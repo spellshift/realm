@@ -15,14 +15,16 @@ import (
 )
 
 func TestMux_InMemory(t *testing.T) {
-	// Setup Mux
-	m := New(WithInMemoryDriver())
-
 	ctx := context.Background()
+	// Setup Mux
+	m, err := New(ctx, WithInMemoryDriver())
+	require.NoError(t, err)
+	defer m.Close()
+
 	topicID := "test-topic"
 
 	// Ensure Topic Exists
-	err := m.ensureTopic(ctx, topicID)
+	err = m.ensureTopic(ctx, topicID)
 	require.NoError(t, err)
 
 	// Subscribe first
@@ -77,9 +79,11 @@ func TestMux_CreatePortal(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Setup Mux
-	m := New(WithInMemoryDriver())
 	ctx := context.Background()
+	// Setup Mux
+	m, err := New(ctx, WithInMemoryDriver())
+	require.NoError(t, err)
+	defer m.Close()
 
 	// Create User, Tome, Quest, Task required for Portal
 	u := client.User.Create().SetName("testuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
@@ -136,13 +140,16 @@ func TestMux_CreatePortal(t *testing.T) {
 }
 
 func TestMux_OpenPortal(t *testing.T) {
-	m := New(WithInMemoryDriver())
 	ctx := context.Background()
+	m, err := New(ctx, WithInMemoryDriver())
+	require.NoError(t, err)
+	defer m.Close()
+
 	portalID := 456
 
 	// Simulate "Portal Output" topic existing (as if created by CreatePortal)
 	topicOut := m.TopicOut(portalID)
-	err := m.ensureTopic(ctx, topicOut)
+	err = m.ensureTopic(ctx, topicOut)
 	require.NoError(t, err)
 
 	teardown, err := m.OpenPortal(ctx, portalID)

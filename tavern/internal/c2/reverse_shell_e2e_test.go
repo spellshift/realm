@@ -14,8 +14,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -24,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/xpubsub"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -44,25 +43,45 @@ func TestReverseShell_E2E(t *testing.T) {
 	// The wsMux will be used by websockets to subscribe to shell output and publish new input.
 	// The grpcMux will be used by gRPC to subscribe to shell input and publish new output.
 
-	pubInput, err := pubsub.OpenTopic(ctx, "mem://e2e-input")
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
 	require.NoError(t, err)
-	defer pubInput.Shutdown(ctx)
+	defer client.Close()
 
-	subInput, err := pubsub.OpenSubscription(ctx, "mem://e2e-input")
-	require.NoError(t, err)
-	defer subInput.Shutdown(ctx)
+	inputTopic := "e2e-input"
+	inputSubName := "e2e-input-sub"
+	outputTopic := "e2e-output"
+	outputSubName := "e2e-output-sub"
 
-	pubOutput, err := pubsub.OpenTopic(ctx, "mem://e2e-output")
-	require.NoError(t, err)
-	defer pubOutput.Shutdown(ctx)
+	require.NoError(t, client.EnsureTopic(ctx, inputTopic))
+	require.NoError(t, client.EnsureSubscription(ctx, inputTopic, inputSubName, 0))
+	require.NoError(t, client.EnsureTopic(ctx, outputTopic))
+	require.NoError(t, client.EnsureSubscription(ctx, outputTopic, outputSubName, 0))
 
-	subOutput, err := pubsub.OpenSubscription(ctx, "mem://e2e-output")
-	require.NoError(t, err)
-	defer subOutput.Shutdown(ctx)
+	pubInput := client.NewPublisher(inputTopic)
+	defer pubInput.Close()
+	subInput := client.NewSubscriber(inputSubName)
+	defer subInput.Close()
+
+	pubOutput := client.NewPublisher(outputTopic)
+	defer pubOutput.Close()
+	subOutput := client.NewSubscriber(outputSubName)
+	defer subOutput.Close()
+
+	// wsMux: reads from outputSub (shell output), writes to inputPub (shell input)
+	// Wait, setup:
+	// wsMux := stream.NewMux(pubInput, subOutput)
+	// grpcMux := stream.NewMux(pubOutput, subInput)
+	// pubInput = "e2e-input". subOutput = "e2e-output-sub" (of e2e-output topic)
+	// pubOutput = "e2e-output". subInput = "e2e-input-sub" (of e2e-input topic)
+
+	// Server (gRPC): writes to pubOutput (e2e-output). Reads from subInput (e2e-input-sub).
+	// WS (Client): writes to pubInput (e2e-input). Reads from subOutput (e2e-output-sub).
 
 	wsMux := stream.NewMux(pubInput, subOutput)
 	grpcMux := stream.NewMux(pubOutput, subInput)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+
+	portalMux, err := mux.New(ctx, mux.WithInMemoryDriver())
+	require.NoError(t, err)
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)

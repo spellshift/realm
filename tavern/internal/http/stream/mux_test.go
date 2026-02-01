@@ -9,13 +9,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 func newTopicName(base string) string {
-	return fmt.Sprintf("mem://%s-%d", base, rand.Int())
+	return fmt.Sprintf("%s-%d", base, rand.Int())
 }
 
 func TestMux(t *testing.T) {
@@ -23,16 +22,22 @@ func TestMux(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
+
 	topicName := newTopicName("mux-test")
-	topic, err := pubsub.OpenTopic(ctx, topicName)
-	require.NoError(t, err)
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
-	require.NoError(t, err)
-	defer sub.Shutdown(ctx)
+	subName := topicName + "-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	pub := client.NewPublisher(topicName)
+	defer pub.Close()
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
 
 	// Create Mux
-	mux := stream.NewMux(topic, sub)
+	mux := stream.NewMux(pub, sub)
 	go mux.Start(ctx)
 
 	// Create and Register Streams
@@ -48,23 +53,15 @@ func TestMux(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Send a message for stream1
-	err = topic.Send(ctx, &pubsub.Message{
-		Body:     []byte("hello stream 1"),
-		Metadata: map[string]string{"id": "stream1"},
-	})
+	err = pub.Publish(ctx, []byte("hello stream 1"), map[string]string{"id": "stream1"})
 	require.NoError(t, err)
 
 	// Send a message for stream2
-	err = topic.Send(ctx, &pubsub.Message{
-		Body:     []byte("hello stream 2"),
-		Metadata: map[string]string{"id": "stream2"},
-	})
+	err = pub.Publish(ctx, []byte("hello stream 2"), map[string]string{"id": "stream2"})
 	require.NoError(t, err)
 
 	// Send a message with no id
-	err = topic.Send(ctx, &pubsub.Message{
-		Body: []byte("no id"),
-	})
+	err = pub.Publish(ctx, []byte("no id"), nil)
 	require.NoError(t, err)
 
 	// Assert messages are received by the correct stream
@@ -88,16 +85,22 @@ func TestMuxHistory(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
+
 	topicName := newTopicName("mux-history-test")
-	topic, err := pubsub.OpenTopic(ctx, topicName)
-	require.NoError(t, err)
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
-	require.NoError(t, err)
-	defer sub.Shutdown(ctx)
+	subName := topicName + "-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	pub := client.NewPublisher(topicName)
+	defer pub.Close()
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
 
 	// Create Mux with small history size
-	mux := stream.NewMux(topic, sub, stream.WithHistorySize(10))
+	mux := stream.NewMux(pub, sub, stream.WithHistorySize(10))
 	go mux.Start(ctx)
 
 	// Create monitor stream to ensure messages are processed
@@ -109,10 +112,7 @@ func TestMuxHistory(t *testing.T) {
 	// Total 15 bytes. Buffer size 10. Last 10 bytes should be kept.
 	messages := []string{"12345", "67890", "ABCDE"}
 	for _, m := range messages {
-		err = topic.Send(ctx, &pubsub.Message{
-			Body:     []byte(m),
-			Metadata: map[string]string{"id": "history_stream"},
-		})
+		err = pub.Publish(ctx, []byte(m), map[string]string{"id": "history_stream"})
 		require.NoError(t, err)
 
 		// Wait for monitor to receive it
@@ -130,10 +130,7 @@ func TestMuxHistory(t *testing.T) {
 	defer mux.Unregister(s)
 
 	// Send SYNC message to trigger registration loop in Mux
-	err = topic.Send(ctx, &pubsub.Message{
-		Body:     []byte("SYNC"),
-		Metadata: map[string]string{"id": "history_stream"},
-	})
+	err = pub.Publish(ctx, []byte("SYNC"), map[string]string{"id": "history_stream"})
 	require.NoError(t, err)
 
 	// Expect history message immediately
@@ -161,16 +158,22 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
+
 	topicName := newTopicName("mux-history-ordering-test")
-	topic, err := pubsub.OpenTopic(ctx, topicName)
-	require.NoError(t, err)
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
-	require.NoError(t, err)
-	defer sub.Shutdown(ctx)
+	subName := topicName + "-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	pub := client.NewPublisher(topicName)
+	defer pub.Close()
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
 
 	// Create Mux
-	mux := stream.NewMux(topic, sub, stream.WithHistorySize(100))
+	mux := stream.NewMux(pub, sub, stream.WithHistorySize(100))
 	go mux.Start(ctx)
 
 	// Create monitor stream to wait for processing
@@ -183,13 +186,10 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	orderKey := "session1"
 
 	// 1. Send Anchor (0)
-	err = topic.Send(ctx, &pubsub.Message{
-		Body: []byte("A"),
-		Metadata: map[string]string{
-			"id":          "ordering_stream",
-			"order-key":   orderKey,
-			"order-index": "0",
-		},
+	err = pub.Publish(ctx, []byte("A"), map[string]string{
+		"id":          "ordering_stream",
+		"order-key":   orderKey,
+		"order-index": "0",
 	})
 	require.NoError(t, err)
 
@@ -202,26 +202,20 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	}
 
 	// 2. Send C (2) - Out of order
-	err = topic.Send(ctx, &pubsub.Message{
-		Body: []byte("C"),
-		Metadata: map[string]string{
-			"id":          "ordering_stream",
-			"order-key":   orderKey,
-			"order-index": "2",
-		},
+	err = pub.Publish(ctx, []byte("C"), map[string]string{
+		"id":          "ordering_stream",
+		"order-key":   orderKey,
+		"order-index": "2",
 	})
 	require.NoError(t, err)
 
 	// 3. Send B (1) - Fills gap
 	// Sleep to ensure C arrives at Mux before B (testing the buffer logic)
 	time.Sleep(10 * time.Millisecond)
-	err = topic.Send(ctx, &pubsub.Message{
-		Body: []byte("B"),
-		Metadata: map[string]string{
-			"id":          "ordering_stream",
-			"order-key":   orderKey,
-			"order-index": "1",
-		},
+	err = pub.Publish(ctx, []byte("B"), map[string]string{
+		"id":          "ordering_stream",
+		"order-key":   orderKey,
+		"order-index": "1",
 	})
 	require.NoError(t, err)
 
@@ -243,10 +237,7 @@ func TestMuxHistoryOrdering(t *testing.T) {
 	defer mux.Unregister(s)
 
 	// Send SYNC
-	err = topic.Send(ctx, &pubsub.Message{
-		Body:     []byte("SYNC"),
-		Metadata: map[string]string{"id": "ordering_stream"},
-	})
+	err = pub.Publish(ctx, []byte("SYNC"), map[string]string{"id": "ordering_stream"})
 	require.NoError(t, err)
 
 	// Expect history: "ABC"

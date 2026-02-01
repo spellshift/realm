@@ -9,20 +9,15 @@ import (
 	"strings"
 	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub/v2"
-	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/gcppubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/xpubsub"
 	"realm.pub/tavern/tomes"
 )
 
@@ -83,10 +78,10 @@ var (
 	// EnvPubSubSubscriptionShellOutput defines the subscription to receive shell output from.
 	EnvGCPProjectID                  = EnvString{"GCP_PROJECT_ID", ""}
 	EnvGCPPubsubKeepAliveIntervalMs  = EnvInteger{"GCP_PUBSUB_KEEP_ALIVE_INTERVAL_MS", 1000}
-	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "mem://shell_input"}
-	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "mem://shell_input"}
-	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
-	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
+	EnvPubSubTopicShellInput         = EnvString{"PUBSUB_TOPIC_SHELL_INPUT", "shell_input"}
+	EnvPubSubSubscriptionShellInput  = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_INPUT", "shell_input"}
+	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "shell_output"}
+	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "shell_output"}
 
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
@@ -156,13 +151,17 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 		projectID = EnvGCPProjectID.String()
 	)
 	if projectID == "" {
-		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
+		m, err := mux.New(ctx, mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
+		if err != nil {
+			panic(fmt.Errorf("failed to create portal mux: %v", err))
+		}
+		return m
 	}
-	gcpClient, err := gcppubsub.NewClient(ctx, projectID)
+	m, err := mux.New(ctx, mux.WithGCPDriver(projectID), mux.WithSubscriberBufferSize(1024))
 	if err != nil {
-		panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+		panic(fmt.Errorf("failed to create portal mux: %v", err))
 	}
-	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(1024))
+	return m
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.
@@ -171,104 +170,85 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 func (cfg *Config) NewShellMuxes(ctx context.Context) (wsMux *stream.Mux, grpcMux *stream.Mux) {
 	var (
 		projectID        = EnvGCPProjectID.String()
-		gcpTopicPrefix   = fmt.Sprintf("gcppubsub://projects/%s/topics/", projectID)
-		topicShellInput  = EnvPubSubTopicShellInput.String()
-		topicShellOutput = EnvPubSubTopicShellOutput.String()
-		subShellInput    = EnvPubSubSubscriptionShellInput.String()
-		subShellOutput   = EnvPubSubSubscriptionShellOutput.String()
+		useInMem         = projectID == ""
+		topicShellInput  = cleanTopicName(EnvPubSubTopicShellInput.String())
+		topicShellOutput = cleanTopicName(EnvPubSubTopicShellOutput.String())
+		subShellInput    = cleanTopicName(EnvPubSubSubscriptionShellInput.String())
+		subShellOutput   = cleanTopicName(EnvPubSubSubscriptionShellOutput.String())
 	)
 
-	// For GCP, messages for a "Subscription" are load-balanced across all of the "Subscribers" to that same "Subscription"
-	// This means we must make a new "Subscription" in GCP for each instance of tavern to ensure they all receive the
-	// appropriate input/output from shells. For more information, see the information here:
-	// https://cloud.google.com/pubsub/docs/pubsub-basics#choose_a_publish_and_subscribe_pattern
-	if strings.HasPrefix(subShellInput, "gcppubsub://") && strings.HasPrefix(subShellOutput, "gcppubsub://") {
-		if projectID == "" {
-			log.Fatalf("[FATAL] must set value for %q when using gcppubsub:// in configuration", EnvGCPProjectID.Key)
+	if useInMem {
+		projectID = "test-project"
+	}
+
+	client, err := xpubsub.NewClient(ctx, projectID, useInMem)
+	if err != nil {
+		panic(fmt.Errorf("failed to create xpubsub client: %v", err))
+	}
+	// Note: client is not closed here, which is intended as Muxes will use it.
+
+	// Ensure Topics
+	if err := client.EnsureTopic(ctx, topicShellInput); err != nil {
+		panic(fmt.Errorf("failed to ensure topic %s: %v", topicShellInput, err))
+	}
+	if err := client.EnsureTopic(ctx, topicShellOutput); err != nil {
+		panic(fmt.Errorf("failed to ensure topic %s: %v", topicShellOutput, err))
+	}
+
+	// Ensure Subscriptions
+	if !useInMem {
+		// GCP Mode: Ensure unique subscriptions for this instance
+		subShellInput = fmt.Sprintf("%s-sub_%s", topicShellInput, GlobalInstanceID)
+		if err := client.EnsureSubscription(ctx, topicShellInput, subShellInput, 24*time.Hour); err != nil {
+			panic(fmt.Errorf("failed to ensure subscription %s: %v", subShellInput, err))
 		}
 
-		client, err := gcppubsub.NewClient(ctx, projectID)
-		if err != nil {
-			panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
-		}
-		defer client.Close()
-
-		createGCPSubscription := func(ctx context.Context, topicID string) string {
-			name := fmt.Sprintf("%s-sub_%s", topicID, GlobalInstanceID)
-			fullTopicName := fmt.Sprintf("projects/%s/topics/%s", projectID, topicID)
-			fullSubName := fmt.Sprintf("projects/%s/subscriptions/%s", projectID, name)
-
-			_, err := client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
-				Name:               fullSubName,
-				Topic:              fullTopicName,
-				AckDeadlineSeconds: 10,
-				ExpirationPolicy: &pubsubpb.ExpirationPolicy{
-					Ttl: durationpb.New(24 * time.Hour),
-				},
-			})
-			if err != nil {
-				panic(fmt.Errorf(
-					"failed to create gcppubsub subscription (topic=%q,subscription_name=%q), to disable creation do not use the 'gcppubsub://' prefix for the environment variable %q: %v",
-					topicID,
-					name,
-					EnvPubSubSubscriptionShellInput.Key,
-					err,
-				))
-			}
-			// Verify existence via GetSubscription
-			_, err = client.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: fullSubName})
-			if err != nil {
-				panic(fmt.Errorf("failed to check if gcppubsub subscription was successfully created: %w", err))
-			}
-			return name
+		subShellOutput = fmt.Sprintf("%s-sub_%s", topicShellOutput, GlobalInstanceID)
+		if err := client.EnsureSubscription(ctx, topicShellOutput, subShellOutput, 24*time.Hour); err != nil {
+			panic(fmt.Errorf("failed to ensure subscription %s: %v", subShellOutput, err))
 		}
 
-		shellInputTopicID := strings.TrimPrefix(topicShellInput, gcpTopicPrefix)
-		shellOutputTopicID := strings.TrimPrefix(topicShellOutput, gcpTopicPrefix)
-
-		// Overwrite env var specification with newly created GCP PubSub Subscriptions
-		subShellInput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellInputTopicID))
-		slog.DebugContext(ctx, "created GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-		subShellOutput = fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", projectID, createGCPSubscription(ctx, shellOutputTopicID))
-		slog.DebugContext(ctx, "created GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
-
-		// Start a goroutine to publish noop messages on an interval.
-		// This reduces cold-start latency for GCP PubSub which can improve shell user experience.
+		// Cold start prevention
 		if interval := EnvGCPPubsubKeepAliveIntervalMs.Int(); interval > 0 {
 			go stream.PreventPubSubColdStarts(
 				ctx,
+				client,
 				time.Duration(interval)*time.Millisecond,
 				topicShellOutput,
 				topicShellInput,
 			)
 		}
+	} else {
+		// In-Mem Mode: Ensure standard subscriptions
+		if err := client.EnsureSubscription(ctx, topicShellInput, subShellInput, 0); err != nil {
+			panic(fmt.Errorf("failed to ensure subscription %s: %v", subShellInput, err))
+		}
+		if err := client.EnsureSubscription(ctx, topicShellOutput, subShellOutput, 0); err != nil {
+			panic(fmt.Errorf("failed to ensure subscription %s: %v", subShellOutput, err))
+		}
 	}
 
-	pubOutput, err := pubsub.OpenTopic(ctx, topicShellOutput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellOutput, err)
-	}
+	slog.DebugContext(ctx, "configured subscriptions", "input", subShellInput, "output", subShellOutput)
 
-	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell output", "subscription_name", subShellOutput)
-	subOutput, err := pubsub.OpenSubscription(ctx, subShellOutput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellOutput, err)
-	}
+	pubInput := client.NewPublisher(topicShellInput)
+	subOutputClient := client.NewSubscriber(subShellOutput)
 
-	pubInput, err := pubsub.OpenTopic(ctx, topicShellInput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub topic (%q): %v", topicShellInput, err)
-	}
+	pubOutput := client.NewPublisher(topicShellOutput)
+	subInputClient := client.NewSubscriber(subShellInput)
 
-	slog.DebugContext(ctx, "opening GCP PubSub subscription for shell input", "subscription_name", subShellInput)
-	subInput, err := pubsub.OpenSubscription(ctx, subShellInput)
-	if err != nil {
-		log.Fatalf("[FATAL] Failed to connect to pubsub subscription (%q): %v", subShellInput, err)
-	}
-
-	wsMux = stream.NewMux(pubInput, subOutput)
-	grpcMux = stream.NewMux(pubOutput, subInput)
+	wsMux = stream.NewMux(pubInput, subOutputClient)
+	grpcMux = stream.NewMux(pubOutput, subInputClient)
 	return
+}
+
+func cleanTopicName(s string) string {
+	s = strings.TrimPrefix(s, "mem://")
+	s = strings.TrimPrefix(s, "gcppubsub://")
+	// If it contains '/', take the last part
+	if idx := strings.LastIndex(s, "/"); idx != -1 {
+		return s[idx+1:]
+	}
+	return s
 }
 
 // NewGitImporter configures and returns a new RepoImporter using git.

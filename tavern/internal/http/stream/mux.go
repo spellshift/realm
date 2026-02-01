@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"gocloud.dev/pubsub"
 	"golang.org/x/exp/slog"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 const (
@@ -33,8 +33,8 @@ type historyState struct {
 // Streams will only receive a Message if their configured ID matches the incoming metadata of a Message.
 // Additionally, new messages may be published using the Mux.
 type Mux struct {
-	pub         *pubsub.Topic
-	sub         *pubsub.Subscription
+	pub         xpubsub.Publisher
+	sub         xpubsub.Subscriber
 	register    chan *Stream
 	unregister  chan *Stream
 	streams     map[*Stream]bool
@@ -53,7 +53,7 @@ func WithHistorySize(size int) MuxOption {
 }
 
 // NewMux initializes and returns a new Mux with the provided pubsub info.
-func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription, options ...MuxOption) *Mux {
+func NewMux(pub xpubsub.Publisher, sub xpubsub.Subscriber, options ...MuxOption) *Mux {
 	mux := &Mux{
 		pub:         pub,
 		sub:         sub,
@@ -71,11 +71,11 @@ func NewMux(pub *pubsub.Topic, sub *pubsub.Subscription, options ...MuxOption) *
 
 // send a new message to the configured publish topic.
 // The provided message MUST include an id metadata.
-func (mux *Mux) send(ctx context.Context, m *pubsub.Message) error {
+func (mux *Mux) send(ctx context.Context, m *xpubsub.Message) error {
 	if _, ok := m.Metadata[metadataID]; !ok {
 		return fmt.Errorf("must set 'id' metadata before publishing")
 	}
-	return mux.pub.Send(ctx, m)
+	return mux.pub.Publish(ctx, m.Body, m.Metadata)
 }
 
 // Register a new stream with the Mux, which will receive broadcast messages from a pubsub subscription
@@ -97,7 +97,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 
 	// Message channel to receive messages from the poller
 	type pollResult struct {
-		msg *pubsub.Message
+		msg *xpubsub.Message
 		err error
 	}
 	msgChan := make(chan pollResult)
@@ -136,7 +136,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 				data := state.buffer.Bytes()
 				if len(data) > 0 {
 					slog.DebugContext(ctx, "mux sending history to new stream", "stream_id", s.id, "bytes", len(data))
-					msg := &pubsub.Message{
+					msg := &xpubsub.Message{
 						Body: data,
 						Metadata: map[string]string{
 							metadataID:      s.id,
@@ -179,7 +179,7 @@ func (mux *Mux) Start(ctx context.Context) error {
 }
 
 // handleMessage processes a new message, updating history and broadcasting to streams.
-func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
+func (mux *Mux) handleMessage(ctx context.Context, msg *xpubsub.Message) {
 	// Always acknowledge the message
 	defer msg.Ack()
 
@@ -216,12 +216,12 @@ func (mux *Mux) handleMessage(ctx context.Context, msg *pubsub.Message) {
 		sessBuf, ok := state.sessions[key]
 		if !ok {
 			sessBuf = &sessionBuffer{
-				data: make(map[uint64]*pubsub.Message, maxStreamOrderBuf),
+				data: make(map[uint64]*xpubsub.Message, maxStreamOrderBuf),
 			}
 			state.sessions[key] = sessBuf
 		}
 
-		sessBuf.writeMessage(ctx, msg, func(m *pubsub.Message) {
+		sessBuf.writeMessage(ctx, msg, func(m *xpubsub.Message) {
 			state.buffer.Write(m.Body)
 		})
 	}

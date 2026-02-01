@@ -17,9 +17,10 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	client := enttest.Open(b, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Setup Mux
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1000))
 	ctx := context.Background()
+	// Setup Mux
+	m, err := New(ctx, WithInMemoryDriver(), WithSubscriberBufferSize(1000))
+	require.NoError(b, err)
 
 	// Setup Entities
 	u := client.User.Create().SetName("benchuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)

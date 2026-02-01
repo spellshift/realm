@@ -9,12 +9,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 func newTopicName(base string) string {
-	return fmt.Sprintf("mem://%s-%d", base, rand.Int())
+	return fmt.Sprintf("%s-%d", base, rand.Int())
 }
 
 func TestStream_SendMessage(t *testing.T) {
@@ -22,19 +21,28 @@ func TestStream_SendMessage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	topicName := newTopicName("stream-test-send")
-	topic, err := pubsub.OpenTopic(ctx, topicName)
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
 	require.NoError(t, err)
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, topicName)
-	require.NoError(t, err)
-	defer sub.Shutdown(ctx)
+	defer client.Close()
 
-	mux := NewMux(topic, sub)
+	topicName := newTopicName("stream-test-send")
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+
+	// In mempubsub, subscription name matters for connecting to topic?
+	// xpubsub uses pstest, so we must link subscription to topic.
+	subName := topicName + "-sub"
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	pub := client.NewPublisher(topicName)
+	defer pub.Close()
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
+
+	mux := NewMux(pub, sub)
 	stream := New("test-stream")
 
 	// Send a message
-	err = stream.SendMessage(ctx, &pubsub.Message{Body: []byte("test message")}, mux)
+	err = stream.SendMessage(ctx, &xpubsub.Message{Body: []byte("test message")}, mux)
 	require.NoError(t, err)
 
 	// Receive the message from the subscription to verify
@@ -53,7 +61,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 	stream := New("ordering-stream")
 	go func() {
 		// Send 0 first to anchor the stream
-		stream.processOneMessage(ctx, &pubsub.Message{
+		stream.processOneMessage(ctx, &xpubsub.Message{
 			Body: []byte("message 0"),
 			Metadata: map[string]string{
 				"id":               "ordering-stream",
@@ -62,7 +70,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 			},
 		})
 		// Then send 2 (buffered)
-		stream.processOneMessage(ctx, &pubsub.Message{
+		stream.processOneMessage(ctx, &xpubsub.Message{
 			Body: []byte("message 2"),
 			Metadata: map[string]string{
 				"id":               "ordering-stream",
@@ -71,7 +79,7 @@ func TestStream_MessageOrdering(t *testing.T) {
 			},
 		})
 		// Then send 1 (fills gap)
-		stream.processOneMessage(ctx, &pubsub.Message{
+		stream.processOneMessage(ctx, &xpubsub.Message{
 			Body: []byte("message 1"),
 			Metadata: map[string]string{
 				"id":               "ordering-stream",
@@ -101,7 +109,7 @@ func TestStream_LateJoin(t *testing.T) {
 	stream := New("late-join-stream")
 	go func() {
 		// Simulate joining late: receive message 10 first
-		stream.processOneMessage(ctx, &pubsub.Message{
+		stream.processOneMessage(ctx, &xpubsub.Message{
 			Body: []byte("message 10"),
 			Metadata: map[string]string{
 				"id":               "late-join-stream",

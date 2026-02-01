@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gocloud.dev/pubsub"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 // OpenPortal opens an existing portal for viewing (Client side).
@@ -21,7 +21,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 			m.subMgr.Lock()
 			m.subMgr.refs[subName]--
 			shouldShutdown := false
-			var s *pubsub.Subscription
+			var s xpubsub.Subscriber
 			var cancel context.CancelFunc
 			if m.subMgr.refs[subName] <= 0 {
 				if sub, ok := m.subMgr.active[subName]; ok {
@@ -40,7 +40,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 					cancel()
 				}
 				if s != nil {
-					s.Shutdown(context.Background())
+					s.Close()
 				}
 			}
 		}, nil
@@ -54,11 +54,9 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	}
 
 	// Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicOut, subName)
-	sub, err := m.openSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, subName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return nil, fmt.Errorf("failed to open subscription %s: %w", subName, err)
 	}
 
 	m.subMgr.Lock()
@@ -70,14 +68,14 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		m.subMgr.Unlock()
 
 		// Close our unused subscription immediately
-		sub.Shutdown(context.Background())
+		sub.Close()
 
 		// Return teardown for the EXISTING subscription
 		return func() {
 			m.subMgr.Lock()
 			m.subMgr.refs[subName]--
 			shouldShutdown := false
-			var s *pubsub.Subscription
+			var s xpubsub.Subscriber
 			var cancel context.CancelFunc
 			if m.subMgr.refs[subName] <= 0 {
 				if sub, ok := m.subMgr.active[subName]; ok {
@@ -96,7 +94,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 					cancel()
 				}
 				if existingSub != nil {
-					s.Shutdown(context.Background())
+					s.Close()
 				}
 			}
 		}, nil
@@ -122,7 +120,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		m.subMgr.Lock()
 		m.subMgr.refs[subName]--
 		shouldShutdown := false
-		var s *pubsub.Subscription
+		var s xpubsub.Subscriber
 		var cancel context.CancelFunc
 		if m.subMgr.refs[subName] <= 0 {
 			if sub, ok := m.subMgr.active[subName]; ok {
@@ -141,7 +139,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 				cancel()
 			}
 			if s != nil {
-				s.Shutdown(context.Background())
+				s.Close()
 			}
 		}
 	}

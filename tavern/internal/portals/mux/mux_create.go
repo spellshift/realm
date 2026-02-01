@@ -63,11 +63,9 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 	}
 
 	// 3. Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicIn, subName)
-	sub, err := m.openSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, subName)
 	if err != nil {
-		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subName, err)
 	}
 
 	// Store in subMgr
@@ -80,7 +78,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 			cancel()
 		}
 		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		existingSub.Shutdown(context.Background())
+		existingSub.Close()
 	}
 
 	m.subMgr.active[subName] = sub
@@ -108,8 +106,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 			if cancel != nil {
 				cancel()
 			}
-			// Shutdown using Background context
-			s.Shutdown(context.Background())
+			s.Close()
 		}
 
 		// Update DB to Closed using ID

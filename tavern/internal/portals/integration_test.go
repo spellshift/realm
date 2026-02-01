@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -23,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/xpubsub"
 	"realm.pub/tavern/portals/portalpb"
 	portalstream "realm.pub/tavern/portals/stream"
 
@@ -46,15 +45,22 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	entClient := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 
 	// 2. Setup Portal Mux (In-Memory)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+	portalMux, err := mux.New(ctx, mux.WithInMemoryDriver())
+	require.NoError(t, err)
 
 	// 3. Setup C2 Stream Mux (Dummy In-Memory)
-	topic, err := pubsub.OpenTopic(ctx, "mem://c2topic")
-	require.NoError(t, err)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://c2topic")
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
 	require.NoError(t, err)
 
-	c2StreamMux := stream.NewMux(topic, sub)
+	topicName := "c2topic"
+	subName := "c2topic-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	pub := client.NewPublisher(topicName)
+	sub := client.NewSubscriber(subName)
+
+	c2StreamMux := stream.NewMux(pub, sub)
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -105,8 +111,10 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 			s.Stop()
 			cancelMux()
 			entClient.Close()
-			topic.Shutdown(ctx)
-			sub.Shutdown(ctx)
+			pub.Close()
+			sub.Close()
+			client.Close()
+			portalMux.Close()
 		},
 	}
 }

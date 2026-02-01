@@ -11,7 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"gocloud.dev/pubsub"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 // metadataID defines the ID of the entity for the stream, enabling multiple ents to be multiplexed over a topic.
@@ -43,8 +43,8 @@ type Stream struct {
 	id          string // ID of the underlying ent (e.g. Shell)
 	orderKey    string // Unique ID for the session (e.g. Websocket)
 	orderIndex  *atomic.Uint64
-	recv        chan *pubsub.Message
-	recvOrdered chan *pubsub.Message
+	recv        chan *xpubsub.Message
+	recvOrdered chan *xpubsub.Message
 	buffers     map[string]*sessionBuffer // Receive messages, bucket by sender (order-key), and order messages from same sender
 }
 
@@ -56,14 +56,14 @@ func New(id string) *Stream {
 		id:          id,
 		orderKey:    newOrderKey(),
 		orderIndex:  &atomic.Uint64{},
-		recv:        make(chan *pubsub.Message, maxStreamMsgBufSize),
-		recvOrdered: make(chan *pubsub.Message, maxStreamMsgBufSize),
+		recv:        make(chan *xpubsub.Message, maxStreamMsgBufSize),
+		recvOrdered: make(chan *xpubsub.Message, maxStreamMsgBufSize),
 		buffers:     make(map[string]*sessionBuffer, maxStreamMsgBufSize),
 	}
 }
 
 // SendMessage
-func (s *Stream) SendMessage(ctx context.Context, msg *pubsub.Message, mux *Mux) error {
+func (s *Stream) SendMessage(ctx context.Context, msg *xpubsub.Message, mux *Mux) error {
 	// Add Metadata
 	if msg.Metadata == nil {
 		msg.Metadata = make(map[string]string, 3)
@@ -84,7 +84,7 @@ func (s *Stream) SendMessage(ctx context.Context, msg *pubsub.Message, mux *Mux)
 }
 
 // Messages returns a channel for receiving new pubsub messages.
-func (s *Stream) Messages() <-chan *pubsub.Message {
+func (s *Stream) Messages() <-chan *xpubsub.Message {
 	return s.recvOrdered
 }
 
@@ -101,7 +101,7 @@ func (s *Stream) Close() error {
 
 // processOneMessage is called by a Mux to receive a new pubsub message designated for this stream.
 // It may be unordered.
-func (s *Stream) processOneMessage(ctx context.Context, msg *pubsub.Message) {
+func (s *Stream) processOneMessage(ctx context.Context, msg *xpubsub.Message) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -112,19 +112,19 @@ func (s *Stream) processOneMessage(ctx context.Context, msg *pubsub.Message) {
 	buf, ok := s.buffers[key]
 	if !ok || buf == nil {
 		buf = &sessionBuffer{
-			data: make(map[uint64]*pubsub.Message, maxStreamMsgBufSize),
+			data: make(map[uint64]*xpubsub.Message, maxStreamMsgBufSize),
 		}
 		s.buffers[key] = buf
 	}
 
 	// Write Message (or buffer it)
-	emit := func(m *pubsub.Message) {
+	emit := func(m *xpubsub.Message) {
 		s.recvOrdered <- m
 	}
 	buf.writeMessage(ctx, msg, emit)
 }
 
-func parseOrderKey(msg *pubsub.Message) string {
+func parseOrderKey(msg *xpubsub.Message) string {
 	key, ok := msg.Metadata[metadataOrderKey]
 	if !ok {
 		return ""
@@ -132,7 +132,7 @@ func parseOrderKey(msg *pubsub.Message) string {
 	return key
 }
 
-func parseOrderIndex(msg *pubsub.Message) (uint64, bool) {
+func parseOrderIndex(msg *xpubsub.Message) (uint64, bool) {
 	indexStr, ok := msg.Metadata[metadataOrderIndex]
 	if !ok {
 		return 0, false
@@ -165,11 +165,11 @@ func newOrderKey() string {
 // with respect to the websocket.
 type sessionBuffer struct {
 	nextToSend  uint64
-	data        map[uint64]*pubsub.Message
+	data        map[uint64]*xpubsub.Message
 	initialized bool
 }
 
-func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message, emit func(*pubsub.Message)) {
+func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *xpubsub.Message, emit func(*xpubsub.Message)) {
 	index, ok := parseOrderIndex(msg)
 	if !ok {
 		slog.DebugContext(ctx, "sessionBuffer received no order index, will write immediately and not buffer")
@@ -195,7 +195,7 @@ func (buf *sessionBuffer) writeMessage(ctx context.Context, msg *pubsub.Message,
 	buf.flushBuffer(ctx, emit)
 }
 
-func (buf *sessionBuffer) flushBuffer(ctx context.Context, emit func(*pubsub.Message)) {
+func (buf *sessionBuffer) flushBuffer(ctx context.Context, emit func(*xpubsub.Message)) {
 	for {
 		msg, ok := buf.data[buf.nextToSend]
 		if !ok {

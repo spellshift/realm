@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub"
-	"gocloud.dev/pubsub"
+	"cloud.google.com/go/pubsub/v2"
 	"google.golang.org/protobuf/proto"
+	"realm.pub/tavern/internal/xpubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -52,11 +52,8 @@ func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) 
 	// Do not shutdown topic here as we are caching it.
 
 	// Send
-	err = t.Send(ctx, &pubsub.Message{
-		Body: data,
-		Metadata: map[string]string{
-			"sender_id": m.serverID,
-		},
+	err = t.Publish(ctx, data, map[string]string{
+		"sender_id": m.serverID,
 	})
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_send").Inc()
@@ -161,7 +158,7 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 }
 
 // dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
-func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
+func (m *Mux) dispatchMsg(topicID string, msg *xpubsub.Message) {
 	// Check for loopback
 	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
 		return
@@ -182,7 +179,7 @@ func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 	m.addToHistory(topicID, &mote)
 }
 
-func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {
+func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub xpubsub.Subscriber) {
 	for {
 		msg, err := sub.Receive(ctx)
 
@@ -200,7 +197,7 @@ func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subsc
 }
 
 // getTopic returns a cached topic handle or opens a new one with low-latency settings.
-func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
+func (m *Mux) getTopic(ctx context.Context, topicID string) (xpubsub.Publisher, error) {
 	m.topics.RLock()
 	t, ok := m.topics.topics[topicID]
 	m.topics.RUnlock()
@@ -215,40 +212,34 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 		return t, nil
 	}
 
-	t, err := pubsub.OpenTopic(ctx, m.TopicURL(topicID))
-	if err != nil {
-		return nil, err
-	}
+	// Create new publisher
+	t = m.client.NewPublisher(topicID)
 
-	// Apply low-latency settings for native driver
-	var native *gcppubsub.Topic
-	if t.As(&native) {
-		slog.InfoContext(ctx, "Applied low-latency publish settings for GCP driver", "topic", topicID)
-		native.PublishSettings.DelayThreshold = publishDelayThreshold
-		native.PublishSettings.CountThreshold = publishCountThreshold
-		native.PublishSettings.ByteThreshold = publishByteThreshold
-	}
+	// Apply low-latency settings
+	t.SetSettings(pubsub.PublishSettings{
+		DelayThreshold: publishDelayThreshold,
+		CountThreshold: publishCountThreshold,
+		ByteThreshold:  publishByteThreshold,
+	})
+	slog.InfoContext(ctx, "Applied low-latency publish settings", "topic", topicID)
 
 	m.topics.topics[topicID] = t
 	return t, nil
 }
 
-// openSubscription opens a subscription and applies low-latency settings if it's a native driver.
-func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscription, error) {
-	sub, err := pubsub.OpenSubscription(ctx, url)
-	if err != nil {
-		return nil, err
-	}
+// openSubscription opens a subscription and applies low-latency settings.
+func (m *Mux) openSubscription(ctx context.Context, subID string) (xpubsub.Subscriber, error) {
+	// Create new subscriber
+	sub := m.client.NewSubscriber(subID)
 
-	// Apply low-latency settings for native driver
-	var native *gcppubsub.Subscription
-	if sub.As(&native) {
-		slog.InfoContext(ctx, "Applied low-latency receive settings for GCP driver", "sub_url", url)
-		native.ReceiveSettings.MaxOutstandingMessages = receiveMaxOutstandingMessages
-		native.ReceiveSettings.MaxOutstandingBytes = receiveMaxOutstandingBytes
-		native.ReceiveSettings.NumGoroutines = receiveNumGoroutines
-		native.ReceiveSettings.MaxExtension = receiveMaxExtension
-	}
+	// Apply low-latency settings
+	sub.SetSettings(pubsub.ReceiveSettings{
+		MaxOutstandingMessages: receiveMaxOutstandingMessages,
+		MaxOutstandingBytes:    receiveMaxOutstandingBytes,
+		NumGoroutines:          receiveNumGoroutines,
+		MaxExtension:           receiveMaxExtension,
+	})
+	slog.InfoContext(ctx, "Applied low-latency receive settings", "sub_id", subID)
 
 	return sub, nil
 }

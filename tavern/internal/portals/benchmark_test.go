@@ -88,7 +88,8 @@ func BenchmarkPortalThroughput(b *testing.B) {
 		SaveX(ctx)
 
 	// 3. Setup Server Components
-	portalMux := mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1000))
+	portalMux, err := mux.New(ctx, mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1000))
+	require.NoError(b, err)
 
 	// Create a placeholder shellMux since C2 requires it, but we won't use it.
 	var shellMux *stream.Mux = nil

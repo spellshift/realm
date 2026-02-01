@@ -7,12 +7,11 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -22,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
@@ -39,17 +39,28 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 
 	// gRPC Mux
 	var (
-		pubOutput = "mem://shell_output"
-		subInput  = "mem://shell_input"
+		pubOutput = "shell_output"
+		subInput  = "shell_input"
+		subName   = "shell_input_sub"
 	)
-	grpcOutTopic, err := pubsub.OpenTopic(ctx, pubOutput)
+
+	// Create xpubsub Client
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
 	require.NoError(t, err)
-	_, err = pubsub.OpenTopic(ctx, subInput)
+
+	// Ensure Topics and Subscription
+	require.NoError(t, client.EnsureTopic(ctx, pubOutput))
+	require.NoError(t, client.EnsureTopic(ctx, subInput))
+	require.NoError(t, client.EnsureSubscription(ctx, subInput, subName, 24*time.Hour))
+
+	grpcOutPub := client.NewPublisher(pubOutput)
+	grpcInSub := client.NewSubscriber(subName)
+
+	grpcShellMux := stream.NewMux(grpcOutPub, grpcInSub)
+
+	// portalMux
+	portalMux, err := mux.New(ctx, mux.WithInMemoryDriver())
 	require.NoError(t, err)
-	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
-	require.NoError(t, err)
-	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
-	portalMux := mux.New(mux.WithInMemoryDriver())
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -79,6 +90,8 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 		assert.NoError(t, lis.Close())
 		baseSrv.Stop()
 		assert.NoError(t, graph.Close())
+		assert.NoError(t, client.Close())
+		assert.NoError(t, portalMux.Close())
 		if err := <-grpcErrCh; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			t.Fatalf("failed to serve grpc: %v", err)
 		}

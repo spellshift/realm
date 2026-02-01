@@ -11,11 +11,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/xpubsub"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -28,21 +27,31 @@ func TestNewShellHandler(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
+
 	// Topic for messages going TO the websocket (server -> shell)
-	outputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-output")
-	require.NoError(t, err)
-	defer outputTopic.Shutdown(ctx)
-	outputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-output")
-	require.NoError(t, err)
-	defer outputSub.Shutdown(ctx)
+	outputTopic := "websocket-output"
+	outputSubName := "websocket-output-sub"
+	require.NoError(t, client.EnsureTopic(ctx, outputTopic))
+	require.NoError(t, client.EnsureSubscription(ctx, outputTopic, outputSubName, 0))
+
+	outputPub := client.NewPublisher(outputTopic)
+	defer outputPub.Close()
+	outputSub := client.NewSubscriber(outputSubName)
+	defer outputSub.Close()
 
 	// Topic for messages coming FROM the websocket (shell -> server)
-	inputTopic, err := pubsub.OpenTopic(ctx, "mem://websocket-input")
-	require.NoError(t, err)
-	defer inputTopic.Shutdown(ctx)
-	inputSub, err := pubsub.OpenSubscription(ctx, "mem://websocket-input")
-	require.NoError(t, err)
-	defer inputSub.Shutdown(ctx)
+	inputTopic := "websocket-input"
+	inputSubName := "websocket-input-sub"
+	require.NoError(t, client.EnsureTopic(ctx, inputTopic))
+	require.NoError(t, client.EnsureSubscription(ctx, inputTopic, inputSubName, 0))
+
+	inputPub := client.NewPublisher(inputTopic)
+	defer inputPub.Close()
+	inputSub := client.NewSubscriber(inputSubName)
+	defer inputSub.Close()
 
 	// Create a test user
 	user, err := graph.User.Create().SetName("test-user").SetOauthID("test-oauth-id").SetPhotoURL("http://example.com/photo.jpg").Save(ctx)
@@ -75,7 +84,40 @@ func TestNewShellHandler(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create Mux with the correct topics
-	mux := stream.NewMux(inputTopic, outputSub)
+	// Mux reads from input (pub), writes to output (sub)?
+	// Wait, Mux in websocket test:
+	// NewMux(inputTopic, outputSub)
+	// inputTopic is *pubsub.Topic (publisher)
+	// outputSub is *pubsub.Subscription (subscriber)
+	// The Mux.send sends to `inputTopic`.
+	// The Mux.Register reads from `outputSub`.
+
+	// Server -> Shell: Published to outputTopic?
+	// Websocket writes to `inputTopic` (via mux.send?) No.
+	// `mux.send` sends to `mux.pub`.
+	// `NewShellHandler` uses `mux`.
+	// When WS receives message, it sends to WS client.
+	// When WS reads message from client, it calls `mux.send`.
+
+	// So WS reads from `mux.sub` (which should be messages intended for Shell).
+	// WS writes to `mux.pub` (which are messages FROM Shell).
+
+	// The test setup:
+	// outputTopic/Sub is for Server -> Shell?
+	// inputTopic/Sub is for Shell -> Server?
+
+	// In test:
+	// outputTopic.Send -> received by WS client.
+	// So WS should listen to outputSub.
+	// So mux.sub should be outputSub.
+
+	// WS WriteMessage -> received on inputSub.
+	// So mux.pub should be inputTopic.
+
+	// NewMux(pub, sub)
+	// NewMux(inputPub, outputSub)
+
+	mux := stream.NewMux(inputPub, outputSub)
 	go mux.Start(ctx)
 
 	// Create a test shell
@@ -95,10 +137,8 @@ func TestNewShellHandler(t *testing.T) {
 
 	// Test writing to the websocket (server -> shell)
 	testMessage := []byte("hello from server")
-	err = outputTopic.Send(ctx, &pubsub.Message{
-		Body:     testMessage,
-		Metadata: map[string]string{"id": strconv.Itoa(shell.ID)},
-	})
+	// Test publishes to outputPub (Server sends to Shell)
+	err = outputPub.Publish(ctx, testMessage, map[string]string{"id": strconv.Itoa(shell.ID)})
 	require.NoError(t, err)
 
 	_, p, err := ws.ReadMessage()

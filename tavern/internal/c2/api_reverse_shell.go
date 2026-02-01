@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"gocloud.dev/pubsub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 // keepAlivePingInterval defines the frequency to send no-op ping messages to the stream,
@@ -102,7 +102,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 		// Notify Subscribers that the stream is closed
 		slog.DebugContext(ctx, "reverse shell closed, sending stream close message", "shell_id", shell.ID)
-		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
+		if err := pubsubStream.SendMessage(ctx, &xpubsub.Message{
 			Metadata: map[string]string{
 				stream.MetadataStreamClose: fmt.Sprintf("%d", shellID),
 			},
@@ -214,7 +214,7 @@ func sendShellOutput(ctx context.Context, shellID int, gstream c2pb.C2_ReverseSh
 
 		// Send Pubsub Message
 		msgLen := len(req.Data)
-		if err := pubsubStream.SendMessage(ctx, &pubsub.Message{
+		if err := pubsubStream.SendMessage(ctx, &xpubsub.Message{
 			Body: req.Data,
 			Metadata: map[string]string{
 				stream.MetadataMsgKind: kind,

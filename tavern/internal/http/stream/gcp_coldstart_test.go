@@ -6,28 +6,28 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
+	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/http/stream"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 func TestPreventPubSubColdStarts_ValidInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	// Create a mock topic and subscription.
-	topic, err := pubsub.OpenTopic(ctx, "mem://valid")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://valid")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
 
-	go stream.PreventPubSubColdStarts(ctx, 50*time.Millisecond, "mem://valid", "mem://valid")
+	topicName := "valid"
+	subName := "valid-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
+
+	go stream.PreventPubSubColdStarts(ctx, client, 50*time.Millisecond, topicName, topicName)
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)
@@ -43,18 +43,19 @@ func TestPreventPubSubColdStarts_ZeroInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://zero")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://zero")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
 
-	go stream.PreventPubSubColdStarts(ctx, 0, "mem://zero", "mem://zero")
+	topicName := "zero"
+	subName := "zero-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
+
+	go stream.PreventPubSubColdStarts(ctx, client, 0, topicName, topicName)
 
 	// Expect to not receive a message and for the context to timeout
 	_, err = sub.Receive(ctx)
@@ -66,18 +67,19 @@ func TestPreventPubSubColdStarts_SubMillisecondInterval(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	topic, err := pubsub.OpenTopic(ctx, "mem://sub")
-	if err != nil {
-		t.Fatalf("Failed to open topic: %v", err)
-	}
-	defer topic.Shutdown(ctx)
-	sub, err := pubsub.OpenSubscription(ctx, "mem://sub")
-	if err != nil {
-		t.Fatalf("Failed to open subscription: %v", err)
-	}
-	defer sub.Shutdown(ctx)
+	client, err := xpubsub.NewClient(ctx, "test-project", true)
+	require.NoError(t, err)
+	defer client.Close()
 
-	go stream.PreventPubSubColdStarts(ctx, 1*time.Microsecond, "mem://sub", "mem://sub")
+	topicName := "sub"
+	subName := "sub-sub"
+	require.NoError(t, client.EnsureTopic(ctx, topicName))
+	require.NoError(t, client.EnsureSubscription(ctx, topicName, subName, 0))
+
+	sub := client.NewSubscriber(subName)
+	defer sub.Close()
+
+	go stream.PreventPubSubColdStarts(ctx, client, 1*time.Microsecond, topicName, topicName)
 
 	// Expect to receive a message
 	msg, err := sub.Receive(ctx)

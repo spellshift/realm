@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/user"
+	"realm.pub/tavern/internal/xpubsub"
 )
 
 const (
@@ -160,7 +160,7 @@ func (c *connector) ReadFromWebsocket(ctx context.Context) {
 			}
 
 			msgLen := len(message)
-			if err := c.Stream.SendMessage(ctx, &pubsub.Message{
+			if err := c.Stream.SendMessage(ctx, &xpubsub.Message{
 				Body: message,
 				Metadata: map[string]string{
 					metadataID:      c.id,
