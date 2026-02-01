@@ -162,8 +162,6 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 
 // dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
 func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
-	msg.Ack()
-
 	// Check for loopback
 	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
 		return
@@ -187,6 +185,12 @@ func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {
 	for {
 		msg, err := sub.Receive(ctx)
+
+		// Rapidly acknowledge to avoid redelivery and backlog buildup
+		if msg != nil {
+			msg.Ack()
+		}
+
 		if err != nil {
 			// Context canceled or subscription closed
 			return
