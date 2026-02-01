@@ -191,3 +191,9 @@ func TestMux_OpenPortal(t *testing.T) {
 	assert.False(t, ok)
 	m.subMgr.Unlock()
 }
+
+func TestWithSubscriberBufferSize(t *testing.T) {
+	expected := 12345
+	m := New(WithSubscriberBufferSize(expected))
+	assert.Equal(t, expected, m.subs.bufferSize)
+}

@@ -88,6 +88,8 @@ var (
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
 	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
 
+	EnvPubSubSubscriberMaxMessagesBuffered = EnvInteger{"PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED", 15625}
+
 	// EnvEnablePProf enables performance profiling and should not be enabled in production.
 	// EnvEnableMetrics enables the /metrics endpoint and HTTP server. It is unauthenticated and should be used carefully.
 	EnvEnablePProf   = EnvBool{"ENABLE_PPROF"}
@@ -153,16 +155,17 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 
 func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 	var (
-		projectID = EnvGCPProjectID.String()
+		projectID     = EnvGCPProjectID.String()
+		subBufferSize = EnvPubSubSubscriberMaxMessagesBuffered.Int()
 	)
 	if projectID == "" {
-		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1024))
+		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(subBufferSize))
 	}
 	gcpClient, err := gcppubsub.NewClient(ctx, projectID)
 	if err != nil {
 		panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
 	}
-	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(1024))
+	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(subBufferSize))
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.
