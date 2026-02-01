@@ -26,39 +26,48 @@ func TestGCPDriver(t *testing.T) {
 	srv := pstest.NewServer()
 	defer srv.Close()
 
-	// 2. Create pubsub client connected to pstest
+	// 2. Create pubsub clients connected to pstest
+	// We need two clients to simulate two different servers (sender and receiver)
+	// so that loopback detection doesn't drop the message.
 	conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 	defer conn.Close()
 
 	projectID := "test-project"
-	client, err := gpubsub.NewClient(ctx, projectID, option.WithGRPCConn(conn))
+
+	// Client 1: Sender
+	gcpClient1, err := gpubsub.NewClient(ctx, projectID, option.WithGRPCConn(conn))
 	require.NoError(t, err)
-	defer client.Close()
+	defer gcpClient1.Close()
+	sender := xpubsub.NewClient(xpubsub.WithGCPDriver("sender-server", gcpClient1))
+	defer sender.Close()
 
-	// 3. Initialize tavern pubsub client with GCP driver
-	c := xpubsub.NewClient(xpubsub.WithGCPDriver("test-server", client))
-	defer c.Close()
+	// Client 2: Receiver
+	gcpClient2, err := gpubsub.NewClient(ctx, projectID, option.WithGRPCConn(conn))
+	require.NoError(t, err)
+	defer gcpClient2.Close()
+	receiver := xpubsub.NewClient(xpubsub.WithGCPDriver("receiver-server", gcpClient2))
+	defer receiver.Close()
 
-	// 4. Test EnsurePublisher
-	// Note: gcp.go implementation uses the provided topic string directly in CreateTopic.
-	// So we should provide fully qualified names.
+	// 4. Test EnsurePublisher (Sender)
 	topicName := fmt.Sprintf("projects/%s/topics/test-topic", projectID)
-	publisher, err := c.EnsurePublisher(ctx, topicName)
+	publisher, err := sender.EnsurePublisher(ctx, topicName)
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 
 	// Verify topic exists in pstest
-	_, err = client.TopicAdminClient.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: topicName})
+	// We can check via gcpClient1
+	_, err = gcpClient1.TopicAdminClient.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: topicName})
 	require.NoError(t, err)
 
-	// 5. Test EnsureSubscriber
+	// 5. Test EnsureSubscriber (Receiver)
 	subName := fmt.Sprintf("projects/%s/subscriptions/test-sub", projectID)
-	subscriber, err := c.EnsureSubscriber(ctx, topicName, subName)
+	// Ensure subscriber on receiver side
+	subObj, err := receiver.EnsureSubscriber(ctx, topicName, subName)
 	require.NoError(t, err)
-	require.NotNil(t, subscriber)
+	require.NotNil(t, subObj)
 
-	_, err = client.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: subName})
+	_, err = gcpClient1.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: subName})
 	require.NoError(t, err)
 
 	// 6. Test Publish and Receive
@@ -66,7 +75,7 @@ func TestGCPDriver(t *testing.T) {
 
 	// Start receiving in a goroutine
 	go func() {
-		err := subscriber.Receive(ctx, func(ctx context.Context, mote *portalpb.Mote) {
+		err := subObj.Receive(ctx, func(ctx context.Context, mote *portalpb.Mote) {
 			// Ignore keepalive messages which might be present from EnsurePublisher
 			if mote.GetBytes().GetKind() == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE {
 				return

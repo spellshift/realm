@@ -4,17 +4,20 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"cloud.google.com/go/pubsub/v2/pstest"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-type InMemOption func(*memDriver)
-
-func WithInMemoryDriver(options ...InMemOption) Option {
+// WithInMemoryDriver configures the Client to use an in-memory driver (pstest).
+// It accepts GCPOptions to configure the underlying in-memory GCP driver.
+func WithInMemoryDriver(options ...GCPOption) Option {
 	return func(c *Client) {
 		// Start a new pstest server
 		srv := pstest.NewServer()
@@ -37,11 +40,15 @@ func WithInMemoryDriver(options ...InMemOption) Option {
 			gcp: &gcpDriver{
 				serverID: "in-memory",
 				GCP:      client,
+				// Default Expiration Policy
+				expirationPolicy: pubsubpb.ExpirationPolicy{
+					Ttl: durationpb.New(24 * time.Hour),
+				},
 			},
 		}
 
 		for _, opt := range options {
-			opt(drv)
+			opt(drv.gcp)
 		}
 		c.Driver = drv
 	}
