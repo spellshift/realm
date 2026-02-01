@@ -67,4 +67,15 @@ pub trait ReportLibrary {
     /// **Returns**
     /// - `None`
     fn user_password(&self, username: String, password: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Reports a captured user password.
+    ///
+    /// **Parameters**
+    /// - `username` (`str`): The username.
+    /// - `hash` (`str`): The ntlm hash.
+    ///
+    /// **Returns**
+    /// - `None`
+    fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String>;
 }

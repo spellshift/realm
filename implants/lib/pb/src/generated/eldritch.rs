@@ -42,6 +42,7 @@ pub mod credential {
         Unspecified = 0,
         Password = 1,
         SshKey = 2,
+        NtlmHash = 3,
     }
     impl Kind {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -53,6 +54,7 @@ pub mod credential {
                 Kind::Unspecified => "KIND_UNSPECIFIED",
                 Kind::Password => "KIND_PASSWORD",
                 Kind::SshKey => "KIND_SSH_KEY",
+                Kind::NtlmHash => "KIND_NTLM_HASH",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -61,6 +63,7 @@ pub mod credential {
                 "KIND_UNSPECIFIED" => Some(Self::Unspecified),
                 "KIND_PASSWORD" => Some(Self::Password),
                 "KIND_SSH_KEY" => Some(Self::SshKey),
+                "KIND_NTLM_HASH" => Some(Self::NtlmHash),
                 _ => None,
             }
         }
