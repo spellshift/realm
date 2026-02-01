@@ -64,8 +64,8 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctxMux, cancelMux := context.WithCancel(ctx)
 	go c2StreamMux.Start(ctxMux)
 
-	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPubKey, testPrivKey)
-	portalServer := portals.New(entClient, portalMux)
+	c2Server := c2.New(entClient, c2StreamMux, portalMux, testPubKey, testPrivKey, "test-server")
+	portalServer := portals.New(entClient, portalMux, "test-server")
 
 	// 4. Setup gRPC Listener with bufconn
 	lis := bufconn.Listen(bufSize)

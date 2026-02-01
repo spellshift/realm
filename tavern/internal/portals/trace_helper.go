@@ -9,7 +9,7 @@ import (
 	"realm.pub/tavern/portals/tracepb"
 )
 
-func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) error {
+func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind, serverID string) error {
 	bm := mote.GetBytes()
 	if bm == nil || bm.Kind != portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE {
 		return nil
@@ -23,6 +23,7 @@ func AddTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) error {
 	traceData.Events = append(traceData.Events, &tracepb.TraceEvent{
 		Kind:            kind,
 		TimestampMicros: time.Now().UTC().UnixMicro(),
+		ServerId:        serverID,
 	})
 
 	newData, err := proto.Marshal(&traceData)

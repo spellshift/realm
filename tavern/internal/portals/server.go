@@ -7,14 +7,16 @@ import (
 )
 
 type Server struct {
-	graph *ent.Client
-	mux   *mux.Mux
+	graph    *ent.Client
+	mux      *mux.Mux
+	serverID string
 	portalpb.UnimplementedPortalServer
 }
 
-func New(graph *ent.Client, mux *mux.Mux) *Server {
+func New(graph *ent.Client, mux *mux.Mux, serverID string) *Server {
 	return &Server{
-		graph: graph,
-		mux:   mux,
+		graph:    graph,
+		mux:      mux,
+		serverID: serverID,
 	}
 }

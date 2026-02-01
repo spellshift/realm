@@ -58,7 +58,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
-	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPubKey, testPrivKey))
+	c2pb.RegisterC2Server(baseSrv, c2.New(graph, grpcShellMux, portalMux, testPubKey, testPrivKey, "test-server"))
 
 	grpcErrCh := make(chan error, 1)
 	go func() {

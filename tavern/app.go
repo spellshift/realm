@@ -479,7 +479,7 @@ func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
 }
 
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
-	portalSrv := portals.New(graph, portalMux)
+	portalSrv := portals.New(graph, portalMux, GlobalInstanceID)
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
@@ -513,7 +513,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		panic(err)
 	}
 
-	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey)
+	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey, GlobalInstanceID)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}

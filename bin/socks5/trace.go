@@ -150,6 +150,7 @@ func traceOne(ctx context.Context, stream portalpb.Portal_OpenPortalClient, port
 			traceData.Events = append(traceData.Events, &tracepb.TraceEvent{
 				Kind:            tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_RECV,
 				TimestampMicros: time.Now().UTC().UnixMicro(),
+				ServerId:        "client",
 			})
 
 			return &traceData, nil
@@ -180,7 +181,7 @@ func sendTraceMote(stream portalpb.Portal_OpenPortalClient, portalID int64, size
 	}
 
 	// Add USER_SEND event
-	mote, err = addTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_SEND)
+	mote, err = addTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_SEND, "client")
 	if err != nil {
 		return fmt.Errorf("add USER_SEND event: %w", err)
 	}
@@ -195,7 +196,7 @@ func sendTraceMote(stream portalpb.Portal_OpenPortalClient, portalID int64, size
 	return nil
 }
 
-func addTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) (*portalpb.Mote, error) {
+func addTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind, serverID string) (*portalpb.Mote, error) {
 	bm := mote.GetBytes()
 	if bm == nil || bm.Kind != portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE {
 		return mote, nil
@@ -209,6 +210,7 @@ func addTraceEvent(mote *portalpb.Mote, kind tracepb.TraceEventKind) (*portalpb.
 	traceData.Events = append(traceData.Events, &tracepb.TraceEvent{
 		Kind:            kind,
 		TimestampMicros: time.Now().UTC().UnixMicro(),
+		ServerId:        serverID,
 	})
 
 	newData, err := proto.Marshal(&traceData)
@@ -231,14 +233,14 @@ func printReport(traceData *tracepb.TraceData) {
 	fmt.Printf("\nTrace Report (Total Duration: %s)\n", formatDuration(totalDuration))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Step Name\tTimestamp\tDelta")
+	fmt.Fprintln(w, "Step Name\tTimestamp\tDelta\tServer ID")
 
 	lastTime := traceData.StartMicros
 
 	for _, evt := range traceData.Events {
 		delta := evt.TimestampMicros - lastTime
 		ts := time.UnixMicro(evt.TimestampMicros).UTC().Format("15:04:05.000000")
-		fmt.Fprintf(w, "%s\t%s\t%s\n", evt.Kind.String(), ts, formatDuration(delta))
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", evt.Kind.String(), ts, formatDuration(delta), evt.ServerId)
 		lastTime = evt.TimestampMicros
 	}
 	w.Flush()

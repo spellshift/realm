@@ -50,13 +50,13 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 
 	// Start goroutine to subscribe to portal output and send to gRPC stream
 	go func() {
-		sendPortalOutput(ctx, portalID, gstream, recv)
+		sendPortalOutput(ctx, portalID, gstream, recv, srv.serverID)
 		done <- struct{}{}
 	}()
 
 	// Send portal input from gRPC stream to portal input topic
 	go func() {
-		sendPortalInput(ctx, portalID, gstream, srv.mux)
+		sendPortalInput(ctx, portalID, gstream, srv.mux, srv.serverID)
 		done <- struct{}{}
 	}()
 
@@ -86,7 +86,7 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 	// return nil
 }
 
-func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, mux *mux.Mux) {
+func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, mux *mux.Mux, serverID string) {
 	portalInTopic := mux.TopicIn(portalID)
 
 	for {
@@ -114,12 +114,12 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 		}
 
 		// TRACE: Server User Recv
-		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV); err != nil {
+		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV, serverID); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server User Recv)", "error", err)
 		}
 
 		// TRACE: Server User Pub
-		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_PUB); err != nil {
+		if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_PUB, serverID); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server User Pub)", "error", err)
 		}
 
@@ -133,7 +133,7 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 	}
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, recv <-chan *portalpb.Mote) {
+func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal_OpenPortalServer, recv <-chan *portalpb.Mote, serverID string) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,12 +144,12 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 			}
 
 			// TRACE: Server User Sub
-			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB); err != nil {
+			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SUB, serverID); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server User Sub)", "error", err)
 			}
 
 			// TRACE: Server User Send
-			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SEND); err != nil {
+			if err := AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_SEND, serverID); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server User Send)", "error", err)
 			}
 

@@ -51,11 +51,11 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	wg.Add(1)
 	go func(ctx context.Context) {
 		defer wg.Done()
-		sendPortalInput(ctx, portalID, gstream, recv)
+		sendPortalInput(ctx, portalID, gstream, recv, srv.serverID)
 	}(ctx)
 
 	// Send portal output from gRPC stream to portal output topic
-	sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+	sendPortalOutput(ctx, portalID, gstream, srv.portalMux, srv.serverID)
 
 	// Cleanup
 	cancel()
@@ -64,7 +64,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	return nil
 }
 
-func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux) {
+func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, mux *mux.Mux, serverID string) {
 	portalOutTopic := mux.TopicOut(portalID)
 
 	for {
@@ -92,12 +92,12 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 		}
 
 		// TRACE: Server Agent Recv
-		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV); err != nil {
+		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_RECV, serverID); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Recv)", "error", err)
 		}
 
 		// TRACE: Server Agent Pub
-		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB); err != nil {
+		if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_PUB, serverID); err != nil {
 			slog.ErrorContext(ctx, "failed to add trace event (Server Agent Pub)", "error", err)
 		}
 
@@ -111,7 +111,7 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream c2pb.C2_CreateP
 	}
 }
 
-func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, recv <-chan *portalpb.Mote) {
+func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePortalServer, recv <-chan *portalpb.Mote, serverID string) {
 	ticker := time.NewTicker(keepAlivePingInterval)
 	defer ticker.Stop()
 
@@ -133,12 +133,12 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 			}
 		case mote := <-recv:
 			// TRACE: Server Agent Sub
-			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB); err != nil {
+			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SUB, serverID); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Sub)", "error", err)
 			}
 
 			// TRACE: Server Agent Send
-			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND); err != nil {
+			if err := portals.AddTraceEvent(mote, tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_AGENT_SEND, serverID); err != nil {
 				slog.ErrorContext(ctx, "failed to add trace event (Server Agent Send)", "error", err)
 			}
 

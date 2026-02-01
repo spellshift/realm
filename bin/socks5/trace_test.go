@@ -1,6 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"io"
+	"os"
+	"strings"
 	"testing"
 
 	"realm.pub/tavern/portals/tracepb"
@@ -116,5 +120,44 @@ func TestCalculateStats(t *testing.T) {
 	}
 	if s2.Max != 30 {
 		t.Errorf("S2 Max: got %d, want 30", s2.Max)
+	}
+}
+
+func TestPrintReport(t *testing.T) {
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	td := &tracepb.TraceData{
+		StartMicros: 1000,
+		Events: []*tracepb.TraceEvent{
+			{
+				Kind:            tracepb.TraceEventKind_TRACE_EVENT_KIND_USER_SEND,
+				TimestampMicros: 1010,
+				ServerId:        "test-client",
+			},
+			{
+				Kind:            tracepb.TraceEventKind_TRACE_EVENT_KIND_SERVER_USER_RECV,
+				TimestampMicros: 1020,
+				ServerId:        "test-server-1",
+			},
+		},
+	}
+
+	printReport(td)
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	output := buf.String()
+
+	if !strings.Contains(output, "test-client") {
+		t.Errorf("Expected output to contain 'test-client', got:\n%s", output)
+	}
+	if !strings.Contains(output, "test-server-1") {
+		t.Errorf("Expected output to contain 'test-server-1', got:\n%s", output)
 	}
 }

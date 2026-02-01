@@ -34,6 +34,7 @@ enum TraceEventKind {
 message TraceEvent {
     TraceEventKind kind = 1;
     int64 timestamp_micros = 2; // Unix microsecond timestamp
+    string server_id = 3;
 }
 
 // When BytesPayloadKind is TRACE, the `data` field of the mote
