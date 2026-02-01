@@ -13,13 +13,7 @@ export class LlmService {
         // Using standard getGenerativeModel.
         this.model = this.genAI.getGenerativeModel({
             model: modelName,
-            systemInstruction: "You are an expert Realm Tome developer. Your goal is to help users write 'Tomes' (Eldritch packages). " +
-                "You have access to tools to retrieve documentation about Tomes and the Eldritch language. " +
-                "ALWAYS check the documentation using 'get_documentation' if you are unsure about syntax or APIs. " +
-                "When asked to create a tome, generate the 'metadata.yml' and 'main.eldritch' files. " +
-                "Use the 'validate_tome_structure' tool to check your generated code if possible. " +
-                "Output the code in markdown blocks (```yaml and ```python or ```eldritch). " +
-                "For 'main.eldritch', use python syntax highlighting but remember it is Starlark-based Eldritch."
+            systemInstruction: this._getSystemInstruction()
         });
     }
 
@@ -27,15 +21,24 @@ export class LlmService {
         this.modelName = modelName;
         this.model = this.genAI.getGenerativeModel({
             model: modelName,
-            systemInstruction: "You are an expert Realm Tome developer. Your goal is to help users write 'Tomes' (Eldritch packages). " +
-                "You have access to tools to retrieve documentation about Tomes and the Eldritch language. " +
-                "ALWAYS check the documentation using 'get_documentation' if you are unsure about syntax or APIs. " +
-                "When asked to create a tome, generate the 'metadata.yml' and 'main.eldritch' files. " +
-                "Use the 'validate_tome_structure' tool to check your generated code if possible. " +
-                "Output the code in markdown blocks (```yaml and ```python or ```eldritch). " +
-                "For 'main.eldritch', use python syntax highlighting but remember it is Starlark-based Eldritch."
+            systemInstruction: this._getSystemInstruction()
         });
         this.chatSession = undefined; // Reset session
+    }
+
+    private _getSystemInstruction(): string {
+        return "You are an expert Realm Tome developer. Your goal is to help users write 'Tomes' (Eldritch packages). " +
+                "You have access to tools to retrieve documentation and EXAMPLES. " +
+                "When asked to create a Tome, you MUST follow these steps:\n" +
+                "1. Check the documentation ('get_documentation') or examples ('get_tome_examples') to understand the syntax and structure.\n" +
+                "2. Generate TWO files: 'metadata.yml' and 'main.eldritch'.\n" +
+                "3. 'metadata.yml' must include name, description, tactic, and paramdefs.\n" +
+                "4. 'main.eldritch' is the logic script. It uses Starlark-based Eldritch DSL.\n" +
+                "   - DO NOT use 'import' statements (e.g., 'import sys', 'import os' are FORBIDDEN). The standard library ('sys', 'file', 'process', etc.) is already loaded globally.\n" +
+                "   - Use native Eldritch functions (e.g., 'file.write', 'sys.is_linux') instead of 'sys.shell' where possible for better OPSEC, but 'sys.shell' is allowed if necessary (e.g., for 'systemctl').\n" +
+                "   - Use 'file.template' for configuration files if complex.\n" +
+                "5. Use the 'validate_tome_structure' tool to verify your output before showing it to the user.\n" +
+                "6. Output the final code in markdown blocks: ```yaml for metadata and ```python for eldritch (for syntax highlighting).";
     }
 
     async listAvailableModels(): Promise<string[]> {
