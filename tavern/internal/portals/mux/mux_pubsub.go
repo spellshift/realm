@@ -145,19 +145,17 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 	buf.Add(mote)
 }
 
-// dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
-func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
-	defer msg.Ack()
-
+// dispatchRaw handles the raw message body and dispatching logic
+func (m *Mux) dispatchRaw(topicID string, body []byte, senderID string) {
 	// Check for loopback
-	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
+	if senderID == m.serverID {
 		return
 	}
 
 	msgsReceived.WithLabelValues(topicID).Inc()
 
 	var mote portalpb.Mote
-	if err := proto.Unmarshal(msg.Body, &mote); err != nil {
+	if err := proto.Unmarshal(body, &mote); err != nil {
 		slog.Error("Failed to unmarshal mote", "topic", topicID, "error", err)
 		return
 	}
@@ -167,6 +165,18 @@ func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 
 	// Add to history (messages from others also go into history)
 	m.addToHistory(topicID, &mote)
+}
+
+// dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
+func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
+	defer msg.Ack()
+
+	senderID := ""
+	if val, ok := msg.Metadata["sender_id"]; ok {
+		senderID = val
+	}
+
+	m.dispatchRaw(topicID, msg.Body, senderID)
 }
 
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {

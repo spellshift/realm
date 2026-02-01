@@ -50,7 +50,7 @@ func init() {
 // SubscriptionManager manages active PubSub subscriptions.
 type SubscriptionManager struct {
 	sync.RWMutex
-	active      map[string]*pubsub.Subscription
+	active      map[string]interface{}
 	refs        map[string]int
 	cancelFuncs map[string]context.CancelFunc
 }
@@ -132,7 +132,7 @@ func New(opts ...Option) *Mux {
 			bufferSize: 1024, // Default
 		},
 		subMgr: &SubscriptionManager{
-			active:      make(map[string]*pubsub.Subscription),
+			active:      make(map[string]interface{}),
 			refs:        make(map[string]int),
 			cancelFuncs: make(map[string]context.CancelFunc),
 		},

@@ -3,8 +3,10 @@ package mux
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
+	gcppubsub "cloud.google.com/go/pubsub"
 	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/task"
@@ -64,40 +66,59 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 	}
 
 	// 3. Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicIn, subName)
-	sub, err := pubsub.OpenSubscription(ctx, subURL)
-	if err != nil {
-		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+	if !m.useInMem && m.gcpClient != nil {
+		teardown, err := m.createPortalGCP(ctx, client, portalID, topicIn, subName)
+		return portalID, teardown, err
 	}
 
-	// Store in subMgr
-	m.subMgr.Lock()
+	teardown, err := m.createPortalGeneric(ctx, client, portalID, topicIn, subName)
+	return portalID, teardown, err
+}
 
+func (m *Mux) createPortalGCP(ctx context.Context, client *ent.Client, portalID int, topicIn, subName string) (func(), error) {
+	sub := m.gcpClient.Subscription(subName)
+	// Note: Synchronous is false by default.
+	sub.ReceiveSettings.MaxOutstandingMessages = -1
+
+	m.subMgr.Lock()
 	// Check if existing sub
-	if existingSub, ok := m.subMgr.active[subName]; ok {
-		// Existing found. Shutdown new one and cleanup old one if needed.
+	if val, ok := m.subMgr.active[subName]; ok {
 		if cancel, ok := m.subMgr.cancelFuncs[subName]; ok {
 			cancel()
 		}
-		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		existingSub.Shutdown(context.Background())
+		if s, ok := val.(*pubsub.Subscription); ok {
+			s.Shutdown(context.Background())
+		}
 	}
-
 	m.subMgr.active[subName] = sub
-
 	ctxLoop, cancelLoop := context.WithCancel(context.Background())
 	m.subMgr.cancelFuncs[subName] = cancelLoop
 	m.subMgr.Unlock()
 
-	// 4. Spawn
 	go func() {
-		m.receiveLoop(ctxLoop, topicIn, sub)
+		err := sub.Receive(ctxLoop, func(ctx context.Context, msg *gcppubsub.Message) {
+			msg.Ack()
+			senderID := ""
+			if val, ok := msg.Attributes["sender_id"]; ok {
+				senderID = val
+			}
+			m.dispatchRaw(topicIn, msg.Data, senderID)
+		})
+		if err != nil {
+			if ctxLoop.Err() == nil {
+				slog.Error("GCP Streaming Pull failed (CreatePortal)", "subscription", subName, "error", err)
+				// Cleanup
+				m.subMgr.Lock()
+				delete(m.subMgr.active, subName)
+				delete(m.subMgr.cancelFuncs, subName)
+				m.subMgr.Unlock()
+			}
+		}
 	}()
 
 	teardown := func() {
 		m.subMgr.Lock()
-		s, ok := m.subMgr.active[subName]
+		_, ok := m.subMgr.active[subName]
 		cancel := m.subMgr.cancelFuncs[subName]
 		if ok {
 			delete(m.subMgr.active, subName)
@@ -109,15 +130,67 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 			if cancel != nil {
 				cancel()
 			}
-			// Shutdown using Background context
-			s.Shutdown(context.Background())
 		}
 
-		// Update DB to Closed using ID
-		client.Portal.UpdateOneID(p.ID).
+		// Update DB to Closed
+		client.Portal.UpdateOneID(portalID).
 			SetClosedAt(time.Now()).
 			Save(context.Background())
 	}
 
-	return portalID, teardown, nil
+	return teardown, nil
+}
+
+func (m *Mux) createPortalGeneric(ctx context.Context, client *ent.Client, portalID int, topicIn, subName string) (func(), error) {
+	subURL := m.SubURL(topicIn, subName)
+	sub, err := pubsub.OpenSubscription(ctx, subURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+	}
+
+	m.subMgr.Lock()
+	if val, ok := m.subMgr.active[subName]; ok {
+		if cancel, ok := m.subMgr.cancelFuncs[subName]; ok {
+			cancel()
+		}
+		if s, ok := val.(*pubsub.Subscription); ok {
+			s.Shutdown(context.Background())
+		}
+	}
+
+	m.subMgr.active[subName] = sub
+	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+	m.subMgr.cancelFuncs[subName] = cancelLoop
+	m.subMgr.Unlock()
+
+	go func() {
+		m.receiveLoop(ctxLoop, topicIn, sub)
+	}()
+
+	teardown := func() {
+		m.subMgr.Lock()
+		val, ok := m.subMgr.active[subName]
+		cancel := m.subMgr.cancelFuncs[subName]
+		if ok {
+			delete(m.subMgr.active, subName)
+			delete(m.subMgr.cancelFuncs, subName)
+		}
+		m.subMgr.Unlock()
+
+		if ok {
+			if cancel != nil {
+				cancel()
+			}
+			if s, ok := val.(*pubsub.Subscription); ok {
+				s.Shutdown(context.Background())
+			}
+		}
+
+		// Update DB to Closed
+		client.Portal.UpdateOneID(portalID).
+			SetClosedAt(time.Now()).
+			Save(context.Background())
+	}
+
+	return teardown, nil
 }

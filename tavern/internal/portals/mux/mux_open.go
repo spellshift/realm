@@ -3,7 +3,9 @@ package mux
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
+	gcppubsub "cloud.google.com/go/pubsub"
 	"gocloud.dev/pubsub"
 )
 
@@ -17,33 +19,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	if _, ok := m.subMgr.active[subName]; ok {
 		m.subMgr.refs[subName]++
 		m.subMgr.Unlock()
-		return func() {
-			m.subMgr.Lock()
-			m.subMgr.refs[subName]--
-			shouldShutdown := false
-			var s *pubsub.Subscription
-			var cancel context.CancelFunc
-			if m.subMgr.refs[subName] <= 0 {
-				if sub, ok := m.subMgr.active[subName]; ok {
-					s = sub
-					cancel = m.subMgr.cancelFuncs[subName]
-					delete(m.subMgr.active, subName)
-					delete(m.subMgr.refs, subName)
-					delete(m.subMgr.cancelFuncs, subName)
-					shouldShutdown = true
-				}
-			}
-			m.subMgr.Unlock()
-
-			if shouldShutdown {
-				if cancel != nil {
-					cancel()
-				}
-				if s != nil {
-					s.Shutdown(context.Background())
-				}
-			}
-		}, nil
+		return m.createTeardownFunc(subName), nil
 	}
 	m.subMgr.Unlock()
 
@@ -54,7 +30,70 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	}
 
 	// Connect
-	// Updated SubURL usage
+	if !m.useInMem && m.gcpClient != nil {
+		return m.openPortalGCP(ctx, topicOut, subName)
+	}
+	return m.openPortalGeneric(ctx, topicOut, subName)
+}
+
+func (m *Mux) openPortalGCP(ctx context.Context, topicOut, subName string) (func(), error) {
+	sub := m.gcpClient.Subscription(subName)
+
+	// Configure ReceiveSettings for low latency
+	// Note: Synchronous is false by default.
+	sub.ReceiveSettings.MaxOutstandingMessages = -1
+
+	ctxLoop, cancelLoop := context.WithCancel(context.Background())
+
+	m.subMgr.Lock()
+	// RACE CONDITION CHECK
+	if _, ok := m.subMgr.active[subName]; ok {
+		m.subMgr.refs[subName]++
+		m.subMgr.Unlock()
+		cancelLoop()
+		return m.createTeardownFunc(subName), nil
+	}
+
+	m.subMgr.active[subName] = sub
+	m.subMgr.refs[subName] = 1
+	m.subMgr.cancelFuncs[subName] = cancelLoop
+	m.subMgr.Unlock()
+
+	go func() {
+		err := sub.Receive(ctxLoop, func(ctx context.Context, msg *gcppubsub.Message) {
+			msg.Ack()
+			senderID := ""
+			if val, ok := msg.Attributes["sender_id"]; ok {
+				senderID = val
+			}
+			m.dispatchRaw(topicOut, msg.Data, senderID)
+		})
+		if err != nil {
+			// Only log error if not canceled
+			if ctxLoop.Err() == nil {
+				slog.Error("GCP Streaming Pull failed", "subscription", subName, "error", err)
+				// Close streams
+				m.subs.Lock()
+				for _, ch := range m.subs.subs[topicOut] {
+					close(ch)
+				}
+				m.subs.subs[topicOut] = nil
+				m.subs.Unlock()
+
+				// Cleanup manager
+				m.subMgr.Lock()
+				delete(m.subMgr.active, subName)
+				delete(m.subMgr.refs, subName)
+				delete(m.subMgr.cancelFuncs, subName)
+				m.subMgr.Unlock()
+			}
+		}
+	}()
+
+	return m.createTeardownFunc(subName), nil
+}
+
+func (m *Mux) openPortalGeneric(ctx context.Context, topicOut, subName string) (func(), error) {
 	subURL := m.SubURL(topicOut, subName)
 	sub, err := pubsub.OpenSubscription(ctx, subURL)
 	if err != nil {
@@ -62,75 +101,46 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	}
 
 	m.subMgr.Lock()
-	// RACE CONDITION CHECK:
-	// Re-check cache in case another goroutine created it while we were provisioning/connecting
-	if existingSub, ok := m.subMgr.active[subName]; ok {
-		// Another routine won the race. Use theirs.
+	if _, ok := m.subMgr.active[subName]; ok {
 		m.subMgr.refs[subName]++
 		m.subMgr.Unlock()
-
-		// Close our unused subscription immediately
 		sub.Shutdown(context.Background())
-
-		// Return teardown for the EXISTING subscription
-		return func() {
-			m.subMgr.Lock()
-			m.subMgr.refs[subName]--
-			shouldShutdown := false
-			var s *pubsub.Subscription
-			var cancel context.CancelFunc
-			if m.subMgr.refs[subName] <= 0 {
-				if sub, ok := m.subMgr.active[subName]; ok {
-					s = sub
-					cancel = m.subMgr.cancelFuncs[subName]
-					delete(m.subMgr.active, subName)
-					delete(m.subMgr.refs, subName)
-					delete(m.subMgr.cancelFuncs, subName)
-					shouldShutdown = true
-				}
-			}
-			m.subMgr.Unlock()
-
-			if shouldShutdown {
-				if cancel != nil {
-					cancel()
-				}
-				if existingSub != nil {
-					s.Shutdown(context.Background())
-				}
-			}
-		}, nil
+		return m.createTeardownFunc(subName), nil
 	}
 
-	// We won the race (or are the first).
 	m.subMgr.active[subName] = sub
 	m.subMgr.refs[subName] = 1
 
-	// Prepare Loop Context
 	ctxLoop, cancelLoop := context.WithCancel(context.Background())
 	m.subMgr.cancelFuncs[subName] = cancelLoop
 
 	m.subMgr.Unlock()
 
-	// Spawn
 	go func() {
-		// No defer cancelLoop() here, controlled by teardown/map
 		m.receiveLoop(ctxLoop, topicOut, sub)
 	}()
 
-	teardown := func() {
+	return m.createTeardownFunc(subName), nil
+}
+
+func (m *Mux) createTeardownFunc(subName string) func() {
+	return func() {
 		m.subMgr.Lock()
 		m.subMgr.refs[subName]--
 		shouldShutdown := false
-		var s *pubsub.Subscription
+		var sGeneric *pubsub.Subscription
 		var cancel context.CancelFunc
+
 		if m.subMgr.refs[subName] <= 0 {
-			if sub, ok := m.subMgr.active[subName]; ok {
-				s = sub
+			if val, ok := m.subMgr.active[subName]; ok {
 				cancel = m.subMgr.cancelFuncs[subName]
 				delete(m.subMgr.active, subName)
 				delete(m.subMgr.refs, subName)
 				delete(m.subMgr.cancelFuncs, subName)
+
+				if sub, ok := val.(*pubsub.Subscription); ok {
+					sGeneric = sub
+				}
 				shouldShutdown = true
 			}
 		}
@@ -140,11 +150,9 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 			if cancel != nil {
 				cancel()
 			}
-			if s != nil {
-				s.Shutdown(context.Background())
+			if sGeneric != nil {
+				sGeneric.Shutdown(context.Background())
 			}
 		}
 	}
-
-	return teardown, nil
 }
