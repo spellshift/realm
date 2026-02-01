@@ -169,3 +169,19 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 		assert.Equal(t, expectedCfg, cfg.oauth)
 	})
 }
+
+func TestConfigurePubSubFromEnv(t *testing.T) {
+	cleanup := func() {
+		require.NoError(t, os.Unsetenv(EnvPubSubSubscriberMaxMessagesBuffered.Key))
+	}
+	defer cleanup()
+
+	t.Run("Default", func(t *testing.T) {
+		assert.Equal(t, 15625, EnvPubSubSubscriberMaxMessagesBuffered.Int())
+	})
+
+	t.Run("Set", func(t *testing.T) {
+		require.NoError(t, os.Setenv(EnvPubSubSubscriberMaxMessagesBuffered.Key, "9999"))
+		assert.Equal(t, 9999, EnvPubSubSubscriberMaxMessagesBuffered.Int())
+	})
+}
