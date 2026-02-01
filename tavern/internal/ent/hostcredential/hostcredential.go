@@ -97,7 +97,7 @@ var (
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k epb.Credential_Kind) error {
 	switch k.String() {
-	case "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED":
+	case "KIND_NTLM_HASH", "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED":
 		return nil
 	default:
 		return fmt.Errorf("hostcredential: invalid enum value for kind field: %q", k)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"gocloud.dev/pubsub"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -66,7 +65,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 	// 3. Connect
 	// Updated SubURL usage
 	subURL := m.SubURL(topicIn, subName)
-	sub, err := pubsub.OpenSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, subURL)
 	if err != nil {
 		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
 	}

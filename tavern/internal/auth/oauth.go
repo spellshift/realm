@@ -157,7 +157,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 
 		// If we encountered a DB error, fail
 		if !ent.IsNotFound(err) {
-			slog.ErrorContext(req.Context(), "oauth failed to lookup user profile", "err", err, "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
+			slog.ErrorContext(req.Context(), "oauth failed to lookup user profile", "err", err)
 			http.Error(w, ErrOAuthFailedUserLookup.Error(), http.StatusInternalServerError)
 			return
 		}

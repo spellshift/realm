@@ -9,6 +9,7 @@ use eldritch_macros::eldritch_library_impl;
 use pb::c2::TaskContext;
 
 pub mod file_impl;
+pub mod ntlm_hash_impl;
 pub mod process_list_impl;
 pub mod ssh_key_impl;
 pub mod user_password_impl;
@@ -55,6 +56,15 @@ impl ReportLibrary for StdReportLibrary {
             self.task_context.clone(),
             username,
             password,
+        )
+    }
+
+    fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String> {
+        ntlm_hash_impl::ntlm_hash(
+            self.agent.clone(),
+            self.task_context.clone(),
+            username,
+            hash,
         )
     }
 }

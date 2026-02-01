@@ -29,6 +29,7 @@ mod all;
 mod any;
 mod dict;
 mod float;
+mod hex;
 mod list;
 mod max;
 mod min;
@@ -74,6 +75,7 @@ pub fn get_all_builtins() -> Vec<(&'static str, BuiltinFn)> {
         ("any", any::builtin_any as BuiltinFn),
         ("all", all::builtin_all as BuiltinFn),
         ("float", float::builtin_float as BuiltinFn),
+        ("hex", hex::builtin_hex as BuiltinFn),
         ("list", list::builtin_list as BuiltinFn),
         ("max", max::builtin_max as BuiltinFn),
         ("min", min::builtin_min as BuiltinFn),

@@ -114,7 +114,7 @@ export IMIX_CALLBACK_URI="http://localhost"
 
 # Build imix.exe
  cargo build --release --target=x86_64-pc-windows-gnu
-# Build imix.svc.exe
+# Build imix.exe - As a service
 cargo build --release --features win_service --target=x86_64-pc-windows-gnu
 # Build imix.dll
 cargo build --release --lib --target=x86_64-pc-windows-gnu

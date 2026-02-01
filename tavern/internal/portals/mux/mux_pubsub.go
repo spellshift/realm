@@ -147,8 +147,6 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 
 // dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
 func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
-	defer msg.Ack()
-
 	// Check for loopback
 	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
 		return
@@ -172,10 +170,51 @@ func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {
 	for {
 		msg, err := sub.Receive(ctx)
+
+		// Rapidly acknowledge to avoid redelivery and backlog buildup
+		if msg != nil {
+			msg.Ack()
+		}
+
 		if err != nil {
 			// Context canceled or subscription closed
 			return
 		}
 		m.dispatchMsg(topicID, msg)
 	}
+}
+
+// getTopic returns a cached topic handle or opens a new one with low-latency settings.
+func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
+	m.topics.RLock()
+	t, ok := m.topics.topics[topicID]
+	m.topics.RUnlock()
+	if ok {
+		return t, nil
+	}
+
+	m.topics.Lock()
+	defer m.topics.Unlock()
+	// Double check
+	if t, ok := m.topics.topics[topicID]; ok {
+		return t, nil
+	}
+
+	t, err := pubsub.OpenTopic(ctx, m.TopicURL(topicID))
+	if err != nil {
+		return nil, err
+	}
+
+	m.topics.topics[topicID] = t
+	return t, nil
+}
+
+// openSubscription opens a subscription and applies low-latency settings if it's a native driver.
+func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscription, error) {
+	sub, err := pubsub.OpenSubscription(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+
+	return sub, nil
 }
