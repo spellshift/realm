@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 )
 
 func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
@@ -49,7 +50,12 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
 	require.NoError(t, err)
 	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+
+	// Portal Mux
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+
+	portalMux := mux.New(mux.WithPubSubClient(psClient))
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
@@ -76,6 +82,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	require.NoError(t, err)
 
 	return c2pb.NewC2Client(conn), graph, func() {
+		assert.NoError(t, psClient.Close())
 		assert.NoError(t, lis.Close())
 		baseSrv.Stop()
 		assert.NoError(t, graph.Close())

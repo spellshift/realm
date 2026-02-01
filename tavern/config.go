@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/tomes"
 )
 
@@ -158,14 +159,33 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 		projectID     = EnvGCPProjectID.String()
 		subBufferSize = EnvPubSubSubscriberMaxMessagesBuffered.Int()
 	)
+
+	var client *xpubsub.Client
+	var err error
+
 	if projectID == "" {
-		return mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(subBufferSize))
+		client, err = xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	} else {
+		client, err = xpubsub.NewClient(ctx,
+			xpubsub.WithGCPDriver(projectID,
+				xpubsub.WithPublishSettings(gcppubsub.PublishSettings{
+					DelayThreshold: 1 * time.Millisecond,
+					CountThreshold: 10,
+					ByteThreshold:  1024,
+				}),
+				xpubsub.WithReceiveSettings(gcppubsub.ReceiveSettings{
+					MaxExtension:           10 * time.Second,
+					MaxOutstandingMessages: 1000,
+				}),
+			),
+		)
 	}
-	gcpClient, err := gcppubsub.NewClient(ctx, projectID)
+
 	if err != nil {
-		panic(fmt.Errorf("failed to create gcppubsub client needed to create a new subscription: %v", err))
+		panic(fmt.Errorf("failed to create pubsub client: %v", err))
 	}
-	return mux.New(mux.WithGCPDriver(projectID, gcpClient), mux.WithSubscriberBufferSize(subBufferSize))
+
+	return mux.New(mux.WithPubSubClient(client), mux.WithSubscriberBufferSize(subBufferSize))
 }
 
 // NewShellMuxes configures two stream.Mux instances for shell i/o.

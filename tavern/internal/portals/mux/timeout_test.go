@@ -7,16 +7,24 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
 func TestMux_DispatchTimeout_Drop(t *testing.T) {
-	// Setup Mux with small buffer size
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1))
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer psClient.Close()
+
+	// Setup Mux with small buffer size
+	m := New(WithPubSubClient(psClient), WithSubscriberBufferSize(1))
+
 	topicID := "test-timeout-drop"
 
-	err := m.ensureTopic(ctx, topicID)
+	_, err = psClient.EnsureTopic(ctx, topicID)
 	require.NoError(t, err)
 
 	// Subscribe
@@ -52,12 +60,18 @@ func TestMux_DispatchTimeout_Drop(t *testing.T) {
 }
 
 func TestMux_DispatchTimeout_Success(t *testing.T) {
-	// Setup Mux with small buffer size
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1))
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer psClient.Close()
+
+	// Setup Mux with small buffer size
+	m := New(WithPubSubClient(psClient), WithSubscriberBufferSize(1))
 	topicID := "test-timeout-success"
 
-	err := m.ensureTopic(ctx, topicID)
+	_, err = psClient.EnsureTopic(ctx, topicID)
 	require.NoError(t, err)
 
 	// Subscribe

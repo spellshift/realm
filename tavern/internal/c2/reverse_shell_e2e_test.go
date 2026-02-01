@@ -24,6 +24,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -62,7 +63,13 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	wsMux := stream.NewMux(pubInput, subOutput)
 	grpcMux := stream.NewMux(pubOutput, subInput)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+
+	// Portal Mux
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer psClient.Close()
+
+	portalMux := mux.New(mux.WithPubSubClient(psClient))
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)

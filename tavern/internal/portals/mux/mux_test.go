@@ -11,18 +11,25 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
 func TestMux_InMemory(t *testing.T) {
-	// Setup Mux
-	m := New(WithInMemoryDriver())
-
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	client, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer client.Close()
+
+	// Setup Mux
+	m := New(WithPubSubClient(client))
+
 	topicID := "test-topic"
 
 	// Ensure Topic Exists
-	err := m.ensureTopic(ctx, topicID)
+	_, err = client.EnsureTopic(ctx, topicID)
 	require.NoError(t, err)
 
 	// Subscribe first
@@ -77,9 +84,15 @@ func TestMux_CreatePortal(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Setup Mux
-	m := New(WithInMemoryDriver())
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer psClient.Close()
+
+	// Setup Mux
+	m := New(WithPubSubClient(psClient))
 
 	// Create User, Tome, Quest, Task required for Portal
 	u := client.User.Create().SetName("testuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
@@ -136,13 +149,21 @@ func TestMux_CreatePortal(t *testing.T) {
 }
 
 func TestMux_OpenPortal(t *testing.T) {
-	m := New(WithInMemoryDriver())
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+	defer psClient.Close()
+
+	// Setup Mux
+	m := New(WithPubSubClient(psClient))
+
 	portalID := 456
 
 	// Simulate "Portal Output" topic existing (as if created by CreatePortal)
 	topicOut := m.TopicOut(portalID)
-	err := m.ensureTopic(ctx, topicOut)
+	_, err = psClient.EnsureTopic(ctx, topicOut)
 	require.NoError(t, err)
 
 	teardown, err := m.OpenPortal(ctx, portalID)

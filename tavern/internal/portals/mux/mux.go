@@ -4,18 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub/v2"
-	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"cloud.google.com/go/pubsub/v2"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/gcppubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -52,7 +45,7 @@ func init() {
 // SubscriptionManager manages active PubSub subscriptions.
 type SubscriptionManager struct {
 	sync.RWMutex
-	active      map[string]*pubsub.Subscription
+	active      map[string]*pubsub.Subscriber
 	refs        map[string]int
 	cancelFuncs map[string]context.CancelFunc
 }
@@ -67,7 +60,7 @@ type SubscriberRegistry struct {
 // TopicManager manages cached PubSub topics.
 type TopicManager struct {
 	sync.RWMutex
-	topics map[string]*pubsub.Topic
+	topics map[string]*pubsub.Publisher
 }
 
 // HistoryManager manages message history buffers.
@@ -79,10 +72,8 @@ type HistoryManager struct {
 
 // Mux is the central router between the global PubSub mesh and local gRPC streams.
 type Mux struct {
-	serverID  string
-	useInMem  bool
-	gcpClient *gcppubsub.Client
-	projectID string
+	serverID string
+	client   *xpubsub.Client
 
 	subs    *SubscriberRegistry
 	subMgr  *SubscriptionManager
@@ -107,21 +98,10 @@ func WithSubscriberBufferSize(size int) Option {
 	}
 }
 
-// WithInMemoryDriver configures the Mux to use the in-memory driver.
-func WithInMemoryDriver() Option {
+// WithPubSubClient sets the PubSub client.
+func WithPubSubClient(client *xpubsub.Client) Option {
 	return func(m *Mux) {
-		m.useInMem = true
-		m.gcpClient = nil
-		m.projectID = ""
-	}
-}
-
-// WithGCPDriver configures the Mux to use the GCP PubSub driver.
-func WithGCPDriver(projectID string, client *gcppubsub.Client) Option {
-	return func(m *Mux) {
-		m.useInMem = false
-		m.projectID = projectID
-		m.gcpClient = client
+		m.client = client
 	}
 }
 
@@ -134,7 +114,7 @@ func New(opts ...Option) *Mux {
 			bufferSize: 15625, // Default
 		},
 		subMgr: &SubscriptionManager{
-			active:      make(map[string]*pubsub.Subscription),
+			active:      make(map[string]*pubsub.Subscriber),
 			refs:        make(map[string]int),
 			cancelFuncs: make(map[string]context.CancelFunc),
 		},
@@ -143,7 +123,7 @@ func New(opts ...Option) *Mux {
 			size:    1024, // Default
 		},
 		topics: &TopicManager{
-			topics: make(map[string]*pubsub.Topic),
+			topics: make(map[string]*pubsub.Publisher),
 		},
 	}
 
@@ -154,7 +134,7 @@ func New(opts ...Option) *Mux {
 	return m
 }
 
-// Naming & URL Construction Helpers
+// Naming Helpers
 
 // TopicIn returns the topic name for incoming messages to the portal.
 func (m *Mux) TopicIn(portalID int) string {
@@ -169,90 +149,4 @@ func (m *Mux) TopicOut(portalID int) string {
 // SubName returns the subscription name for a given topic and this server.
 func (m *Mux) SubName(topicID string) string {
 	return fmt.Sprintf("%s_SUB_%s", topicID, m.serverID)
-}
-
-// TopicURL returns the URL for the topic based on the configured driver.
-func (m *Mux) TopicURL(name string) string {
-	if m.useInMem {
-		return "mem://" + name
-	}
-	return fmt.Sprintf("gcppubsub://projects/%s/topics/%s", m.projectID, name)
-}
-
-// SubURL returns the URL for the subscription based on the configured driver.
-func (m *Mux) SubURL(topicID, subID string) string {
-	if m.useInMem {
-		return "mem://" + topicID
-	}
-	return fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", m.projectID, subID)
-}
-
-
-// ensureTopic ensures that the topic exists.
-func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {
-	if m.useInMem {
-		// Open and cache it
-		_, err := m.getTopic(ctx, topicID)
-		return err
-	}
-	if m.gcpClient == nil {
-		return fmt.Errorf("gcp client is nil")
-	}
-
-	fullTopicName := fmt.Sprintf("projects/%s/topics/%s", m.projectID, topicID)
-	_, err := m.gcpClient.TopicAdminClient.GetTopic(ctx, &pubsubpb.GetTopicRequest{Topic: fullTopicName})
-	if err == nil {
-		return nil
-	}
-	if status.Code(err) != codes.NotFound {
-		return fmt.Errorf("failed to check topic existence: %w", err)
-	}
-
-	_, err = m.gcpClient.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: fullTopicName})
-	if err != nil {
-		// Check for AlreadyExists error to handle race conditions
-		if status.Code(err) == codes.AlreadyExists {
-			return nil
-		}
-		return fmt.Errorf("failed to create topic: %w", err)
-	}
-	return nil
-}
-
-// ensureSub ensures that the subscription exists.
-func (m *Mux) ensureSub(ctx context.Context, topicID, subID string) error {
-	if m.useInMem {
-		// Ensure topic exists first
-		return m.ensureTopic(ctx, topicID)
-	}
-
-	if m.gcpClient == nil {
-		return fmt.Errorf("gcp client is nil")
-	}
-
-	fullSubName := fmt.Sprintf("projects/%s/subscriptions/%s", m.projectID, subID)
-	_, err := m.gcpClient.SubscriptionAdminClient.GetSubscription(ctx, &pubsubpb.GetSubscriptionRequest{Subscription: fullSubName})
-	if err == nil {
-		return nil
-	}
-	if status.Code(err) != codes.NotFound {
-		return fmt.Errorf("failed to check subscription existence: %w", err)
-	}
-
-	fullTopicName := fmt.Sprintf("projects/%s/topics/%s", m.projectID, topicID)
-	_, err = m.gcpClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
-		Name:  fullSubName,
-		Topic: fullTopicName,
-		ExpirationPolicy: &pubsubpb.ExpirationPolicy{
-			Ttl: durationpb.New(24 * time.Hour),
-		},
-	})
-	if err != nil {
-		// Check for AlreadyExists error to handle race conditions
-		if status.Code(err) == codes.AlreadyExists {
-			return nil
-		}
-		return fmt.Errorf("failed to create subscription: %w", err)
-	}
-	return nil
 }

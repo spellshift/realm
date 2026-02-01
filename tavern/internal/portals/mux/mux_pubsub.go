@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"gocloud.dev/pubsub"
+	"cloud.google.com/go/pubsub/v2"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -30,20 +30,22 @@ func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) 
 		return fmt.Errorf("failed to marshal mote: %w", err)
 	}
 
-	t, err := m.getTopic(ctx, topicID)
+	publisher, err := m.getTopic(ctx, topicID)
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_topic_open").Inc()
 		return fmt.Errorf("failed to open topic %s: %w", topicID, err)
 	}
-	// Do not shutdown topic here as we are caching it.
 
 	// Send
-	err = t.Send(ctx, &pubsub.Message{
-		Body: data,
-		Metadata: map[string]string{
+	res := publisher.Publish(ctx, &pubsub.Message{
+		Data: data,
+		Attributes: map[string]string{
 			"sender_id": m.serverID,
 		},
 	})
+
+	// Wait for result
+	_, err = res.Get(ctx)
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_send").Inc()
 		return fmt.Errorf("failed to publish to topic %s: %w", topicID, err)
@@ -149,14 +151,14 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 // dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
 func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 	// Check for loopback
-	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
+	if senderID, ok := msg.Attributes["sender_id"]; ok && senderID == m.serverID {
 		return
 	}
 
 	msgsReceived.WithLabelValues(topicID).Inc()
 
 	var mote portalpb.Mote
-	if err := proto.Unmarshal(msg.Body, &mote); err != nil {
+	if err := proto.Unmarshal(msg.Data, &mote); err != nil {
 		slog.Error("Failed to unmarshal mote", "topic", topicID, "error", err)
 		return
 	}
@@ -168,25 +170,22 @@ func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
 	m.addToHistory(topicID, &mote)
 }
 
-func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {
-	for {
-		msg, err := sub.Receive(ctx)
-
-		// Rapidly acknowledge to avoid redelivery and backlog buildup
-		if msg != nil {
-			msg.Ack()
-		}
-
-		if err != nil {
-			// Context canceled or subscription closed
-			return
-		}
+func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscriber) {
+	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		msg.Ack()
 		m.dispatchMsg(topicID, msg)
+	})
+
+	if err != nil {
+		// Context canceled or error
+		if ctx.Err() == nil {
+			slog.Error("Receive loop failed", "topic", topicID, "error", err)
+		}
 	}
 }
 
-// getTopic returns a cached topic handle or opens a new one with low-latency settings.
-func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
+// getTopic returns a cached publisher handle or opens a new one.
+func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Publisher, error) {
 	m.topics.RLock()
 	t, ok := m.topics.topics[topicID]
 	m.topics.RUnlock()
@@ -201,21 +200,12 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 		return t, nil
 	}
 
-	t, err := pubsub.OpenTopic(ctx, m.TopicURL(topicID))
+	// EnsureTopic in client creates and returns a Publisher
+	p, err := m.client.EnsureTopic(ctx, topicID)
 	if err != nil {
 		return nil, err
 	}
 
-	m.topics.topics[topicID] = t
-	return t, nil
-}
-
-// openSubscription opens a subscription and applies low-latency settings if it's a native driver.
-func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscription, error) {
-	sub, err := pubsub.OpenSubscription(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-
-	return sub, nil
+	m.topics.topics[topicID] = p
+	return p, nil
 }

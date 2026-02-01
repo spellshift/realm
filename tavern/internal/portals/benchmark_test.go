@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -88,7 +89,11 @@ func BenchmarkPortalThroughput(b *testing.B) {
 		SaveX(ctx)
 
 	// 3. Setup Server Components
-	portalMux := mux.New(mux.WithInMemoryDriver(), mux.WithSubscriberBufferSize(1000))
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(b, err)
+	defer psClient.Close()
+
+	portalMux := mux.New(mux.WithPubSubClient(psClient), mux.WithSubscriberBufferSize(1000))
 
 	// Create a placeholder shellMux since C2 requires it, but we won't use it.
 	var shellMux *stream.Mux = nil

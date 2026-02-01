@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 	portalstream "realm.pub/tavern/portals/stream"
 
@@ -46,7 +47,10 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	entClient := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 
 	// 2. Setup Portal Mux (In-Memory)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(t, err)
+
+	portalMux := mux.New(mux.WithPubSubClient(psClient))
 
 	// 3. Setup C2 Stream Mux (Dummy In-Memory)
 	topic, err := pubsub.OpenTopic(ctx, "mem://c2topic")
@@ -107,6 +111,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 			entClient.Close()
 			topic.Shutdown(ctx)
 			sub.Shutdown(ctx)
+			psClient.Close()
 		},
 	}
 }

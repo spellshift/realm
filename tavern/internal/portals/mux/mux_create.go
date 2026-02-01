@@ -50,37 +50,29 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 
 	// 2. Provisioning
 	// Ensure topics exist
-	if err := m.ensureTopic(ctx, topicIn); err != nil {
+	if _, err := m.client.EnsureTopic(ctx, topicIn); err != nil {
 		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
 	}
-	if err := m.ensureTopic(ctx, topicOut); err != nil {
+	if _, err := m.client.EnsureTopic(ctx, topicOut); err != nil {
 		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
 	}
 
-	// Ensure subscription exists
-	if err := m.ensureSub(ctx, topicIn, subName); err != nil {
-		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
-	}
-
-	// 3. Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicIn, subName)
-	sub, err := m.openSubscription(ctx, subURL)
+	// Ensure subscription exists and get subscriber
+	sub, err := m.client.EnsureSubscription(ctx, subName, topicIn)
 	if err != nil {
-		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return portalID, nil, fmt.Errorf("failed to ensure subscription: %w", err)
 	}
 
 	// Store in subMgr
 	m.subMgr.Lock()
 
 	// Check if existing sub
-	if existingSub, ok := m.subMgr.active[subName]; ok {
+	if _, ok := m.subMgr.active[subName]; ok {
 		// Existing found. Shutdown new one and cleanup old one if needed.
 		if cancel, ok := m.subMgr.cancelFuncs[subName]; ok {
 			cancel()
 		}
-		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		existingSub.Shutdown(context.Background())
+		// Native Subscriber doesn't need explicit Shutdown, just context cancel.
 	}
 
 	m.subMgr.active[subName] = sub
@@ -96,7 +88,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 
 	teardown := func() {
 		m.subMgr.Lock()
-		s, ok := m.subMgr.active[subName]
+		_, ok := m.subMgr.active[subName]
 		cancel := m.subMgr.cancelFuncs[subName]
 		if ok {
 			delete(m.subMgr.active, subName)
@@ -108,8 +100,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 			if cancel != nil {
 				cancel()
 			}
-			// Shutdown using Background context
-			s.Shutdown(context.Background())
+			// Subscriber stops when context is canceled.
 		}
 
 		// Update DB to Closed using ID

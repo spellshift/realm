@@ -9,6 +9,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/tome"
+	xpubsub "realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -17,9 +18,15 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	client := enttest.Open(b, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-	// Setup Mux
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1000))
 	ctx := context.Background()
+
+	// Setup PubSub Client
+	psClient, err := xpubsub.NewClient(ctx, xpubsub.WithInMemoryDriver())
+	require.NoError(b, err)
+	defer psClient.Close()
+
+	// Setup Mux
+	m := New(WithPubSubClient(psClient), WithSubscriberBufferSize(1000))
 
 	// Setup Entities
 	u := client.User.Create().SetName("benchuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
