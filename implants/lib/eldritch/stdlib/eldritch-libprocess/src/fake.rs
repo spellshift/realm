@@ -12,12 +12,27 @@ pub struct ProcessLibraryFake;
 impl ProcessLibrary for ProcessLibraryFake {
     fn info(&self, _pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
-        map.insert("name".into(), Value::String("init".into()));
-        map.insert("pid".into(), Value::Int(1));
-        map.insert("ppid".into(), Value::Int(0));
-        map.insert("arch".into(), Value::String("x86_64".into()));
-        map.insert("user".into(), Value::String("root".into()));
-        map.insert("command".into(), Value::String("/sbin/init".into()));
+        map.insert("cmd".into(), Value::String("target/debug/golem -i".into()));
+        map.insert(
+            "cwd".into(),
+            Value::String("/workspaces/realm/implants".into()),
+        );
+
+        map.insert(
+            "exe".into(),
+            Value::String("/workspaces/realm/implants/target/debug/golem".into()),
+        );
+        map.insert("gid".into(), Value::Int(1001));
+        map.insert("memory_usage".into(), Value::Int(16384000));
+        map.insert("name".into(), Value::String("golem".into()));
+        map.insert("pid".into(), Value::Int(151931));
+        map.insert("ppid".into(), Value::Int(76290));
+        map.insert("root".into(), Value::String("/".into()));
+        map.insert("run_time".into(), Value::Int(139));
+        map.insert("start_time".into(), Value::Int(1769925749));
+        map.insert("status".into(), Value::String("Runnable".into()));
+        map.insert("uid".into(), Value::Int(1000));
+        map.insert("virtual_memory_usage".into(), Value::Int(37724160));
         Ok(map)
     }
 
@@ -89,8 +104,8 @@ mod tests {
     fn test_fake_process_info() {
         let lib = ProcessLibraryFake;
         let info = lib.info(Some(123)).unwrap(); // PID doesn't matter for fake
-        assert_eq!(info.get("name"), Some(&Value::String("init".into())));
-        assert_eq!(info.get("pid"), Some(&Value::Int(1)));
+        assert_eq!(info.get("name"), Some(&Value::String("golem".into())));
+        assert_eq!(info.get("pid"), Some(&Value::Int(151931)));
     }
 
     #[test]
