@@ -37,6 +37,7 @@ export class LlmService {
                 "   - DO NOT use 'import' statements (e.g., 'import sys', 'import os' are FORBIDDEN). The standard library ('sys', 'file', 'process', etc.) is already loaded globally.\n" +
                 "   - Use native Eldritch functions (e.g., 'file.write', 'sys.is_linux') instead of 'sys.shell' where possible for better OPSEC, but 'sys.shell' is allowed if necessary (e.g., for 'systemctl').\n" +
                 "   - Use 'file.template' for configuration files if complex.\n" +
+                "   - ALWAYS use 'eprint()' for printing error messages, and 'print()' for standard information.\n" +
                 "5. Use the 'validate_tome_structure' tool to verify your output before showing it to the user.\n" +
                 "6. Output the final code in markdown blocks: ```yaml for metadata and ```python for eldritch (for syntax highlighting).";
     }
