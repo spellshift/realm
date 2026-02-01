@@ -7,7 +7,7 @@ permalink: user-guide/tomes
 ---
 ## Tomes
 
-A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package that can be run on one or more [Beacons](/user-guide/terminology#beacon). By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. Please take a few minutes to read through the options available to you now, and be sure to refer to them as reference when creating your own [Tomes](/user-guide/terminology#tome). If you're looking for information on how to run [Tomes](/user-guide/terminology#tome) and aren't quite ready to write your own, check out our [Getting Started guide](/user-guide/getting-started). Otherwise, adventure onwards, but with a word of warning. [Eldritch](/user-guide/terminology#eldritch) provides a useful abstraction for many offensive operations, however it is under heavy active development at this time and is subject to change. After the release of [Realm](https://github.com/spellshift/realm) version `1.0.0`, [Eldritch](/user-guide/terminology#eldritch) will follow [Semantic Versioning](https://semver.org/), to prevent [Tomes](/user-guide/terminology#tome) from failing when breaking changes are introduced. Until then however, the [Eldritch](/user-guide/terminology#eldritch) API may change. This rapid iteration will enable the language to more quickly reach maturity and ensure we provide the best possible design for operators, so thank you for your patience.
+A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package that can be run on one or more [Beacons](/user-guide/terminology#beacon). By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. Please take a few minutes to read through the [options available to you](https://github.com/spellshift/realm/tree/main/tavern/tomes) now, and be sure to refer to them as reference when creating your own [Tomes](/user-guide/terminology#tome). If you're looking for information on how to run [Tomes](/user-guide/terminology#tome) and aren't quite ready to write your own, check out our [Getting Started guide](/user-guide/getting-started). Otherwise, adventure onwards, but with a word of warning. [Eldritch](/user-guide/terminology#eldritch) provides a useful abstraction for many offensive operations, however it is under heavy active development at this time and is subject to change. After the release of [Realm](https://github.com/spellshift/realm) version `1.0.0`, [Eldritch](/user-guide/terminology#eldritch) will follow [Semantic Versioning](https://semver.org/), to prevent [Tomes](/user-guide/terminology#tome) from failing when breaking changes are introduced. Until then however, the [Eldritch](/user-guide/terminology#eldritch) API may change. This rapid iteration will enable the language to more quickly reach maturity and ensure we provide the best possible design for operators, so thank you for your patience.
 
 ## Anatomy of a Tome
 
@@ -28,6 +28,7 @@ The `metadata.yml` file specifies key information about a [Tome](/user-guide/ter
 | `name` | Display name of your [Tome](/user-guide/terminology#tome). | Yes |
 | `description` | Provide a helpful description of functionality, for user's of your [Tome](/user-guide/terminology#tome). | Yes |
 | `author` | Your name/handle, so you can get credit for your amazing work! | Yes |
+| `support_model` | The type of support offered by this tome `FIRST_PARTY` (from realm developers) or `COMMUNITY` | Yes |
 | `tactic` | The relevant [MITRE ATT&CK tactic](https://attack.mitre.org/tactics/enterprise/) that best describes this [Tome](/user-guide/terminology#tome). Possible values include: `UNSPECIFIED`, `RECON`, `RESOURCE_DEVELOPMENT`, `INITIAL_ACCESS`, `EXECUTION`, `PERSISTENCE`, `PRIVILEGE_ESCALATION`, `DEFENSE_EVASION`, `CREDENTIAL_ACCESS`, `DISCOVERY`, `LATERAL_MOVEMENT`, `COLLECTION`,`COMMAND_AND_CONTROL`,`EXFILTRATION`, `IMPACT`. | Yes |
 | `paramdefs` | A list of [parameters](/user-guide/tomes#tome-parameters) that users may provide to your [Tome](/user-guide/terminology#tome) when it is run. | No |
 
@@ -71,6 +72,7 @@ name: List files
 description: List the files and directories found at the path. Supports basic glob functionality. Does not glob more than one level.
 author: hulto
 tactic: RECON
+support_model: COMMUNITY
 paramdefs:
   - name: path
     type: string
@@ -90,13 +92,14 @@ When using the [Eldritch Assets API](/user-guide/eldritch#assets), these assets 
 
 Below is the directory structure used in this example:
 
-```text
-mytome/
-      /main.eldritch
-      /metadata.yml
-      /assets/
-             /imix.exe
-             /imix-linux
+```shell
+$ tree ./mytome/
+./mytome/
+├── assets
+│   ├── imix.exe
+│   └── imix-linux
+├── main.eldritch
+└── metadata.yml
 ```
 
 ## Importing Tomes from Git
@@ -276,8 +279,6 @@ Common things to validate:
 - Check parent directory exists using [`file.parent_dir`](/user-guide/eldritch#fileparent_dir)
 - User permissions
 - Required dependencies or LOLBINs
-
-**Note on `eprint`: eprint has bugs causing tomes to exit prematurely. Currently best practice is to avoid using it.**
 
 ### Backup and Test
 If you need to modify configuration that might cause breaking changes to the system.

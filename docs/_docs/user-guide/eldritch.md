@@ -7,15 +7,10 @@ permalink: user-guide/eldritch
 ---
 # Overview
 
-🚨 **DEPRECATION WARNING:** Eldritch v1 will soon be deprecated and replaced with v2 🚨
-
-
 Eldritch is a Pythonic red team Domain Specific Language (DSL) based on [starlark](https://github.com/facebookexperimental/starlark-rust). It uses and supports most python syntax and basic functionality such as list comprehension, string operations (`lower()`, `join()`, `replace()`, etc.), and built-in methods (`any()`, `dir()`, `hex()`, `sorted()`, etc.). For more details on the supported functionality not listed here, please consult the [Starlark Spec Reference](https://github.com/bazelbuild/starlark/blob/master/spec.md), but for the most part you can treat this like basic Python with extra red team functionality.
 
 Eldritch is a small interpreter that can be embedded into a c2 agent as it is with Golem and Imix.
 By embedding the interpreter into the agent conditional logic can be quickly evaluated without requiring multiple callbacks.
-
-Eldritch is currently under active development to help delineate methods in development the description contains the phrase `X method will`.
 
 **Trying to create a tome? Check out the guide in [Golem](/user-guide/golem).**
 
@@ -60,16 +55,16 @@ For example:
 
 ```python
 def read_passwd():
-    if is_linux():
-        if is_file("/etc/passwd"):
-            file.read("/etc/passwd")
+    if sys.is_linux():
+        if file.is_file("/etc/passwd"):
+            print(file.read("/etc/passwd"))
 read_passwd()
 ```
 
 ```python
 def write_systemd_service():
-    if is_linux():
-        if is_dir("/lib/systemd/system/"):
+    if sys.is_linux():
+        if file.is_dir("/lib/systemd/system/"):
             service_args = {
                 "name":"my-service",
                 "desc":"A test",
@@ -128,8 +123,7 @@ for user_home_dir in file.list("/home/"):
 
 `agent._terminate_this_process_clowntown() -> None`
 
-> [!CAUTION]
-> **DANGER**: The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
+**🚨 DANGER 🚨:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits.
 
 ### agent.get_config
 
@@ -141,7 +135,7 @@ The **agent.get_config** method returns the current configuration of the agent a
 
 `agent.get_transport() -> str`
 
-The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc").
+The **agent.get_transport** method returns the name of the currently active transport (e.g., "http", "grpc", "dns").
 
 ### agent.list_transports
 

@@ -64,13 +64,14 @@ After installing the gcloud CLI, run `gcloud auth application-default login` to 
 
 1. Follow [these instructions](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli) to install the Terraform CLI.
 2. Clone [the repo](https://github.com/spellshift/realm) and navigate to the `terraform` directory.
-3. Run `terraform init` to install the Google provider for terraform.
-4. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>"` to deploy Tavern!
+3. Checkout the latest stable release `git checkout -b latest $(git tag | tail -1)`
+4. Run `terraform init` to install the Google provider for terraform.
+5. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=$(git tag | tail -1)"` to deploy Tavern!
 
 **Example:**
 
 ```sh
-terraform apply -var="gcp_project=new-realm-deployment" -var="oauth_client_id=12345.apps.googleusercontent.com" -var="oauth_client_secret=ABCDEFG" -var="oauth_domain=test-tavern.redteam.toys"
+terraform apply -var="gcp_project=new-realm-deployment" -var="oauth_client_id=12345.apps.googleusercontent.com" -var="oauth_client_secret=ABCDEFG" -var="oauth_domain=test-tavern.redteam.toys" -var="tavern_container_image=$(git tag | tail -1)"
 ```
 
 After terraform completes successfully, head to the [DNS mappings for Cloud Run](https://console.cloud.google.com/run/domains) and wait for a certificate to successfully provision. This may take a while, so go enjoy a nice cup of coffee ☕
@@ -92,6 +93,7 @@ After your certificate has successfully provisioned, it may still take a while (
 |oauth_domain|Only if OAuth is configured|The OAuth Domain that the IDP should redirect to e.g. tavern.mydomain.com (should be the domain you set a CNAME record for while configuring OAuth).|
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
+|tavern_container_image|No|Override the dafult tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.| 
 
 ### Manual Deployment Tips
 
@@ -360,6 +362,13 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
 
+## Tavern docker image tags explained
+
+Tavern publishes a couple different images.
+- `vX.Y.Z` is a semver style verision string. Each Realm release creates a git tag and container image .
+- `edge` & `main` are the latest version of tavern in the git repos main branch. These two exist for developers to deploy the latest changes and coerce terraform into deploying upgrades as needed.
+- `sha-<hash>` represents the specific container per a git commit to main. The hash will match the git commit hash as well this can be verified in the docker build workflow logs.
+
 ## Build and publish tavern container
 
 If you want to deploy tavern without using the published version you'll have to build and publish your own container.
@@ -396,32 +405,32 @@ If you'd like to explore the Graph API and try out some queries, head to the `/g
 
 Within the GraphIQL Playground, you'll be able to access documentation on the various queries and mutations available to you. For example, the `updateUser` mutation is useful for activating new users and granting admin privileges to others.
 
-#### Activate User Example
-
-Activate the user with the ID `47244640258`.
+#### List shells
 
 ```graphql
-mutation ActivateUser {
-  updateUser(userID: 47244640258, input:{isActivated:true}) {
-    id
-    name
-    isAdmin
-    isActivated
+query shells {
+  shells {
+    edges {
+      node {
+        id
+        beacon {
+          id
+          host {
+            name
+          }
+        }
+      }
+    }
   }
 }
 ```
 
-#### Activate Admin Example
-
-Activate the user with the ID `47244640258` and grant them admin privileges.
+#### Create an asset link
 
 ```graphql
-mutation ActivateAdmin {
-  updateUser(userID: 47244640258, input:{isAdmin:true, isActivated:true}) {
-    id
-    name
-    isAdmin
-    isActivated
+mutation tempLink {
+  createLink(input: {expiresAt: "2026-02-02T21:33:18Z", assetID: 4}) {
+    path
   }
 }
 ```
@@ -431,17 +440,18 @@ mutation ActivateAdmin {
 List information about all available tomes.
 
 ```graphql
-query Tomes {
-  tomes {
-    name
-    tactic
-    supportModel
-    files {
-      id
-      name
-      size
+query listtomes{
+    tomes {
+      edges {
+        node {
+          id
+          name
+          tactic
+          description
+          paramDefs
+        }
+      }
     }
-  }
 }
 ```
 
@@ -450,17 +460,18 @@ query Tomes {
 List information about all available tomes which are made for persistence.
 
 ```graphql
-query PeristenceTomes {
-  tomes(where:{tactic: PERSISTENCE}) {
-    name
-    tactic
-    supportModel
-    files {
-      id
-      name
-      size
+query listtomes{
+    tomes(where:{tactic: PERSISTENCE}) {
+      edges {
+        node {
+          id
+          name
+          tactic
+          description
+          paramDefs
+        }
+      }
     }
-  }
 }
 ```
 

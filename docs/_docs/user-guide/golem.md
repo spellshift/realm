@@ -18,13 +18,13 @@ You can leverage the power of Eldritch with minimal exposure in the system proce
 ```bash
 git clone git@github.com:spellshift/realm.git
 cd realm/implants/golem
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
 # Launch and interactive REPL
 cargo run -- -i
 
 # Or run a tome on disk
-cargo build --release && \
-    ../target/release/golem ../../bin/golem_cli_test/hello_world.eldritch
+cargo run ../../bin/golem_cli_test/hello_world.eldritch
 ```
 
 ## Creating and testing tomes
@@ -153,8 +153,16 @@ The Eldritch interpreter can embed files at compile time. To interact with these
 
 ## Golem as a stage 0
 
-Golem can also be used as a stage 0 to load imix or other c2 agents.
-This can help in a few ways such as:
+Golem can also be used as a stage 0 to load imix or other c2 agents. When building as a stage 0 releases builds are recommended to optimize build size.
+
+```bash
+# Build imix.exe
+cargo build --release --target=x86_64-pc-windows-gnu
+# Build imix
+cargo build --release --bin imix --target=x86_64-unknown-linux-musl
+```
+
+Golem as a stage 0 can help in a few ways such as:
 
 - Keying payloads to specific hosts
 
