@@ -13,9 +13,15 @@ impl ProcessLibrary for ProcessLibraryFake {
     fn info(&self, _pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("cmd".into(), Value::String("target/debug/golem -i".into()));
-        map.insert("cwd".into(), Value::String("/workspaces/realm/implants".into()));
+        map.insert(
+            "cwd".into(),
+            Value::String("/workspaces/realm/implants".into()),
+        );
 
-        map.insert("exe".into(), Value::String("/workspaces/realm/implants/target/debug/golem".into()));
+        map.insert(
+            "exe".into(),
+            Value::String("/workspaces/realm/implants/target/debug/golem".into()),
+        );
         map.insert("gid".into(), Value::Int(1001));
         map.insert("memory_usage".into(), Value::Int(16384000));
         map.insert("name".into(), Value::String("golem".into()));
