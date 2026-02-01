@@ -104,7 +104,7 @@ func (drv *gcpDriver) EnsurePublisher(ctx context.Context, topic string) (Publis
 	}
 
 	if err := gcpPublishAdapter.Publish(ctx, keepalive); err != nil {
-		return nil, fmt.Errorf("failed to publish keepalive message: %w", err)
+		return nil, fmt.Errorf("failed to publish keepalive message (topic=%q): %w", topic, err)
 	}
 	return gcpPublishAdapter, nil
 }
@@ -117,7 +117,7 @@ func (drv *gcpDriver) EnsureSubscriber(ctx context.Context, topic, subscription 
 		ExpirationPolicy: &drv.expirationPolicy,
 	})
 	if err != nil && status.Code(err) != codes.AlreadyExists {
-		return nil, fmt.Errorf("failed to create subscription: %w", err)
+		return nil, fmt.Errorf("failed to create subscription (sub=%q, topic=%q): %w", subscription, topic, err)
 	}
 
 	subscriber := drv.GCP.Subscriber(subscription)
