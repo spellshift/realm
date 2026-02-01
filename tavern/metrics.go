@@ -55,6 +55,7 @@ func init() {
 			Name:        "pubsub.googleapis.com/publish/latency",
 			Description: "Latency of publish operations",
 			Measure:     gcppubsub.PublishLatency,
+			// Latency buckets in milliseconds, from 0ms to 10s
 			Aggregation: view.Distribution(0, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000),
 		},
 	); err != nil {
