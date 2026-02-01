@@ -219,6 +219,7 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 	// Apply low-latency settings for native driver
 	var native *gcppubsub.Topic
 	if t.As(&native) {
+		slog.InfoContext(ctx, "Applied low-latency publish settings for GCP driver", "topic", topicID)
 		native.PublishSettings.DelayThreshold = publishDelayThreshold
 		native.PublishSettings.CountThreshold = publishCountThreshold
 		native.PublishSettings.ByteThreshold = publishByteThreshold
@@ -238,6 +239,7 @@ func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscri
 	// Apply low-latency settings for native driver
 	var native *gcppubsub.Subscription
 	if sub.As(&native) {
+		slog.InfoContext(ctx, "Applied low-latency receive settings for GCP driver", "sub_url", url)
 		native.ReceiveSettings.MaxOutstandingMessages = receiveMaxOutstandingMessages
 		native.ReceiveSettings.MaxOutstandingBytes = receiveMaxOutstandingBytes
 		native.ReceiveSettings.NumGoroutines = receiveNumGoroutines
