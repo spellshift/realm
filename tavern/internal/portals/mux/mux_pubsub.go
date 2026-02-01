@@ -4,25 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"time"
 
-	gcppubsub "cloud.google.com/go/pubsub"
 	"gocloud.dev/pubsub"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/portals/portalpb"
-)
-
-const (
-	// PubSub Publish Settings (Low Latency)
-	publishDelayThreshold = 0
-	publishCountThreshold = 1
-	publishByteThreshold  = 0
-
-	// PubSub Receive Settings (Unbounded)
-	receiveMaxOutstandingMessages = -1
-	receiveMaxOutstandingBytes    = -1
-	receiveNumGoroutines          = 1
-	receiveMaxExtension           = 60 * time.Minute
 )
 
 // Publish sends a message to the specified topic.
@@ -220,15 +205,6 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 		return nil, err
 	}
 
-	// Apply low-latency settings for native driver
-	var native *gcppubsub.Topic
-	if t.As(&native) {
-		slog.InfoContext(ctx, "Applied low-latency publish settings for GCP driver", "topic", topicID)
-		native.PublishSettings.DelayThreshold = publishDelayThreshold
-		native.PublishSettings.CountThreshold = publishCountThreshold
-		native.PublishSettings.ByteThreshold = publishByteThreshold
-	}
-
 	m.topics.topics[topicID] = t
 	return t, nil
 }
@@ -238,16 +214,6 @@ func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscri
 	sub, err := pubsub.OpenSubscription(ctx, url)
 	if err != nil {
 		return nil, err
-	}
-
-	// Apply low-latency settings for native driver
-	var native *gcppubsub.Subscription
-	if sub.As(&native) {
-		slog.InfoContext(ctx, "Applied low-latency receive settings for GCP driver", "sub_url", url)
-		native.ReceiveSettings.MaxOutstandingMessages = receiveMaxOutstandingMessages
-		native.ReceiveSettings.MaxOutstandingBytes = receiveMaxOutstandingBytes
-		native.ReceiveSettings.NumGoroutines = receiveNumGoroutines
-		native.ReceiveSettings.MaxExtension = receiveMaxExtension
 	}
 
 	return sub, nil
