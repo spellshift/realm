@@ -180,7 +180,7 @@ fn test_random_bindings() {
 fn test_report_bindings() {
     check_bindings(
         "report",
-        &["file", "process_list", "ssh_key", "user_password"],
+        &["file", "ntlm_hash", "process_list", "ssh_key", "user_password"],
     );
 }
 
