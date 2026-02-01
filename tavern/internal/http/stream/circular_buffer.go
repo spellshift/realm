@@ -7,11 +7,11 @@ import (
 // CircularBuffer is a fixed-size byte buffer that overwrites old data when full.
 // It is safe for concurrent use.
 type CircularBuffer struct {
-	mu       sync.Mutex
-	data     []byte
-	size     int
-	start    int
-	length   int
+	mu     sync.Mutex
+	data   []byte
+	size   int
+	start  int
+	length int
 }
 
 // NewCircularBuffer creates a new circular buffer with the given size.

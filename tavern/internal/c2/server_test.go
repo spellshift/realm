@@ -18,9 +18,9 @@ import (
 
 func TestGetClientIP(t *testing.T) {
 	tests := []struct {
-		name             string
-		setupContext     func() context.Context
-		expectedIP       string
+		name         string
+		setupContext func() context.Context
+		expectedIP   string
 	}{
 		{
 			name: "X-Forwarded-For_Only",
@@ -173,13 +173,13 @@ func TestJWTValidate(t *testing.T) {
 	}
 	srv := Server{
 		jwtPrivateKey: privKey,
-		jwtPublicKey: pubkey,
+		jwtPublicKey:  pubkey,
 	}
 
 	claims := jwt.MapClaims{
 		"task_id": 1234,
-		"iat":       time.Now().Unix(),
-		"exp":       time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+		"iat":     time.Now().Unix(),
+		"exp":     time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
@@ -190,5 +190,5 @@ func TestJWTValidate(t *testing.T) {
 	// Verify
 	err = srv.ValidateJWT(tokenStr)
 	fmt.Println(err)
- 	assert.Nil(t, err)
+	assert.Nil(t, err)
 }

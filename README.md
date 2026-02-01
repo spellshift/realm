@@ -21,7 +21,7 @@ Want to get involved? [Join our Discord!](https://discord.gg/W4cfwWRNZK)
 
 ## Feature Highlights
 
-- **Eldritch, a Pythonic DSL for Offensive Security:** Ditch clunky scripting and embrace [Eldritch](https://docs.realm.pub/user-guide/eldritch), Realm's Pythonic [Domain Specific Language (DSL)](https://en.wikipedia.org/wiki/Domain-specific_language) based on [Google Starlark](https://github.com/bazelbuild/starlark/blob/master/spec.md#starlark-language-specification). Write clear, concise, reuseable code that reflects your strategic thinking and streamlines offensive operations. [Eldritch](https://docs.realm.pub/user-guide/eldritch) is natively compiled to Rust, providing a performant abstraction for low-level system interactions.
+- **Eldritch, a Pythonic DSL for Offensive Security:** Ditch clunky scripting and embrace [Eldritch](https://docs.realm.pub/user-guide/eldritch), Realm's Pythonic [Domain Specific Language (DSL)](https://en.wikipedia.org/wiki/Domain-specific_language) based on [Google Starlark](https://github.com/bazelbuild/starlark/blob/master/spec.md#starlark-language-specification). Write clear, concise, reusable code that reflects your strategic thinking and streamlines offensive operations. [Eldritch](https://docs.realm.pub/user-guide/eldritch) is natively compiled to Rust, providing a performant abstraction for low-level system interactions.
 
 - **Effortless Multi-Host Management:** Juggling tasks across numerous machines during complex engagements? Realm simplifies the process, enabling you to control agents on multiple hosts simultaneously.
 

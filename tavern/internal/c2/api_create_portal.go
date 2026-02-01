@@ -30,7 +30,6 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
 	}
 
-
 	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "error", err)

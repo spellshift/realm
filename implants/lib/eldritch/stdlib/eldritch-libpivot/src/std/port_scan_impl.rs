@@ -181,14 +181,14 @@ async fn tcp_connect_scan_socket(
                 CLOSED.to_string(),
             )),
             _ => Err(anyhow::anyhow!(
-                "Unexpeceted error occured during scan:\n{err}"
+                "Unexpected error occurred during scan:\n{err}"
             )),
         },
     }
 }
 
 // Connect to a UDP port send the string hello and see if any data is sent back.
-// If data is recieved port is open.
+// If data is received port is open.
 async fn udp_scan_socket(
     target_host: String,
     target_port: i32,
@@ -203,11 +203,11 @@ async fn udp_scan_socket(
         )
         .await?;
 
-    // Recieve any response from remote host.
+    // Receive any response from remote host.
     let mut response_buffer = [0; 1024];
     // Handle the outcome of our recv.
     match sock.recv_from(&mut response_buffer).await {
-        // If okay and we recieved bytes then we connected and the port  is open.
+        // If okay and we received bytes then we connected and the port  is open.
         Ok((_bytes_copied, _addr)) => {
             Ok((target_host, target_port, UDP.to_string(), OPEN.to_string()))
         }
@@ -238,7 +238,7 @@ async fn udp_scan_socket(
                     CLOSED.to_string(),
                 )),
                 _ => Err(anyhow::anyhow!(
-                    "Unexpeceted error occured during scan:\n{err}"
+                    "Unexpected error occurred during scan:\n{err}"
                 )),
             }
         }

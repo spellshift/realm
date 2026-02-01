@@ -91,8 +91,8 @@ func TestGetFlusher(t *testing.T) {
 
 type basicResponseWriter struct{}
 
-func (b *basicResponseWriter) Header() http.Header       { return http.Header{} }
-func (b *basicResponseWriter) Write([]byte) (int, error) { return 0, nil }
+func (b *basicResponseWriter) Header() http.Header        { return http.Header{} }
+func (b *basicResponseWriter) Write([]byte) (int, error)  { return 0, nil }
 func (b *basicResponseWriter) WriteHeader(statusCode int) {}
 
 func TestHandleStreamError(t *testing.T) {
