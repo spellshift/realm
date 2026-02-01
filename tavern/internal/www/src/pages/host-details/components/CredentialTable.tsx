@@ -34,7 +34,7 @@ const CredentialTable = ({ data }: any) => {
             header: "Credential Kind",
             accessorFn: row => row.kind,
             footer: props => props.column.id,
-            enableSorting: false,
+            enableSorting: true,
             cell: (cellData: any) => {
                 const kind = cellData.getValue();
                 return (
