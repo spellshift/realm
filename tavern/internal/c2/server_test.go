@@ -185,7 +185,7 @@ func TestJWTValidate(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tokenStr, err := token.SignedString(privKey)
 	if err != nil {
-		fmt.Errorf("failed to sign JWT: %w", err)
+		t.Fatalf("failed to sign JWT: %v", err)
 	}
 	// Verify
 	err = srv.ValidateJWT(tokenStr)
