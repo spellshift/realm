@@ -56,13 +56,26 @@ func runTrace(ctx context.Context, upstreamAddr string, portalID int64, size int
 
 	var traces []*tracepb.TraceData
 
+	// 1. Open stream once
+	stream, err := client.OpenPortal(ctx)
+	if err != nil {
+		log.Fatalf("Failed to open portal: %v", err)
+	}
+
+	// 2. Register (Send Portal ID)
+	if err := stream.Send(&portalpb.OpenPortalRequest{
+		PortalId: portalID,
+	}); err != nil {
+		log.Fatalf("Failed to send registration message: %v", err)
+	}
+
 	for i := 0; i < count; i++ {
 		// Basic progress for multiple runs
 		if count > 1 {
 			fmt.Fprintf(os.Stderr, "Sending trace %d/%d...\r", i+1, count)
 		}
 
-		td, err := traceOne(ctx, client, portalID, size)
+		td, err := traceOne(ctx, stream, portalID, size)
 		if err != nil {
 			log.Fatalf("\nTrace %d failed: %v", i+1, err)
 		}
@@ -83,22 +96,7 @@ func runTrace(ctx context.Context, upstreamAddr string, portalID int64, size int
 	}
 }
 
-func traceOne(ctx context.Context, client portalpb.PortalClient, portalID int64, size int) (*tracepb.TraceData, error) {
-	// 1. Open a new stream for this trace
-	stream, err := client.OpenPortal(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("open portal: %w", err)
-	}
-	// We want to fully close the stream when done
-	defer stream.CloseSend()
-
-	// 2. Register (Send Portal ID)
-	if err := stream.Send(&portalpb.OpenPortalRequest{
-		PortalId: portalID,
-	}); err != nil {
-		return nil, fmt.Errorf("send registration: %w", err)
-	}
-
+func traceOne(ctx context.Context, stream portalpb.Portal_OpenPortalClient, portalID int64, size int) (*tracepb.TraceData, error) {
 	start := time.Now().UTC().UnixMicro()
 
 	// 3. Send Trace Mote

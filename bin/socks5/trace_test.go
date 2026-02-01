@@ -118,6 +118,3 @@ func TestCalculateStats(t *testing.T) {
 		t.Errorf("S2 Max: got %d, want 30", s2.Max)
 	}
 }
-
-// Stub for now to allow compilation of test if I run it before trace.go is updated
-// But I will update trace.go next.
