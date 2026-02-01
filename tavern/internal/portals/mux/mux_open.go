@@ -56,7 +56,7 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	// Connect
 	// Updated SubURL usage
 	subURL := m.SubURL(topicOut, subName)
-	sub, err := pubsub.OpenSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, subURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
 	}
