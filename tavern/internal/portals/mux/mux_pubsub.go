@@ -6,8 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"gocloud.dev/pubsub"
-	"google.golang.org/protobuf/proto"
+	"realm.pub/tavern/internal/portals/pubsub"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -23,27 +22,14 @@ func (m *Mux) Publish(ctx context.Context, topicID string, mote *portalpb.Mote) 
 	// Metrics
 	msgsPublished.WithLabelValues(topicID, "attempt").Inc()
 
-	// Serialize
-	data, err := proto.Marshal(mote)
-	if err != nil {
-		msgsPublished.WithLabelValues(topicID, "error_marshal").Inc()
-		return fmt.Errorf("failed to marshal mote: %w", err)
-	}
-
 	t, err := m.getTopic(ctx, topicID)
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_topic_open").Inc()
 		return fmt.Errorf("failed to open topic %s: %w", topicID, err)
 	}
-	// Do not shutdown topic here as we are caching it.
 
 	// Send
-	err = t.Send(ctx, &pubsub.Message{
-		Body: data,
-		Metadata: map[string]string{
-			"sender_id": m.serverID,
-		},
-	})
+	err = t.Publish(ctx, mote)
 	if err != nil {
 		msgsPublished.WithLabelValues(topicID, "error_send").Inc()
 		return fmt.Errorf("failed to publish to topic %s: %w", topicID, err)
@@ -146,47 +132,27 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 	buf.Add(mote)
 }
 
-// dispatchMsg handles a raw pubsub message, unmarshals it, and dispatches it locally.
-func (m *Mux) dispatchMsg(topicID string, msg *pubsub.Message) {
-	// Check for loopback
-	if senderID, ok := msg.Metadata["sender_id"]; ok && senderID == m.serverID {
-		return
-	}
+func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub pubsub.Subscriber) {
+	err := sub.Receive(ctx, func(ctx context.Context, mote *portalpb.Mote) {
+		msgsReceived.WithLabelValues(topicID).Inc()
 
-	msgsReceived.WithLabelValues(topicID).Inc()
+		// Dispatch locally
+		m.dispatch(topicID, mote)
 
-	var mote portalpb.Mote
-	if err := proto.Unmarshal(msg.Body, &mote); err != nil {
-		slog.Error("Failed to unmarshal mote", "topic", topicID, "error", err)
-		return
-	}
-
-	// Dispatch locally
-	m.dispatch(topicID, &mote)
-
-	// Add to history (messages from others also go into history)
-	m.addToHistory(topicID, &mote)
-}
-
-func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subscription) {
-	for {
-		msg, err := sub.Receive(ctx)
-
-		// Rapidly acknowledge to avoid redelivery and backlog buildup
-		if msg != nil {
-			msg.Ack()
-		}
-
-		if err != nil {
-			// Context canceled or subscription closed
+		// Add to history (messages from others also go into history)
+		m.addToHistory(topicID, mote)
+	})
+	if err != nil {
+		// Context canceled or subscription closed
+		if ctx.Err() != nil {
 			return
 		}
-		m.dispatchMsg(topicID, msg)
+		slog.Error("Receive loop exited with error", "topic", topicID, "error", err)
 	}
 }
 
-// getTopic returns a cached topic handle or opens a new one with low-latency settings.
-func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
+// getTopic returns a cached topic handle or opens a new one.
+func (m *Mux) getTopic(ctx context.Context, topicID string) (pubsub.Publisher, error) {
 	m.topics.RLock()
 	t, ok := m.topics.topics[topicID]
 	m.topics.RUnlock()
@@ -201,7 +167,7 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 		return t, nil
 	}
 
-	t, err := pubsub.OpenTopic(ctx, m.TopicURL(topicID))
+	t, err := m.pubsub.EnsurePublisher(ctx, topicID)
 	if err != nil {
 		return nil, err
 	}
@@ -210,12 +176,7 @@ func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, erro
 	return t, nil
 }
 
-// openSubscription opens a subscription and applies low-latency settings if it's a native driver.
-func (m *Mux) openSubscription(ctx context.Context, url string) (*pubsub.Subscription, error) {
-	sub, err := pubsub.OpenSubscription(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-
-	return sub, nil
+// openSubscription opens a subscription.
+func (m *Mux) openSubscription(ctx context.Context, topicID, subID string) (pubsub.Subscriber, error) {
+	return m.pubsub.EnsureSubscriber(ctx, topicID, subID)
 }

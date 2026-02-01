@@ -15,8 +15,8 @@ import (
 )
 
 func TestMux_InMemory(t *testing.T) {
-	// Setup Mux
-	m := New(WithInMemoryDriver())
+	// Setup Mux (Defaults to In-Memory)
+	m := New()
 
 	ctx := context.Background()
 	topicID := "test-topic"
@@ -78,7 +78,7 @@ func TestMux_CreatePortal(t *testing.T) {
 	defer client.Close()
 
 	// Setup Mux
-	m := New(WithInMemoryDriver())
+	m := New()
 	ctx := context.Background()
 
 	// Create User, Tome, Quest, Task required for Portal
@@ -136,7 +136,7 @@ func TestMux_CreatePortal(t *testing.T) {
 }
 
 func TestMux_OpenPortal(t *testing.T) {
-	m := New(WithInMemoryDriver())
+	m := New()
 	ctx := context.Background()
 	portalID := 456
 
