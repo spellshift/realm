@@ -90,19 +90,31 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
             clean_s
         };
 
-    let to_parse = if is_neg {
-        format!("-{}", clean_s_no_prefix)
-    } else {
-        String::from(clean_s_no_prefix)
-    };
+    let uval = u64::from_str_radix(clean_s_no_prefix, radix).map_err(|_| {
+        if base == 0 || base == 10 {
+            format!("invalid literal for int() with base {radix}: '{s}'")
+        } else {
+            format!("invalid literal for int() with base {base}: '{s}'")
+        }
+    })?;
 
-    i64::from_str_radix(&to_parse, radix)
-        .map(Value::Int)
-        .map_err(|_| {
-            if base == 0 || base == 10 {
-                format!("invalid literal for int() with base {radix}: '{s}'")
-            } else {
-                format!("invalid literal for int() with base {base}: '{s}'")
-            }
-        })
+    if is_neg {
+        // For negative, absolute value can be at most i64::MAX + 1 (which is abs(i64::MIN))
+        // i64::MIN is -9223372036854775808
+        // i64::MAX is  9223372036854775807
+        // abs(i64::MIN) is 9223372036854775808 (u64)
+        if uval > i64::MAX as u64 + 1 {
+            return Err(format!(
+                "int() literal too large: '{s}'" // Python behavior for overflow in fixed-width types? Python ints are arbitrary precision.
+                                                 // But eldritch uses i64. We should error on overflow.
+            ));
+        }
+        // Wrapping negation for i64::MIN case
+        Ok(Value::Int((uval as i64).wrapping_neg()))
+    } else {
+        if uval > i64::MAX as u64 {
+            return Err(format!("int() literal too large: '{s}'"));
+        }
+        Ok(Value::Int(uval as i64))
+    }
 }

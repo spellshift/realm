@@ -23,6 +23,17 @@ fn test_int_conversion_success() {
     // Other bases
     assert::pass("assert_eq(int('10', 2), 2)");
     assert::pass("assert_eq(int('10', 8), 8)");
+
+    // Float conversion
+    assert::pass("assert_eq(int(5.2), 5)");
+    assert::pass("assert_eq(int(5.9), 5)");
+    assert::pass("assert_eq(int(-5.2), -5)");
+
+    // Edge cases (i64 limits)
+    assert::pass("assert_eq(int('9223372036854775807'), 9223372036854775807)");
+    // Note: -9223372036854775808 literal might be parsed as -(9223372036854775808) which overflows i64 positive,
+    // so we use subtraction to represent i64::MIN safely in the test assertion.
+    assert::pass("assert_eq(int('-9223372036854775808'), -9223372036854775807 - 1)");
 }
 
 #[test]
