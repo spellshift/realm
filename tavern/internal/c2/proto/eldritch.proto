@@ -21,6 +21,7 @@ message Credential {
         KIND_UNSPECIFIED = 0;
         KIND_PASSWORD = 1;
         KIND_SSH_KEY = 2;
+        KIND_NTLM_HASH = 3;
     }
     Kind kind = 3;
 }
