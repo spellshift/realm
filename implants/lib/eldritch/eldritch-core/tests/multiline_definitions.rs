@@ -49,14 +49,12 @@ l3 = [6,
             panic!("Failed to interpret: {:?}", e);
         }
 
-        let mut check_len = |name: &str, len: usize| {
-            match interp.interpret(name).unwrap() {
-                Value::List(l) => {
-                     let l = l.read();
-                     assert_eq!(l.len(), len, "List {} has wrong length", name);
-                },
-                v => panic!("Expected list for {}, got {:?}", name, v),
+        let mut check_len = |name: &str, len: usize| match interp.interpret(name).unwrap() {
+            Value::List(l) => {
+                let l = l.read();
+                assert_eq!(l.len(), len, "List {} has wrong length", name);
             }
+            v => panic!("Expected list for {}, got {:?}", name, v),
         };
 
         check_len("l1", 2);
@@ -125,7 +123,7 @@ t = (
             panic!("Failed to interpret: {:?}", e);
         }
 
-         let l = interp.interpret("l").unwrap();
+        let l = interp.interpret("l").unwrap();
         if let Value::List(l) = l {
             assert_eq!(l.read().len(), 0);
         } else {
