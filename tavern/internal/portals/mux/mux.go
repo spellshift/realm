@@ -187,29 +187,6 @@ func (m *Mux) SubURL(topicID, subID string) string {
 	return fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", m.projectID, subID)
 }
 
-// getTopic returns a cached topic handle or opens a new one.
-func (m *Mux) getTopic(ctx context.Context, topicID string) (*pubsub.Topic, error) {
-	m.topics.RLock()
-	t, ok := m.topics.topics[topicID]
-	m.topics.RUnlock()
-	if ok {
-		return t, nil
-	}
-
-	m.topics.Lock()
-	defer m.topics.Unlock()
-	// Double check
-	if t, ok := m.topics.topics[topicID]; ok {
-		return t, nil
-	}
-
-	t, err := pubsub.OpenTopic(ctx, m.TopicURL(topicID))
-	if err != nil {
-		return nil, err
-	}
-	m.topics.topics[topicID] = t
-	return t, nil
-}
 
 // ensureTopic ensures that the topic exists.
 func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {
