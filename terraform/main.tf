@@ -25,7 +25,7 @@ variable "tavern_container_image" {
 
 variable "tavern_request_timeout_seconds" {
   type = number
-  description = "How many seconds before a request is dropped, defaults to 3600 (the maximum) to accomodate reverse shells (which are killed when this timeout is reached)"
+  description = "How many seconds before a request is dropped, defaults to 3600 (the maximum) to accommodate reverse shells (which are killed when this timeout is reached)"
   default = 3600
 
   validation {

@@ -10,12 +10,12 @@ import (
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"realm.pub/tavern/portals/portalpb"
 )
 
@@ -186,7 +186,6 @@ func (m *Mux) SubURL(topicID, subID string) string {
 	}
 	return fmt.Sprintf("gcppubsub://projects/%s/subscriptions/%s", m.projectID, subID)
 }
-
 
 // ensureTopic ensures that the topic exists.
 func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {

@@ -23,7 +23,6 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 		return nil, err
 	}
 
-
 	// Load Task
 	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
 	if ent.IsNotFound(err) {

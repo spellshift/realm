@@ -22,7 +22,6 @@ func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredent
 		return nil, err
 	}
 
-
 	// Load Task
 	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
 	if ent.IsNotFound(err) {

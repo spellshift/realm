@@ -54,7 +54,7 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
         .lock()
         .unwrap() // Mutex's must unwrap
         .get(&pub_key)
-        .context("Unable to find shared secret for the public key recieved")?;
+        .context("Unable to find shared secret for the public key received")?;
     Ok(res)
 }
 

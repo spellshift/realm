@@ -8,9 +8,9 @@ import (
 
 func TestGetClientIP(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupRequest   func() *http.Request
-		expectedIP     string
+		name         string
+		setupRequest func() *http.Request
+		expectedIP   string
 	}{
 		{
 			name: "X-Forwarded-For_Set",

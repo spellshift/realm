@@ -21,7 +21,6 @@ func (srv *Server) ReportTaskOutput(ctx context.Context, req *c2pb.ReportTaskOut
 		return nil, err
 	}
 
-
 	// Parse Input
 	var (
 		execStartedAt  *time.Time

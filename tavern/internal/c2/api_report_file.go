@@ -15,7 +15,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 
 	var (
 		taskID      int64
-		jwtToken	string
+		jwtToken    string
 		path        string
 		owner       string
 		group       string
@@ -79,7 +79,6 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if err != nil {
 		return err
 	}
-
 
 	// Load Task
 	task, err := srv.graph.Task.Get(stream.Context(), int(taskID))

@@ -69,7 +69,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 			hostID := newRandomIdentifier()
 			hostIP := newRandomIP()
 
-			var testHost *ent.Host;
+			var testHost *ent.Host
 			if i == 4 && groupNum == 5 {
 				testHost = client.Host.Create().
 					SetName(hostName).
@@ -140,7 +140,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
+						SetTransport(getTransport(groupNum*100+i*10+0)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -152,7 +152,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
+						SetTransport(getTransport(groupNum*100+i*10+1)).
 						SaveX(ctx),
 				)
 				testBeacons = append(testBeacons,
@@ -164,7 +164,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(60).
 						SetPrincipal("root").
-						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
+						SetTransport(getTransport(groupNum*100+i*10+2)).
 						SaveX(ctx),
 				)
 			} else {
@@ -177,7 +177,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(600000).
 						SetPrincipal("root").
-						SetTransport(getTransport(groupNum*100 + i*10 + 0)).
+						SetTransport(getTransport(groupNum*100+i*10+0)).
 						SaveX(ctx),
 				)
 				if i == 3 {
@@ -190,8 +190,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600).
 							SetPrincipal("janet").
-						SetTransport(getTransport(groupNum*100 + i*10 + 1)).
-						SaveX(ctx),
+							SetTransport(getTransport(groupNum*100+i*10+1)).
+							SaveX(ctx),
 					)
 				}
 				if groupNum == 1 {
@@ -204,8 +204,8 @@ func createTestData(ctx context.Context, client *ent.Client) {
 							SetHost(testHost).
 							SetInterval(600000).
 							SetPrincipal("jane").
-						SetTransport(getTransport(groupNum*100 + i*10 + 2)).
-						SaveX(ctx),
+							SetTransport(getTransport(groupNum*100+i*10+2)).
+							SaveX(ctx),
 					)
 				}
 
@@ -218,7 +218,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(1000).
 						SetPrincipal("admin").
-						SetTransport(getTransport(groupNum*100 + i*10 + 3)).
+						SetTransport(getTransport(groupNum*100+i*10+3)).
 						SaveX(ctx),
 				)
 
@@ -231,7 +231,7 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SetHost(testHost).
 						SetInterval(4).
 						SetPrincipal("Administrator").
-						SetTransport(getTransport(groupNum*100 + i*10 + 4)).
+						SetTransport(getTransport(groupNum*100+i*10+4)).
 						SaveX(ctx),
 				)
 			}
