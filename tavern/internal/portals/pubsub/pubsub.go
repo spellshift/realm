@@ -22,6 +22,18 @@ type Driver interface {
 	EnsureSubscriber(ctx context.Context, topic, subscription string) (Subscriber, error)
 }
 
+type Option func(*Client)
+
 type Client struct {
 	Driver
+}
+
+func NewClient(options ...Option) *Client {
+	c := &Client{
+		Driver: &memDriver{},
+	}
+	for _, opt := range options {
+		opt(c)
+	}
+	return c
 }

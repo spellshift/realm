@@ -14,48 +14,21 @@ import (
 	"realm.pub/tavern/portals/portalpb"
 )
 
-type gcpPublisher struct {
-	serverID     string
-	readyTimeout time.Duration
-	*pubsub.Publisher
-}
+// GCPOption defines an option for configuring the GCP driver.
+type GCPOption func(*gcpDriver)
 
-func (pub *gcpPublisher) Publish(ctx context.Context, mote *portalpb.Mote) error {
-	data, err := proto.Marshal(mote)
-	if err != nil {
-		return fmt.Errorf("failed to marshal mote: %w", err)
-	}
-	result := pub.Publisher.Publish(ctx, &pubsub.Message{
-		Data: data,
-		Attributes: map[string]string{
-			"server_id": pub.serverID,
-		},
-	})
-	select {
-	case <-result.Ready():
-		_, err := result.Get(ctx)
-		return err
-	case <-time.After(pub.readyTimeout):
-		return nil
-	}
-}
-
-type gcpSubscriber struct {
-	*pubsub.Subscriber
-}
-
-func (s *gcpSubscriber) Receive(ctx context.Context, f func(context.Context, *portalpb.Mote)) error {
-	return s.Subscriber.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		// Immediately acknowledge the message to prevent redelivery.
-		msg.Ack()
-
-		var mote portalpb.Mote
-		if err := proto.Unmarshal(msg.Data, &mote); err != nil {
-			slog.Error("subscriber failed to unmarshal mote", "err", err)
-			return
+// WithGCPDriver configures the Client to use Google Cloud Pub/Sub as its Driver.
+func WithGCPDriver(serverID string, client *pubsub.Client, options ...GCPOption) Option {
+	return func(c *Client) {
+		drv := &gcpDriver{
+			serverID: serverID,
+			GCP:      client,
 		}
-		f(ctx, &mote)
-	})
+		for _, opt := range options {
+			opt(drv)
+		}
+		c.Driver = drv
+	}
 }
 
 type gcpDriver struct {
@@ -115,4 +88,48 @@ func (drv *gcpDriver) EnsureSubscriber(ctx context.Context, topic, subscription 
 	subscriber := drv.GCP.Subscriber(subscription)
 	subscriber.ReceiveSettings = drv.receiveSettings
 	return &gcpSubscriber{Subscriber: subscriber}, nil
+}
+
+type gcpPublisher struct {
+	serverID     string
+	readyTimeout time.Duration
+	*pubsub.Publisher
+}
+
+func (pub *gcpPublisher) Publish(ctx context.Context, mote *portalpb.Mote) error {
+	data, err := proto.Marshal(mote)
+	if err != nil {
+		return fmt.Errorf("failed to marshal mote: %w", err)
+	}
+	result := pub.Publisher.Publish(ctx, &pubsub.Message{
+		Data: data,
+		Attributes: map[string]string{
+			"server_id": pub.serverID,
+		},
+	})
+	select {
+	case <-result.Ready():
+		_, err := result.Get(ctx)
+		return err
+	case <-time.After(pub.readyTimeout):
+		return nil
+	}
+}
+
+type gcpSubscriber struct {
+	*pubsub.Subscriber
+}
+
+func (s *gcpSubscriber) Receive(ctx context.Context, f func(context.Context, *portalpb.Mote)) error {
+	return s.Subscriber.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		// Immediately acknowledge the message to prevent redelivery.
+		msg.Ack()
+
+		var mote portalpb.Mote
+		if err := proto.Unmarshal(msg.Data, &mote); err != nil {
+			slog.Error("subscriber failed to unmarshal mote", "err", err)
+			return
+		}
+		f(ctx, &mote)
+	})
 }
