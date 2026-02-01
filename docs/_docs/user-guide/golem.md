@@ -18,6 +18,7 @@ You can leverage the power of Eldritch with minimal exposure in the system proce
 ```bash
 git clone git@github.com:spellshift/realm.git
 cd realm/implants/golem
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
 # Launch and interactive REPL
 cargo run -- -i

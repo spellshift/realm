@@ -38,6 +38,7 @@ Want to get involved? [Join our Discord!](https://discord.gg/W4cfwWRNZK)
 ```bash
 # Clone Realm
 git clone https://github.com/spellshift/realm.git && cd realm
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
 # Start Tavern (Server)
 go run ./tavern

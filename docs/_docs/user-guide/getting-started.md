@@ -11,6 +11,7 @@ permalink: user-guide/getting-started
 ```bash
 # Clone Repo
 git clone https://github.com/spellshift/realm && cd ./realm
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
 # Start Server
 go run ./tavern
@@ -38,7 +39,10 @@ To start Tavern, open a terminal and run the following:
 
 ```bash
 git clone https://github.com/spellshift/realm.git
-cd realm && go run ./tavern
+cd realm
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
+
+go run ./tavern
 ```
 
 ![starting-tavern](/assets/img/user-guide/getting-started/starting-tavern.png)
@@ -51,7 +55,10 @@ If your adventure requires you to roll for stealth Tavern's redirectors have you
 
 ```bash
 git clone https://github.com/spellshift/realm.git
-cd realm && go run ./tavern redirector --transport grpc http://127.0.0.1:8000
+cd realm
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
+
+go run ./tavern redirector --transport grpc http://127.0.0.1:8000
 ```
 
 
@@ -62,6 +69,7 @@ cd realm && go run ./tavern redirector --transport grpc http://127.0.0.1:8000
 ```bash
 git clone https://github.com/spellshift/realm.git
 cd realm/implants/imix
+git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
 cargo run
 ```
