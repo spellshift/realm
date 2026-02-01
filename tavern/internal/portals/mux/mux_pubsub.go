@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	gcppubsub "cloud.google.com/go/pubsub"
 	"gocloud.dev/pubsub"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/portals/portalpb"
@@ -178,4 +179,28 @@ func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub *pubsub.Subsc
 		}
 		m.dispatchMsg(topicID, msg)
 	}
+}
+
+// dispatchGCPMsg handles a raw GCP pubsub message, unmarshals it, and dispatches it locally.
+func (m *Mux) dispatchGCPMsg(ctx context.Context, topicID string, msg *gcppubsub.Message) {
+	defer msg.Ack()
+
+	// Check for loopback
+	if senderID, ok := msg.Attributes["sender_id"]; ok && senderID == m.serverID {
+		return
+	}
+
+	msgsReceived.WithLabelValues(topicID).Inc()
+
+	var mote portalpb.Mote
+	if err := proto.Unmarshal(msg.Data, &mote); err != nil {
+		slog.ErrorContext(ctx, "Failed to unmarshal mote", "topic", topicID, "error", err)
+		return
+	}
+
+	// Dispatch locally
+	m.dispatch(topicID, &mote)
+
+	// Add to history (messages from others also go into history)
+	m.addToHistory(topicID, &mote)
 }

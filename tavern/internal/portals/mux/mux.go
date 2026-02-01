@@ -51,6 +51,7 @@ func init() {
 type SubscriptionManager struct {
 	sync.RWMutex
 	active      map[string]*pubsub.Subscription
+	activeGCP   map[string]*gcppubsub.Subscription
 	refs        map[string]int
 	cancelFuncs map[string]context.CancelFunc
 }
@@ -133,6 +134,7 @@ func New(opts ...Option) *Mux {
 		},
 		subMgr: &SubscriptionManager{
 			active:      make(map[string]*pubsub.Subscription),
+			activeGCP:   make(map[string]*gcppubsub.Subscription),
 			refs:        make(map[string]int),
 			cancelFuncs: make(map[string]context.CancelFunc),
 		},
