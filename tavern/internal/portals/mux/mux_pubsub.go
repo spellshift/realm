@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"gocloud.dev/pubsub"
 	"google.golang.org/protobuf/proto"
@@ -124,7 +125,7 @@ func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
 	for _, ch := range subs {
 		select {
 		case ch <- mote:
-		default:
+		case <-time.After(100 * time.Millisecond):
 			// Drop message if subscriber is slow
 			slog.Warn("Dropping message for slow subscriber", "topic", topicID)
 			msgsDropped.WithLabelValues(topicID).Inc()
