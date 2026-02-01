@@ -101,13 +101,12 @@ var (
 	EnvGCPPublishFlowControlMaxOutstandingBytes    = EnvInteger{"PUBSUB_GCP_PUBLISH_FLOW_CONTROL_MAX_OUTSTANDING_BYTES", -1}
 	EnvGCPPublishFlowControlLimitExceededBehavior  = EnvString{"PUBSUB_GCP_PUBLISH_FLOW_CONTROL_LIMIT_EXCEEDED_BEHAVIOR", "ignore"}
 
-	EnvGCPReceiveMaxExtensionMs         = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_EXTENSION_MS", 0}
-	EnvGCPReceiveMaxExtensionPeriodMs   = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_EXTENSION_PERIOD_MS", 0}
-	EnvGCPReceiveMinExtensionPeriodMs   = EnvInteger{"PUBSUB_GCP_RECEIVE_MIN_EXTENSION_PERIOD_MS", 0}
-	EnvGCPReceiveMaxOutstandingMessages = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_MESSAGES", 1000}
-	EnvGCPReceiveMaxOutstandingBytes    = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_BYTES", -1}
-	EnvGCPReceiveNumGoroutines          = EnvInteger{"PUBSUB_GCP_RECEIVE_NUM_GOROUTINES", 10}
-	EnvGCPReceiveSynchronous            = EnvBool{"PUBSUB_GCP_RECEIVE_SYNCHRONOUS"}
+	EnvGCPReceiveMaxExtensionMs             = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_EXTENSION_MS", 0}
+	EnvGCPReceiveMaxDurationPerAckExtension = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_DURATION_PER_ACK_EXTENSION_MS", 0}
+	EnvGCPReceiveMinDurationPerAckExtension = EnvInteger{"PUBSUB_GCP_RECEIVE_MIN_DURATION_PER_ACK_EXTENSION_MS", 0}
+	EnvGCPReceiveMaxOutstandingMessages     = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_MESSAGES", 1000}
+	EnvGCPReceiveMaxOutstandingBytes        = EnvInteger{"PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_BYTES", -1}
+	EnvGCPReceiveNumGoroutines              = EnvInteger{"PUBSUB_GCP_RECEIVE_NUM_GOROUTINES", 10}
 
 	EnvGCPSubscriptionTTLHours  = EnvInteger{"PUBSUB_GCP_SUBSCRIPTION_TTL_HOURS", 24}
 	EnvGCPPublishReadyTimeoutMs = EnvInteger{"PUBSUB_GCP_PUBLISH_READY_TIMEOUT_MS", 0}
@@ -203,13 +202,12 @@ func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {
 	}
 
 	recvSettings := gcppubsub.ReceiveSettings{
-		MaxExtension:           time.Duration(EnvGCPReceiveMaxExtensionMs.Int()) * time.Millisecond,
-		MaxExtensionPeriod:     time.Duration(EnvGCPReceiveMaxExtensionPeriodMs.Int()) * time.Millisecond,
-		MinExtensionPeriod:     time.Duration(EnvGCPReceiveMinExtensionPeriodMs.Int()) * time.Millisecond,
-		MaxOutstandingMessages: EnvGCPReceiveMaxOutstandingMessages.Int(),
-		MaxOutstandingBytes:    EnvGCPReceiveMaxOutstandingBytes.Int(),
-		NumGoroutines:          EnvGCPReceiveNumGoroutines.Int(),
-		Synchronous:            EnvGCPReceiveSynchronous.Bool(),
+		MaxExtension:               time.Duration(EnvGCPReceiveMaxExtensionMs.Int()) * time.Millisecond,
+		MaxDurationPerAckExtension: time.Duration(EnvGCPReceiveMaxDurationPerAckExtension.Int()) * time.Millisecond,
+		MinDurationPerAckExtension: time.Duration(EnvGCPReceiveMinDurationPerAckExtension.Int()) * time.Millisecond,
+		MaxOutstandingMessages:     EnvGCPReceiveMaxOutstandingMessages.Int(),
+		MaxOutstandingBytes:        EnvGCPReceiveMaxOutstandingBytes.Int(),
+		NumGoroutines:              EnvGCPReceiveNumGoroutines.Int(),
 	}
 
 	ttl := time.Duration(EnvGCPSubscriptionTTLHours.Int()) * time.Hour

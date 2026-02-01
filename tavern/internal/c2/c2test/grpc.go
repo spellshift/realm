@@ -49,7 +49,7 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	grpcInSub, err := pubsub.OpenSubscription(ctx, subInput)
 	require.NoError(t, err)
 	grpcShellMux := stream.NewMux(grpcOutTopic, grpcInSub)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+	portalMux := mux.New()
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
