@@ -171,18 +171,28 @@ func printReport(mote *portalpb.Mote) {
 		log.Fatalf("Failed to unmarshal final trace data: %v", err)
 	}
 
-	fmt.Printf("\nTrace Report (Total Duration: %d µs)\n", time.Now().UTC().UnixMicro()-traceData.StartMicros)
+	totalDuration := time.Now().UTC().UnixMicro() - traceData.StartMicros
+	fmt.Printf("\nTrace Report (Total Duration: %s)\n", formatDuration(totalDuration))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Step Name\tTimestamp\tDelta (µs)")
+	fmt.Fprintln(w, "Step Name\tTimestamp\tDelta")
 
 	lastTime := traceData.StartMicros
 
 	for _, evt := range traceData.Events {
 		delta := evt.TimestampMicros - lastTime
 		ts := time.UnixMicro(evt.TimestampMicros).UTC().Format("15:04:05.000000")
-		fmt.Fprintf(w, "%s\t%s\t%d\n", evt.Kind.String(), ts, delta)
+		fmt.Fprintf(w, "%s\t%s\t%s\n", evt.Kind.String(), ts, formatDuration(delta))
 		lastTime = evt.TimestampMicros
 	}
 	w.Flush()
+}
+
+func formatDuration(micros int64) string {
+	if micros >= 1_000_000 {
+		return fmt.Sprintf("%.4f seconds", float64(micros)/1_000_000.0)
+	} else if micros >= 1_000 {
+		return fmt.Sprintf("%.4fms", float64(micros)/1_000.0)
+	}
+	return fmt.Sprintf("%dµs", micros)
 }
