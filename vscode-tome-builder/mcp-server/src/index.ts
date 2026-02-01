@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { TOMES_DOC, ELDRITCH_DOC } from "./docs";
+import { FILE_WRITE_EXAMPLE, PERSIST_SERVICE_EXAMPLE } from "./examples";
 
 const server = new Server(
   {
@@ -37,6 +38,22 @@ const getDocumentationTool: Tool = {
     }
 };
 
+const getTomeExamplesTool: Tool = {
+    name: "get_tome_examples",
+    description: "Get example Tomes to understand structure and best practices. Returns metadata and script content.",
+    inputSchema: {
+        type: "object",
+        properties: {
+            topic: {
+                type: "string",
+                enum: ["file_write", "persist_service"],
+                description: "The example to retrieve. 'file_write' is simple, 'persist_service' is complex (templates, os checks)."
+            }
+        },
+        required: ["topic"]
+    }
+};
+
 const validateTomeStructureTool: Tool = {
     name: "validate_tome_structure",
     description: "Validate the structure of a Tome (metadata.yml and main.eldritch).",
@@ -52,7 +69,7 @@ const validateTomeStructureTool: Tool = {
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-        tools: [getDocumentationTool, validateTomeStructureTool]
+        tools: [getDocumentationTool, getTomeExamplesTool, validateTomeStructureTool]
     };
 });
 
@@ -71,6 +88,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
         }
         return { content: [], isError: true };
+    }
+
+    if (name === "get_tome_examples") {
+        const topic = (args as any).topic;
+        if (topic === "file_write") {
+            return {
+                content: [
+                    { type: "text", text: "## metadata.yml\n" + FILE_WRITE_EXAMPLE.metadata },
+                    { type: "text", text: "## main.eldritch\n" + FILE_WRITE_EXAMPLE.script }
+                ]
+            };
+        } else if (topic === "persist_service") {
+             return {
+                content: [
+                    { type: "text", text: "## metadata.yml\n" + PERSIST_SERVICE_EXAMPLE.metadata },
+                    { type: "text", text: "## main.eldritch\n" + PERSIST_SERVICE_EXAMPLE.script }
+                ]
+            };
+        }
+         return { content: [], isError: true };
     }
 
     if (name === "validate_tome_structure") {
