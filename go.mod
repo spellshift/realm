@@ -7,6 +7,7 @@ toolchain go1.24.3
 require (
 	cloud.google.com/go/pubsub/v2 v2.3.0
 	cloud.google.com/go/secretmanager v1.15.0
+	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.1
 	filippo.io/edwards25519 v1.1.0
@@ -22,6 +23,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.5
 	github.com/vektah/gqlparser/v2 v2.5.21
+	go.opencensus.io v0.24.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/net v0.48.0
 	golang.org/x/oauth2 v0.30.0
@@ -46,6 +48,8 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.1 // indirect
+	github.com/go-kit/log v0.2.1 // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
@@ -60,10 +64,10 @@ require (
 	github.com/mmcloughlin/avo v0.6.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pjbgf/sha1cd v0.3.1 // indirect
+	github.com/prometheus/statsd_exporter v0.22.7 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.62.0 // indirect
@@ -77,6 +81,7 @@ require (
 	google.golang.org/genproto v0.0.0-20250715232539-7130f93afb79 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (
