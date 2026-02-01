@@ -18,7 +18,7 @@ import (
 // MockPortalServer implements the Portal service.
 type MockPortalServer struct {
 	portalpb.UnimplementedPortalServer
-	mu      sync.Mutex
+	mu sync.Mutex
 
 	// For testing, we can hook into received motes
 	onMote func(mote *portalpb.Mote, send func(*portalpb.Mote))
@@ -81,7 +81,9 @@ func BenchmarkProxy(b *testing.B) {
 					sent := 0
 					data := make([]byte, chunkSize)
 					// Fill with some data
-					for i := range data { data[i] = byte(i) }
+					for i := range data {
+						data[i] = byte(i)
+					}
 
 					currentSeq := uint64(0)
 
