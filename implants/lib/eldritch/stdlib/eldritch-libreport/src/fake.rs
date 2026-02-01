@@ -25,7 +25,7 @@ impl ReportLibrary for ReportLibraryFake {
     fn user_password(&self, _username: String, _password: String) -> Result<(), String> {
         Ok(())
     }
-    
+
     fn ntlm_hash(&self, _username: String, _hash: String) -> Result<(), String> {
         Ok(())
     }
