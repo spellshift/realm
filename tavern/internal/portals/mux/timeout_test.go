@@ -12,7 +12,7 @@ import (
 
 func TestMux_DispatchTimeout_Drop(t *testing.T) {
 	// Setup Mux with small buffer size
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1))
+	m := New(WithSubscriberBufferSize(1))
 	ctx := context.Background()
 	topicID := "test-timeout-drop"
 
@@ -53,7 +53,7 @@ func TestMux_DispatchTimeout_Drop(t *testing.T) {
 
 func TestMux_DispatchTimeout_Success(t *testing.T) {
 	// Setup Mux with small buffer size
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1))
+	m := New(WithSubscriberBufferSize(1))
 	ctx := context.Background()
 	topicID := "test-timeout-success"
 

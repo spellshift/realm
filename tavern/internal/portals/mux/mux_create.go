@@ -63,24 +63,20 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 	}
 
 	// 3. Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicIn, subName)
-	sub, err := m.openSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, topicIn, subName)
 	if err != nil {
-		return portalID, nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return portalID, nil, fmt.Errorf("failed to open subscription for topic %s: %w", topicIn, err)
 	}
 
 	// Store in subMgr
 	m.subMgr.Lock()
 
 	// Check if existing sub
-	if existingSub, ok := m.subMgr.active[subName]; ok {
-		// Existing found. Shutdown new one and cleanup old one if needed.
+	if _, ok := m.subMgr.active[subName]; ok {
+		// Existing found. Shutdown existing one's loop.
 		if cancel, ok := m.subMgr.cancelFuncs[subName]; ok {
 			cancel()
 		}
-		// We are overwriting, so we must assume the old one is invalid or we are restarting.
-		existingSub.Shutdown(context.Background())
 	}
 
 	m.subMgr.active[subName] = sub
@@ -96,7 +92,7 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 
 	teardown := func() {
 		m.subMgr.Lock()
-		s, ok := m.subMgr.active[subName]
+		_, ok := m.subMgr.active[subName]
 		cancel := m.subMgr.cancelFuncs[subName]
 		if ok {
 			delete(m.subMgr.active, subName)
@@ -108,8 +104,6 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) 
 			if cancel != nil {
 				cancel()
 			}
-			// Shutdown using Background context
-			s.Shutdown(context.Background())
 		}
 
 		// Update DB to Closed using ID

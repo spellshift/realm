@@ -3,8 +3,6 @@ package mux
 import (
 	"context"
 	"fmt"
-
-	"gocloud.dev/pubsub"
 )
 
 // OpenPortal opens an existing portal for viewing (Client side).
@@ -21,11 +19,9 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 			m.subMgr.Lock()
 			m.subMgr.refs[subName]--
 			shouldShutdown := false
-			var s *pubsub.Subscription
 			var cancel context.CancelFunc
 			if m.subMgr.refs[subName] <= 0 {
-				if sub, ok := m.subMgr.active[subName]; ok {
-					s = sub
+				if _, ok := m.subMgr.active[subName]; ok {
 					cancel = m.subMgr.cancelFuncs[subName]
 					delete(m.subMgr.active, subName)
 					delete(m.subMgr.refs, subName)
@@ -38,9 +34,6 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 			if shouldShutdown {
 				if cancel != nil {
 					cancel()
-				}
-				if s != nil {
-					s.Shutdown(context.Background())
 				}
 			}
 		}, nil
@@ -54,34 +47,30 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 	}
 
 	// Connect
-	// Updated SubURL usage
-	subURL := m.SubURL(topicOut, subName)
-	sub, err := m.openSubscription(ctx, subURL)
+	sub, err := m.openSubscription(ctx, topicOut, subName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open subscription %s: %w", subURL, err)
+		return nil, fmt.Errorf("failed to open subscription for topic %s: %w", topicOut, err)
 	}
 
 	m.subMgr.Lock()
 	// RACE CONDITION CHECK:
 	// Re-check cache in case another goroutine created it while we were provisioning/connecting
-	if existingSub, ok := m.subMgr.active[subName]; ok {
+	if _, ok := m.subMgr.active[subName]; ok {
 		// Another routine won the race. Use theirs.
 		m.subMgr.refs[subName]++
 		m.subMgr.Unlock()
 
 		// Close our unused subscription immediately
-		sub.Shutdown(context.Background())
+		// For our interface, dropping it is sufficient as we haven't started receiveLoop.
 
 		// Return teardown for the EXISTING subscription
 		return func() {
 			m.subMgr.Lock()
 			m.subMgr.refs[subName]--
 			shouldShutdown := false
-			var s *pubsub.Subscription
 			var cancel context.CancelFunc
 			if m.subMgr.refs[subName] <= 0 {
-				if sub, ok := m.subMgr.active[subName]; ok {
-					s = sub
+				if _, ok := m.subMgr.active[subName]; ok {
 					cancel = m.subMgr.cancelFuncs[subName]
 					delete(m.subMgr.active, subName)
 					delete(m.subMgr.refs, subName)
@@ -94,9 +83,6 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 			if shouldShutdown {
 				if cancel != nil {
 					cancel()
-				}
-				if existingSub != nil {
-					s.Shutdown(context.Background())
 				}
 			}
 		}, nil
@@ -122,11 +108,9 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		m.subMgr.Lock()
 		m.subMgr.refs[subName]--
 		shouldShutdown := false
-		var s *pubsub.Subscription
 		var cancel context.CancelFunc
 		if m.subMgr.refs[subName] <= 0 {
-			if sub, ok := m.subMgr.active[subName]; ok {
-				s = sub
+			if _, ok := m.subMgr.active[subName]; ok {
 				cancel = m.subMgr.cancelFuncs[subName]
 				delete(m.subMgr.active, subName)
 				delete(m.subMgr.refs, subName)
@@ -139,9 +123,6 @@ func (m *Mux) OpenPortal(ctx context.Context, portalID int) (func(), error) {
 		if shouldShutdown {
 			if cancel != nil {
 				cancel()
-			}
-			if s != nil {
-				s.Shutdown(context.Background())
 			}
 		}
 	}

@@ -62,7 +62,7 @@ func TestReverseShell_E2E(t *testing.T) {
 
 	wsMux := stream.NewMux(pubInput, subOutput)
 	grpcMux := stream.NewMux(pubOutput, subInput)
-	portalMux := mux.New(mux.WithInMemoryDriver())
+	portalMux := mux.New()
 
 	// Generate test ED25519 key for JWT signing
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)

@@ -18,7 +18,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 	defer client.Close()
 
 	// Setup Mux
-	m := New(WithInMemoryDriver(), WithSubscriberBufferSize(1000))
+	m := New(WithSubscriberBufferSize(1000))
 	ctx := context.Background()
 
 	// Setup Entities
