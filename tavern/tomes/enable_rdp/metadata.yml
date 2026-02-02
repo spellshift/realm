@@ -1,0 +1,5 @@
+name: Enable RDP
+description: Configures the system to be accessible via RDP by enabling fDenyTSConnections and opening port 3389 in the firewall.
+author: Jules
+support_model: FIRST_PARTY
+tactic: LATERAL_MOVEMENT
