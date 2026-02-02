@@ -27,7 +27,7 @@ Want to get involved? [Join our Discord!](https://discord.gg/W4cfwWRNZK)
 
 - **Native GCP Integration:** Leverage the power and scalability of Google Cloud directly within your red team engagements. Realm seamlessly integrates with GCP services, boosting your attack capabilities without reinventing the wheel.
 
-- **Stateless Server Architecture:** While Realm officially supports GCP, you may deploy it's [stateless docker container](https://hub.docker.com/r/spellshift/tavern) to any environment that best fits your needs.
+- **Stateless Server Architecture:** While Realm officially supports GCP, you may deploy its [stateless docker container](https://hub.docker.com/r/spellshift/tavern) to any environment that best fits your needs.
 
 - **Focus on Reliability:** Realm always prioritizes quality over quantity, enabling operators to focus on the engagement instead of spending hours troubleshooting bugs. Extensive testing and rigorous code review ensure unwavering reliability, while an intuitive design and clear documentation keep the learning curve minimal. After reaching a stable `1.0.0` release, Realm will follow [Semantic Versioning](https://semver.org/), ensuring the stability of older deployments.
 

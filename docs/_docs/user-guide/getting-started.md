@@ -51,7 +51,7 @@ The warnings you see here indicate that there are settings recommended for produ
 
 ### Tavern (Redirector)
 
-If your adventure requires you to roll for stealth Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including GRPC, HTTP1, and DNS. Out of the box tavern c2 only uses grpc but by adding a redirector you unlock any any supported protocol.
+If your adventure requires you to roll for stealth, Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including GRPC, HTTP1, and DNS. Out of the box tavern c2 only uses grpc but by adding a redirector you unlock any supported protocol.
 
 ```bash
 git clone https://github.com/spellshift/realm.git
@@ -87,7 +87,7 @@ These configurations can be controlled via Environment Variables at `imix` compi
 
 ### Quests
 
-Now it's time to provide our [Beacon](/user-guide/terminology#beacon) it's first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+Now it's time to provide our [Beacon](/user-guide/terminology#beacon) its first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 #### Beacon Selection
 
@@ -115,7 +115,7 @@ Lastly, we'll be greeted with a prompt displaying a summary of the [Quest](/user
 
 #### Results
 
-Now, in your `imix` logs you'll see that when it calls back, it will obtain the [Tome](/user-guide/terminology#tome) from Tavern and evaluate it. On it's next callback, it will report the results.
+Now, in your `imix` logs you'll see that when it calls back, it will obtain the [Tome](/user-guide/terminology#tome) from Tavern and evaluate it. On its next callback, it will report the results.
 
 ![imix-tome-eval](/assets/img/user-guide/getting-started/imix-tome-eval.png)
 

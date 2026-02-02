@@ -7,7 +7,7 @@ permalink: dev-guide/introduction
 ---
 # Overview
 
-This section of the documentation is meant for new Realm-contributors, and should be read in it's entirety before submitting your first PR. Below you can learn more about our testing & documentation requirements, project layout, and some of the internals of our codebase.
+This section of the documentation is meant for new Realm-contributors, and should be read in its entirety before submitting your first PR. Below you can learn more about our testing & documentation requirements, project layout, and some of the internals of our codebase.
 
 ## Contribution Guidelines
 
@@ -73,7 +73,7 @@ In an attempt to reduce the complexity of merges, we enforce a linear history fo
   * **[tavern/internal](https://github.com/spellshift/realm/tree/main/tavern/internal)** contains various internal packages that makeup Tavern
     * **[tavern/internal/www](https://github.com/spellshift/realm/tree/main/tavern/internal/www)** contains Tavern's UI code
 * **[terraform](https://github.com/spellshift/realm/tree/main/terraform)** contains the Terraform used to deploy a production ready Realm instance. See [Tavern User Guide](https://docs.realm.pub/user-guide/tavern) to learn how to use.
-* **[tests](https://github.com/spellshift/realm/tree/main/tests)** miscellaneous files and example code used for testing. Generally won't be used but required for some niche situations like deadlocking cargo build.
+* **[tests](https://github.com/spellshift/realm/tree/main/tests)** miscellaneous files and example code used for testing. Generally won't be used but is required for some niche situations like deadlocking cargo build.
 * **[vscode](https://github.com/spellshift/realm/tree/main/vscode)** contains our Eldritch VSCode integration source code **(Unmaintained)**
 
 # Where to Start?
