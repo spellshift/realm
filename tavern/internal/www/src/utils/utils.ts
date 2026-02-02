@@ -39,7 +39,10 @@ export function classNames(...classes: string[]) {
 }
 
 export const convertArrayToObject = (array: Array<any>) =>
-    array.reduce((acc, curr) => (acc[curr] = curr, acc), {});
+    array.reduce((acc, curr) => {
+        acc[curr] = curr;
+        return acc;
+    }, {});
 
 export const safelyJsonParse = (value: string) => {
     let error = false;
@@ -126,7 +129,10 @@ export function getTomeFilterNameByTypes(typeFilters: Array<FilterBarOption>): T
 };
 
 export const getFormatForPrincipal = (beacons: BeaconEdge[]) => {
-    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => (acc[curr.node["principal"]] = curr, acc), {});
+    const uniqueListOFPrincipals = beacons.reduce((acc: any, curr: BeaconEdge) => {
+        acc[curr.node["principal"]] = curr;
+        return acc;
+    }, {});
     const princialUserList = Object.values(PrincipalAdminTypes) as Array<string>;
     const finalList = [] as Array<string>;
     for (const property in uniqueListOFPrincipals) {
