@@ -31,6 +31,8 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
             #[cfg(debug_assertions)]
             log::error!("Portal transport error: {}", e);
         }
+        #[cfg(debug_assertions)]
+        log::info!("Portal transport loop exited");
     });
 
     // Map of stream_id -> StreamContext
@@ -44,14 +46,15 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     let (out_tx, mut out_rx) = mpsc::channel::<Mote>(100);
 
     // Send initial registration message
-    if req_tx
+    if let Err(e) = req_tx
         .send(CreatePortalRequest {
             context: Some(task_context.clone()),
             mote: None,
         })
         .await
-        .is_err()
     {
+        #[cfg(debug_assertions)]
+        log::error!("Failed to send initial portal registration: {}", e);
         return Err(anyhow::anyhow!(
             "Failed to send initial portal registration"
         ));
@@ -73,6 +76,8 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                     }
                     None => {
                         // Transport closed
+                        #[cfg(debug_assertions)]
+                        log::info!("Transport channel closed (resp_rx), shutting down portal loop");
                         break;
                     }
                 }
@@ -86,11 +91,15 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                             context: Some(task_context.clone()),
                             mote: Some(mote),
                         };
-                        if req_tx.send(req).await.is_err() {
+                        if let Err(e) = req_tx.send(req).await {
+                            #[cfg(debug_assertions)]
+                            log::error!("Failed to send outgoing mote to transport: {}", e);
                             break;
                         }
                     }
                     None => {
+                        #[cfg(debug_assertions)]
+                        log::info!("Outgoing mote channel (out_rx) closed");
                         break; // All handlers closed? Unlikely.
                     }
                 }
@@ -149,10 +158,12 @@ async fn handle_incoming_mote(
         let stream_id_clone = stream_id.clone();
 
         let task = tokio::spawn(async move {
-            if let Err(e) = stream_handler(stream_id_clone, rx, out_tx_clone).await {
+            if let Err(e) = stream_handler(stream_id_clone.clone(), rx, out_tx_clone).await {
                 #[cfg(debug_assertions)]
-                log::error!("Stream handler error: {}", e);
+                log::error!("Stream handler error for {}: {}", stream_id_clone, e);
             }
+            #[cfg(debug_assertions)]
+            log::info!("Stream handler finished for {}", stream_id_clone);
         });
         tasks.push(task);
     }
@@ -220,6 +231,8 @@ async fn stream_handler(
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
         }
     } else {
+        #[cfg(debug_assertions)]
+        log::warn!("Received mote with no payload for stream {}", stream_id);
         Ok(())
     }
 }

