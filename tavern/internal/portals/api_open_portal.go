@@ -3,6 +3,7 @@ package portals
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 
 	"google.golang.org/grpc/codes"
@@ -100,7 +101,13 @@ func sendPortalInput(ctx context.Context, portalID int, gstream portalpb.Portal_
 		// Receive from gRPC stream
 		req, err := gstream.Recv()
 		if err != nil {
-			slog.InfoContext(ctx, "portal gRPC stream closed", "portal_id", portalID, "error", err)
+			if err == io.EOF {
+				slog.InfoContext(ctx, "portal gRPC stream ended (EOF)", "portal_id", portalID)
+			} else if status.Code(err) == codes.Canceled {
+				slog.InfoContext(ctx, "portal gRPC stream canceled", "portal_id", portalID)
+			} else {
+				slog.WarnContext(ctx, "portal gRPC stream error", "portal_id", portalID, "error", err)
+			}
 			break
 		}
 		mote := req.GetMote()
@@ -137,9 +144,11 @@ func sendPortalOutput(ctx context.Context, portalID int, gstream portalpb.Portal
 	for {
 		select {
 		case <-ctx.Done():
+			slog.InfoContext(ctx, "portal output loop context done", "portal_id", portalID, "error", ctx.Err())
 			return
 		case mote, ok := <-recv:
 			if !ok {
+				slog.InfoContext(ctx, "portal output channel closed", "portal_id", portalID)
 				return
 			}
 
