@@ -70,7 +70,7 @@ const Shell = () => {
                 ws.current = null;
             }
         }
-    }, [shellId]);
+    }, [shellId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Setup Ping WebSocket and Loop
     useEffect(() => {
@@ -119,7 +119,7 @@ const Shell = () => {
                 pingWs.current = null;
             }
         };
-    }, [shellId]);
+    }, [shellId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const renderTerminal = (div: HTMLDivElement) => { if (div) { termRef.current?.open(div); } };
 
