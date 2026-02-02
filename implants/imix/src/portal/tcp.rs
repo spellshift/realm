@@ -30,7 +30,11 @@ pub async fn handle_tcp(
         .context("Failed to connect TCP")?;
 
     #[cfg(debug_assertions)]
-    log::info!("Connected TCP to {} (local: {:?})", addr, stream.local_addr());
+    log::info!(
+        "Connected TCP to {} (local: {:?})",
+        addr,
+        stream.local_addr()
+    );
 
     let (mut read_half, mut write_half) = stream.into_split();
 
@@ -61,7 +65,10 @@ pub async fn handle_tcp(
                     let mote = sequencer.new_tcp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
                         #[cfg(debug_assertions)]
-                        log::warn!("Failed to send mote to C2 (channel closed) for {}", addr_for_read);
+                        log::warn!(
+                            "Failed to send mote to C2 (channel closed) for {}",
+                            addr_for_read
+                        );
                         break;
                     }
                 }

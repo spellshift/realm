@@ -27,9 +27,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Start transport loop
     // Note: We use a separate task for transport since it might block or be long-running
     let transport_handle = tokio::spawn(async move {
-        if let Err(e) = transport.create_portal(req_rx, resp_tx).await {
+        if let Err(_e) = transport.create_portal(req_rx, resp_tx).await {
             #[cfg(debug_assertions)]
-            log::error!("Portal transport error: {}", e);
+            log::error!("Portal transport error: {}", _e);
         }
         #[cfg(debug_assertions)]
         log::info!("Portal transport loop exited");
@@ -46,7 +46,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     let (out_tx, mut out_rx) = mpsc::channel::<Mote>(100);
 
     // Send initial registration message
-    if let Err(e) = req_tx
+    if let Err(_e) = req_tx
         .send(CreatePortalRequest {
             context: Some(task_context.clone()),
             mote: None,
@@ -54,7 +54,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
         .await
     {
         #[cfg(debug_assertions)]
-        log::error!("Failed to send initial portal registration: {}", e);
+        log::error!("Failed to send initial portal registration: {}", _e);
         return Err(anyhow::anyhow!(
             "Failed to send initial portal registration"
         ));
@@ -68,9 +68,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                     Some(resp) => {
                          #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
-                            if let Err(e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
+                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
                                 #[cfg(debug_assertions)]
-                                log::error!("Error handling incoming mote: {}", e);
+                                log::error!("Error handling incoming mote: {}", _e);
                             }
                          }
                     }
@@ -91,9 +91,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                             context: Some(task_context.clone()),
                             mote: Some(mote),
                         };
-                        if let Err(e) = req_tx.send(req).await {
+                        if let Err(_e) = req_tx.send(req).await {
                             #[cfg(debug_assertions)]
-                            log::error!("Failed to send outgoing mote to transport: {}", e);
+                            log::error!("Failed to send outgoing mote to transport: {}", _e);
                             break;
                         }
                     }
@@ -158,9 +158,9 @@ async fn handle_incoming_mote(
         let stream_id_clone = stream_id.clone();
 
         let task = tokio::spawn(async move {
-            if let Err(e) = stream_handler(stream_id_clone.clone(), rx, out_tx_clone).await {
+            if let Err(_e) = stream_handler(stream_id_clone.clone(), rx, out_tx_clone).await {
                 #[cfg(debug_assertions)]
-                log::error!("Stream handler error for {}: {}", stream_id_clone, e);
+                log::error!("Stream handler error for {}: {}", stream_id_clone, _e);
             }
             #[cfg(debug_assertions)]
             log::info!("Stream handler finished for {}", stream_id_clone);

@@ -65,7 +65,10 @@ pub async fn handle_udp(
                     let mote = sequencer.new_udp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
                         #[cfg(debug_assertions)]
-                        log::warn!("Failed to send UDP mote to C2 (channel closed) for {}", addr_for_read);
+                        log::warn!(
+                            "Failed to send UDP mote to C2 (channel closed) for {}",
+                            addr_for_read
+                        );
                         break;
                     }
                 }
