@@ -89,7 +89,7 @@ var (
 	EnvPubSubTopicShellOutput        = EnvString{"PUBSUB_TOPIC_SHELL_OUTPUT", "mem://shell_output"}
 	EnvPubSubSubscriptionShellOutput = EnvString{"PUBSUB_SUBSCRIPTION_SHELL_OUTPUT", "mem://shell_output"}
 
-	EnvPubSubSubscriberMaxMessagesBuffered = EnvInteger{"PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED", 15625}
+	EnvPubSubSubscriberMaxMessagesBuffered = EnvInteger{"PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED", 32768}
 
 	// PubSub Configuration Variables
 	EnvGCPPublishDelayThresholdMs                  = EnvInteger{"PUBSUB_GCP_PUBLISH_DELAY_THRESHOLD_MS", 10}

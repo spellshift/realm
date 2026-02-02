@@ -197,3 +197,9 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 	m := New(WithSubscriberBufferSize(expected))
 	assert.Equal(t, expected, m.subs.bufferSize)
 }
+
+func TestDefaultSubscriberBufferSize(t *testing.T) {
+	expected := 32768
+	m := New()
+	assert.Equal(t, expected, m.subs.bufferSize)
+}

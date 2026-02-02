@@ -177,7 +177,7 @@ func TestConfigurePubSubFromEnv(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Default", func(t *testing.T) {
-		assert.Equal(t, 15625, EnvPubSubSubscriberMaxMessagesBuffered.Int())
+		assert.Equal(t, 32768, EnvPubSubSubscriberMaxMessagesBuffered.Int())
 	})
 
 	t.Run("Set", func(t *testing.T) {
