@@ -28,7 +28,7 @@ Hosts are in-scope systems for the current engagement. A host can have multiple 
 
 ### Quest
 
-Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks assocaited with a single beacon.
+Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks associated with a single beacon.
 
 ### Task
 
@@ -36,7 +36,7 @@ A task is a single instance of a tome plus its parameters executed against a sin
 
 ### Eldritch
 
-Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to progammatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
+Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to programmatically define red team operations. Many of the language's built-in features do not rely on system binaries. For more information, please see the [Eldritch section](/user-guide/eldritch) of the documentation.
 
 ### Tome
 

@@ -180,10 +180,10 @@ not persist across agent reboots.
 `agent.set_callback_uri(new_uri: str) -> None`
 
 The <b>agent.set_callback_uri</b> method takes an string and changes the
-running agent's callback uri to the passed value. This configuration change will
+running agent's callback URI to the passed value. This configuration change will
 not persist across agent reboots. NOTE: please ensure the passed URI path is correct
 for the underlying `Transport` being used, as a URI can take many forms and we make no
-assumptions on `Transport` requirements no gut checks are applied to the passed string.
+assumptions on `Transport` requirements no checks are applied to the passed string.
 
 ---
 
@@ -556,13 +556,13 @@ The <b>http.download</b> method downloads a file at the URI specified in `uri` t
 
 `http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query paramters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
 `http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form paramters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 
@@ -640,7 +640,7 @@ Results will be in the format:
 ]
 ```
 
-A ports status can be open, closed, or timeout:
+A port's status can be open, closed, or timeout:
 
 |**State**|**Protocol**| **Meaning**                                          |
 |---------|------------|------------------------------------------------------|
@@ -672,7 +672,7 @@ The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move 
 `pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
 The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
-ssh_copy will return `"Sucess"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
+ssh_copy will return `"Success"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
 ssh_copy will overwrite the remote file if it exists.
 The file directory the `dst` file exists in must exist in order for ssh_copy to work.
@@ -774,7 +774,7 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method returns the name of the process from it's given process id.
+The <b>process.name</b> method returns the name of the process from its given process ID.
 
 ### process.netstat
 
@@ -800,7 +800,7 @@ _Currently only shows LISTENING TCP connections_
 
 ## Random
 
-The random library is designed to enable generation of cryptogrphically secure random vaules. None of these functions will be blocking.
+The random library is designed to enable generation of cryptographically secure random values. None of these functions will be blocking.
 
 ### random.bool
 
@@ -855,7 +855,7 @@ The <b>regex.replace</b> method returns the given haystack with the first captur
 
 ## Report
 
-The report library is designed to enable reporting structured data to Tavern. It's API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
+The report library is designed to enable reporting structured data to Tavern. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
 
 ### report.file
 
@@ -969,7 +969,7 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 
 `sys.get_os() -> Dict`
 
-The <b>sys.get_os</b> method returns a dictionary that describes the current systems OS.
+The <b>sys.get_os</b> method returns a dictionary that describes the current system's OS.
 An example is below:
 
 ```json

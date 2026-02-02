@@ -93,7 +93,7 @@ After your certificate has successfully provisioned, it may still take a while (
 |oauth_domain|Only if OAuth is configured|The OAuth Domain that the IDP should redirect to e.g. tavern.mydomain.com (should be the domain you set a CNAME record for while configuring OAuth).|
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
-|tavern_container_image|No|Override the dafult tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.| 
+|tavern_container_image|No|Override the default tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.|
 
 ### Manual Deployment Tips
 
@@ -365,7 +365,7 @@ Running Tavern with the `ENABLE_PPROF` environment variable set will enable perf
 ## Tavern docker image tags explained
 
 Tavern publishes a couple different images.
-- `vX.Y.Z` is a semver style verision string. Each Realm release creates a git tag and container image .
+- `vX.Y.Z` is a semver style version string. Each Realm release creates a git tag and container image .
 - `edge` & `main` are the latest version of tavern in the git repos main branch. These two exist for developers to deploy the latest changes and coerce terraform into deploying upgrades as needed.
 - `sha-<hash>` represents the specific container per a git commit to main. The hash will match the git commit hash as well this can be verified in the docker build workflow logs.
 
