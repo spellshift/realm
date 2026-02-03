@@ -322,7 +322,7 @@ def windows_service_manager(service_name, service_display_name, service_descript
     create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path +
                            " displayname="+service_display_name+" start= auto type= own")
     if 'ERROR' in create_res['stdout'] or 'USAGE' in create_res['stdout'] or create_res['stderr'] != "":
-        print("Failed to create service:\n"+create_res+"\n")
+        print("Failed to start service:\n"+str(start_res)+"\n")
         print("\n")
         return
 
