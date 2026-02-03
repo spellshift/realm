@@ -29,6 +29,11 @@ pub async fn handle_tcp(
         .await
         .context("Failed to connect TCP")?;
 
+    // Disable Nagle's algorithm
+    stream
+        .set_nodelay(true)
+        .context("Failed to set TCP_NODELAY")?;
+
     #[cfg(debug_assertions)]
     log::info!(
         "Connected TCP to {} (local: {:?})",
@@ -61,6 +66,12 @@ pub async fn handle_tcp(
                     break; // EOF
                 }
                 Ok(n) => {
+                    #[cfg(debug_assertions)]
+                    log::debug!(
+                        "← TCP {} {n} bytes from portal stream ",
+                        dst_addr_clone.clone()
+                    );
+
                     let data = buf[0..n].to_vec();
                     let mote = sequencer.new_tcp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
@@ -86,11 +97,17 @@ pub async fn handle_tcp(
         if let Some(Payload::Tcp(tcp)) = mote.payload
             && !tcp.data.is_empty()
         {
+            #[cfg(debug_assertions)]
+            let n = tcp.data.len();
+
             match write_half.write_all(&tcp.data).await {
-                Ok(_) => {}
+                Ok(_) => {
+                    #[cfg(debug_assertions)]
+                    log::debug!("→ TCP {dst_addr} {n} bytes to portal stream ");
+                }
                 Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write tcp to {}: {_e:?}", addr);
+                    log::error!("failed to write tcp ({n} bytes)to {}: {_e:?}", addr);
 
                     break;
                 }
@@ -99,6 +116,7 @@ pub async fn handle_tcp(
     }
 
     // Cleanup
+    let _ = write_half.shutdown().await;
     let _ = read_task.await;
 
     Ok(())
