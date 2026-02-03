@@ -1,0 +1,48 @@
+def enable_rdp_registry():
+    hive = "HKEY_LOCAL_MACHINE"
+    path = "SYSTEM\\CurrentControlSet\\Control\\Terminal Server"
+    key = "fDenyTSConnections"
+
+    print(f"Setting {hive}\\{path}\\{key} to 0")
+    if sys.write_reg_int(hive, path, key, "REG_DWORD", 0):
+        print("Registry write successful.")
+    else:
+        print("Registry write failed. Are you running as Administrator?")
+        return False
+
+    # Verify
+    reg_vals = sys.get_reg(hive, path)
+    if key in reg_vals:
+        val = reg_vals[key]
+        if val == 0:
+            print("Verification successful: fDenyTSConnections is 0.")
+            return True
+        else:
+            print(f"Verification failed: fDenyTSConnections is {val}.")
+            return False
+    else:
+        print(f"Verification failed: Key {key} not found in {hive}\\{path}")
+        return False
+
+def enable_rdp_firewall():
+    cmd = 'netsh advfirewall firewall add rule name="Open RDP" protocol=TCP dir=in localport=3389 action=allow'
+    print(f"Running: {cmd}")
+    res = sys.shell(cmd)
+
+    if res["status"] == 0:
+        print("Firewall rule added successfully.")
+        return True
+    else:
+        print(f"Failed to add firewall rule. Status: {res['status']}")
+        print(f"Stderr: {res['stderr']}")
+        return False
+
+def main():
+    if not sys.is_windows():
+        print("This tome only supports Windows.")
+        return
+
+    if enable_rdp_registry():
+        enable_rdp_firewall()
+
+main()
