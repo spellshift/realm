@@ -54,8 +54,14 @@ impl FileLibrary for StdFileLibrary {
         exists_impl::exists(path)
     }
 
-    fn follow(&self, path: String, fn_val: Value) -> Result<(), String> {
-        follow_impl::follow(path, fn_val)
+    fn follow(
+        &self,
+        interp: &mut eldritch_core::Interpreter,
+        path: String,
+        fn_val: Value,
+    ) -> Result<(), String> {
+        let printer = interp.env.read().printer.clone();
+        follow_impl::follow(path, fn_val, printer)
     }
 
     fn is_dir(&self, path: String) -> Result<bool, String> {
