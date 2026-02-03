@@ -148,6 +148,6 @@ func newTokenHandler(tokenCh chan<- Token, errCh chan<- error) http.HandlerFunc 
 		}
 
 		tokenCh <- Token(token)
-		io.WriteString(w, "Succesfully Authenticated!")
+		io.WriteString(w, "Successfully Authenticated!")
 	})
 }
