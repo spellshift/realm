@@ -126,6 +126,9 @@ async fn handle_incoming_mote(
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
         && bytes_payload.kind == BytesPayloadKind::Trace as i32
     {
+        #[cfg(debug_assertions)]
+        log::trace!("portal trace mote received: {:?}", &bytes_payload.clone());
+
         // 1. Add Agent Recv Event
         add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentRecv)?;
 
@@ -145,7 +148,15 @@ async fn handle_incoming_mote(
     // Get or create context
     if !streams.contains_key(&stream_id) {
         #[cfg(debug_assertions)]
-        log::info!("incoming mote for new stream! {stream_id} {mote:?}");
+        {
+            let seq_id = mote.seq_id;
+            let size = mote.payload.as_ref().map_or(0, |p| match p {
+                Payload::Bytes(b) => b.data.len(),
+                Payload::Tcp(t) => t.data.len(),
+                Payload::Udp(u) => u.data.len(),
+            });
+            log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
+        }
 
         // Create new stream context
         let (tx, rx) = mpsc::channel::<Mote>(100);
