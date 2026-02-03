@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { useQuery, NetworkStatus } from "@apollo/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { GET_QUEST_QUERY } from "../../utils/queries";
@@ -13,81 +13,86 @@ export const useQuests = (pagination: boolean) => {
   const { filters } = useFilters();
   const { sorts } = useSorts();
   const { lastFetchedTimestamp } = useTags();
-
-  const constructDefaultQuery = useCallback((currentFilters: Filters, afterCursor?: Cursor, beforeCursor?: Cursor, sort?: OrderByField, currentTimestamp?: Date): GetQuestQueryVariables => {
-    const defaultRowLimit = TableRowLimit.QuestRowLimit;
-    const filterQueryTaskFields = constructTaskFilterQuery(currentFilters, currentTimestamp);
-    const questFilterFields = constructQuestFilterQuery(currentFilters);
-
-    const query: GetQuestQueryVariables = {
-      where: {
-        ...(questFilterFields || {}),
-        ...(filterQueryTaskFields || {})
-      },
-      whereTotalTask: {
-        ...(filterQueryTaskFields?.hasTasksWith || {})
-      },
-      whereFinishedTask: {
-        execFinishedAtNotNil: true,
-        ...(filterQueryTaskFields?.hasTasksWith || {})
-      },
-      whereOutputTask: {
-        outputSizeGT: 0,
-        ...(filterQueryTaskFields?.hasTasksWith || {})
-      },
-      whereErrorTask: {
-        errorNotNil: true,
-        ...(filterQueryTaskFields?.hasTasksWith || {})
-      },
-      firstTask: 1,
-      ...(sort && { orderBy: [sort] })
-    };
-
-    if (pagination) {
-      query.first = beforeCursor ? undefined : defaultRowLimit;
-      query.last = beforeCursor ? defaultRowLimit : undefined;
-      query.after = afterCursor || undefined;
-      query.before = beforeCursor || undefined;
-    }
-
-    return query;
-  }, [pagination]);
-
   const questSort = sorts[PageNavItem.quests];
-  const queryVariables = useMemo(() => constructDefaultQuery(filters, undefined, undefined, questSort, lastFetchedTimestamp), [constructDefaultQuery, filters, questSort, lastFetchedTimestamp]);
 
-  const { loading, data, error, refetch } = useQuery<QuestQueryTopLevel>(
+  const queryVariables = useMemo(
+    () => getDefaultQuestQuery(filters, pagination, undefined, undefined, questSort, lastFetchedTimestamp),
+    [filters, pagination, questSort, lastFetchedTimestamp]
+  );
+
+  const { data, previousData, error, refetch, networkStatus } = useQuery<QuestQueryTopLevel>(
     GET_QUEST_QUERY,
     {
       variables: queryVariables,
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'cache-and-network',
     }
   );
 
   const updateQuestList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-    const query = constructDefaultQuery(filters, afterCursor, beforeCursor, questSort, lastFetchedTimestamp);
-    return refetch(query);
-  }, [filters, questSort, constructDefaultQuery, refetch, lastFetchedTimestamp]);
+    return refetch(
+      getDefaultQuestQuery(filters, pagination, afterCursor, beforeCursor, questSort, lastFetchedTimestamp)
+    );
+  }, [filters, pagination, questSort, lastFetchedTimestamp, refetch]);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    updateQuestList();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [updateQuestList]);
-
-  useEffect(() => {
-    setPage(1);
+    setPage(prev => prev !== 1 ? 1 : prev);
   }, [filters, questSort]);
 
+  const currentData = data ?? previousData;
+
   return {
-    data,
-    loading,
+    data: currentData,
+    loading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,
     updateQuestList
   };
+};
+
+const getDefaultQuestQuery = (
+  filters: Filters,
+  pagination: boolean,
+  afterCursor?: Cursor,
+  beforeCursor?: Cursor,
+  sort?: OrderByField,
+  currentTimestamp?: Date
+): GetQuestQueryVariables => {
+  const defaultRowLimit = TableRowLimit.QuestRowLimit;
+  const filterQueryTaskFields = constructTaskFilterQuery(filters, currentTimestamp);
+  const questFilterFields = constructQuestFilterQuery(filters);
+
+  const query: GetQuestQueryVariables = {
+    where: {
+      ...(questFilterFields || {}),
+      ...(filterQueryTaskFields || {})
+    },
+    whereTotalTask: {
+      ...(filterQueryTaskFields?.hasTasksWith || {})
+    },
+    whereFinishedTask: {
+      execFinishedAtNotNil: true,
+      ...(filterQueryTaskFields?.hasTasksWith || {})
+    },
+    whereOutputTask: {
+      outputSizeGT: 0,
+      ...(filterQueryTaskFields?.hasTasksWith || {})
+    },
+    whereErrorTask: {
+      errorNotNil: true,
+      ...(filterQueryTaskFields?.hasTasksWith || {})
+    },
+    firstTask: 1,
+    ...(sort && { orderBy: [sort] })
+  };
+
+  if (pagination) {
+    query.first = beforeCursor ? undefined : defaultRowLimit;
+    query.last = beforeCursor ? defaultRowLimit : undefined;
+    query.after = afterCursor || undefined;
+    query.before = beforeCursor || undefined;
+  }
+
+  return query;
 };

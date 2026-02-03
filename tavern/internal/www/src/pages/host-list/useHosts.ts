@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ApolloError, useQuery } from "@apollo/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ApolloError, NetworkStatus, useQuery } from "@apollo/client";
 import { GET_HOST_QUERY } from "../../utils/queries";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { Filters, useFilters } from "../../context/FilterContext";
@@ -9,7 +9,7 @@ import { useSorts } from "../../context/SortContext";
 import { useTags } from "../../context/TagContext";
 
 interface HostsHook {
-  data: HostQueryTopLevel
+  data: HostQueryTopLevel | undefined
   loading: boolean,
   error: ApolloError | undefined,
   page: number,
@@ -24,39 +24,36 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook => {
   const { lastFetchedTimestamp } = useTags();
   const hostSort = sorts[PageNavItem.hosts];
 
-  const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-    return getDefaultHostQuery(filters, pagination, afterCursor, beforeCursor, id, hostSort, lastFetchedTimestamp);
-  }, [pagination, id, filters, hostSort, lastFetchedTimestamp]);
+  const queryVariables = useMemo(
+    () => getDefaultHostQuery(filters, pagination, undefined, undefined, id, hostSort, lastFetchedTimestamp),
+    [filters, pagination, id, hostSort, lastFetchedTimestamp]
+  );
 
-  const { loading, data, error, refetch } = useQuery(
+  const { data, previousData, error, refetch, networkStatus } = useQuery(
     GET_HOST_QUERY,
     {
-      variables: constructDefaultQuery(),
+      variables: queryVariables,
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'cache-and-network',
     }
   );
 
   const updateHosts = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-    const query = constructDefaultQuery(afterCursor, beforeCursor);
-    return refetch(query);
-  }, [constructDefaultQuery, refetch]);
+    return refetch(
+      getDefaultHostQuery(filters, pagination, afterCursor, beforeCursor, id, hostSort, lastFetchedTimestamp)
+    );
+  }, [filters, pagination, id, hostSort, lastFetchedTimestamp, refetch]);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    updateHosts();
+    setPage(prev => prev !== 1 ? 1 : prev);
+  }, [filters, hostSort]);
 
-    return () => {
-      abortController.abort();
-    };
-  }, [updateHosts]);
+  const currentData = data ?? previousData;
 
-  useEffect(() => {
-    setPage(1);
-  }, [filters, hostSort])
 
   return {
-    data,
-    loading,
+    data: currentData,
+    loading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,
