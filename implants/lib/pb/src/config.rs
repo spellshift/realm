@@ -43,11 +43,6 @@ macro_rules! callback_interval {
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
-/* Default interval value in seconds */
-const DEFAULT_INTERVAL_SECONDS: u64 = 5;
-
-/* Default extra config value */
-const DEFAULT_EXTRA_CONFIG: &str = "";
 
 macro_rules! retry_interval {
     () => {
@@ -71,14 +66,19 @@ macro_rules! run_once {
     };
 }
 
+
 macro_rules! extra {
     () => {
         match option_env!("IMIX_TRANSPORT_EXTRA") {
-            Some(extra) => extra.to_lowercase(),
-            None => String::from(""),
+            Some(extra) => extra,
+            None => "",
         }
     };
 }
+
+/* Default extra config value */
+const DEFAULT_EXTRA_CONFIG: &str = extra!();
+
 
 /* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
  * Defaults to false if unset.
@@ -126,8 +126,8 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     // Parse as a URL to extract query parameters
     let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
-    let mut interval = DEFAULT_INTERVAL_SECONDS;
-    let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
+    let mut interval = parse_callback_interval()?;
+    let mut extra = DEFAULT_EXTRA_CONFIG.to_lowercase();
 
     // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
@@ -291,6 +291,8 @@ fn get_primary_ip() -> String {
 mod tests {
     use super::*;
 
+    const DEFAULT_INTERVAL_SECONDS: u64 = 5;
+
     #[test]
     fn test_single_uri_parsing() {
         // Simulating a single URI at compile time
@@ -434,7 +436,7 @@ mod tests {
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
-        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG);
+        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG.to_lowercase());
     }
 
     #[test]

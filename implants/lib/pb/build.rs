@@ -246,25 +246,6 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     );
 }
 
-fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
-    let mut res = HashMap::new();
-    for (key, value) in std::env::vars() {
-        if key.starts_with("IMIX_TRANSPORT_EXTRA_") {
-            println!("{}", key);
-            match key.strip_prefix("IMIX_TRANSPORT_EXTRA_") {
-                Some(k) => {
-                    let suffixed_key = String::from(k);
-                    res.insert(suffixed_key, value);
-                }
-                None => panic!("failed to strip prefix"),
-            }
-        }
-    }
-    let res_str = serde_json::to_string(&res)?;
-    println!("cargo:rustc-env=IMIX_TRANSPORT_EXTRA={}", res_str);
-    Ok(())
-}
-
 fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
     // Skip validation if YAML config is being used
     // (parse_yaml_config already handles validation in that case)
@@ -310,7 +291,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     validate_dsn_config()?;
 
     get_pub_key(yaml_config);
-    build_extra_vars()?;
 
     // Skip if no `protoc` can be found
     match env::var_os("PROTOC")
