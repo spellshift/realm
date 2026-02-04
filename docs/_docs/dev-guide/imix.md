@@ -8,7 +8,7 @@ permalink: dev-guide/imix
 
 ## Overview
 
-Imix in the main bot for Realm.
+Imix is the main bot for Realm.
 
 ## Agent protobuf
 
@@ -20,9 +20,9 @@ If you need to update these fields start with the `tavern/internal/c2/proto/c2.p
 
 Once you've finished making your changes apply these changes across the project using `cd /workspaces/realm/ && go generate ./tavern/...`
 
-To generate the associated agent proto's use cargo build in the `implants` directory. This will copy the necessary protos from tavern and perform the code generation.
+To generate the associated agent protos use cargo build in the `implants` directory. This will copy the necessary protos from tavern and perform the code generation.
 
-In addition to config syncronization claimTasks also authorizes the agent to access assets, and report data using a signed JWT per task. This prevents unauthorized users from reading tavern data, or spamming DB writes.
+In addition to config synchronization claimTasks also authorizes the agent to access assets, and report data using a signed JWT per task. This prevents unauthorized users from reading tavern data, or spamming DB writes.
 
 
 ### Adding enums
@@ -51,7 +51,7 @@ And add a new enum definition to `tavern/internal/c2/c2pb/enum_<MESSAGE NAME>_<E
 
 ## Host Selector
 
-The host selector defined in `implants/lib/host_unique` allow imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
+The host selector defined in `implants/lib/host_unique` allows imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
 
 Out of the box realm comes with two options `File` and `Env` to determine what host it's on.
 

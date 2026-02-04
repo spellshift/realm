@@ -108,7 +108,12 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be opened.
-    fn follow(&self, path: String, fn_val: Value) -> Result<(), String>; // fn is reserved
+    fn follow(
+        &self,
+        interp: &mut eldritch_core::Interpreter,
+        path: String,
+        fn_val: Value,
+    ) -> Result<(), String>; // fn is reserved
 
     #[eldritch_method]
     /// Checks if the path exists and is a directory.

@@ -143,7 +143,12 @@ impl FileLibrary for FileLibraryFake {
         Ok(Self::traverse(&mut root, &parts).is_some())
     }
 
-    fn follow(&self, _path: String, _fn_val: Value) -> Result<(), String> {
+    fn follow(
+        &self,
+        _interp: &mut eldritch_core::Interpreter,
+        _path: String,
+        _fn_val: Value,
+    ) -> Result<(), String> {
         Ok(())
     }
 
