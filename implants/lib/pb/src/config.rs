@@ -43,7 +43,6 @@ macro_rules! callback_interval {
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
-
 macro_rules! retry_interval {
     () => {
         match option_env!("IMIX_RETRY_INTERVAL") {
@@ -66,7 +65,6 @@ macro_rules! run_once {
     };
 }
 
-
 macro_rules! extra {
     () => {
         match option_env!("IMIX_TRANSPORT_EXTRA") {
@@ -78,7 +76,6 @@ macro_rules! extra {
 
 /* Default extra config value */
 const DEFAULT_EXTRA_CONFIG: &str = extra!();
-
 
 /* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
  * Defaults to false if unset.
