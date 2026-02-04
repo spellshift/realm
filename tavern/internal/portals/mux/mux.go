@@ -110,7 +110,7 @@ func New(opts ...Option) *Mux {
 		serverID: uuid.New().String(),
 		subs: &SubscriberRegistry{
 			subs:       make(map[string][]chan *portalpb.Mote),
-			bufferSize: 15625, // Default
+			bufferSize: 32768, // Default
 		},
 		subMgr: &SubscriptionManager{
 			active:      make(map[string]pubsub.Subscriber),
