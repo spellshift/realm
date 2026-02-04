@@ -215,6 +215,51 @@ fn test_string_unterminated() {
 }
 
 #[test]
+fn test_number_trailing_dot_limitation() {
+    // Current limitation: "1." is lexed as Integer(1) followed by Dot.
+    // In many languages this is a float (1.0).
+    // This test asserts the *current* behavior to detect if it changes.
+    let input = "1.";
+    let tokens = lex(input);
+    let expected = vec![
+        TokenKind::Integer(1),
+        TokenKind::Dot,
+        TokenKind::Newline,
+        TokenKind::Eof,
+    ];
+    assert_eq!(tokens, expected);
+}
+
+#[test]
+fn test_scientific_notation_unsupported() {
+    // Current limitation: Scientific notation is not supported.
+    // "1e10" is lexed as Integer(1) followed by Identifier(e10).
+    let input = "1e10";
+    let tokens = lex(input);
+    let expected = vec![
+        TokenKind::Integer(1),
+        TokenKind::Identifier(String::from("e10")),
+        TokenKind::Newline,
+        TokenKind::Eof,
+    ];
+    assert_eq!(tokens, expected);
+}
+
+#[test]
+fn test_scientific_notation_float_unsupported() {
+    // "1.5e10" -> Float(1.5), Identifier(e10)
+    let input = "1.5e10";
+    let tokens = lex(input);
+    let expected = vec![
+        TokenKind::Float(1.5),
+        TokenKind::Identifier(String::from("e10")),
+        TokenKind::Newline,
+        TokenKind::Eof,
+    ];
+    assert_eq!(tokens, expected);
+}
+
+#[test]
 fn test_string_newline_error() {
     let input = "\"line1\nline2\"";
     let tokens = lex(input);
