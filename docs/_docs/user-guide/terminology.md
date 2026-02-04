@@ -28,7 +28,7 @@ Hosts are in-scope systems for the current engagement. A host can have multiple 
 
 ### Quest
 
-Quests enable multi-beacon managment by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks associated with a single beacon.
+Quests enable multi-beacon management by taking a list of beacons and executing a tome with customized parameters against them. A quest is made up of tasks associated with a single beacon.
 
 ### Task
 
@@ -40,4 +40,4 @@ Eldritch is our Pythonic Domain Specific Language (DSL), which can be used to pr
 
 ### Tome
 
-A Tome is a prebuilt Eldritch bundle, which includes execution instructions and embed files. Tomes are how beacon actions are defined and change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).
+A Tome is a prebuilt Eldritch bundle, which includes execution instructions and embedded files. Tomes are how beacon actions are defined and change their behavior at runtime. Tavern's built-in Tomes are defined [here](https://github.com/spellshift/realm/tree/main/tavern/tomes).

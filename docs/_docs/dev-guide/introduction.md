@@ -48,7 +48,7 @@ All code changes to Tavern must be tested. Below are some standards for test wri
 
 ##### Tavern Tests (Front End)
 
-At the time of writing, the Tavern UI is still in an early stage, and therefore minimal testing exists for it. Once the UI is considered more stable, this documentation will be updated. If the Tavern UI is useable and this documentation still exists, please [file an issue](https://github.com/spellshift/realm/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.).
+At the time of writing, the Tavern UI is still in an early stage, and therefore minimal testing exists for it. Once the UI is considered more stable, this documentation will be updated. If the Tavern UI is usable and this documentation still exists, please [file an issue](https://github.com/spellshift/realm/issues/new?labels=documentation&title=Documentation%20Discrepancy:&body=Please%20include%20the%20location%20of%20the%20inaccurate%20documentation%20and%20a%20helpful%20description%20of%20what%20needs%20improvement.).
 
 ### Linear History
 

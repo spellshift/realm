@@ -72,7 +72,7 @@ name: List files # The name of your tome.
 description: List the files and directories found at the path # A description to help users understand what your tome does.
 author: hulto # Your Github username.
 support_model: FIRST_PARTY # Is this a tome that ships with Realm or not?
-tactic: RECON # Which MTIRE ATT&CK Tactic best describes this tome?
+tactic: RECON # Which MITRE ATT&CK Tactic best describes this tome?
 paramdefs: # A list of inputs the tome requires.
 - name: path # The name of the input parameter `input_params['path']`.
   type: string # The type of the input parameter.
@@ -84,7 +84,7 @@ paramdefs: # A list of inputs the tome requires.
 
 Eldritch while it looks like python is distinct and many features in python do not exist in Eldritch.
 
-For an almost complete list of syntax checkout the starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
+For an almost complete list of syntax checkout the Starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
 *Note: The docs may be incorrect in some places as we're using the starlark-rust implementation which doesn't always adhere to the starlark spec.*
 
 ```python

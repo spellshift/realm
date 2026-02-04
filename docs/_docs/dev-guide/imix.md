@@ -51,24 +51,24 @@ And add a new enum definition to `tavern/internal/c2/c2pb/enum_<MESSAGE NAME>_<E
 
 ## Host Selector
 
-The host selector defined in `implants/lib/host_unique` allows imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUID4 value.
+The host selector defined in `implants/lib/host_unique` allows imix to reliably identify which host it's running on. This is helpful for operators when creating tasking across multiple beacons as well as when searching for command results. Uniqueness is stored as a UUIDv4 value.
 
 Out of the box realm comes with two options `File` and `Env` to determine what host it's on.
 
-`File` will create a file on disk that stores the UUID4 Eg. Linux:
+`File` will create a file on disk that stores the UUIDv4 Eg. Linux:
 
 ```bash
 [~]$ cat /etc/system-id
 36b3c472-d19b-46cc-b3e6-ee6fd8da5b9c
 ```
 
-`Env` will read from the agent environment variables looking for `IMIX_HOST_ID` if it's set it will use the UUID4 string set there.
+`Env` will read from the agent environment variables looking for `IMIX_HOST_ID` if it's set it will use the UUIDv4 string set there.
 
 There is a third option available on Windows systems to store the UUID value inside a registry key. Follow the steps below to update `lib.rs` to include `Registry` as a default before `File` to enable it. On hosts that are not Windows, imix will simply skip `Registry`.
 
-If no selectors succeed a random UUID4 ID will be generated and used for the bot. This should be avoided.
+If no selectors succeed a random UUIDv4 ID will be generated and used for the bot. This should be avoided.
 
-## Develop A Host Uniqueness Selector
+## Develop a Host Uniqueness Selector
 
 To create your own:
 

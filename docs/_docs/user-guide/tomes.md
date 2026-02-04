@@ -144,7 +144,7 @@ Writing tomes will always be specific to your use case. Different teams, differe
 
 OPSEC considerations will tend towards avoiding calls to `shell` and `exec` instead using native functions to accomplish the function.
 
-In some situations you may also wish to avoid testing on target if that's the case you should test throughly off target before launching.
+In some situations you may also wish to avoid testing on target if that's the case you should test thoroughly off target before launching.
 
 If you test off target you can leverage native functions like [`sys.get_os`](/user-guide/eldritch#sysget_os) to ensure that your tome only runs against targets it's been tested on.
 
