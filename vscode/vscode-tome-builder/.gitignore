@@ -3,7 +3,3 @@ dist/
 node_modules/
 .vscode-test/
 *.vsix
-mcp-server/src/docs.ts
-mcp-server/src/docs.js
-mcp-server/src/examples.ts
-mcp-server/src/examples.js

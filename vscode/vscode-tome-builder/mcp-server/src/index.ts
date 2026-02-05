@@ -6,8 +6,8 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { TOMES_DOC, ELDRITCH_DOC } from "./docs";
-import { FILE_WRITE_EXAMPLE, PERSIST_SERVICE_EXAMPLE } from "./examples";
+import { getTomesDoc, getEldritchDoc } from "./docs";
+import { getFileWriteExample, getPersistServiceExample } from "./examples";
 
 const server = new Server(
   {
@@ -80,11 +80,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const topic = (args as any).topic;
         if (topic === "tomes") {
             return {
-                content: [{ type: "text", text: TOMES_DOC }],
+                content: [{ type: "text", text: getTomesDoc() }],
             };
         } else if (topic === "eldritch") {
             return {
-                content: [{ type: "text", text: ELDRITCH_DOC }],
+                content: [{ type: "text", text: getEldritchDoc() }],
             };
         }
         return { content: [], isError: true };
@@ -93,17 +93,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "get_tome_examples") {
         const topic = (args as any).topic;
         if (topic === "file_write") {
+            const example = getFileWriteExample();
             return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + FILE_WRITE_EXAMPLE.metadata },
-                    { type: "text", text: "## main.eldritch\n" + FILE_WRITE_EXAMPLE.script }
+                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         } else if (topic === "persist_service") {
+             const example = getPersistServiceExample();
              return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + PERSIST_SERVICE_EXAMPLE.metadata },
-                    { type: "text", text: "## main.eldritch\n" + PERSIST_SERVICE_EXAMPLE.script }
+                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         }

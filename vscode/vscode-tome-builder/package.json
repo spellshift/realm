@@ -65,14 +65,12 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "npm run generate-assets && tsc -p ./",
-    "generate-assets": "ts-node -O '{\"module\":\"commonjs\"}' ./scripts/generate-assets.ts",
+    "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.80.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   },
   "dependencies": {
