@@ -1,10 +1,10 @@
-import { useQuery } from "@apollo/client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, NetworkStatus } from "@apollo/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../utils/enums";
 import { GET_TASK_QUERY } from "../../utils/queries";
-import { useFilters } from "../../context/FilterContext";
+import { Filters, useFilters } from "../../context/FilterContext";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
-import { Cursor } from "../../utils/interfacesQuery";
+import { Cursor, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
 import { useTags } from "../../context/TagContext";
 
@@ -15,58 +15,65 @@ export const useTasks = (id?: string) => {
   const { lastFetchedTimestamp } = useTags();
   const taskSort = sorts[PageNavItem.tasks];
 
-  const constructDefaultQuery = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-    const defaultRowLimit = TableRowLimit.TaskRowLimit;
-    const filterQueryFields = constructTaskFilterQuery(filters, lastFetchedTimestamp);
+  const queryVariables = useMemo(
+    () => getDefaultTaskQuery(filters, undefined, undefined, id, taskSort, lastFetchedTimestamp),
+    [filters, id, taskSort, lastFetchedTimestamp]
+  );
 
-    const query = {
-      "where": {
-        ...filterQueryFields && filterQueryFields.hasTasksWith,
-        "hasQuestWith": { "id": id },
-      },
-      "first": beforeCursor ? null : defaultRowLimit,
-      "last": beforeCursor ? defaultRowLimit : null,
-      "after": afterCursor ? afterCursor : null,
-      "before": beforeCursor ? beforeCursor : null,
-      ...(taskSort && { orderBy: [taskSort] })
-    } as any;
-
-    return query;
-  }, [id, filters, taskSort, lastFetchedTimestamp]);
-
-
-  const { loading, error, data, refetch } = useQuery(
+  const { data, previousData, error, refetch, networkStatus, loading } = useQuery(
     GET_TASK_QUERY,
     {
-      variables: constructDefaultQuery(),
+      variables: queryVariables,
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'cache-and-network',
     }
   );
 
   const updateTaskList = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-    const query = constructDefaultQuery(afterCursor, beforeCursor);
-    return refetch(query);
-  }, [constructDefaultQuery, refetch]);
+    return refetch(
+      getDefaultTaskQuery(filters, afterCursor, beforeCursor, id, taskSort, lastFetchedTimestamp)
+    );
+  }, [filters, id, taskSort, lastFetchedTimestamp, refetch]);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    updateTaskList();
+    setPage(prev => prev !== 1 ? 1 : prev);
+  }, [filters, taskSort]);
 
-    return () => {
-      abortController.abort();
-    };
-  }, [updateTaskList]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filters, taskSort])
+  const currentData = data ?? previousData;
 
   return {
-    data,
+    data: currentData,
     loading,
+    initialLoading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,
     updateTaskList
-  }
+  };
+};
+
+const getDefaultTaskQuery = (
+  filters: Filters,
+  afterCursor?: Cursor,
+  beforeCursor?: Cursor,
+  id?: string,
+  sort?: OrderByField,
+  currentTimestamp?: Date
+) => {
+  const defaultRowLimit = TableRowLimit.TaskRowLimit;
+  const filterQueryFields = constructTaskFilterQuery(filters, currentTimestamp);
+
+  const query = {
+    "where": {
+      ...filterQueryFields && filterQueryFields.hasTasksWith,
+      "hasQuestWith": { "id": id },
+    },
+    "first": beforeCursor ? null : defaultRowLimit,
+    "last": beforeCursor ? defaultRowLimit : null,
+    "after": afterCursor ? afterCursor : null,
+    "before": beforeCursor ? beforeCursor : null,
+    ...(sort && { orderBy: [sort] })
+  } as any;
+
+  return query;
 };

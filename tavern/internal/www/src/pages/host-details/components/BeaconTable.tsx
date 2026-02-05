@@ -10,7 +10,6 @@ import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { BeaconEdge } from "../../../utils/interfacesQuery";
 
 const BeaconTable = ({ beacons }: { beacons: Array<BeaconEdge> }) => {
-    console.log(beacons);
     const nav = useNavigate();
     const currentDate = new Date();
     const princialColors = Object.values(PrincipalAdminTypes);

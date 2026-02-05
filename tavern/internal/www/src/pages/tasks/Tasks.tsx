@@ -11,6 +11,7 @@ const Tasks = () => {
     const {
         data,
         loading,
+        initialLoading,
         error,
         updateTaskList,
         page,
@@ -23,7 +24,7 @@ const Tasks = () => {
             <TableWrapper
                 title="Tasks"
                 totalItems={data?.tasks?.totalCount}
-                loading={loading}
+                loading={initialLoading}
                 error={error}
                 table={
                     <div className="w-full flex flex-col gap-4 my-4">
@@ -42,6 +43,7 @@ const Tasks = () => {
                         page={page}
                         setPage={setPage}
                         rowLimit={TableRowLimit.TaskRowLimit}
+                        loading={loading}
                     />
                 }
             />
