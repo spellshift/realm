@@ -6,8 +6,61 @@ import {
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import { TOMES_DOC, ELDRITCH_DOC } from "./docs";
-import { FILE_WRITE_EXAMPLE, PERSIST_SERVICE_EXAMPLE } from "./examples";
+import * as fs from 'fs';
+import * as path from 'path';
+
+// --- Helper Functions for Runtime File Reading ---
+
+function findRepoRoot(): string | null {
+    let currentDir = __dirname;
+    while (currentDir !== path.parse(currentDir).root) {
+        if (fs.existsSync(path.join(currentDir, 'go.mod'))) {
+            return currentDir;
+        }
+        if (fs.existsSync(path.join(currentDir, '.git'))) {
+             return currentDir;
+        }
+        currentDir = path.dirname(currentDir);
+    }
+    return null;
+}
+
+const REPO_ROOT = findRepoRoot();
+
+function readDocFile(relativePath: string): string {
+    if (!REPO_ROOT) {
+        return "Error: Could not locate repository root. Ensure you are running this in the realm repository.";
+    }
+    const fullPath = path.join(REPO_ROOT, relativePath);
+    try {
+        return fs.readFileSync(fullPath, 'utf-8');
+    } catch (e) {
+        return `Error reading file ${fullPath}: ${e}`;
+    }
+}
+
+function readExample(tomeName: string): { metadata: string, script: string } {
+     if (!REPO_ROOT) {
+        return {
+            metadata: "Error: Could not locate repository root.",
+            script: "Error: Could not locate repository root."
+        };
+    }
+
+    const tomeDir = path.join(REPO_ROOT, `tavern/tomes/${tomeName}`);
+    try {
+        const metadata = fs.readFileSync(path.join(tomeDir, 'metadata.yml'), 'utf-8');
+        const script = fs.readFileSync(path.join(tomeDir, 'main.eldritch'), 'utf-8');
+        return { metadata, script };
+    } catch (e) {
+        return {
+            metadata: `Error reading example ${tomeName}: ${e}`,
+            script: `Error reading example ${tomeName}: ${e}`
+        };
+    }
+}
+
+// --- Server Setup ---
 
 const server = new Server(
   {
@@ -80,11 +133,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const topic = (args as any).topic;
         if (topic === "tomes") {
             return {
-                content: [{ type: "text", text: TOMES_DOC }],
+                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/tomes.md') }],
             };
         } else if (topic === "eldritch") {
             return {
-                content: [{ type: "text", text: ELDRITCH_DOC }],
+                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/eldritch.md') }],
             };
         }
         return { content: [], isError: true };
@@ -93,17 +146,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "get_tome_examples") {
         const topic = (args as any).topic;
         if (topic === "file_write") {
+            const example = readExample('file_write');
             return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + FILE_WRITE_EXAMPLE.metadata },
-                    { type: "text", text: "## main.eldritch\n" + FILE_WRITE_EXAMPLE.script }
+                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         } else if (topic === "persist_service") {
+             const example = readExample('persist_service');
              return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + PERSIST_SERVICE_EXAMPLE.metadata },
-                    { type: "text", text: "## main.eldritch\n" + PERSIST_SERVICE_EXAMPLE.script }
+                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         }
