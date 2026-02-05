@@ -20,7 +20,7 @@ export const useQuests = (pagination: boolean) => {
     [filters, pagination, questSort, lastFetchedTimestamp]
   );
 
-  const { data, previousData, error, refetch, networkStatus } = useQuery<QuestQueryTopLevel>(
+  const { data, previousData, error, refetch, networkStatus, loading } = useQuery<QuestQueryTopLevel>(
     GET_QUEST_QUERY,
     {
       variables: queryVariables,
@@ -43,7 +43,8 @@ export const useQuests = (pagination: boolean) => {
 
   return {
     data: currentData,
-    loading: networkStatus === NetworkStatus.loading && !currentData,
+    loading,
+    initialLoading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,

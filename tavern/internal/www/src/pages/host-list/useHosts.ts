@@ -11,6 +11,7 @@ import { useTags } from "../../context/TagContext";
 interface HostsHook {
   data: HostQueryTopLevel | undefined
   loading: boolean,
+  initialLoading: boolean,
   error: ApolloError | undefined,
   page: number,
   setPage: React.Dispatch<React.SetStateAction<number>>,
@@ -29,7 +30,7 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook => {
     [filters, pagination, id, hostSort, lastFetchedTimestamp]
   );
 
-  const { data, previousData, error, refetch, networkStatus } = useQuery(
+  const { data, previousData, error, refetch, networkStatus, loading } = useQuery(
     GET_HOST_QUERY,
     {
       variables: queryVariables,
@@ -53,7 +54,8 @@ export const useHosts = (pagination: boolean, id?: string): HostsHook => {
 
   return {
     data: currentData,
-    loading: networkStatus === NetworkStatus.loading && !currentData,
+    loading,
+    initialLoading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,

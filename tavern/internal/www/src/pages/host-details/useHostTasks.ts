@@ -20,7 +20,7 @@ export const useHostTasks = (id?: string) => {
     [filters, id, taskSort, lastFetchedTimestamp]
   );
 
-  const { data, previousData, error, refetch, networkStatus } = useQuery(
+  const { data, previousData, error, refetch, networkStatus, loading } = useQuery(
     GET_TASK_QUERY,
     {
       variables: queryVariables,
@@ -43,7 +43,8 @@ export const useHostTasks = (id?: string) => {
 
   return {
     data: currentData,
-    loading: networkStatus === NetworkStatus.loading && !currentData,
+    loading,
+    initialLoading: networkStatus === NetworkStatus.loading && !currentData,
     error,
     page,
     setPage,
