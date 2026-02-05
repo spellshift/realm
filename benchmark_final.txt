@@ -1,0 +1,13 @@
+2026/02/05 05:29:23 ERROR input bytes to short 1 expected at least 32
+2026/02/05 05:29:23 ERROR failed to get aead failed to get shared secret crypto/ecdh: bad X25519 remote ECDH input: low order point
+2026/02/05 05:29:23 ERROR public key not found for id: 0
+goos: linux
+goarch: amd64
+pkg: realm.pub/tavern/internal/cryptocodec
+cpu: Intel(R) Xeon(R) Processor @ 2.30GHz
+BenchmarkEncrypt-4        	   84398	     14302 ns/op	  71.60 MB/s	    3128 B/op	       6 allocs/op
+BenchmarkEncryptLarge-4   	     661	   1779365 ns/op	 589.30 MB/s	 1058767 B/op	       6 allocs/op
+BenchmarkDecrypt-4        	   69344	     17025 ns/op	  60.15 MB/s	    1984 B/op	       5 allocs/op
+BenchmarkDecryptLarge-4   	    1530	    742227 ns/op	1412.74 MB/s	    2675 B/op	       5 allocs/op
+PASS
+ok  	realm.pub/tavern/internal/cryptocodec	18.716s

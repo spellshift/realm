@@ -1,0 +1,15 @@
+2026/02/05 05:25:00 ERROR failed to create public key crypto/ecdh: invalid public key
+2026/02/05 05:25:00 ERROR input bytes to short 1 expected at least 32
+2026/02/05 05:25:00 ERROR failed to get shared secret crypto/ecdh: bad X25519 remote ECDH input: low order point
+2026/02/05 05:25:00 ERROR failed to create xchacha key chacha20poly1305: bad key length
+2026/02/05 05:25:00 ERROR public key not found for id: 0
+goos: linux
+goarch: amd64
+pkg: realm.pub/tavern/internal/cryptocodec
+cpu: Intel(R) Xeon(R) Processor @ 2.30GHz
+BenchmarkEncrypt-4        	   13266	     91523 ns/op	  11.19 MB/s	    4408 B/op	      10 allocs/op
+BenchmarkEncryptLarge-4   	     291	   3832558 ns/op	 273.60 MB/s	 2115679 B/op	      11 allocs/op
+BenchmarkDecrypt-4        	   13568	     88719 ns/op	  11.54 MB/s	    3128 B/op	       9 allocs/op
+BenchmarkDecryptLarge-4   	     544	   2068380 ns/op	 506.96 MB/s	 1050696 B/op	       9 allocs/op
+PASS
+ok  	realm.pub/tavern/internal/cryptocodec	7.184s

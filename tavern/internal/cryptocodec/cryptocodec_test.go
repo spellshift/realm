@@ -49,7 +49,7 @@ func TestSyncMap_String(t *testing.T) {
 	assert.Contains(t, s, "deadbeef")
 }
 
-func TestGenerateSharedKey(t *testing.T) {
+func TestGetAEAD(t *testing.T) {
 	// Generate server key pair
 	serverPrivKey, err := ecdh.X25519().GenerateKey(rand.Reader)
 	require.NoError(t, err)
@@ -60,21 +60,25 @@ func TestGenerateSharedKey(t *testing.T) {
 	clientPubKey := clientPrivKey.PublicKey().Bytes()
 
 	svc := NewCryptoSvc(serverPrivKey)
-	sharedKey := svc.generate_shared_key(clientPubKey)
+	aead, err := svc.getAEAD(clientPubKey)
+	require.NoError(t, err)
+	require.NotNil(t, aead)
 
-	assert.Len(t, sharedKey, 32)
-	assert.NotEqual(t, FAILURE_BYTES, sharedKey)
+	// Test caching: getting it again should return the same instance (or at least succeed)
+	aead2, err := svc.getAEAD(clientPubKey)
+	require.NoError(t, err)
+	assert.Equal(t, aead, aead2)
 }
 
-func TestGenerateSharedKey_InvalidKey(t *testing.T) {
+func TestGetAEAD_InvalidKey(t *testing.T) {
 	serverPrivKey, err := ecdh.X25519().GenerateKey(rand.Reader)
 	require.NoError(t, err)
 	svc := NewCryptoSvc(serverPrivKey)
 
 	// Test with invalid public key length
 	invalidKey := []byte{0x00, 0x01}
-	sharedKey := svc.generate_shared_key(invalidKey)
-	assert.Equal(t, FAILURE_BYTES, sharedKey)
+	_, err = svc.getAEAD(invalidKey)
+	assert.Error(t, err)
 }
 
 func TestDecrypt(t *testing.T) {
@@ -137,14 +141,6 @@ func TestGoAllIds(t *testing.T) {
 	trace, err := goAllIds()
 	assert.NoError(t, err)
 	assert.Greater(t, trace.Id, 0)
-}
-
-func TestCastBytesToBufSlice(t *testing.T) {
-	data := []byte("test data")
-	bufSlice, err := castBytesToBufSlice(data)
-	assert.NoError(t, err)
-	assert.NotNil(t, bufSlice)
-	assert.Equal(t, data, bufSlice.Materialize())
 }
 
 func TestCryptoSvc_Encrypt_NoSession(t *testing.T) {
