@@ -141,13 +141,17 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 }
 
 func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
-	// Read in pub key
 	if len(in_arr) < x25519.Size {
-		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), x25519.Size))
+		slog.Error(fmt.Sprintf("input bytes too short %d expected at least %d", len(in_arr), x25519.Size))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 
-	client_pub_key_bytes := in_arr[:x25519.Size]
+	// CRITICAL FIX: Make a distinct copy of the public key.
+	// Previously, 'in_arr[:32]' retained the capacity of the entire 'in_arr'.
+	// This caused the subsequent 'Encrypt' to append into shared memory (Data Race).
+	client_pub_key_bytes := make([]byte, x25519.Size)
+	copy(client_pub_key_bytes, in_arr[:x25519.Size])
+
 
 	ids, err := goAllIds()
 	if err != nil {
