@@ -8,7 +8,7 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
-spin = { version = "0.10.0", features = ["rwlock"] }
+spin = { workspace = true }
 
 [features]
 default = ["stdlib"]

@@ -4,7 +4,7 @@ version = "0.3.2"
 edition = "2024"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["install", "grpc", "http1", "dns", "doh"]
@@ -49,3 +49,9 @@ static_vcruntime = { workspace = true }
 
 [dev-dependencies]
 transport = { workspace = true, features = ["mock", "grpc"] }
+criterion = { workspace = true, features = ["async_tokio"] }
+httptest = { workspace = true }
+
+[[bench]]
+name = "tcp_bench"
+harness = false
