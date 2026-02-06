@@ -3,7 +3,6 @@ import { classNames } from '../../utils/utils';
 import logo from '../../assets/eldrich.png';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { usePageNavigation } from './usePageNavigation';
-import { PollingCountdown } from '../../context/PollingContext';
 
 type FullSidebarNavProps = {
     currNavItem?: string;
@@ -74,7 +73,6 @@ const FullSidebarNav = ({ currNavItem, handleSidebarMinimized }: FullSidebarNavP
                         </li>
                     </ul>
                 </nav>
-                <PollingCountdown variant="full" />
             </div>
         </div>
     );

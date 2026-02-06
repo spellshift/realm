@@ -8,6 +8,7 @@ const Quests = () => {
     const {
         data,
         loading,
+        initialLoading,
         error,
         page,
         setPage,
@@ -20,7 +21,7 @@ const Quests = () => {
             <TableWrapper
                 title="Quests"
                 totalItems={data?.quests?.totalCount}
-                loading={loading}
+                loading={initialLoading}
                 error={error}
                 table={<QuestTable quests={data?.quests?.edges || []} />}
                 pagination={
@@ -31,6 +32,7 @@ const Quests = () => {
                         page={page}
                         setPage={setPage}
                         rowLimit={TableRowLimit.QuestRowLimit}
+                        loading={loading}
                     />
                 }
             />

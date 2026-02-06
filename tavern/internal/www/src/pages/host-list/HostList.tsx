@@ -6,7 +6,7 @@ import HostTable from "./HostTable";
 import { TablePagination, TableWrapper } from "../../components/tavern-base-ui/table";
 
 const HostList: React.FC = () => {
-    const { loading, error, data, updateHosts, page, setPage } = useHosts(true);
+    const { loading, initialLoading, error, data, updateHosts, page, setPage } = useHosts(true);
 
     return (
         <>
@@ -19,7 +19,7 @@ const HostList: React.FC = () => {
             <TableWrapper
                 title="Hosts"
                 totalItems={data?.hosts?.totalCount}
-                loading={loading}
+                loading={initialLoading}
                 error={error}
                 table={<HostTable data={data?.hosts?.edges || []} />}
                 pagination={
@@ -30,6 +30,7 @@ const HostList: React.FC = () => {
                         page={page}
                         setPage={setPage}
                         rowLimit={TableRowLimit.HostRowLimit}
+                        loading={loading}
                     />
                 }
             />
