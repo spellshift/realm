@@ -22,6 +22,9 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
+	builderclient "realm.pub/tavern/internal/builder/client"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
@@ -115,6 +118,36 @@ func newApp(ctx context.Context) (app *cli.App) {
 						return nil
 					},
 				},
+			},
+		},
+		{
+			Name:      "builder",
+			Usage:     "Run the builder client to build agents via the server",
+			ArgsUsage: "[upstream_address]",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "upstream",
+					Usage: "Address of the upstream Tavern server",
+					Value: "127.0.0.1:80",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				upstream := c.String("upstream")
+				if arg := c.Args().First(); arg != "" {
+					upstream = arg
+				}
+
+				slog.InfoContext(ctx, "starting builder client", "upstream", upstream)
+
+				client, err := builderclient.New(ctx, upstream)
+				if err != nil {
+					return fmt.Errorf("failed to create builder client: %w", err)
+				}
+				defer client.Close()
+
+				fmt.Println("Builder client connected to", upstream)
+				fmt.Println("Builder client ready. Use sub-commands to interact with the build service.")
+				return nil
 			},
 		},
 	}
@@ -279,6 +312,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/portal.Portal/": tavernhttp.Endpoint{
 			Handler: newPortalGRPCHandler(client, portalMux),
+		},
+		"/builder.Builder/": tavernhttp.Endpoint{
+			Handler: newBuilderGRPCHandler(client),
 		},
 		"/cdn/": tavernhttp.Endpoint{
 			Handler:              cdn.NewLinkDownloadHandler(client, "/cdn/"),
@@ -522,6 +558,28 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
 	c2pb.RegisterC2Server(grpcSrv, c2srv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func newBuilderGRPCHandler(client *ent.Client) http.Handler {
+	builderSrv := builder.New(client)
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
+		grpc.StreamInterceptor(grpcWithStreamMetrics),
+	)
+	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)

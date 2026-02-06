@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package builder;
+
+option go_package = "realm.pub/tavern/internal/builder/builderpb";
+
+/*
+ * Messages
+ */
+
+// BuildAgentRequest contains the configuration for building an agent.
+message BuildAgentRequest {
+    // Name to identify this build.
+    string name = 1;
+
+    // Target operating system (e.g. "linux", "windows", "macos").
+    string target_os = 2;
+
+    // Target architecture (e.g. "amd64", "arm64").
+    string target_arch = 3;
+
+    // Callback URI for the agent to connect back to.
+    string callback_uri = 4;
+}
+
+// BuildAgentResponse contains information about the initiated build.
+message BuildAgentResponse {
+    // Unique identifier for this build.
+    string build_id = 1;
+}
+
+// BuildStatus enumerates the possible states of a build.
+enum BuildStatus {
+    BUILD_STATUS_UNSPECIFIED = 0;
+    BUILD_STATUS_IN_PROGRESS = 1;
+    BUILD_STATUS_SUCCESS = 2;
+    BUILD_STATUS_FAILURE = 3;
+}
+
+// ReportBuildStatusRequest reports the current status of a build.
+message ReportBuildStatusRequest {
+    // Unique identifier for the build.
+    string build_id = 1;
+
+    // Current status of the build.
+    BuildStatus status = 2;
+
+    // Human-readable message with details about the status.
+    string message = 3;
+}
+
+// ReportBuildStatusResponse is returned after a build status is reported.
+message ReportBuildStatusResponse {}
+
+// ReportBuildArtifactRequest uploads a build artifact chunk.
+message ReportBuildArtifactRequest {
+    // Unique identifier for the build.
+    string build_id = 1;
+
+    // Name of the artifact file.
+    string artifact_name = 2;
+
+    // Chunk of artifact data.
+    bytes chunk = 3;
+}
+
+// ReportBuildArtifactResponse is returned after a build artifact is reported.
+message ReportBuildArtifactResponse {
+    // SHA3-256 checksum of the received artifact.
+    string sha3_256_checksum = 1;
+}
+
+/*
+ * Service
+ */
+
+service Builder {
+    // BuildAgent initiates a new agent build with the given configuration.
+    rpc BuildAgent(BuildAgentRequest) returns (BuildAgentResponse);
+
+    // ReportBuildStatus reports the current status of an ongoing build.
+    rpc ReportBuildStatus(ReportBuildStatusRequest) returns (ReportBuildStatusResponse);
+
+    // ReportBuildArtifact uploads build artifact data in chunks.
+    rpc ReportBuildArtifact(stream ReportBuildArtifactRequest) returns (ReportBuildArtifactResponse);
+}
