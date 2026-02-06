@@ -19,8 +19,8 @@ message BuildAgentRequest {
     // Target architecture (e.g. "amd64", "arm64").
     string target_arch = 3;
 
-    // Callback URI for the agent to connect back to.
-    string callback_uri = 4;
+    // IMIX configuration value for the agent build.
+    string imix_config = 4;
 }
 
 // BuildAgentResponse contains information about the initiated build.
@@ -45,8 +45,11 @@ message ReportBuildStatusRequest {
     // Current status of the build.
     BuildStatus status = 2;
 
-    // Human-readable message with details about the status.
-    string message = 3;
+    // Standard output from the build process.
+    string stdout = 3;
+
+    // Standard error from the build process.
+    string stderr = 4;
 }
 
 // ReportBuildStatusResponse is returned after a build status is reported.

@@ -83,8 +83,8 @@ type BuildAgentRequest struct {
 	TargetOs string `protobuf:"bytes,2,opt,name=target_os,json=targetOs,proto3" json:"target_os,omitempty"`
 	// Target architecture (e.g. "amd64", "arm64").
 	TargetArch string `protobuf:"bytes,3,opt,name=target_arch,json=targetArch,proto3" json:"target_arch,omitempty"`
-	// Callback URI for the agent to connect back to.
-	CallbackUri   string `protobuf:"bytes,4,opt,name=callback_uri,json=callbackUri,proto3" json:"callback_uri,omitempty"`
+	// IMIX configuration value for the agent build.
+	ImixConfig    string `protobuf:"bytes,4,opt,name=imix_config,json=imixConfig,proto3" json:"imix_config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -140,9 +140,9 @@ func (x *BuildAgentRequest) GetTargetArch() string {
 	return ""
 }
 
-func (x *BuildAgentRequest) GetCallbackUri() string {
+func (x *BuildAgentRequest) GetImixConfig() string {
 	if x != nil {
-		return x.CallbackUri
+		return x.ImixConfig
 	}
 	return ""
 }
@@ -200,8 +200,10 @@ type ReportBuildStatusRequest struct {
 	BuildId string `protobuf:"bytes,1,opt,name=build_id,json=buildId,proto3" json:"build_id,omitempty"`
 	// Current status of the build.
 	Status BuildStatus `protobuf:"varint,2,opt,name=status,proto3,enum=builder.BuildStatus" json:"status,omitempty"`
-	// Human-readable message with details about the status.
-	Message       string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	// Standard output from the build process.
+	Stdout string `protobuf:"bytes,3,opt,name=stdout,proto3" json:"stdout,omitempty"`
+	// Standard error from the build process.
+	Stderr        string `protobuf:"bytes,4,opt,name=stderr,proto3" json:"stderr,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -250,9 +252,16 @@ func (x *ReportBuildStatusRequest) GetStatus() BuildStatus {
 	return BuildStatus_BUILD_STATUS_UNSPECIFIED
 }
 
-func (x *ReportBuildStatusRequest) GetMessage() string {
+func (x *ReportBuildStatusRequest) GetStdout() string {
 	if x != nil {
-		return x.Message
+		return x.Stdout
+	}
+	return ""
+}
+
+func (x *ReportBuildStatusRequest) GetStderr() string {
+	if x != nil {
+		return x.Stderr
 	}
 	return ""
 }
@@ -408,19 +417,21 @@ var File_builder_proto protoreflect.FileDescriptor
 
 const file_builder_proto_rawDesc = "" +
 	"\n" +
-	"\rbuilder.proto\x12\abuilder\"\x88\x01\n" +
+	"\rbuilder.proto\x12\abuilder\"\x86\x01\n" +
 	"\x11BuildAgentRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\ttarget_os\x18\x02 \x01(\tR\btargetOs\x12\x1f\n" +
 	"\vtarget_arch\x18\x03 \x01(\tR\n" +
-	"targetArch\x12!\n" +
-	"\fcallback_uri\x18\x04 \x01(\tR\vcallbackUri\"/\n" +
+	"targetArch\x12\x1f\n" +
+	"\vimix_config\x18\x04 \x01(\tR\n" +
+	"imixConfig\"/\n" +
 	"\x12BuildAgentResponse\x12\x19\n" +
-	"\bbuild_id\x18\x01 \x01(\tR\abuildId\"}\n" +
+	"\bbuild_id\x18\x01 \x01(\tR\abuildId\"\x93\x01\n" +
 	"\x18ReportBuildStatusRequest\x12\x19\n" +
 	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12,\n" +
-	"\x06status\x18\x02 \x01(\x0e2\x14.builder.BuildStatusR\x06status\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x1b\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x14.builder.BuildStatusR\x06status\x12\x16\n" +
+	"\x06stdout\x18\x03 \x01(\tR\x06stdout\x12\x16\n" +
+	"\x06stderr\x18\x04 \x01(\tR\x06stderr\"\x1b\n" +
 	"\x19ReportBuildStatusResponse\"r\n" +
 	"\x1aReportBuildArtifactRequest\x12\x19\n" +
 	"\bbuild_id\x18\x01 \x01(\tR\abuildId\x12#\n" +

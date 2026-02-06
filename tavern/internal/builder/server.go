@@ -32,7 +32,7 @@ func (srv *Server) BuildAgent(ctx context.Context, req *builderpb.BuildAgentRequ
 		"name", req.GetName(),
 		"target_os", req.GetTargetOs(),
 		"target_arch", req.GetTargetArch(),
-		"callback_uri", req.GetCallbackUri(),
+		"imix_config", req.GetImixConfig(),
 	)
 
 	// TODO: Implement agent build logic
@@ -44,7 +44,8 @@ func (srv *Server) ReportBuildStatus(ctx context.Context, req *builderpb.ReportB
 	slog.InfoContext(ctx, "build status reported",
 		"build_id", req.GetBuildId(),
 		"status", req.GetStatus().String(),
-		"message", req.GetMessage(),
+		"stdout", req.GetStdout(),
+		"stderr", req.GetStderr(),
 	)
 
 	// TODO: Implement build status reporting logic

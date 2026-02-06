@@ -22,10 +22,10 @@ func TestBuilderE2E_ClientConnectsToServer(t *testing.T) {
 
 	t.Run("BuildAgent", func(t *testing.T) {
 		resp, err := client.BuildAgent(ctx, &builderpb.BuildAgentRequest{
-			Name:        "test-agent",
-			TargetOs:    "linux",
-			TargetArch:  "amd64",
-			CallbackUri: "https://example.com/c2",
+			Name:       "test-agent",
+			TargetOs:   "linux",
+			TargetArch: "amd64",
+			ImixConfig: "default-config",
 		})
 
 		// Expect Unimplemented since it's a stub
@@ -41,7 +41,8 @@ func TestBuilderE2E_ClientConnectsToServer(t *testing.T) {
 		resp, err := client.ReportBuildStatus(ctx, &builderpb.ReportBuildStatusRequest{
 			BuildId: "build-123",
 			Status:  builderpb.BuildStatus_BUILD_STATUS_IN_PROGRESS,
-			Message: "compiling...",
+			Stdout:  "compiling main.go...",
+			Stderr:  "",
 		})
 
 		// Expect Unimplemented since it's a stub
