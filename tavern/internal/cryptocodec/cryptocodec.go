@@ -77,8 +77,8 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 		slog.Error("Unable to marshall data")
 		return res, err
 	}
-	enc_res := s.Csvc.Encrypt(res.Materialize())
-	return mem.BufferSlice{mem.SliceBuffer(enc_res)}, nil
+	enc_buf := s.Csvc.Encrypt(res.Materialize(), mem.DefaultBufferPool())
+	return mem.BufferSlice{enc_buf}, nil
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
@@ -98,11 +98,11 @@ func (s StreamDecryptCodec) Name() string {
 
 type CryptoSvc struct {
 	priv_key       *ecdh.PrivateKey
-	sharedKeyCache *lru.Cache[string, cipher.AEAD]
+	sharedKeyCache *lru.Cache[[32]byte, cipher.AEAD]
 }
 
 func NewCryptoSvc(priv_key *ecdh.PrivateKey) CryptoSvc {
-	c, err := lru.New[string, cipher.AEAD](LRUCACHE_SIZE)
+	c, err := lru.New[[32]byte, cipher.AEAD](LRUCACHE_SIZE)
 	if err != nil {
 		slog.Error("Failed to create shared key LRU cache")
 	}
@@ -113,7 +113,9 @@ func NewCryptoSvc(priv_key *ecdh.PrivateKey) CryptoSvc {
 }
 
 func (csvc *CryptoSvc) getAEAD(client_pub_key_bytes []byte) (cipher.AEAD, error) {
-	key := string(client_pub_key_bytes)
+	var key [32]byte
+	copy(key[:], client_pub_key_bytes)
+
 	if csvc.sharedKeyCache != nil {
 		if val, ok := csvc.sharedKeyCache.Get(key); ok {
 			return val, nil
@@ -187,11 +189,11 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 }
 
 // TODO: Don't use [] ref.
-func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
+func (csvc *CryptoSvc) Encrypt(in_arr []byte, pool mem.BufferPool) mem.Buffer {
 	ids, err := goAllIds()
 	if err != nil {
 		slog.Error(fmt.Sprintf("unable to find GOID %s", err))
-		return FAILURE_BYTES
+		return mem.NewBuffer(&FAILURE_BYTES, nil)
 	}
 
 	var id int
@@ -206,32 +208,51 @@ func (csvc *CryptoSvc) Encrypt(in_arr []byte) []byte {
 
 	if !ok {
 		slog.Error(fmt.Sprintf("public key not found for id: %d", id))
-		return FAILURE_BYTES
+		return mem.NewBuffer(&FAILURE_BYTES, nil)
 	}
 
 	// Get AEAD from cache or generate it
 	aead, err := csvc.getAEAD(client_pub_key_bytes)
 	if err != nil {
 		slog.Error(fmt.Sprintf("failed to get aead %v", err))
-		return FAILURE_BYTES
+		return mem.NewBuffer(&FAILURE_BYTES, nil)
 	}
 
 	nonceSize := aead.NonceSize()
 	overhead := aead.Overhead()
 	capacity := len(client_pub_key_bytes) + nonceSize + len(in_arr) + overhead
 
-	// Pre-allocate output buffer
-	out := make([]byte, len(client_pub_key_bytes)+nonceSize, capacity)
-	copy(out, client_pub_key_bytes)
-
-	nonce := out[len(client_pub_key_bytes):]
-	if _, err := rand.Read(nonce); err != nil {
-		slog.Error(fmt.Sprintf("Failed to encrypt %v", err))
-		return FAILURE_BYTES
+	// Get buffer from pool if available
+	var outPtr *[]byte
+	if pool != nil {
+		outPtr = pool.Get(capacity)
+	} else {
+		// Fallback if no pool provided
+		buf := make([]byte, 0, capacity)
+		outPtr = &buf
 	}
 
-	// Append ciphertext to out (which already contains pubKey + nonce)
-	return aead.Seal(out, nonce, in_arr, nil)
+	// Reset length and fill
+	*outPtr = (*outPtr)[:0]
+	*outPtr = append(*outPtr, client_pub_key_bytes...)
+
+	// Append nonce space (will be filled by rand.Read)
+	startNonce := len(*outPtr)
+	*outPtr = append(*outPtr, make([]byte, nonceSize)...)
+	nonce := (*outPtr)[startNonce:]
+
+	if _, err := rand.Read(nonce); err != nil {
+		slog.Error(fmt.Sprintf("Failed to encrypt %v", err))
+		return mem.NewBuffer(&FAILURE_BYTES, nil)
+	}
+
+	// Seal appends ciphertext to outPtr
+	*outPtr = aead.Seal(*outPtr, nonce, in_arr, nil)
+
+	if pool != nil {
+		return mem.NewBuffer(outPtr, pool)
+	}
+	return mem.SliceBuffer(*outPtr)
 }
 
 type GoidTrace struct {

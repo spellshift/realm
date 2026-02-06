@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/chacha20poly1305"
+	"google.golang.org/grpc/mem"
 )
 
 func TestLRUCache(t *testing.T) {
@@ -149,8 +150,9 @@ func TestCryptoSvc_Encrypt_NoSession(t *testing.T) {
 	svc := NewCryptoSvc(serverPrivKey)
 
 	// Encrypt should fail because the current goroutine ID is not in the session map
-	res := svc.Encrypt([]byte("test"))
-	assert.Equal(t, FAILURE_BYTES, res)
+	res := svc.Encrypt([]byte("test"), nil)
+	// Materialize() creates a copy, which equals FAILURE_BYTES
+	assert.Equal(t, FAILURE_BYTES, res.ReadOnlyData())
 }
 
 func TestCryptoSvc_Encrypt_WithSession(t *testing.T) {
@@ -171,7 +173,12 @@ func TestCryptoSvc_Encrypt_WithSession(t *testing.T) {
 
 	// Test Encrypt
 	plaintext := []byte("secret message")
-	encrypted := svc.Encrypt(plaintext)
+	// Use default pool
+	pool := mem.DefaultBufferPool()
+	encryptedBuf := svc.Encrypt(plaintext, pool)
+	defer encryptedBuf.Free()
+
+	encrypted := encryptedBuf.ReadOnlyData()
 
 	assert.NotEqual(t, FAILURE_BYTES, encrypted)
 	assert.True(t, len(encrypted) > len(plaintext))

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/chacha20poly1305"
+	"google.golang.org/grpc/mem"
 )
 
 func BenchmarkEncrypt(b *testing.B) {
@@ -33,11 +34,13 @@ func BenchmarkEncrypt(b *testing.B) {
 	b.ReportAllocs()
 	b.SetBytes(int64(len(payload)))
 
+	pool := mem.DefaultBufferPool()
 	for i := 0; i < b.N; i++ {
-		encrypted := svc.Encrypt(payload)
-		if len(encrypted) == 0 {
+		encryptedBuf := svc.Encrypt(payload, pool)
+		if encryptedBuf.ReadOnlyData() == nil {
 			b.Fatal("Encrypt returned empty slice")
 		}
+		encryptedBuf.Free()
 	}
 }
 
@@ -66,11 +69,13 @@ func BenchmarkEncryptLarge(b *testing.B) {
 	b.ReportAllocs()
 	b.SetBytes(int64(len(payload)))
 
+	pool := mem.DefaultBufferPool()
 	for i := 0; i < b.N; i++ {
-		encrypted := svc.Encrypt(payload)
-		if len(encrypted) == 0 {
+		encryptedBuf := svc.Encrypt(payload, pool)
+		if encryptedBuf.ReadOnlyData() == nil {
 			b.Fatal("Encrypt returned empty slice")
 		}
+		encryptedBuf.Free()
 	}
 }
 
