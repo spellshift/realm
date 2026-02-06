@@ -19,29 +19,12 @@ import (
 func (ec *executionContext) dir_requireRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.dir_requireRole_argsRole(ctx, rawArgs)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "role", ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole)
 	if err != nil {
 		return nil, err
 	}
 	args["role"] = arg0
 	return args, nil
-}
-func (ec *executionContext) dir_requireRole_argsRole(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (models.Role, error) {
-	if _, ok := rawArgs["role"]; !ok {
-		var zeroVal models.Role
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-	if tmp, ok := rawArgs["role"]; ok {
-		return ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, tmp)
-	}
-
-	var zeroVal models.Role
-	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
