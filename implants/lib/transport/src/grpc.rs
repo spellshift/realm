@@ -64,6 +64,22 @@ impl Transport for GRPC {
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        // Rate limit: configurable via extra map, default 40 req/s (1 per 25ms)
+        let rate_limit_num: u64 = extra_map
+            .get("rate_limit_num")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1);
+        let rate_limit_ms: u64 = extra_map
+            .get("rate_limit_ms")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(25);
+
+        let endpoint = endpoint
+            .rate_limit(rate_limit_num, Duration::from_millis(rate_limit_ms))
+            .initial_stream_window_size(2 * 1024 * 1024)
+            .initial_connection_window_size(4 * 1024 * 1024)
+            .buffer_size(2*1024*1024);
+
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
                 let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
@@ -73,14 +89,10 @@ impl Transport for GRPC {
                 let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
                 proxy_connector.set_tls(None);
 
-                endpoint
-                    .rate_limit(1, Duration::from_millis(25))
-                    .connect_with_connector_lazy(proxy_connector)
+                endpoint.connect_with_connector_lazy(proxy_connector)
             }
             #[allow(non_snake_case) /* None is a reserved keyword */]
-            None => endpoint
-                .rate_limit(1, Duration::from_millis(25))
-                .connect_with_connector_lazy(http),
+            None => endpoint.connect_with_connector_lazy(http),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
