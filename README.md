@@ -33,7 +33,7 @@ Want to get involved? [Join our Discord!](https://discord.gg/W4cfwWRNZK)
 
 ## Quick Start
 
-*To deploy a production ready instance see the [setup guide](https://docs.realm.pub/admin-guide/tavern).*
+*To deploy a production-ready instance see the [setup guide](https://docs.realm.pub/admin-guide/tavern).*
 
 ```bash
 # Clone Realm
@@ -55,7 +55,7 @@ cd realm/implants/imix && cargo run
 - Written in Rust with support for MacOS, Linux, and Windows.
 - Supports long running tasks by reading output from tasks in real time.
 - Interval callback times.
-- Simple file based configuration.
+- Simple file-based configuration.
 - Embedded files.
 - Built-in interpreter.
 
@@ -63,7 +63,7 @@ cd realm/implants/imix && cargo run
 
 - Web interface.
 - Group actions.
-- graphql backend for easy API access.
+- GraphQL backend for easy API access.
 - OAuth login support.
 - Cloud native deployment with pre-made terraform for production deployments.
 

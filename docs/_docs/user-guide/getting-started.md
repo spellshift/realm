@@ -51,7 +51,7 @@ The warnings you see here indicate that there are settings recommended for produ
 
 ### Tavern (Redirector)
 
-If your adventure requires you to roll for stealth, Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including GRPC, HTTP1, and DNS. Out of the box tavern c2 only uses grpc but by adding a redirector you unlock any supported protocol.
+If your adventure requires you to roll for stealth, Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including gRPC, HTTP/1.1, and DNS. Out of the box, Tavern C2 only uses gRPC, but by adding a redirector you unlock any supported protocol.
 
 ```bash
 git clone https://github.com/spellshift/realm.git
@@ -97,7 +97,7 @@ Now from the left navigation menu, select "Create new quest".
 
 ![create-new-quest](/assets/img/user-guide/getting-started/create-new-quest.png)
 
-This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. You can use the "View one beacon per host" toggle to filter and display only the best beacon per host, which prioritizes beacons with admin privileges and better transport protocols (GRPC > HTTP > DNS). This is useful when you have multiple beacons on the same host and want to task only the most capable one. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
+This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. You can use the "View one beacon per host" toggle to filter and display only the Best Beacon per Host, which prioritizes beacons with admin privileges and better transport protocols (gRPC > HTTP > DNS). This is useful when you have multiple beacons on the same host and want to task only the most capable one. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
 
 #### Tome Selection
 

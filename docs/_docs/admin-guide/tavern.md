@@ -14,7 +14,7 @@ If you would like to help contribute to Tavern, please take a look at our [open 
 
 ## Deployment
 
-This section will walk you through deploying a production ready instance of Tavern to GCP. If you're just looking to play around with Tavern, feel free to run the [docker image (spellshift/tavern:latest)](https://hub.docker.com/r/spellshift/tavern) locally.
+This section will walk you through deploying a production-ready instance of Tavern to GCP. If you're just looking to play around with Tavern, feel free to run the [docker image (spellshift/tavern:latest)](https://hub.docker.com/r/spellshift/tavern) locally.
 
 ### 1. Create a GCP Project
 

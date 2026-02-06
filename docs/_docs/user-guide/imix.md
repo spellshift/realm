@@ -199,7 +199,7 @@ The DNS transport enables covert C2 communication by tunneling traffic through D
 
 This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
-*Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specififed the transport will attempt to use the local systems primary resolver. Custom ports can be specified with `dns://8.8.8.8:53`
+*Note*: the uri parameter here is the dns server to communicate with. If `dns://*` is specified the transport will attempt to use the local systems primary resolver. Custom ports can be specified with `dns://8.8.8.8:53`
 
 **Extra Keys Supported:**
 - `domain` - Base domain for DNS queries (e.g., `c2.example.com`)

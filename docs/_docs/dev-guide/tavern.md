@@ -194,7 +194,7 @@ For example to add Hashicorp Vault as an OIDC backend you'll need to:
 
 1. Setup an OIDC provider in vault - <https://developer.hashicorp.com/vault/docs/secrets/identity/oidc-provider>
 2. Get the relevant variables from the '.well-known/openid-configuration` endpoint: `authorization_endpoint`,`token_endpoint`,`userinfo_endpoint`,`scopes_supported`
-3. Open the `tavern/config.go` file and find where the `oauth2.Config` is initalized.
+3. Open the `tavern/config.go` file and find where the `oauth2.Config` is initialized.
 4. You'll need to change `Endpoint: google.Endpoint` to  `oauth2.Endpoint{}` and fill in the `AuthURL` and `TokenURL` with `authorization_endpoint` and `token_endpoint` respectively.
 5. Update the `cfg.userProfiles` link with the `userinfo_endpoint`
 6. Update `Scopes:` with the scopes in `scopes_supported`
