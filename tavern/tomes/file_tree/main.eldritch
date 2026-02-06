@@ -22,14 +22,14 @@ def can_read(f):
     # Are we root?
     root = usernfo["euid"]["uid"] == 0
     
-    # If the user isnt root and the user doesnt own the file, clear the user byte   
+    # If the user isn't root and the user doesn't own the file, clear the user byte
     if not root and f["owner"] not in (usernfo["euid"]["name"], usernfo["uid"]["name"]):
         f_user = 0
     
     # TODO: https://github.com/spellshift/realm/issues/570
     # Will NOT match any group other than primary until #570 is fixed
 
-    # If the user isnt root and the group doesnt own the file, clear the group byte    
+    # If the user isn't root and the group doesn't own the file, clear the group byte
     if not root and f["group"] not in (str(usernfo["egid"]), str(usernfo["gid"])):
         f_group = 0
 

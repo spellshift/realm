@@ -136,7 +136,7 @@ fn main() -> anyhow::Result<()> {
             });
         }
     }
-    // If we havent specified tomes in INPUT, we need to look through the asset locker for tomes to run
+    // If we haven't specified tomes in INPUT, we need to look through the asset locker for tomes to run
     if parsed_tomes.is_empty() {
         match locker.list() {
             Ok(assets) => {
