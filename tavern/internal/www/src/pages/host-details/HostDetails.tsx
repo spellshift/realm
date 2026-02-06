@@ -4,7 +4,7 @@ import HostDetailsSection from "./components/HostDetailsSection";
 import HostTabs from "./components/HostTabs";
 import BeaconTab from "./components/BeaconTab";
 import CredentialTab from "./components/CredentialTab";
-import HostTaskTab from "./components/HostTaskTab";
+import { HostTaskTab } from "./task-tab";
 import HostBreadcrumbs from "./components/HostBreadcrumbs";
 
 const HostDetails = () => {

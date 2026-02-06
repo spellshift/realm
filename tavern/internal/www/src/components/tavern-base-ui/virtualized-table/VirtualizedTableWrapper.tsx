@@ -101,9 +101,12 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
     return (
         <div className={`flex flex-col w-full ${className} gap-2`}>
             <div className="flex flex-row justify-between items-center border-b border-gray-200 bg-white gap-2 py-2 sticky top-0 z-5 shadow-sm">
-                <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">
-                    {title} ({totalItems})
-                </h3>
+                <div className='flex flex-row gap-2 items-center'>
+                    <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">
+                        {title}
+                    </h3>
+                    <p className='text-md text-gray-600'>{totalItems !== undefined && `(${totalItems})`}</p>
+                </div>
                 <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
                     {showSorting && <SortingControls />}
                     {showFiltering && <FilterControls />}
