@@ -1,5 +1,5 @@
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
-import QuestHeader from "../quest-list/components/QuestHeader";
+import QuestHeader from "./QuestHeader";
 import { QuestsTable } from "./QuestsTable";
 import { useQuestIds } from "./useQuestIds";
 

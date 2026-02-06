@@ -174,7 +174,6 @@ export const QuestRowVirtualized = ({ questId, onRowClick, isVisible }: QuestRow
             extractData={(response) => response?.quests?.edges?.[0]?.node || null}
             onRowClick={onRowClick}
             isVisible={isVisible}
-            pollInterval={5000}
         />
     );
 };

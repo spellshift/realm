@@ -39,7 +39,7 @@ export function VirtualizedTableRow<TData, TVariables = Record<string, unknown>>
     columns,
     onRowClick,
     isVisible,
-    pollInterval = 30000,
+    pollInterval = 10000,
     extractData,
     className = "",
     minWidth = "800px",

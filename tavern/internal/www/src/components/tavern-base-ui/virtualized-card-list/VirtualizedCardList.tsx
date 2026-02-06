@@ -1,34 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { VirtualizedTableProps } from "./types";
+import { VirtualizedCardListProps } from "./types";
 
-
-export const VirtualizedTable = ({
+export const VirtualizedCardList = ({
     items,
-    renderRow,
-    renderHeader,
-    onItemClick,
+    renderCard,
     hasMore = false,
     onLoadMore,
-    estimateRowSize = 73,
-    overscan = 5,
+    estimateCardSize = 300,
+    overscan = 3,
     height = "calc(100vh - 180px)",
     minHeight = "400px",
-    dynamicSizing = false,
-}: VirtualizedTableProps) => {
+    gap = 16,
+    padding = "1rem",
+    dynamicSizing = true,
+}: VirtualizedCardListProps) => {
     const parentRef = useRef<HTMLDivElement>(null);
     const [visibleItemIds, setVisibleItemIds] = useState<Set<string>>(new Set());
-
-    const handleItemClick = useCallback((itemId: string) => {
-        if (onItemClick) {
-            onItemClick(itemId);
-        }
-    }, [onItemClick]);
 
     const rowVirtualizer = useVirtualizer({
         count: items.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => estimateRowSize,
+        estimateSize: () => estimateCardSize + gap,
         overscan,
         // Enable dynamic measurement of actual element sizes
         measureElement: dynamicSizing
@@ -68,14 +61,14 @@ export const VirtualizedTable = ({
 
         if (!lastItem) return;
 
-        if (lastItem.index >= items.length - 5 && hasMore && onLoadMore) {
+        if (lastItem.index >= items.length - 3 && hasMore && onLoadMore) {
             onLoadMore();
         }
     }, [rowVirtualizer, items.length, hasMore, onLoadMore]);
 
     const range = rowVirtualizer.range;
 
-    // Track which rows are actually visible (not just in overscan)
+    // Track which cards are actually visible (not just in overscan)
     useEffect(() => {
         updateVisibleItemIds();
     }, [updateVisibleItemIds, range?.startIndex, range?.endIndex]);
@@ -88,35 +81,34 @@ export const VirtualizedTable = ({
     return (
         <div
             ref={parentRef}
-            className="overflow-auto border border-gray-200 rounded-lg"
+            className="overflow-auto"
             style={{
                 height,
                 minHeight,
-                width: '100%'
+                width: '100%',
+                padding,
             }}
         >
-            {/* Header */}
-            {renderHeader()}
-
-            {/* Virtualized rows container */}
+            {/* Virtualized cards container */}
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                {rowVirtualizer.getVirtualItems().map(virtualRow => {
-                    const itemId = items[virtualRow.index];
+                {rowVirtualizer.getVirtualItems().map(virtualItem => {
+                    const itemId = items[virtualItem.index];
                     const isVisible = visibleItemIds.has(itemId);
                     return (
                         <div
                             key={itemId}
                             ref={dynamicSizing ? rowVirtualizer.measureElement : undefined}
-                            data-index={virtualRow.index}
+                            data-index={virtualItem.index}
                             style={{
                                 position: 'absolute',
                                 top: 0,
                                 left: 0,
                                 width: '100%',
-                                transform: `translateY(${virtualRow.start}px)`,
+                                transform: `translateY(${virtualItem.start}px)`,
+                                paddingBottom: `${gap}px`,
                             }}
                         >
-                            {renderRow({ itemId, isVisible, onItemClick: handleItemClick })}
+                            {renderCard({ itemId, isVisible })}
                         </div>
                     );
                 })}

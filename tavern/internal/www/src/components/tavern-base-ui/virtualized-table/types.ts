@@ -89,6 +89,9 @@ export interface VirtualizedTableProps {
 
     /** Minimum height in pixels */
     minHeight?: string;
+
+    /** Enable dynamic sizing - measures actual element heights after render (default: false) */
+    dynamicSizing?: boolean;
 }
 
 /**
