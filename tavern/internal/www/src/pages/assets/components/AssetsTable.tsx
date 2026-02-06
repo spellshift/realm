@@ -3,8 +3,8 @@ import { format } from "date-fns";
 import { AssetEdge } from "../../../utils/interfacesQuery";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { ArrowDownToLine, Link, ChevronDown, ChevronRight } from "lucide-react";
-import { Tooltip } from "@chakra-ui/react";
+import { ArrowDownToLine, Link, ChevronDown, ChevronRight, BookOpen, Copy } from "lucide-react";
+import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 
 type AssetsTableProps = {
@@ -22,6 +22,19 @@ const formatBytes = (bytes: number, decimals = 2) => {
 }
 
 const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
+    const toast = useToast();
+
+    const handleCopyHash = (hash: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(hash);
+        toast({
+            title: "Hash copied to clipboard",
+            status: "success",
+            duration: 2000,
+            isClosable: true,
+        });
+    };
+
     const columns: ColumnDef<AssetEdge>[] = [
          {
             id: 'expander',
@@ -32,7 +45,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             maxSize: 40,
             cell: ({ row }) => {
                 return (
-                    <div className="flex items-center" >
+                    <div className="flex items-center justify-center h-full w-full" >
                         {row.getIsExpanded() ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />}
                     </div>
                 );
@@ -43,6 +56,19 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             header: "Name",
             accessorFn: row => row.node.name,
             enableSorting: false,
+            cell: ({ row }) => {
+                const hasTomes = row.original.node.tomes.totalCount > 0;
+                return (
+                    <div className="flex items-center gap-2">
+                        {hasTomes && (
+                            <Tooltip label={`${row.original.node.tomes.totalCount} associated tome(s)`} bg="white" color="black">
+                                <BookOpen className="w-4 h-4 text-gray-500" />
+                            </Tooltip>
+                        )}
+                        <span>{row.original.node.name}</span>
+                    </div>
+                );
+            }
         },
         {
             id: "size",
@@ -58,8 +84,14 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             cell: ({ getValue }) => {
                 const hash = getValue() as string;
                 return (
-                    <Tooltip label={hash}>
-                        <span className="font-mono text-xs">{hash.substring(0, 12)}...</span>
+                    <Tooltip label="Click to copy hash" bg="white" color="black">
+                        <div
+                            className="font-mono text-xs cursor-pointer hover:text-purple-600 flex items-center gap-1"
+                            onClick={(e) => handleCopyHash(hash, e)}
+                        >
+                            <span>{hash.substring(0, 12)}...</span>
+                            <Copy className="w-3 h-3" />
+                        </div>
                     </Tooltip>
                 );
             },
@@ -69,12 +101,6 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             id: "links",
             header: "Links",
             accessorFn: (row) => row.node.links.totalCount,
-            enableSorting: false,
-        },
-        {
-            id: "tomes",
-            header: "Tomes",
-            accessorFn: (row) => row.node.tomes.totalCount,
             enableSorting: false,
         },
         {
@@ -91,8 +117,8 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             cell: ({ row }) => {
                 return (
                     <div className="flex flex-row gap-2">
-                         <Tooltip label="Download">
-                            <a href={`/assets/download/${row.original.node.name}`} download>
+                         <Tooltip label="Download" bg="white" color="black">
+                            <a href={`/assets/download/${row.original.node.name}`} download onClick={(e) => e.stopPropagation()}>
                                 <Button
                                     buttonVariant="ghost"
                                     buttonStyle={{ color: "gray", size: "xs" }}
@@ -101,7 +127,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                                 />
                             </a>
                         </Tooltip>
-                        <Tooltip label="Create Link">
+                        <Tooltip label="Create Link" bg="white" color="black">
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
