@@ -6,9 +6,9 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio::time::{Duration, sleep};
 
-const BUF_SIZE: usize = 64 * 1024;
+const BUF_SIZE: usize = 256 * 1024;
 const BATCH_DURATION: Duration = Duration::from_millis(1);
-const MAX_BATCH_SIZE: usize = 4194304;
+const MAX_BATCH_SIZE: usize = 2097152;
 
 pub async fn handle_tcp(
     first_mote: Mote,
@@ -131,23 +131,56 @@ pub async fn handle_tcp(
     });
 
     // Write Loop (C2 -> Socket)
-    while let Some(mote) = rx.recv().await {
-        if let Some(Payload::Tcp(tcp)) = mote.payload
-            && !tcp.data.is_empty()
-        {
-            #[cfg(debug_assertions)]
-            let n = tcp.data.len();
+    'outer: while let Some(mote) = rx.recv().await {
+        // Collect the first mote's data
+        let mut batch = Vec::new();
+        if let Some(Payload::Tcp(tcp)) = mote.payload {
+            if !tcp.data.is_empty() {
+                batch.extend_from_slice(&tcp.data);
+            }
+        }
 
-            match write_half.write_all(&tcp.data).await {
+        // Collect additional motes within the batch window
+        let deadline = sleep(BATCH_DURATION);
+        tokio::pin!(deadline);
+        loop {
+            if batch.len() >= MAX_BATCH_SIZE {
+                break;
+            }
+            tokio::select! {
+                biased;
+                maybe_mote = rx.recv() => {
+                    match maybe_mote {
+                        Some(m) => {
+                            if let Some(Payload::Tcp(tcp)) = m.payload {
+                                if !tcp.data.is_empty() {
+                                    batch.extend_from_slice(&tcp.data);
+                                }
+                            }
+                        }
+                        None => break, // channel closed
+                    }
+                }
+                () = &mut deadline => {
+                    break;
+                }
+            }
+        }
+
+        if !batch.is_empty() {
+            #[cfg(debug_assertions)]
+            let n = batch.len();
+
+            match write_half.write_all(&batch).await {
                 Ok(_) => {
                     #[cfg(debug_assertions)]
-                    log::debug!("→ TCP {dst_addr} {n} bytes to portal stream ");
+                    log::debug!("→ TCP {dst_addr} {n} bytes to portal stream (batched)");
                 }
                 Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write tcp ({n} bytes)to {}: {_e:?}", addr);
+                    log::error!("failed to write tcp ({n} bytes) to {}: {_e:?}", addr);
 
-                    break;
+                    break 'outer;
                 }
             }
         }
