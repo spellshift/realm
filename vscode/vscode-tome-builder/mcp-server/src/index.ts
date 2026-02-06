@@ -5,60 +5,7 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { z } from "zod";
-import * as fs from 'fs';
-import * as path from 'path';
-
-// --- Helper Functions for Runtime File Reading ---
-
-function findRepoRoot(): string | null {
-    let currentDir = __dirname;
-    while (currentDir !== path.parse(currentDir).root) {
-        if (fs.existsSync(path.join(currentDir, 'go.mod'))) {
-            return currentDir;
-        }
-        if (fs.existsSync(path.join(currentDir, '.git'))) {
-             return currentDir;
-        }
-        currentDir = path.dirname(currentDir);
-    }
-    return null;
-}
-
-const REPO_ROOT = findRepoRoot();
-
-function readDocFile(relativePath: string): string {
-    if (!REPO_ROOT) {
-        return "Error: Could not locate repository root. Ensure you are running this in the realm repository.";
-    }
-    const fullPath = path.join(REPO_ROOT, relativePath);
-    try {
-        return fs.readFileSync(fullPath, 'utf-8');
-    } catch (e) {
-        return `Error reading file ${fullPath}: ${e}`;
-    }
-}
-
-function readExample(tomeName: string): { metadata: string, script: string } {
-     if (!REPO_ROOT) {
-        return {
-            metadata: "Error: Could not locate repository root.",
-            script: "Error: Could not locate repository root."
-        };
-    }
-
-    const tomeDir = path.join(REPO_ROOT, `tavern/tomes/${tomeName}`);
-    try {
-        const metadata = fs.readFileSync(path.join(tomeDir, 'metadata.yml'), 'utf-8');
-        const script = fs.readFileSync(path.join(tomeDir, 'main.eldritch'), 'utf-8');
-        return { metadata, script };
-    } catch (e) {
-        return {
-            metadata: `Error reading example ${tomeName}: ${e}`,
-            script: `Error reading example ${tomeName}: ${e}`
-        };
-    }
-}
+import { DOCS, EXAMPLES } from "./assets.js";
 
 // --- Server Setup ---
 
@@ -99,8 +46,8 @@ const getTomeExamplesTool: Tool = {
         properties: {
             topic: {
                 type: "string",
-                enum: ["file_write", "persist_service"],
-                description: "The example to retrieve. 'file_write' is simple, 'persist_service' is complex (templates, os checks)."
+                enum: Object.keys(EXAMPLES),
+                description: "The name of the tome example to retrieve."
             }
         },
         required: ["topic"]
@@ -133,36 +80,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const topic = (args as any).topic;
         if (topic === "tomes") {
             return {
-                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/tomes.md') }],
+                content: [{ type: "text", text: DOCS.tomes }],
             };
         } else if (topic === "eldritch") {
             return {
-                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/eldritch.md') }],
+                content: [{ type: "text", text: DOCS.eldritch }],
             };
         }
         return { content: [], isError: true };
     }
 
     if (name === "get_tome_examples") {
-        const topic = (args as any).topic;
-        if (topic === "file_write") {
-            const example = readExample('file_write');
+        const topic = (args as any).topic as string;
+        const example = EXAMPLES[topic];
+
+        if (example) {
             return {
                 content: [
                     { type: "text", text: "## metadata.yml\n" + example.metadata },
                     { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
-        } else if (topic === "persist_service") {
-             const example = readExample('persist_service');
-             return {
-                content: [
-                    { type: "text", text: "## metadata.yml\n" + example.metadata },
-                    { type: "text", text: "## main.eldritch\n" + example.script }
-                ]
-            };
         }
-         return { content: [], isError: true };
+
+         return {
+            content: [{ type: "text", text: `Example '${topic}' not found. Available: ${Object.keys(EXAMPLES).join(", ")}` }],
+            isError: true
+        };
     }
 
     if (name === "validate_tome_structure") {
