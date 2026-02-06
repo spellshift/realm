@@ -1,15 +1,15 @@
 import { BarsArrowDownIcon, BarsArrowUpIcon } from "@heroicons/react/24/outline";
 import { useSorts } from "./SortContext";
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from "../../utils/enums";
+import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from "../../utils/enums";
 import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
 import SingleDropdownSelector, { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
 import { ReactElement } from "react";
 import { useLocation } from "react-router-dom";
 import { getNavItemFromPath, isHostDetailPath } from "../../utils/utils";
 
-type SortPageType = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks;
+type SortPageType = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks | PageNavItem.assets;
 
-const sortablePages = new Set<PageNavItem>([PageNavItem.quests, PageNavItem.tasks, PageNavItem.hosts]);
+const sortablePages = new Set<PageNavItem>([PageNavItem.quests, PageNavItem.tasks, PageNavItem.hosts, PageNavItem.assets]);
 
 function getSortPageType(pathname: string): SortPageType | null {
     // Host detail pages sort by tasks
@@ -23,6 +23,7 @@ const orderFieldOptionsMap = {
     [PageNavItem.hosts]: createOrderFieldOptions(HostOrderField),
     [PageNavItem.quests]: createOrderFieldOptions(QuestOrderField),
     [PageNavItem.tasks]: createOrderFieldOptions(TaskOrderField),
+    [PageNavItem.assets]: createOrderFieldOptions(AssetOrderField),
 };
 
 const directionOptions = [
@@ -59,7 +60,7 @@ function getDirectionIcon(direction: OrderDirection): ReactElement {
     return <BarsArrowDownIcon className="w-4" />
 }
 
-function createOrderFieldOptions<T extends QuestOrderField | TaskOrderField | HostOrderField>(
+function createOrderFieldOptions<T extends QuestOrderField | TaskOrderField | HostOrderField | AssetOrderField>(
     enumObj: Record<string, T>
 ): Array<Option> {
     return Object.values(enumObj).map((field) => ({

@@ -1,4 +1,4 @@
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { Upload } from "lucide-react";
 import { FC } from "react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
@@ -19,7 +19,7 @@ const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen }) => {
                     onClick={() => setOpen(true)}
                     buttonVariant="solid"
                     buttonStyle={{ color: "purple", size: "md" }}
-                    leftIcon={<ArrowUpTrayIcon className="-ml-0.5 mr-1.5 h-5 w-5" />}
+                    leftIcon={<Upload className="-ml-0.5 mr-1.5 h-5 w-5" />}
                 >
                     Upload Asset
                 </Button>

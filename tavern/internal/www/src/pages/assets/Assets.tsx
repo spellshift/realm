@@ -6,6 +6,7 @@ import CreateLinkModal from "./components/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal";
 import TableWrapper from "../../components/tavern-base-ui/table/TableWrapper";
 import TablePagination from "../../components/tavern-base-ui/table/TablePagination";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 export const Assets = () => {
     const rowLimit = 50;
@@ -26,6 +27,12 @@ export const Assets = () => {
 
     return (
         <>
+            <Breadcrumbs
+                pages={[{
+                    label: "Assets",
+                    link: "/assets"
+                }]}
+            />
             <div className="flex flex-col gap-6">
                 <AssetsHeader setOpen={setUploadAssetModalOpen} />
                 <TableWrapper

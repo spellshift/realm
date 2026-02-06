@@ -315,6 +315,17 @@ export interface GetRepositoryQueryVariables {
     orderBy?: RepositoryOrderBy[];
 }
 
+export interface LinkNode {
+    id: string;
+    path: string;
+    expiresAt: string;
+    downloadsRemaining: number;
+}
+
+export interface LinkEdge {
+    node: LinkNode;
+}
+
 export interface AssetNode {
     id: string;
     name: string;
@@ -324,9 +335,11 @@ export interface AssetNode {
     lastModifiedAt: string;
     links: {
         totalCount: number;
+        edges: LinkEdge[];
     };
     tomes: {
         totalCount: number;
+        edges: TomeEdge[];
     };
 }
 

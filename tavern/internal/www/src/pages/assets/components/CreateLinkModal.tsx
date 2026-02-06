@@ -3,7 +3,7 @@ import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useCreateLink } from "../useAssets";
 import { format } from "date-fns";
-import { ClipboardDocumentIcon } from "@heroicons/react/24/outline";
+import { Clipboard } from "lucide-react";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
@@ -54,14 +54,14 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">
                         Create link for {assetName}
                     </h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-gray-500 font-normal">
                         Create a temporary download link for this asset.
                     </p>
                 </div>
 
                 {createdLink ? (
-                    <div className="flex flex-col gap-4 p-4 bg-green-50 rounded-md border border-green-200">
-                        <h4 className="font-medium text-green-800">Link Created!</h4>
+                    <div className="flex flex-col gap-4">
+                        <h4 className="font-medium text-gray-900">Link Created!</h4>
                         <div className="flex flex-row items-center gap-2">
                             <input
                                 type="text"
@@ -73,7 +73,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                                 onClick={handleCopy}
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "sm" }}
-                                leftIcon={<ClipboardDocumentIcon className="h-5 w-5" />}
+                                leftIcon={<Clipboard className="h-5 w-5" />}
                             >
                                 Copy
                             </Button>

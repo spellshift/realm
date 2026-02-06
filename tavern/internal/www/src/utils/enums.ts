@@ -86,6 +86,13 @@ export enum HostOrderField {
     LastSeenAt = "LAST_SEEN_AT",
 }
 
+export enum AssetOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
+}
+
 export enum RepositoryOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",

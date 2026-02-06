@@ -1,7 +1,7 @@
+import { Upload } from "lucide-react";
 import { FC, useState } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 
 type UploadAssetModalProps = {
     isOpen: boolean;
@@ -113,7 +113,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                             disabled={loading || !file}
                             buttonVariant="solid"
                             buttonStyle={{ color: "purple", size: "md" }}
-                            leftIcon={<ArrowUpTrayIcon className="h-5 w-5" />}
+                            leftIcon={<Upload className="h-5 w-5" />}
                         >
                             {loading ? "Uploading..." : "Upload"}
                         </Button>
