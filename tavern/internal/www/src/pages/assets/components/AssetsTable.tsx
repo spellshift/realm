@@ -6,6 +6,8 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
+import { useState, useEffect } from "react";
+import UserImageAndName from "../../../components/UserImageAndName";
 
 type AssetsTableProps = {
     assets: AssetEdge[];
@@ -23,6 +25,15 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
     const toast = useToast();
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleCopyHash = (hash: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -44,6 +55,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             enableSorting: false,
             maxSize: 40,
             cell: ({ row }) => {
+                if (row.original.node.links.totalCount === 0) return null;
                 return (
                     <div className="flex flex-row gap-2 items-center" >
                         {row.getIsExpanded() ? <div><ChevronDown className="w-4 h-4" /></div> : <div><ChevronRight className="w-4 h-4" /></div>}
@@ -62,11 +74,24 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                     <div className="flex items-center gap-2">
                         {hasTomes && (
                             <Tooltip label={`${row.original.node.tomes.totalCount} associated tome(s)`} bg="white" color="black">
-                                <BookOpen className="w-4 h-4 text-gray-500" />
+                                <div className="shrink-0">
+                                    <BookOpen className="w-4 h-4 text-gray-500" />
+                                </div>
                             </Tooltip>
                         )}
                         <span>{row.original.node.name}</span>
                     </div>
+                );
+            }
+        },
+        {
+            id: "creator",
+            header: "Creator",
+            accessorFn: row => row.node.creator,
+            enableSorting: false,
+            cell: ({ row }) => {
+                return (
+                    <UserImageAndName userData={row.original.node.creator} />
                 );
             }
         },
@@ -145,14 +170,21 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
         },
     ];
 
+    const visibleColumns = isMobile
+        ? columns.filter(col => ["expander", "name", "creator", "actions"].includes(col.id as string))
+        : columns;
+
+
     return (
         <Table
             data={assets}
-            columns={columns}
-            getRowCanExpand={() => true}
+            columns={visibleColumns}
+            getRowCanExpand={(row) => row.original.node.links.totalCount > 0}
             onRowClick={(row, event) => {
-                const toggle = row.getToggleExpandedHandler();
-                toggle();
+                if (row.original.node.links.totalCount > 0) {
+                    const toggle = row.getToggleExpandedHandler();
+                    toggle();
+                }
             }}
             renderSubComponent={({ row }) => <AssetAccordion asset={row.original.node} />}
         />

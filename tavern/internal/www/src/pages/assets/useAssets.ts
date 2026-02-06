@@ -43,6 +43,11 @@ export const GET_ASSETS = gql`
               }
             }
           }
+          creator {
+            id
+            name
+            photoURL
+          }
         }
       }
     }
