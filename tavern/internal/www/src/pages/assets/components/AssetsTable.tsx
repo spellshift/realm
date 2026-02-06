@@ -68,6 +68,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             header: "Name",
             accessorFn: row => row.node.name,
             enableSorting: false,
+            size: 250,
             cell: ({ row }) => {
                 const hasTomes = row.original.node.tomes.totalCount > 0;
                 return (
@@ -89,6 +90,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             header: "Creator",
             accessorFn: row => row.node.creator,
             enableSorting: false,
+            size: 200,
             cell: ({ row }) => {
                 return (
                     <div className="pr-4">
