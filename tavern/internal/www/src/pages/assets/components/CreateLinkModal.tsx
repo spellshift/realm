@@ -25,7 +25,7 @@ const generateRandomString = (length: number) => {
 
 const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName }) => {
     const { createLink, loading } = useCreateLink();
-    const [downloadsRemaining, setDownloadsRemaining] = useState<number>(1);
+    const [downloadLimit, setDownloadLimit] = useState<number|null>(null);
     const [expiresAt, setExpiresAt] = useState<string>(
         format(new Date(Date.now() + 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm")
     );
@@ -46,7 +46,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 variables: {
                     input: {
                         assetID: assetId,
-                        downloadsRemaining: Number(downloadsRemaining),
+                        downloadLimit: downloadLimit !== null ? Number(downloadLimit) : null,
                         expiresAt: new Date(expiresAt).toISOString(),
                         path: path,
                     },
@@ -113,14 +113,14 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Downloads Remaining
+                                Download Limit
                             </label>
                             <input
                                 type="number"
-                                min="1"
+                                min="0"
                                 required
-                                value={downloadsRemaining}
-                                onChange={(e) => setDownloadsRemaining(Number(e.target.value))}
+                                value={downloadLimit ?? 0}
+                                onChange={(e) => setDownloadLimit(Number(e.target.value))}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
                             />
                         </div>

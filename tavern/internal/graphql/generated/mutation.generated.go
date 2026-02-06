@@ -1309,10 +1309,14 @@ func (ec *executionContext) fieldContext_Mutation_createLink(ctx context.Context
 				return ec.fieldContext_Link_path(ctx, field)
 			case "expiresAt":
 				return ec.fieldContext_Link_expiresAt(ctx, field)
-			case "downloadsRemaining":
-				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
+			case "downloadLimit":
+				return ec.fieldContext_Link_downloadLimit(ctx, field)
+			case "downloads":
+				return ec.fieldContext_Link_downloads(ctx, field)
 			case "asset":
 				return ec.fieldContext_Link_asset(ctx, field)
+			case "creator":
+				return ec.fieldContext_Link_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},
@@ -1384,10 +1388,14 @@ func (ec *executionContext) fieldContext_Mutation_updateLink(ctx context.Context
 				return ec.fieldContext_Link_path(ctx, field)
 			case "expiresAt":
 				return ec.fieldContext_Link_expiresAt(ctx, field)
-			case "downloadsRemaining":
-				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
+			case "downloadLimit":
+				return ec.fieldContext_Link_downloadLimit(ctx, field)
+			case "downloads":
+				return ec.fieldContext_Link_downloads(ctx, field)
 			case "asset":
 				return ec.fieldContext_Link_asset(ctx, field)
+			case "creator":
+				return ec.fieldContext_Link_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},
@@ -1459,10 +1467,14 @@ func (ec *executionContext) fieldContext_Mutation_disableLink(ctx context.Contex
 				return ec.fieldContext_Link_path(ctx, field)
 			case "expiresAt":
 				return ec.fieldContext_Link_expiresAt(ctx, field)
-			case "downloadsRemaining":
-				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
+			case "downloadLimit":
+				return ec.fieldContext_Link_downloadLimit(ctx, field)
+			case "downloads":
+				return ec.fieldContext_Link_downloads(ctx, field)
 			case "asset":
 				return ec.fieldContext_Link_asset(ctx, field)
+			case "creator":
+				return ec.fieldContext_Link_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},

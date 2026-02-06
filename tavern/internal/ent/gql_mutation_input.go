@@ -158,10 +158,11 @@ func (c *HostCredentialCreate) SetInput(i CreateHostCredentialInput) *HostCreden
 
 // CreateLinkInput represents a mutation input for creating links.
 type CreateLinkInput struct {
-	Path               *string
-	ExpiresAt          *time.Time
-	DownloadsRemaining *int
-	AssetID            int
+	Path          *string
+	ExpiresAt     *time.Time
+	DownloadLimit *int
+	Downloads     *int
+	AssetID       int
 }
 
 // Mutate applies the CreateLinkInput on the LinkMutation builder.
@@ -172,8 +173,11 @@ func (i *CreateLinkInput) Mutate(m *LinkMutation) {
 	if v := i.ExpiresAt; v != nil {
 		m.SetExpiresAt(*v)
 	}
-	if v := i.DownloadsRemaining; v != nil {
-		m.SetDownloadsRemaining(*v)
+	if v := i.DownloadLimit; v != nil {
+		m.SetDownloadLimit(*v)
+	}
+	if v := i.Downloads; v != nil {
+		m.SetDownloads(*v)
 	}
 	m.SetAssetID(i.AssetID)
 }
@@ -189,7 +193,11 @@ type UpdateLinkInput struct {
 	LastModifiedAt     *time.Time
 	Path               *string
 	ExpiresAt          *time.Time
-	DownloadsRemaining *int
+	ClearDownloadLimit bool
+	DownloadLimit      *int
+	Downloads          *int
+	ClearCreator       bool
+	CreatorID          *int
 }
 
 // Mutate applies the UpdateLinkInput on the LinkMutation builder.
@@ -203,8 +211,20 @@ func (i *UpdateLinkInput) Mutate(m *LinkMutation) {
 	if v := i.ExpiresAt; v != nil {
 		m.SetExpiresAt(*v)
 	}
-	if v := i.DownloadsRemaining; v != nil {
-		m.SetDownloadsRemaining(*v)
+	if i.ClearDownloadLimit {
+		m.ClearDownloadLimit()
+	}
+	if v := i.DownloadLimit; v != nil {
+		m.SetDownloadLimit(*v)
+	}
+	if v := i.Downloads; v != nil {
+		m.SetDownloads(*v)
+	}
+	if i.ClearCreator {
+		m.ClearCreator()
+	}
+	if v := i.CreatorID; v != nil {
+		m.SetCreatorID(*v)
 	}
 }
 

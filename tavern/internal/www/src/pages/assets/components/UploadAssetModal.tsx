@@ -2,6 +2,7 @@ import { Upload } from "lucide-react";
 import { FC, useState } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import AlertError from "../../../components/tavern-base-ui/AlertError";
 
 type UploadAssetModalProps = {
     isOpen: boolean;
@@ -68,10 +69,20 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                 </div>
 
                 {error && (
-                    <div className="p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
-                        {error}
-                    </div>
-                )}
+                <div className="mb-4">
+                    <AlertError
+                        label="Failed to upload asset"
+                        details="There was an error uploading your asset. Please try again or contact support if the issue persists."
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setError(null)}
+                        className="mt-2 text-sm text-red-600 hover:text-red-500 underline"
+                    >
+                        Dismiss error
+                    </button>
+                </div>
+            )}
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                     <div>

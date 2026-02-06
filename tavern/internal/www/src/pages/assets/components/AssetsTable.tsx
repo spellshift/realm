@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { AssetEdge } from "../../../utils/interfacesQuery";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { ArrowDownToLine, Link, ChevronDown, ChevronRight, BookOpen, Copy } from "lucide-react";
+import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 
@@ -45,8 +45,8 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             maxSize: 40,
             cell: ({ row }) => {
                 return (
-                    <div className="flex items-center justify-center h-full w-full" >
-                        {row.getIsExpanded() ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />}
+                    <div className="flex flex-row gap-2 items-center" >
+                        {row.getIsExpanded() ? <div><ChevronDown className="w-4 h-4" /></div> : <div><ChevronRight className="w-4 h-4" /></div>}
                     </div>
                 );
             },
@@ -131,7 +131,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
-                                leftIcon={<Link className="w-4 h-4" />}
+                                leftIcon={<Share className="w-4 h-4" />}
                                 onClick={(e) => {
                                     e.stopPropagation(); // Prevent row expansion
                                     onCreateLink(row.original.node.id, row.original.node.name);

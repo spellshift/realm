@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // LinkCreate is the builder for creating a Link entity.
@@ -79,16 +80,30 @@ func (lc *LinkCreate) SetNillableExpiresAt(t *time.Time) *LinkCreate {
 	return lc
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (lc *LinkCreate) SetDownloadsRemaining(i int) *LinkCreate {
-	lc.mutation.SetDownloadsRemaining(i)
+// SetDownloadLimit sets the "download_limit" field.
+func (lc *LinkCreate) SetDownloadLimit(i int) *LinkCreate {
+	lc.mutation.SetDownloadLimit(i)
 	return lc
 }
 
-// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
-func (lc *LinkCreate) SetNillableDownloadsRemaining(i *int) *LinkCreate {
+// SetNillableDownloadLimit sets the "download_limit" field if the given value is not nil.
+func (lc *LinkCreate) SetNillableDownloadLimit(i *int) *LinkCreate {
 	if i != nil {
-		lc.SetDownloadsRemaining(*i)
+		lc.SetDownloadLimit(*i)
+	}
+	return lc
+}
+
+// SetDownloads sets the "downloads" field.
+func (lc *LinkCreate) SetDownloads(i int) *LinkCreate {
+	lc.mutation.SetDownloads(i)
+	return lc
+}
+
+// SetNillableDownloads sets the "downloads" field if the given value is not nil.
+func (lc *LinkCreate) SetNillableDownloads(i *int) *LinkCreate {
+	if i != nil {
+		lc.SetDownloads(*i)
 	}
 	return lc
 }
@@ -102,6 +117,25 @@ func (lc *LinkCreate) SetAssetID(id int) *LinkCreate {
 // SetAsset sets the "asset" edge to the Asset entity.
 func (lc *LinkCreate) SetAsset(a *Asset) *LinkCreate {
 	return lc.SetAssetID(a.ID)
+}
+
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (lc *LinkCreate) SetCreatorID(id int) *LinkCreate {
+	lc.mutation.SetCreatorID(id)
+	return lc
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (lc *LinkCreate) SetNillableCreatorID(id *int) *LinkCreate {
+	if id != nil {
+		lc = lc.SetCreatorID(*id)
+	}
+	return lc
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (lc *LinkCreate) SetCreator(u *User) *LinkCreate {
+	return lc.SetCreatorID(u.ID)
 }
 
 // Mutation returns the LinkMutation object of the builder.
@@ -155,9 +189,9 @@ func (lc *LinkCreate) defaults() {
 		v := link.DefaultExpiresAt
 		lc.mutation.SetExpiresAt(v)
 	}
-	if _, ok := lc.mutation.DownloadsRemaining(); !ok {
-		v := link.DefaultDownloadsRemaining
-		lc.mutation.SetDownloadsRemaining(v)
+	if _, ok := lc.mutation.Downloads(); !ok {
+		v := link.DefaultDownloads
+		lc.mutation.SetDownloads(v)
 	}
 }
 
@@ -180,12 +214,17 @@ func (lc *LinkCreate) check() error {
 	if _, ok := lc.mutation.ExpiresAt(); !ok {
 		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "Link.expires_at"`)}
 	}
-	if _, ok := lc.mutation.DownloadsRemaining(); !ok {
-		return &ValidationError{Name: "downloads_remaining", err: errors.New(`ent: missing required field "Link.downloads_remaining"`)}
+	if v, ok := lc.mutation.DownloadLimit(); ok {
+		if err := link.DownloadLimitValidator(v); err != nil {
+			return &ValidationError{Name: "download_limit", err: fmt.Errorf(`ent: validator failed for field "Link.download_limit": %w`, err)}
+		}
 	}
-	if v, ok := lc.mutation.DownloadsRemaining(); ok {
-		if err := link.DownloadsRemainingValidator(v); err != nil {
-			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
+	if _, ok := lc.mutation.Downloads(); !ok {
+		return &ValidationError{Name: "downloads", err: errors.New(`ent: missing required field "Link.downloads"`)}
+	}
+	if v, ok := lc.mutation.Downloads(); ok {
+		if err := link.DownloadsValidator(v); err != nil {
+			return &ValidationError{Name: "downloads", err: fmt.Errorf(`ent: validator failed for field "Link.downloads": %w`, err)}
 		}
 	}
 	if len(lc.mutation.AssetIDs()) == 0 {
@@ -234,9 +273,13 @@ func (lc *LinkCreate) createSpec() (*Link, *sqlgraph.CreateSpec) {
 		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = value
 	}
-	if value, ok := lc.mutation.DownloadsRemaining(); ok {
-		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
-		_node.DownloadsRemaining = value
+	if value, ok := lc.mutation.DownloadLimit(); ok {
+		_spec.SetField(link.FieldDownloadLimit, field.TypeInt, value)
+		_node.DownloadLimit = &value
+	}
+	if value, ok := lc.mutation.Downloads(); ok {
+		_spec.SetField(link.FieldDownloads, field.TypeInt, value)
+		_node.Downloads = value
 	}
 	if nodes := lc.mutation.AssetIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -253,6 +296,23 @@ func (lc *LinkCreate) createSpec() (*Link, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.link_asset = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := lc.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   link.CreatorTable,
+			Columns: []string{link.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.link_creator = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -343,21 +403,45 @@ func (u *LinkUpsert) UpdateExpiresAt() *LinkUpsert {
 	return u
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (u *LinkUpsert) SetDownloadsRemaining(v int) *LinkUpsert {
-	u.Set(link.FieldDownloadsRemaining, v)
+// SetDownloadLimit sets the "download_limit" field.
+func (u *LinkUpsert) SetDownloadLimit(v int) *LinkUpsert {
+	u.Set(link.FieldDownloadLimit, v)
 	return u
 }
 
-// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
-func (u *LinkUpsert) UpdateDownloadsRemaining() *LinkUpsert {
-	u.SetExcluded(link.FieldDownloadsRemaining)
+// UpdateDownloadLimit sets the "download_limit" field to the value that was provided on create.
+func (u *LinkUpsert) UpdateDownloadLimit() *LinkUpsert {
+	u.SetExcluded(link.FieldDownloadLimit)
 	return u
 }
 
-// AddDownloadsRemaining adds v to the "downloads_remaining" field.
-func (u *LinkUpsert) AddDownloadsRemaining(v int) *LinkUpsert {
-	u.Add(link.FieldDownloadsRemaining, v)
+// AddDownloadLimit adds v to the "download_limit" field.
+func (u *LinkUpsert) AddDownloadLimit(v int) *LinkUpsert {
+	u.Add(link.FieldDownloadLimit, v)
+	return u
+}
+
+// ClearDownloadLimit clears the value of the "download_limit" field.
+func (u *LinkUpsert) ClearDownloadLimit() *LinkUpsert {
+	u.SetNull(link.FieldDownloadLimit)
+	return u
+}
+
+// SetDownloads sets the "downloads" field.
+func (u *LinkUpsert) SetDownloads(v int) *LinkUpsert {
+	u.Set(link.FieldDownloads, v)
+	return u
+}
+
+// UpdateDownloads sets the "downloads" field to the value that was provided on create.
+func (u *LinkUpsert) UpdateDownloads() *LinkUpsert {
+	u.SetExcluded(link.FieldDownloads)
+	return u
+}
+
+// AddDownloads adds v to the "downloads" field.
+func (u *LinkUpsert) AddDownloads(v int) *LinkUpsert {
+	u.Add(link.FieldDownloads, v)
 	return u
 }
 
@@ -448,24 +532,52 @@ func (u *LinkUpsertOne) UpdateExpiresAt() *LinkUpsertOne {
 	})
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (u *LinkUpsertOne) SetDownloadsRemaining(v int) *LinkUpsertOne {
+// SetDownloadLimit sets the "download_limit" field.
+func (u *LinkUpsertOne) SetDownloadLimit(v int) *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetDownloadsRemaining(v)
+		s.SetDownloadLimit(v)
 	})
 }
 
-// AddDownloadsRemaining adds v to the "downloads_remaining" field.
-func (u *LinkUpsertOne) AddDownloadsRemaining(v int) *LinkUpsertOne {
+// AddDownloadLimit adds v to the "download_limit" field.
+func (u *LinkUpsertOne) AddDownloadLimit(v int) *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.AddDownloadsRemaining(v)
+		s.AddDownloadLimit(v)
 	})
 }
 
-// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
-func (u *LinkUpsertOne) UpdateDownloadsRemaining() *LinkUpsertOne {
+// UpdateDownloadLimit sets the "download_limit" field to the value that was provided on create.
+func (u *LinkUpsertOne) UpdateDownloadLimit() *LinkUpsertOne {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateDownloadsRemaining()
+		s.UpdateDownloadLimit()
+	})
+}
+
+// ClearDownloadLimit clears the value of the "download_limit" field.
+func (u *LinkUpsertOne) ClearDownloadLimit() *LinkUpsertOne {
+	return u.Update(func(s *LinkUpsert) {
+		s.ClearDownloadLimit()
+	})
+}
+
+// SetDownloads sets the "downloads" field.
+func (u *LinkUpsertOne) SetDownloads(v int) *LinkUpsertOne {
+	return u.Update(func(s *LinkUpsert) {
+		s.SetDownloads(v)
+	})
+}
+
+// AddDownloads adds v to the "downloads" field.
+func (u *LinkUpsertOne) AddDownloads(v int) *LinkUpsertOne {
+	return u.Update(func(s *LinkUpsert) {
+		s.AddDownloads(v)
+	})
+}
+
+// UpdateDownloads sets the "downloads" field to the value that was provided on create.
+func (u *LinkUpsertOne) UpdateDownloads() *LinkUpsertOne {
+	return u.Update(func(s *LinkUpsert) {
+		s.UpdateDownloads()
 	})
 }
 
@@ -722,24 +834,52 @@ func (u *LinkUpsertBulk) UpdateExpiresAt() *LinkUpsertBulk {
 	})
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (u *LinkUpsertBulk) SetDownloadsRemaining(v int) *LinkUpsertBulk {
+// SetDownloadLimit sets the "download_limit" field.
+func (u *LinkUpsertBulk) SetDownloadLimit(v int) *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.SetDownloadsRemaining(v)
+		s.SetDownloadLimit(v)
 	})
 }
 
-// AddDownloadsRemaining adds v to the "downloads_remaining" field.
-func (u *LinkUpsertBulk) AddDownloadsRemaining(v int) *LinkUpsertBulk {
+// AddDownloadLimit adds v to the "download_limit" field.
+func (u *LinkUpsertBulk) AddDownloadLimit(v int) *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.AddDownloadsRemaining(v)
+		s.AddDownloadLimit(v)
 	})
 }
 
-// UpdateDownloadsRemaining sets the "downloads_remaining" field to the value that was provided on create.
-func (u *LinkUpsertBulk) UpdateDownloadsRemaining() *LinkUpsertBulk {
+// UpdateDownloadLimit sets the "download_limit" field to the value that was provided on create.
+func (u *LinkUpsertBulk) UpdateDownloadLimit() *LinkUpsertBulk {
 	return u.Update(func(s *LinkUpsert) {
-		s.UpdateDownloadsRemaining()
+		s.UpdateDownloadLimit()
+	})
+}
+
+// ClearDownloadLimit clears the value of the "download_limit" field.
+func (u *LinkUpsertBulk) ClearDownloadLimit() *LinkUpsertBulk {
+	return u.Update(func(s *LinkUpsert) {
+		s.ClearDownloadLimit()
+	})
+}
+
+// SetDownloads sets the "downloads" field.
+func (u *LinkUpsertBulk) SetDownloads(v int) *LinkUpsertBulk {
+	return u.Update(func(s *LinkUpsert) {
+		s.SetDownloads(v)
+	})
+}
+
+// AddDownloads adds v to the "downloads" field.
+func (u *LinkUpsertBulk) AddDownloads(v int) *LinkUpsertBulk {
+	return u.Update(func(s *LinkUpsert) {
+		s.AddDownloads(v)
+	})
+}
+
+// UpdateDownloads sets the "downloads" field to the value that was provided on create.
+func (u *LinkUpsertBulk) UpdateDownloads() *LinkUpsertBulk {
+	return u.Update(func(s *LinkUpsert) {
+		s.UpdateDownloads()
 	})
 }
 

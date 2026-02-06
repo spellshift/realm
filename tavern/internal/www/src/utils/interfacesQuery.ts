@@ -319,7 +319,8 @@ export interface LinkNode {
     id: string;
     path: string;
     expiresAt: string;
-    downloadsRemaining: number;
+    downloads: number;
+    downloadLimit: number | null;
 }
 
 export interface LinkEdge {

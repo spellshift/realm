@@ -29,7 +29,8 @@ export const GET_ASSETS = gql`
                 id
                 path
                 expiresAt
-                downloadsRemaining
+                downloadLimit
+                downloads
               }
             }
           }
@@ -54,7 +55,8 @@ export const CREATE_LINK = gql`
       id
       path
       expiresAt
-      downloadsRemaining
+      downloads
+      downloadLimit
     }
   }
 `;

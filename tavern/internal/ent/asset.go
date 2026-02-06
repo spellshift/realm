@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Asset is the model entity for the Asset schema.
@@ -31,8 +32,9 @@ type Asset struct {
 	Content []byte `json:"content,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AssetQuery when eager-loading is set.
-	Edges        AssetEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges         AssetEdges `json:"edges"`
+	asset_creator *int
+	selectValues  sql.SelectValues
 }
 
 // AssetEdges holds the relations/edges for other nodes in the graph.
@@ -41,11 +43,13 @@ type AssetEdges struct {
 	Tomes []*Tome `json:"tomes,omitempty"`
 	// Links that point to this asset
 	Links []*Link `json:"links,omitempty"`
+	// User that created the asset if available.
+	Creator *User `json:"creator,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
 	namedTomes map[string][]*Tome
 	namedLinks map[string][]*Link
@@ -69,6 +73,17 @@ func (e AssetEdges) LinksOrErr() ([]*Link, error) {
 	return nil, &NotLoadedError{edge: "links"}
 }
 
+// CreatorOrErr returns the Creator value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AssetEdges) CreatorOrErr() (*User, error) {
+	if e.Creator != nil {
+		return e.Creator, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "creator"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Asset) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -82,6 +97,8 @@ func (*Asset) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case asset.FieldCreatedAt, asset.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
+		case asset.ForeignKeys[0]: // asset_creator
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -139,6 +156,13 @@ func (a *Asset) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				a.Content = *value
 			}
+		case asset.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field asset_creator", value)
+			} else if value.Valid {
+				a.asset_creator = new(int)
+				*a.asset_creator = int(value.Int64)
+			}
 		default:
 			a.selectValues.Set(columns[i], values[i])
 		}
@@ -160,6 +184,11 @@ func (a *Asset) QueryTomes() *TomeQuery {
 // QueryLinks queries the "links" edge of the Asset entity.
 func (a *Asset) QueryLinks() *LinkQuery {
 	return NewAssetClient(a.config).QueryLinks(a)
+}
+
+// QueryCreator queries the "creator" edge of the Asset entity.
+func (a *Asset) QueryCreator() *UserQuery {
+	return NewAssetClient(a.config).QueryCreator(a)
 }
 
 // Update returns a builder for updating this Asset.

@@ -44,7 +44,7 @@ const AssetAccordion = ({ asset }: AssetAccordionProps) => {
                                  </div>
                                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                                      <span>Expires: {format(new Date(edge.node.expiresAt), "MMM d, yyyy HH:mm")}</span>
-                                     <span>{edge.node.downloadsRemaining} downloads left</span>
+                                     <span>{edge.node.downloads} {edge.node.downloadLimit != null ? '/ '+edge.node.downloadLimit : ''} downloads</span>
                                  </div>
                              </div>
                          ))}
