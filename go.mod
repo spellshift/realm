@@ -17,7 +17,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.33
 	github.com/prometheus/client_golang v1.20.4
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.11.1
