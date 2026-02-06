@@ -11,7 +11,7 @@ sysinfo = { workspace = true, optional = true }
 whoami = { workspace = true, optional = true }
 local-ip-address = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
-spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+spin = { workspace = true }
 
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true }
