@@ -71,7 +71,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             cell: ({ row }) => {
                 const hasTomes = row.original.node.tomes.totalCount > 0;
                 return (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         {hasTomes && (
                             <Tooltip label={`${row.original.node.tomes.totalCount} associated tome(s)`} bg="white" color="black">
                                 <div className="shrink-0">
@@ -91,7 +91,9 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             enableSorting: false,
             cell: ({ row }) => {
                 return (
-                    <UserImageAndName userData={row.original.node.creator} />
+                    <div className="pr-4">
+                        <UserImageAndName userData={row.original.node.creator} />
+                    </div>
                 );
             }
         },
