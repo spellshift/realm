@@ -303,9 +303,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
 			}
 		}
-		for _, canidate := range candidateNames {
-			if !namegen.IsCollision(collisions, canidate) {
-				beaconNameAddr = &canidate
+		for _, candidate := range candidateNames {
+			if !namegen.IsCollision(collisions, candidate) {
+				beaconNameAddr = &candidate
 				break
 			}
 		}

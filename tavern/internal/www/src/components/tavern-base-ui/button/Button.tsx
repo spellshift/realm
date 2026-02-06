@@ -22,7 +22,7 @@ interface ButtonProps extends BaseButtonAttributes {
 }
 
 const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
-  // destructure neccesary props
+  // destructure necessary props
   const { type, children, buttonStyle, buttonVariant, disabled, isLoading, leftIcon, rightIcon, className, ...rest } = props;
 
   // determine icon placement
