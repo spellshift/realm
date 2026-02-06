@@ -12,7 +12,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 eldritch-core = { workspace = true }
-spin = { workspace = true, features = ["rwlock"] }
+spin = { workspace = true }
 log = { workspace = true }
 
 [dev-dependencies]
