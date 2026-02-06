@@ -1,11 +1,11 @@
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
-use httptest::{matchers::*, responders::*, Expectation, Server};
+use criterion::{Criterion, Throughput, criterion_group, criterion_main};
+use httptest::{Expectation, Server, matchers::*, responders::*};
 use imix::portal::tcp::handle_tcp;
-use pb::portal::{mote::Payload, Mote, TcpPayload};
+use pb::portal::{Mote, TcpPayload, mote::Payload};
 use portal_stream::PayloadSequencer;
+use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
-use std::time::Duration;
 
 fn bench_tcp_download(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
@@ -18,10 +18,7 @@ fn bench_tcp_download(c: &mut Criterion) {
 
     server.expect(
         Expectation::matching(request::method_path("GET", "/bigfile"))
-        .respond_with(
-            status_code(200)
-            .body(data)
-        )
+            .respond_with(status_code(200).body(data)),
     );
 
     let addr = server.addr();
@@ -62,7 +59,7 @@ fn bench_tcp_download(c: &mut Criterion) {
                 let mut total_bytes = 0;
                 while let Some(mote) = out_rx.recv().await {
                     if let Some(Payload::Tcp(tcp)) = mote.payload {
-                         total_bytes += tcp.data.len();
+                        total_bytes += tcp.data.len();
                     }
                     if total_bytes >= payload_size {
                         break;
