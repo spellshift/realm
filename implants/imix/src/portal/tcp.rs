@@ -4,8 +4,11 @@ use portal_stream::PayloadSequencer;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
+use tokio::time::{Duration, sleep};
 
 const BUF_SIZE: usize = 64 * 1024;
+const BATCH_DURATION: Duration = Duration::from_millis(1);
+const MAX_BATCH_SIZE: usize = 4194304;
 
 pub async fn handle_tcp(
     first_mote: Mote,
@@ -59,6 +62,7 @@ pub async fn handle_tcp(
     let read_task = tokio::spawn(async move {
         let mut buf = [0u8; BUF_SIZE];
         loop {
+            // Wait for the first read (blocking)
             match read_half.read(&mut buf).await {
                 Ok(0) => {
                     #[cfg(debug_assertions)]
@@ -66,14 +70,48 @@ pub async fn handle_tcp(
                     break; // EOF
                 }
                 Ok(n) => {
+                    let mut batch = buf[0..n].to_vec();
+
+                    // Collect additional data within the batch window
+                    let deadline = sleep(BATCH_DURATION);
+                    tokio::pin!(deadline);
+                    loop {
+                        if batch.len() >= MAX_BATCH_SIZE {
+                            break;
+                        }
+                        tokio::select! {
+                            biased;
+                            result = read_half.read(&mut buf) => {
+                                match result {
+                                    Ok(0) => {
+                                        // EOF — flush what we have, then exit
+                                        break;
+                                    }
+                                    Ok(n) => {
+                                        batch.extend_from_slice(&buf[0..n]);
+                                    }
+                                    Err(_e) => {
+                                        #[cfg(debug_assertions)]
+                                        log::error!("Error reading from TCP socket {}: {:?}", addr_for_read, _e);
+                                        break;
+                                    }
+                                }
+                            }
+                            () = &mut deadline => {
+                                break;
+                            }
+                        }
+                    }
+
                     #[cfg(debug_assertions)]
                     log::debug!(
-                        "← TCP {} {n} bytes from portal stream ",
-                        dst_addr_clone.clone()
+                        "← TCP {} {} bytes from portal stream (batched)",
+                        dst_addr_clone.clone(),
+                        batch.len()
                     );
 
-                    let data = buf[0..n].to_vec();
-                    let mote = sequencer.new_tcp_mote(data, dst_addr_clone.clone(), dst_port);
+                    let mote =
+                        sequencer.new_tcp_mote(batch, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
                         #[cfg(debug_assertions)]
                         log::warn!(
