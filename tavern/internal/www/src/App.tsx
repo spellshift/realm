@@ -19,6 +19,7 @@ import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
+import Assets from "./pages/assets/Assets";
 import { PageWrapper } from "./components/page-wrapper";
 
 
@@ -62,6 +63,10 @@ const router = createBrowserRouter([
       {
         path: "tomes",
         element: <Tomes />,
+      },
+      {
+        path: "assets",
+        element: <Assets />,
       },
       {
         path: "shells/:shellId",

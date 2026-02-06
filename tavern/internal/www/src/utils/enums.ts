@@ -12,6 +12,7 @@ export enum PageNavItem {
     createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
+    assets="Assets",
     admin="Admin",
 }
 export enum SupportedPlatforms {
