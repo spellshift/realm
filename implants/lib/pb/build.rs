@@ -284,6 +284,14 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Tell Cargo to rerun this build script if these env vars change
+    // This fixes the issue where changing IMIX_CONFIG doesn't trigger a rebuild
+    println!("cargo:rerun-if-env-changed=IMIX_CONFIG");
+    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_URI");
+    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
+    println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
+    println!("cargo:rerun-if-env-changed=PROTOC");
+
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;
 
