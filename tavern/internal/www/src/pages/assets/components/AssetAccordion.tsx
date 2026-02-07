@@ -1,8 +1,8 @@
-import { Copy, Lock } from "lucide-react";
+import { Copy, Link2Off } from "lucide-react";
 import { format } from "date-fns";
 import { AssetNode, LinkEdge } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { useToast } from "@chakra-ui/react";
+import { useToast, Tooltip } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useDisableLink } from "../useAssets";
 import UserImageAndName from "../../../components/UserImageAndName";
@@ -96,13 +96,26 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                                              {`${window.location.origin}/cdn/${edge.node.path}`}
                                          </div>
                                          {(!isExpired && hasDownloadsRemaining) && (
-                                             <Button
-                                                onClick={() => handleCopyLink(edge.node.path)}
-                                                buttonVariant="ghost"
-                                                buttonStyle={{ color: "gray", size: "xs" }}
-                                                leftIcon={<Copy className="w-3 h-3" />}
-                                                aria-label="Copy Link"
-                                             />
+                                             <div className="flex gap-1">
+                                                 <Tooltip label="Copy Link" bg="white" color="black">
+                                                     <Button
+                                                         onClick={() => handleCopyLink(edge.node.path)}
+                                                         buttonVariant="ghost"
+                                                         buttonStyle={{ color: "gray", size: "xs" }}
+                                                         leftIcon={<Copy className="w-3 h-3" />}
+                                                         aria-label="Copy Link"
+                                                     />
+                                                 </Tooltip>
+                                                 <Tooltip label="Expire Link" bg="white" color="black">
+                                                     <Button
+                                                         onClick={() => handleDisableLink(edge.node.id)}
+                                                         buttonVariant="ghost"
+                                                         buttonStyle={{ color: "red", size: "xs" }}
+                                                         leftIcon={<Link2Off className="w-3 h-3" />}
+                                                         aria-label="Expire Link"
+                                                     />
+                                                 </Tooltip>
+                                             </div>
                                          )}
                                      </div>
                                      <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
@@ -116,15 +129,6 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                                      </div>
                                      <div className="flex justify-between items-center mt-1 border-t border-gray-100 pt-2">
                                          <UserImageAndName userData={edge.node.creator} />
-                                         {!isExpired && (
-                                            <Button
-                                                onClick={() => handleDisableLink(edge.node.id)}
-                                                buttonVariant="ghost"
-                                                buttonStyle={{ color: "red", size: "xs" }}
-                                                leftIcon={<Lock className="w-3 h-3" />}
-                                                aria-label="Disable Link"
-                                            />
-                                         )}
                                      </div>
                                  </div>
                              );

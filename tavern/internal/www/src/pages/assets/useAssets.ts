@@ -1,5 +1,5 @@
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { AssetQueryTopLevel, Cursor, OrderByField } from "../../utils/interfacesQuery";
+import { AssetQueryTopLevel, Cursor } from "../../utils/interfacesQuery";
 import { useCallback, useMemo, useState } from "react";
 import { PageNavItem } from "../../utils/enums";
 import { useSorts } from "../../context/SortContext";

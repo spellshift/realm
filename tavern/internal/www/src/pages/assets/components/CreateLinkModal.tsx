@@ -1,10 +1,12 @@
 import { FC, useState, useEffect } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { useCreateLink } from "../useAssets";
 import { format, add } from "date-fns";
 import { Clipboard } from "lucide-react";
 import { Checkbox, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
+import * as yup from "yup";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
@@ -35,6 +37,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
     );
     const [path, setPath] = useState<string>("");
     const [createdLink, setCreatedLink] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -43,11 +46,13 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             setHasDownloadLimit(false);
             setDownloadLimit(1);
             setExpiryMode(0);
+            setError(null);
         }
     }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
 
         let finalExpiresAt = new Date();
         if (expiryMode === 0) {
@@ -56,6 +61,19 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             finalExpiresAt = add(new Date(), { hours: 1 });
         } else {
             finalExpiresAt = new Date(expiresAt);
+        }
+
+        const schema = yup.object().shape({
+            expiresAt: yup.date()
+                .required("Expiry date is required")
+                .min(new Date(), "Expiry date must be in the future")
+        });
+
+        try {
+            await schema.validate({ expiresAt: finalExpiresAt });
+        } catch (validationError: any) {
+            setError(validationError.message);
+            return;
         }
 
         try {
@@ -75,9 +93,12 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 if (onSuccess) {
                     onSuccess();
                 }
+            } else {
+                throw new Error("Failed to create link: no path returned");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setError(err.message || "An unknown error occurred");
         }
     };
 
@@ -98,6 +119,8 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                         Create a temporary download link for this asset.
                     </p>
                 </div>
+
+                {error && <AlertError label={error} details={""} />}
 
                 {createdLink ? (
                     <div className="flex flex-col gap-4">

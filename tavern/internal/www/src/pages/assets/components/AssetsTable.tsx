@@ -8,7 +8,7 @@ import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 import { useState, useEffect } from "react";
 import UserImageAndName from "../../../components/UserImageAndName";
-import { formatRelativeTime } from "../../../utils/time";
+import moment from "moment";
 
 type AssetsTableProps = {
     assets: AssetEdge[];
@@ -177,7 +177,7 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
                 return (
                     <Tooltip label={hash} bg="white" color="black">
                         <div
-                            className="font-mono text-xs cursor-pointer hover:text-purple-600 flex items-center gap-1"
+                            className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
                         >
                             <span>{hash.substring(0, 12)}...</span>
@@ -199,7 +199,7 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
             id: "lastModifiedAt",
             header: "Modified",
             accessorFn: row => row.node.lastModifiedAt,
-            cell: ({ getValue }) => formatRelativeTime(getValue() as string),
+            cell: ({ getValue }) => moment(getValue() as string).fromNow(),
             enableSorting: false,
         },
         {
