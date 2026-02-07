@@ -5,6 +5,7 @@ schema:
   - schema/query.graphql
   - schema/mutation.graphql
   - schema/inputs.graphql
+  - schema/dashboard.graphql
 
 model:
   package: models

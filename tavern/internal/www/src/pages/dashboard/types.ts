@@ -1,5 +1,63 @@
 import { HostEdge, HostQueryTopLevel, TaskQueryTopLevel } from "../../utils/interfacesQuery";
 
+export interface DashboardHostMetric {
+    tag: string;
+    tagID: string;
+    online: number;
+    total: number;
+    hostsOnline: number;
+    hostsTotal: number;
+    lastSeenAt?: string;
+}
+
+export interface DashboardHostMetrics {
+    group: DashboardHostMetric[];
+    service: DashboardHostMetric[];
+    platform: DashboardHostMetric[];
+    onlineHostCount: number;
+    offlineHostCount: number;
+    totalHostCount: number;
+}
+
+export interface DashboardQuestMetric {
+    name: string;
+    tasksError: number;
+    tasksNoError: number;
+    id: string;
+}
+
+export interface DashboardTacticCount {
+    tactic: string;
+    count: number;
+}
+
+export interface DashboardTimelineItem {
+    label: string;
+    timestamp: string;
+    taskCreated: number;
+    tactics: DashboardTacticCount[];
+}
+
+export interface DashboardQuestMetrics {
+    tomeUsage: DashboardQuestMetric[];
+    taskTimeline: DashboardTimelineItem[];
+    taskTactics: string[];
+    groupUsage: DashboardQuestMetric[];
+    serviceUsage: DashboardQuestMetric[];
+    totalQuests: number;
+    totalOutput: number;
+    totalTasks: number;
+    totalErrors: number;
+}
+
+export interface DashboardQueryResponse {
+    dashboard: {
+        hostMetrics: DashboardHostMetrics;
+        questMetrics: DashboardQuestMetrics;
+    }
+}
+
+// UI Types
 export interface TaskTimelineItem {
     label: string;
     timestamp: Date;
@@ -51,7 +109,7 @@ export interface HostActivityByKind {
 
 export interface DashboardQuestData {
     formattedData: QuestFormattedData;
-    hosts: HostEdge[];
+    hosts: HostEdge[]; // Kept for compatibility if used, otherwise empty
     loading: boolean;
 }
 
@@ -63,8 +121,8 @@ export interface DashboardHostData {
 }
 
 export interface DashboardRawData {
-    tasks: TaskQueryTopLevel | undefined;
-    hosts: HostQueryTopLevel | undefined;
+    tasks: TaskQueryTopLevel | undefined; // Deprecated/Unused?
+    hosts: HostQueryTopLevel | undefined; // Deprecated/Unused?
 }
 
 export interface DashboardData {
@@ -78,5 +136,5 @@ export interface UseDashboardDataReturn {
     error: any;
     data: DashboardData;
     hasTaskData: boolean;
-    hasHostData: boolean;
+    hasHostData: boolean; // Maybe rename to hasData?
 }

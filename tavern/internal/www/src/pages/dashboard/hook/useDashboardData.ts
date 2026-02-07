@@ -1,77 +1,123 @@
 import { useQuery } from "@apollo/client";
 import { useMemo } from "react";
-import { GET_TASK_QUERY, GET_HOST_QUERY } from "../../../utils/queries";
-import { useQuestData } from "./useQuestData";
-import { useHostData } from "./useHostData";
-import { UseDashboardDataReturn } from "../types";
-import { TaskQueryTopLevel, HostQueryTopLevel } from "../../../utils/interfacesQuery";
+import { GET_DASHBOARD_QUERY } from "../../../utils/queries";
+import { UseDashboardDataReturn, DashboardQueryResponse, TaskTimelineItem, HostActivityItem } from "../types";
 
 export const useDashboardData = (): UseDashboardDataReturn => {
     const {
-        loading: taskLoading,
-        error: taskError,
-        data: taskData
-    } = useQuery<TaskQueryTopLevel>(GET_TASK_QUERY, {
-        variables: {
-            orderBy: [{
-                direction: "ASC",
-                field: "CREATED_AT"
-            }],
-        },
+        loading,
+        error,
+        data
+    } = useQuery<DashboardQueryResponse>(GET_DASHBOARD_QUERY, {
         notifyOnNetworkStatusChange: true,
+        pollInterval: 10000, // Poll every 10 seconds for dashboard updates
     });
 
-    const {
-        loading: hostLoading,
-        data: hostData,
-        error: hostError
-    } = useQuery<HostQueryTopLevel>(GET_HOST_QUERY, {
-        notifyOnNetworkStatusChange: true,
-    });
-
-    const { loading: questFormatLoading, formattedData } = useQuestData(taskData);
-    const {
-        loading: hostFormatLoading,
-        hostActivity,
-        onlineHostCount,
-        offlineHostCount
-    } = useHostData(hostData);
-
-    const loading = taskLoading || hostLoading || questFormatLoading || hostFormatLoading;
-    const error = taskError || hostError;
-
-    const dashboardData = useMemo(() => ({
-        questData: {
-            formattedData,
-            hosts: hostData?.hosts?.edges || [],
-            loading: taskLoading,
-        },
-        hostData: {
-            hostActivity,
-            onlineHostCount,
-            offlineHostCount,
-            loading: hostFormatLoading,
-        },
-        raw: {
-            tasks: taskData,
-            hosts: hostData,
+    const dashboardData = useMemo(() => {
+        if (!data?.dashboard) {
+            return {
+                questData: {
+                    formattedData: {
+                        tomeUsage: [],
+                        taskTimeline: [],
+                        taskTactics: [],
+                        groupUsage: [],
+                        serviceUsage: [],
+                        totalQuests: 0,
+                        totalOutput: 0,
+                        totalTasks: 0,
+                        totalErrors: 0
+                    },
+                    hosts: [],
+                    loading: loading,
+                },
+                hostData: {
+                    hostActivity: { group: [], service: [], platform: [] },
+                    onlineHostCount: 0,
+                    offlineHostCount: 0,
+                    loading: loading,
+                },
+                raw: {
+                    tasks: undefined,
+                    hosts: undefined,
+                }
+            };
         }
-    }), [
-        formattedData,
-        hostData,
-        taskLoading,
-        hostActivity,
-        onlineHostCount,
-        offlineHostCount,
-        hostFormatLoading,
-        taskData
-    ]);
+
+        const { hostMetrics, questMetrics } = data.dashboard;
+
+        // Transform Host Metrics
+        const mapHostMetrics = (metrics: any[]): HostActivityItem[] => metrics.map(m => ({
+            tag: m.tag,
+            tagId: m.tagID,
+            online: m.online,
+            total: m.total,
+            hostsOnline: m.hostsOnline,
+            hostsTotal: m.hostsTotal,
+            lastSeenAt: m.lastSeenAt
+        }));
+
+        const hostActivity = {
+            group: mapHostMetrics(hostMetrics.group),
+            service: mapHostMetrics(hostMetrics.service),
+            platform: mapHostMetrics(hostMetrics.platform),
+        };
+
+        // Transform Quest Metrics
+        const mapQuestMetrics = (metrics: any[]) => metrics.map(m => ({
+            name: m.name,
+            taskError: m.tasksError,
+            taskNoError: m.tasksNoError,
+            id: m.id
+        }));
+
+        const taskTimeline: TaskTimelineItem[] = questMetrics.taskTimeline.map((item: any) => {
+            const tacticsObj = item.tactics.reduce((acc: any, curr: any) => ({ ...acc, [curr.tactic]: curr.count }), {});
+            return {
+                label: item.label,
+                timestamp: new Date(item.timestamp),
+                taskCreated: item.taskCreated,
+                ...tacticsObj
+            };
+        });
+
+        const formattedData = {
+            tomeUsage: mapQuestMetrics(questMetrics.tomeUsage),
+            taskTimeline,
+            taskTactics: questMetrics.taskTactics,
+            groupUsage: mapQuestMetrics(questMetrics.groupUsage),
+            serviceUsage: mapQuestMetrics(questMetrics.serviceUsage),
+            totalQuests: questMetrics.totalQuests,
+            totalOutput: questMetrics.totalOutput,
+            totalTasks: questMetrics.totalTasks,
+            totalErrors: questMetrics.totalErrors,
+        };
+
+        return {
+            questData: {
+                formattedData,
+                hosts: [],
+                loading: loading,
+            },
+            hostData: {
+                hostActivity,
+                onlineHostCount: hostMetrics.onlineHostCount,
+                offlineHostCount: hostMetrics.offlineHostCount,
+                loading: loading,
+            },
+            raw: {
+                tasks: undefined,
+                hosts: undefined,
+            }
+        };
+
+    }, [data, loading]);
 
     return {
         loading,
         error,
         data: dashboardData,
-        hasTaskData: !!(taskData?.tasks?.edges?.length),
-        hasHostData: !!(hostData?.hosts?.edges?.length),
+        hasTaskData: !!(data?.dashboard?.questMetrics?.totalTasks),
+        hasHostData: !!(data?.dashboard?.hostMetrics?.totalHostCount),
     };
 };

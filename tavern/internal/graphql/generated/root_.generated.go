@@ -94,6 +94,61 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Dashboard struct {
+		HostMetrics  func(childComplexity int) int
+		QuestMetrics func(childComplexity int) int
+	}
+
+	DashboardHostMetric struct {
+		HostsOnline func(childComplexity int) int
+		HostsTotal  func(childComplexity int) int
+		LastSeenAt  func(childComplexity int) int
+		Online      func(childComplexity int) int
+		Tag         func(childComplexity int) int
+		TagID       func(childComplexity int) int
+		Total       func(childComplexity int) int
+	}
+
+	DashboardHostMetrics struct {
+		Group            func(childComplexity int) int
+		OfflineHostCount func(childComplexity int) int
+		OnlineHostCount  func(childComplexity int) int
+		Platform         func(childComplexity int) int
+		Service          func(childComplexity int) int
+		TotalHostCount   func(childComplexity int) int
+	}
+
+	DashboardQuestMetric struct {
+		ID           func(childComplexity int) int
+		Name         func(childComplexity int) int
+		TasksError   func(childComplexity int) int
+		TasksNoError func(childComplexity int) int
+	}
+
+	DashboardQuestMetrics struct {
+		GroupUsage   func(childComplexity int) int
+		ServiceUsage func(childComplexity int) int
+		TaskTactics  func(childComplexity int) int
+		TaskTimeline func(childComplexity int) int
+		TomeUsage    func(childComplexity int) int
+		TotalErrors  func(childComplexity int) int
+		TotalOutput  func(childComplexity int) int
+		TotalQuests  func(childComplexity int) int
+		TotalTasks   func(childComplexity int) int
+	}
+
+	DashboardTacticCount struct {
+		Count  func(childComplexity int) int
+		Tactic func(childComplexity int) int
+	}
+
+	DashboardTimelineItem struct {
+		Label       func(childComplexity int) int
+		Tactics     func(childComplexity int) int
+		TaskCreated func(childComplexity int) int
+		Timestamp   func(childComplexity int) int
+	}
+
 	Host struct {
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
@@ -270,6 +325,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		Dashboard    func(childComplexity int) int
 		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
@@ -715,6 +771,244 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
+
+	case "Dashboard.hostMetrics":
+		if e.complexity.Dashboard.HostMetrics == nil {
+			break
+		}
+
+		return e.complexity.Dashboard.HostMetrics(childComplexity), true
+
+	case "Dashboard.questMetrics":
+		if e.complexity.Dashboard.QuestMetrics == nil {
+			break
+		}
+
+		return e.complexity.Dashboard.QuestMetrics(childComplexity), true
+
+	case "DashboardHostMetric.hostsOnline":
+		if e.complexity.DashboardHostMetric.HostsOnline == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.HostsOnline(childComplexity), true
+
+	case "DashboardHostMetric.hostsTotal":
+		if e.complexity.DashboardHostMetric.HostsTotal == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.HostsTotal(childComplexity), true
+
+	case "DashboardHostMetric.lastSeenAt":
+		if e.complexity.DashboardHostMetric.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.LastSeenAt(childComplexity), true
+
+	case "DashboardHostMetric.online":
+		if e.complexity.DashboardHostMetric.Online == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.Online(childComplexity), true
+
+	case "DashboardHostMetric.tag":
+		if e.complexity.DashboardHostMetric.Tag == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.Tag(childComplexity), true
+
+	case "DashboardHostMetric.tagID":
+		if e.complexity.DashboardHostMetric.TagID == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.TagID(childComplexity), true
+
+	case "DashboardHostMetric.total":
+		if e.complexity.DashboardHostMetric.Total == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetric.Total(childComplexity), true
+
+	case "DashboardHostMetrics.group":
+		if e.complexity.DashboardHostMetrics.Group == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.Group(childComplexity), true
+
+	case "DashboardHostMetrics.offlineHostCount":
+		if e.complexity.DashboardHostMetrics.OfflineHostCount == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.OfflineHostCount(childComplexity), true
+
+	case "DashboardHostMetrics.onlineHostCount":
+		if e.complexity.DashboardHostMetrics.OnlineHostCount == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.OnlineHostCount(childComplexity), true
+
+	case "DashboardHostMetrics.platform":
+		if e.complexity.DashboardHostMetrics.Platform == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.Platform(childComplexity), true
+
+	case "DashboardHostMetrics.service":
+		if e.complexity.DashboardHostMetrics.Service == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.Service(childComplexity), true
+
+	case "DashboardHostMetrics.totalHostCount":
+		if e.complexity.DashboardHostMetrics.TotalHostCount == nil {
+			break
+		}
+
+		return e.complexity.DashboardHostMetrics.TotalHostCount(childComplexity), true
+
+	case "DashboardQuestMetric.id":
+		if e.complexity.DashboardQuestMetric.ID == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetric.ID(childComplexity), true
+
+	case "DashboardQuestMetric.name":
+		if e.complexity.DashboardQuestMetric.Name == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetric.Name(childComplexity), true
+
+	case "DashboardQuestMetric.tasksError":
+		if e.complexity.DashboardQuestMetric.TasksError == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetric.TasksError(childComplexity), true
+
+	case "DashboardQuestMetric.tasksNoError":
+		if e.complexity.DashboardQuestMetric.TasksNoError == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetric.TasksNoError(childComplexity), true
+
+	case "DashboardQuestMetrics.groupUsage":
+		if e.complexity.DashboardQuestMetrics.GroupUsage == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.GroupUsage(childComplexity), true
+
+	case "DashboardQuestMetrics.serviceUsage":
+		if e.complexity.DashboardQuestMetrics.ServiceUsage == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.ServiceUsage(childComplexity), true
+
+	case "DashboardQuestMetrics.taskTactics":
+		if e.complexity.DashboardQuestMetrics.TaskTactics == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TaskTactics(childComplexity), true
+
+	case "DashboardQuestMetrics.taskTimeline":
+		if e.complexity.DashboardQuestMetrics.TaskTimeline == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TaskTimeline(childComplexity), true
+
+	case "DashboardQuestMetrics.tomeUsage":
+		if e.complexity.DashboardQuestMetrics.TomeUsage == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TomeUsage(childComplexity), true
+
+	case "DashboardQuestMetrics.totalErrors":
+		if e.complexity.DashboardQuestMetrics.TotalErrors == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TotalErrors(childComplexity), true
+
+	case "DashboardQuestMetrics.totalOutput":
+		if e.complexity.DashboardQuestMetrics.TotalOutput == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TotalOutput(childComplexity), true
+
+	case "DashboardQuestMetrics.totalQuests":
+		if e.complexity.DashboardQuestMetrics.TotalQuests == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TotalQuests(childComplexity), true
+
+	case "DashboardQuestMetrics.totalTasks":
+		if e.complexity.DashboardQuestMetrics.TotalTasks == nil {
+			break
+		}
+
+		return e.complexity.DashboardQuestMetrics.TotalTasks(childComplexity), true
+
+	case "DashboardTacticCount.count":
+		if e.complexity.DashboardTacticCount.Count == nil {
+			break
+		}
+
+		return e.complexity.DashboardTacticCount.Count(childComplexity), true
+
+	case "DashboardTacticCount.tactic":
+		if e.complexity.DashboardTacticCount.Tactic == nil {
+			break
+		}
+
+		return e.complexity.DashboardTacticCount.Tactic(childComplexity), true
+
+	case "DashboardTimelineItem.label":
+		if e.complexity.DashboardTimelineItem.Label == nil {
+			break
+		}
+
+		return e.complexity.DashboardTimelineItem.Label(childComplexity), true
+
+	case "DashboardTimelineItem.tactics":
+		if e.complexity.DashboardTimelineItem.Tactics == nil {
+			break
+		}
+
+		return e.complexity.DashboardTimelineItem.Tactics(childComplexity), true
+
+	case "DashboardTimelineItem.taskCreated":
+		if e.complexity.DashboardTimelineItem.TaskCreated == nil {
+			break
+		}
+
+		return e.complexity.DashboardTimelineItem.TaskCreated(childComplexity), true
+
+	case "DashboardTimelineItem.timestamp":
+		if e.complexity.DashboardTimelineItem.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.DashboardTimelineItem.Timestamp(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
@@ -1635,6 +1929,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
+
+	case "Query.dashboard":
+		if e.complexity.Query.Dashboard == nil {
+			break
+		}
+
+		return e.complexity.Query.Dashboard(childComplexity), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -7250,6 +7551,65 @@ input ImportRepositoryInput {
   Only tomes that have a main.eldritch in one of these directory prefixes will be included.
   """
   includeDirs: [String!]
+}
+`, BuiltIn: false},
+	{Name: "../schema/dashboard.graphql", Input: `type DashboardHostMetric {
+    tag: String!
+    tagID: String!
+    online: Int!
+    total: Int!
+    hostsOnline: Int!
+    hostsTotal: Int!
+    lastSeenAt: Time
+}
+
+type DashboardHostMetrics {
+    group: [DashboardHostMetric!]!
+    service: [DashboardHostMetric!]!
+    platform: [DashboardHostMetric!]!
+    onlineHostCount: Int!
+    offlineHostCount: Int!
+    totalHostCount: Int!
+}
+
+type DashboardQuestMetric {
+    name: String!
+    tasksError: Int!
+    tasksNoError: Int!
+    id: String!
+}
+
+type DashboardTacticCount {
+    tactic: String!
+    count: Int!
+}
+
+type DashboardTimelineItem {
+    label: String!
+    timestamp: Time!
+    taskCreated: Int!
+    tactics: [DashboardTacticCount!]!
+}
+
+type DashboardQuestMetrics {
+    tomeUsage: [DashboardQuestMetric!]!
+    taskTimeline: [DashboardTimelineItem!]!
+    taskTactics: [String!]!
+    groupUsage: [DashboardQuestMetric!]!
+    serviceUsage: [DashboardQuestMetric!]!
+    totalQuests: Int!
+    totalOutput: Int!
+    totalTasks: Int!
+    totalErrors: Int!
+}
+
+type Dashboard {
+    hostMetrics: DashboardHostMetrics!
+    questMetrics: DashboardQuestMetrics!
+}
+
+extend type Query {
+    dashboard: Dashboard! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 }
