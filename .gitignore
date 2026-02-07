@@ -12,7 +12,6 @@
 
 # Build artifacts
 dist/**
-tavern/internal/www/build/
 
 # Playwright E2E Test Results
 tests/e2e/test-results/**

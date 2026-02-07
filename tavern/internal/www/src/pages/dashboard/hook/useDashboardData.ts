@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import { useMemo } from "react";
 import { GET_DASHBOARD_QUERY } from "../../../utils/queries";
 import { UseDashboardDataReturn, DashboardQueryResponse, TaskTimelineItem, HostActivityItem } from "../types";
+import { TaskChartKeys } from "../../../utils/enums";
 
 export const useDashboardData = (): UseDashboardDataReturn => {
     const {
@@ -10,7 +11,6 @@ export const useDashboardData = (): UseDashboardDataReturn => {
         data
     } = useQuery<DashboardQueryResponse>(GET_DASHBOARD_QUERY, {
         notifyOnNetworkStatusChange: true,
-        pollInterval: 10000, // Poll every 10 seconds for dashboard updates
     });
 
     const dashboardData = useMemo(() => {
@@ -66,8 +66,8 @@ export const useDashboardData = (): UseDashboardDataReturn => {
         // Transform Quest Metrics
         const mapQuestMetrics = (metrics: any[]) => metrics.map(m => ({
             name: m.name,
-            taskError: m.tasksError,
-            taskNoError: m.tasksNoError,
+            [TaskChartKeys.taskError]: m.tasksError,
+            [TaskChartKeys.taskNoError]: m.tasksNoError,
             id: m.id
         }));
 
@@ -76,12 +76,12 @@ export const useDashboardData = (): UseDashboardDataReturn => {
             return {
                 label: item.label,
                 timestamp: new Date(item.timestamp),
-                taskCreated: item.taskCreated,
+                [TaskChartKeys.taskCreated]: item.taskCreated,
                 ...tacticsObj
             };
         });
 
-        const formattedData = {
+        const formattedData: any = {
             tomeUsage: mapQuestMetrics(questMetrics.tomeUsage),
             taskTimeline,
             taskTactics: questMetrics.taskTactics,
