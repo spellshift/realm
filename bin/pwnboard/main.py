@@ -94,7 +94,6 @@ if __name__ == "__main__":
         time_five_minutes_ago = current_time - timedelta(seconds=args.timediff)
 
         formatted_time = time_five_minutes_ago.strftime("%Y-%m-%dT%H:%M:%SZ")
-        print(formatted_time)
         graphql_variables = {"input": {"lastSeenAtGT": formatted_time}}
 
         result = make_graphql_request(
