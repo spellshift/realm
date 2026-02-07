@@ -74,9 +74,9 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                 )}
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            File
+                    <div className="flex flex-col gap-2">
+                        <label className="hidden" aria-hidden="true">
+                            Select file or folder to upload
                         </label>
                         <input
                             type="file"
