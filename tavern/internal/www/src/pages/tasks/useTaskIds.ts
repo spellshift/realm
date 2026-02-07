@@ -141,12 +141,11 @@ const getTaskIdsQuery = (
     currentTimestamp?: Date
 ) => {
     const defaultRowLimit = TableRowLimit.TaskRowLimit;
-    const filterQueryFields = constructTaskFilterQuery(filters, currentTimestamp);
+    const filterQueryFields = constructTaskFilterQuery(filters, currentTimestamp, questId);
 
     const query = {
         "where": {
             ...filterQueryFields && filterQueryFields.hasTasksWith,
-            ...(questId && { "hasQuestWith": { "id": questId } }),
         },
         "first": beforeCursor ? null : defaultRowLimit,
         "last": beforeCursor ? defaultRowLimit : null,
