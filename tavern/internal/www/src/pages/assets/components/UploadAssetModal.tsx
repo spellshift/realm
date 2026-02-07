@@ -1,4 +1,4 @@
-import { Upload, Folder, File as FileIcon } from "lucide-react";
+import { Upload, Folder, File as FileIcon, X } from "lucide-react";
 import { FC, useState, useRef } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -23,15 +23,40 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const selectedFiles = Array.from(e.target.files);
-            setFiles(selectedFiles);
-            if (selectedFiles.length === 1) {
-                setSingleFileName(selectedFiles[0].name);
-            } else {
-                setSingleFileName("");
-            }
+
+            setFiles(prev => {
+                const newFiles = [...prev, ...selectedFiles];
+                // Update single file name logic based on the *new* combined list
+                if (newFiles.length === 1) {
+                    setSingleFileName(newFiles[0].name);
+                } else {
+                    setSingleFileName("");
+                }
+                return newFiles;
+            });
+
             setUploadErrors([]);
             setProgress(null);
         }
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setFiles(prev => {
+            const newFiles = prev.filter((_, i) => i !== index);
+            if (newFiles.length === 1) {
+                setSingleFileName(newFiles[0].name);
+            } else {
+                setSingleFileName("");
+            }
+            return newFiles;
+        });
+    };
+
+    const handleClearAll = () => {
+        setFiles([]);
+        setSingleFileName("");
+        setUploadErrors([]);
+        setProgress(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +109,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
             onUploadSuccess();
             setOpen(false);
             setFiles([]);
+            setSingleFileName("");
             setProgress(null);
         }
     };
@@ -91,6 +117,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
     const handleClose = () => {
         setOpen(false);
         setFiles([]);
+        setSingleFileName("");
         setUploadErrors([]);
         setProgress(null);
     }
@@ -167,7 +194,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                                 buttonStyle={{ color: "gray", size: "sm" }}
                                 leftIcon={<FileIcon className="h-4 w-4" />}
                             >
-                                Select Files
+                                Add Files
                             </Button>
                             <Button
                                 type="button"
@@ -179,8 +206,17 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                                 buttonStyle={{ color: "gray", size: "sm" }}
                                 leftIcon={<Folder className="h-4 w-4" />}
                             >
-                                Select Folder
+                                Add Folder
                             </Button>
+                             {files.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleClearAll}
+                                    className="text-sm text-gray-500 hover:text-gray-700 underline ml-auto"
+                                >
+                                    Clear All
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -204,10 +240,20 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Selected ({files.length} files)
                             </label>
-                            <div className="max-h-40 overflow-y-auto border rounded-md p-2 bg-gray-50 text-sm text-gray-600">
+                            <div className="max-h-40 overflow-y-auto border rounded-md bg-gray-50 text-sm text-gray-600 divide-y divide-gray-200">
                                 {files.map((f, i) => (
-                                    <div key={i} className="truncate">
-                                        {f.webkitRelativePath || f.name}
+                                    <div key={i} className="flex items-center justify-between p-2 hover:bg-gray-100">
+                                        <div className="truncate flex-1 mr-2">
+                                            {f.webkitRelativePath || f.name}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveFile(i)}
+                                            className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-gray-200"
+                                            title="Remove file"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
