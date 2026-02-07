@@ -16,7 +16,8 @@ const UserFilterBar = () => {
     const selectedOption = options.find((option) => option.value === filters.creatorId);
 
     return (
-        <div className="w-64">
+        <div className="flex flex-col gap-1">
+            <label className="text-gray-700">User Filter</label>
             <Select
                 isDisabled={filters.isLocked || loading}
                 isLoading={loading}
@@ -28,19 +29,6 @@ const UserFilterBar = () => {
                     updateFilters({ creatorId: option ? option.value : "" });
                 }}
                 className="text-sm"
-                styles={{
-                    control: (base: any) => ({
-                        ...base,
-                        borderColor: "#E2E8F0",
-                        "&:hover": {
-                            borderColor: "#CBD5E0",
-                        },
-                    }),
-                    menu: (base: any) => ({
-                        ...base,
-                        zIndex: 9999,
-                    }),
-                }}
             />
         </div>
     );

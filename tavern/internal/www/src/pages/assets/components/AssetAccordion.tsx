@@ -7,6 +7,8 @@ import { useMemo } from "react";
 import { useDisableLink } from "../useAssets";
 import UserImageAndName from "../../../components/UserImageAndName";
 
+const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';
+
 type AssetAccordionProps = {
     asset: AssetNode;
     onUpdate: () => void;
@@ -17,7 +19,7 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
     const { disableLink } = useDisableLink();
 
     const handleCopyLink = (path: string) => {
-        const url = `${window.location.origin}/cdn/${path}`;
+        const url = `${API_ENDPOINT}/cdn/${path}`;
         navigator.clipboard.writeText(url);
         toast({
             title: "Link copied to clipboard",
@@ -92,8 +94,8 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                              return (
                                  <div key={edge.node.id} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex flex-col gap-2 text-sm">
                                      <div className="flex justify-between items-start gap-2">
-                                         <div className="font-mono text-xs break-all text-gray-600 bg-gray-50 p-1 rounded w-full">
-                                             {`${window.location.origin}/cdn/${edge.node.path}`}
+                                         <div className="font-mono text-xs break-all text-gray-600 p-1 rounded w-full">
+                                             {`/cdn/${edge.node.path}`}
                                          </div>
                                          {(!isExpired && hasDownloadsRemaining) && (
                                              <div className="flex gap-1">
