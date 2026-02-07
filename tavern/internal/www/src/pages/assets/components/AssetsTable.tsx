@@ -25,11 +25,11 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
     const toast = useToast();
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
+            setWindowWidth(window.innerWidth);
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
@@ -174,9 +174,29 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
         },
     ];
 
-    const visibleColumns = isMobile
-        ? columns.filter(col => ["expander", "name", "creator", "actions"].includes(col.id as string))
-        : columns;
+    const getVisibleColumns = () => {
+        // Priority: Name > Actions > Creator > Links > Size > Created > Hash
+        const priority = ["expander", "name", "actions", "creator", "links", "size", "createdAt", "hash"];
+
+        // Define hiding thresholds (pixels)
+        // Adjust these as needed to prevent scroll
+        if (windowWidth < 640) { // Small mobile
+             return columns.filter(col => ["expander", "name", "actions", "creator"].includes(col.id as string));
+        }
+        if (windowWidth < 768) { // Mobile
+            return columns.filter(col => ["expander", "name", "actions", "creator", "links"].includes(col.id as string));
+        }
+        if (windowWidth < 1024) { // Tablet
+             return columns.filter(col => ["expander", "name", "actions", "creator", "links", "size"].includes(col.id as string));
+        }
+         if (windowWidth < 1280) { // Laptop/Large Tablet
+             return columns.filter(col => ["expander", "name", "actions", "creator", "links", "size", "createdAt"].includes(col.id as string));
+        }
+
+        return columns; // Full view
+    };
+
+    const visibleColumns = getVisibleColumns();
 
 
     return (
