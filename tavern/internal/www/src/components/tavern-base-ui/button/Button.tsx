@@ -58,7 +58,7 @@ const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
     <button
       className={renderButtonVariant()}
       {...rest}
-      type={type || "button"}
+      type={type ? "submit" : "button"}
       ref={ref}
       disabled={disabled || isLoading}
     >

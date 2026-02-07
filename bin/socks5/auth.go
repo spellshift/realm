@@ -45,7 +45,7 @@ func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token,
 	}
 
 	log.Printf("Loaded authentication credentials from %q", cachePath)
-	return auth.Token(strings.TrimSpace(string(tokenData))), nil
+	return auth.Token(tokenData), nil
 }
 
 func authGRPCContext(ctx context.Context, upstream string, authCachePath string) context.Context {

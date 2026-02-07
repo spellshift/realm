@@ -214,16 +214,12 @@ func init() {
 	linkDescExpiresAt := linkFields[1].Descriptor()
 	// link.DefaultExpiresAt holds the default value on creation for the expires_at field.
 	link.DefaultExpiresAt = linkDescExpiresAt.Default.(time.Time)
-	// linkDescDownloadLimit is the schema descriptor for download_limit field.
-	linkDescDownloadLimit := linkFields[2].Descriptor()
-	// link.DownloadLimitValidator is a validator for the "download_limit" field. It is called by the builders before save.
-	link.DownloadLimitValidator = linkDescDownloadLimit.Validators[0].(func(int) error)
-	// linkDescDownloads is the schema descriptor for downloads field.
-	linkDescDownloads := linkFields[3].Descriptor()
-	// link.DefaultDownloads holds the default value on creation for the downloads field.
-	link.DefaultDownloads = linkDescDownloads.Default.(int)
-	// link.DownloadsValidator is a validator for the "downloads" field. It is called by the builders before save.
-	link.DownloadsValidator = linkDescDownloads.Validators[0].(func(int) error)
+	// linkDescDownloadsRemaining is the schema descriptor for downloads_remaining field.
+	linkDescDownloadsRemaining := linkFields[2].Descriptor()
+	// link.DefaultDownloadsRemaining holds the default value on creation for the downloads_remaining field.
+	link.DefaultDownloadsRemaining = linkDescDownloadsRemaining.Default.(int)
+	// link.DownloadsRemainingValidator is a validator for the "downloads_remaining" field. It is called by the builders before save.
+	link.DownloadsRemainingValidator = linkDescDownloadsRemaining.Validators[0].(func(int) error)
 	portalMixin := schema.Portal{}.Mixin()
 	portalMixinFields0 := portalMixin[0].Fields()
 	_ = portalMixinFields0

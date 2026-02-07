@@ -319,9 +319,7 @@ export interface LinkNode {
     id: string;
     path: string;
     expiresAt: string;
-    downloads: number;
-    downloadLimit: number | null;
-    creator?: UserNode | null;
+    downloadsRemaining: number;
 }
 
 export interface LinkEdge {
@@ -343,7 +341,6 @@ export interface AssetNode {
         totalCount: number;
         edges: TomeEdge[];
     };
-    creator?: UserNode | null;
 }
 
 export interface AssetEdge {

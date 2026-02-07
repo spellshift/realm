@@ -2,8 +2,8 @@ package cdn
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -12,12 +12,12 @@ import (
 	"realm.pub/tavern/internal/errors"
 )
 
-// NewLinkDownloadHandler returns an HTTP handler responsible for downloading an Asset via a Link from the CDN.
-// Assets are accessed using the link path. The Link's ExpiresAt and DownloadLimit determine if the Link can still be used for downloads.
-// - If the Link cannot be found at the path provided, 404 is returned
-// - If ExpiresAt <= now, 404 is returned
-// - If DownloadLimit is set and Downloads >= DownloadLimit, 404 is returned
-// - Otherwise, the Asset is returned
+// NewLinkDownloadHandler returns an HTTP handler responsible for downloading a file via a Link from the CDN.
+// Files are accessed using the link path. The link's active_clicks and active_before fields determine
+// if the file can be downloaded:
+// - If active_clicks > 0, the file is returned and the counter is decremented
+// - If current time < active_before, the file is returned
+// - Otherwise, 404 is returned
 func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 	return errors.WrapHandler(func(w http.ResponseWriter, req *http.Request) error {
 		ctx := req.Context()
@@ -29,47 +29,44 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		}
 
 		// Query for the link by path, including the associated asset
-		l, err := graph.Link.Query().
+		linkQuery := graph.Link.Query().
 			Where(link.Path(linkPath)).
-			WithAsset().
-			Only(ctx)
-		if err != nil {
-			slog.Error("failed to query link", "err", err, "path", linkPath)
+			WithAsset()
+
+		// Ensure the link exists
+		if exists, err := linkQuery.Clone().Exist(ctx); !exists || err != nil {
 			return ErrFileNotFound
 		}
 
-		// Ensure an asset is associated with the Link
+		l, err := linkQuery.Only(ctx)
+		if err != nil {
+			return ErrFileNotFound
+		}
+
+		// Check if the link is active based on active_clicks or active_before
+		currentTime := time.Now()
+		hasDownloadsRemaining := l.DownloadsRemaining > 0
+		hasTimeRemaining := currentTime.Before(l.ExpiresAt)
+
+		// If neither condition is met, return 404
+		if !hasDownloadsRemaining && !hasTimeRemaining {
+			return ErrFileNotFound
+		}
+
+		// If active by clicks, decrement the counter
+		if hasDownloadsRemaining {
+			_, err := graph.Link.UpdateOne(l).
+				SetDownloadsRemaining(l.DownloadsRemaining - 1).
+				Save(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to decrement active clicks: %w", err)
+			}
+		}
+
+		// Get the associated asset
 		a := l.Edges.Asset
 		if a == nil {
 			return ErrFileNotFound
-		}
-
-		// Check Expiry
-		if time.Now().After(l.ExpiresAt) {
-			slog.Info("Failed attempt to download expired link", "path", linkPath)
-			return ErrFileNotFound
-		}
-
-		// Check DownloadLimit
-		downloadLimit := -1
-		if l.DownloadLimit != nil {
-			downloadLimit = *l.DownloadLimit
-		}
-		if  downloadLimit > 0 && l.Downloads >= downloadLimit {
-			slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "downloads", l.Downloads, "download_limit", l.DownloadLimit)
-			return ErrFileNotFound
-		}
-
-		// Increment Link Downloads
-		if _, err := graph.Link.UpdateOne(l).
-		SetDownloads(l.Downloads + 1).
-		Save(ctx); err != nil {
-			slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "err", err)
-
-			// Only error if a download limit is enforced
-			if downloadLimit > 0 {
-				return ErrFileNotFound
-			}
 		}
 
 		// Set Etag to hash of asset

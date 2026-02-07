@@ -11,7 +11,7 @@ type TableWrapperProps = {
   error: ApolloError | undefined;
   title?: string;
   table: ReactNode;
-  pagination?: ReactNode;
+  pagination: ReactNode;
 }
 
 export const TableWrapper: React.FC<TableWrapperProps> = ({
@@ -49,7 +49,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
           <div className="overflow-x-auto">
             {table}
           </div>
-          {pagination && pagination}
+          {pagination}
         </>
       )
     }

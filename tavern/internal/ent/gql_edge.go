@@ -50,14 +50,6 @@ func (a *Asset) Links(
 	return a.QueryLinks().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (a *Asset) Creator(ctx context.Context) (*User, error) {
-	result, err := a.Edges.CreatorOrErr()
-	if IsNotLoaded(err) {
-		result, err = a.QueryCreator().Only(ctx)
-	}
-	return result, MaskNotFound(err)
-}
-
 func (b *Beacon) Host(ctx context.Context) (*Host, error) {
 	result, err := b.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -267,14 +259,6 @@ func (l *Link) Asset(ctx context.Context) (*Asset, error) {
 		result, err = l.QueryAsset().Only(ctx)
 	}
 	return result, err
-}
-
-func (l *Link) Creator(ctx context.Context) (*User, error) {
-	result, err := l.Edges.CreatorOrErr()
-	if IsNotLoaded(err) {
-		result, err = l.QueryCreator().Only(ctx)
-	}
-	return result, MaskNotFound(err)
 }
 
 func (po *Portal) Task(ctx context.Context) (*Task, error) {

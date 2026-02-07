@@ -31,8 +31,6 @@ const (
 	EdgeTomes = "tomes"
 	// EdgeLinks holds the string denoting the links edge name in mutations.
 	EdgeLinks = "links"
-	// EdgeCreator holds the string denoting the creator edge name in mutations.
-	EdgeCreator = "creator"
 	// Table holds the table name of the asset in the database.
 	Table = "assets"
 	// TomesTable is the table that holds the tomes relation/edge. The primary key declared below.
@@ -47,13 +45,6 @@ const (
 	LinksInverseTable = "links"
 	// LinksColumn is the table column denoting the links relation/edge.
 	LinksColumn = "link_asset"
-	// CreatorTable is the table that holds the creator relation/edge.
-	CreatorTable = "assets"
-	// CreatorInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	CreatorInverseTable = "users"
-	// CreatorColumn is the table column denoting the creator relation/edge.
-	CreatorColumn = "asset_creator"
 )
 
 // Columns holds all SQL columns for asset fields.
@@ -67,12 +58,6 @@ var Columns = []string{
 	FieldContent,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "assets"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"asset_creator",
-}
-
 var (
 	// TomesPrimaryKey and TomesColumn2 are the table columns denoting the
 	// primary key for the tomes relation (M2M).
@@ -83,11 +68,6 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -177,13 +157,6 @@ func ByLinks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newLinksStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-
-// ByCreatorField orders the results by creator field.
-func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -196,12 +169,5 @@ func newLinksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(LinksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, LinksTable, LinksColumn),
-	)
-}
-func newCreatorStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(CreatorInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
 	)
 }

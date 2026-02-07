@@ -6,15 +6,12 @@ use pb::c2::{self, ClaimTasksRequest, TaskContext};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use tokio::sync::RwLock;
 use transport::Transport;
 
 use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
-
-const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
@@ -23,26 +20,23 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
-    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
     pub fn new(
         config: Config,
         transport: T,
-        runtime_handle: std::runtime::Handle,
+        runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
-            output_tx,
-            output_rx: Arc::new(Mutex::new(output_rx)),
+            output_buffer: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -87,15 +81,16 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
     // Flushes all buffered task outputs using the provided transport
     pub async fn flush_outputs(&self) {
-        let rx = match self.output_rx.lock() {
-            Ok(rx) => rx,
-            Err(_) => return,
-        };
+        // Wait a short delay to allow tasks to produce output
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-        let mut outputs = Vec::new();
-        while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
-            outputs.push(msg);
-        }
+        // Drain the buffer
+        let outputs: Vec<_> = {
+            match self.output_buffer.lock() {
+                Ok(mut b) => b.drain(..).collect(),
+                Err(_) => return,
+            }
+        };
 
         #[cfg(debug_assertions)]
         log::info!("Flushing {} task outputs", outputs.len());
@@ -104,41 +99,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             return;
         }
 
-        let mut merged_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
-        for output in outputs {
-            let task_id = output
-                .context
-                .as_ref()
-                .map(|c| c.task_id)
-                .unwrap_or_default();
-
-            use std::collections::btree_map::Entry;
-            match merged_outputs.entry(task_id) {
-                Entry::Occupied(mut entry) => {
-                    let existing = entry.get_mut();
-                    if let Some(existing_out) = &mut existing.output {
-                        if let Some(new_out) = &output.output {
-                            existing_out.output.push_str(&new_out.output);
-                            match (&mut existing_out.error, &new_out.error) {
-                                (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
-                                (None, Some(e2)) => existing_out.error = Some(e2.clone()),
-                                _ => {}
-                            }
-                            if new_out.exec_finished_at.is_some() {
-                                existing_out.exec_finished_at = new_out.exec_finished_at.clone();
-                            }
-                        }
-                    }
-                    existing.context = output.context.clone();
-                }
-                Entry::Vacant(entry) => {
-                    entry.insert(output);
-                }
-            }
-        }
-
         let mut transport = self.transport.write().await;
-        for (_, output) in merged_outputs {
+        for output in outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
 
@@ -322,9 +284,8 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         // Buffer output instead of sending immediately
-        self.output_tx
-            .try_send(req)
-            .map_err(|_| "Output buffer full".to_string())?;
+        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
+        buffer.push(req);
         Ok(c2::ReportTaskOutputResponse {})
     }
 

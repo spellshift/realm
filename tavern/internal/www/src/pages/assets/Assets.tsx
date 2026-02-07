@@ -6,18 +6,11 @@ import CreateLinkModal from "./components/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal";
 import TableWrapper from "../../components/tavern-base-ui/table/TableWrapper";
 import TablePagination from "../../components/tavern-base-ui/table/TablePagination";
-import { useFilters } from "../../context/FilterContext";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 export const Assets = () => {
-    const rowLimit = 10;
-    const { filters } = useFilters();
-    const where: any = filters.assetName ? { nameContains: filters.assetName } : {};
-
-    if (filters.creatorId) {
-        where.hasCreatorWith = [{ id: filters.creatorId }];
-    }
-
-    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit, where);
+    const rowLimit = 50;
+    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit);
 
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
@@ -28,12 +21,18 @@ export const Assets = () => {
         setCreateLinkModalOpen(true);
     };
 
-    const handleRefresh = () => {
+    const handleUploadSuccess = () => {
         refetch();
     };
 
     return (
-        <>            
+        <>
+            <Breadcrumbs
+                pages={[{
+                    label: "Assets",
+                    link: "/assets"
+                }]}
+            />
             <div className="flex flex-col gap-6">
                 <AssetsHeader setOpen={setUploadAssetModalOpen} />
                 <TableWrapper
@@ -41,7 +40,7 @@ export const Assets = () => {
                     loading={loading}
                     error={error}
                     title="Assets"
-                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} onAssetUpdate={refetch} />}
+                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} />}
                     pagination={
                          <TablePagination
                             totalCount={totalCount || 0}
@@ -62,14 +61,13 @@ export const Assets = () => {
                     setOpen={setCreateLinkModalOpen}
                     assetId={selectedAsset.id}
                     assetName={selectedAsset.name}
-                    onSuccess={handleRefresh}
                 />
             )}
 
             <UploadAssetModal
                 isOpen={uploadAssetModalOpen}
                 setOpen={setUploadAssetModalOpen}
-                onUploadSuccess={handleRefresh}
+                onUploadSuccess={handleUploadSuccess}
             />
         </>
     );
