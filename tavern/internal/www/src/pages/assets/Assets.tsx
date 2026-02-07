@@ -20,7 +20,7 @@ export const Assets = () => {
         setCreateLinkModalOpen(true);
     };
 
-    const handleUploadSuccess = () => {
+    const handleRefresh = () => {
         refetch();
     };
 
@@ -54,13 +54,14 @@ export const Assets = () => {
                     setOpen={setCreateLinkModalOpen}
                     assetId={selectedAsset.id}
                     assetName={selectedAsset.name}
+                    onSuccess={handleRefresh}
                 />
             )}
 
             <UploadAssetModal
                 isOpen={uploadAssetModalOpen}
                 setOpen={setUploadAssetModalOpen}
-                onUploadSuccess={handleUploadSuccess}
+                onUploadSuccess={handleRefresh}
             />
         </>
     );

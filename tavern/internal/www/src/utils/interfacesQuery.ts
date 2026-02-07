@@ -342,6 +342,7 @@ export interface AssetNode {
         totalCount: number;
         edges: TomeEdge[];
     };
+    creator?: UserNode | null;
 }
 
 export interface AssetEdge {

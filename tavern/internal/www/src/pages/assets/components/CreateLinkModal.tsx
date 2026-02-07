@@ -4,12 +4,14 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import { useCreateLink } from "../useAssets";
 import { format } from "date-fns";
 import { Clipboard } from "lucide-react";
+import { Checkbox } from "@chakra-ui/react";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
     setOpen: (arg: boolean) => void;
     assetId: string;
     assetName: string;
+    onSuccess?: () => void;
 };
 
 const generateRandomString = (length: number) => {
@@ -23,9 +25,10 @@ const generateRandomString = (length: number) => {
     return result;
 };
 
-const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName }) => {
+const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
     const { createLink, loading } = useCreateLink();
-    const [downloadLimit, setDownloadLimit] = useState<number|null>(null);
+    const [downloadLimit, setDownloadLimit] = useState<number>(1);
+    const [hasDownloadLimit, setHasDownloadLimit] = useState<boolean>(false);
     const [expiresAt, setExpiresAt] = useState<string>(
         format(new Date(Date.now() + 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm")
     );
@@ -36,6 +39,8 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
         if (isOpen) {
             setPath(generateRandomString(12));
             setCreatedLink(null);
+            setHasDownloadLimit(false);
+            setDownloadLimit(1);
         }
     }, [isOpen]);
 
@@ -46,7 +51,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 variables: {
                     input: {
                         assetID: assetId,
-                        downloadLimit: downloadLimit !== null ? Number(downloadLimit) : null,
+                        downloadLimit: hasDownloadLimit ? Number(downloadLimit) : null,
                         expiresAt: new Date(expiresAt).toISOString(),
                         path: path,
                     },
@@ -55,6 +60,9 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             if (data?.createLink?.path) {
                 const link = `${window.location.origin}/cdn/${data.createLink.path}`;
                 setCreatedLink(link);
+                if (onSuccess) {
+                    onSuccess();
+                }
             }
         } catch (err) {
             console.error(err);
@@ -112,17 +120,26 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 ) : (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Download Limit
-                            </label>
-                            <input
-                                type="number"
-                                min="0"
-                                required
-                                value={downloadLimit ?? 0}
-                                onChange={(e) => setDownloadLimit(Number(e.target.value))}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
+                            <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                    isChecked={hasDownloadLimit}
+                                    onChange={(e) => setHasDownloadLimit(e.target.checked)}
+                                    colorScheme="purple"
+                                >
+                                    <span className="text-sm font-medium text-gray-700">Limit Downloads</span>
+                                </Checkbox>
+                            </div>
+
+                            {hasDownloadLimit && (
+                                <input
+                                    type="number"
+                                    min="1"
+                                    required
+                                    value={downloadLimit}
+                                    onChange={(e) => setDownloadLimit(Number(e.target.value))}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                />
+                            )}
                         </div>
 
                         <div>
