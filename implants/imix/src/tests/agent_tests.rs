@@ -27,12 +27,7 @@ async fn test_start_reverse_shell() {
     let handle = tokio::runtime::Handle::current();
 
     let task_registry = Arc::new(TaskRegistry::new());
-    let (agent_struct, _rx) = ImixAgent::new(
-        Config::default(),
-        transport,
-        handle,
-        task_registry,
-    );
+    let (agent_struct, _rx) = ImixAgent::new(Config::default(), transport, handle, task_registry);
     let agent = Arc::new(agent_struct);
 
     // Execution must happen in a separate thread to allow block_on

@@ -6,7 +6,7 @@ use pb::c2::{self, ClaimTasksRequest, TaskContext};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::{RwLock, mpsc};
 use transport::Transport;
 
 use crate::portal::run_create_portal;

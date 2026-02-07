@@ -28,12 +28,8 @@ pub async fn run_agent() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
-    let (agent_struct, mut output_rx) = ImixAgent::new(
-        config,
-        transport,
-        handle,
-        task_registry.clone(),
-    );
+    let (agent_struct, mut output_rx) =
+        ImixAgent::new(config, transport, handle, task_registry.clone());
     let agent = Arc::new(agent_struct);
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
