@@ -13,6 +13,8 @@ use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
+const MAX_BUFFERED_OUTPUT_MESSAGES: usize = 65535;
+
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
     config: Arc<RwLock<Config>>,
@@ -21,15 +23,20 @@ pub struct ImixAgent<T: Transport> {
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
+
+    output_tx: std::mpsc::Sender,
+    output_rx: std::mpsc::Receiver,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
     pub fn new(
         config: Config,
         transport: T,
-        runtime_handle: tokio::runtime::Handle,
+        runtime_handle: std::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
+        let output_tx, output_rx = std::mpsc::channel(MAX_BUFFERED_OUTPUT_MESSAGES);
+
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -37,6 +44,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_buffer: Arc::new(Mutex::new(Vec::new())),
+            output_tx,
+            output_rx
         }
     }
 
@@ -283,9 +292,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
-        // Buffer output instead of sending immediately
-        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
-        buffer.push(req);
+        self.output_tx.send(req);
         Ok(c2::ReportTaskOutputResponse {})
     }
 
