@@ -1,6 +1,7 @@
 import { Upload } from "lucide-react";
 import { FC } from "react";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import Breadcrumbs from "../../../components/Breadcrumbs";
 
 type AssetsHeaderProps = {
     setOpen: (arg: boolean) => void;
@@ -8,21 +9,23 @@ type AssetsHeaderProps = {
 
 const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen }) => {
     return (
-        <div className="md:flex md:items-center md:justify-between">
-            <div className="min-w-0 flex-1">
-                <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-                    Assets
-                </h2>
-            </div>
-            <div className="mt-4 flex md:ml-4 md:mt-0">
+        <div className="flex flex-col gap-4 justify-between">
+            <div className="flex flex-row justify-between w-full items-center">
+                <Breadcrumbs pages={[{
+                                    label: "Assets",
+                                    link: "/assets"
+                                }]}
+                />
+                <div>
                 <Button
                     onClick={() => setOpen(true)}
                     buttonVariant="solid"
                     buttonStyle={{ color: "purple", size: "md" }}
                     leftIcon={<Upload className="-ml-0.5 mr-1.5 h-5 w-5" />}
                 >
-                    Upload Asset
-                </Button>
+                    Upload Assets
+                    </Button>
+                </div>
             </div>
         </div>
     );

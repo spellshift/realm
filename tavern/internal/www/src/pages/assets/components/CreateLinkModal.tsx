@@ -2,14 +2,16 @@ import { FC, useState, useEffect } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useCreateLink } from "../useAssets";
-import { format } from "date-fns";
+import { format, add } from "date-fns";
 import { Clipboard } from "lucide-react";
+import { Checkbox, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
     setOpen: (arg: boolean) => void;
     assetId: string;
     assetName: string;
+    onSuccess?: () => void;
 };
 
 const generateRandomString = (length: number) => {
@@ -23,9 +25,11 @@ const generateRandomString = (length: number) => {
     return result;
 };
 
-const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName }) => {
+const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
     const { createLink, loading } = useCreateLink();
-    const [downloadsRemaining, setDownloadsRemaining] = useState<number>(1);
+    const [downloadLimit, setDownloadLimit] = useState<number>(1);
+    const [hasDownloadLimit, setHasDownloadLimit] = useState<boolean>(false);
+    const [expiryMode, setExpiryMode] = useState<number>(0); // 0: 10m, 1: 1h, 2: Custom
     const [expiresAt, setExpiresAt] = useState<string>(
         format(new Date(Date.now() + 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm")
     );
@@ -36,18 +40,31 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
         if (isOpen) {
             setPath(generateRandomString(12));
             setCreatedLink(null);
+            setHasDownloadLimit(false);
+            setDownloadLimit(1);
+            setExpiryMode(0);
         }
     }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        let finalExpiresAt = new Date();
+        if (expiryMode === 0) {
+            finalExpiresAt = add(new Date(), { minutes: 10 });
+        } else if (expiryMode === 1) {
+            finalExpiresAt = add(new Date(), { hours: 1 });
+        } else {
+            finalExpiresAt = new Date(expiresAt);
+        }
+
         try {
             const { data } = await createLink({
                 variables: {
                     input: {
                         assetID: assetId,
-                        downloadsRemaining: Number(downloadsRemaining),
-                        expiresAt: new Date(expiresAt).toISOString(),
+                        downloadLimit: hasDownloadLimit ? Number(downloadLimit) : null,
+                        expiresAt: finalExpiresAt.toISOString(),
                         path: path,
                     },
                 },
@@ -55,6 +72,9 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             if (data?.createLink?.path) {
                 const link = `${window.location.origin}/cdn/${data.createLink.path}`;
                 setCreatedLink(link);
+                if (onSuccess) {
+                    onSuccess();
+                }
             }
         } catch (err) {
             console.error(err);
@@ -112,30 +132,56 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 ) : (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Downloads Remaining
-                            </label>
-                            <input
-                                type="number"
-                                min="1"
-                                required
-                                value={downloadsRemaining}
-                                onChange={(e) => setDownloadsRemaining(Number(e.target.value))}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
+                            <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                    isChecked={hasDownloadLimit}
+                                    onChange={(e) => setHasDownloadLimit(e.target.checked)}
+                                    colorScheme="purple"
+                                >
+                                    <span className="text-sm font-medium text-gray-700">Limit Downloads</span>
+                                </Checkbox>
+                            </div>
+
+                            {hasDownloadLimit && (
+                                <input
+                                    type="number"
+                                    min="1"
+                                    required
+                                    value={downloadLimit}
+                                    onChange={(e) => setDownloadLimit(Number(e.target.value))}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                />
+                            )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                                Expires At
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Expires In
                             </label>
-                            <input
-                                type="datetime-local"
-                                required
-                                value={expiresAt}
-                                onChange={(e) => setExpiresAt(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
+                            <Tabs index={expiryMode} onChange={setExpiryMode} variant="soft-rounded" colorScheme="purple" size="sm">
+                                <TabList>
+                                    <Tab>10min</Tab>
+                                    <Tab>1hr</Tab>
+                                    <Tab>Custom</Tab>
+                                </TabList>
+                                <TabPanels>
+                                    <TabPanel p={0} pt={2}>
+                                        <p className="text-sm text-gray-500">Link will expire in 10 minutes.</p>
+                                    </TabPanel>
+                                    <TabPanel p={0} pt={2}>
+                                        <p className="text-sm text-gray-500">Link will expire in 1 hour.</p>
+                                    </TabPanel>
+                                    <TabPanel p={0} pt={2}>
+                                        <input
+                                            type="datetime-local"
+                                            required={expiryMode === 2}
+                                            value={expiresAt}
+                                            onChange={(e) => setExpiresAt(e.target.value)}
+                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                        />
+                                    </TabPanel>
+                                </TabPanels>
+                            </Tabs>
                         </div>
 
                         <div>

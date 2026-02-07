@@ -6,11 +6,13 @@ import CreateLinkModal from "./components/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal";
 import TableWrapper from "../../components/tavern-base-ui/table/TableWrapper";
 import TablePagination from "../../components/tavern-base-ui/table/TablePagination";
-import Breadcrumbs from "../../components/Breadcrumbs";
+import { useFilters } from "../../context/FilterContext";
 
 export const Assets = () => {
-    const rowLimit = 50;
-    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit);
+    const rowLimit = 10;
+    const { filters } = useFilters();
+    const where = filters.assetName ? { nameContains: filters.assetName } : undefined;
+    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit, where);
 
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
@@ -21,18 +23,12 @@ export const Assets = () => {
         setCreateLinkModalOpen(true);
     };
 
-    const handleUploadSuccess = () => {
+    const handleRefresh = () => {
         refetch();
     };
 
     return (
-        <>
-            <Breadcrumbs
-                pages={[{
-                    label: "Assets",
-                    link: "/assets"
-                }]}
-            />
+        <>            
             <div className="flex flex-col gap-6">
                 <AssetsHeader setOpen={setUploadAssetModalOpen} />
                 <TableWrapper
@@ -40,7 +36,7 @@ export const Assets = () => {
                     loading={loading}
                     error={error}
                     title="Assets"
-                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} />}
+                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} onAssetUpdate={refetch} />}
                     pagination={
                          <TablePagination
                             totalCount={totalCount || 0}
@@ -61,13 +57,14 @@ export const Assets = () => {
                     setOpen={setCreateLinkModalOpen}
                     assetId={selectedAsset.id}
                     assetName={selectedAsset.name}
+                    onSuccess={handleRefresh}
                 />
             )}
 
             <UploadAssetModal
                 isOpen={uploadAssetModalOpen}
                 setOpen={setUploadAssetModalOpen}
-                onUploadSuccess={handleUploadSuccess}
+                onUploadSuccess={handleRefresh}
             />
         </>
     );
