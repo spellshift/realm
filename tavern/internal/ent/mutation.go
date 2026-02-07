@@ -77,8 +77,6 @@ type AssetMutation struct {
 	links            map[int]struct{}
 	removedlinks     map[int]struct{}
 	clearedlinks     bool
-	creator          *int
-	clearedcreator   bool
 	done             bool
 	oldValue         func(context.Context) (*Asset, error)
 	predicates       []predicate.Asset
@@ -526,45 +524,6 @@ func (m *AssetMutation) ResetLinks() {
 	m.removedlinks = nil
 }
 
-// SetCreatorID sets the "creator" edge to the User entity by id.
-func (m *AssetMutation) SetCreatorID(id int) {
-	m.creator = &id
-}
-
-// ClearCreator clears the "creator" edge to the User entity.
-func (m *AssetMutation) ClearCreator() {
-	m.clearedcreator = true
-}
-
-// CreatorCleared reports if the "creator" edge to the User entity was cleared.
-func (m *AssetMutation) CreatorCleared() bool {
-	return m.clearedcreator
-}
-
-// CreatorID returns the "creator" edge ID in the mutation.
-func (m *AssetMutation) CreatorID() (id int, exists bool) {
-	if m.creator != nil {
-		return *m.creator, true
-	}
-	return
-}
-
-// CreatorIDs returns the "creator" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// CreatorID instead. It exists only for internal usage by the builders.
-func (m *AssetMutation) CreatorIDs() (ids []int) {
-	if id := m.creator; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetCreator resets all changes to the "creator" edge.
-func (m *AssetMutation) ResetCreator() {
-	m.creator = nil
-	m.clearedcreator = false
-}
-
 // Where appends a list predicates to the AssetMutation builder.
 func (m *AssetMutation) Where(ps ...predicate.Asset) {
 	m.predicates = append(m.predicates, ps...)
@@ -798,15 +757,12 @@ func (m *AssetMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AssetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.tomes != nil {
 		edges = append(edges, asset.EdgeTomes)
 	}
 	if m.links != nil {
 		edges = append(edges, asset.EdgeLinks)
-	}
-	if m.creator != nil {
-		edges = append(edges, asset.EdgeCreator)
 	}
 	return edges
 }
@@ -827,17 +783,13 @@ func (m *AssetMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case asset.EdgeCreator:
-		if id := m.creator; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AssetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.removedtomes != nil {
 		edges = append(edges, asset.EdgeTomes)
 	}
@@ -869,15 +821,12 @@ func (m *AssetMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AssetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedtomes {
 		edges = append(edges, asset.EdgeTomes)
 	}
 	if m.clearedlinks {
 		edges = append(edges, asset.EdgeLinks)
-	}
-	if m.clearedcreator {
-		edges = append(edges, asset.EdgeCreator)
 	}
 	return edges
 }
@@ -890,8 +839,6 @@ func (m *AssetMutation) EdgeCleared(name string) bool {
 		return m.clearedtomes
 	case asset.EdgeLinks:
 		return m.clearedlinks
-	case asset.EdgeCreator:
-		return m.clearedcreator
 	}
 	return false
 }
@@ -900,9 +847,6 @@ func (m *AssetMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *AssetMutation) ClearEdge(name string) error {
 	switch name {
-	case asset.EdgeCreator:
-		m.ClearCreator()
-		return nil
 	}
 	return fmt.Errorf("unknown Asset unique edge %s", name)
 }
@@ -916,9 +860,6 @@ func (m *AssetMutation) ResetEdge(name string) error {
 		return nil
 	case asset.EdgeLinks:
 		m.ResetLinks()
-		return nil
-	case asset.EdgeCreator:
-		m.ResetCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Asset edge %s", name)
@@ -6216,25 +6157,21 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 // LinkMutation represents an operation that mutates the Link nodes in the graph.
 type LinkMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	_path             *string
-	expires_at        *time.Time
-	download_limit    *int
-	adddownload_limit *int
-	downloads         *int
-	adddownloads      *int
-	clearedFields     map[string]struct{}
-	asset             *int
-	clearedasset      bool
-	creator           *int
-	clearedcreator    bool
-	done              bool
-	oldValue          func(context.Context) (*Link, error)
-	predicates        []predicate.Link
+	op                     Op
+	typ                    string
+	id                     *int
+	created_at             *time.Time
+	last_modified_at       *time.Time
+	_path                  *string
+	expires_at             *time.Time
+	downloads_remaining    *int
+	adddownloads_remaining *int
+	clearedFields          map[string]struct{}
+	asset                  *int
+	clearedasset           bool
+	done                   bool
+	oldValue               func(context.Context) (*Link, error)
+	predicates             []predicate.Link
 }
 
 var _ ent.Mutation = (*LinkMutation)(nil)
@@ -6479,130 +6416,60 @@ func (m *LinkMutation) ResetExpiresAt() {
 	m.expires_at = nil
 }
 
-// SetDownloadLimit sets the "download_limit" field.
-func (m *LinkMutation) SetDownloadLimit(i int) {
-	m.download_limit = &i
-	m.adddownload_limit = nil
+// SetDownloadsRemaining sets the "downloads_remaining" field.
+func (m *LinkMutation) SetDownloadsRemaining(i int) {
+	m.downloads_remaining = &i
+	m.adddownloads_remaining = nil
 }
 
-// DownloadLimit returns the value of the "download_limit" field in the mutation.
-func (m *LinkMutation) DownloadLimit() (r int, exists bool) {
-	v := m.download_limit
+// DownloadsRemaining returns the value of the "downloads_remaining" field in the mutation.
+func (m *LinkMutation) DownloadsRemaining() (r int, exists bool) {
+	v := m.downloads_remaining
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDownloadLimit returns the old "download_limit" field's value of the Link entity.
+// OldDownloadsRemaining returns the old "downloads_remaining" field's value of the Link entity.
 // If the Link object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LinkMutation) OldDownloadLimit(ctx context.Context) (v *int, err error) {
+func (m *LinkMutation) OldDownloadsRemaining(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDownloadLimit is only allowed on UpdateOne operations")
+		return v, errors.New("OldDownloadsRemaining is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDownloadLimit requires an ID field in the mutation")
+		return v, errors.New("OldDownloadsRemaining requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDownloadLimit: %w", err)
+		return v, fmt.Errorf("querying old value for OldDownloadsRemaining: %w", err)
 	}
-	return oldValue.DownloadLimit, nil
+	return oldValue.DownloadsRemaining, nil
 }
 
-// AddDownloadLimit adds i to the "download_limit" field.
-func (m *LinkMutation) AddDownloadLimit(i int) {
-	if m.adddownload_limit != nil {
-		*m.adddownload_limit += i
+// AddDownloadsRemaining adds i to the "downloads_remaining" field.
+func (m *LinkMutation) AddDownloadsRemaining(i int) {
+	if m.adddownloads_remaining != nil {
+		*m.adddownloads_remaining += i
 	} else {
-		m.adddownload_limit = &i
+		m.adddownloads_remaining = &i
 	}
 }
 
-// AddedDownloadLimit returns the value that was added to the "download_limit" field in this mutation.
-func (m *LinkMutation) AddedDownloadLimit() (r int, exists bool) {
-	v := m.adddownload_limit
+// AddedDownloadsRemaining returns the value that was added to the "downloads_remaining" field in this mutation.
+func (m *LinkMutation) AddedDownloadsRemaining() (r int, exists bool) {
+	v := m.adddownloads_remaining
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ClearDownloadLimit clears the value of the "download_limit" field.
-func (m *LinkMutation) ClearDownloadLimit() {
-	m.download_limit = nil
-	m.adddownload_limit = nil
-	m.clearedFields[link.FieldDownloadLimit] = struct{}{}
-}
-
-// DownloadLimitCleared returns if the "download_limit" field was cleared in this mutation.
-func (m *LinkMutation) DownloadLimitCleared() bool {
-	_, ok := m.clearedFields[link.FieldDownloadLimit]
-	return ok
-}
-
-// ResetDownloadLimit resets all changes to the "download_limit" field.
-func (m *LinkMutation) ResetDownloadLimit() {
-	m.download_limit = nil
-	m.adddownload_limit = nil
-	delete(m.clearedFields, link.FieldDownloadLimit)
-}
-
-// SetDownloads sets the "downloads" field.
-func (m *LinkMutation) SetDownloads(i int) {
-	m.downloads = &i
-	m.adddownloads = nil
-}
-
-// Downloads returns the value of the "downloads" field in the mutation.
-func (m *LinkMutation) Downloads() (r int, exists bool) {
-	v := m.downloads
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDownloads returns the old "downloads" field's value of the Link entity.
-// If the Link object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *LinkMutation) OldDownloads(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDownloads is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDownloads requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDownloads: %w", err)
-	}
-	return oldValue.Downloads, nil
-}
-
-// AddDownloads adds i to the "downloads" field.
-func (m *LinkMutation) AddDownloads(i int) {
-	if m.adddownloads != nil {
-		*m.adddownloads += i
-	} else {
-		m.adddownloads = &i
-	}
-}
-
-// AddedDownloads returns the value that was added to the "downloads" field in this mutation.
-func (m *LinkMutation) AddedDownloads() (r int, exists bool) {
-	v := m.adddownloads
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetDownloads resets all changes to the "downloads" field.
-func (m *LinkMutation) ResetDownloads() {
-	m.downloads = nil
-	m.adddownloads = nil
+// ResetDownloadsRemaining resets all changes to the "downloads_remaining" field.
+func (m *LinkMutation) ResetDownloadsRemaining() {
+	m.downloads_remaining = nil
+	m.adddownloads_remaining = nil
 }
 
 // SetAssetID sets the "asset" edge to the Asset entity by id.
@@ -6644,45 +6511,6 @@ func (m *LinkMutation) ResetAsset() {
 	m.clearedasset = false
 }
 
-// SetCreatorID sets the "creator" edge to the User entity by id.
-func (m *LinkMutation) SetCreatorID(id int) {
-	m.creator = &id
-}
-
-// ClearCreator clears the "creator" edge to the User entity.
-func (m *LinkMutation) ClearCreator() {
-	m.clearedcreator = true
-}
-
-// CreatorCleared reports if the "creator" edge to the User entity was cleared.
-func (m *LinkMutation) CreatorCleared() bool {
-	return m.clearedcreator
-}
-
-// CreatorID returns the "creator" edge ID in the mutation.
-func (m *LinkMutation) CreatorID() (id int, exists bool) {
-	if m.creator != nil {
-		return *m.creator, true
-	}
-	return
-}
-
-// CreatorIDs returns the "creator" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// CreatorID instead. It exists only for internal usage by the builders.
-func (m *LinkMutation) CreatorIDs() (ids []int) {
-	if id := m.creator; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetCreator resets all changes to the "creator" edge.
-func (m *LinkMutation) ResetCreator() {
-	m.creator = nil
-	m.clearedcreator = false
-}
-
 // Where appends a list predicates to the LinkMutation builder.
 func (m *LinkMutation) Where(ps ...predicate.Link) {
 	m.predicates = append(m.predicates, ps...)
@@ -6717,7 +6545,7 @@ func (m *LinkMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LinkMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, link.FieldCreatedAt)
 	}
@@ -6730,11 +6558,8 @@ func (m *LinkMutation) Fields() []string {
 	if m.expires_at != nil {
 		fields = append(fields, link.FieldExpiresAt)
 	}
-	if m.download_limit != nil {
-		fields = append(fields, link.FieldDownloadLimit)
-	}
-	if m.downloads != nil {
-		fields = append(fields, link.FieldDownloads)
+	if m.downloads_remaining != nil {
+		fields = append(fields, link.FieldDownloadsRemaining)
 	}
 	return fields
 }
@@ -6752,10 +6577,8 @@ func (m *LinkMutation) Field(name string) (ent.Value, bool) {
 		return m.Path()
 	case link.FieldExpiresAt:
 		return m.ExpiresAt()
-	case link.FieldDownloadLimit:
-		return m.DownloadLimit()
-	case link.FieldDownloads:
-		return m.Downloads()
+	case link.FieldDownloadsRemaining:
+		return m.DownloadsRemaining()
 	}
 	return nil, false
 }
@@ -6773,10 +6596,8 @@ func (m *LinkMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPath(ctx)
 	case link.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
-	case link.FieldDownloadLimit:
-		return m.OldDownloadLimit(ctx)
-	case link.FieldDownloads:
-		return m.OldDownloads(ctx)
+	case link.FieldDownloadsRemaining:
+		return m.OldDownloadsRemaining(ctx)
 	}
 	return nil, fmt.Errorf("unknown Link field %s", name)
 }
@@ -6814,19 +6635,12 @@ func (m *LinkMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExpiresAt(v)
 		return nil
-	case link.FieldDownloadLimit:
+	case link.FieldDownloadsRemaining:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDownloadLimit(v)
-		return nil
-	case link.FieldDownloads:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDownloads(v)
+		m.SetDownloadsRemaining(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Link field %s", name)
@@ -6836,11 +6650,8 @@ func (m *LinkMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *LinkMutation) AddedFields() []string {
 	var fields []string
-	if m.adddownload_limit != nil {
-		fields = append(fields, link.FieldDownloadLimit)
-	}
-	if m.adddownloads != nil {
-		fields = append(fields, link.FieldDownloads)
+	if m.adddownloads_remaining != nil {
+		fields = append(fields, link.FieldDownloadsRemaining)
 	}
 	return fields
 }
@@ -6850,10 +6661,8 @@ func (m *LinkMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *LinkMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case link.FieldDownloadLimit:
-		return m.AddedDownloadLimit()
-	case link.FieldDownloads:
-		return m.AddedDownloads()
+	case link.FieldDownloadsRemaining:
+		return m.AddedDownloadsRemaining()
 	}
 	return nil, false
 }
@@ -6863,19 +6672,12 @@ func (m *LinkMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *LinkMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case link.FieldDownloadLimit:
+	case link.FieldDownloadsRemaining:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDownloadLimit(v)
-		return nil
-	case link.FieldDownloads:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDownloads(v)
+		m.AddDownloadsRemaining(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Link numeric field %s", name)
@@ -6884,11 +6686,7 @@ func (m *LinkMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *LinkMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(link.FieldDownloadLimit) {
-		fields = append(fields, link.FieldDownloadLimit)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -6901,11 +6699,6 @@ func (m *LinkMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *LinkMutation) ClearField(name string) error {
-	switch name {
-	case link.FieldDownloadLimit:
-		m.ClearDownloadLimit()
-		return nil
-	}
 	return fmt.Errorf("unknown Link nullable field %s", name)
 }
 
@@ -6925,11 +6718,8 @@ func (m *LinkMutation) ResetField(name string) error {
 	case link.FieldExpiresAt:
 		m.ResetExpiresAt()
 		return nil
-	case link.FieldDownloadLimit:
-		m.ResetDownloadLimit()
-		return nil
-	case link.FieldDownloads:
-		m.ResetDownloads()
+	case link.FieldDownloadsRemaining:
+		m.ResetDownloadsRemaining()
 		return nil
 	}
 	return fmt.Errorf("unknown Link field %s", name)
@@ -6937,12 +6727,9 @@ func (m *LinkMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *LinkMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.asset != nil {
 		edges = append(edges, link.EdgeAsset)
-	}
-	if m.creator != nil {
-		edges = append(edges, link.EdgeCreator)
 	}
 	return edges
 }
@@ -6955,17 +6742,13 @@ func (m *LinkMutation) AddedIDs(name string) []ent.Value {
 		if id := m.asset; id != nil {
 			return []ent.Value{*id}
 		}
-	case link.EdgeCreator:
-		if id := m.creator; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *LinkMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -6977,12 +6760,9 @@ func (m *LinkMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *LinkMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 1)
 	if m.clearedasset {
 		edges = append(edges, link.EdgeAsset)
-	}
-	if m.clearedcreator {
-		edges = append(edges, link.EdgeCreator)
 	}
 	return edges
 }
@@ -6993,8 +6773,6 @@ func (m *LinkMutation) EdgeCleared(name string) bool {
 	switch name {
 	case link.EdgeAsset:
 		return m.clearedasset
-	case link.EdgeCreator:
-		return m.clearedcreator
 	}
 	return false
 }
@@ -7006,9 +6784,6 @@ func (m *LinkMutation) ClearEdge(name string) error {
 	case link.EdgeAsset:
 		m.ClearAsset()
 		return nil
-	case link.EdgeCreator:
-		m.ClearCreator()
-		return nil
 	}
 	return fmt.Errorf("unknown Link unique edge %s", name)
 }
@@ -7019,9 +6794,6 @@ func (m *LinkMutation) ResetEdge(name string) error {
 	switch name {
 	case link.EdgeAsset:
 		m.ResetAsset()
-		return nil
-	case link.EdgeCreator:
-		m.ResetCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Link edge %s", name)

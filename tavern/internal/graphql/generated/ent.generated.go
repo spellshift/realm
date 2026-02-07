@@ -1544,51 +1544,6 @@ func (ec *executionContext) fieldContext_Asset_links(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Asset_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Asset) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Asset_creator,
-		func(ctx context.Context) (any, error) {
-			return obj.Creator(ctx)
-		},
-		nil,
-		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Asset_creator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Asset",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "photoURL":
-				return ec.fieldContext_User_photoURL(ctx, field)
-			case "isActivated":
-				return ec.fieldContext_User_isActivated(ctx, field)
-			case "isAdmin":
-				return ec.fieldContext_User_isAdmin(ctx, field)
-			case "tomes":
-				return ec.fieldContext_User_tomes(ctx, field)
-			case "activeShells":
-				return ec.fieldContext_User_activeShells(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _AssetConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.AssetConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1732,8 +1687,6 @@ func (ec *executionContext) fieldContext_AssetEdge_node(_ context.Context, field
 				return ec.fieldContext_Asset_tomes(ctx, field)
 			case "links":
 				return ec.fieldContext_Asset_links(ctx, field)
-			case "creator":
-				return ec.fieldContext_Asset_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
 		},
@@ -5016,43 +4969,14 @@ func (ec *executionContext) fieldContext_Link_expiresAt(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Link_downloadLimit(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
+func (ec *executionContext) _Link_downloadsRemaining(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Link_downloadLimit,
+		ec.fieldContext_Link_downloadsRemaining,
 		func(ctx context.Context) (any, error) {
-			return obj.DownloadLimit, nil
-		},
-		nil,
-		ec.marshalOInt2ᚖint,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Link_downloadLimit(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Link",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Link_downloads(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Link_downloads,
-		func(ctx context.Context) (any, error) {
-			return obj.Downloads, nil
+			return obj.DownloadsRemaining, nil
 		},
 		nil,
 		ec.marshalNInt2int,
@@ -5061,7 +4985,7 @@ func (ec *executionContext) _Link_downloads(ctx context.Context, field graphql.C
 	)
 }
 
-func (ec *executionContext) fieldContext_Link_downloads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Link_downloadsRemaining(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Link",
 		Field:      field,
@@ -5114,55 +5038,8 @@ func (ec *executionContext) fieldContext_Link_asset(_ context.Context, field gra
 				return ec.fieldContext_Asset_tomes(ctx, field)
 			case "links":
 				return ec.fieldContext_Asset_links(ctx, field)
-			case "creator":
-				return ec.fieldContext_Asset_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Link_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Link) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Link_creator,
-		func(ctx context.Context) (any, error) {
-			return obj.Creator(ctx)
-		},
-		nil,
-		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Link_creator(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Link",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_User_id(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "photoURL":
-				return ec.fieldContext_User_photoURL(ctx, field)
-			case "isActivated":
-				return ec.fieldContext_User_isActivated(ctx, field)
-			case "isAdmin":
-				return ec.fieldContext_User_isAdmin(ctx, field)
-			case "tomes":
-				return ec.fieldContext_User_tomes(ctx, field)
-			case "activeShells":
-				return ec.fieldContext_User_activeShells(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -5305,14 +5182,10 @@ func (ec *executionContext) fieldContext_LinkEdge_node(_ context.Context, field 
 				return ec.fieldContext_Link_path(ctx, field)
 			case "expiresAt":
 				return ec.fieldContext_Link_expiresAt(ctx, field)
-			case "downloadLimit":
-				return ec.fieldContext_Link_downloadLimit(ctx, field)
-			case "downloads":
-				return ec.fieldContext_Link_downloads(ctx, field)
+			case "downloadsRemaining":
+				return ec.fieldContext_Link_downloadsRemaining(ctx, field)
 			case "asset":
 				return ec.fieldContext_Link_asset(ctx, field)
-			case "creator":
-				return ec.fieldContext_Link_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Link", field.Name)
 		},
@@ -7254,8 +7127,6 @@ func (ec *executionContext) fieldContext_Quest_bundle(_ context.Context, field g
 				return ec.fieldContext_Asset_tomes(ctx, field)
 			case "links":
 				return ec.fieldContext_Asset_links(ctx, field)
-			case "creator":
-				return ec.fieldContext_Asset_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
 		},
@@ -10800,7 +10671,7 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashEqualFold", "hashContainsFold", "hasTomes", "hasTomesWith", "hasLinks", "hasLinksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -11262,20 +11133,6 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasLinksWith = data
-		case "hasCreator":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreator"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasCreator = data
-		case "hasCreatorWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatorWith"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasCreatorWith = data
 		}
 	}
 
@@ -12263,7 +12120,7 @@ func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"path", "expiresAt", "downloadLimit", "downloads", "assetID"}
+	fieldsInOrder := [...]string{"path", "expiresAt", "downloadsRemaining", "assetID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12284,20 +12141,13 @@ func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, o
 				return it, err
 			}
 			it.ExpiresAt = data
-		case "downloadLimit":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimit"))
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimit = data
-		case "downloads":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloads"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Downloads = data
+			it.DownloadsRemaining = data
 		case "assetID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetID"))
 			data, err := ec.unmarshalNID2int(ctx, v)
@@ -15804,7 +15654,7 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "downloadLimit", "downloadLimitNEQ", "downloadLimitIn", "downloadLimitNotIn", "downloadLimitGT", "downloadLimitGTE", "downloadLimitLT", "downloadLimitLTE", "downloadLimitIsNil", "downloadLimitNotNil", "downloads", "downloadsNEQ", "downloadsIn", "downloadsNotIn", "downloadsGT", "downloadsGTE", "downloadsLT", "downloadsLTE", "hasAsset", "hasAssetWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "expiresAt", "expiresAtNEQ", "expiresAtIn", "expiresAtNotIn", "expiresAtGT", "expiresAtGTE", "expiresAtLT", "expiresAtLTE", "downloadsRemaining", "downloadsRemainingNEQ", "downloadsRemainingIn", "downloadsRemainingNotIn", "downloadsRemainingGT", "downloadsRemainingGTE", "downloadsRemainingLT", "downloadsRemainingLTE", "hasAsset", "hasAssetWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16147,132 +15997,62 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.ExpiresAtLTE = data
-		case "downloadLimit":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimit"))
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimit = data
-		case "downloadLimitNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitNEQ"))
+			it.DownloadsRemaining = data
+		case "downloadsRemainingNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingNEQ"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitNEQ = data
-		case "downloadLimitIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitIn"))
+			it.DownloadsRemainingNEQ = data
+		case "downloadsRemainingIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingIn"))
 			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitIn = data
-		case "downloadLimitNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitNotIn"))
+			it.DownloadsRemainingIn = data
+		case "downloadsRemainingNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingNotIn"))
 			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitNotIn = data
-		case "downloadLimitGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitGT"))
+			it.DownloadsRemainingNotIn = data
+		case "downloadsRemainingGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingGT"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitGT = data
-		case "downloadLimitGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitGTE"))
+			it.DownloadsRemainingGT = data
+		case "downloadsRemainingGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingGTE"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitGTE = data
-		case "downloadLimitLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitLT"))
+			it.DownloadsRemainingGTE = data
+		case "downloadsRemainingLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingLT"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitLT = data
-		case "downloadLimitLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitLTE"))
+			it.DownloadsRemainingLT = data
+		case "downloadsRemainingLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemainingLTE"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimitLTE = data
-		case "downloadLimitIsNil":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitIsNil"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadLimitIsNil = data
-		case "downloadLimitNotNil":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimitNotNil"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadLimitNotNil = data
-		case "downloads":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloads"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Downloads = data
-		case "downloadsNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsNEQ"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsNEQ = data
-		case "downloadsIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsIn = data
-		case "downloadsNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsNotIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsNotIn = data
-		case "downloadsGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsGT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsGT = data
-		case "downloadsGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsGTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsGTE = data
-		case "downloadsLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsLT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsLT = data
-		case "downloadsLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsLTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.DownloadsLTE = data
+			it.DownloadsRemainingLTE = data
 		case "hasAsset":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAsset"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -16287,20 +16067,6 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasAssetWith = data
-		case "hasCreator":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreator"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasCreator = data
-		case "hasCreatorWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasCreatorWith"))
-			data, err := ec.unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasCreatorWith = data
 		}
 	}
 
@@ -20498,7 +20264,7 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "path", "expiresAt", "downloadLimit", "clearDownloadLimit", "downloads", "creatorID", "clearCreator"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "path", "expiresAt", "downloadsRemaining"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -20526,41 +20292,13 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 				return it, err
 			}
 			it.ExpiresAt = data
-		case "downloadLimit":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadLimit"))
+		case "downloadsRemaining":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloadsRemaining"))
 			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DownloadLimit = data
-		case "clearDownloadLimit":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearDownloadLimit"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearDownloadLimit = data
-		case "downloads":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("downloads"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Downloads = data
-		case "creatorID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creatorID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CreatorID = data
-		case "clearCreator":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearCreator"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ClearCreator = data
+			it.DownloadsRemaining = data
 		}
 	}
 
@@ -21417,39 +21155,6 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "creator":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Asset_creator(ctx, field, obj)
 				return res
 			}
 
@@ -22911,10 +22616,8 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "downloadLimit":
-			out.Values[i] = ec._Link_downloadLimit(ctx, field, obj)
-		case "downloads":
-			out.Values[i] = ec._Link_downloads(ctx, field, obj)
+		case "downloadsRemaining":
+			out.Values[i] = ec._Link_downloadsRemaining(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
@@ -22931,39 +22634,6 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "creator":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Link_creator(ctx, field, obj)
 				return res
 			}
 

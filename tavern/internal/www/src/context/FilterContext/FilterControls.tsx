@@ -22,9 +22,6 @@ function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname === '/tasks' || pathname.startsWith('/tasks/')) {
         return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
     }
-    if (pathname === '/assets') {
-        return [FilterFieldType.ASSET_NAME];
-    }
 
     return null;
 }
@@ -102,19 +99,6 @@ export default function FilterControls() {
                         defaultValue={filters.tomeMultiSearch}
                         setSearch={(newValue) => updateFilters({ 'tomeMultiSearch': newValue })}
                         placeholder="Tome definition & values"
-                    />
-                </div>
-            );
-        }
-        else if (field === FilterFieldType.ASSET_NAME) {
-            return (
-                <div key={field}>
-                    <FreeTextSearch
-                        key={field}
-                        isDisabled={filters.isLocked}
-                        defaultValue={filters.assetName}
-                        setSearch={(newValue) => updateFilters({ 'assetName': newValue })}
-                        placeholder="Asset name"
                     />
                 </div>
             );

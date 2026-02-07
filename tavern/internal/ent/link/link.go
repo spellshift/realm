@@ -22,14 +22,10 @@ const (
 	FieldPath = "path"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
-	// FieldDownloadLimit holds the string denoting the download_limit field in the database.
-	FieldDownloadLimit = "download_limit"
-	// FieldDownloads holds the string denoting the downloads field in the database.
-	FieldDownloads = "downloads"
+	// FieldDownloadsRemaining holds the string denoting the downloads_remaining field in the database.
+	FieldDownloadsRemaining = "downloads_remaining"
 	// EdgeAsset holds the string denoting the asset edge name in mutations.
 	EdgeAsset = "asset"
-	// EdgeCreator holds the string denoting the creator edge name in mutations.
-	EdgeCreator = "creator"
 	// Table holds the table name of the link in the database.
 	Table = "links"
 	// AssetTable is the table that holds the asset relation/edge.
@@ -39,13 +35,6 @@ const (
 	AssetInverseTable = "assets"
 	// AssetColumn is the table column denoting the asset relation/edge.
 	AssetColumn = "link_asset"
-	// CreatorTable is the table that holds the creator relation/edge.
-	CreatorTable = "links"
-	// CreatorInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	CreatorInverseTable = "users"
-	// CreatorColumn is the table column denoting the creator relation/edge.
-	CreatorColumn = "link_creator"
 )
 
 // Columns holds all SQL columns for link fields.
@@ -55,15 +44,13 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldPath,
 	FieldExpiresAt,
-	FieldDownloadLimit,
-	FieldDownloads,
+	FieldDownloadsRemaining,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "links"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"link_asset",
-	"link_creator",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -94,12 +81,10 @@ var (
 	PathValidator func(string) error
 	// DefaultExpiresAt holds the default value on creation for the "expires_at" field.
 	DefaultExpiresAt time.Time
-	// DownloadLimitValidator is a validator for the "download_limit" field. It is called by the builders before save.
-	DownloadLimitValidator func(int) error
-	// DefaultDownloads holds the default value on creation for the "downloads" field.
-	DefaultDownloads int
-	// DownloadsValidator is a validator for the "downloads" field. It is called by the builders before save.
-	DownloadsValidator func(int) error
+	// DefaultDownloadsRemaining holds the default value on creation for the "downloads_remaining" field.
+	DefaultDownloadsRemaining int
+	// DownloadsRemainingValidator is a validator for the "downloads_remaining" field. It is called by the builders before save.
+	DownloadsRemainingValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the Link queries.
@@ -130,14 +115,9 @@ func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
 }
 
-// ByDownloadLimit orders the results by the download_limit field.
-func ByDownloadLimit(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDownloadLimit, opts...).ToFunc()
-}
-
-// ByDownloads orders the results by the downloads field.
-func ByDownloads(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDownloads, opts...).ToFunc()
+// ByDownloadsRemaining orders the results by the downloads_remaining field.
+func ByDownloadsRemaining(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDownloadsRemaining, opts...).ToFunc()
 }
 
 // ByAssetField orders the results by asset field.
@@ -146,24 +126,10 @@ func ByAssetField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAssetStep(), sql.OrderByField(field, opts...))
 	}
 }
-
-// ByCreatorField orders the results by creator field.
-func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
-	}
-}
 func newAssetStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AssetInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, AssetTable, AssetColumn),
-	)
-}
-func newCreatorStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(CreatorInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
 	)
 }

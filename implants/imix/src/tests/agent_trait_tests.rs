@@ -2,6 +2,7 @@ use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch::agent::agent::Agent;
 use pb::c2::host::Platform;
+use pb::c2::transport::Type;
 use pb::c2::{self, Host};
 use pb::config::Config;
 use std::sync::Arc;
@@ -37,8 +38,20 @@ async fn test_imix_agent_buffer_and_flush() {
     };
     agent.report_task_output(req).unwrap();
 
+    // Verify buffer
+    {
+        let buffer = agent.output_buffer.lock().unwrap();
+        assert_eq!(buffer.len(), 1);
+    }
+
     // 2. Flush outputs (should drain buffer and call transport)
     agent.flush_outputs().await;
+
+    // Verify buffer empty
+    {
+        let buffer = agent.output_buffer.lock().unwrap();
+        assert!(buffer.is_empty());
+    }
 }
 
 #[tokio::test]

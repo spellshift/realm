@@ -29,13 +29,7 @@ export const GET_ASSETS = gql`
                 id
                 path
                 expiresAt
-                downloadLimit
-                downloads
-                creator {
-                  id
-                  name
-                  photoURL
-                }
+                downloadsRemaining
               }
             }
           }
@@ -48,22 +42,8 @@ export const GET_ASSETS = gql`
               }
             }
           }
-          creator {
-            id
-            name
-            photoURL
-          }
         }
       }
-    }
-  }
-`;
-
-export const DISABLE_LINK = gql`
-  mutation DisableLink($linkID: ID!) {
-    disableLink(linkID: $linkID) {
-      id
-      expiresAt
     }
   }
 `;
@@ -74,8 +54,7 @@ export const CREATE_LINK = gql`
       id
       path
       expiresAt
-      downloads
-      downloadLimit
+      downloadsRemaining
     }
   }
 `;
@@ -103,18 +82,11 @@ export const useAssets = (rowLimit = 50, where?: any) => {
       if (afterCursor) {
           variables.first = rowLimit;
           variables.after = afterCursor;
-          variables.last = null;
-          variables.before = null;
       } else if (beforeCursor) {
           variables.last = rowLimit;
           variables.before = beforeCursor;
-          variables.first = null;
-          variables.after = null;
       } else {
           variables.first = rowLimit;
-          variables.last = null;
-          variables.after = null;
-          variables.before = null;
       }
       return refetch(variables);
   }, [rowLimit, where, refetch, assetSort]);
@@ -136,9 +108,4 @@ export const useAssets = (rowLimit = 50, where?: any) => {
 export const useCreateLink = () => {
   const [createLink, { data, loading, error }] = useMutation(CREATE_LINK);
   return { createLink, data, loading, error };
-};
-
-export const useDisableLink = () => {
-  const [disableLink, { data, loading, error }] = useMutation(DISABLE_LINK);
-  return { disableLink, data, loading, error };
 };

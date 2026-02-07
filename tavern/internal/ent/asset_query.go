@@ -16,7 +16,6 @@ import (
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/ent/user"
 )
 
 // AssetQuery is the builder for querying Asset entities.
@@ -28,8 +27,6 @@ type AssetQuery struct {
 	predicates     []predicate.Asset
 	withTomes      *TomeQuery
 	withLinks      *LinkQuery
-	withCreator    *UserQuery
-	withFKs        bool
 	modifiers      []func(*sql.Selector)
 	loadTotal      []func(context.Context, []*Asset) error
 	withNamedTomes map[string]*TomeQuery
@@ -107,28 +104,6 @@ func (aq *AssetQuery) QueryLinks() *LinkQuery {
 			sqlgraph.From(asset.Table, asset.FieldID, selector),
 			sqlgraph.To(link.Table, link.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, asset.LinksTable, asset.LinksColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryCreator chains the current query on the "creator" edge.
-func (aq *AssetQuery) QueryCreator() *UserQuery {
-	query := (&UserClient{config: aq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := aq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := aq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(asset.Table, asset.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, asset.CreatorTable, asset.CreatorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -323,14 +298,13 @@ func (aq *AssetQuery) Clone() *AssetQuery {
 		return nil
 	}
 	return &AssetQuery{
-		config:      aq.config,
-		ctx:         aq.ctx.Clone(),
-		order:       append([]asset.OrderOption{}, aq.order...),
-		inters:      append([]Interceptor{}, aq.inters...),
-		predicates:  append([]predicate.Asset{}, aq.predicates...),
-		withTomes:   aq.withTomes.Clone(),
-		withLinks:   aq.withLinks.Clone(),
-		withCreator: aq.withCreator.Clone(),
+		config:     aq.config,
+		ctx:        aq.ctx.Clone(),
+		order:      append([]asset.OrderOption{}, aq.order...),
+		inters:     append([]Interceptor{}, aq.inters...),
+		predicates: append([]predicate.Asset{}, aq.predicates...),
+		withTomes:  aq.withTomes.Clone(),
+		withLinks:  aq.withLinks.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -356,17 +330,6 @@ func (aq *AssetQuery) WithLinks(opts ...func(*LinkQuery)) *AssetQuery {
 		opt(query)
 	}
 	aq.withLinks = query
-	return aq
-}
-
-// WithCreator tells the query-builder to eager-load the nodes that are connected to
-// the "creator" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AssetQuery) WithCreator(opts ...func(*UserQuery)) *AssetQuery {
-	query := (&UserClient{config: aq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	aq.withCreator = query
 	return aq
 }
 
@@ -447,20 +410,12 @@ func (aq *AssetQuery) prepareQuery(ctx context.Context) error {
 func (aq *AssetQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Asset, error) {
 	var (
 		nodes       = []*Asset{}
-		withFKs     = aq.withFKs
 		_spec       = aq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [2]bool{
 			aq.withTomes != nil,
 			aq.withLinks != nil,
-			aq.withCreator != nil,
 		}
 	)
-	if aq.withCreator != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, asset.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Asset).scanValues(nil, columns)
 	}
@@ -493,12 +448,6 @@ func (aq *AssetQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Asset,
 		if err := aq.loadLinks(ctx, query, nodes,
 			func(n *Asset) { n.Edges.Links = []*Link{} },
 			func(n *Asset, e *Link) { n.Edges.Links = append(n.Edges.Links, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := aq.withCreator; query != nil {
-		if err := aq.loadCreator(ctx, query, nodes, nil,
-			func(n *Asset, e *User) { n.Edges.Creator = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -613,38 +562,6 @@ func (aq *AssetQuery) loadLinks(ctx context.Context, query *LinkQuery, nodes []*
 			return fmt.Errorf(`unexpected referenced foreign-key "link_asset" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
-	}
-	return nil
-}
-func (aq *AssetQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*Asset, init func(*Asset), assign func(*Asset, *User)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Asset)
-	for i := range nodes {
-		if nodes[i].asset_creator == nil {
-			continue
-		}
-		fk := *nodes[i].asset_creator
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(user.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "asset_creator" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
 	}
 	return nil
 }

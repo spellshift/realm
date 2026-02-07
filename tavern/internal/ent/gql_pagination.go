@@ -2747,31 +2747,17 @@ var (
 			}
 		},
 	}
-	// LinkOrderFieldDownloadLimit orders Link by download_limit.
-	LinkOrderFieldDownloadLimit = &LinkOrderField{
+	// LinkOrderFieldDownloadsRemaining orders Link by downloads_remaining.
+	LinkOrderFieldDownloadsRemaining = &LinkOrderField{
 		Value: func(l *Link) (ent.Value, error) {
-			return l.DownloadLimit, nil
+			return l.DownloadsRemaining, nil
 		},
-		column: link.FieldDownloadLimit,
-		toTerm: link.ByDownloadLimit,
+		column: link.FieldDownloadsRemaining,
+		toTerm: link.ByDownloadsRemaining,
 		toCursor: func(l *Link) Cursor {
 			return Cursor{
 				ID:    l.ID,
-				Value: l.DownloadLimit,
-			}
-		},
-	}
-	// LinkOrderFieldDownloads orders Link by downloads.
-	LinkOrderFieldDownloads = &LinkOrderField{
-		Value: func(l *Link) (ent.Value, error) {
-			return l.Downloads, nil
-		},
-		column: link.FieldDownloads,
-		toTerm: link.ByDownloads,
-		toCursor: func(l *Link) Cursor {
-			return Cursor{
-				ID:    l.ID,
-				Value: l.Downloads,
+				Value: l.DownloadsRemaining,
 			}
 		},
 	}
@@ -2789,10 +2775,8 @@ func (f LinkOrderField) String() string {
 		str = "PATH"
 	case LinkOrderFieldExpiresAt.column:
 		str = "EXPIRES_AT"
-	case LinkOrderFieldDownloadLimit.column:
-		str = "DOWNLOAD_LIMIT"
-	case LinkOrderFieldDownloads.column:
-		str = "DOWNLOADS"
+	case LinkOrderFieldDownloadsRemaining.column:
+		str = "DOWNLOADS_REMAINING"
 	}
 	return str
 }
@@ -2817,10 +2801,8 @@ func (f *LinkOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *LinkOrderFieldPath
 	case "EXPIRES_AT":
 		*f = *LinkOrderFieldExpiresAt
-	case "DOWNLOAD_LIMIT":
-		*f = *LinkOrderFieldDownloadLimit
-	case "DOWNLOADS":
-		*f = *LinkOrderFieldDownloads
+	case "DOWNLOADS_REMAINING":
+		*f = *LinkOrderFieldDownloadsRemaining
 	default:
 		return fmt.Errorf("%s is not a valid LinkOrderField", str)
 	}

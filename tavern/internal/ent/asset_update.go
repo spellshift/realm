@@ -15,7 +15,6 @@ import (
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/tome"
-	"realm.pub/tavern/internal/ent/user"
 )
 
 // AssetUpdate is the builder for updating Asset entities.
@@ -122,25 +121,6 @@ func (au *AssetUpdate) AddLinks(l ...*Link) *AssetUpdate {
 	return au.AddLinkIDs(ids...)
 }
 
-// SetCreatorID sets the "creator" edge to the User entity by ID.
-func (au *AssetUpdate) SetCreatorID(id int) *AssetUpdate {
-	au.mutation.SetCreatorID(id)
-	return au
-}
-
-// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
-func (au *AssetUpdate) SetNillableCreatorID(id *int) *AssetUpdate {
-	if id != nil {
-		au = au.SetCreatorID(*id)
-	}
-	return au
-}
-
-// SetCreator sets the "creator" edge to the User entity.
-func (au *AssetUpdate) SetCreator(u *User) *AssetUpdate {
-	return au.SetCreatorID(u.ID)
-}
-
 // Mutation returns the AssetMutation object of the builder.
 func (au *AssetUpdate) Mutation() *AssetMutation {
 	return au.mutation
@@ -186,12 +166,6 @@ func (au *AssetUpdate) RemoveLinks(l ...*Link) *AssetUpdate {
 		ids[i] = l[i].ID
 	}
 	return au.RemoveLinkIDs(ids...)
-}
-
-// ClearCreator clears the "creator" edge to the User entity.
-func (au *AssetUpdate) ClearCreator() *AssetUpdate {
-	au.mutation.ClearCreator()
-	return au
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -376,35 +350,6 @@ func (au *AssetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if au.mutation.CreatorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   asset.CreatorTable,
-			Columns: []string{asset.CreatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := au.mutation.CreatorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   asset.CreatorTable,
-			Columns: []string{asset.CreatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{asset.Label}
@@ -516,25 +461,6 @@ func (auo *AssetUpdateOne) AddLinks(l ...*Link) *AssetUpdateOne {
 	return auo.AddLinkIDs(ids...)
 }
 
-// SetCreatorID sets the "creator" edge to the User entity by ID.
-func (auo *AssetUpdateOne) SetCreatorID(id int) *AssetUpdateOne {
-	auo.mutation.SetCreatorID(id)
-	return auo
-}
-
-// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
-func (auo *AssetUpdateOne) SetNillableCreatorID(id *int) *AssetUpdateOne {
-	if id != nil {
-		auo = auo.SetCreatorID(*id)
-	}
-	return auo
-}
-
-// SetCreator sets the "creator" edge to the User entity.
-func (auo *AssetUpdateOne) SetCreator(u *User) *AssetUpdateOne {
-	return auo.SetCreatorID(u.ID)
-}
-
 // Mutation returns the AssetMutation object of the builder.
 func (auo *AssetUpdateOne) Mutation() *AssetMutation {
 	return auo.mutation
@@ -580,12 +506,6 @@ func (auo *AssetUpdateOne) RemoveLinks(l ...*Link) *AssetUpdateOne {
 		ids[i] = l[i].ID
 	}
 	return auo.RemoveLinkIDs(ids...)
-}
-
-// ClearCreator clears the "creator" edge to the User entity.
-func (auo *AssetUpdateOne) ClearCreator() *AssetUpdateOne {
-	auo.mutation.ClearCreator()
-	return auo
 }
 
 // Where appends a list predicates to the AssetUpdate builder.
@@ -793,35 +713,6 @@ func (auo *AssetUpdateOne) sqlSave(ctx context.Context) (_node *Asset, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(link.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if auo.mutation.CreatorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   asset.CreatorTable,
-			Columns: []string{asset.CreatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := auo.mutation.CreatorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   asset.CreatorTable,
-			Columns: []string{asset.CreatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
