@@ -39,7 +39,7 @@ func (Link) Fields() []ent.Field {
 			).
 			Comment("Unique path for accessing the asset via the CDN"),
 		field.Time("expires_at").
-			Default(time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)).
+			Default(time.Now().Add(-time.Second).UTC()).
 			Annotations(
 				entgql.OrderField("EXPIRES_AT"),
 			).
