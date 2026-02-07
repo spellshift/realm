@@ -84,6 +84,17 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
         setProgress(null);
     }
 
+    const getErrorDetails = () => {
+        if (uploadErrors.length === 0) return "";
+        const limit = 10;
+        const visibleErrors = uploadErrors.slice(0, limit);
+        let details = visibleErrors.join("\n");
+        if (uploadErrors.length > limit) {
+            details += `\n...and ${uploadErrors.length - limit} more errors`;
+        }
+        return details;
+    };
+
     return (
         <Modal setOpen={handleClose} isOpen={isOpen} size="md">
             <div className="flex flex-col gap-6">
@@ -100,13 +111,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                     <div className="mb-4">
                         <AlertError
                             label="Upload completed with errors"
-                            details={
-                                <ul className="list-disc pl-4 mt-2 max-h-32 overflow-y-auto">
-                                    {uploadErrors.map((err, idx) => (
-                                        <li key={idx}>{err}</li>
-                                    ))}
-                                </ul>
-                            }
+                            details={getErrorDetails()}
                         />
                         <button
                             type="button"

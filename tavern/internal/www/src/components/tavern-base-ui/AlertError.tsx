@@ -1,9 +1,9 @@
 import { XCircleIcon } from '@heroicons/react/20/solid'
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 type AlertErrorProps = {
     label: string,
-    details: string
+    details: ReactNode
 }
 const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
     return (
@@ -14,7 +14,7 @@ const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
                 </div>
                 <div className="flex flex-col">
                     <h3 className="text-sm font-semibold text-red-700">{label}</h3>
-                    <div className="text-sm text-red-700">
+                    <div className="text-sm text-red-700 whitespace-pre-wrap">
                         {details}
                     </div>
                 </div>
