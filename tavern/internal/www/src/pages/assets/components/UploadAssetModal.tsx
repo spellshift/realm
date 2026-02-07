@@ -101,6 +101,20 @@ const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
                                     <Pencil className="w-3.5 h-3.5" />
                                 </button>
                             )}
+                                        {isError && (
+                <div className="flex items-center gap-1 text-xs text-red-700 p-1 rounded">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{item.error || "Upload failed"}</span>
+                </div>
+            )}
+            {isUploading && (
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                    <div
+                        className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${item.progress}%` }}
+                    ></div>
+                </div>
+            )}
                         </div>
                     )}
                 </div>
@@ -115,7 +129,7 @@ const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
                         </div>
                     )}
 
-                    <button
+                    {!isSuccess && !isUploading && (<button
                         type="button"
                         onClick={onRemove}
                         className={`text-gray-400 p-1 rounded-full hover:bg-gray-200 hover:text-gray-600 ${isUploading ? 'invisible' : ''}`}
@@ -123,24 +137,9 @@ const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
                     >
                         <X className="w-4 h-4" />
                     </button>
+                    )}
                 </div>
             </div>
-
-            {isUploading && (
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
-                    <div
-                        className="bg-purple-600 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${item.progress}%` }}
-                    ></div>
-                </div>
-            )}
-
-            {isError && (
-                <div className="flex items-start gap-2 mt-1 text-sm text-red-700 p-2 rounded">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                    <span>{item.error || "Upload failed"}</span>
-                </div>
-            )}
         </div>
     );
 };
