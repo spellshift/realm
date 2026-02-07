@@ -1,5 +1,5 @@
-import { Upload } from "lucide-react";
-import { FC, useState } from "react";
+import { Upload, Folder, File as FileIcon } from "lucide-react";
+import { FC, useState, useRef } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
@@ -11,109 +11,199 @@ type UploadAssetModalProps = {
 };
 
 const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUploadSuccess }) => {
-    const [file, setFile] = useState<File | null>(null);
-    const [fileName, setFileName] = useState<string>("");
+    const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+    const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const folderInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
-            setFileName(selectedFile.name);
+        if (e.target.files && e.target.files.length > 0) {
+            setFiles(Array.from(e.target.files));
+            setUploadErrors([]);
+            setProgress(null);
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file || !fileName) return;
+        if (files.length === 0) return;
 
         setLoading(true);
-        setError(null);
+        setUploadErrors([]);
+        setProgress({ current: 0, total: files.length });
 
-        const formData = new FormData();
-        formData.append("fileName", fileName);
-        formData.append("fileContent", file);
+        const errors: string[] = [];
 
-        try {
-            const response = await fetch("/cdn/upload", {
-                method: "POST",
-                body: formData,
-            });
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const assetName = file.webkitRelativePath || file.name;
 
-            if (!response.ok) {
-                throw new Error("Upload failed");
+            const formData = new FormData();
+            formData.append("fileName", assetName);
+            formData.append("fileContent", file);
+
+            try {
+                const response = await fetch("/cdn/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to upload ${assetName}: ${response.statusText}`);
+                }
+            } catch (err: any) {
+                errors.push(err.message || `Error uploading ${assetName}`);
             }
 
+            setProgress({ current: i + 1, total: files.length });
+        }
+
+        setLoading(false);
+
+        if (errors.length > 0) {
+            setUploadErrors(errors);
+            // If some succeeded, we might want to refresh the table anyway
+            if (errors.length < files.length) {
+                onUploadSuccess();
+            }
+        } else {
             onUploadSuccess();
             setOpen(false);
-            setFile(null);
-            setFileName("");
-        } catch (err: any) {
-            setError(err.message || "An error occurred during upload");
-        } finally {
-            setLoading(false);
+            setFiles([]);
+            setProgress(null);
         }
     };
 
+    const handleClose = () => {
+        setOpen(false);
+        setFiles([]);
+        setUploadErrors([]);
+        setProgress(null);
+    }
+
     return (
-        <Modal setOpen={setOpen} isOpen={isOpen} size="md">
+        <Modal setOpen={handleClose} isOpen={isOpen} size="md">
             <div className="flex flex-col gap-6">
                 <div>
                     <h3 className="text-xl font-semibold leading-6 text-gray-900">
-                        Upload Asset
+                        Upload Assets
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                        Upload a new asset or update an existing one by name.
+                        Upload files or folders.
                     </p>
                 </div>
 
-                {error && (
-                <div className="mb-4">
-                    <AlertError
-                        label="Failed to upload asset"
-                        details="There was an error uploading your asset. Please try again or contact support if the issue persists."
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setError(null)}
-                        className="mt-2 text-sm text-red-600 hover:text-red-500 underline"
-                    >
-                        Dismiss error
-                    </button>
-                </div>
-            )}
+                {uploadErrors.length > 0 && (
+                    <div className="mb-4">
+                        <AlertError
+                            label="Upload completed with errors"
+                            details={
+                                <ul className="list-disc pl-4 mt-2 max-h-32 overflow-y-auto">
+                                    {uploadErrors.map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            }
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setUploadErrors([])}
+                            className="mt-2 text-sm text-red-600 hover:text-red-500 underline"
+                        >
+                            Dismiss errors
+                        </button>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div>
+                    <div className="flex flex-col gap-2">
                         <label className="block text-sm font-medium text-gray-700">
-                            File
+                            Select Content
                         </label>
-                        <input
-                            type="file"
-                            required
-                            onChange={handleFileChange}
-                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-                        />
+                        <div className="flex gap-3">
+                            <input
+                                type="file"
+                                multiple
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
+                            <input
+                                type="file"
+                                // @ts-ignore
+                                webkitdirectory=""
+                                mozdirectory=""
+                                directory=""
+                                ref={folderInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
+                            <Button
+                                type="button"
+                                onClick={() => {
+                                    if (fileInputRef.current) fileInputRef.current.value = "";
+                                    fileInputRef.current?.click();
+                                }}
+                                buttonVariant="outline"
+                                buttonStyle={{ color: "gray", size: "sm" }}
+                                leftIcon={<FileIcon className="h-4 w-4" />}
+                            >
+                                Select Files
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={() => {
+                                    if (folderInputRef.current) folderInputRef.current.value = "";
+                                    folderInputRef.current?.click();
+                                }}
+                                buttonVariant="outline"
+                                buttonStyle={{ color: "gray", size: "sm" }}
+                                leftIcon={<Folder className="h-4 w-4" />}
+                            >
+                                Select Folder
+                            </Button>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                            Asset Name
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            value={fileName}
-                            onChange={(e) => setFileName(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                        />
-                    </div>
+                    {files.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Selected ({files.length} files)
+                            </label>
+                            <div className="max-h-40 overflow-y-auto border rounded-md p-2 bg-gray-50 text-sm text-gray-600">
+                                {files.map((f, i) => (
+                                    <div key={i} className="truncate">
+                                        {f.webkitRelativePath || f.name}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {progress && (
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Upload Progress
+                            </label>
+                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                <div
+                                    className="bg-purple-600 h-2.5 rounded-full transition-all duration-300"
+                                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                                ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1 text-right">
+                                {progress.current} / {progress.total}
+                            </p>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-2 mt-4">
                         <Button
                             type="button"
-                            onClick={() => setOpen(false)}
+                            onClick={handleClose}
                             buttonVariant="outline"
                             buttonStyle={{ color: "gray", size: "md" }}
                         >
@@ -121,7 +211,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                         </Button>
                         <Button
                             type="submit"
-                            disabled={loading || !file}
+                            disabled={loading || files.length === 0}
                             buttonVariant="solid"
                             buttonStyle={{ color: "purple", size: "md" }}
                             leftIcon={<Upload className="h-5 w-5" />}
