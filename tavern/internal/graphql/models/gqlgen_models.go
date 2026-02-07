@@ -29,6 +29,61 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+type Dashboard struct {
+	HostMetrics  *DashboardHostMetrics  `json:"hostMetrics"`
+	QuestMetrics *DashboardQuestMetrics `json:"questMetrics"`
+}
+
+type DashboardHostMetric struct {
+	Tag         string     `json:"tag"`
+	TagID       string     `json:"tagID"`
+	Online      int        `json:"online"`
+	Total       int        `json:"total"`
+	HostsOnline int        `json:"hostsOnline"`
+	HostsTotal  int        `json:"hostsTotal"`
+	LastSeenAt  *time.Time `json:"lastSeenAt,omitempty"`
+}
+
+type DashboardHostMetrics struct {
+	Group            []*DashboardHostMetric `json:"group"`
+	Service          []*DashboardHostMetric `json:"service"`
+	Platform         []*DashboardHostMetric `json:"platform"`
+	OnlineHostCount  int                    `json:"onlineHostCount"`
+	OfflineHostCount int                    `json:"offlineHostCount"`
+	TotalHostCount   int                    `json:"totalHostCount"`
+}
+
+type DashboardQuestMetric struct {
+	Name         string `json:"name"`
+	TasksError   int    `json:"tasksError"`
+	TasksNoError int    `json:"tasksNoError"`
+	ID           string `json:"id"`
+}
+
+type DashboardQuestMetrics struct {
+	TomeUsage    []*DashboardQuestMetric  `json:"tomeUsage"`
+	TaskTimeline []*DashboardTimelineItem `json:"taskTimeline"`
+	TaskTactics  []string                 `json:"taskTactics"`
+	GroupUsage   []*DashboardQuestMetric  `json:"groupUsage"`
+	ServiceUsage []*DashboardQuestMetric  `json:"serviceUsage"`
+	TotalQuests  int                      `json:"totalQuests"`
+	TotalOutput  int                      `json:"totalOutput"`
+	TotalTasks   int                      `json:"totalTasks"`
+	TotalErrors  int                      `json:"totalErrors"`
+}
+
+type DashboardTacticCount struct {
+	Tactic string `json:"tactic"`
+	Count  int    `json:"count"`
+}
+
+type DashboardTimelineItem struct {
+	Label       string                  `json:"label"`
+	Timestamp   time.Time               `json:"timestamp"`
+	TaskCreated int                     `json:"taskCreated"`
+	Tactics     []*DashboardTacticCount `json:"tactics"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.

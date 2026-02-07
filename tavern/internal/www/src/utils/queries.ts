@@ -403,3 +403,76 @@ export const GET_HOST_CREDENTIALS = gql`
             }
         }
 }`;
+
+export const GET_DASHBOARD_QUERY = gql`
+    query GetDashboard {
+        dashboard {
+            hostMetrics {
+                group {
+                    tag
+                    tagID
+                    online
+                    total
+                    hostsOnline
+                    hostsTotal
+                    lastSeenAt
+                }
+                service {
+                    tag
+                    tagID
+                    online
+                    total
+                    hostsOnline
+                    hostsTotal
+                    lastSeenAt
+                }
+                platform {
+                    tag
+                    tagID
+                    online
+                    total
+                    hostsOnline
+                    hostsTotal
+                    lastSeenAt
+                }
+                onlineHostCount
+                offlineHostCount
+                totalHostCount
+            }
+            questMetrics {
+                tomeUsage {
+                    name
+                    tasksError
+                    tasksNoError
+                    id
+                }
+                taskTimeline {
+                    label
+                    timestamp
+                    taskCreated
+                    tactics {
+                        tactic
+                        count
+                    }
+                }
+                taskTactics
+                groupUsage {
+                    name
+                    tasksError
+                    tasksNoError
+                    id
+                }
+                serviceUsage {
+                    name
+                    tasksError
+                    tasksNoError
+                    id
+                }
+                totalQuests
+                totalOutput
+                totalTasks
+                totalErrors
+            }
+        }
+    }
+`;

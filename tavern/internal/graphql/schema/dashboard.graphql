@@ -1,0 +1,58 @@
+type DashboardHostMetric {
+    tag: String!
+    tagID: String!
+    online: Int!
+    total: Int!
+    hostsOnline: Int!
+    hostsTotal: Int!
+    lastSeenAt: Time
+}
+
+type DashboardHostMetrics {
+    group: [DashboardHostMetric!]!
+    service: [DashboardHostMetric!]!
+    platform: [DashboardHostMetric!]!
+    onlineHostCount: Int!
+    offlineHostCount: Int!
+    totalHostCount: Int!
+}
+
+type DashboardQuestMetric {
+    name: String!
+    tasksError: Int!
+    tasksNoError: Int!
+    id: String!
+}
+
+type DashboardTacticCount {
+    tactic: String!
+    count: Int!
+}
+
+type DashboardTimelineItem {
+    label: String!
+    timestamp: Time!
+    taskCreated: Int!
+    tactics: [DashboardTacticCount!]!
+}
+
+type DashboardQuestMetrics {
+    tomeUsage: [DashboardQuestMetric!]!
+    taskTimeline: [DashboardTimelineItem!]!
+    taskTactics: [String!]!
+    groupUsage: [DashboardQuestMetric!]!
+    serviceUsage: [DashboardQuestMetric!]!
+    totalQuests: Int!
+    totalOutput: Int!
+    totalTasks: Int!
+    totalErrors: Int!
+}
+
+type Dashboard {
+    hostMetrics: DashboardHostMetrics!
+    questMetrics: DashboardQuestMetrics!
+}
+
+extend type Query {
+    dashboard: Dashboard! @requireRole(role: USER)
+}
