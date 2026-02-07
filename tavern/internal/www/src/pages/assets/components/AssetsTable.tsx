@@ -247,12 +247,14 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
         if (windowWidth >= 1000) {
             visibleIds.push("size");
         }
-        if (windowWidth >= 1200) {
-            visibleIds.push("createdAt");
+        if (windowWidth > 1200) {
             visibleIds.push("lastModifiedAt");
         }
         if (windowWidth >= 1400) {
             visibleIds.push("hash");
+        }
+        if (windowWidth > 1600) {
+            visibleIds.push("createdAt");
         }
 
         return columns.filter(col => visibleIds.includes(col.id as string));
