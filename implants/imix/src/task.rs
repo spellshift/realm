@@ -10,26 +10,48 @@ use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc::{self, UnboundedSender};
 
-#[derive(Debug)]
 struct StreamPrinter {
-    tx: UnboundedSender<String>,
+    tx: Mutex<Option<UnboundedSender<String>>>,
+}
+
+impl std::fmt::Debug for StreamPrinter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StreamPrinter").finish()
+    }
 }
 
 impl StreamPrinter {
     fn new(tx: UnboundedSender<String>) -> Self {
-        Self { tx }
+        Self {
+            tx: Mutex::new(Some(tx)),
+        }
+    }
+
+    /// Explicitly close the underlying channel sender.
+    /// This ensures the consumer sees channel closure even if
+    /// Arc<StreamPrinter> references leak from interpreter reference cycles.
+    fn close(&self) {
+        if let Ok(mut guard) = self.tx.lock() {
+            *guard = None;
+        }
     }
 }
 
 impl Printer for StreamPrinter {
     fn print_out(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior which separates lines
-        let _ = self.tx.send(format!("{}\n", s));
+        if let Ok(guard) = self.tx.lock() {
+            if let Some(tx) = guard.as_ref() {
+                let _ = tx.send(format!("{}\n", s));
+            }
+        }
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior
-        let _ = self.tx.send(format!("{}\n", s));
+        if let Ok(guard) = self.tx.lock() {
+            if let Some(tx) = guard.as_ref() {
+                let _ = tx.send(format!("{}\n", s));
+            }
+        }
     }
 }
 
@@ -182,15 +204,19 @@ fn execute_task(
         rx,
     );
 
+    log::debug!("executing");
     // Run Interpreter with panic protection
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         interp.interpret(&tome.eldritch)
     }));
 
-    // Explicitly drop interp and printer to close channel
-    drop(printer);
+    // Explicitly close the channel sender. This ensures the consumer
+    // sees channel closure even if Arc<StreamPrinter> has leaked references
+    // (e.g. from Environment reference cycles in the interpreter).
+    printer.close();
     drop(interp);
 
+    log::debug!("consuming");
     // Wait for consumer to finish processing all messages
     match runtime_handle.block_on(consumer_join_handle) {
         Ok(_) => {}
@@ -202,7 +228,7 @@ fn execute_task(
             );
         }
     }
-
+    log::debug!("reporting output");
     // Handle result
     match result {
         Ok(exec_result) => report_result(task_context, exec_result, &agent),
