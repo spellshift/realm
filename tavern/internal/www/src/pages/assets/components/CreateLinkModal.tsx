@@ -11,6 +11,7 @@ type CreateLinkModalProps = {
     setOpen: (arg: boolean) => void;
     assetId: string;
     assetName: string;
+    onSuccess?: () => void;
 };
 
 const generateRandomString = (length: number) => {
@@ -24,7 +25,7 @@ const generateRandomString = (length: number) => {
     return result;
 };
 
-const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName }) => {
+const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
     const { createLink, loading } = useCreateLink();
     const [downloadLimit, setDownloadLimit] = useState<number>(1);
     const [hasDownloadLimit, setHasDownloadLimit] = useState<boolean>(false);
@@ -59,6 +60,9 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             if (data?.createLink?.path) {
                 const link = `${window.location.origin}/cdn/${data.createLink.path}`;
                 setCreatedLink(link);
+                if (onSuccess) {
+                    onSuccess();
+                }
             }
         } catch (err) {
             console.error(err);

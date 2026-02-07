@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { AssetEdge } from "../../../utils/interfacesQuery";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy } from "lucide-react";
+import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy, FilePlus } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 import { useState, useEffect } from "react";
@@ -112,10 +112,16 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                 const truncatedName = truncateAssetName(row.original.node.name);
                 return (
                     <div className="flex items-center gap-4">
-                        {hasTomes && (
+                        {hasTomes ? (
                             <Tooltip label={`${row.original.node.tomes.totalCount} associated tome(s)`} bg="white" color="black">
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />
+                                </div>
+                            </Tooltip>
+                        ) : (
+                            <Tooltip label="Asset is not referenced by any tomes" bg="white" color="black">
+                                <div className="shrink-0">
+                                    <FilePlus className="w-4 h-4 text-gray-400" />
                                 </div>
                             </Tooltip>
                         )}
