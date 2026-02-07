@@ -12,6 +12,7 @@ type UploadAssetModalProps = {
 
 const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUploadSuccess }) => {
     const [files, setFiles] = useState<File[]>([]);
+    const [singleFileName, setSingleFileName] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [uploadErrors, setUploadErrors] = useState<string[]>([]);
     const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
@@ -21,7 +22,13 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setFiles(Array.from(e.target.files));
+            const selectedFiles = Array.from(e.target.files);
+            setFiles(selectedFiles);
+            if (selectedFiles.length === 1) {
+                setSingleFileName(selectedFiles[0].name);
+            } else {
+                setSingleFileName("");
+            }
             setUploadErrors([]);
             setProgress(null);
         }
@@ -39,7 +46,11 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const assetName = file.webkitRelativePath || file.name;
+            let assetName = file.webkitRelativePath || file.name;
+
+            if (files.length === 1 && singleFileName) {
+                assetName = singleFileName;
+            }
 
             const formData = new FormData();
             formData.append("fileName", assetName);
@@ -173,7 +184,22 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                         </div>
                     </div>
 
-                    {files.length > 0 && (
+                    {files.length === 1 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Asset Name
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                value={singleFileName}
+                                onChange={(e) => setSingleFileName(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                            />
+                        </div>
+                    )}
+
+                    {files.length > 1 && (
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Selected ({files.length} files)
