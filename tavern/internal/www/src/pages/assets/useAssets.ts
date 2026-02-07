@@ -103,11 +103,18 @@ export const useAssets = (rowLimit = 50, where?: any) => {
       if (afterCursor) {
           variables.first = rowLimit;
           variables.after = afterCursor;
+          variables.last = null;
+          variables.before = null;
       } else if (beforeCursor) {
           variables.last = rowLimit;
           variables.before = beforeCursor;
+          variables.first = null;
+          variables.after = null;
       } else {
           variables.first = rowLimit;
+          variables.last = null;
+          variables.after = null;
+          variables.before = null;
       }
       return refetch(variables);
   }, [rowLimit, where, refetch, assetSort]);
