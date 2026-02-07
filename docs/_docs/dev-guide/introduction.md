@@ -7,7 +7,7 @@ permalink: dev-guide/introduction
 ---
 # Overview
 
-This section of the documentation is meant for new Realm-contributors, and should be read in its entirety before submitting your first PR. Below you can learn more about our testing & documentation requirements, project layout, and some of the internals of our codebase.
+This section of the documentation is meant for new Realm contributors, and should be read in its entirety before submitting your first PR. Below you can learn more about our testing & documentation requirements, project layout, and some of the internals of our codebase.
 
 ## Contribution Guidelines
 
@@ -23,7 +23,7 @@ Realm contains code across a variety of languages and frameworks. Testing helps 
 
 #### Eldritch
 
-Any methods added to the Eldritch Standard Library should have tests collocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
+Any methods added to the Eldritch Standard Library should have tests colocated in the method's `<name>_impl.rs` file. Here are a few things to keep in mind:
 
 * Tests should be cross platform
   * Rely on [NamedTempFile](https://docs.rs/tempfile/1.1.1/tempfile/struct.NamedTempFile.html) for temporary files
@@ -39,7 +39,7 @@ All code changes to Tavern must be tested. Below are some standards for test wri
 * For GraphQL API Tests, please refer to our [YAML specification](/dev-guide/tavern#yaml-test-reference-graphql)
 * For gRPC API Tests, please refer to our [YAML specification](/dev-guide/tavern#yaml-test-reference-grpc)
 * Conventionally, please colocate your test code with the code it is testing and include it in the `<packagename>_test` package
-* We rely on the standard [testify](https://github.com/stretchr/testify) assert & require libraries for ensuring expected values (or errors) are returned
+* We rely on the standard [testify](https://github.com/stretchr/testify) assert and require libraries for ensuring expected values (or errors) are returned
 * To enable a variety of inputs for a test case, we rely on closure-driven testing for Golang, you can read more about it [here](https://medium.com/@cep21/closure-driven-tests-an-alternative-style-to-table-driven-tests-in-go-628a41497e5e)
 * Reusable test code should go in a sub-package suffixed with test
   * For example, reusable test code for the `ent` package would be located in the `ent/enttest` package

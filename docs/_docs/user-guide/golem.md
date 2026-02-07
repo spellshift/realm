@@ -8,7 +8,7 @@ permalink: user-guide/golem
 ## What is Golem
 
 Golem is the standalone interpreter for Eldritch.
-This program exists to help users get experience with the Eldritch language as well as a jumping-off point if you're interested in implementing your own program using the Eldritch language. Additionally, consult our [Tomes](/user-guide/tomes) documentation for information about packaging [Eldritch](/user-guide/terminology#eldritch) code for use with [Imix](/user-guide/imix) and Tavern.
+This program exists to help users get experience with the Eldritch language as well as serve as a jumping-off point if you're interested in implementing your own program using the Eldritch language. Additionally, consult our [Tomes](/user-guide/tomes) documentation for information about packaging [Eldritch](/user-guide/terminology#eldritch) code for use with [Imix](/user-guide/imix) and Tavern.
 
 Golem can also be used operationally as an alternative to a system native shell.
 You can leverage the power of Eldritch with minimal exposure in the system process tree.
@@ -82,9 +82,9 @@ paramdefs: # A list of inputs the tome requires.
 
 ### Building your Eldritch script
 
-Eldritch while it looks like python is distinct and many features in python do not exist in Eldritch.
+Eldritch, while it looks like python, is distinct and many features in python do not exist in Eldritch.
 
-For an almost complete list of syntax checkout the Starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
+For an almost complete list of syntax check out the Starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
 *Note: The docs may be incorrect in some places as we're using the starlark-rust implementation which doesn't always adhere to the starlark spec.*
 
 ```python
@@ -105,7 +105,7 @@ def file_list(path):
             if f['type'] == "File":
                 type_str = "File"
             # Formatting - By default Eldritch will print data as a JSON Dictionary which is easy for scripts to read but
-            # not great for humans to make your tome more usable make sure you print data in a readable way.
+            # not great for humans. To make your tome more usable, make sure you print data in a readable way.
             print(f['permissions']+"\t"+f['owner']+"\t"+f['group']+"\t"+str(f['size'])+"\t"+f['modified']+"\t"+type_str+"\t"+f['file_name']+"\n")
     else:
         print("Error: Invalid Path ("+path+")\n")
@@ -140,7 +140,7 @@ Now that your tome is created let's test it locally.
 # ...
 ```
 
-_If you have input_params that you need to define for your tome manually set them for your test by adding a line like this:_
+_If you have `input_params` that you need to define for your tome, manually set them for your test by adding a line like this:_
 
 ```python
 input_params['path'] = "/tmp/"
@@ -149,11 +149,11 @@ file_list(input_params['path'])
 
 ## Golem embedded files
 
-The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in Eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified `-i` or a file path, golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
+The Eldritch interpreter can embed files at compile time. To interact with these assets use the `assets` module in Eldritch. In addition to programmatic access the embedded files can be automatically executed at run time. If no other option is specified (`-i` or a file path), golem will iterate over every instance of `main.eldritch` in the embedded assets launching each one as a separate thread. This behavior is desirable when trying to perform recon or deploy persistence quickly.
 
 ## Golem as a stage 0
 
-Golem can also be used as a stage 0 to load imix or other c2 agents. When building as a stage 0 releases builds are recommended to optimize build size.
+Golem can also be used as a stage 0 to load imix or other c2 agents. When building as a stage 0 release builds are recommended to optimize build size.
 
 ```bash
 # Build imix.exe

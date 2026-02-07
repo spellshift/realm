@@ -83,7 +83,7 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 	proto := encoding.GetCodecV2("proto")
 	res, err := proto.Marshal(v)
 	if err != nil {
-		slog.Error("Unable to marshall data")
+		slog.Error("Unable to marshal data")
 		return res, err
 	}
 	enc_res := s.Csvc.Encrypt(res.Materialize())
@@ -152,7 +152,6 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	client_pub_key_bytes := make([]byte, x25519.Size)
 	copy(client_pub_key_bytes, in_arr[:x25519.Size])
 
-
 	ids, err := goAllIds()
 	if err != nil {
 		slog.Error("failed to get goid")
@@ -174,7 +173,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 
 	// Read nonce & cipher text
 	if len(in_arr) < aead.NonceSize() {
-		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), aead.NonceSize()))
+		slog.Error(fmt.Sprintf("input bytes too short %d expected at least %d", len(in_arr), aead.NonceSize()))
 		return FAILURE_BYTES, FAILURE_BYTES
 	}
 	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]

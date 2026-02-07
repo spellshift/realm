@@ -179,7 +179,7 @@ not persist across agent reboots.
 
 `agent.set_callback_uri(new_uri: str) -> None`
 
-The <b>agent.set_callback_uri</b> method takes an string and changes the
+The <b>agent.set_callback_uri</b> method takes a string and changes the
 running agent's callback URI to the passed value. This configuration change will
 not persist across agent reboots. NOTE: please ensure the passed URI path is correct
 for the underlying `Transport` being used, as a URI can take many forms and we make no
@@ -491,7 +491,7 @@ The <b>file.remove</b> method deletes a file or directory (and it's contents) sp
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces it with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.replace_all
 
@@ -525,14 +525,14 @@ Unimplemented.
 `file.write(path: str, content: str) -> None`
 
 The <b>file.write</b> method writes to a given file path with the given content.
-If a file already exists at this path, the method will overwite it. If a directory
+If a file already exists at this path, the method will overwrite it. If a directory
 already exists at the path the method will error.
 
 ### file.find
 
 `file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>`
 
-The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.
+The <b>file.find</b> method finds all files matching the used parameters. Returns file paths for all matching items.
 
 - name: Checks if file name contains provided input
 - file_type: Checks for 'file' or 'dir' for files or directories, respectively.
@@ -556,13 +556,13 @@ The <b>http.download</b> method downloads a file at the URI specified in `uri` t
 
 `http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then returns the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
 `http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then returns the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 
@@ -608,13 +608,13 @@ The <b>pivot.bind_proxy</b> method is being proposed to provide users another op
 
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
 
-The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
+The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds, that response will be returned.
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
 ### pivot.port_forward
 
-`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
+`pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port: int, protocol: str) -> None`
 
 The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
@@ -817,7 +817,7 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 ### random.string
 
 `random.string(length: uint, charset: Optional<str>) -> str`
-The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning: the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
 
 ---
 
@@ -897,7 +897,7 @@ The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a rem
 
 The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
 
-The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
+The ints in dll_bytes will be cast from u32 -> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
 
 ### sys.exec
@@ -905,8 +905,8 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 `sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
-On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
-On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
+On *nix systems, disown will run the process in the background disowned from the agent. This is done through double forking.
+On Windows systems, disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
 
 ```python
@@ -1229,7 +1229,7 @@ For reference on all available format specifiers, see <https://docs.rs/chrono/la
 
 `time.now() -> int`
 
-The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
+The <b>time.now</b> method returns the time since Unix Epoch (Jan 01 1970). This uses the local system time.
 
 ### time.sleep
 

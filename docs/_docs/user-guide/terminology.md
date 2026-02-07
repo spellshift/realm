@@ -8,7 +8,7 @@ permalink: user-guide/terminology
 
 ## Terminology
 
-Throughout the documentation terms that are used to reference various components of Realm. Below we attempt to define some of those terms, to add some clarity to that other documentation.
+Throughout the documentation, terms are used to reference various components of Realm. Below we attempt to define some of those terms, to add some clarity to that other documentation.
 
 ### Implant
 
@@ -24,7 +24,7 @@ A Beacon is an instance of an Agent running as a process. Beacons are the underl
 
 ### Host
 
-Hosts are in-scope systems for the current engagement. A host can have multiple beacons which can execute instructions provided by tomes.
+Hosts are in-scope systems for the current engagement. A host can have multiple beacons, which can execute instructions provided by tomes.
 
 ### Quest
 

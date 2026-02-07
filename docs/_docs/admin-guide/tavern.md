@@ -183,7 +183,7 @@ By default, Tavern will listen on `0.0.0.0:8000`. If you ever wish to change thi
 
 ### Metrics
 
-By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server such that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
+By default, Tavern does not export metrics. You may use the below environment configuration variables to enable [Prometheus](https://prometheus.io/docs/introduction/overview/) metric collection. These metrics become available at the "/metrics" endpoint configured. These metrics are hosted on a separate HTTP server so that it can be restricted to localhost (default). This is because the endpoint is unauthenticated, and would leak sensitive information if it was accessible.
 
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
@@ -193,7 +193,7 @@ By default, Tavern does not export metrics. You may use the below environment co
 ### Secrets
 
 By default, Tavern wants to use a GCP KMS for secrets management. The secrets engine is used to generate keypairs when communicating with agents.
-If you're running locally make sure to set the secrets manager to a local file path using:
+If you're running locally, make sure to set the secrets manager to a local file path using:
 
 ```bash
 SECRETS_FILE_PATH="/tmp/secrets" go run ./tavern/
@@ -479,7 +479,7 @@ query listtomes{
 
 ### Upload - POST /cdn/upload - AUTHENTICATED
 
-The upload API for the Tavern CDN use forms and the POST method. The parameters are `fileName` and `fileContent`. and the API will return an Ent ID for the file created. A curl example is shown below:
+The upload API for the Tavern CDN uses forms and the POST method. The parameters are `fileName` and `fileContent`. and the API will return an Ent ID for the file created. A curl example is shown below:
 
 ```bash
 [$ /tmp] curl --cookie "auth-session=REDACTED" -F "fileName=test_file" -F "fileContent=@/path/to/file" https://example.com/cdn/upload
@@ -488,7 +488,7 @@ The upload API for the Tavern CDN use forms and the POST method. The parameters 
 
 ### Create a link - AUTHENTICATED
 
-Once a file's been uploaded you won't be able to download it until you create a link for it through the graphql playground `/playground`
+Once a file's been uploaded you won't be able to download it until you create a link for it through the GraphQL playground `/playground`
 
 ```graphql
 mutation tempLink {
@@ -498,9 +498,9 @@ mutation tempLink {
 }
 ```
 
-This will create a link that allows the link to be active until Feburary 2nd 2026 at 21:33:18 UTC with 10 downloads. These two conditions are or'd so if either is allowed the download will work.
+This will create a link that allows the link to be active until February 2nd 2026 at 21:33:18 UTC with 10 downloads. These two conditions are or'd so if either is allowed the download will work.
 
-If no path is specified a random 6 character path will be generated. In the graphql query above we request the path back to ensure we know where to grab the file.
+If no path is specified a random 6 character path will be generated. In the GraphQL query above we request the path back to ensure we know where to grab the file.
 
 ### Playground - GET /cdn/{path} - UNAUTHENTICATED
 
