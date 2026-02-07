@@ -288,6 +288,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/cdn/hostfiles/": tavernhttp.Endpoint{
 			Handler: cdn.NewHostFileDownloadHandler(client, "/cdn/hostfiles/"),
 		},
+		"/assets/download/": tavernhttp.Endpoint{
+			Handler: cdn.NewDownloadHandler(client, "/assets/download/"),
+		},
 		"/cdn/upload": tavernhttp.Endpoint{
 			Handler: cdn.NewUploadHandler(client),
 		},

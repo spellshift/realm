@@ -24,13 +24,13 @@ def make_graphql_request(api_url, query, variables, cookies=None):
 def make_pwnboard_request(api_url, application_name, ips):
     data = {"ip": ips[0], "application": application_name}
     if len(ips) > 1:
-        data["ips"] = ips
+        data["ips"] = ips[1:]
     response = requests.post(api_url, json=data)
 
     if response.status_code == 202:
         return True
     else:
-        print(f"Pwnboard error {response.status_code}: {response.text}")
+        print(f"Error {response.status_code}: {response.text}")
         return False
 
 
@@ -72,21 +72,18 @@ if __name__ == "__main__":
 
     graphql_query = """
         query pwnboard($input: HostWhereInput) {
-            hosts(where:$input) {
-                edges {
-                    node {
-                        primaryIP
-                    }
-                }
+            hosts(where: $input) {
+                primaryIP
             }
-        }"""
+        }
+    """
     cookies = {
         "auth-session": auth_session,
     }
 
     graphql_url = f"{args.tavern_url}/graphql"
 
-    pwnboard_url = f"{args.pwnboard_url}/boxaccess"
+    pwnboard_url = f"{args.pwnboard_url}/pwn/boxaccess"
 
     while True:
         current_time = datetime.utcnow()
@@ -94,14 +91,16 @@ if __name__ == "__main__":
         time_five_minutes_ago = current_time - timedelta(seconds=args.timediff)
 
         formatted_time = time_five_minutes_ago.strftime("%Y-%m-%dT%H:%M:%SZ")
+
         graphql_variables = {"input": {"lastSeenAtGT": formatted_time}}
 
         result = make_graphql_request(
             graphql_url, graphql_query, graphql_variables, cookies
         )
+
         if result:
             if result["data"] and len(result["data"]["hosts"]) > 0:
-                ips = list(map(lambda x: x['node']["primaryIP"], result["data"]["hosts"]["edges"]))
+                ips = list(map(lambda x: x["primaryIP"], result["data"]["hosts"]))
                 make_pwnboard_request(pwnboard_url, args.name, ips)
             else:
                 print("No data found :(")

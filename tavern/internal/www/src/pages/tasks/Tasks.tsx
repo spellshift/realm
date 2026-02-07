@@ -1,55 +1,53 @@
-import { useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { VirtualizedCardList, VirtualizedCardListWrapper } from "../../components/tavern-base-ui/virtualized-card-list";
-import { useTaskIds } from "./useTaskIds";
-import { TaskCardVirtualized } from "./TaskCardVirtualized";
+import { TablePagination, TableWrapper } from "../../components/tavern-base-ui/table";
+import { TableRowLimit } from "../../utils/enums";
+import { useTasks } from "./useTasks";
+import TaskCard from "../../components/task-card/TaskCard";
+import { TaskEdge } from "../../utils/interfacesQuery";
 import { EditablePageHeader } from "./EditablePageHeader";
 
 const Tasks = () => {
     const { questId } = useParams();
     const {
-        taskIds,
-        totalCount,
+        data,
+        loading,
         initialLoading,
         error,
-        hasMore,
-        loadMore,
-    } = useTaskIds(questId);
-
-    const renderCard = useCallback(({ itemId, isVisible }: { itemId: string; isVisible: boolean }) => {
-        return (
-            <TaskCardVirtualized
-                key={itemId}
-                itemId={itemId}
-                isVisible={isVisible}
-            />
-        );
-    }, []);
+        updateTaskList,
+        page,
+        setPage
+    } = useTasks(questId);
 
     return (
         <>
             <EditablePageHeader />
-            <VirtualizedCardListWrapper
+            <TableWrapper
                 title="Tasks"
-                totalItems={totalCount}
+                totalItems={data?.tasks?.totalCount}
                 loading={initialLoading}
                 error={error}
-                showSorting={true}
-                showFiltering={true}
-                cardList={
-                    <VirtualizedCardList
-                        items={taskIds}
-                        renderCard={renderCard}
-                        hasMore={hasMore}
-                        onLoadMore={loadMore}
-                        estimateCardSize={360}
-                        gap={16}
-                        padding="1rem 0"
+                table={
+                    <div className="w-full flex flex-col gap-4 my-4">
+                        {data?.tasks?.edges.map((task: TaskEdge) => {
+                            return (
+                                <TaskCard key={task.node.id} task={task.node} />
+                            )
+                        })}
+                    </div>
+                }
+                pagination={
+                    <TablePagination
+                        totalCount={data?.tasks?.totalCount || 0}
+                        pageInfo={data?.tasks?.pageInfo || { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }}
+                        refetchTable={updateTaskList}
+                        page={page}
+                        setPage={setPage}
+                        rowLimit={TableRowLimit.TaskRowLimit}
+                        loading={loading}
                     />
                 }
             />
         </>
     );
 };
-
 export default Tasks;

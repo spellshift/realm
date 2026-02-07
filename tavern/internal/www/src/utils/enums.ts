@@ -12,6 +12,7 @@ export enum PageNavItem {
     createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
+    assets="Assets",
     admin="Admin",
 }
 export enum SupportedPlatforms {
@@ -37,9 +38,9 @@ export enum OnlineOfflineFilterType {
 }
 
 export enum TableRowLimit {
-    QuestRowLimit=14,
-    TaskRowLimit=14,
-    HostRowLimit=14
+    QuestRowLimit=10,
+    TaskRowLimit=10,
+    HostRowLimit=10
 }
 export enum PrincipalAdminTypes {
     root='root',
@@ -83,6 +84,13 @@ export enum HostOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     LastSeenAt = "LAST_SEEN_AT",
+}
+
+export enum AssetOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
 }
 
 export enum RepositoryOrderField {

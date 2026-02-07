@@ -10,6 +10,7 @@ const pathToNavItem: Record<string, PageNavItem> = {
     '/createQuest': PageNavItem.createQuest,
     '/hosts': PageNavItem.hosts,
     '/tomes': PageNavItem.tomes,
+    '/assets': PageNavItem.assets,
     '/admin': PageNavItem.admin,
 };
 

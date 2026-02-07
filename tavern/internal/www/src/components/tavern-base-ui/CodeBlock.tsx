@@ -58,10 +58,9 @@ type CodeBlockProps = {
     code: string;
     language?: CodeBlockLanguageSupport;
     showCopyButton?: boolean;
-    inlineButton?: boolean;
 };
 
-const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton= false }: CodeBlockProps) => {
+const CodeBlock = ({ code, language = 'markdown', showCopyButton = false }: CodeBlockProps) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -97,8 +96,8 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                             ...style,
                             margin: 0,
                             padding: "0.75rem",
-                            paddingRight: !inlineButton && showCopyButton ? "3rem" : "0.75rem",
-                            marginRight:  showCopyButton ? "2rem" : "0rem",
+                            paddingRight: showCopyButton ? "3rem" : "0.75rem",
+                            marginRight: showCopyButton ? "3rem" : "0rem",
                             borderRadius: "0.375rem",
                             fontSize: "0.8rem",
                             overflowX: "auto",

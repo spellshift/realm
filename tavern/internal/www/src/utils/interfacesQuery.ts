@@ -314,3 +314,45 @@ export interface RepositoryQueryTopLevel {
 export interface GetRepositoryQueryVariables {
     orderBy?: RepositoryOrderBy[];
 }
+
+export interface LinkNode {
+    id: string;
+    path: string;
+    expiresAt: string;
+    downloadsRemaining: number;
+}
+
+export interface LinkEdge {
+    node: LinkNode;
+}
+
+export interface AssetNode {
+    id: string;
+    name: string;
+    size: number;
+    hash: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    links: {
+        totalCount: number;
+        edges: LinkEdge[];
+    };
+    tomes: {
+        totalCount: number;
+        edges: TomeEdge[];
+    };
+}
+
+export interface AssetEdge {
+    node: AssetNode;
+}
+
+export interface AssetQueryResponse {
+    pageInfo: QueryPageInfo;
+    totalCount: number;
+    edges: AssetEdge[];
+}
+
+export interface AssetQueryTopLevel {
+    assets: AssetQueryResponse;
+}
