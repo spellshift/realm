@@ -31,6 +31,11 @@ export const GET_ASSETS = gql`
                 expiresAt
                 downloadLimit
                 downloads
+                creator {
+                  id
+                  name
+                  photoURL
+                }
               }
             }
           }
@@ -50,6 +55,15 @@ export const GET_ASSETS = gql`
           }
         }
       }
+    }
+  }
+`;
+
+export const DISABLE_LINK = gql`
+  mutation DisableLink($linkID: ID!) {
+    disableLink(linkID: $linkID) {
+      id
+      expiresAt
     }
   }
 `;
@@ -115,4 +129,9 @@ export const useAssets = (rowLimit = 50, where?: any) => {
 export const useCreateLink = () => {
   const [createLink, { data, loading, error }] = useMutation(CREATE_LINK);
   return { createLink, data, loading, error };
+};
+
+export const useDisableLink = () => {
+  const [disableLink, { data, loading, error }] = useMutation(DISABLE_LINK);
+  return { disableLink, data, loading, error };
 };

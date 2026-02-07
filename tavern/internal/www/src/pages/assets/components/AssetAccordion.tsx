@@ -1,16 +1,20 @@
-import { Copy } from "lucide-react";
+import { Copy, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { AssetNode, LinkEdge } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useToast } from "@chakra-ui/react";
 import { useMemo } from "react";
+import { useDisableLink } from "../useAssets";
+import UserImageAndName from "../../../components/UserImageAndName";
 
 type AssetAccordionProps = {
     asset: AssetNode;
+    onUpdate: () => void;
 };
 
-const AssetAccordion = ({ asset }: AssetAccordionProps) => {
+const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
     const toast = useToast();
+    const { disableLink } = useDisableLink();
 
     const handleCopyLink = (path: string) => {
         const url = `${window.location.origin}/cdn/${path}`;
@@ -21,6 +25,27 @@ const AssetAccordion = ({ asset }: AssetAccordionProps) => {
             duration: 2000,
             isClosable: true,
         });
+    };
+
+    const handleDisableLink = async (linkId: string) => {
+        try {
+            await disableLink({ variables: { linkID: linkId } });
+            toast({
+                title: "Link disabled",
+                status: "success",
+                duration: 2000,
+                isClosable: true,
+            });
+            onUpdate();
+        } catch (e: any) {
+            toast({
+                title: "Error disabling link",
+                description: e.message,
+                status: "error",
+                duration: 4000,
+                isClosable: true,
+            });
+        }
     };
 
     const sortedLinks = useMemo(() => {
@@ -84,6 +109,18 @@ const AssetAccordion = ({ asset }: AssetAccordionProps) => {
                                              }
                                          </span>
                                          <span>{edge.node.downloads} {edge.node.downloadLimit != null ? '/ '+edge.node.downloadLimit : ''} downloads</span>
+                                     </div>
+                                     <div className="flex justify-between items-center mt-1 border-t border-gray-100 pt-2">
+                                         <UserImageAndName userData={edge.node.creator} />
+                                         {!isExpired && (
+                                            <Button
+                                                onClick={() => handleDisableLink(edge.node.id)}
+                                                buttonVariant="ghost"
+                                                buttonStyle={{ color: "red", size: "xs" }}
+                                                leftIcon={<Lock className="w-3 h-3" />}
+                                                aria-label="Disable Link"
+                                            />
+                                         )}
                                      </div>
                                  </div>
                              );

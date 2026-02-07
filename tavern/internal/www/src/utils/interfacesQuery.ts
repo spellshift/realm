@@ -321,6 +321,7 @@ export interface LinkNode {
     expiresAt: string;
     downloads: number;
     downloadLimit: number | null;
+    creator?: UserNode | null;
 }
 
 export interface LinkEdge {

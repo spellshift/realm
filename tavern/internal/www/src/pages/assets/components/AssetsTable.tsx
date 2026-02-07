@@ -12,6 +12,7 @@ import UserImageAndName from "../../../components/UserImageAndName";
 type AssetsTableProps = {
     assets: AssetEdge[];
     onCreateLink: (assetId: string, assetName: string) => void;
+    onAssetUpdate: () => void;
 };
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -61,7 +62,7 @@ const truncateAssetName = (name: string, maxLength: number = 25): string => {
     return name.substring(0, maxLength - 3) + "...";
 };
 
-const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
+const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) => {
     const toast = useToast();
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
@@ -166,7 +167,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             cell: ({ getValue }) => {
                 const hash = getValue() as string;
                 return (
-                    <Tooltip label="Click to copy hash" bg="white" color="black">
+                    <Tooltip label={hash} bg="white" color="black">
                         <div
                             className="font-mono text-xs cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
@@ -177,12 +178,6 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                     </Tooltip>
                 );
             },
-            enableSorting: false,
-        },
-        {
-            id: "links",
-            header: "Links",
-            accessorFn: (row) => row.node.links.totalCount,
             enableSorting: false,
         },
         {
@@ -228,25 +223,23 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
     ];
 
     const getVisibleColumns = () => {
-        // Priority: Name > Actions > Creator > Links > Size > Created > Hash
-        const priority = ["expander", "name", "actions", "creator", "links", "size", "createdAt", "hash"];
+        // Name and Actions always shown
+        const visibleIds = ["expander", "name", "actions"];
 
-        // Define hiding thresholds (pixels)
-        // Adjust these as needed to prevent scroll
-        if (windowWidth < 640) { // Small mobile
-             return columns.filter(col => ["expander", "name", "actions", "creator"].includes(col.id as string));
+        if (windowWidth >= 800) {
+            visibleIds.push("creator");
         }
-        if (windowWidth < 768) { // Mobile
-            return columns.filter(col => ["expander", "name", "actions", "creator", "links"].includes(col.id as string));
+        if (windowWidth >= 1000) {
+            visibleIds.push("size");
         }
-        if (windowWidth < 1024) { // Tablet
-             return columns.filter(col => ["expander", "name", "actions", "creator", "links", "size"].includes(col.id as string));
+        if (windowWidth >= 1200) {
+            visibleIds.push("createdAt");
         }
-         if (windowWidth < 1280) { // Laptop/Large Tablet
-             return columns.filter(col => ["expander", "name", "actions", "creator", "links", "size", "createdAt"].includes(col.id as string));
+        if (windowWidth >= 1400) {
+            visibleIds.push("hash");
         }
 
-        return columns; // Full view
+        return columns.filter(col => visibleIds.includes(col.id as string));
     };
 
     const visibleColumns = getVisibleColumns();
@@ -263,7 +256,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                     toggle();
                 }
             }}
-            renderSubComponent={({ row }) => <AssetAccordion asset={row.original.node} />}
+            renderSubComponent={({ row }) => <AssetAccordion asset={row.original.node} onUpdate={onAssetUpdate} />}
         />
     );
 };

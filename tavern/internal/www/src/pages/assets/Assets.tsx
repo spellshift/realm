@@ -6,10 +6,13 @@ import CreateLinkModal from "./components/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal";
 import TableWrapper from "../../components/tavern-base-ui/table/TableWrapper";
 import TablePagination from "../../components/tavern-base-ui/table/TablePagination";
+import { useFilters } from "../../context/FilterContext";
 
 export const Assets = () => {
     const rowLimit = 10;
-    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit);
+    const { filters } = useFilters();
+    const where = filters.assetName ? { nameContains: filters.assetName } : undefined;
+    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit, where);
 
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
@@ -33,7 +36,7 @@ export const Assets = () => {
                     loading={loading}
                     error={error}
                     title="Assets"
-                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} />}
+                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} onAssetUpdate={refetch} />}
                     pagination={
                          <TablePagination
                             totalCount={totalCount || 0}
