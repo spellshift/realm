@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -27,11 +28,13 @@ type UserQuery struct {
 	predicates            []predicate.User
 	withTomes             *TomeQuery
 	withActiveShells      *ShellQuery
+	withAssets            *AssetQuery
 	withFKs               bool
 	modifiers             []func(*sql.Selector)
 	loadTotal             []func(context.Context, []*User) error
 	withNamedTomes        map[string]*TomeQuery
 	withNamedActiveShells map[string]*ShellQuery
+	withNamedAssets       map[string]*AssetQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -105,6 +108,28 @@ func (uq *UserQuery) QueryActiveShells() *ShellQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAssets chains the current query on the "assets" edge.
+func (uq *UserQuery) QueryAssets() *AssetQuery {
+	query := (&AssetClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.AssetsTable, user.AssetsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -306,6 +331,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		predicates:       append([]predicate.User{}, uq.predicates...),
 		withTomes:        uq.withTomes.Clone(),
 		withActiveShells: uq.withActiveShells.Clone(),
+		withAssets:       uq.withAssets.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -331,6 +357,17 @@ func (uq *UserQuery) WithActiveShells(opts ...func(*ShellQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withActiveShells = query
+	return uq
+}
+
+// WithAssets tells the query-builder to eager-load the nodes that are connected to
+// the "assets" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithAssets(opts ...func(*AssetQuery)) *UserQuery {
+	query := (&AssetClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withAssets = query
 	return uq
 }
 
@@ -413,9 +450,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
+			uq.withAssets != nil,
 		}
 	)
 	if withFKs {
@@ -456,6 +494,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withAssets; query != nil {
+		if err := uq.loadAssets(ctx, query, nodes,
+			func(n *User) { n.Edges.Assets = []*Asset{} },
+			func(n *User, e *Asset) { n.Edges.Assets = append(n.Edges.Assets, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedTomes {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.appendNamedTomes(name) },
@@ -467,6 +512,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadActiveShells(ctx, query, nodes,
 			func(n *User) { n.appendNamedActiveShells(name) },
 			func(n *User, e *Shell) { n.appendNamedActiveShells(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedAssets {
+		if err := uq.loadAssets(ctx, query, nodes,
+			func(n *User) { n.appendNamedAssets(name) },
+			func(n *User, e *Asset) { n.appendNamedAssets(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -567,6 +619,37 @@ func (uq *UserQuery) loadActiveShells(ctx context.Context, query *ShellQuery, no
 		for kn := range nodes {
 			assign(kn, n)
 		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadAssets(ctx context.Context, query *AssetQuery, nodes []*User, init func(*User), assign func(*User, *Asset)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Asset(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.AssetsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.asset_creator
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "asset_creator" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "asset_creator" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -680,6 +763,20 @@ func (uq *UserQuery) WithNamedActiveShells(name string, opts ...func(*ShellQuery
 		uq.withNamedActiveShells = make(map[string]*ShellQuery)
 	}
 	uq.withNamedActiveShells[name] = query
+	return uq
+}
+
+// WithNamedAssets tells the query-builder to eager-load the nodes that are connected to the "assets"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedAssets(name string, opts ...func(*AssetQuery)) *UserQuery {
+	query := (&AssetClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedAssets == nil {
+		uq.withNamedAssets = make(map[string]*AssetQuery)
+	}
+	uq.withNamedAssets[name] = query
 	return uq
 }
 

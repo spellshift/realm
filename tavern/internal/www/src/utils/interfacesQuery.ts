@@ -333,6 +333,7 @@ export interface AssetNode {
     hash: string;
     createdAt: string;
     lastModifiedAt: string;
+    creator?: UserNode;
     links: {
         totalCount: number;
         edges: LinkEdge[];

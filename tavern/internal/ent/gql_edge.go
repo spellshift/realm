@@ -50,6 +50,14 @@ func (a *Asset) Links(
 	return a.QueryLinks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (a *Asset) Creator(ctx context.Context) (*User, error) {
+	result, err := a.Edges.CreatorOrErr()
+	if IsNotLoaded(err) {
+		result, err = a.QueryCreator().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (b *Beacon) Host(ctx context.Context) (*Host, error) {
 	result, err := b.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -644,4 +652,25 @@ func (u *User) ActiveShells(
 		return conn, nil
 	}
 	return u.QueryActiveShells().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) Assets(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*AssetOrder, where *AssetWhereInput,
+) (*AssetConnection, error) {
+	opts := []AssetPaginateOption{
+		WithAssetOrder(orderBy),
+		WithAssetFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[2][alias]
+	if nodes, err := u.NamedAssets(alias); err == nil || hasTotalCount {
+		pager, err := newAssetPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &AssetConnection{Edges: []*AssetEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryAssets().Paginate(ctx, after, first, before, last, opts...)
 }

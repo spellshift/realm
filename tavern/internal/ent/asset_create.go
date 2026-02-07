@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // AssetCreate is the builder for creating a Asset entity.
@@ -112,6 +113,25 @@ func (ac *AssetCreate) AddLinks(l ...*Link) *AssetCreate {
 		ids[i] = l[i].ID
 	}
 	return ac.AddLinkIDs(ids...)
+}
+
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (ac *AssetCreate) SetCreatorID(id int) *AssetCreate {
+	ac.mutation.SetCreatorID(id)
+	return ac
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (ac *AssetCreate) SetNillableCreatorID(id *int) *AssetCreate {
+	if id != nil {
+		ac = ac.SetCreatorID(*id)
+	}
+	return ac
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (ac *AssetCreate) SetCreator(u *User) *AssetCreate {
+	return ac.SetCreatorID(u.ID)
 }
 
 // Mutation returns the AssetMutation object of the builder.
@@ -288,6 +308,23 @@ func (ac *AssetCreate) createSpec() (*Asset, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   asset.CreatorTable,
+			Columns: []string{asset.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.asset_creator = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

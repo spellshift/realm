@@ -1,8 +1,9 @@
-import { Copy } from "lucide-react";
-import { format } from "date-fns";
+import { Copy, Link2Off } from "lucide-react";
+import moment from "moment";
 import { AssetNode } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { useToast } from "@chakra-ui/react";
+import { useToast, Tooltip } from "@chakra-ui/react";
+import { useDisableLink } from "../useAssets";
 
 type AssetAccordionProps = {
     asset: AssetNode;
@@ -10,6 +11,7 @@ type AssetAccordionProps = {
 
 const AssetAccordion = ({ asset }: AssetAccordionProps) => {
     const toast = useToast();
+    const { disableLink } = useDisableLink();
 
     const handleCopyLink = (path: string) => {
         const url = `${window.location.origin}/cdn/${path}`;
@@ -34,16 +36,44 @@ const AssetAccordion = ({ asset }: AssetAccordionProps) => {
                                      <div className="font-mono text-xs break-all text-gray-600 bg-gray-50 p-1 rounded w-full">
                                          {`${window.location.origin}/cdn/${edge.node.path}`}
                                      </div>
-                                     <Button
-                                        onClick={() => handleCopyLink(edge.node.path)}
-                                        buttonVariant="ghost"
-                                        buttonStyle={{ color: "gray", size: "xs" }}
-                                        leftIcon={<Copy className="w-3 h-3" />}
-                                        aria-label="Copy Link"
-                                     />
+                                     <div className="flex flex-row items-center">
+                                        <Button
+                                            onClick={() => handleCopyLink(edge.node.path)}
+                                            buttonVariant="ghost"
+                                            buttonStyle={{ color: "gray", size: "xs" }}
+                                            leftIcon={<Copy className="w-3 h-3" />}
+                                            aria-label="Copy Link"
+                                        />
+                                        <Tooltip label="Expire link" bg="white" color="black">
+                                            <Button
+                                                onClick={async () => {
+                                                    try {
+                                                        await disableLink({ variables: { linkID: edge.node.id } });
+                                                        toast({
+                                                            title: "Link expired",
+                                                            status: "success",
+                                                            duration: 2000,
+                                                            isClosable: true,
+                                                        });
+                                                    } catch (e) {
+                                                        toast({
+                                                            title: "Failed to expire link",
+                                                            status: "error",
+                                                            duration: 2000,
+                                                            isClosable: true,
+                                                        });
+                                                    }
+                                                }}
+                                                buttonVariant="ghost"
+                                                buttonStyle={{ color: "gray", size: "xs" }}
+                                                leftIcon={<Link2Off className="w-3 h-3" />}
+                                                aria-label="Expire Link"
+                                            />
+                                        </Tooltip>
+                                     </div>
                                  </div>
                                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
-                                     <span>Expires: {format(new Date(edge.node.expiresAt), "MMM d, yyyy HH:mm")}</span>
+                                     <span>Expires: {moment(edge.node.expiresAt).format("MMM D, YYYY HH:mm")}</span>
                                      <span>{edge.node.downloadsRemaining} downloads left</span>
                                  </div>
                              </div>

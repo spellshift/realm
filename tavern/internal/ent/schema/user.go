@@ -82,6 +82,13 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Shells actively used by the user"),
+		edge.From("assets", Asset.Type).
+			Ref("creator").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Assets uploaded by the user"),
 	}
 }
 

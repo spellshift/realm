@@ -2,8 +2,10 @@ import { FC, useState, useEffect } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useCreateLink } from "../useAssets";
-import { format } from "date-fns";
+import moment from "moment";
 import { Clipboard } from "lucide-react";
+import AlertError from "../../../components/tavern-base-ui/AlertError";
+import * as Yup from "yup";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
@@ -27,27 +29,48 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
     const { createLink, loading } = useCreateLink();
     const [downloadsRemaining, setDownloadsRemaining] = useState<number>(1);
     const [expiresAt, setExpiresAt] = useState<string>(
-        format(new Date(Date.now() + 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm")
+        moment().add(1, 'day').format("YYYY-MM-DDTHH:mm")
     );
     const [path, setPath] = useState<string>("");
     const [createdLink, setCreatedLink] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setPath(generateRandomString(12));
             setCreatedLink(null);
+            setError(null);
+            setExpiresAt(moment().add(1, 'day').format("YYYY-MM-DDTHH:mm"));
         }
     }, [isOpen]);
 
+    const validationSchema = Yup.object().shape({
+        expiresAt: Yup.string()
+            .required("Expiry date is required")
+            .test("is-future", "Expiry date must be in the future", (value) => {
+                if (!value) return false;
+                return moment(value).isAfter(moment());
+            }),
+    });
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+
+        try {
+            await validationSchema.validate({ expiresAt });
+        } catch (err: any) {
+            setError(err.message);
+            return;
+        }
+
         try {
             const { data } = await createLink({
                 variables: {
                     input: {
                         assetID: assetId,
                         downloadsRemaining: Number(downloadsRemaining),
-                        expiresAt: new Date(expiresAt).toISOString(),
+                        expiresAt: moment(expiresAt).toISOString(),
                         path: path,
                     },
                 },
@@ -56,8 +79,9 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 const link = `${window.location.origin}/cdn/${data.createLink.path}`;
                 setCreatedLink(link);
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setError(err.message || "Failed to create link");
         }
     };
 
@@ -78,6 +102,10 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                         Create a temporary download link for this asset.
                     </p>
                 </div>
+
+                {error && (
+                    <AlertError label="Error creating link" details={error} />
+                )}
 
                 {createdLink ? (
                     <div className="flex flex-col gap-4">

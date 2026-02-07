@@ -18,12 +18,21 @@ var (
 		{Name: "size", Type: field.TypeInt, Default: 0},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "content", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "asset_creator", Type: field.TypeInt, Nullable: true},
 	}
 	// AssetsTable holds the schema information for the "assets" table.
 	AssetsTable = &schema.Table{
 		Name:       "assets",
 		Columns:    AssetsColumns,
 		PrimaryKey: []*schema.Column{AssetsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "assets_users_creator",
+				Columns:    []*schema.Column{AssetsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// BeaconsColumns holds the columns for the "beacons" table.
 	BeaconsColumns = []*schema.Column{
@@ -570,6 +579,7 @@ var (
 )
 
 func init() {
+	AssetsTable.ForeignKeys[0].RefTable = UsersTable
 	AssetsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

@@ -46,6 +46,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Asset struct {
 		CreatedAt      func(childComplexity int) int
+		Creator        func(childComplexity int) int
 		Hash           func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -433,6 +434,7 @@ type ComplexityRoot struct {
 
 	User struct {
 		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		ID           func(childComplexity int) int
 		IsActivated  func(childComplexity int) int
 		IsAdmin      func(childComplexity int) int
@@ -478,6 +480,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Asset.CreatedAt(childComplexity), true
+
+	case "Asset.creator":
+		if e.complexity.Asset.Creator == nil {
+			break
+		}
+
+		return e.complexity.Asset.Creator(childComplexity), true
 
 	case "Asset.hash":
 		if e.complexity.Asset.Hash == nil {
@@ -2488,6 +2497,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.User.ActiveShells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
 
+	case "User.assets":
+		if e.complexity.User.Assets == nil {
+			break
+		}
+
+		args, err := ec.field_User_assets_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.Assets(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.AssetOrder), args["where"].(*ent.AssetWhereInput)), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -2812,6 +2833,10 @@ type Asset implements Node {
     """
     where: LinkWhereInput
   ): LinkConnection!
+  """
+  The user who created the asset
+  """
+  creator: User
 }
 """
 A connection to a list of items.
@@ -2959,6 +2984,11 @@ input AssetWhereInput {
   """
   hasLinks: Boolean
   hasLinksWith: [LinkWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 type Beacon implements Node {
   id: ID!
@@ -6724,6 +6754,9 @@ input UpdateUserInput {
   addActiveShellIDs: [ID!]
   removeActiveShellIDs: [ID!]
   clearActiveShells: Boolean
+  addAssetIDs: [ID!]
+  removeAssetIDs: [ID!]
+  clearAssets: Boolean
 }
 type User implements Node {
   id: ID!
@@ -6805,6 +6838,37 @@ type User implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+  assets(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Assets returned from the connection.
+    """
+    orderBy: [AssetOrder!]
+
+    """
+    Filtering options for Assets returned from the connection.
+    """
+    where: AssetWhereInput
+  ): AssetConnection!
 }
 """
 A connection to a list of items.
@@ -6926,6 +6990,11 @@ input UserWhereInput {
   """
   hasActiveShells: Boolean
   hasActiveShellsWith: [ShellWhereInput!]
+  """
+  assets edge predicates
+  """
+  hasAssets: Boolean
+  hasAssetsWith: [AssetWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time

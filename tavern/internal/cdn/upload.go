@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/errors"
@@ -51,10 +52,13 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 				SetContent(assetContent).
 				SaveX(ctx)
 		} else {
-			assetID = graph.Asset.Create().
+			create := graph.Asset.Create().
 				SetName(assetName).
-				SetContent(assetContent).
-				SaveX(ctx).ID
+				SetContent(assetContent)
+			if u := auth.UserFromContext(ctx); u != nil {
+				create.SetCreator(u)
+			}
+			assetID = create.SaveX(ctx).ID
 		}
 
 		// Respond with JSON of the asset ID

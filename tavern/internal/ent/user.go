@@ -43,14 +43,17 @@ type UserEdges struct {
 	Tomes []*Tome `json:"tomes,omitempty"`
 	// Shells actively used by the user
 	ActiveShells []*Shell `json:"active_shells,omitempty"`
+	// Assets uploaded by the user
+	Assets []*Asset `json:"assets,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
 	namedTomes        map[string][]*Tome
 	namedActiveShells map[string][]*Shell
+	namedAssets       map[string][]*Asset
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -69,6 +72,15 @@ func (e UserEdges) ActiveShellsOrErr() ([]*Shell, error) {
 		return e.ActiveShells, nil
 	}
 	return nil, &NotLoadedError{edge: "active_shells"}
+}
+
+// AssetsOrErr returns the Assets value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) AssetsOrErr() ([]*Asset, error) {
+	if e.loadedTypes[2] {
+		return e.Assets, nil
+	}
+	return nil, &NotLoadedError{edge: "assets"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -177,6 +189,11 @@ func (u *User) QueryActiveShells() *ShellQuery {
 	return NewUserClient(u.config).QueryActiveShells(u)
 }
 
+// QueryAssets queries the "assets" edge of the User entity.
+func (u *User) QueryAssets() *AssetQuery {
+	return NewUserClient(u.config).QueryAssets(u)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -266,6 +283,30 @@ func (u *User) appendNamedActiveShells(name string, edges ...*Shell) {
 		u.Edges.namedActiveShells[name] = []*Shell{}
 	} else {
 		u.Edges.namedActiveShells[name] = append(u.Edges.namedActiveShells[name], edges...)
+	}
+}
+
+// NamedAssets returns the Assets named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedAssets(name string) ([]*Asset, error) {
+	if u.Edges.namedAssets == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedAssets[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedAssets(name string, edges ...*Asset) {
+	if u.Edges.namedAssets == nil {
+		u.Edges.namedAssets = make(map[string][]*Asset)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedAssets[name] = []*Asset{}
+	} else {
+		u.Edges.namedAssets[name] = append(u.Edges.namedAssets[name], edges...)
 	}
 }
 

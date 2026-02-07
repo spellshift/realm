@@ -461,6 +461,22 @@ func (c *AssetClient) QueryLinks(a *Asset) *LinkQuery {
 	return query
 }
 
+// QueryCreator queries the creator edge of a Asset.
+func (c *AssetClient) QueryCreator(a *Asset) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(asset.Table, asset.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, asset.CreatorTable, asset.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AssetClient) Hooks() []Hook {
 	hooks := c.hooks.Asset
@@ -2993,6 +3009,22 @@ func (c *UserClient) QueryActiveShells(u *User) *ShellQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAssets queries the assets edge of a User.
+func (c *UserClient) QueryAssets(u *User) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.AssetsTable, user.AssetsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

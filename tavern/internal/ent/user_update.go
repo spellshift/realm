@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -143,6 +144,21 @@ func (uu *UserUpdate) AddActiveShells(s ...*Shell) *UserUpdate {
 	return uu.AddActiveShellIDs(ids...)
 }
 
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (uu *UserUpdate) AddAssetIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddAssetIDs(ids...)
+	return uu
+}
+
+// AddAssets adds the "assets" edges to the Asset entity.
+func (uu *UserUpdate) AddAssets(a ...*Asset) *UserUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.AddAssetIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -188,6 +204,27 @@ func (uu *UserUpdate) RemoveActiveShells(s ...*Shell) *UserUpdate {
 		ids[i] = s[i].ID
 	}
 	return uu.RemoveActiveShellIDs(ids...)
+}
+
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (uu *UserUpdate) ClearAssets() *UserUpdate {
+	uu.mutation.ClearAssets()
+	return uu
+}
+
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (uu *UserUpdate) RemoveAssetIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveAssetIDs(ids...)
+	return uu
+}
+
+// RemoveAssets removes "assets" edges to Asset entities.
+func (uu *UserUpdate) RemoveAssets(a ...*Asset) *UserUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uu.RemoveAssetIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -357,6 +394,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !uu.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.AssetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -491,6 +573,21 @@ func (uuo *UserUpdateOne) AddActiveShells(s ...*Shell) *UserUpdateOne {
 	return uuo.AddActiveShellIDs(ids...)
 }
 
+// AddAssetIDs adds the "assets" edge to the Asset entity by IDs.
+func (uuo *UserUpdateOne) AddAssetIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddAssetIDs(ids...)
+	return uuo
+}
+
+// AddAssets adds the "assets" edges to the Asset entity.
+func (uuo *UserUpdateOne) AddAssets(a ...*Asset) *UserUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.AddAssetIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -536,6 +633,27 @@ func (uuo *UserUpdateOne) RemoveActiveShells(s ...*Shell) *UserUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return uuo.RemoveActiveShellIDs(ids...)
+}
+
+// ClearAssets clears all "assets" edges to the Asset entity.
+func (uuo *UserUpdateOne) ClearAssets() *UserUpdateOne {
+	uuo.mutation.ClearAssets()
+	return uuo
+}
+
+// RemoveAssetIDs removes the "assets" edge to Asset entities by IDs.
+func (uuo *UserUpdateOne) RemoveAssetIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveAssetIDs(ids...)
+	return uuo
+}
+
+// RemoveAssets removes "assets" edges to Asset entities.
+func (uuo *UserUpdateOne) RemoveAssets(a ...*Asset) *UserUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return uuo.RemoveAssetIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -728,6 +846,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedAssetsIDs(); len(nodes) > 0 && !uuo.mutation.AssetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.AssetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.AssetsTable,
+			Columns: []string{user.AssetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

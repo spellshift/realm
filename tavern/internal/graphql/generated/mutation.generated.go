@@ -1161,6 +1161,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
 				return ec.fieldContext_User_activeShells(ctx, field)
+			case "assets":
+				return ec.fieldContext_User_assets(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},

@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import moment from "moment";
 import { AssetEdge } from "../../../utils/interfacesQuery";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -78,7 +78,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                 return (
                     <Tooltip label="Click to copy hash" bg="white" color="black">
                         <div
-                            className="font-mono text-xs cursor-pointer hover:text-purple-600 flex items-center gap-1"
+                            className="font-mono cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopyHash(hash, e)}
                         >
                             <span>{hash.substring(0, 12)}...</span>
@@ -96,10 +96,16 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             enableSorting: false,
         },
         {
+            id: "creator",
+            header: "Creator",
+            accessorFn: row => row.node.creator?.name || "Unknown",
+            enableSorting: false,
+        },
+        {
             id: "createdAt",
             header: "Created",
             accessorFn: row => row.node.createdAt,
-            cell: ({ getValue }) => format(new Date(getValue() as string), "yyyy-MM-dd HH:mm"),
+            cell: ({ getValue }) => moment(getValue() as string).format("YYYY-MM-DD HH:mm"),
             enableSorting: false,
         },
         {

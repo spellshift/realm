@@ -478,6 +478,9 @@ type UpdateUserInput struct {
 	ClearActiveShells    bool
 	AddActiveShellIDs    []int
 	RemoveActiveShellIDs []int
+	ClearAssets          bool
+	AddAssetIDs          []int
+	RemoveAssetIDs       []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -511,6 +514,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveActiveShellIDs; len(v) > 0 {
 		m.RemoveActiveShellIDs(v...)
+	}
+	if i.ClearAssets {
+		m.ClearAssets()
+	}
+	if v := i.AddAssetIDs; len(v) > 0 {
+		m.AddAssetIDs(v...)
+	}
+	if v := i.RemoveAssetIDs; len(v) > 0 {
+		m.RemoveAssetIDs(v...)
 	}
 }
 

@@ -111,6 +111,10 @@ type AssetWhereInput struct {
 	// "links" edge predicates.
 	HasLinks     *bool             `json:"hasLinks,omitempty"`
 	HasLinksWith []*LinkWhereInput `json:"hasLinksWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -394,6 +398,24 @@ func (i *AssetWhereInput) P() (predicate.Asset, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, asset.HasLinksWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := asset.HasCreator()
+		if !*i.HasCreator {
+			p = asset.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, asset.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6752,6 +6774,10 @@ type UserWhereInput struct {
 	// "active_shells" edge predicates.
 	HasActiveShells     *bool              `json:"hasActiveShells,omitempty"`
 	HasActiveShellsWith []*ShellWhereInput `json:"hasActiveShellsWith,omitempty"`
+
+	// "assets" edge predicates.
+	HasAssets     *bool              `json:"hasAssets,omitempty"`
+	HasAssetsWith []*AssetWhereInput `json:"hasAssetsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7014,6 +7040,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasActiveShellsWith(with...))
+	}
+	if i.HasAssets != nil {
+		p := user.HasAssets()
+		if !*i.HasAssets {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAssetsWith) > 0 {
+		with := make([]predicate.Asset, 0, len(i.HasAssetsWith))
+		for _, w := range i.HasAssetsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAssetsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasAssetsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

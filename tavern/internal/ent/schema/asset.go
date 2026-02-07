@@ -68,6 +68,9 @@ func (Asset) Edges() []ent.Edge {
 			).
 			Ref("asset").
 			Comment("Links that point to this asset"),
+		edge.To("creator", User.Type).
+			Unique().
+			Comment("The user who created the asset"),
 	}
 }
 

@@ -77,6 +77,8 @@ type AssetMutation struct {
 	links            map[int]struct{}
 	removedlinks     map[int]struct{}
 	clearedlinks     bool
+	creator          *int
+	clearedcreator   bool
 	done             bool
 	oldValue         func(context.Context) (*Asset, error)
 	predicates       []predicate.Asset
@@ -524,6 +526,45 @@ func (m *AssetMutation) ResetLinks() {
 	m.removedlinks = nil
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by id.
+func (m *AssetMutation) SetCreatorID(id int) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (m *AssetMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared reports if the "creator" edge to the User entity was cleared.
+func (m *AssetMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *AssetMutation) CreatorID() (id int, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *AssetMutation) CreatorIDs() (ids []int) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *AssetMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
 // Where appends a list predicates to the AssetMutation builder.
 func (m *AssetMutation) Where(ps ...predicate.Asset) {
 	m.predicates = append(m.predicates, ps...)
@@ -757,12 +798,15 @@ func (m *AssetMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AssetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.tomes != nil {
 		edges = append(edges, asset.EdgeTomes)
 	}
 	if m.links != nil {
 		edges = append(edges, asset.EdgeLinks)
+	}
+	if m.creator != nil {
+		edges = append(edges, asset.EdgeCreator)
 	}
 	return edges
 }
@@ -783,13 +827,17 @@ func (m *AssetMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case asset.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AssetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedtomes != nil {
 		edges = append(edges, asset.EdgeTomes)
 	}
@@ -821,12 +869,15 @@ func (m *AssetMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AssetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedtomes {
 		edges = append(edges, asset.EdgeTomes)
 	}
 	if m.clearedlinks {
 		edges = append(edges, asset.EdgeLinks)
+	}
+	if m.clearedcreator {
+		edges = append(edges, asset.EdgeCreator)
 	}
 	return edges
 }
@@ -839,6 +890,8 @@ func (m *AssetMutation) EdgeCleared(name string) bool {
 		return m.clearedtomes
 	case asset.EdgeLinks:
 		return m.clearedlinks
+	case asset.EdgeCreator:
+		return m.clearedcreator
 	}
 	return false
 }
@@ -847,6 +900,9 @@ func (m *AssetMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *AssetMutation) ClearEdge(name string) error {
 	switch name {
+	case asset.EdgeCreator:
+		m.ClearCreator()
+		return nil
 	}
 	return fmt.Errorf("unknown Asset unique edge %s", name)
 }
@@ -860,6 +916,9 @@ func (m *AssetMutation) ResetEdge(name string) error {
 		return nil
 	case asset.EdgeLinks:
 		m.ResetLinks()
+		return nil
+	case asset.EdgeCreator:
+		m.ResetCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown Asset edge %s", name)
@@ -13082,6 +13141,9 @@ type UserMutation struct {
 	active_shells        map[int]struct{}
 	removedactive_shells map[int]struct{}
 	clearedactive_shells bool
+	assets               map[int]struct{}
+	removedassets        map[int]struct{}
+	clearedassets        bool
 	done                 bool
 	oldValue             func(context.Context) (*User, error)
 	predicates           []predicate.User
@@ -13545,6 +13607,60 @@ func (m *UserMutation) ResetActiveShells() {
 	m.removedactive_shells = nil
 }
 
+// AddAssetIDs adds the "assets" edge to the Asset entity by ids.
+func (m *UserMutation) AddAssetIDs(ids ...int) {
+	if m.assets == nil {
+		m.assets = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.assets[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAssets clears the "assets" edge to the Asset entity.
+func (m *UserMutation) ClearAssets() {
+	m.clearedassets = true
+}
+
+// AssetsCleared reports if the "assets" edge to the Asset entity was cleared.
+func (m *UserMutation) AssetsCleared() bool {
+	return m.clearedassets
+}
+
+// RemoveAssetIDs removes the "assets" edge to the Asset entity by IDs.
+func (m *UserMutation) RemoveAssetIDs(ids ...int) {
+	if m.removedassets == nil {
+		m.removedassets = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.assets, ids[i])
+		m.removedassets[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAssets returns the removed IDs of the "assets" edge to the Asset entity.
+func (m *UserMutation) RemovedAssetsIDs() (ids []int) {
+	for id := range m.removedassets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AssetsIDs returns the "assets" edge IDs in the mutation.
+func (m *UserMutation) AssetsIDs() (ids []int) {
+	for id := range m.assets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAssets resets all changes to the "assets" edge.
+func (m *UserMutation) ResetAssets() {
+	m.assets = nil
+	m.clearedassets = false
+	m.removedassets = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -13780,12 +13896,15 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.active_shells != nil {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.assets != nil {
+		edges = append(edges, user.EdgeAssets)
 	}
 	return edges
 }
@@ -13806,18 +13925,27 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.assets))
+		for id := range m.assets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.removedactive_shells != nil {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.removedassets != nil {
+		edges = append(edges, user.EdgeAssets)
 	}
 	return edges
 }
@@ -13838,18 +13966,27 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeAssets:
+		ids := make([]ent.Value, 0, len(m.removedassets))
+		for id := range m.removedassets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.clearedactive_shells {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.clearedassets {
+		edges = append(edges, user.EdgeAssets)
 	}
 	return edges
 }
@@ -13862,6 +13999,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedtomes
 	case user.EdgeActiveShells:
 		return m.clearedactive_shells
+	case user.EdgeAssets:
+		return m.clearedassets
 	}
 	return false
 }
@@ -13883,6 +14022,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeActiveShells:
 		m.ResetActiveShells()
+		return nil
+	case user.EdgeAssets:
+		m.ResetAssets()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
