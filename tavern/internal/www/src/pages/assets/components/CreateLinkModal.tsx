@@ -132,32 +132,35 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 {createdLink ? (
                     <div className="flex flex-col gap-4">
                         <h4 className="font-medium text-gray-900">Link Created!</h4>
-                        <div className="flex flex-row items-center gap-2">
-                            <input
-                                type="text"
-                                readOnly
-                                value={createdLink}
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            />
+                        <div className="flex flex-col gap-2">
+                            <p className="text-sm text-gray-700 break-all select-all">
+                                {createdLink}
+                            </p>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-2">
                             <Button
-                                onClick={handleCopy}
-                                buttonVariant="ghost"
-                                buttonStyle={{ color: "gray", size: "sm" }}
+                                onClick={() => {
+                                    setCreatedLink(null);
+                                    setOpen(false);
+                                }}
+                                buttonVariant="outline"
+                                buttonStyle={{ color: "gray", size: "md" }}
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    handleCopy();
+                                    setCreatedLink(null);
+                                    setOpen(false);
+                                }}
+                                buttonVariant="solid"
+                                buttonStyle={{ color: "purple", size: "md" }}
                                 leftIcon={<Clipboard className="h-5 w-5" />}
                             >
-                                Copy
+                                Copy & Close
                             </Button>
                         </div>
-                        <Button
-                            onClick={() => {
-                                setCreatedLink(null);
-                                setOpen(false);
-                            }}
-                            buttonVariant="solid"
-                            buttonStyle={{ color: "purple", size: "md" }}
-                        >
-                            Done
-                        </Button>
                     </div>
                 ) : (
                     <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
