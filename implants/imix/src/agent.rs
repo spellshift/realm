@@ -31,7 +31,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     pub fn new(
         config: Config,
         transport: T,
-        runtime_handle: tokio::runtime::Handle,
+        runtime_handle: std::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
         let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);

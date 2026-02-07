@@ -111,6 +111,10 @@ type AssetWhereInput struct {
 	// "links" edge predicates.
 	HasLinks     *bool             `json:"hasLinks,omitempty"`
 	HasLinksWith []*LinkWhereInput `json:"hasLinksWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -394,6 +398,24 @@ func (i *AssetWhereInput) P() (predicate.Asset, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, asset.HasLinksWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := asset.HasCreator()
+		if !*i.HasCreator {
+			p = asset.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, asset.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -3357,19 +3379,35 @@ type LinkWhereInput struct {
 	ExpiresAtLT    *time.Time  `json:"expiresAtLT,omitempty"`
 	ExpiresAtLTE   *time.Time  `json:"expiresAtLTE,omitempty"`
 
-	// "downloads_remaining" field predicates.
-	DownloadsRemaining      *int  `json:"downloadsRemaining,omitempty"`
-	DownloadsRemainingNEQ   *int  `json:"downloadsRemainingNEQ,omitempty"`
-	DownloadsRemainingIn    []int `json:"downloadsRemainingIn,omitempty"`
-	DownloadsRemainingNotIn []int `json:"downloadsRemainingNotIn,omitempty"`
-	DownloadsRemainingGT    *int  `json:"downloadsRemainingGT,omitempty"`
-	DownloadsRemainingGTE   *int  `json:"downloadsRemainingGTE,omitempty"`
-	DownloadsRemainingLT    *int  `json:"downloadsRemainingLT,omitempty"`
-	DownloadsRemainingLTE   *int  `json:"downloadsRemainingLTE,omitempty"`
+	// "download_limit" field predicates.
+	DownloadLimit       *int  `json:"downloadLimit,omitempty"`
+	DownloadLimitNEQ    *int  `json:"downloadLimitNEQ,omitempty"`
+	DownloadLimitIn     []int `json:"downloadLimitIn,omitempty"`
+	DownloadLimitNotIn  []int `json:"downloadLimitNotIn,omitempty"`
+	DownloadLimitGT     *int  `json:"downloadLimitGT,omitempty"`
+	DownloadLimitGTE    *int  `json:"downloadLimitGTE,omitempty"`
+	DownloadLimitLT     *int  `json:"downloadLimitLT,omitempty"`
+	DownloadLimitLTE    *int  `json:"downloadLimitLTE,omitempty"`
+	DownloadLimitIsNil  bool  `json:"downloadLimitIsNil,omitempty"`
+	DownloadLimitNotNil bool  `json:"downloadLimitNotNil,omitempty"`
+
+	// "downloads" field predicates.
+	Downloads      *int  `json:"downloads,omitempty"`
+	DownloadsNEQ   *int  `json:"downloadsNEQ,omitempty"`
+	DownloadsIn    []int `json:"downloadsIn,omitempty"`
+	DownloadsNotIn []int `json:"downloadsNotIn,omitempty"`
+	DownloadsGT    *int  `json:"downloadsGT,omitempty"`
+	DownloadsGTE   *int  `json:"downloadsGTE,omitempty"`
+	DownloadsLT    *int  `json:"downloadsLT,omitempty"`
+	DownloadsLTE   *int  `json:"downloadsLTE,omitempty"`
 
 	// "asset" edge predicates.
 	HasAsset     *bool              `json:"hasAsset,omitempty"`
 	HasAssetWith []*AssetWhereInput `json:"hasAssetWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3578,29 +3616,59 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 	if i.ExpiresAtLTE != nil {
 		predicates = append(predicates, link.ExpiresAtLTE(*i.ExpiresAtLTE))
 	}
-	if i.DownloadsRemaining != nil {
-		predicates = append(predicates, link.DownloadsRemainingEQ(*i.DownloadsRemaining))
+	if i.DownloadLimit != nil {
+		predicates = append(predicates, link.DownloadLimitEQ(*i.DownloadLimit))
 	}
-	if i.DownloadsRemainingNEQ != nil {
-		predicates = append(predicates, link.DownloadsRemainingNEQ(*i.DownloadsRemainingNEQ))
+	if i.DownloadLimitNEQ != nil {
+		predicates = append(predicates, link.DownloadLimitNEQ(*i.DownloadLimitNEQ))
 	}
-	if len(i.DownloadsRemainingIn) > 0 {
-		predicates = append(predicates, link.DownloadsRemainingIn(i.DownloadsRemainingIn...))
+	if len(i.DownloadLimitIn) > 0 {
+		predicates = append(predicates, link.DownloadLimitIn(i.DownloadLimitIn...))
 	}
-	if len(i.DownloadsRemainingNotIn) > 0 {
-		predicates = append(predicates, link.DownloadsRemainingNotIn(i.DownloadsRemainingNotIn...))
+	if len(i.DownloadLimitNotIn) > 0 {
+		predicates = append(predicates, link.DownloadLimitNotIn(i.DownloadLimitNotIn...))
 	}
-	if i.DownloadsRemainingGT != nil {
-		predicates = append(predicates, link.DownloadsRemainingGT(*i.DownloadsRemainingGT))
+	if i.DownloadLimitGT != nil {
+		predicates = append(predicates, link.DownloadLimitGT(*i.DownloadLimitGT))
 	}
-	if i.DownloadsRemainingGTE != nil {
-		predicates = append(predicates, link.DownloadsRemainingGTE(*i.DownloadsRemainingGTE))
+	if i.DownloadLimitGTE != nil {
+		predicates = append(predicates, link.DownloadLimitGTE(*i.DownloadLimitGTE))
 	}
-	if i.DownloadsRemainingLT != nil {
-		predicates = append(predicates, link.DownloadsRemainingLT(*i.DownloadsRemainingLT))
+	if i.DownloadLimitLT != nil {
+		predicates = append(predicates, link.DownloadLimitLT(*i.DownloadLimitLT))
 	}
-	if i.DownloadsRemainingLTE != nil {
-		predicates = append(predicates, link.DownloadsRemainingLTE(*i.DownloadsRemainingLTE))
+	if i.DownloadLimitLTE != nil {
+		predicates = append(predicates, link.DownloadLimitLTE(*i.DownloadLimitLTE))
+	}
+	if i.DownloadLimitIsNil {
+		predicates = append(predicates, link.DownloadLimitIsNil())
+	}
+	if i.DownloadLimitNotNil {
+		predicates = append(predicates, link.DownloadLimitNotNil())
+	}
+	if i.Downloads != nil {
+		predicates = append(predicates, link.DownloadsEQ(*i.Downloads))
+	}
+	if i.DownloadsNEQ != nil {
+		predicates = append(predicates, link.DownloadsNEQ(*i.DownloadsNEQ))
+	}
+	if len(i.DownloadsIn) > 0 {
+		predicates = append(predicates, link.DownloadsIn(i.DownloadsIn...))
+	}
+	if len(i.DownloadsNotIn) > 0 {
+		predicates = append(predicates, link.DownloadsNotIn(i.DownloadsNotIn...))
+	}
+	if i.DownloadsGT != nil {
+		predicates = append(predicates, link.DownloadsGT(*i.DownloadsGT))
+	}
+	if i.DownloadsGTE != nil {
+		predicates = append(predicates, link.DownloadsGTE(*i.DownloadsGTE))
+	}
+	if i.DownloadsLT != nil {
+		predicates = append(predicates, link.DownloadsLT(*i.DownloadsLT))
+	}
+	if i.DownloadsLTE != nil {
+		predicates = append(predicates, link.DownloadsLTE(*i.DownloadsLTE))
 	}
 
 	if i.HasAsset != nil {
@@ -3620,6 +3688,24 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, link.HasAssetWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := link.HasCreator()
+		if !*i.HasCreator {
+			p = link.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, link.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

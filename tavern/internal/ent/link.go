@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Link is the model entity for the Link schema.
@@ -26,12 +27,15 @@ type Link struct {
 	Path string `json:"path,omitempty"`
 	// Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
-	// Number of times this link can be clicked before it becomes inactive
-	DownloadsRemaining int `json:"downloads_remaining,omitempty"`
+	// Maximum number of times this link can be clicked before it becomes inactive (if set)
+	DownloadLimit *int `json:"download_limit,omitempty"`
+	// Number of times the asset has been downloaded using this Link.
+	Downloads int `json:"downloads,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the LinkQuery when eager-loading is set.
 	Edges        LinkEdges `json:"edges"`
 	link_asset   *int
+	link_creator *int
 	selectValues sql.SelectValues
 }
 
@@ -39,11 +43,13 @@ type Link struct {
 type LinkEdges struct {
 	// The asset that this link points to
 	Asset *Asset `json:"asset,omitempty"`
+	// User that created the Link if available.
+	Creator *User `json:"creator,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 }
 
 // AssetOrErr returns the Asset value or an error if the edge
@@ -57,18 +63,31 @@ func (e LinkEdges) AssetOrErr() (*Asset, error) {
 	return nil, &NotLoadedError{edge: "asset"}
 }
 
+// CreatorOrErr returns the Creator value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e LinkEdges) CreatorOrErr() (*User, error) {
+	if e.Creator != nil {
+		return e.Creator, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "creator"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Link) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case link.FieldID, link.FieldDownloadsRemaining:
+		case link.FieldID, link.FieldDownloadLimit, link.FieldDownloads:
 			values[i] = new(sql.NullInt64)
 		case link.FieldPath:
 			values[i] = new(sql.NullString)
 		case link.FieldCreatedAt, link.FieldLastModifiedAt, link.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
 		case link.ForeignKeys[0]: // link_asset
+			values[i] = new(sql.NullInt64)
+		case link.ForeignKeys[1]: // link_creator
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -115,11 +134,18 @@ func (l *Link) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				l.ExpiresAt = value.Time
 			}
-		case link.FieldDownloadsRemaining:
+		case link.FieldDownloadLimit:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field downloads_remaining", values[i])
+				return fmt.Errorf("unexpected type %T for field download_limit", values[i])
 			} else if value.Valid {
-				l.DownloadsRemaining = int(value.Int64)
+				l.DownloadLimit = new(int)
+				*l.DownloadLimit = int(value.Int64)
+			}
+		case link.FieldDownloads:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field downloads", values[i])
+			} else if value.Valid {
+				l.Downloads = int(value.Int64)
 			}
 		case link.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -127,6 +153,13 @@ func (l *Link) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				l.link_asset = new(int)
 				*l.link_asset = int(value.Int64)
+			}
+		case link.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field link_creator", value)
+			} else if value.Valid {
+				l.link_creator = new(int)
+				*l.link_creator = int(value.Int64)
 			}
 		default:
 			l.selectValues.Set(columns[i], values[i])
@@ -144,6 +177,11 @@ func (l *Link) Value(name string) (ent.Value, error) {
 // QueryAsset queries the "asset" edge of the Link entity.
 func (l *Link) QueryAsset() *AssetQuery {
 	return NewLinkClient(l.config).QueryAsset(l)
+}
+
+// QueryCreator queries the "creator" edge of the Link entity.
+func (l *Link) QueryCreator() *UserQuery {
+	return NewLinkClient(l.config).QueryCreator(l)
 }
 
 // Update returns a builder for updating this Link.
@@ -181,8 +219,13 @@ func (l *Link) String() string {
 	builder.WriteString("expires_at=")
 	builder.WriteString(l.ExpiresAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("downloads_remaining=")
-	builder.WriteString(fmt.Sprintf("%v", l.DownloadsRemaining))
+	if v := l.DownloadLimit; v != nil {
+		builder.WriteString("download_limit=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("downloads=")
+	builder.WriteString(fmt.Sprintf("%v", l.Downloads))
 	builder.WriteByte(')')
 	return builder.String()
 }

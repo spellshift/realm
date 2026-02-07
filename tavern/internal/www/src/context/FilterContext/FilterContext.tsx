@@ -7,7 +7,9 @@ export enum FilterFieldType {
     TASK_OUTPUT = 'taskOutput',
     QUEST_NAME = 'questName',
     TOME_FIELDS = 'tomeFields',
-    TOME_MULTI_SEARCH = "tomeMultiSearch"
+    TOME_MULTI_SEARCH = "tomeMultiSearch",
+    ASSET_NAME = "assetName",
+    CREATOR = "creator"
 }
 
 const STORAGE_KEY = 'realm-filters-v1.1'
@@ -19,6 +21,8 @@ export type Filters = {
     beaconFields: Array<FilterBarOption>,
     tomeFields: Array<FilterBarOption>,
     tomeMultiSearch: string,
+    assetName: string,
+    creatorId: string,
 }
 
 const defaultFilters: Filters = {
@@ -27,7 +31,9 @@ const defaultFilters: Filters = {
     taskOutput: "",
     beaconFields: [],
     tomeFields: [],
-    tomeMultiSearch: ""
+    tomeMultiSearch: "",
+    assetName: "",
+    creatorId: ""
 }
 
 function isValidFilterBarOption(item: any): item is FilterBarOption {
@@ -53,6 +59,8 @@ function validateStoredFilters(data: any): Filters {
         questName: (v) => typeof v === 'string',
         taskOutput: (v) => typeof v === 'string',
         tomeMultiSearch: (v) => typeof v === 'string',
+        assetName: (v) => typeof v === 'string',
+        creatorId: (v) => typeof v === 'string',
         beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
         tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
     }
@@ -93,6 +101,10 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
             return filters.taskOutput !== "" ? 1 : 0;
         case FilterFieldType.TOME_MULTI_SEARCH:
             return filters.tomeMultiSearch !== "" ? 1 : 0;
+        case FilterFieldType.ASSET_NAME:
+            return filters.assetName !== "" ? 1 : 0;
+        case FilterFieldType.CREATOR:
+            return filters.creatorId !== "" ? 1 : 0;
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
         case FilterFieldType.TOME_FIELDS:
