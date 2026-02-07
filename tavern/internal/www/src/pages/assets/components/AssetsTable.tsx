@@ -244,16 +244,16 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
         if (windowWidth >= 800) {
             visibleIds.push("creator");
         }
-        if (windowWidth >= 1000) {
+        if (windowWidth >= 1150) {
             visibleIds.push("size");
         }
-        if (windowWidth > 1200) {
+        if (windowWidth > 1400) {
             visibleIds.push("lastModifiedAt");
         }
-        if (windowWidth >= 1400) {
+        if (windowWidth >= 1600) {
             visibleIds.push("hash");
         }
-        if (windowWidth > 1600) {
+        if (windowWidth > 1900) {
             visibleIds.push("createdAt");
         }
 

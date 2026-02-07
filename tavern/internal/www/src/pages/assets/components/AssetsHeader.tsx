@@ -23,7 +23,7 @@ const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen }) => {
                     buttonStyle={{ color: "purple", size: "md" }}
                     leftIcon={<Upload className="-ml-0.5 mr-1.5 h-5 w-5" />}
                 >
-                    Upload Asset
+                    Upload Assets
                     </Button>
                 </div>
             </div>
