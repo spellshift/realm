@@ -23,6 +23,44 @@ const formatBytes = (bytes: number, decimals = 2) => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
+const truncateAssetName = (name: string, maxLength: number = 25): string => {
+    if (name.length <= maxLength) return name;
+
+    // Check for path structure (forward or backward slashes)
+    const hasPath = name.includes('/') || name.includes('\\');
+
+    if (hasPath) {
+        // Handle path truncation: prioritize keeping the filename
+        const separator = name.includes('/') ? '/' : '\\';
+        const parts = name.split(separator);
+        const fileName = parts.pop() || "";
+
+        // If filename itself is too long, truncate it
+        if (fileName.length > maxLength) {
+            return fileName.substring(0, maxLength - 3) + "...";
+        }
+
+        // Try to add parent directories until limit is reached
+        let result = fileName;
+        // Start from end of parts (deepest folder)
+        for (let i = parts.length - 1; i >= 0; i--) {
+            const part = parts[i];
+            const potential = part + separator + result;
+            // +3 for "..." prefix
+            if (potential.length + 3 <= maxLength) {
+                result = potential;
+            } else {
+                return "..." + separator + result;
+            }
+        }
+        // Should not reach here if length check passed, but fallback
+        return "..." + separator + result;
+    }
+
+    // Standard string truncation
+    return name.substring(0, maxLength - 3) + "...";
+};
+
 const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
     const toast = useToast();
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -35,11 +73,11 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const handleCopyHash = (hash: string, e: React.MouseEvent) => {
+    const handleCopy = (text: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        navigator.clipboard.writeText(hash);
+        navigator.clipboard.writeText(text);
         toast({
-            title: "Hash copied to clipboard",
+            title: "Copied to clipboard",
             status: "success",
             duration: 2000,
             isClosable: true,
@@ -71,6 +109,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
             size: 250,
             cell: ({ row }) => {
                 const hasTomes = row.original.node.tomes.totalCount > 0;
+                const truncatedName = truncateAssetName(row.original.node.name);
                 return (
                     <div className="flex items-center gap-4">
                         {hasTomes && (
@@ -80,10 +119,18 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                                 </div>
                             </Tooltip>
                         )}
-                        <span>{row.original.node.name}</span>
+                        <Tooltip label={row.original.node.name} bg="white" color="black">
+                            <div
+                                className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
+                                onClick={(e) => handleCopy(row.original.node.name, e)}
+                            >
+                                <span>{truncatedName}</span>
+                                <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" />
+                            </div>
+                        </Tooltip>
                     </div>
                 );
-            }
+            },
         },
         {
             id: "creator",
@@ -116,7 +163,7 @@ const AssetsTable = ({ assets, onCreateLink }: AssetsTableProps) => {
                     <Tooltip label="Click to copy hash" bg="white" color="black">
                         <div
                             className="font-mono text-xs cursor-pointer hover:text-purple-600 flex items-center gap-1"
-                            onClick={(e) => handleCopyHash(hash, e)}
+                            onClick={(e) => handleCopy(hash, e)}
                         >
                             <span>{hash.substring(0, 12)}...</span>
                             <Copy className="w-3 h-3" />
