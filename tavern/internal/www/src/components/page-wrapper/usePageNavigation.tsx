@@ -8,8 +8,8 @@ import {
     BookOpenIcon,
     ClipboardDocumentListIcon,
     UserGroupIcon,
+    FolderIcon,
 } from '@heroicons/react/24/outline';
-import { LibraryBigIcon } from 'lucide-react';
 import { useAuthorization } from '../../context/AuthorizationContext';
 import { PageNavItem } from '../../utils/enums';
 
@@ -31,7 +31,7 @@ export const usePageNavigation = () => {
         { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
         { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },
         { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
-        { name: PageNavItem.assets, href: '/assets', icon: LibraryBigIcon, internal: true },
+        { name: PageNavItem.assets, href: '/assets', icon: FolderIcon, internal: true },
         ...data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : [],
         { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
         { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
