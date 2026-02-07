@@ -87,19 +87,23 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                          {sortedLinks.map((edge) => {
                              const isExpired = new Date(edge.node.expiresAt) < new Date();
+                             const hasDownloadsRemaining = edge.node.downloadLimit === null || (edge.node.downloadLimit - edge.node.downloads > 0);
+
                              return (
                                  <div key={edge.node.id} className="p-3 bg-white border border-gray-200 rounded-md shadow-sm flex flex-col gap-2 text-sm">
                                      <div className="flex justify-between items-start gap-2">
                                          <div className="font-mono text-xs break-all text-gray-600 bg-gray-50 p-1 rounded w-full">
                                              {`${window.location.origin}/cdn/${edge.node.path}`}
                                          </div>
-                                         <Button
-                                            onClick={() => handleCopyLink(edge.node.path)}
-                                            buttonVariant="ghost"
-                                            buttonStyle={{ color: "gray", size: "xs" }}
-                                            leftIcon={<Copy className="w-3 h-3" />}
-                                            aria-label="Copy Link"
-                                         />
+                                         {(!isExpired && hasDownloadsRemaining) && (
+                                             <Button
+                                                onClick={() => handleCopyLink(edge.node.path)}
+                                                buttonVariant="ghost"
+                                                buttonStyle={{ color: "gray", size: "xs" }}
+                                                leftIcon={<Copy className="w-3 h-3" />}
+                                                aria-label="Copy Link"
+                                             />
+                                         )}
                                      </div>
                                      <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
                                          <span>

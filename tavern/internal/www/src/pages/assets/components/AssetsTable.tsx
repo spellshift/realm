@@ -3,11 +3,12 @@ import { format } from "date-fns";
 import { AssetEdge } from "../../../utils/interfacesQuery";
 import Table from "../../../components/tavern-base-ui/table/Table";
 import Button from "../../../components/tavern-base-ui/button/Button";
-import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy, FilePlus } from "lucide-react";
+import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy, FilePlus, Info } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 import { useState, useEffect } from "react";
 import UserImageAndName from "../../../components/UserImageAndName";
+import { formatRelativeTime } from "../../../utils/time";
 
 type AssetsTableProps = {
     assets: AssetEdge[];
@@ -162,7 +163,14 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
         },
         {
             id: "hash",
-            header: "Hash",
+            header: () => (
+                <div className="flex items-center gap-1">
+                    Hash
+                    <Tooltip label="SHA3-256 digest of the content field" bg="white" color="black">
+                        <Info className="w-3 h-3 text-gray-400 cursor-help" />
+                    </Tooltip>
+                </div>
+            ),
             accessorFn: row => row.node.hash,
             cell: ({ getValue }) => {
                 const hash = getValue() as string;
@@ -185,6 +193,13 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
             header: "Created",
             accessorFn: row => row.node.createdAt,
             cell: ({ getValue }) => format(new Date(getValue() as string), "yyyy-MM-dd HH:mm"),
+            enableSorting: false,
+        },
+        {
+            id: "lastModifiedAt",
+            header: "Modified",
+            accessorFn: row => row.node.lastModifiedAt,
+            cell: ({ getValue }) => formatRelativeTime(getValue() as string),
             enableSorting: false,
         },
         {
@@ -232,11 +247,14 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
         if (windowWidth >= 1000) {
             visibleIds.push("size");
         }
-        if (windowWidth >= 1200) {
-            visibleIds.push("createdAt");
+        if (windowWidth > 1200) {
+            visibleIds.push("lastModifiedAt");
         }
         if (windowWidth >= 1400) {
             visibleIds.push("hash");
+        }
+        if (windowWidth > 1600) {
+            visibleIds.push("createdAt");
         }
 
         return columns.filter(col => visibleIds.includes(col.id as string));
