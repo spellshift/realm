@@ -64,6 +64,8 @@ export interface VirtualizedTableProps {
         itemId: string;
         isVisible: boolean;
         onItemClick: (id: string) => void;
+        isExpanded: boolean;
+        onToggleExpand: (id: string) => void;
     }) => ReactNode;
 
     /** Function to render the table header */
@@ -92,30 +94,44 @@ export interface VirtualizedTableProps {
 
     /** Enable dynamic sizing - measures actual element heights after render (default: false) */
     dynamicSizing?: boolean;
+
+    /** Set of expanded item IDs (for expandable rows) */
+    expandedItems?: Set<string>;
+
+    /** Callback when an item's expand state is toggled */
+    onToggleExpand?: (id: string) => void;
 }
 
 /**
  * Props for the VirtualizedTableRow component
  */
-export interface VirtualizedTableRowProps<TData, TVariables> {
+export interface VirtualizedTableRowProps<TData, TResponse = unknown> {
     /** Unique identifier for this row's item */
     itemId: string;
     /** GraphQL query to fetch data for this row */
     query: DocumentNode;
     /** Function to generate query variables from itemId */
     getVariables: (itemId: string) => OperationVariables | undefined;
+    /** Function to extract the data node from the query response */
+    extractData: (response: TResponse) => TData | null;
+    /** Whether the row is currently visible in viewport */
+    isVisible: boolean;
+    /** Poll interval in milliseconds when visible (default: 10000) */
+    pollInterval?: number;
     /** Column definitions */
     columns: VirtualizedTableColumn<TData>[];
     /** Callback when row is clicked */
     onRowClick?: (itemId: string) => void;
-    /** Whether the row is currently visible in viewport */
-    isVisible: boolean;
-    /** Poll interval in milliseconds when visible (default: 30000) */
-    pollInterval?: number;
-    /** Function to extract the data node from the query response */
-    extractData: (response: any) => TData | null;
     /** Custom CSS class for the row */
     className?: string;
     /** Minimum width for the row (default: '800px') */
     minWidth?: string;
+    /** Whether the row is currently expanded */
+    isExpanded?: boolean;
+    /** Callback when the expand toggle is clicked */
+    onToggleExpand?: (itemId: string) => void;
+    /** Function to render expanded content below the row */
+    renderExpandedContent?: (data: TData) => ReactNode;
+    /** Function to determine if this specific row is expandable based on its data (default: true if renderExpandedContent is provided) */
+    isExpandable?: (data: TData) => boolean;
 }

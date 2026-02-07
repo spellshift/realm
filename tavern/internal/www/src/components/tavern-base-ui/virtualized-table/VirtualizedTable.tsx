@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { VirtualizedTableProps } from "./types";
 
-
 export const VirtualizedTable = ({
     items,
     renderRow,
@@ -15,7 +14,12 @@ export const VirtualizedTable = ({
     height = "calc(100vh - 180px)",
     minHeight = "400px",
     dynamicSizing = false,
+    expandedItems,
+    onToggleExpand,
 }: VirtualizedTableProps) => {
+
+    const hasExpandableRows = expandedItems !== undefined && onToggleExpand !== undefined;
+    const useDynamicSizing = dynamicSizing || hasExpandableRows;
     const parentRef = useRef<HTMLDivElement>(null);
     const [visibleItemIds, setVisibleItemIds] = useState<Set<string>>(new Set());
 
@@ -25,13 +29,19 @@ export const VirtualizedTable = ({
         }
     }, [onItemClick]);
 
+    const handleToggleExpand = useCallback((itemId: string) => {
+        if (onToggleExpand) {
+            onToggleExpand(itemId);
+        }
+    }, [onToggleExpand]);
+
     const rowVirtualizer = useVirtualizer({
         count: items.length,
         getScrollElement: () => parentRef.current,
         estimateSize: () => estimateRowSize,
         overscan,
         // Enable dynamic measurement of actual element sizes
-        measureElement: dynamicSizing
+        measureElement: useDynamicSizing
             ? (element) => element.getBoundingClientRect().height
             : undefined,
     });
@@ -75,12 +85,10 @@ export const VirtualizedTable = ({
 
     const range = rowVirtualizer.range;
 
-    // Track which rows are actually visible (not just in overscan)
     useEffect(() => {
         updateVisibleItemIds();
     }, [updateVisibleItemIds, range?.startIndex, range?.endIndex]);
 
-    // Detect when user scrolls near the bottom and load more
     useEffect(() => {
         checkAndLoadMore();
     }, [checkAndLoadMore, range?.endIndex]);
@@ -90,15 +98,13 @@ export const VirtualizedTable = ({
             ref={parentRef}
             className="overflow-auto border border-gray-200 rounded-lg"
             style={{
-                height,
+                height: height,
                 minHeight,
                 width: '100%'
             }}
         >
-            {/* Header */}
             {renderHeader()}
 
-            {/* Virtualized rows container */}
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                 {rowVirtualizer.getVirtualItems().map(virtualRow => {
                     const itemId = items[virtualRow.index];
@@ -106,7 +112,7 @@ export const VirtualizedTable = ({
                     return (
                         <div
                             key={itemId}
-                            ref={dynamicSizing ? rowVirtualizer.measureElement : undefined}
+                            ref={useDynamicSizing ? rowVirtualizer.measureElement : undefined}
                             data-index={virtualRow.index}
                             style={{
                                 position: 'absolute',
@@ -116,7 +122,13 @@ export const VirtualizedTable = ({
                                 transform: `translateY(${virtualRow.start}px)`,
                             }}
                         >
-                            {renderRow({ itemId, isVisible, onItemClick: handleItemClick })}
+                            {renderRow({
+                                itemId,
+                                isVisible,
+                                onItemClick: handleItemClick,
+                                isExpanded: expandedItems?.has(itemId) ?? false,
+                                onToggleExpand: handleToggleExpand,
+                            })}
                         </div>
                     );
                 })}

@@ -2,37 +2,9 @@ import { useQuery } from "@apollo/client";
 import { useMemo } from "react";
 import { renderCellSkeleton } from "./CellDefaultSkeleton";
 import { VirtualizedTableRowProps } from "./types";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
-/**
- * Generic virtualized table row component that fetches and displays data
- *
- * This component abstracts the common pattern of:
- * - Fetching data per row with Apollo useQuery
- * - Polling when visible in viewport
- * - Showing loading skeletons
- * - Rendering custom column content
- *
- * @example
- * ```tsx
- * <VirtualizedTableRow
- *   itemId="host-123"
- *   query={GET_HOST_DETAIL_QUERY}
- *   getVariables={(id) => ({ id })}
- *   columns={[
- *     {
- *       key: 'name',
- *       gridWidth: 'minmax(250px,3fr)',
- *       render: (host) => <div>{host.name}</div>,
- *       renderSkeleton: () => <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
- *     }
- *   ]}
- *   extractData={(response) => response.hosts?.edges?.[0]?.node}
- *   onRowClick={(id) => console.log(id)}
- *   isVisible={true}
- * />
- * ```
- */
-export function VirtualizedTableRow<TData, TVariables = Record<string, unknown>>({
+export function VirtualizedTableRow<TData, TResponse = unknown>({
     itemId,
     query,
     getVariables,
@@ -43,11 +15,15 @@ export function VirtualizedTableRow<TData, TVariables = Record<string, unknown>>
     extractData,
     className = "",
     minWidth = "800px",
-}: VirtualizedTableRowProps<TData, TVariables>) {
-    const queryVariables = useMemo(() => getVariables(itemId), [itemId, getVariables]);
+    isExpanded = false,
+    onToggleExpand,
+    renderExpandedContent,
+    isExpandable,
+}: VirtualizedTableRowProps<TData, TResponse>) {
+    const variables = useMemo(() => getVariables(itemId), [itemId, getVariables]);
 
-    const { data } = useQuery(query, {
-        variables: queryVariables,
+    const { data } = useQuery<TResponse>(query, {
+        variables,
         pollInterval: isVisible ? pollInterval : 0,
         fetchPolicy: 'cache-and-network',
     });
@@ -57,18 +33,17 @@ export function VirtualizedTableRow<TData, TVariables = Record<string, unknown>>
         [columns]
     );
 
-    const baseClassName = `grid gap-4 px-6 py-4 border-b border-gray-200 bg-white hover:bg-gray-50 ${className}`;
-    const clickableClassName = onRowClick ? "cursor-pointer" : "";
+    const supportsExpand = renderExpandedContent !== undefined;
+    const fullGridTemplateColumns = supportsExpand ? `32px ${gridTemplateColumns}` : gridTemplateColumns;
+    const rowClassName = `grid gap-4 px-6 py-4 border-b border-gray-200 bg-white hover:bg-gray-50 ${className}`;
 
     if (!data) {
         return (
             <div
-                className={baseClassName}
-                style={{
-                    gridTemplateColumns,
-                    minWidth
-                }}
+                className={rowClassName}
+                style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
             >
+                {supportsExpand && <div />}
                 {columns.map((column) => (
                     <div key={column.key}>
                         {renderCellSkeleton(column)}
@@ -79,31 +54,52 @@ export function VirtualizedTableRow<TData, TVariables = Record<string, unknown>>
     }
 
     const itemData = extractData(data);
-
     if (!itemData) {
         return null;
     }
 
-    const handleClick = () => {
-        if (onRowClick) {
-            onRowClick(itemId);
-        }
+    const canExpand = isExpandable?.(itemData) ?? true;
+
+    const handleExpandClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onToggleExpand?.(itemId);
     };
 
     return (
-        <div
-            className={`${baseClassName} ${clickableClassName}`}
-            style={{
-                gridTemplateColumns,
-                minWidth
-            }}
-            onClick={handleClick}
-        >
-            {columns.map((column) => (
-                <div key={column.key}>
-                    {column.render(itemData)}
+        <div>
+            <div
+                className={`${rowClassName} ${onRowClick ? "cursor-pointer" : ""}`}
+                style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
+                onClick={() => onRowClick?.(itemId)}
+            >
+                {supportsExpand && (
+                    canExpand ? (
+                        <button
+                            type="button"
+                            className="flex items-center justify-center cursor-pointer"
+                            onClick={handleExpandClick}
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded ? "Collapse row" : "Expand row"}
+                        >
+                            {isExpanded ? (
+                                <ChevronDown className="w-4 text-gray-500" />
+                            ) : (
+                                <ChevronRight className="w-4 text-gray-500" />
+                            )}
+                        </button>
+                    ) : <div />
+                )}
+                {columns.map((column) => (
+                    <div key={column.key}>
+                        {column.render(itemData)}
+                    </div>
+                ))}
+            </div>
+            {isExpanded && canExpand && renderExpandedContent && (
+                <div className="bg-gray-50 border-b border-gray-200">
+                    {renderExpandedContent(itemData)}
                 </div>
-            ))}
+            )}
         </div>
     );
 }

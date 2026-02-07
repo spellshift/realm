@@ -56,8 +56,6 @@ export const HostsTable = ({ hostIds, hasMore = false, onLoadMore }: HostsTableP
             onLoadMore={onLoadMore}
             estimateRowSize={73}
             overscan={5}
-            height="calc(100vh - 180px)"
-            minHeight="400px"
         />
     );
 };

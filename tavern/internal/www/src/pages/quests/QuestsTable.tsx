@@ -58,8 +58,6 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             onLoadMore={onLoadMore}
             estimateRowSize={73}
             overscan={5}
-            height="calc(100vh - 180px)"
-            minHeight="400px"
         />
     );
 };

@@ -1,7 +1,7 @@
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
-import Breadcrumbs from "../../../components/Breadcrumbs";
-import Button from "../../../components/tavern-base-ui/button/Button";
-import PageHeader from "../../../components/tavern-base-ui/PageHeader";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import Button from "../../components/tavern-base-ui/button/Button";
+import PageHeader from "../../components/tavern-base-ui/PageHeader";
 
 type TomesHeaderType = {
     setOpen: (arg: boolean) => void
