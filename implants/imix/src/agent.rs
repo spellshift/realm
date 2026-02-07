@@ -6,7 +6,7 @@ use pb::c2::{self, ClaimTasksRequest, TaskContext};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
-use tokio::sync::RwLock;
+use tokio::sync::{mpsc, RwLock};
 use transport::Transport;
 
 use crate::portal::run_create_portal;
@@ -20,7 +20,7 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
+    pub output_tx: mpsc::UnboundedSender<c2::ReportTaskOutputRequest>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -29,15 +29,19 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         transport: T,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
-    ) -> Self {
-        Self {
-            config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(transport)),
-            runtime_handle,
-            task_registry,
-            subtasks: Arc::new(Mutex::new(BTreeMap::new())),
-            output_buffer: Arc::new(Mutex::new(Vec::new())),
-        }
+    ) -> (Self, mpsc::UnboundedReceiver<c2::ReportTaskOutputRequest>) {
+        let (output_tx, output_rx) = mpsc::unbounded_channel();
+        (
+            Self {
+                config: Arc::new(RwLock::new(config)),
+                transport: Arc::new(RwLock::new(transport)),
+                runtime_handle,
+                task_registry,
+                subtasks: Arc::new(Mutex::new(BTreeMap::new())),
+                output_tx,
+            },
+            output_rx,
+        )
     }
 
     pub fn get_callback_interval_u64(&self) -> Result<u64> {
@@ -80,17 +84,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Flushes all buffered task outputs using the provided transport
-    pub async fn flush_outputs(&self) {
-        // Wait a short delay to allow tasks to produce output
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-        // Drain the buffer
-        let outputs: Vec<_> = {
-            match self.output_buffer.lock() {
-                Ok(mut b) => b.drain(..).collect(),
-                Err(_) => return,
+    pub async fn flush_outputs(
+        &self,
+        rx: &mut mpsc::UnboundedReceiver<c2::ReportTaskOutputRequest>,
+    ) {
+        let mut outputs = Vec::new();
+        // Drain the channel using a tokio::time::timeout of 100ms
+        let _ = tokio::time::timeout(std::time::Duration::from_millis(100), async {
+            while let Some(msg) = rx.recv().await {
+                outputs.push(msg);
             }
-        };
+        })
+        .await;
 
         #[cfg(debug_assertions)]
         log::info!("Flushing {} task outputs", outputs.len());
@@ -284,8 +289,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
         // Buffer output instead of sending immediately
-        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
-        buffer.push(req);
+        self.output_tx.send(req).map_err(|e| e.to_string())?;
         Ok(c2::ReportTaskOutputResponse {})
     }
 

