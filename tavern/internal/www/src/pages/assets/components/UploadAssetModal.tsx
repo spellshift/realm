@@ -3,6 +3,7 @@ import { FC, useState, useRef, useEffect } from "react";
 import { useFormik } from "formik";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import * as Yup from "yup";
 
 type UploadAssetModalProps = {
     isOpen: boolean;
@@ -36,7 +37,15 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
-const FileCard = ({ item, index, formik, onRemove }: { item: FileItem, index: number, formik: any, onRemove: () => void }) => {
+interface FileCardProps {
+    item: FileItem;
+    index: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    formik: any;
+    onRemove: () => void;
+}
+
+const FileCard = ({ item, index, formik, onRemove }: FileCardProps) => {
     const [editingName, setEditingName] = useState<string | null>(null);
 
     const isPending = item.status === "pending";
@@ -60,10 +69,10 @@ const FileCard = ({ item, index, formik, onRemove }: { item: FileItem, index: nu
     };
 
     return (
-        <div className={`border rounded-md p-3 flex flex-col gap-2 bg-white ${
+        <div className={`border rounded-md p-3 flex flex-col gap-2 ${
             isSuccess ? 'border-green-500 bg-green-50' :
             isError ? 'border-red-500 bg-red-50' :
-            'border-gray-300'
+            'bg-white border-gray-300'
         }`}>
             <div className="flex justify-between items-center gap-2">
                 <div className="flex-1 min-w-0">
@@ -127,7 +136,7 @@ const FileCard = ({ item, index, formik, onRemove }: { item: FileItem, index: nu
             )}
 
             {isError && (
-                <div className="flex items-start gap-2 mt-1 text-sm text-red-700 bg-red-50 p-2 rounded border border-red-100">
+                <div className="flex items-start gap-2 mt-1 text-sm text-red-700 p-2 rounded">
                     <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>{item.error || "Upload failed"}</span>
                 </div>
@@ -209,7 +218,6 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
             }
 
             if (!hasErrors) {
-                // All good
                 onUploadSuccess();
                 // We keep the modal open to show success state, user can close it.
             }
@@ -225,7 +233,8 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            const newFiles: FileItem[] = Array.from(e.target.files).map(file => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const newFiles: FileItem[] = Array.from(e.target.files).map((file: any) => ({
                 id: Math.random().toString(36).substring(7) + Date.now(),
                 file,
                 name: file.webkitRelativePath || file.name,
