@@ -12,7 +12,7 @@ import (
 )
 
 // DefaultMaxUploadSize defines the maximum number of bytes an uploaded asset can be.
-const DefaultMaxUploadSize = 10 << 20
+const DefaultMaxUploadSize = 100 * 1024 * 1024 // 10MB
 
 // NewUploadHandler returns an HTTP handler responsible for uploading a asset to the CDN.
 func NewUploadHandler(graph *ent.Client) http.Handler {
