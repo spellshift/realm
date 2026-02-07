@@ -9,17 +9,17 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
-import Tasks from "./pages/tasks/Tasks";
-import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
 import { PageWrapper } from "./components/page-wrapper";
+import Quests from "./pages/quests";
+import Hosts from "./pages/hosts/Hosts";
+import { Tasks } from "./pages/tasks";
 
 
 const router = createBrowserRouter([
@@ -37,7 +37,7 @@ const router = createBrowserRouter([
       },
       {
         path: "hosts",
-        element: <HostList />,
+        element: <Hosts />,
       },
       {
         path: "hosts/:hostId",
@@ -71,6 +71,7 @@ const router = createBrowserRouter([
         path: "admin",
         element: <AdminPortal />,
       },
+      
     ]
   },
 ]);
