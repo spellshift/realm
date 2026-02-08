@@ -12,7 +12,6 @@ import (
 	"log/slog"
 	"math/big"
 	"net"
-	"os"
 	"time"
 
 	"github.com/caddyserver/certmagic"
@@ -24,25 +23,18 @@ import (
 func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
 	slog.DebugContext(ctx, "redirectors: configuring TLS", "hostname", hostname)
 
-	// Try certmagic if we have a real hostname (not empty, not an IP)
-	if hostname != "" && net.ParseIP(hostname) == nil {
-		slog.DebugContext(ctx, "redirectors: attempting ACME certificate provisioning", "hostname", hostname)
-		tlsCfg, err := tryACME(ctx, hostname)
-		if err != nil {
-			slog.WarnContext(ctx, "ACME certificate provisioning failed, falling back to self-signed", "hostname", hostname, "error", err)
-		} else {
-			slog.InfoContext(ctx, "ACME certificate provisioned successfully", "hostname", hostname)
-			slog.DebugContext(ctx, "redirectors: TLS config ready (ACME)", "hostname", hostname, "min_version", tlsCfg.MinVersion, "num_certificates", len(tlsCfg.Certificates))
-			return tlsCfg, nil
-		}
+	tlsCfg, err := tryACME(ctx, hostname)
+	if err != nil {
+		slog.WarnContext(ctx, "ACME certificate provisioning failed, falling back to self-signed", "hostname", hostname, "error", err)
 	} else {
-		slog.DebugContext(ctx, "redirectors: no hostname for ACME, will use self-signed", "hostname", hostname)
-		slog.InfoContext(ctx, "no hostname provided for ACME, using self-signed certificate", "hostname", hostname)
+		slog.InfoContext(ctx, "ACME certificate provisioned successfully", "hostname", hostname)
+		slog.DebugContext(ctx, "redirectors: TLS config ready (ACME)", "hostname", hostname, "min_version", tlsCfg.MinVersion, "num_certificates", len(tlsCfg.Certificates))
+		return tlsCfg, nil
 	}
 
 	// Fallback to self-signed
 	slog.DebugContext(ctx, "redirectors: generating self-signed certificate", "hostname", hostname)
-	tlsCfg, err := selfSignedTLSConfig(hostname)
+	tlsCfg, err = selfSignedTLSConfig(hostname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate self-signed certificate: %w", err)
 	}
@@ -55,7 +47,7 @@ func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
 func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
 	acme := certmagic.ACMEIssuer{
 		Agreed: true,
-		Email:  os.Getenv("REDIRECTOR_ACME_EMAIL"),
+		Email:  "",
 		CA:     certmagic.LetsEncryptProductionCA,
 	}
 
