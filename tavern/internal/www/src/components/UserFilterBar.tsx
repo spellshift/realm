@@ -13,7 +13,7 @@ const UserFilterBar = () => {
         label: edge.node.name,
     })) || [];
 
-    const selectedOption = options.find((option) => option.value === filters.creatorId);
+    const selectedOption = options.find((option) => option.value === filters.userId);
 
     return (
         <div className="flex flex-col gap-1">
@@ -22,11 +22,11 @@ const UserFilterBar = () => {
                 isDisabled={filters.isLocked || loading}
                 isLoading={loading}
                 isClearable
-                placeholder="Filter by Creator"
+                placeholder="Filter by User"
                 options={options}
                 value={selectedOption}
                 onChange={(option) => {
-                    updateFilters({ creatorId: option ? option.value : "" });
+                    updateFilters({ userId: option ? option.value : "" });
                 }}
             />
         </div>

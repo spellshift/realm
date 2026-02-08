@@ -24,7 +24,7 @@ function getFilterFields(pathname: string): FilterFieldType[] | null {
         return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/assets') {
-        return [FilterFieldType.ASSET_NAME, FilterFieldType.CREATOR];
+        return [FilterFieldType.ASSET_NAME, FilterFieldType.USER];
     }
 
     return null;
@@ -120,7 +120,7 @@ export default function FilterControls() {
                 </div>
             );
         }
-        else if (field === FilterFieldType.CREATOR) {
+        else if (field === FilterFieldType.USER) {
             return (
                 <div key={field}>
                     <UserFilterBar />
