@@ -20,7 +20,7 @@ import (
 func TestReportTaskOutput(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	client, graph, close := c2test.New(t)
+	client, graph, close, token := c2test.New(t)
 	defer close()
 
 	// Test Data
@@ -131,6 +131,13 @@ func TestReportTaskOutput(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Callback
+			// Ensure JWT present in request context
+			if tc.req.Context == nil {
+				tc.req.Context = &c2pb.TaskContext{Jwt: token}
+			} else {
+				tc.req.Context.Jwt = token
+			}
+
 			resp, err := client.ReportTaskOutput(ctx, tc.req)
 
 			// Assert Response Code
