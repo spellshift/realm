@@ -69,13 +69,20 @@ impl Transport for GRPC {
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        let connector = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_provider_and_webpki_roots(rustls::crypto::ring::default_provider())
+            .expect("failed to set rustls provider")
+            .https_or_http()
+            .enable_http2()
+            .wrap_connector(http);
+
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
                 let proxy = hyper_http_proxy::Proxy::new(
                     hyper_http_proxy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(connector, proxy)?;
 
                 endpoint
                     .rate_limit(1, Duration::from_millis(25))
@@ -84,7 +91,7 @@ impl Transport for GRPC {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
-                .connect_with_connector_lazy(http),
+                .connect_with_connector_lazy(connector),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
