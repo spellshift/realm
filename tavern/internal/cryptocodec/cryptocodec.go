@@ -152,7 +152,6 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	client_pub_key_bytes := make([]byte, x25519.Size)
 	copy(client_pub_key_bytes, in_arr[:x25519.Size])
 
-
 	ids, err := goAllIds()
 	if err != nil {
 		slog.Error("failed to get goid")
