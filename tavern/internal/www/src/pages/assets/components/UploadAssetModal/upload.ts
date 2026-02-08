@@ -1,6 +1,6 @@
 import { FileItem } from "./FileCard";
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 interface uploadFileParams {
     files: FileItem[];

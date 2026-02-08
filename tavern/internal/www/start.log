@@ -1,0 +1,56 @@
+
+> www@0.1.0 start
+> react-scripts start
+
+(node:3032) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:3032) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled with warnings.
+
+[eslint]
+src/components/UserFilterBar.tsx
+  Line 1:10:  'gql' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/components/tavern-base-ui/Tooltip.tsx
+  Line 1:10:  'useToast' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/pages/assets/components/CreateLinkModal/CreateLinkForm.tsx
+  Line 1:10:  'useFormik' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/UserFilterBar.tsx
+  Line 1:10:  'gql' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/components/tavern-base-ui/Tooltip.tsx
+  Line 1:10:  'useToast' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/pages/assets/components/CreateLinkModal/CreateLinkForm.tsx
+  Line 1:10:  'useFormik' is defined but never used  @typescript-eslint/no-unused-vars
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
