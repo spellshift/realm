@@ -45,10 +45,15 @@ func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
 
 // tryACME attempts to obtain a TLS certificate via ACME using certmagic.
 func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
+	profile := ""
+	if ip := net.ParseIP(host); ip != nil {
+		profile = "shortlived"
+	}
 	acme := certmagic.ACMEIssuer{
 		Agreed: true,
 		Email:  "",
 		CA:     certmagic.LetsEncryptProductionCA,
+		Profile: profile,
 	}
 
 	cfg := certmagic.NewDefault()
