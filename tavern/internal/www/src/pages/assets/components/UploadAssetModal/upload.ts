@@ -1,6 +1,6 @@
 import { FileItem } from "./FileCard";
 
-export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+export const MAX_FILE_SIZE = 512 * 1024 * 1024; // 512MB (see upload.go for server limit)
 
 interface uploadFileParams {
     files: FileItem[];

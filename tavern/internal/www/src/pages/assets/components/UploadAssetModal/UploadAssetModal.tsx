@@ -25,7 +25,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
             files: [],
         },
         onSubmit: async (values, { setFieldValue }) => {
-            uploadFiles({ files: values.files, setFieldValue, onUploadSuccess });
+            await uploadFiles({ files: values.files, setFieldValue, onUploadSuccess });
         }
     });
 
@@ -33,7 +33,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
         if (e.target.files && e.target.files.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const newFiles: FileItem[] = Array.from(e.target.files).map((file: any) => ({
-                id: Math.random().toString(36).substring(7) + Date.now(),
+                id: crypto.randomUUID(),
                 file,
                 name: file.webkitRelativePath || file.name,
                 status: file.size > MAX_FILE_SIZE ? "error" : "pending",

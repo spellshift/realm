@@ -87,7 +87,7 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                                     <span>
                                         {isExpired
                                             ? "Expired"
-                                            : `Expires: ${moment(edge.node.expiresAt).toNow()}`
+                                            : `Expires: ${moment(edge.node.expiresAt).fromNow()}`
                                         }
                                     </span>
                                     <span>{edge.node.downloads} {edge.node.downloadLimit != null ? '/ ' + edge.node.downloadLimit : ''} downloads</span>

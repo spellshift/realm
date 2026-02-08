@@ -14,7 +14,7 @@ const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
                 </div>
                 <div className="flex flex-col">
                     <h3 className="text-sm font-semibold text-red-700">{label}</h3>
-                    <div className="text-sm text-red-700 whitespace-pre-wrap">
+                    <div className="text-sm text-red-700">
                         {details}
                     </div>
                 </div>
