@@ -56,7 +56,7 @@ export const Assets = () => {
                 />
             </div>
 
-            {selectedAsset && (
+            {createLinkModalOpen && selectedAsset && (
                 <CreateLinkModal
                     isOpen={createLinkModalOpen}
                     setOpen={setCreateLinkModalOpen}
@@ -66,11 +66,13 @@ export const Assets = () => {
                 />
             )}
 
-            <UploadAssetModal
-                isOpen={uploadAssetModalOpen}
-                setOpen={setUploadAssetModalOpen}
-                onUploadSuccess={handleRefresh}
-            />
+            {uploadAssetModalOpen && (
+                <UploadAssetModal
+                    isOpen={uploadAssetModalOpen}
+                    setOpen={setUploadAssetModalOpen}
+                    onUploadSuccess={handleRefresh}
+                />
+            )}
         </>
     );
 };
