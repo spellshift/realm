@@ -4,7 +4,7 @@ import { useFormik } from "formik";
 import Modal from "../../../../components/tavern-base-ui/Modal";
 import Button from "../../../../components/tavern-base-ui/button/Button";
 import FileCard, { FileItem } from "./FileCard";
-import { uploadFiles } from "./upload";
+import { uploadFiles, MAX_FILE_SIZE } from "./upload";
 
 type UploadAssetModalProps = {
     isOpen: boolean;
@@ -36,8 +36,9 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                 id: Math.random().toString(36).substring(7) + Date.now(),
                 file,
                 name: file.webkitRelativePath || file.name,
-                status: "pending",
-                progress: 0
+                status: file.size > MAX_FILE_SIZE ? "error" : "pending",
+                progress: 0,
+                error: file.size > MAX_FILE_SIZE ? "File size exceeds 100MB limit" : undefined
             }));
             formik.setFieldValue("files", [...formik.values.files, ...newFiles]);
 
@@ -94,6 +95,7 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
                                 onChange={handleFileChange}
                                 className="hidden"
                                 disabled={formik.isSubmitting}
+                                data-testid="file-upload-input"
                             />
                             <input
                                 type="file"
