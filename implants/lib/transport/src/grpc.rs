@@ -40,8 +40,8 @@ impl Transport for GRPC {
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
         let mut endpoint = tonic::transport::Endpoint::from_shared(callback.clone())?;
-        if callback.starts_with("https://") {
-            endpoint = endpoint.tls_config(ClientTlsConfig::new())?;
+        if callback.starts_with("https://") || callback.starts_with("grpcs://") {
+            endpoint = endpoint.tls_config(ClientTlsConfig::new().with_enabled_roots())?;
         }
 
         #[cfg(feature = "doh")]
