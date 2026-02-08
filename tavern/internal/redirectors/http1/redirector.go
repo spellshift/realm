@@ -2,6 +2,7 @@ package http1
 
 import (
 	"context"
+	"crypto/tls"
 	"log/slog"
 	"net/http"
 
@@ -18,7 +19,7 @@ func init() {
 type Redirector struct{}
 
 // Redirect starts the redirector, listening for traffic locally and forwarding to the upstream
-func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
+func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, tlsConfig *tls.Config) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/c2.C2/FetchAsset", func(w http.ResponseWriter, r *http.Request) {
 		handleFetchAssetStreaming(w, r, upstream)
@@ -31,8 +32,14 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	})
 
 	srv := &http.Server{
-		Addr:    listenOn,
-		Handler: mux,
+		Addr:      listenOn,
+		Handler:   mux,
+		TLSConfig: tlsConfig,
+	}
+
+	if tlsConfig != nil {
+		slog.Info("HTTPS HTTP/1.1 redirector started", "listen_on", listenOn)
+		return srv.ListenAndServeTLS("", "")
 	}
 
 	slog.Info("HTTP/1.1 redirector started", "listen_on", listenOn)

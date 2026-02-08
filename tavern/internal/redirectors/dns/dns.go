@@ -2,6 +2,7 @@ package dns
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base32"
 	"encoding/binary"
 	"errors"
@@ -87,7 +88,7 @@ type Conversation struct {
 	Completed        bool // Set to true when all chunks received
 }
 
-func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
+func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, _ *tls.Config) error {
 	listenAddr, domains, err := ParseListenAddr(listenOn)
 	if err != nil {
 		return fmt.Errorf("failed to parse listen address: %w", err)

@@ -2,12 +2,14 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -23,16 +25,21 @@ func init() {
 type Redirector struct{}
 
 // Redirect implements the redirectors.Redirector interface.
-func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error {
+func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, tlsConfig *tls.Config) error {
 	lis, err := net.Listen("tcp", listenOn)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	s := grpc.NewServer(
+	serverOpts := []grpc.ServerOption{
 		grpc.UnknownServiceHandler(r.handler(upstream)),
 		grpc.ForceServerCodec(encoding.GetCodec("raw")),
-	)
+	}
+	if tlsConfig != nil {
+		serverOpts = append(serverOpts, grpc.Creds(credentials.NewTLS(tlsConfig)))
+	}
+
+	s := grpc.NewServer(serverOpts...)
 
 	go func() {
 		<-ctx.Done()
