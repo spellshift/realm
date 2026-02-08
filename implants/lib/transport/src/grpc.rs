@@ -13,6 +13,44 @@ use crate::dns_resolver::doh::DohProvider;
 
 use std::time::Duration;
 
+#[derive(Clone)]
+struct ForceHttpsConnector<C> {
+    inner: C,
+    force: bool,
+}
+
+impl<C> tower::Service<http::Uri> for ForceHttpsConnector<C>
+where
+    C: tower::Service<http::Uri> + Clone + Send + 'static,
+    C::Response: Send,
+    C::Error: Send,
+    C::Future: Send,
+{
+    type Response = C::Response;
+    type Error = C::Error;
+    type Future = C::Future;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, uri: http::Uri) -> Self::Future {
+        if self.force {
+            let mut parts = uri.into_parts();
+            if parts.scheme == Some(http::uri::Scheme::HTTP) {
+                parts.scheme = Some(http::uri::Scheme::HTTPS);
+            }
+            let https_uri = http::Uri::from_parts(parts).expect("valid uri");
+            self.inner.call(https_uri)
+        } else {
+            self.inner.call(uri)
+        }
+    }
+}
+
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
@@ -38,7 +76,16 @@ impl Transport for GRPC {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        // Tonic 0.14+ might fail with "Connecting to HTTPS without TLS enabled" if we use https:// scheme
+        // even if we provide a TLS-enabled connector. We workaround this by using http:// scheme
+        // internally and forcing https:// in the connector.
+        let internal_callback = if callback.starts_with("https://") {
+            callback.replacen("https://", "http://", 1)
+        } else {
+            callback.clone()
+        };
+
+        let endpoint = tonic::transport::Endpoint::from_shared(internal_callback)?;
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");
@@ -75,6 +122,12 @@ impl Transport for GRPC {
             .https_or_http()
             .enable_http2()
             .wrap_connector(http);
+
+        // Wrap connector to force HTTPS if the original callback was HTTPS
+        let connector = ForceHttpsConnector {
+            inner: connector,
+            force: callback.starts_with("https://"),
+        };
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
