@@ -8,7 +8,7 @@ Realm is an Adversary Emulation Framework focused on scalability, reliability, a
 
 ## Project Structure
 
-```
+```text
 realm/
 ├── tavern/          # Go server - GraphQL API, Web UI (TypeScript), gRPC API
 │   └── internal/www # React/TypeScript frontend (npm managed)
@@ -79,6 +79,26 @@ cargo fmt
 2. **Code Generation**: Run `go generate ./...` after modifying ent schemas, GraphQL, or frontend.
 3. **Rust Formatting**: Always run `cargo fmt` - CI will fail without it.
 4. **Linear History**: Use squash merge for PRs.
+5. **React Components**: Avoid large ternary operations, instead break out the two pieces into components and use a simple ternary operation e.g. `condition ? <ComponentA /> : <ComponentB />`
+6. **React Utilities**: Separate styling from logic and abstract reuseable functions into utils files.
+7. **React Styling**: Attempt to reference existing pages and components for style guidelines, be sure to re-use components and match styling to maintain consistency.
+8. **Prefer Line-of-Sight Coding**: Avoid large indentation by returning early and keeping an unnested control flow, for example:
+
+```golang
+func doAThing(myparam *Thing):
+    if myparam == nil {
+        // Return early
+        return
+    }
+    if myparam.Other <= 25 {
+        // Perform an op and return early
+        myparam.Other += 1
+        return
+    }
+    // Expected code after edge cases have been handled
+    fmt.Printf("myparam.Other has reached %d\n", myparam.Other)
+}
+```
 
 ## Eldritch Standard Library
 
