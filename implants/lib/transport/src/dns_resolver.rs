@@ -14,12 +14,12 @@ pub mod doh {
     use hyper_util::client::legacy::connect::dns::Name as Hyper1Name;
     #[cfg(feature = "grpc")]
     use hyper_util::client::legacy::connect::HttpConnector as Hyper1HttpConnector;
-    #[cfg(feature = "grpc")]
-    use tower::Service as TowerService;
     use std::future::Future;
     use std::net::SocketAddr;
     use std::pin::Pin;
     use std::task::{Context, Poll};
+    #[cfg(feature = "grpc")]
+    use tower::Service as TowerService;
 
     #[allow(dead_code)]
     #[derive(Debug, Clone, Copy)]

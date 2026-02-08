@@ -7,9 +7,9 @@ use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
 
-use crate::Transport;
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::DohProvider;
+use crate::Transport;
 
 use std::time::Duration;
 
@@ -135,7 +135,8 @@ impl Transport for GRPC {
                     hyper_http_proxy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(connector, proxy)?;
+                let proxy_connector =
+                    hyper_http_proxy::ProxyConnector::from_proxy(connector, proxy)?;
 
                 endpoint
                     .rate_limit(1, Duration::from_millis(25))
