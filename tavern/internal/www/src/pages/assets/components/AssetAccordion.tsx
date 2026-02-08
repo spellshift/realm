@@ -1,11 +1,12 @@
 import { Copy, Link2Off } from "lucide-react";
 import { format } from "date-fns";
-import { AssetNode, LinkEdge } from "../../../utils/interfacesQuery";
+import { AssetNode } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { useToast, Tooltip } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useDisableLink } from "../useAssets";
 import UserImageAndName from "../../../components/UserImageAndName";
+import { sortLinks } from "../utils";
 
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';
 
@@ -52,33 +53,7 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
 
     const sortedLinks = useMemo(() => {
         if (!asset.links?.edges) return [];
-
-        return [...asset.links.edges].sort((a: LinkEdge, b: LinkEdge) => {
-            const now = new Date();
-            const aExpired = new Date(a.node.expiresAt) < now;
-            const bExpired = new Date(b.node.expiresAt) < now;
-
-            // 1. Unexpired first
-            if (aExpired !== bExpired) {
-                return aExpired ? 1 : -1;
-            }
-
-            // 2. Unlimited downloads first
-            const aUnlimited = a.node.downloadLimit === null;
-            const bUnlimited = b.node.downloadLimit === null;
-            if (aUnlimited !== bUnlimited) {
-                return aUnlimited ? -1 : 1;
-            }
-
-            // 3. Most remaining downloads first
-            if (!aUnlimited && !bUnlimited) {
-                const aRemaining = (a.node.downloadLimit || 0) - a.node.downloads;
-                const bRemaining = (b.node.downloadLimit || 0) - b.node.downloads;
-                return bRemaining - aRemaining;
-            }
-
-            return 0;
-        });
+        return sortLinks(asset.links.edges);
     }, [asset.links?.edges]);
 
     return (
