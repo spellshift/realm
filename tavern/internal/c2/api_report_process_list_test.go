@@ -19,7 +19,7 @@ import (
 func TestReportProcessList(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	client, graph, close := c2test.New(t)
+	client, graph, close, token := c2test.New(t)
 	defer close()
 
 	// Test Data
@@ -44,7 +44,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root", Status: epb.Process_STATUS_RUN},
@@ -63,7 +63,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},
@@ -96,7 +96,7 @@ func TestReportProcessList(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID)},
+				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
 				List: &epb.ProcessList{
 					List: []*epb.Process{},
 				},
@@ -107,7 +107,7 @@ func TestReportProcessList(t *testing.T) {
 		{
 			name: "Not_Found",
 			req: &c2pb.ReportProcessListRequest{
-				Context: &c2pb.TaskContext{TaskId: 99888777776666},
+				Context: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},

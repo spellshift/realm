@@ -7,7 +7,9 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +26,7 @@ import (
 	"realm.pub/tavern/internal/portals/mux"
 )
 
-func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
+func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 	t.Helper()
 	ctx := context.Background()
 
@@ -55,6 +57,19 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 	testPubKey, testPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
+	// Generate a signed JWT string for tests
+	claims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(),
+	}
+	testToken := ""
+	{
+		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+		s, err := token.SignedString(testPrivKey)
+		require.NoError(t, err)
+		testToken = s
+	}
+
 	// gRPC Server
 	lis := bufconn.Listen(1024 * 1024 * 10)
 	baseSrv := grpc.NewServer()
@@ -82,5 +97,5 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func()) {
 		if err := <-grpcErrCh; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			t.Fatalf("failed to serve grpc: %v", err)
 		}
-	}
+	}, testToken
 }
