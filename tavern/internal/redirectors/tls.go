@@ -53,14 +53,6 @@ func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
 
 // tryACME attempts to obtain a TLS certificate via ACME using certmagic.
 func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
-	// Recover from any panics inside certmagic (e.g. nil pointer dereferences
-	// when ACME challenge solvers are not fully initialized).
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("certmagic panicked: %v", r)
-		}
-	}()
-
 	acme := certmagic.ACMEIssuer{
 		Agreed: true,
 		Email:  os.Getenv("REDIRECTOR_ACME_EMAIL"),
@@ -72,7 +64,7 @@ func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
 	cfg.Issuers = []certmagic.Issuer{certmagic.NewACMEIssuer(cfg, acme)}
 
 	if err := cfg.ManageSync(ctx, []string{host}); err != nil {
-		return nil, fmt.Errorf("certmagic failed to manage certificate for %q: %w", host, err)
+		return nil, fmt.Errorf("certmagic failed to manage certificate for %q", host)
 	}
 
 	tlsCfg = cfg.TLSConfig()
@@ -97,7 +89,6 @@ func selfSignedTLSConfig(host string) (*tls.Config, error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Realm Redirector"},
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
