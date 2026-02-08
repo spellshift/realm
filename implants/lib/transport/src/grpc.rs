@@ -4,6 +4,7 @@ use pb::c2::*;
 use pb::config::Config;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
+use tonic::transport::ClientTlsConfig;
 use tonic::GrpcMethod;
 use tonic::Request;
 
@@ -38,7 +39,10 @@ impl Transport for GRPC {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        let mut endpoint = tonic::transport::Endpoint::from_shared(callback.clone())?;
+        if callback.starts_with("https://") {
+            endpoint = endpoint.tls_config(ClientTlsConfig::new())?;
+        }
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");
