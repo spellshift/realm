@@ -80,17 +80,17 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Usage: "Transport protocol to use for redirector",
 					Value: "grpc",
 				},
-				cli.BoolFlag{
-					Name:  "https",
-					Usage: "Enable HTTPS using automatic TLS certificates (via ACME), falling back to self-signed if ACME fails",
+				cli.StringFlag{
+					Name:  "tls-hostname",
+					Usage: "Enable TLS and use this hostname for certificate provisioning via ACME (e.g. redirector.example.com); falls back to self-signed if ACME fails",
 				},
 			},
 			Action: func(c *cli.Context) error {
 				var (
-					upstream  = c.Args().First()
-					listenOn  = c.String("listen")
-					transport = c.String("transport")
-					useHTTPS  = c.Bool("https")
+					upstream    = c.Args().First()
+					listenOn    = c.String("listen")
+					transport   = c.String("transport")
+					tlsHostname = c.String("tls-hostname")
 				)
 				if upstream == "" {
 					return fmt.Errorf("gRPC upstream address is required (first argument)")
@@ -103,16 +103,16 @@ func newApp(ctx context.Context) (app *cli.App) {
 				}
 
 				var tlsCfg *tls.Config
-				if useHTTPS {
+				if tlsHostname != "" {
 					var err error
-					tlsCfg, err = redirectors.NewTLSConfig(ctx, listenOn)
+					tlsCfg, err = redirectors.NewTLSConfig(ctx, tlsHostname)
 					if err != nil {
 						return fmt.Errorf("failed to configure TLS: %w", err)
 					}
-					slog.InfoContext(ctx, "TLS configured for redirector", "listen_on", listenOn)
+					slog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
 				}
 
-				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "https", useHTTPS)
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
 				return redirectors.Run(ctx, transport, listenOn, upstream, tlsCfg)
 			},
 			Subcommands: cli.Commands{

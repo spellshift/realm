@@ -112,7 +112,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 	defer conn.Close()
 
-	slog.Info("DNS redirector started", "listen_on", listenAddr, "base_domains", r.baseDomains)
+	slog.Info("dns redirector: started", "listen_on", listenAddr, "base_domains", r.baseDomains)
 
 	go r.cleanupConversations(ctx)
 
@@ -129,7 +129,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					continue
 				}
-				slog.Error("failed to read UDP", "error", err)
+				slog.Error("dns redirector: incoming request failed, could not read UDP", "error", err)
 				continue
 			}
 
@@ -227,7 +227,8 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	domain = strings.ToLower(domain)
 
-	slog.Debug("received DNS query", "domain", domain, "query_type", queryType, "from", addr.String())
+	slog.Info("dns redirector: request", "source", addr.String(), "destination", domain)
+	slog.Debug("dns redirector: query details", "domain", domain, "query_type", queryType, "source", addr.String())
 
 	// Extract subdomain
 	subdomain, err := r.extractSubdomain(domain)
@@ -300,7 +301,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	if err != nil {
-		slog.Warn("packet handling failed", "type", packet.Type, "conv_id", packet.ConversationId, "error", err)
+		slog.Error("dns redirector: upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
 	}
@@ -451,7 +452,7 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 
 		conv.mu.Unlock()
 		if err := r.processCompletedConversation(ctx, upstream, conv, queryType); err != nil {
-			slog.Error("failed to process completed conversation", "conv_id", conv.ID, "error", err)
+			slog.Error("dns redirector: upstream request failed, could not process completed conversation", "conv_id", conv.ID, "method", conv.MethodPath, "error", err)
 		}
 		conv.mu.Lock()
 	}
@@ -942,7 +943,9 @@ func (r *Redirector) sendDNSResponse(conn *net.UDPConn, addr *net.UDPAddr, trans
 		response = append(response, 0x00, 0x00)                                 // RDLENGTH: 0
 	}
 
-	conn.WriteToUDP(response, addr)
+	if _, err := conn.WriteToUDP(response, addr); err != nil {
+		slog.Error("dns redirector: incoming request failed, could not write DNS response", "destination", addr.String(), "error", err)
+	}
 }
 
 // sendErrorResponse sends a DNS error response
@@ -952,5 +955,7 @@ func (r *Redirector) sendErrorResponse(conn *net.UDPConn, addr *net.UDPAddr, tra
 	response[2] = byte(dnsErrorFlags >> 8)
 	response[3] = byte(dnsErrorFlags & 0xFF)
 
-	conn.WriteToUDP(response, addr)
+	if _, err := conn.WriteToUDP(response, addr); err != nil {
+		slog.Error("dns redirector: incoming request failed, could not write DNS error response", "destination", addr.String(), "error", err)
+	}
 }

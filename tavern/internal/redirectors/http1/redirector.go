@@ -38,10 +38,11 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 
 	if tlsConfig != nil {
-		slog.Info("HTTPS HTTP/1.1 redirector started", "listen_on", listenOn)
+		slog.Debug("http1 redirector: TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
+		slog.Info("http1 redirector: HTTPS started", "listen_on", listenOn)
 		return srv.ListenAndServeTLS("", "")
 	}
 
-	slog.Info("HTTP/1.1 redirector started", "listen_on", listenOn)
+	slog.Info("http1 redirector: HTTP started", "listen_on", listenOn)
 	return srv.ListenAndServe()
 }

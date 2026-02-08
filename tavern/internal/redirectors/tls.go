@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"math/big"
 	"net"
+	"os"
 	"time"
 
 	"github.com/caddyserver/certmagic"
@@ -19,43 +20,66 @@ import (
 
 // NewTLSConfig attempts to provision a TLS certificate using certmagic (ACME).
 // If all ACME challenges fail, it falls back to a self-signed certificate.
-// The listenOn address is used to extract the hostname for the certificate.
-func NewTLSConfig(ctx context.Context, listenOn string) (*tls.Config, error) {
-	host, _, err := net.SplitHostPort(listenOn)
-	if err != nil {
-		host = listenOn
-	}
+// The hostname is used for certificate provisioning (e.g. "redirector.example.com").
+func NewTLSConfig(ctx context.Context, hostname string) (*tls.Config, error) {
+	slog.DebugContext(ctx, "redirectors: configuring TLS", "hostname", hostname)
 
 	// Try certmagic if we have a real hostname (not empty, not an IP)
-	if host != "" && net.ParseIP(host) == nil {
-		tlsCfg, err := tryACME(ctx, host)
+	if hostname != "" && net.ParseIP(hostname) == nil {
+		slog.DebugContext(ctx, "redirectors: attempting ACME certificate provisioning", "hostname", hostname)
+		tlsCfg, err := tryACME(ctx, hostname)
 		if err != nil {
-			slog.WarnContext(ctx, "ACME certificate provisioning failed, falling back to self-signed", "host", host, "error", err)
+			slog.WarnContext(ctx, "ACME certificate provisioning failed, falling back to self-signed", "hostname", hostname, "error", err)
 		} else {
-			slog.InfoContext(ctx, "ACME certificate provisioned successfully", "host", host)
+			slog.InfoContext(ctx, "ACME certificate provisioned successfully", "hostname", hostname)
+			slog.DebugContext(ctx, "redirectors: TLS config ready (ACME)", "hostname", hostname, "min_version", tlsCfg.MinVersion, "num_certificates", len(tlsCfg.Certificates))
 			return tlsCfg, nil
 		}
 	} else {
-		slog.InfoContext(ctx, "no hostname provided for ACME, using self-signed certificate", "listen_on", listenOn)
+		slog.DebugContext(ctx, "redirectors: no hostname for ACME, will use self-signed", "hostname", hostname)
+		slog.InfoContext(ctx, "no hostname provided for ACME, using self-signed certificate", "hostname", hostname)
 	}
 
 	// Fallback to self-signed
-	tlsCfg, err := selfSignedTLSConfig(host)
+	slog.DebugContext(ctx, "redirectors: generating self-signed certificate", "hostname", hostname)
+	tlsCfg, err := selfSignedTLSConfig(hostname)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate self-signed certificate: %w", err)
 	}
 	slog.WarnContext(ctx, "using self-signed TLS certificate")
+	slog.DebugContext(ctx, "redirectors: TLS config ready (self-signed)", "hostname", hostname, "num_certificates", len(tlsCfg.Certificates))
 	return tlsCfg, nil
 }
 
 // tryACME attempts to obtain a TLS certificate via ACME using certmagic.
-func tryACME(ctx context.Context, host string) (*tls.Config, error) {
+func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
+	// Recover from any panics inside certmagic (e.g. nil pointer dereferences
+	// when ACME challenge solvers are not fully initialized).
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("certmagic panicked: %v", r)
+		}
+	}()
+
+	acme := certmagic.ACMEIssuer{
+		Agreed: true,
+		Email:  os.Getenv("REDIRECTOR_ACME_EMAIL"),
+		CA:     certmagic.LetsEncryptProductionCA,
+	}
+
 	cfg := certmagic.NewDefault()
-	err := cfg.ManageSync(ctx, []string{host})
-	if err != nil {
+	acme.Logger = cfg.Logger
+	cfg.Issuers = []certmagic.Issuer{certmagic.NewACMEIssuer(cfg, acme)}
+
+	if err := cfg.ManageSync(ctx, []string{host}); err != nil {
 		return nil, fmt.Errorf("certmagic failed to manage certificate for %q: %w", host, err)
 	}
-	return cfg.TLSConfig(), nil
+
+	tlsCfg = cfg.TLSConfig()
+	if tlsCfg == nil {
+		return nil, fmt.Errorf("certmagic returned nil TLS config for %q", host)
+	}
+	return tlsCfg, nil
 }
 
 // selfSignedTLSConfig generates a self-signed TLS certificate and returns a tls.Config.
