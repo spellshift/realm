@@ -80,7 +80,7 @@ export const CREATE_LINK = gql`
   }
 `;
 
-export const useAssets = (rowLimit = 50, where?: any) => {
+export const useAssets = (rowLimit = 100, where?: any) => {
   const [page, setPage] = useState(1);
   const { sorts } = useSorts();
   const assetSort = sorts[PageNavItem.assets];
