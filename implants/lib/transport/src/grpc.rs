@@ -8,6 +8,8 @@ use tonic::GrpcMethod;
 use tonic::Request;
 
 use crate::Transport;
+#[cfg(feature = "doh")]
+use crate::dns_resolver::doh::DohProvider;
 
 use std::time::Duration;
 
@@ -38,8 +40,28 @@ impl Transport for GRPC {
 
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        // Note: DOH is not currently supported for gRPC transport due to hyper 1.x migration
-        // TODO: Add DOH support with hyper 1.x compatible DNS resolver
+        #[cfg(feature = "doh")]
+        let doh: Option<&String> = extra_map.get("doh");
+
+        // Create base HTTP connector (either DOH-enabled or system DNS)
+        #[cfg(feature = "doh")]
+        let mut http = match doh {
+            Some(provider_str) => {
+                let provider = match provider_str.to_lowercase().as_str() {
+                    "cloudflare" => DohProvider::Cloudflare,
+                    "google" => DohProvider::Google,
+                    "quad9" => DohProvider::Quad9,
+                    _ => DohProvider::System,
+                };
+                crate::dns_resolver::doh::create_doh_connector_hyper1(provider)?
+            }
+            None => {
+                // Use system DNS when DOH not explicitly requested
+                crate::dns_resolver::doh::create_doh_connector_hyper1(DohProvider::System)?
+            }
+        };
+
+        #[cfg(not(feature = "doh"))]
         let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");
