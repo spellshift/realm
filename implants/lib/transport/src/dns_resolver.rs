@@ -7,9 +7,9 @@
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
     use hickory_resolver::TokioAsyncResolver;
-    use hyper::client::connect::dns::Name;
-    use hyper::client::HttpConnector;
-    use hyper::service::Service;
+    use hyper_legacy::client::connect::dns::Name;
+    use hyper_legacy::client::HttpConnector;
+    use hyper_legacy::service::Service;
     use std::future::Future;
     use std::net::SocketAddr;
     use std::pin::Pin;
@@ -134,8 +134,8 @@ mod tests {
     #[cfg(feature = "doh")]
     #[tokio::test]
     async fn test_dns_resolution() {
-        use hyper::client::connect::dns::Name;
-        use hyper::service::Service;
+        use hyper_legacy::client::connect::dns::Name;
+        use hyper_legacy::service::Service;
         use std::str::FromStr;
 
         let mut resolver = HickoryResolverService::new(DohProvider::Cloudflare)

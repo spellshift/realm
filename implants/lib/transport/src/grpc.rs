@@ -1,14 +1,11 @@
 use anyhow::Result;
-use hyper::Uri;
+use http::Uri;
 use pb::c2::*;
 use pb::config::Config;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
 use tonic::Request;
-
-#[cfg(feature = "doh")]
-use crate::dns_resolver::doh::DohProvider;
 
 use crate::Transport;
 
@@ -41,23 +38,9 @@ impl Transport for GRPC {
 
         let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
 
-        #[cfg(feature = "doh")]
-        let doh: Option<&String> = extra_map.get("doh");
-
-        #[cfg(feature = "doh")]
-        let mut http = match doh {
-            // TODO: Add provider selection based on the provider string
-            Some(_provider) => {
-                crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
-            }
-            None => {
-                // Use system DNS when DOH not explicitly requested
-                crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
-            }
-        };
-
-        #[cfg(not(feature = "doh"))]
-        let mut http = hyper::client::HttpConnector::new();
+        // Note: DOH is not currently supported for gRPC transport due to hyper 1.x migration
+        // TODO: Add DOH support with hyper 1.x compatible DNS resolver
+        let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");
 
@@ -66,12 +49,11 @@ impl Transport for GRPC {
 
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
-                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
-                    hyper_proxy::Intercept::All,
+                let proxy = hyper_http_proxy::Proxy::new(
+                    hyper_http_proxy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
+                let proxy_connector = hyper_http_proxy::ProxyConnector::from_proxy(http, proxy)?;
 
                 endpoint
                     .rate_limit(1, Duration::from_millis(25))
