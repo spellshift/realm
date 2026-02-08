@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import CreateLinkModal from '../CreateLinkModal';
+import CreateLinkModal from '../CreateLinkModal/CreateLinkModal';
 import { render } from '../../../../test-utils';
 
 // Mock useCreateLink

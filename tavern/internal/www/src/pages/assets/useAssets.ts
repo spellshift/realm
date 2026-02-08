@@ -99,23 +99,14 @@ export const useAssets = (rowLimit = 50, where?: any) => {
   });
 
   const updateAssets = useCallback((afterCursor?: Cursor, beforeCursor?: Cursor) => {
-      const variables: any = { where, orderBy: assetSort ? [assetSort] : undefined };
-      if (afterCursor) {
-          variables.first = rowLimit;
-          variables.after = afterCursor;
-          variables.last = null;
-          variables.before = null;
-      } else if (beforeCursor) {
-          variables.last = rowLimit;
-          variables.before = beforeCursor;
-          variables.first = null;
-          variables.after = null;
-      } else {
-          variables.first = rowLimit;
-          variables.last = null;
-          variables.after = null;
-          variables.before = null;
-      }
+      const variables: any = {
+        where,
+        orderBy: assetSort ? [assetSort] : undefined,
+      "first": beforeCursor ? null : rowLimit,
+      "last": beforeCursor ? rowLimit : null,
+      "after": afterCursor ? afterCursor : null,
+      "before": beforeCursor ? beforeCursor : null,
+      };
       return refetch(variables);
   }, [rowLimit, where, refetch, assetSort]);
 
@@ -136,9 +127,4 @@ export const useAssets = (rowLimit = 50, where?: any) => {
 export const useCreateLink = () => {
   const [createLink, { data, loading, error }] = useMutation(CREATE_LINK);
   return { createLink, data, loading, error };
-};
-
-export const useDisableLink = () => {
-  const [disableLink, { data, loading, error }] = useMutation(DISABLE_LINK);
-  return { disableLink, data, loading, error };
 };

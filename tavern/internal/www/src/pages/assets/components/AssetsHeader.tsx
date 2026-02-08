@@ -11,19 +11,20 @@ const AssetsHeader: FC<AssetsHeaderProps> = ({ setOpen }) => {
     return (
         <div className="flex flex-col gap-4 justify-between">
             <div className="flex flex-row justify-between w-full items-center">
-                <Breadcrumbs pages={[{
-                                    label: "Assets",
-                                    link: "/assets"
-                                }]}
+                <Breadcrumbs
+                    pages={[{
+                        label: "Assets",
+                        link: "/assets"
+                    }]}
                 />
                 <div>
-                <Button
-                    onClick={() => setOpen(true)}
-                    buttonVariant="solid"
-                    buttonStyle={{ color: "purple", size: "md" }}
-                    leftIcon={<Upload className="-ml-0.5 mr-1.5 h-5 w-5" />}
-                >
-                    Upload Assets
+                    <Button
+                        onClick={() => setOpen(true)}
+                        buttonVariant="solid"
+                        buttonStyle={{ color: "purple", size: "md" }}
+                        leftIcon={<Upload className="-ml-0.5 mr-1.5 h-5 w-5" />}
+                    >
+                        Upload Assets
                     </Button>
                 </div>
             </div>

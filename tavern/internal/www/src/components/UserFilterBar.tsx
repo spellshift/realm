@@ -17,7 +17,7 @@ const UserFilterBar = () => {
 
     return (
         <div className="flex flex-col gap-1">
-            <label className="text-gray-700">User Filter</label>
+            <label className="text-gray-700">User</label>
             <Select
                 isDisabled={filters.isLocked || loading}
                 isLoading={loading}
@@ -28,7 +28,6 @@ const UserFilterBar = () => {
                 onChange={(option) => {
                     updateFilters({ creatorId: option ? option.value : "" });
                 }}
-                className="text-sm"
             />
         </div>
     );

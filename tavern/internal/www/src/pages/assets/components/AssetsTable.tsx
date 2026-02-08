@@ -7,6 +7,7 @@ import { ArrowDownToLine, Share, ChevronDown, ChevronRight, BookOpen, Copy, File
 import { Tooltip, useToast } from "@chakra-ui/react";
 import AssetAccordion from "./AssetAccordion";
 import { useState, useEffect } from "react";
+import { formatBytes, truncateAssetName } from "../utils";
 import UserImageAndName from "../../../components/UserImageAndName";
 import moment from "moment";
 
@@ -14,53 +15,6 @@ type AssetsTableProps = {
     assets: AssetEdge[];
     onCreateLink: (assetId: string, assetName: string) => void;
     onAssetUpdate: () => void;
-};
-
-const formatBytes = (bytes: number, decimals = 2) => {
-    if (!+bytes) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
-
-const truncateAssetName = (name: string, maxLength: number = 25): string => {
-    if (name.length <= maxLength) return name;
-
-    // Check for path structure (forward or backward slashes)
-    const hasPath = name.includes('/') || name.includes('\\');
-
-    if (hasPath) {
-        // Handle path truncation: prioritize keeping the filename
-        const separator = name.includes('/') ? '/' : '\\';
-        const parts = name.split(separator);
-        const fileName = parts.pop() || "";
-
-        // If filename itself is too long, truncate it
-        if (fileName.length > maxLength) {
-            return fileName.substring(0, maxLength - 3) + "...";
-        }
-
-        // Try to add parent directories until limit is reached
-        let result = fileName;
-        // Start from end of parts (deepest folder)
-        for (let i = parts.length - 1; i >= 0; i--) {
-            const part = parts[i];
-            const potential = part + separator + result;
-            // +3 for "..." prefix
-            if (potential.length + 3 <= maxLength) {
-                result = potential;
-            } else {
-                return "..." + separator + result;
-            }
-        }
-        // Should not reach here if length check passed, but fallback
-        return "..." + separator + result;
-    }
-
-    // Standard string truncation
-    return name.substring(0, maxLength - 3) + "...";
 };
 
 const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) => {
@@ -87,7 +41,7 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
     };
 
     const columns: ColumnDef<AssetEdge>[] = [
-         {
+        {
             id: 'expander',
             header: '',
             accessorFn: row => row.node.id,
@@ -209,7 +163,7 @@ const AssetsTable = ({ assets, onCreateLink, onAssetUpdate }: AssetsTableProps) 
             cell: ({ row }) => {
                 return (
                     <div className="flex flex-row gap-2">
-                         <Tooltip label="Download" bg="white" color="black">
+                        <Tooltip label="Download" bg="white" color="black">
                             <a href={`/assets/download/${row.original.node.name}`} download onClick={(e) => e.stopPropagation()}>
                                 <Button
                                     buttonVariant="ghost"
