@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState } from "react";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
@@ -39,7 +39,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             hasDownloadLimit: false,
             expiryMode: 0, // 0: 10m, 1: 1h, 2: Custom
             expiresAt: format(add(new Date(), { days: 1 }), "yyyy-MM-dd'T'HH:mm"),
-            path: "",
+            path: generateRandomString(12),
         },
         validationSchema: yup.object({
             path: yup.string().required("Path is required"),
@@ -92,22 +92,6 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
             }
         },
     });
-
-    useEffect(() => {
-        if (isOpen) {
-            setCreatedLink(null);
-            setError(null);
-            formik.setValues({
-                downloadLimit: 1,
-                hasDownloadLimit: false,
-                expiryMode: 0,
-                expiresAt: format(add(new Date(), { days: 1 }), "yyyy-MM-dd'T'HH:mm"),
-                path: generateRandomString(12),
-            });
-            formik.setTouched({});
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
 
     const handleCopy = () => {
         if (createdLink) {
@@ -240,7 +224,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="path" className="block text-sm font-medium text-gray-700">
                                 Path
                             </label>
                             <div className="flex rounded-md shadow-sm mt-1">
@@ -249,6 +233,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                                 </span>
                                 <input
                                     type="text"
+                                    id="path"
                                     name="path"
                                     required
                                     value={formik.values.path}

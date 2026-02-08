@@ -1,5 +1,5 @@
 import { Upload, Folder, File as FileIcon, X, CheckCircle, Loader2, Pencil, AlertTriangle } from "lucide-react";
-import { FC, useState, useRef, useEffect } from "react";
+import { FC, useState, useRef } from "react";
 import { useFormik } from "formik";
 import Modal from "../../../components/tavern-base-ui/Modal";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -222,13 +222,6 @@ const UploadAssetModal: FC<UploadAssetModalProps> = ({ isOpen, setOpen, onUpload
             }
         },
     });
-
-    useEffect(() => {
-        if (isOpen) {
-            formik.resetForm();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
