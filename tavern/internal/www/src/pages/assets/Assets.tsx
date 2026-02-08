@@ -12,8 +12,8 @@ export const Assets = () => {
     const rowLimit = 10;
     const { filters } = useFilters();
     const where: any = filters.assetName ? { nameContains: filters.assetName } : {};
-    if (filters.creatorId) {
-        where.hasCreatorWith = [{ id: filters.creatorId }];
+    if (filters.userId) {
+        where.hasCreatorWith = [{ id: filters.userId }];
     }
 
     const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit, where);

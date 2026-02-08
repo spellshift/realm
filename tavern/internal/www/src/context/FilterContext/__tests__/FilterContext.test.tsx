@@ -37,7 +37,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -50,7 +50,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -71,7 +71,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -88,7 +88,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -109,7 +109,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
       expect(result.current.filterCount).toBe(0);
     });
@@ -131,7 +131,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -184,7 +184,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(validFilters));
@@ -298,7 +298,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -327,7 +327,7 @@ describe('FilterContext', () => {
           tomeFields: [],
           tomeMultiSearch: '',
           assetName: '',
-          creatorId: '',
+          userId: '',
         });
       });
     });
@@ -347,7 +347,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       act(() => {
@@ -379,7 +379,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       act(() => {
@@ -399,7 +399,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -431,7 +431,7 @@ describe('FilterContext', () => {
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
-      creatorId: '',
+      userId: '',
     };
 
     it('should return 1 for non-empty questName', () => {
@@ -482,6 +482,24 @@ describe('FilterContext', () => {
       };
       expect(calculateFilterCount(filters, FilterFieldType.TOME_FIELDS)).toBe(1);
     });
+
+    it('should return 1 for non-empty assetName', () => {
+      const filters = { ...baseFilters, assetName: 'asset' };
+      expect(calculateFilterCount(filters, FilterFieldType.ASSET_NAME)).toBe(1);
+    });
+
+    it('should return 0 for empty assetName', () => {
+      expect(calculateFilterCount(baseFilters, FilterFieldType.ASSET_NAME)).toBe(0);
+    });
+
+    it('should return 1 for non-empty userId', () => {
+      const filters = { ...baseFilters, userId: 'user1' };
+      expect(calculateFilterCount(filters, FilterFieldType.CREATOR)).toBe(1);
+    });
+
+    it('should return 0 for empty userId', () => {
+      expect(calculateFilterCount(baseFilters, FilterFieldType.CREATOR)).toBe(0);
+    });
   });
 
   describe('calculateTotalFilterCount', () => {
@@ -493,7 +511,7 @@ describe('FilterContext', () => {
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
-      creatorId: '',
+      userId: '',
     };
 
     it('should return 0 when all filters are empty', () => {
@@ -530,7 +548,7 @@ describe('FilterContext', () => {
           { kind: 'tome', id: '1', name: 'T1' },
         ],
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       const allFields = Object.values(FilterFieldType);

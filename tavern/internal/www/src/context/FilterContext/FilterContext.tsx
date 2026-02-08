@@ -22,7 +22,7 @@ export type Filters = {
     tomeFields: Array<FilterBarOption>,
     tomeMultiSearch: string,
     assetName: string,
-    creatorId: string,
+    userId: string,
 }
 
 const defaultFilters: Filters = {
@@ -33,7 +33,7 @@ const defaultFilters: Filters = {
     tomeFields: [],
     tomeMultiSearch: "",
     assetName: "",
-    creatorId: ""
+    userId: ""
 }
 
 function isValidFilterBarOption(item: any): item is FilterBarOption {
@@ -60,7 +60,7 @@ function validateStoredFilters(data: any): Filters {
         taskOutput: (v) => typeof v === 'string',
         tomeMultiSearch: (v) => typeof v === 'string',
         assetName: (v) => typeof v === 'string',
-        creatorId: (v) => typeof v === 'string',
+        userId: (v) => typeof v === 'string',
         beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
         tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
     }
@@ -104,7 +104,7 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
         case FilterFieldType.ASSET_NAME:
             return filters.assetName !== "" ? 1 : 0;
         case FilterFieldType.CREATOR:
-            return filters.creatorId !== "" ? 1 : 0;
+            return filters.userId !== "" ? 1 : 0;
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
         case FilterFieldType.TOME_FIELDS:

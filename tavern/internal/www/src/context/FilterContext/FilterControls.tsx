@@ -8,7 +8,7 @@ import { LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { TomeFilterBar } from "../../components/TomeFilterBar";
 import { Tooltip } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
-import UserFilterBar from "../../components/UserFilterBar";
+import UserFilter from "../../components/UserFilter";
 
 function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname.startsWith('/hosts/')) {
@@ -123,7 +123,14 @@ export default function FilterControls() {
         else if (field === FilterFieldType.CREATOR) {
             return (
                 <div key={field}>
-                    <UserFilterBar />
+                    <UserFilter
+                        key={field}
+                        value={filters.userId}
+                        onChange={(newValue) => updateFilters({ 'userId': newValue })}
+                        label="User"
+                        placeholder="Filter by Creator"
+                        isDisabled={filters.isLocked}
+                    />
                 </div>
             );
         }
