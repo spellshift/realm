@@ -1,13 +1,14 @@
 import { FC, useState } from "react";
 import Modal from "../../../../components/tavern-base-ui/Modal";
 import AlertError from "../../../../components/tavern-base-ui/AlertError";
-import { useCreateLink } from "../../useAssets";
+import { CREATE_LINK } from "../../useAssets";
 import { format, add } from "date-fns";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import LinkCreated from "./LinkCreated";
 import CreateLinkForm from "./CreateLinkForm";
 import { generateRandomLinkPath } from "../../utils";
+import { useMutation } from "@apollo/client";
 
 type CreateLinkModalProps = {
     isOpen: boolean;
@@ -18,7 +19,7 @@ type CreateLinkModalProps = {
 };
 
 const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, assetName, onSuccess }) => {
-    const { createLink } = useCreateLink();
+    const [createLink] = useMutation(CREATE_LINK);
     const [createdLink, setCreatedLink] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 

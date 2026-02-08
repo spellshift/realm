@@ -123,8 +123,3 @@ export const useAssets = (rowLimit = 100, where?: any) => {
     setPage,
   };
 };
-
-export const useCreateLink = () => {
-  const [createLink, { data, loading, error }] = useMutation(CREATE_LINK);
-  return { createLink, data, loading, error };
-};
