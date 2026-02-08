@@ -5,7 +5,7 @@ import { FilterBarOption } from '../../../utils/interfacesUI';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
-const STORAGE_KEY = 'realm-filters-v1.1';
+const STORAGE_KEY = 'realm-filters-v1.2';
 
 const createWrapper = (initialEntries: string[] = ['/']) => {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -37,7 +37,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -50,7 +50,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -71,7 +71,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'search-term',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -88,7 +88,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -109,7 +109,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
       expect(result.current.filterCount).toBe(0);
     });
@@ -131,7 +131,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -184,7 +184,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(validFilters));
@@ -298,7 +298,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -327,7 +327,7 @@ describe('FilterContext', () => {
           tomeFields: [],
           tomeMultiSearch: '',
           assetName: '',
-          creatorId: '',
+          userId: '',
         });
       });
     });
@@ -347,7 +347,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       act(() => {
@@ -379,7 +379,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: 'external-search',
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       act(() => {
@@ -399,7 +399,7 @@ describe('FilterContext', () => {
         tomeFields: [],
         tomeMultiSearch: '',
         assetName: '',
-        creatorId: '',
+        userId: '',
       });
     });
 
@@ -431,7 +431,7 @@ describe('FilterContext', () => {
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
-      creatorId: '',
+      userId: '',
     };
 
     it('should return 1 for non-empty questName', () => {
@@ -493,7 +493,7 @@ describe('FilterContext', () => {
       tomeFields: [],
       tomeMultiSearch: '',
       assetName: '',
-      creatorId: '',
+      userId: '',
     };
 
     it('should return 0 when all filters are empty', () => {
@@ -530,7 +530,7 @@ describe('FilterContext', () => {
           { kind: 'tome', id: '1', name: 'T1' },
         ],
         assetName: '',
-        creatorId: '',
+        userId: '',
       };
 
       const allFields = Object.values(FilterFieldType);
