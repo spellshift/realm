@@ -1077,6 +1077,21 @@ type BuilderWhereInput struct {
 	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
 	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
 
+	// "identifier" field predicates.
+	Identifier             *string  `json:"identifier,omitempty"`
+	IdentifierNEQ          *string  `json:"identifierNEQ,omitempty"`
+	IdentifierIn           []string `json:"identifierIn,omitempty"`
+	IdentifierNotIn        []string `json:"identifierNotIn,omitempty"`
+	IdentifierGT           *string  `json:"identifierGT,omitempty"`
+	IdentifierGTE          *string  `json:"identifierGTE,omitempty"`
+	IdentifierLT           *string  `json:"identifierLT,omitempty"`
+	IdentifierLTE          *string  `json:"identifierLTE,omitempty"`
+	IdentifierContains     *string  `json:"identifierContains,omitempty"`
+	IdentifierHasPrefix    *string  `json:"identifierHasPrefix,omitempty"`
+	IdentifierHasSuffix    *string  `json:"identifierHasSuffix,omitempty"`
+	IdentifierEqualFold    *string  `json:"identifierEqualFold,omitempty"`
+	IdentifierContainsFold *string  `json:"identifierContainsFold,omitempty"`
+
 	// "upstream" field predicates.
 	Upstream             *string  `json:"upstream,omitempty"`
 	UpstreamNEQ          *string  `json:"upstreamNEQ,omitempty"`
@@ -1235,6 +1250,45 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 	}
 	if i.LastModifiedAtLTE != nil {
 		predicates = append(predicates, builder.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Identifier != nil {
+		predicates = append(predicates, builder.IdentifierEQ(*i.Identifier))
+	}
+	if i.IdentifierNEQ != nil {
+		predicates = append(predicates, builder.IdentifierNEQ(*i.IdentifierNEQ))
+	}
+	if len(i.IdentifierIn) > 0 {
+		predicates = append(predicates, builder.IdentifierIn(i.IdentifierIn...))
+	}
+	if len(i.IdentifierNotIn) > 0 {
+		predicates = append(predicates, builder.IdentifierNotIn(i.IdentifierNotIn...))
+	}
+	if i.IdentifierGT != nil {
+		predicates = append(predicates, builder.IdentifierGT(*i.IdentifierGT))
+	}
+	if i.IdentifierGTE != nil {
+		predicates = append(predicates, builder.IdentifierGTE(*i.IdentifierGTE))
+	}
+	if i.IdentifierLT != nil {
+		predicates = append(predicates, builder.IdentifierLT(*i.IdentifierLT))
+	}
+	if i.IdentifierLTE != nil {
+		predicates = append(predicates, builder.IdentifierLTE(*i.IdentifierLTE))
+	}
+	if i.IdentifierContains != nil {
+		predicates = append(predicates, builder.IdentifierContains(*i.IdentifierContains))
+	}
+	if i.IdentifierHasPrefix != nil {
+		predicates = append(predicates, builder.IdentifierHasPrefix(*i.IdentifierHasPrefix))
+	}
+	if i.IdentifierHasSuffix != nil {
+		predicates = append(predicates, builder.IdentifierHasSuffix(*i.IdentifierHasSuffix))
+	}
+	if i.IdentifierEqualFold != nil {
+		predicates = append(predicates, builder.IdentifierEqualFold(*i.IdentifierEqualFold))
+	}
+	if i.IdentifierContainsFold != nil {
+		predicates = append(predicates, builder.IdentifierContainsFold(*i.IdentifierContainsFold))
 	}
 	if i.Upstream != nil {
 		predicates = append(predicates, builder.UpstreamEQ(*i.Upstream))

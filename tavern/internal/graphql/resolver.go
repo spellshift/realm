@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/x509"
 	"fmt"
 
 	"realm.pub/tavern/internal/auth"
@@ -19,14 +21,21 @@ type RepoImporter interface {
 
 // Resolver is the resolver root.
 type Resolver struct {
-	client   *ent.Client
-	importer RepoImporter
+	client      *ent.Client
+	importer    RepoImporter
+	builderCA   *x509.Certificate
+	builderCAKey *ecdsa.PrivateKey
 }
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client, importer RepoImporter) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer RepoImporter, builderCA *x509.Certificate, builderCAKey *ecdsa.PrivateKey) graphql.ExecutableSchema {
 	cfg := generated.Config{
-		Resolvers: &Resolver{client, importer},
+		Resolvers: &Resolver{
+			client:      client,
+			importer:    importer,
+			builderCA:   builderCA,
+			builderCAKey: builderCAKey,
+		},
 	}
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
 		// Allow unauthenticated contexts to continue for open endpoints

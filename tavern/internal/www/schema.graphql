@@ -590,6 +590,10 @@ type Builder implements Node {
   """
   lastModifiedAt: Time!
   """
+  Unique identifier for the builder, embedded in its mTLS certificate CN.
+  """
+  identifier: String!
+  """
   The platforms this builder can build agents for.
   """
   supportedTargets: [HostPlatform!]!
@@ -689,6 +693,22 @@ input BuilderWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
+  """
+  identifier field predicates
+  """
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
   """
   upstream field predicates
   """

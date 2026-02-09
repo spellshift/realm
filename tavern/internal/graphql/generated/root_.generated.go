@@ -97,6 +97,7 @@ type ComplexityRoot struct {
 	Builder struct {
 		CreatedAt        func(childComplexity int) int
 		ID               func(childComplexity int) int
+		Identifier       func(childComplexity int) int
 		LastModifiedAt   func(childComplexity int) int
 		SupportedTargets func(childComplexity int) int
 		Upstream         func(childComplexity int) int
@@ -755,6 +756,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Builder.ID(childComplexity), true
+
+	case "Builder.identifier":
+		if e.complexity.Builder.Identifier == nil {
+			break
+		}
+
+		return e.complexity.Builder.Identifier(childComplexity), true
 
 	case "Builder.lastModifiedAt":
 		if e.complexity.Builder.LastModifiedAt == nil {
@@ -3445,6 +3453,10 @@ type Builder implements Node {
   """
   lastModifiedAt: Time!
   """
+  Unique identifier for the builder, embedded in its mTLS certificate CN.
+  """
+  identifier: String!
+  """
   The platforms this builder can build agents for.
   """
   supportedTargets: [HostPlatform!]!
@@ -3544,6 +3556,22 @@ input BuilderWhereInput {
   lastModifiedAtGTE: Time
   lastModifiedAtLT: Time
   lastModifiedAtLTE: Time
+  """
+  identifier field predicates
+  """
+  identifier: String
+  identifierNEQ: String
+  identifierIn: [String!]
+  identifierNotIn: [String!]
+  identifierGT: String
+  identifierGTE: String
+  identifierLT: String
+  identifierLTE: String
+  identifierContains: String
+  identifierHasPrefix: String
+  identifierHasSuffix: String
+  identifierEqualFold: String
+  identifierContainsFold: String
   """
   upstream field predicates
   """

@@ -17,6 +17,15 @@ type Builder struct {
 // Fields of the Builder.
 func (Builder) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("identifier").
+			DefaultFunc(newRandomIdentifier).
+			NotEmpty().
+			Unique().
+			Immutable().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Unique identifier for the builder, embedded in its mTLS certificate CN."),
 		field.JSON("supported_targets", []c2pb.Host_Platform{}).
 			Annotations(
 				entgql.Type("[HostPlatform!]"),

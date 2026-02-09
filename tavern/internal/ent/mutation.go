@@ -2057,6 +2057,7 @@ type BuilderMutation struct {
 	id                      *int
 	created_at              *time.Time
 	last_modified_at        *time.Time
+	identifier              *string
 	supported_targets       *[]c2pb.Host_Platform
 	appendsupported_targets []c2pb.Host_Platform
 	upstream                *string
@@ -2236,6 +2237,42 @@ func (m *BuilderMutation) ResetLastModifiedAt() {
 	m.last_modified_at = nil
 }
 
+// SetIdentifier sets the "identifier" field.
+func (m *BuilderMutation) SetIdentifier(s string) {
+	m.identifier = &s
+}
+
+// Identifier returns the value of the "identifier" field in the mutation.
+func (m *BuilderMutation) Identifier() (r string, exists bool) {
+	v := m.identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentifier returns the old "identifier" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentifier: %w", err)
+	}
+	return oldValue.Identifier, nil
+}
+
+// ResetIdentifier resets all changes to the "identifier" field.
+func (m *BuilderMutation) ResetIdentifier() {
+	m.identifier = nil
+}
+
 // SetSupportedTargets sets the "supported_targets" field.
 func (m *BuilderMutation) SetSupportedTargets(cp []c2pb.Host_Platform) {
 	m.supported_targets = &cp
@@ -2357,12 +2394,15 @@ func (m *BuilderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.created_at != nil {
 		fields = append(fields, builder.FieldCreatedAt)
 	}
 	if m.last_modified_at != nil {
 		fields = append(fields, builder.FieldLastModifiedAt)
+	}
+	if m.identifier != nil {
+		fields = append(fields, builder.FieldIdentifier)
 	}
 	if m.supported_targets != nil {
 		fields = append(fields, builder.FieldSupportedTargets)
@@ -2382,6 +2422,8 @@ func (m *BuilderMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case builder.FieldLastModifiedAt:
 		return m.LastModifiedAt()
+	case builder.FieldIdentifier:
+		return m.Identifier()
 	case builder.FieldSupportedTargets:
 		return m.SupportedTargets()
 	case builder.FieldUpstream:
@@ -2399,6 +2441,8 @@ func (m *BuilderMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCreatedAt(ctx)
 	case builder.FieldLastModifiedAt:
 		return m.OldLastModifiedAt(ctx)
+	case builder.FieldIdentifier:
+		return m.OldIdentifier(ctx)
 	case builder.FieldSupportedTargets:
 		return m.OldSupportedTargets(ctx)
 	case builder.FieldUpstream:
@@ -2425,6 +2469,13 @@ func (m *BuilderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastModifiedAt(v)
+		return nil
+	case builder.FieldIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentifier(v)
 		return nil
 	case builder.FieldSupportedTargets:
 		v, ok := value.([]c2pb.Host_Platform)
@@ -2494,6 +2545,9 @@ func (m *BuilderMutation) ResetField(name string) error {
 		return nil
 	case builder.FieldLastModifiedAt:
 		m.ResetLastModifiedAt()
+		return nil
+	case builder.FieldIdentifier:
+		m.ResetIdentifier()
 		return nil
 	case builder.FieldSupportedTargets:
 		m.ResetSupportedTargets()

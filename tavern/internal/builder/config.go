@@ -9,6 +9,7 @@ import (
 
 // Config represents the YAML configuration for a builder.
 type Config struct {
+	ID               string   `yaml:"id"`
 	SupportedTargets []string `yaml:"supported_targets"`
 	MTLS             string   `yaml:"mtls"`
 	Upstream         string   `yaml:"upstream"`
@@ -38,6 +39,9 @@ func ParseConfigBytes(data []byte) (*Config, error) {
 }
 
 func (cfg *Config) validate() error {
+	if cfg.ID == "" {
+		return fmt.Errorf("config must specify a builder id")
+	}
 	if len(cfg.SupportedTargets) == 0 {
 		return fmt.Errorf("config must specify at least one supported_target")
 	}

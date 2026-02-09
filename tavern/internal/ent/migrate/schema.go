@@ -59,6 +59,7 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString},
 	}

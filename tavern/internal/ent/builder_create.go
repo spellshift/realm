@@ -51,6 +51,20 @@ func (bc *BuilderCreate) SetNillableLastModifiedAt(t *time.Time) *BuilderCreate 
 	return bc
 }
 
+// SetIdentifier sets the "identifier" field.
+func (bc *BuilderCreate) SetIdentifier(s string) *BuilderCreate {
+	bc.mutation.SetIdentifier(s)
+	return bc
+}
+
+// SetNillableIdentifier sets the "identifier" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillableIdentifier(s *string) *BuilderCreate {
+	if s != nil {
+		bc.SetIdentifier(*s)
+	}
+	return bc
+}
+
 // SetSupportedTargets sets the "supported_targets" field.
 func (bc *BuilderCreate) SetSupportedTargets(cp []c2pb.Host_Platform) *BuilderCreate {
 	bc.mutation.SetSupportedTargets(cp)
@@ -106,6 +120,10 @@ func (bc *BuilderCreate) defaults() {
 		v := builder.DefaultLastModifiedAt()
 		bc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := bc.mutation.Identifier(); !ok {
+		v := builder.DefaultIdentifier()
+		bc.mutation.SetIdentifier(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -115,6 +133,14 @@ func (bc *BuilderCreate) check() error {
 	}
 	if _, ok := bc.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Builder.last_modified_at"`)}
+	}
+	if _, ok := bc.mutation.Identifier(); !ok {
+		return &ValidationError{Name: "identifier", err: errors.New(`ent: missing required field "Builder.identifier"`)}
+	}
+	if v, ok := bc.mutation.Identifier(); ok {
+		if err := builder.IdentifierValidator(v); err != nil {
+			return &ValidationError{Name: "identifier", err: fmt.Errorf(`ent: validator failed for field "Builder.identifier": %w`, err)}
+		}
 	}
 	if _, ok := bc.mutation.SupportedTargets(); !ok {
 		return &ValidationError{Name: "supported_targets", err: errors.New(`ent: missing required field "Builder.supported_targets"`)}
@@ -156,6 +182,10 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.LastModifiedAt(); ok {
 		_spec.SetField(builder.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
+	}
+	if value, ok := bc.mutation.Identifier(); ok {
+		_spec.SetField(builder.FieldIdentifier, field.TypeString, value)
+		_node.Identifier = value
 	}
 	if value, ok := bc.mutation.SupportedTargets(); ok {
 		_spec.SetField(builder.FieldSupportedTargets, field.TypeJSON, value)
@@ -266,6 +296,9 @@ func (u *BuilderUpsertOne) UpdateNewValues() *BuilderUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
 			s.SetIgnore(builder.FieldCreatedAt)
+		}
+		if _, exists := u.create.mutation.Identifier(); exists {
+			s.SetIgnore(builder.FieldIdentifier)
 		}
 	}))
 	return u
@@ -518,6 +551,9 @@ func (u *BuilderUpsertBulk) UpdateNewValues() *BuilderUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.CreatedAt(); exists {
 				s.SetIgnore(builder.FieldCreatedAt)
+			}
+			if _, exists := b.mutation.Identifier(); exists {
+				s.SetIgnore(builder.FieldIdentifier)
 			}
 		}
 	}))

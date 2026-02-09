@@ -685,6 +685,11 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 				selectedFields = append(selectedFields, builder.FieldLastModifiedAt)
 				fieldSeen[builder.FieldLastModifiedAt] = struct{}{}
 			}
+		case "identifier":
+			if _, ok := fieldSeen[builder.FieldIdentifier]; !ok {
+				selectedFields = append(selectedFields, builder.FieldIdentifier)
+				fieldSeen[builder.FieldIdentifier] = struct{}{}
+			}
 		case "supportedTargets":
 			if _, ok := fieldSeen[builder.FieldSupportedTargets]; !ok {
 				selectedFields = append(selectedFields, builder.FieldSupportedTargets)

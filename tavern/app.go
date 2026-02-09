@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"crypto/ecdh"
+	"crypto/ecdsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -240,6 +242,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Initialize Git Tome Importer
 	git := cfg.NewGitImporter(client)
 
+	// Initialize Builder CA
+	builderCACert, builderCAKey, err := getBuilderCA()
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize builder CA: %w", err)
+	}
+
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
 		createTestData(ctx, client)
@@ -299,7 +308,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git),
+			Handler:          newGraphQLHandler(client, git, builderCACert, builderCAKey),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -311,7 +320,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: newPortalGRPCHandler(client, portalMux),
 		},
 		"/builder.Builder/": tavernhttp.Endpoint{
-			Handler:              newBuilderGRPCHandler(client),
+			Handler:              newBuilderGRPCHandler(client, builderCACert),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -395,8 +404,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, builderCACert *x509.Certificate, builderCAKey *ecdsa.PrivateKey) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, builderCACert, builderCAKey))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// Configure Raw Query Logging
@@ -512,6 +521,16 @@ func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
 	return pubKey, privKey, nil
 }
 
+// getBuilderCA returns the Builder CA certificate and private key for signing builder certificates.
+func getBuilderCA() (caCert *x509.Certificate, caKey *ecdsa.PrivateKey, err error) {
+	secretsManager, err := newSecretsManager()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return builder.GetOrCreateCA(secretsManager)
+}
+
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	portalSrv := portals.New(graph, portalMux)
 	grpcSrv := grpc.NewServer(
@@ -534,10 +553,13 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	})
 }
 
-func newBuilderGRPCHandler(client *ent.Client) http.Handler {
+func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate) http.Handler {
 	builderSrv := builder.New(client)
 	grpcSrv := grpc.NewServer(
-		grpc.UnaryInterceptor(grpcWithUnaryMetrics),
+		grpc.ChainUnaryInterceptor(
+			builder.NewAuthInterceptor(caCert, client),
+			grpcWithUnaryMetrics,
+		),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)

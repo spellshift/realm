@@ -109,6 +109,12 @@ func init() {
 	builder.DefaultLastModifiedAt = builderDescLastModifiedAt.Default.(func() time.Time)
 	// builder.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	builder.UpdateDefaultLastModifiedAt = builderDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// builderDescIdentifier is the schema descriptor for identifier field.
+	builderDescIdentifier := builderFields[0].Descriptor()
+	// builder.DefaultIdentifier holds the default value on creation for the identifier field.
+	builder.DefaultIdentifier = builderDescIdentifier.Default.(func() string)
+	// builder.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	builder.IdentifierValidator = builderDescIdentifier.Validators[0].(func(string) error)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0

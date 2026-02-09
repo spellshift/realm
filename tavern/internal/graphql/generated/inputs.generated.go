@@ -58,6 +58,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_createdAt(ctx, field)
 			case "lastModifiedAt":
 				return ec.fieldContext_Builder_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Builder_identifier(ctx, field)
 			case "supportedTargets":
 				return ec.fieldContext_Builder_supportedTargets(ctx, field)
 			case "upstream":

@@ -64,6 +64,11 @@ func LastModifiedAt(v time.Time) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
+// Identifier applies equality check predicate on the "identifier" field. It's identical to IdentifierEQ.
+func Identifier(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldIdentifier, v))
+}
+
 // Upstream applies equality check predicate on the "upstream" field. It's identical to UpstreamEQ.
 func Upstream(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldUpstream, v))
@@ -147,6 +152,71 @@ func LastModifiedAtLT(v time.Time) predicate.Builder {
 // LastModifiedAtLTE applies the LTE predicate on the "last_modified_at" field.
 func LastModifiedAtLTE(v time.Time) predicate.Builder {
 	return predicate.Builder(sql.FieldLTE(FieldLastModifiedAt, v))
+}
+
+// IdentifierEQ applies the EQ predicate on the "identifier" field.
+func IdentifierEQ(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldIdentifier, v))
+}
+
+// IdentifierNEQ applies the NEQ predicate on the "identifier" field.
+func IdentifierNEQ(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldIdentifier, v))
+}
+
+// IdentifierIn applies the In predicate on the "identifier" field.
+func IdentifierIn(vs ...string) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldIdentifier, vs...))
+}
+
+// IdentifierNotIn applies the NotIn predicate on the "identifier" field.
+func IdentifierNotIn(vs ...string) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldIdentifier, vs...))
+}
+
+// IdentifierGT applies the GT predicate on the "identifier" field.
+func IdentifierGT(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldGT(FieldIdentifier, v))
+}
+
+// IdentifierGTE applies the GTE predicate on the "identifier" field.
+func IdentifierGTE(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldGTE(FieldIdentifier, v))
+}
+
+// IdentifierLT applies the LT predicate on the "identifier" field.
+func IdentifierLT(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldLT(FieldIdentifier, v))
+}
+
+// IdentifierLTE applies the LTE predicate on the "identifier" field.
+func IdentifierLTE(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldLTE(FieldIdentifier, v))
+}
+
+// IdentifierContains applies the Contains predicate on the "identifier" field.
+func IdentifierContains(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldContains(FieldIdentifier, v))
+}
+
+// IdentifierHasPrefix applies the HasPrefix predicate on the "identifier" field.
+func IdentifierHasPrefix(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldHasPrefix(FieldIdentifier, v))
+}
+
+// IdentifierHasSuffix applies the HasSuffix predicate on the "identifier" field.
+func IdentifierHasSuffix(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldHasSuffix(FieldIdentifier, v))
+}
+
+// IdentifierEqualFold applies the EqualFold predicate on the "identifier" field.
+func IdentifierEqualFold(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldEqualFold(FieldIdentifier, v))
+}
+
+// IdentifierContainsFold applies the ContainsFold predicate on the "identifier" field.
+func IdentifierContainsFold(v string) predicate.Builder {
+	return predicate.Builder(sql.FieldContainsFold(FieldIdentifier, v))
 }
 
 // UpstreamEQ applies the EQ predicate on the "upstream" field.

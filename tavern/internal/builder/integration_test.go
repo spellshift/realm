@@ -11,7 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 
 	"realm.pub/tavern/internal/builder"
@@ -19,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/tomes"
 )
 
@@ -29,17 +32,26 @@ func TestBuilderE2E(t *testing.T) {
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
 
-	// 2. Setup GraphQL server with authentication bypass
+	// 2. Initialize Builder CA
+	secretsDir := t.TempDir()
+	secretsManager, err := secrets.NewDebugFileSecrets(secretsDir + "/secrets.yaml")
+	require.NoError(t, err)
+	caCert, caKey, err := builder.GetOrCreateCA(secretsManager)
+	require.NoError(t, err)
+	require.NotNil(t, caCert)
+	require.NotNil(t, caKey)
+
+	// 3. Setup GraphQL server with authentication bypass and Builder CA
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caKey)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
 	gqlClient := client.New(srv, client.Path("/graphql"))
 
-	// 3. Register a builder via GraphQL mutation
+	// 4. Register a builder via GraphQL mutation
 	var registerResp struct {
 		RegisterBuilder struct {
 			Builder struct {
@@ -50,7 +62,7 @@ func TestBuilderE2E(t *testing.T) {
 		}
 	}
 
-	err := gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
+	err = gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
 		registerBuilder(input: $input) {
 			builder { id }
 			mtlsCert
@@ -65,22 +77,28 @@ func TestBuilderE2E(t *testing.T) {
 	require.NotEmpty(t, registerResp.RegisterBuilder.MtlsCert)
 	require.NotEmpty(t, registerResp.RegisterBuilder.Config)
 
-	// 4. Parse the returned YAML config
+	// 5. Parse the returned YAML config
 	cfg, err := builder.ParseConfigBytes([]byte(registerResp.RegisterBuilder.Config))
 	require.NoError(t, err)
 	assert.Contains(t, cfg.SupportedTargets, "linux")
 	assert.Contains(t, cfg.SupportedTargets, "macos")
 	assert.NotEmpty(t, cfg.MTLS)
+	assert.NotEmpty(t, cfg.ID)
 	assert.Equal(t, "https://tavern.example.com:443", cfg.Upstream)
 
-	// 5. Verify builder exists in DB
+	// 6. Verify builder exists in DB
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
+	assert.Equal(t, cfg.ID, builders[0].Identifier)
 
-	// 6. Setup builder gRPC server via bufconn
+	// 7. Setup builder gRPC server via bufconn with mTLS auth interceptor
 	lis := bufconn.Listen(1024 * 1024)
-	grpcSrv := grpc.NewServer()
+	grpcSrv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			builder.NewAuthInterceptor(caCert, graph),
+		),
+	)
 	builderSrv := builder.New(graph)
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 
@@ -91,19 +109,41 @@ func TestBuilderE2E(t *testing.T) {
 	}()
 	defer grpcSrv.Stop()
 
-	// 7. Connect gRPC client via bufconn
-	conn, err := grpc.DialContext(ctx, "bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-			return lis.Dial()
-		}),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	require.NoError(t, err)
-	defer conn.Close()
+	bufDialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
+	}
 
-	// 8. Call Ping on the builder gRPC service
-	builderClient := builderpb.NewBuilderClient(conn)
-	pingResp, err := builderClient.Ping(ctx, &builderpb.PingRequest{})
-	require.NoError(t, err)
-	require.NotNil(t, pingResp)
+	// 8. Test: Unauthenticated request should be rejected
+	t.Run("unauthenticated request rejected", func(t *testing.T) {
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		unauthClient := builderpb.NewBuilderClient(conn)
+		_, err = unauthClient.Ping(ctx, &builderpb.PingRequest{})
+		require.Error(t, err)
+		assert.Equal(t, codes.Unauthenticated, status.Code(err))
+	})
+
+	// 9. Test: Authenticated request should succeed
+	t.Run("authenticated request succeeds", func(t *testing.T) {
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		authClient := builderpb.NewBuilderClient(conn)
+		pingResp, err := authClient.Ping(ctx, &builderpb.PingRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, pingResp)
+	})
 }

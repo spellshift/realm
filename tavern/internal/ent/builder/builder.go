@@ -17,6 +17,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldLastModifiedAt holds the string denoting the last_modified_at field in the database.
 	FieldLastModifiedAt = "last_modified_at"
+	// FieldIdentifier holds the string denoting the identifier field in the database.
+	FieldIdentifier = "identifier"
 	// FieldSupportedTargets holds the string denoting the supported_targets field in the database.
 	FieldSupportedTargets = "supported_targets"
 	// FieldUpstream holds the string denoting the upstream field in the database.
@@ -30,6 +32,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldLastModifiedAt,
+	FieldIdentifier,
 	FieldSupportedTargets,
 	FieldUpstream,
 }
@@ -51,6 +54,10 @@ var (
 	DefaultLastModifiedAt func() time.Time
 	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
+	// DefaultIdentifier holds the default value on creation for the "identifier" field.
+	DefaultIdentifier func() string
+	// IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
+	IdentifierValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Builder queries.
@@ -69,6 +76,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByLastModifiedAt orders the results by the last_modified_at field.
 func ByLastModifiedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastModifiedAt, opts...).ToFunc()
+}
+
+// ByIdentifier orders the results by the identifier field.
+func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIdentifier, opts...).ToFunc()
 }
 
 // ByUpstream orders the results by the upstream field.

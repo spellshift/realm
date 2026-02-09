@@ -23,6 +23,8 @@ type Builder struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
+	// Unique identifier for the builder, embedded in its mTLS certificate CN.
+	Identifier string `json:"identifier,omitempty"`
 	// The platforms this builder can build agents for.
 	SupportedTargets []c2pb.Host_Platform `json:"supported_targets,omitempty"`
 	// The server address that the builder should connect to.
@@ -39,7 +41,7 @@ func (*Builder) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case builder.FieldID:
 			values[i] = new(sql.NullInt64)
-		case builder.FieldUpstream:
+		case builder.FieldIdentifier, builder.FieldUpstream:
 			values[i] = new(sql.NullString)
 		case builder.FieldCreatedAt, builder.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -75,6 +77,12 @@ func (b *Builder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				b.LastModifiedAt = value.Time
+			}
+		case builder.FieldIdentifier:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field identifier", values[i])
+			} else if value.Valid {
+				b.Identifier = value.String
 			}
 		case builder.FieldSupportedTargets:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -131,6 +139,9 @@ func (b *Builder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_modified_at=")
 	builder.WriteString(b.LastModifiedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("identifier=")
+	builder.WriteString(b.Identifier)
 	builder.WriteString(", ")
 	builder.WriteString("supported_targets=")
 	builder.WriteString(fmt.Sprintf("%v", b.SupportedTargets))

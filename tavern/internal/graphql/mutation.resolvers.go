@@ -7,20 +7,14 @@ package graphql
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
-	"encoding/pem"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -290,66 +284,38 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 
 // RegisterBuilder is the resolver for the registerBuilder field.
 func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
-	// 1. Create builder ent
-	builder, err := r.client.Builder.Create().SetInput(input).Save(ctx)
+	// 1. Create builder ent (identifier is auto-generated)
+	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create builder: %w", err)
 	}
 
-	// 2. Generate self-signed X.509 certificate for mTLS
-	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	// 2. Generate CA-signed X.509 certificate for mTLS
+	certPEM, keyPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, b.Identifier)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate private key: %w", err)
+		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
 	}
-
-	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate serial number: %w", err)
-	}
-
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			CommonName:   fmt.Sprintf("builder-%d", builder.ID),
-			Organization: []string{"Realm"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		BasicConstraintsValid: true,
-	}
-
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privKey.PublicKey, privKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create certificate: %w", err)
-	}
-
-	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	keyDER, err := x509.MarshalECPrivateKey(privKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal private key: %w", err)
-	}
-	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 
 	// Combine cert and key into a single PEM bundle, base64-encode it
 	combinedPEM := append(certPEM, keyPEM...)
 	mtlsCert := base64.StdEncoding.EncodeToString(combinedPEM)
 
 	// 3. Build YAML config
-	targetNames := make([]string, len(builder.SupportedTargets))
-	for i, t := range builder.SupportedTargets {
+	targetNames := make([]string, len(b.SupportedTargets))
+	for i, t := range b.SupportedTargets {
 		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
 	}
 
 	configData := struct {
+		ID               string   `yaml:"id"`
 		SupportedTargets []string `yaml:"supported_targets"`
 		MTLS             string   `yaml:"mtls"`
 		Upstream         string   `yaml:"upstream"`
 	}{
+		ID:               b.Identifier,
 		SupportedTargets: targetNames,
 		MTLS:             mtlsCert,
-		Upstream:         builder.Upstream,
+		Upstream:         b.Upstream,
 	}
 
 	configBytes, err := yaml.Marshal(configData)
@@ -358,7 +324,7 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 	}
 
 	return &models.RegisterBuilderOutput{
-		Builder:  builder,
+		Builder:  b,
 		MtlsCert: mtlsCert,
 		Config:   string(configBytes),
 	}, nil
