@@ -21,7 +21,7 @@ import (
 func TestFetchAsset(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	client, graph, close := c2test.New(t)
+	client, graph, close, token := c2test.New(t)
 	defer close()
 
 	// Test Cases
@@ -66,6 +66,13 @@ func TestFetchAsset(t *testing.T) {
 			SetName(tc.fileName).
 			SetContent(data).
 			SaveX(ctx)
+
+		// Ensure request contains JWT
+		if tc.req.Context == nil {
+			tc.req.Context = &c2pb.TaskContext{Jwt: token}
+		} else {
+			tc.req.Context.Jwt = token
+		}
 
 		// Send Request
 		fileClient, err := client.FetchAsset(ctx, tc.req)

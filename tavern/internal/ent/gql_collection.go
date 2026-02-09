@@ -230,6 +230,17 @@ func (a *AssetQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			a.WithNamedLinks(alias, func(wq *LinkQuery) {
 				*wq = *query
 			})
+
+		case "creator":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			a.withCreator = query
 		case "createdAt":
 			if _, ok := fieldSeen[asset.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, asset.FieldCreatedAt)
@@ -1725,6 +1736,17 @@ func (l *LinkQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				return err
 			}
 			l.withAsset = query
+
+		case "creator":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: l.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			l.withCreator = query
 		case "createdAt":
 			if _, ok := fieldSeen[link.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, link.FieldCreatedAt)
@@ -1745,10 +1767,15 @@ func (l *LinkQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				selectedFields = append(selectedFields, link.FieldExpiresAt)
 				fieldSeen[link.FieldExpiresAt] = struct{}{}
 			}
-		case "downloadsRemaining":
-			if _, ok := fieldSeen[link.FieldDownloadsRemaining]; !ok {
-				selectedFields = append(selectedFields, link.FieldDownloadsRemaining)
-				fieldSeen[link.FieldDownloadsRemaining] = struct{}{}
+		case "downloadLimit":
+			if _, ok := fieldSeen[link.FieldDownloadLimit]; !ok {
+				selectedFields = append(selectedFields, link.FieldDownloadLimit)
+				fieldSeen[link.FieldDownloadLimit] = struct{}{}
+			}
+		case "downloads":
+			if _, ok := fieldSeen[link.FieldDownloads]; !ok {
+				selectedFields = append(selectedFields, link.FieldDownloads)
+				fieldSeen[link.FieldDownloads] = struct{}{}
 			}
 		case "id":
 		case "__typename":
