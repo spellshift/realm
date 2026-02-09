@@ -2,13 +2,11 @@ import Button from "../../../../components/tavern-base-ui/button/Button";
 import { Clipboard } from "lucide-react";
 
 interface LinkCreatedProps {
-    createdLink: string | null;
-    setOpen: (arg: boolean) => void;
-    handleCopy: () => void;
-    setCreatedLink: (link: string | null) => void;
+    createdLink: string;
+    close: () => void;
 }
 
-const LinkCreated = ({ createdLink, setOpen, handleCopy, setCreatedLink }: LinkCreatedProps) => (
+const LinkCreated = ({ createdLink, close }: LinkCreatedProps) => (
     <div className="flex flex-col gap-4">
         <h4 className="font-medium text-gray-900">Link Created</h4>
         <div className="flex flex-col gap-2">
@@ -18,10 +16,7 @@ const LinkCreated = ({ createdLink, setOpen, handleCopy, setCreatedLink }: LinkC
         </div>
         <div className="flex justify-end gap-2 mt-2">
             <Button
-                onClick={() => {
-                    setCreatedLink(null);
-                    setOpen(false);
-                }}
+                onClick={close}
                 buttonVariant="outline"
                 buttonStyle={{ color: "gray", size: "md" }}
             >
@@ -29,13 +24,12 @@ const LinkCreated = ({ createdLink, setOpen, handleCopy, setCreatedLink }: LinkC
             </Button>
             <Button
                 onClick={() => {
-                    handleCopy();
-                    setCreatedLink(null);
-                    setOpen(false);
+                    navigator.clipboard.writeText(createdLink);
+                    close();
                 }}
                 buttonVariant="solid"
                 buttonStyle={{ color: "purple", size: "md" }}
-                leftIcon={<Clipboard className="h-5 w-4" />}
+                leftIcon={<Clipboard className="h-4 w-4" />}
             >
                 Copy & Close
             </Button>

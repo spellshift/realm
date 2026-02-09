@@ -12,7 +12,7 @@ export enum FilterFieldType {
     USER = "user"
 }
 
-const STORAGE_KEY = 'realm-filters-v1.2'
+const STORAGE_KEY = 'realm-filters-v1.1'
 
 export type Filters = {
     isLocked: boolean,

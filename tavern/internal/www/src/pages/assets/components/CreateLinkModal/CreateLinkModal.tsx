@@ -83,12 +83,6 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
         },
     });
 
-    const handleCopy = () => {
-        if (createdLink) {
-            navigator.clipboard.writeText(createdLink);
-        }
-    };
-
     return (
         <Modal setOpen={setOpen} isOpen={isOpen} size="md">
             <div className="flex flex-col gap-6">
@@ -104,7 +98,7 @@ const CreateLinkModal: FC<CreateLinkModalProps> = ({ isOpen, setOpen, assetId, a
                 {error && <AlertError label={error} details={""} />}
 
                 {createdLink
-                    ? <LinkCreated createdLink={createdLink} setOpen={setOpen} handleCopy={handleCopy} setCreatedLink={setCreatedLink} />
+                    ? <LinkCreated createdLink={createdLink} close={() => setOpen(false)} />
                     : <CreateLinkForm formik={formik} setOpen={setOpen} />}
             </div>
         </Modal>
