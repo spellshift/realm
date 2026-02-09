@@ -206,11 +206,7 @@ impl FileLibrary for FileLibraryFake {
         let parts = Self::normalize_path(&path);
         let mut files = Vec::new();
 
-        fn traverse_recursive(
-            entry: &FsEntry,
-            current_path: String,
-            files: &mut Vec<String>,
-        ) {
+        fn traverse_recursive(entry: &FsEntry, current_path: String, files: &mut Vec<String>) {
             match entry {
                 FsEntry::File(_) => {
                     files.push(current_path);
@@ -250,7 +246,7 @@ impl FileLibrary for FileLibraryFake {
 
             traverse_recursive(entry, base, &mut files);
         } else {
-             return Err("Path not found".to_string());
+            return Err("Path not found".to_string());
         }
 
         // Since we don't have timestamps, we just return the first `limit`
