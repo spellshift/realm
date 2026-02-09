@@ -85,7 +85,7 @@ pub mod tests {
         }
         fn report_file(
             &self,
-            _req: c2::ReportFileRequest,
+            _req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send>,
         ) -> Result<c2::ReportFileResponse, String> {
             Ok(c2::ReportFileResponse::default())
         }

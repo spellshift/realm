@@ -189,13 +189,14 @@ async fn test_imix_agent_report_file() {
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
-        let _ = agent_clone.report_file(c2::ReportFileRequest {
+        let req = c2::ReportFileRequest {
             chunk: None,
             context: Some(c2::TaskContext {
                 task_id: 1,
                 jwt: "test jwt".to_string(),
             }),
-        });
+        };
+        let _ = agent_clone.report_file(Box::new(std::iter::once(req)));
     })
     .join()
     .unwrap();

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::time::Duration;
-use tokio::net::{TcpListener};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
 
 #[tokio::test]
 async fn test_proxy_cold_start() -> Result<()> {
@@ -16,7 +16,9 @@ async fn test_proxy_cold_start() -> Result<()> {
                 let mut buf = [0; 1024];
                 loop {
                     let n = socket.read(&mut buf).await.unwrap();
-                    if n == 0 { return; }
+                    if n == 0 {
+                        return;
+                    }
                     socket.write_all(&buf[0..n]).await.unwrap();
                 }
             });
@@ -27,7 +29,7 @@ async fn test_proxy_cold_start() -> Result<()> {
 
     // We import from crate::portal since we are inside the crate
     use crate::portal::tcp::handle_tcp;
-    use pb::portal::{Mote, mote::Payload, TcpPayload};
+    use pb::portal::{Mote, TcpPayload, mote::Payload};
     use portal_stream::PayloadSequencer;
     use tokio::sync::mpsc;
 

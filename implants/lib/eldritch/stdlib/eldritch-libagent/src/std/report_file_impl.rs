@@ -18,5 +18,7 @@ pub fn report_file(
         context: Some(task_context.into()),
         chunk: Some(file.0),
     };
-    agent.report_file(req).map(|_| ())
+    agent
+        .report_file(alloc::boxed::Box::new(core::iter::once(req)))
+        .map(|_| ())
 }
