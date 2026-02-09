@@ -5,7 +5,7 @@ import { FilterBarOption } from '../../../utils/interfacesUI';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
-const STORAGE_KEY = 'realm-filters-v1.2';
+const STORAGE_KEY = 'realm-filters-v1.1';
 
 const createWrapper = (initialEntries: string[] = ['/']) => {
   return function Wrapper({ children }: { children: React.ReactNode }) {
