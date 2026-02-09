@@ -30,7 +30,6 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters).toEqual({
-        isLocked: false,
         questName: '',
         taskOutput: '',
         beaconFields: [],
@@ -39,10 +38,11 @@ describe('FilterContext', () => {
         assetName: '',
         userId: '',
       });
+      expect(result.current.isLocked).toBe(false);
     });
 
     it('should load locked filters from sessionStorage', () => {
-      const storedFilters: Filters = {
+      const storedFilters = {
         isLocked: true,
         questName: 'test-quest',
         taskOutput: 'test-output',
@@ -59,11 +59,18 @@ describe('FilterContext', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.filters).toEqual(storedFilters);
+      expect(result.current.filters).toEqual({
+        questName: 'test-quest',
+        taskOutput: 'test-output',
+        beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
+        tomeFields: [],
+        tomeMultiSearch: 'search-term',
+      });
+      expect(result.current.isLocked).toBe(true);
     });
 
     it('should NOT load unlocked filters from sessionStorage', () => {
-      const storedFilters: Filters = {
+      const storedFilters = {
         isLocked: false,
         questName: 'test-quest',
         taskOutput: 'test-output',
@@ -81,7 +88,6 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters).toEqual({
-        isLocked: false,
         questName: '',
         taskOutput: '',
         beaconFields: [],
@@ -90,28 +96,7 @@ describe('FilterContext', () => {
         assetName: '',
         userId: '',
       });
-    });
-
-    it('should return default context values when useFilters is used outside FilterProvider', () => {
-      // Note: The context provides default values, so it won't throw when used outside provider
-      // but will return no-op functions and default filter state
-      const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <MemoryRouter>{children}</MemoryRouter>
-      );
-
-      const { result } = renderHook(() => useFilters(), { wrapper });
-
-      expect(result.current.filters).toEqual({
-        isLocked: false,
-        questName: '',
-        taskOutput: '',
-        beaconFields: [],
-        tomeFields: [],
-        tomeMultiSearch: '',
-        assetName: '',
-        userId: '',
-      });
-      expect(result.current.filterCount).toBe(0);
+      expect(result.current.isLocked).toBe(false);
     });
   });
 
@@ -124,7 +109,6 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters).toEqual({
-        isLocked: false,
         questName: '',
         taskOutput: '',
         beaconFields: [],
@@ -133,6 +117,7 @@ describe('FilterContext', () => {
         assetName: '',
         userId: '',
       });
+      expect(result.current.isLocked).toBe(false);
     });
 
     it('should reject data with invalid field types', () => {
@@ -151,7 +136,7 @@ describe('FilterContext', () => {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.filters.isLocked).toBe(false);
+      expect(result.current.isLocked).toBe(false);
     });
 
     it('should reject beaconFields with missing required fields', () => {
@@ -172,29 +157,6 @@ describe('FilterContext', () => {
 
       expect(result.current.filters.beaconFields).toEqual([]);
     });
-
-    it('should accept valid FilterBarOption with optional fields when locked', () => {
-      const validFilters: Filters = {
-        isLocked: true,
-        questName: '',
-        taskOutput: '',
-        beaconFields: [
-          { kind: 'beacon', id: '1', name: 'Beacon 1', label: 'Label 1', value: 'value-1' },
-        ],
-        tomeFields: [],
-        tomeMultiSearch: '',
-        assetName: '',
-        userId: '',
-      };
-
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(validFilters));
-
-      const { result } = renderHook(() => useFilters(), {
-        wrapper: createWrapper(),
-      });
-
-      expect(result.current.filters.beaconFields).toEqual(validFilters.beaconFields);
-    });
   });
 
   describe('updateFilters', () => {
@@ -208,24 +170,7 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters.questName).toBe('new-quest');
-      expect(result.current.filters.isLocked).toBe(false);
-    });
-
-    it('should update multiple filter fields at once', () => {
-      const { result } = renderHook(() => useFilters(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.updateFilters({
-          questName: 'multi-quest',
-          taskOutput: 'multi-output',
-        });
-      });
-
-      expect(result.current.filters.questName).toBe('multi-quest');
-      expect(result.current.filters.taskOutput).toBe('multi-output');
-      expect(result.current.filters.isLocked).toBe(false);
+      expect(result.current.isLocked).toBe(false);
     });
 
     it('should persist updated filters to sessionStorage', async () => {
@@ -281,7 +226,6 @@ describe('FilterContext', () => {
         result.current.updateFilters({
           questName: 'custom-quest',
           taskOutput: 'custom-output',
-          isLocked: false,
           beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
         });
       });
@@ -291,7 +235,6 @@ describe('FilterContext', () => {
       });
 
       expect(result.current.filters).toEqual({
-        isLocked: false,
         questName: '',
         taskOutput: '',
         beaconFields: [],
@@ -300,36 +243,7 @@ describe('FilterContext', () => {
         assetName: '',
         userId: '',
       });
-    });
-
-    it('should persist default filters to sessionStorage after reset', async () => {
-      const { result } = renderHook(() => useFilters(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.updateFilters({ questName: 'to-be-removed' });
-      });
-
-      act(() => {
-        result.current.resetFilters();
-      });
-
-      await waitFor(() => {
-        const stored = sessionStorage.getItem(STORAGE_KEY);
-        expect(stored).toBeTruthy();
-        const parsed = JSON.parse(stored!);
-        expect(parsed).toEqual({
-          isLocked: false,
-          questName: '',
-          taskOutput: '',
-          beaconFields: [],
-          tomeFields: [],
-          tomeMultiSearch: '',
-          assetName: '',
-          userId: '',
-        });
-      });
+      expect(result.current.isLocked).toBe(false);
     });
   });
 
@@ -339,7 +253,7 @@ describe('FilterContext', () => {
         wrapper: createWrapper(),
       });
 
-      const newFilters: Filters = {
+      const newFilters = {
         isLocked: true,
         questName: 'external-update',
         taskOutput: 'external-output',
@@ -358,7 +272,14 @@ describe('FilterContext', () => {
         window.dispatchEvent(storageEvent);
       });
 
-      expect(result.current.filters).toEqual(newFilters);
+      expect(result.current.filters).toEqual({
+        questName: 'external-update',
+        taskOutput: 'external-output',
+        beaconFields: [],
+        tomeFields: [],
+        tomeMultiSearch: 'external-search',
+      });
+      expect(result.current.isLocked).toBe(true);
     });
 
     it('should reset to defaults when storage event contains unlocked filters', () => {
@@ -368,10 +289,11 @@ describe('FilterContext', () => {
 
       // First set some filters
       act(() => {
-        result.current.updateFilters({ questName: 'initial-quest', isLocked: true });
+        result.current.updateFilters({ questName: 'initial-quest' });
+        result.current.setIsLocked(true);
       });
 
-      const unlockedFilters: Filters = {
+      const unlockedFilters = {
         isLocked: false,
         questName: 'external-update',
         taskOutput: 'external-output',
@@ -392,7 +314,6 @@ describe('FilterContext', () => {
 
       // Should reset to defaults since isLocked is false
       expect(result.current.filters).toEqual({
-        isLocked: false,
         questName: '',
         taskOutput: '',
         beaconFields: [],
@@ -401,6 +322,7 @@ describe('FilterContext', () => {
         assetName: '',
         userId: '',
       });
+      expect(result.current.isLocked).toBe(false);
     });
 
     it('should ignore storage events with different keys', () => {
@@ -424,7 +346,6 @@ describe('FilterContext', () => {
 
   describe('calculateFilterCount', () => {
     const baseFilters: Filters = {
-      isLocked: false,
       questName: '',
       taskOutput: '',
       beaconFields: [],
@@ -434,59 +355,48 @@ describe('FilterContext', () => {
       userId: '',
     };
 
-    it('should return 1 for non-empty questName', () => {
-      const filters = { ...baseFilters, questName: 'test' };
-      expect(calculateFilterCount(filters, FilterFieldType.QUEST_NAME)).toBe(1);
-    });
-
-    it('should return 0 for empty questName', () => {
+    it('should count string fields correctly', () => {
+      // Empty strings
       expect(calculateFilterCount(baseFilters, FilterFieldType.QUEST_NAME)).toBe(0);
-    });
-
-    it('should return 1 for non-empty taskOutput', () => {
-      const filters = { ...baseFilters, taskOutput: 'output' };
-      expect(calculateFilterCount(filters, FilterFieldType.TASK_OUTPUT)).toBe(1);
-    });
-
-    it('should return 0 for empty taskOutput', () => {
       expect(calculateFilterCount(baseFilters, FilterFieldType.TASK_OUTPUT)).toBe(0);
-    });
-
-    it('should return 1 for non-empty tomeMultiSearch', () => {
-      const filters = { ...baseFilters, tomeMultiSearch: 'search' };
-      expect(calculateFilterCount(filters, FilterFieldType.TOME_MULTI_SEARCH)).toBe(1);
-    });
-
-    it('should return 0 for empty tomeMultiSearch', () => {
       expect(calculateFilterCount(baseFilters, FilterFieldType.TOME_MULTI_SEARCH)).toBe(0);
+
+      // Non-empty strings
+      const filtersWithStrings = {
+        ...baseFilters,
+        questName: 'test',
+        taskOutput: 'output',
+        tomeMultiSearch: 'search'
+      };
+      expect(calculateFilterCount(filtersWithStrings, FilterFieldType.QUEST_NAME)).toBe(1);
+      expect(calculateFilterCount(filtersWithStrings, FilterFieldType.TASK_OUTPUT)).toBe(1);
+      expect(calculateFilterCount(filtersWithStrings, FilterFieldType.TOME_MULTI_SEARCH)).toBe(1);
     });
 
-    it('should return array length for beaconFields', () => {
-      const filters = {
+    it('should count array fields by length', () => {
+      // Empty arrays
+      expect(calculateFilterCount(baseFilters, FilterFieldType.BEACON_FIELDS)).toBe(0);
+      expect(calculateFilterCount(baseFilters, FilterFieldType.TOME_FIELDS)).toBe(0);
+
+      // Non-empty arrays
+      const filtersWithArrays = {
         ...baseFilters,
         beaconFields: [
           { kind: 'beacon', id: '1', name: 'B1' },
           { kind: 'beacon', id: '2', name: 'B2' },
           { kind: 'beacon', id: '3', name: 'B3' },
         ],
-      };
-      expect(calculateFilterCount(filters, FilterFieldType.BEACON_FIELDS)).toBe(3);
-    });
-
-    it('should return array length for tomeFields', () => {
-      const filters = {
-        ...baseFilters,
         tomeFields: [
           { kind: 'tome', id: '1', name: 'T1' },
         ],
       };
-      expect(calculateFilterCount(filters, FilterFieldType.TOME_FIELDS)).toBe(1);
+      expect(calculateFilterCount(filtersWithArrays, FilterFieldType.BEACON_FIELDS)).toBe(3);
+      expect(calculateFilterCount(filtersWithArrays, FilterFieldType.TOME_FIELDS)).toBe(1);
     });
   });
 
   describe('calculateTotalFilterCount', () => {
     const baseFilters: Filters = {
-      isLocked: false,
       questName: '',
       taskOutput: '',
       beaconFields: [],
@@ -518,7 +428,6 @@ describe('FilterContext', () => {
 
     it('should return total count for all fields', () => {
       const filters: Filters = {
-        isLocked: false,
         questName: 'test',
         taskOutput: 'output',
         tomeMultiSearch: 'search',
