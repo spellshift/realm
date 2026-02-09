@@ -11,6 +11,8 @@ use tonic::Request;
 use crate::dns_resolver::doh::DohProvider;
 use crate::Transport;
 
+use crate::tls_utils::AcceptAllCertVerifier;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -116,9 +118,17 @@ impl Transport for GRPC {
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        let tls_config = rustls::ClientConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .expect("failed to set default protocol versions")
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+        .with_no_client_auth();
+
         let connector = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_provider_and_webpki_roots(rustls::crypto::ring::default_provider())
-            .expect("failed to set rustls provider")
+            .with_tls_config(tls_config)
             .https_or_http()
             .enable_http2()
             .wrap_connector(http);
