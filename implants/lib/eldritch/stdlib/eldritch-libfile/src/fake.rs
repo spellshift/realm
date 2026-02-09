@@ -201,6 +201,63 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
+    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String> {
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+        let mut files = Vec::new();
+
+        fn traverse_recursive(
+            entry: &FsEntry,
+            current_path: String,
+            files: &mut Vec<String>,
+        ) {
+            match entry {
+                FsEntry::File(_) => {
+                    files.push(current_path);
+                }
+                FsEntry::Dir(map) => {
+                    for (name, child) in map {
+                        let child_path = if current_path == "/" {
+                            format!("/{}", name)
+                        } else {
+                            format!("{}/{}", current_path, name)
+                        };
+                        traverse_recursive(child, child_path, files);
+                    }
+                }
+            }
+        }
+
+        if let Some(entry) = Self::traverse(&mut root, &parts) {
+            // Reconstruct absolute path for start
+            // Note: traverse follows parts but doesn't track path string.
+            // We need to pass the base path.
+            // But if path is relative, normalize_path returns parts.
+            // Let's assume path passed in is what we want as base.
+            // Actually, we should use the resolved path.
+            // But here let's just use the path argument + traversed names.
+
+            // Wait, traverse returns reference to FsEntry inside the tree.
+            // To get full paths, we need to know where we are.
+            // But traverse consumes parts.
+
+            // It's easier to just traverse from the found entry and prepend `path`.
+            let base = if path.ends_with('/') && path.len() > 1 {
+                path.trim_end_matches('/').to_string()
+            } else {
+                path.clone()
+            };
+
+            traverse_recursive(entry, base, &mut files);
+        } else {
+             return Err("Path not found".to_string());
+        }
+
+        // Since we don't have timestamps, we just return the first `limit`
+        let limit = if limit < 0 { 0 } else { limit as usize };
+        Ok(files.into_iter().take(limit).collect())
+    }
+
     fn mkdir(&self, path: String, _parent: Option<bool>) -> Result<(), String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
