@@ -80,7 +80,7 @@ cargo fmt
 3. **Rust Formatting**: Always run `cargo fmt` - CI will fail without it.
 4. **Linear History**: Use squash merge for PRs.
 5. **React Components**: Avoid large ternary operations, instead break out the two pieces into components and use a simple ternary operation e.g. `condition ? <ComponentA /> : <ComponentB />`
-6. **React Utilities**: Separate styling from logic and abstract reuseable functions into utils files.
+6. **React Utilities**: Separate styling from logic and abstract reusable functions into utils files.
 7. **React Styling**: Attempt to reference existing pages and components for style guidelines, be sure to re-use components and match styling to maintain consistency.
 8. **Prefer Line-of-Sight Coding**: Avoid large indentation by returning early and keeping an unnested control flow, for example:
 
