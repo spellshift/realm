@@ -24,13 +24,13 @@ prost-types = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-webpki-roots"] }
-rustls = { version = "0.23", features = ["ring"] }
+rustls = { workspace = true, features = ["ring"] }
 trait-variant = { workspace = true }
-http = "1.4"
-tower = "0.5"
+http = { workspace = true }
+tower = { workspace = true }
 # Use hyper 1.x for grpc
 hyper = { workspace = true, features = ["client"] }
-# Use hyper 0.14 for http1 transport
+# These crates are kinda funky gonna keep them in just transprot for now.
 hyper_legacy = { package = "hyper", version = "0.14", features = ["client", "http1", "http2", "stream"] }
 hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "http2"] }
 hyper-rustls = { version = "0.27", default-features = false, features = ["webpki-tokio", "http2"] }
