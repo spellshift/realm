@@ -46,6 +46,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Asset struct {
 		CreatedAt      func(childComplexity int) int
+		Creator        func(childComplexity int) int
 		Hash           func(childComplexity int) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -199,13 +200,15 @@ type ComplexityRoot struct {
 	}
 
 	Link struct {
-		Asset              func(childComplexity int) int
-		CreatedAt          func(childComplexity int) int
-		DownloadsRemaining func(childComplexity int) int
-		ExpiresAt          func(childComplexity int) int
-		ID                 func(childComplexity int) int
-		LastModifiedAt     func(childComplexity int) int
-		Path               func(childComplexity int) int
+		Asset          func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Creator        func(childComplexity int) int
+		DownloadLimit  func(childComplexity int) int
+		Downloads      func(childComplexity int) int
+		ExpiresAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Path           func(childComplexity int) int
 	}
 
 	LinkConnection struct {
@@ -478,6 +481,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Asset.CreatedAt(childComplexity), true
+
+	case "Asset.creator":
+		if e.complexity.Asset.Creator == nil {
+			break
+		}
+
+		return e.complexity.Asset.Creator(childComplexity), true
 
 	case "Asset.hash":
 		if e.complexity.Asset.Hash == nil {
@@ -1231,12 +1241,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Link.CreatedAt(childComplexity), true
 
-	case "Link.downloadsRemaining":
-		if e.complexity.Link.DownloadsRemaining == nil {
+	case "Link.creator":
+		if e.complexity.Link.Creator == nil {
 			break
 		}
 
-		return e.complexity.Link.DownloadsRemaining(childComplexity), true
+		return e.complexity.Link.Creator(childComplexity), true
+
+	case "Link.downloadLimit":
+		if e.complexity.Link.DownloadLimit == nil {
+			break
+		}
+
+		return e.complexity.Link.DownloadLimit(childComplexity), true
+
+	case "Link.downloads":
+		if e.complexity.Link.Downloads == nil {
+			break
+		}
+
+		return e.complexity.Link.Downloads(childComplexity), true
 
 	case "Link.expiresAt":
 		if e.complexity.Link.ExpiresAt == nil {
@@ -2812,6 +2836,10 @@ type Asset implements Node {
     """
     where: LinkWhereInput
   ): LinkConnection!
+  """
+  User that created the asset if available.
+  """
+  creator: User
 }
 """
 A connection to a list of items.
@@ -2959,6 +2987,11 @@ input AssetWhereInput {
   """
   hasLinks: Boolean
   hasLinksWith: [LinkWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 type Beacon implements Node {
   id: ID!
@@ -3336,9 +3369,13 @@ input CreateLinkInput {
   """
   expiresAt: Time
   """
-  Number of times this link can be clicked before it becomes inactive
+  Maximum number of times this link can be clicked before it becomes inactive (if set)
   """
-  downloadsRemaining: Int
+  downloadLimit: Int
+  """
+  Number of times the asset has been downloaded using this Link.
+  """
+  downloads: Int
   assetID: ID!
 }
 """
@@ -4619,13 +4656,21 @@ type Link implements Node {
   """
   expiresAt: Time!
   """
-  Number of times this link can be clicked before it becomes inactive
+  Maximum number of times this link can be clicked before it becomes inactive (if set)
   """
-  downloadsRemaining: Int!
+  downloadLimit: Int
+  """
+  Number of times the asset has been downloaded using this Link.
+  """
+  downloads: Int!
   """
   The asset that this link points to
   """
   asset: Asset!
+  """
+  User that created the Link if available.
+  """
+  creator: User
 }
 """
 A connection to a list of items.
@@ -4678,7 +4723,8 @@ enum LinkOrderField {
   LAST_MODIFIED_AT
   PATH
   EXPIRES_AT
-  DOWNLOADS_REMAINING
+  DOWNLOAD_LIMIT
+  DOWNLOADS
 }
 """
 LinkWhereInput is used for filtering Link objects.
@@ -4749,21 +4795,39 @@ input LinkWhereInput {
   expiresAtLT: Time
   expiresAtLTE: Time
   """
-  downloads_remaining field predicates
+  download_limit field predicates
   """
-  downloadsRemaining: Int
-  downloadsRemainingNEQ: Int
-  downloadsRemainingIn: [Int!]
-  downloadsRemainingNotIn: [Int!]
-  downloadsRemainingGT: Int
-  downloadsRemainingGTE: Int
-  downloadsRemainingLT: Int
-  downloadsRemainingLTE: Int
+  downloadLimit: Int
+  downloadLimitNEQ: Int
+  downloadLimitIn: [Int!]
+  downloadLimitNotIn: [Int!]
+  downloadLimitGT: Int
+  downloadLimitGTE: Int
+  downloadLimitLT: Int
+  downloadLimitLTE: Int
+  downloadLimitIsNil: Boolean
+  downloadLimitNotNil: Boolean
+  """
+  downloads field predicates
+  """
+  downloads: Int
+  downloadsNEQ: Int
+  downloadsIn: [Int!]
+  downloadsNotIn: [Int!]
+  downloadsGT: Int
+  downloadsGTE: Int
+  downloadsLT: Int
+  downloadsLTE: Int
   """
   asset edge predicates
   """
   hasAsset: Boolean
   hasAssetWith: [AssetWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 """
 An object with an ID.
@@ -6619,9 +6683,16 @@ input UpdateLinkInput {
   """
   expiresAt: Time
   """
-  Number of times this link can be clicked before it becomes inactive
+  Maximum number of times this link can be clicked before it becomes inactive (if set)
   """
-  downloadsRemaining: Int
+  downloadLimit: Int
+  clearDownloadLimit: Boolean
+  """
+  Number of times the asset has been downloaded using this Link.
+  """
+  downloads: Int
+  creatorID: ID
+  clearCreator: Boolean
 }
 """
 UpdateTagInput is used for update Tag object.

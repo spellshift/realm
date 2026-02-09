@@ -75,9 +75,14 @@ func ExpiresAt(v time.Time) predicate.Link {
 	return predicate.Link(sql.FieldEQ(FieldExpiresAt, v))
 }
 
-// DownloadsRemaining applies equality check predicate on the "downloads_remaining" field. It's identical to DownloadsRemainingEQ.
-func DownloadsRemaining(v int) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldDownloadsRemaining, v))
+// DownloadLimit applies equality check predicate on the "download_limit" field. It's identical to DownloadLimitEQ.
+func DownloadLimit(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloadLimit, v))
+}
+
+// Downloads applies equality check predicate on the "downloads" field. It's identical to DownloadsEQ.
+func Downloads(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloads, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -265,44 +270,94 @@ func ExpiresAtLTE(v time.Time) predicate.Link {
 	return predicate.Link(sql.FieldLTE(FieldExpiresAt, v))
 }
 
-// DownloadsRemainingEQ applies the EQ predicate on the "downloads_remaining" field.
-func DownloadsRemainingEQ(v int) predicate.Link {
-	return predicate.Link(sql.FieldEQ(FieldDownloadsRemaining, v))
+// DownloadLimitEQ applies the EQ predicate on the "download_limit" field.
+func DownloadLimitEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloadLimit, v))
 }
 
-// DownloadsRemainingNEQ applies the NEQ predicate on the "downloads_remaining" field.
-func DownloadsRemainingNEQ(v int) predicate.Link {
-	return predicate.Link(sql.FieldNEQ(FieldDownloadsRemaining, v))
+// DownloadLimitNEQ applies the NEQ predicate on the "download_limit" field.
+func DownloadLimitNEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldNEQ(FieldDownloadLimit, v))
 }
 
-// DownloadsRemainingIn applies the In predicate on the "downloads_remaining" field.
-func DownloadsRemainingIn(vs ...int) predicate.Link {
-	return predicate.Link(sql.FieldIn(FieldDownloadsRemaining, vs...))
+// DownloadLimitIn applies the In predicate on the "download_limit" field.
+func DownloadLimitIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldIn(FieldDownloadLimit, vs...))
 }
 
-// DownloadsRemainingNotIn applies the NotIn predicate on the "downloads_remaining" field.
-func DownloadsRemainingNotIn(vs ...int) predicate.Link {
-	return predicate.Link(sql.FieldNotIn(FieldDownloadsRemaining, vs...))
+// DownloadLimitNotIn applies the NotIn predicate on the "download_limit" field.
+func DownloadLimitNotIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldNotIn(FieldDownloadLimit, vs...))
 }
 
-// DownloadsRemainingGT applies the GT predicate on the "downloads_remaining" field.
-func DownloadsRemainingGT(v int) predicate.Link {
-	return predicate.Link(sql.FieldGT(FieldDownloadsRemaining, v))
+// DownloadLimitGT applies the GT predicate on the "download_limit" field.
+func DownloadLimitGT(v int) predicate.Link {
+	return predicate.Link(sql.FieldGT(FieldDownloadLimit, v))
 }
 
-// DownloadsRemainingGTE applies the GTE predicate on the "downloads_remaining" field.
-func DownloadsRemainingGTE(v int) predicate.Link {
-	return predicate.Link(sql.FieldGTE(FieldDownloadsRemaining, v))
+// DownloadLimitGTE applies the GTE predicate on the "download_limit" field.
+func DownloadLimitGTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldGTE(FieldDownloadLimit, v))
 }
 
-// DownloadsRemainingLT applies the LT predicate on the "downloads_remaining" field.
-func DownloadsRemainingLT(v int) predicate.Link {
-	return predicate.Link(sql.FieldLT(FieldDownloadsRemaining, v))
+// DownloadLimitLT applies the LT predicate on the "download_limit" field.
+func DownloadLimitLT(v int) predicate.Link {
+	return predicate.Link(sql.FieldLT(FieldDownloadLimit, v))
 }
 
-// DownloadsRemainingLTE applies the LTE predicate on the "downloads_remaining" field.
-func DownloadsRemainingLTE(v int) predicate.Link {
-	return predicate.Link(sql.FieldLTE(FieldDownloadsRemaining, v))
+// DownloadLimitLTE applies the LTE predicate on the "download_limit" field.
+func DownloadLimitLTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldLTE(FieldDownloadLimit, v))
+}
+
+// DownloadLimitIsNil applies the IsNil predicate on the "download_limit" field.
+func DownloadLimitIsNil() predicate.Link {
+	return predicate.Link(sql.FieldIsNull(FieldDownloadLimit))
+}
+
+// DownloadLimitNotNil applies the NotNil predicate on the "download_limit" field.
+func DownloadLimitNotNil() predicate.Link {
+	return predicate.Link(sql.FieldNotNull(FieldDownloadLimit))
+}
+
+// DownloadsEQ applies the EQ predicate on the "downloads" field.
+func DownloadsEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldEQ(FieldDownloads, v))
+}
+
+// DownloadsNEQ applies the NEQ predicate on the "downloads" field.
+func DownloadsNEQ(v int) predicate.Link {
+	return predicate.Link(sql.FieldNEQ(FieldDownloads, v))
+}
+
+// DownloadsIn applies the In predicate on the "downloads" field.
+func DownloadsIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldIn(FieldDownloads, vs...))
+}
+
+// DownloadsNotIn applies the NotIn predicate on the "downloads" field.
+func DownloadsNotIn(vs ...int) predicate.Link {
+	return predicate.Link(sql.FieldNotIn(FieldDownloads, vs...))
+}
+
+// DownloadsGT applies the GT predicate on the "downloads" field.
+func DownloadsGT(v int) predicate.Link {
+	return predicate.Link(sql.FieldGT(FieldDownloads, v))
+}
+
+// DownloadsGTE applies the GTE predicate on the "downloads" field.
+func DownloadsGTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldGTE(FieldDownloads, v))
+}
+
+// DownloadsLT applies the LT predicate on the "downloads" field.
+func DownloadsLT(v int) predicate.Link {
+	return predicate.Link(sql.FieldLT(FieldDownloads, v))
+}
+
+// DownloadsLTE applies the LTE predicate on the "downloads" field.
+func DownloadsLTE(v int) predicate.Link {
+	return predicate.Link(sql.FieldLTE(FieldDownloads, v))
 }
 
 // HasAsset applies the HasEdge predicate on the "asset" edge.
@@ -320,6 +375,29 @@ func HasAsset() predicate.Link {
 func HasAssetWith(preds ...predicate.Asset) predicate.Link {
 	return predicate.Link(func(s *sql.Selector) {
 		step := newAssetStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCreator applies the HasEdge predicate on the "creator" edge.
+func HasCreator() predicate.Link {
+	return predicate.Link(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCreatorWith applies the HasEdge predicate on the "creator" edge with a given conditions (other predicates).
+func HasCreatorWith(preds ...predicate.User) predicate.Link {
+	return predicate.Link(func(s *sql.Selector) {
+		step := newCreatorStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

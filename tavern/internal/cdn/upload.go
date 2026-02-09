@@ -5,13 +5,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/errors"
 )
 
 // DefaultMaxUploadSize defines the maximum number of bytes an uploaded asset can be.
-const DefaultMaxUploadSize = 10 << 20
+const DefaultMaxUploadSize = 512 * 1024 * 1024 // 512MB
 
 // NewUploadHandler returns an HTTP handler responsible for uploading a asset to the CDN.
 func NewUploadHandler(graph *ent.Client) http.Handler {
@@ -42,6 +43,12 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 		assetQuery := graph.Asset.Query().Where(asset.Name(assetName))
 		exists := assetQuery.Clone().ExistX(ctx)
 
+		// Get the creator
+		var creatorID *int
+		if creator := auth.UserFromContext(ctx); creator != nil {
+			creatorID = &creator.ID
+		}
+
 		// Create or Update the asset
 		var assetID int
 
@@ -49,11 +56,13 @@ func NewUploadHandler(graph *ent.Client) http.Handler {
 			assetID = assetQuery.OnlyIDX(ctx)
 			graph.Asset.UpdateOneID(assetID).
 				SetContent(assetContent).
+				SetNillableCreatorID(creatorID).
 				SaveX(ctx)
 		} else {
 			assetID = graph.Asset.Create().
 				SetName(assetName).
 				SetContent(assetContent).
+				SetNillableCreatorID(creatorID).
 				SaveX(ctx).ID
 		}
 

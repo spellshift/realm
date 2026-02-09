@@ -39,18 +39,26 @@ func (Link) Fields() []ent.Field {
 			).
 			Comment("Unique path for accessing the asset via the CDN"),
 		field.Time("expires_at").
-			Default(time.Now().Add(-time.Second).UTC()).
+			Default(time.Now().Add(24 * time.Hour)).
 			Annotations(
 				entgql.OrderField("EXPIRES_AT"),
 			).
 			Comment("Timestamp before which the link is active. Default is MySQL minimum datetime (1000-01-01)"),
-		field.Int("downloads_remaining").
+		field.Int("download_limit").
+			Optional().
+			Nillable().
+			Min(0).
+			Annotations(
+				entgql.OrderField("DOWNLOAD_LIMIT"),
+			).
+			Comment("Maximum number of times this link can be clicked before it becomes inactive (if set)"),
+		field.Int("downloads").
 			Default(0).
 			Min(0).
 			Annotations(
-				entgql.OrderField("DOWNLOADS_REMAINING"),
+				entgql.OrderField("DOWNLOADS"),
 			).
-			Comment("Number of times this link can be clicked before it becomes inactive"),
+			Comment("Number of times the asset has been downloaded using this Link."),
 	}
 }
 
@@ -64,6 +72,12 @@ func (Link) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationUpdateInput), // Don't allow changing the asset after creation
 			).
 			Comment("The asset that this link points to"),
+		edge.To("creator", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("User that created the Link if available."),
 	}
 }
 
