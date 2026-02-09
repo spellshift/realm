@@ -68,7 +68,7 @@ impl TaskRegistry {
         };
 
         // 1. Register logic
-        // TODO: Should de-dupe Taks and TaskContext?
+        // TODO: Should de-dupe Tasks and TaskContext?
         if !self.register_task(&task) {
             return;
         }
