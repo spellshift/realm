@@ -12,6 +12,7 @@ export enum PageNavItem {
     createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
+    assets="Assets",
     admin="Admin",
 }
 export enum SupportedPlatforms {
@@ -83,6 +84,13 @@ export enum HostOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     LastSeenAt = "LAST_SEEN_AT",
+}
+
+export enum AssetOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
 }
 
 export enum RepositoryOrderField {
