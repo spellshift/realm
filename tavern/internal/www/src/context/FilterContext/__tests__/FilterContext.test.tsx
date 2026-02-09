@@ -36,6 +36,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
     });
 
@@ -47,6 +49,8 @@ describe('FilterContext', () => {
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
+        assetName: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -66,6 +70,8 @@ describe('FilterContext', () => {
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
+        assetName: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(storedFilters));
@@ -81,6 +87,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
     });
 
@@ -100,6 +108,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
       expect(result.current.filterCount).toBe(0);
     });
@@ -120,6 +130,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
     });
 
@@ -171,6 +183,8 @@ describe('FilterContext', () => {
         ],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(validFilters));
@@ -283,6 +297,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
     });
 
@@ -310,6 +326,8 @@ describe('FilterContext', () => {
           beaconFields: [],
           tomeFields: [],
           tomeMultiSearch: '',
+          assetName: '',
+          userId: '',
         });
       });
     });
@@ -328,6 +346,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
+        assetName: '',
+        userId: '',
       };
 
       act(() => {
@@ -358,6 +378,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
+        assetName: '',
+        userId: '',
       };
 
       act(() => {
@@ -376,6 +398,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: '',
+        assetName: '',
+        userId: '',
       });
     });
 
@@ -406,6 +430,8 @@ describe('FilterContext', () => {
       beaconFields: [],
       tomeFields: [],
       tomeMultiSearch: '',
+      assetName: '',
+      userId: '',
     };
 
     it('should return 1 for non-empty questName', () => {
@@ -466,6 +492,8 @@ describe('FilterContext', () => {
       beaconFields: [],
       tomeFields: [],
       tomeMultiSearch: '',
+      assetName: '',
+      userId: '',
     };
 
     it('should return 0 when all filters are empty', () => {
@@ -501,6 +529,8 @@ describe('FilterContext', () => {
         tomeFields: [
           { kind: 'tome', id: '1', name: 'T1' },
         ],
+        assetName: '',
+        userId: '',
       };
 
       const allFields = Object.values(FilterFieldType);
