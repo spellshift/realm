@@ -255,12 +255,51 @@ impl Lexer {
         let initial_start = self.current;
         let mut nesting_level = 1;
 
-        while nesting_level > 0 && !self.is_at_end() && self.peek() != '\n' {
-            if self.peek() == '{' {
+        while nesting_level > 0 && !self.is_at_end() {
+            let c = self.peek();
+
+            if c == '\'' || c == '"' {
+                let quote = c;
+                self.advance(); // consume opening quote
+                while !self.is_at_end() {
+                    let sc = self.peek();
+                    if sc == quote {
+                        self.advance();
+                        break;
+                    } else if sc == '\\' {
+                        self.advance();
+                        if !self.is_at_end() {
+                            self.advance();
+                        }
+                    } else if sc == '\n' {
+                        self.line += 1;
+                        self.advance();
+                    } else {
+                        self.advance();
+                    }
+                }
+                continue;
+            }
+
+            if c == '#' {
+                while !self.is_at_end() && self.peek() != '\n' {
+                    self.advance();
+                }
+                continue;
+            }
+
+            if c == '\n' {
+                self.line += 1;
+                self.advance();
+                continue;
+            }
+
+            if c == '{' {
                 nesting_level += 1;
-            } else if self.peek() == '}' {
+            } else if c == '}' {
                 nesting_level -= 1;
             }
+
             if nesting_level > 0 {
                 self.advance();
             }
