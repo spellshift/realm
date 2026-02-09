@@ -98,7 +98,7 @@ impl Transport for GRPC {
                     "cloudflare" => DohProvider::Cloudflare,
                     "google" => DohProvider::Google,
                     "quad9" => DohProvider::Quad9,
-                    _ => DohProvider::System,
+                    _ => DohProvider::Cloudflare,
                 };
                 crate::dns_resolver::doh::create_doh_connector_hyper1(provider)?
             }
