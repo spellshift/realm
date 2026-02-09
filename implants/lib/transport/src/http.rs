@@ -13,7 +13,58 @@ use std::sync::{
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::DohProvider;
 
+use rustls_0_21::client::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
 use std::str::FromStr;
+use std::time::SystemTime;
+
+#[derive(Debug)]
+struct AcceptAllCertVerifier;
+
+impl ServerCertVerifier for AcceptAllCertVerifier {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &rustls_0_21::Certificate,
+        _intermediates: &[rustls_0_21::Certificate],
+        _server_name: &rustls_0_21::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _ocsp_response: &[u8],
+        _now: SystemTime,
+    ) -> Result<ServerCertVerified, rustls_0_21::Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls_0_21::Certificate,
+        _dss: &rustls_0_21::DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls_0_21::Error> {
+        Ok(HandshakeSignatureValid::assertion())
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls_0_21::Certificate,
+        _dss: &rustls_0_21::DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls_0_21::Error> {
+        Ok(HandshakeSignatureValid::assertion())
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls_0_21::SignatureScheme> {
+        vec![
+            rustls_0_21::SignatureScheme::ECDSA_NISTP384_SHA384,
+            rustls_0_21::SignatureScheme::ECDSA_NISTP256_SHA256,
+            rustls_0_21::SignatureScheme::ED25519,
+            rustls_0_21::SignatureScheme::RSA_PSS_SHA512,
+            rustls_0_21::SignatureScheme::RSA_PSS_SHA384,
+            rustls_0_21::SignatureScheme::RSA_PSS_SHA256,
+            rustls_0_21::SignatureScheme::RSA_PKCS1_SHA512,
+            rustls_0_21::SignatureScheme::RSA_PKCS1_SHA384,
+            rustls_0_21::SignatureScheme::RSA_PKCS1_SHA256,
+        ]
+    }
+}
 
 /// gRPC frame header utilities for encoding/decoding wire protocol frames
 mod grpc_frame {
@@ -400,6 +451,17 @@ impl Transport for HTTP {
         http.enforce_http(false); // Allow HTTPS
         http.set_nodelay(true); // TCP optimization
 
+        let tls_config = rustls_0_21::ClientConfig::builder()
+            .with_safe_defaults()
+            .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+            .with_no_client_auth();
+
+        let https = hyper_rustls_legacy::HttpsConnectorBuilder::new()
+            .with_tls_config(tls_config)
+            .https_or_http()
+            .enable_http1()
+            .wrap_connector(http);
+
         // Build the appropriate client based on configuration
         let client: Arc<dyn HttpClient> = match proxy_uri {
             Some(proxy_uri_string) => {
@@ -408,9 +470,8 @@ impl Transport for HTTP {
                     hyper_proxy_legacy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let mut proxy_connector =
-                    hyper_proxy_legacy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
+                let proxy_connector =
+                    hyper_proxy_legacy::ProxyConnector::from_proxy_unsecured(https, proxy);
 
                 // Build client with proxy
                 Arc::new(hyper_legacy::Client::builder().build(proxy_connector))
@@ -418,7 +479,7 @@ impl Transport for HTTP {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => {
                 // No proxy configuration
-                Arc::new(hyper_legacy::Client::builder().build(http))
+                Arc::new(hyper_legacy::Client::builder().build(https))
             }
         };
 

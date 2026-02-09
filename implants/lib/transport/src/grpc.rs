@@ -11,6 +11,11 @@ use tonic::Request;
 use crate::dns_resolver::doh::DohProvider;
 use crate::Transport;
 
+use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
+use rustls::DigitallySignedStruct;
+use rustls::SignatureScheme;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -48,6 +53,54 @@ where
         } else {
             self.inner.call(uri)
         }
+    }
+}
+
+#[derive(Debug)]
+struct AcceptAllCertVerifier;
+
+impl ServerCertVerifier for AcceptAllCertVerifier {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: UnixTime,
+    ) -> Result<ServerCertVerified, rustls::Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        _message: &[u8],
+        _cert: &CertificateDer<'_>,
+        _dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        Ok(HandshakeSignatureValid::assertion())
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        _message: &[u8],
+        _cert: &CertificateDer<'_>,
+        _dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        Ok(HandshakeSignatureValid::assertion())
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        vec![
+            SignatureScheme::ECDSA_NISTP384_SHA384,
+            SignatureScheme::ECDSA_NISTP256_SHA256,
+            SignatureScheme::ED25519,
+            SignatureScheme::RSA_PSS_SHA512,
+            SignatureScheme::RSA_PSS_SHA384,
+            SignatureScheme::RSA_PSS_SHA256,
+            SignatureScheme::RSA_PKCS1_SHA512,
+            SignatureScheme::RSA_PKCS1_SHA384,
+            SignatureScheme::RSA_PKCS1_SHA256,
+        ]
     }
 }
 
@@ -116,9 +169,17 @@ impl Transport for GRPC {
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        let tls_config = rustls::ClientConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .expect("failed to set default protocol versions")
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+        .with_no_client_auth();
+
         let connector = hyper_rustls::HttpsConnectorBuilder::new()
-            .with_provider_and_webpki_roots(rustls::crypto::ring::default_provider())
-            .expect("failed to set rustls provider")
+            .with_tls_config(tls_config)
             .https_or_http()
             .enable_http2()
             .wrap_connector(http);
