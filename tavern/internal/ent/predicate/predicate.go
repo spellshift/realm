@@ -12,6 +12,9 @@ type Asset func(*sql.Selector)
 // Beacon is the predicate function for beacon builders.
 type Beacon func(*sql.Selector)
 
+// Builder is the predicate function for builder builders.
+type Builder func(*sql.Selector)
+
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 

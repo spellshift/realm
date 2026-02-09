@@ -94,6 +94,25 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Builder struct {
+		CreatedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LastModifiedAt   func(childComplexity int) int
+		SupportedTargets func(childComplexity int) int
+		Upstream         func(childComplexity int) int
+	}
+
+	BuilderConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BuilderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Host struct {
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
@@ -230,6 +249,7 @@ type ComplexityRoot struct {
 		DisableLink      func(childComplexity int, linkID int) int
 		DropAllData      func(childComplexity int) int
 		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		RegisterBuilder  func(childComplexity int, input ent.CreateBuilderInput) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
@@ -307,6 +327,12 @@ type ComplexityRoot struct {
 	QuestEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	RegisterBuilderOutput struct {
+		Builder  func(childComplexity int) int
+		Config   func(childComplexity int) int
+		MtlsCert func(childComplexity int) int
 	}
 
 	Repository struct {
@@ -715,6 +741,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
+
+	case "Builder.createdAt":
+		if e.complexity.Builder.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Builder.CreatedAt(childComplexity), true
+
+	case "Builder.id":
+		if e.complexity.Builder.ID == nil {
+			break
+		}
+
+		return e.complexity.Builder.ID(childComplexity), true
+
+	case "Builder.lastModifiedAt":
+		if e.complexity.Builder.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Builder.LastModifiedAt(childComplexity), true
+
+	case "Builder.supportedTargets":
+		if e.complexity.Builder.SupportedTargets == nil {
+			break
+		}
+
+		return e.complexity.Builder.SupportedTargets(childComplexity), true
+
+	case "Builder.upstream":
+		if e.complexity.Builder.Upstream == nil {
+			break
+		}
+
+		return e.complexity.Builder.Upstream(childComplexity), true
+
+	case "BuilderConnection.edges":
+		if e.complexity.BuilderConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.BuilderConnection.Edges(childComplexity), true
+
+	case "BuilderConnection.pageInfo":
+		if e.complexity.BuilderConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BuilderConnection.PageInfo(childComplexity), true
+
+	case "BuilderConnection.totalCount":
+		if e.complexity.BuilderConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BuilderConnection.TotalCount(childComplexity), true
+
+	case "BuilderEdge.cursor":
+		if e.complexity.BuilderEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.BuilderEdge.Cursor(childComplexity), true
+
+	case "BuilderEdge.node":
+		if e.complexity.BuilderEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.BuilderEdge.Node(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
@@ -1416,6 +1512,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.ImportRepository(childComplexity, args["repoID"].(int), args["input"].(*models.ImportRepositoryInput)), true
 
+	case "Mutation.registerBuilder":
+		if e.complexity.Mutation.RegisterBuilder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_registerBuilder_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RegisterBuilder(childComplexity, args["input"].(ent.CreateBuilderInput)), true
+
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
 			break
@@ -1891,6 +1999,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.QuestEdge.Node(childComplexity), true
+
+	case "RegisterBuilderOutput.builder":
+		if e.complexity.RegisterBuilderOutput.Builder == nil {
+			break
+		}
+
+		return e.complexity.RegisterBuilderOutput.Builder(childComplexity), true
+
+	case "RegisterBuilderOutput.config":
+		if e.complexity.RegisterBuilderOutput.Config == nil {
+			break
+		}
+
+		return e.complexity.RegisterBuilderOutput.Config(childComplexity), true
+
+	case "RegisterBuilderOutput.mtlsCert":
+		if e.complexity.RegisterBuilderOutput.MtlsCert == nil {
+			break
+		}
+
+		return e.complexity.RegisterBuilderOutput.MtlsCert(childComplexity), true
 
 	case "Repository.createdAt":
 		if e.complexity.Repository.CreatedAt == nil {
@@ -2582,7 +2711,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAssetWhereInput,
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
+		ec.unmarshalInputBuilderOrder,
+		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
+		ec.unmarshalInputCreateBuilderInput,
 		ec.unmarshalInputCreateHostCredentialInput,
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
@@ -3301,6 +3433,147 @@ input BeaconWhereInput {
   """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
+}
+type Builder implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  The platforms this builder can build agents for.
+  """
+  supportedTargets: [HostPlatform!]!
+  """
+  The server address that the builder should connect to.
+  """
+  upstream: String!
+}
+"""
+A connection to a list of items.
+"""
+type BuilderConnection {
+  """
+  A list of edges.
+  """
+  edges: [BuilderEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BuilderEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Builder
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Builder connections
+"""
+input BuilderOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Builders.
+  """
+  field: BuilderOrderField!
+}
+"""
+Properties by which Builder connections can be ordered.
+"""
+enum BuilderOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+BuilderWhereInput is used for filtering Builder objects.
+Input was generated by ent.
+"""
+input BuilderWhereInput {
+  not: BuilderWhereInput
+  and: [BuilderWhereInput!]
+  or: [BuilderWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  upstream field predicates
+  """
+  upstream: String
+  upstreamNEQ: String
+  upstreamIn: [String!]
+  upstreamNotIn: [String!]
+  upstreamGT: String
+  upstreamGTE: String
+  upstreamLT: String
+  upstreamLTE: String
+  upstreamContains: String
+  upstreamHasPrefix: String
+  upstreamHasSuffix: String
+  upstreamEqualFold: String
+  upstreamContainsFold: String
+}
+"""
+CreateBuilderInput is used for create Builder object.
+Input was generated by ent.
+"""
+input CreateBuilderInput {
+  """
+  The platforms this builder can build agents for.
+  """
+  supportedTargets: [HostPlatform!]!
+  """
+  The server address that the builder should connect to.
+  """
+  upstream: String!
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.
@@ -7200,6 +7473,11 @@ scalar Uint64
     createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
     updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
     disableLink(linkID: ID!): Link! @requireRole(role: USER)
+
+    ###
+    # Builder
+    ###
+    registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
@@ -7250,6 +7528,18 @@ input ImportRepositoryInput {
   Only tomes that have a main.eldritch in one of these directory prefixes will be included.
   """
   includeDirs: [String!]
+}
+
+"""Output returned when registering a new builder."""
+type RegisterBuilderOutput {
+  """The created builder entity."""
+  builder: Builder!
+
+  """mTLS certificate in base64 encoding for the builder to authenticate."""
+  mtlsCert: String!
+
+  """YAML-formatted configuration for the builder."""
+  config: String!
 }
 `, BuiltIn: false},
 }

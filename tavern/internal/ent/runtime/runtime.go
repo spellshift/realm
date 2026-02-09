@@ -7,6 +7,7 @@ import (
 
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -93,6 +94,21 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	builderMixin := schema.Builder{}.Mixin()
+	builderMixinFields0 := builderMixin[0].Fields()
+	_ = builderMixinFields0
+	builderFields := schema.Builder{}.Fields()
+	_ = builderFields
+	// builderDescCreatedAt is the schema descriptor for created_at field.
+	builderDescCreatedAt := builderMixinFields0[0].Descriptor()
+	// builder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	builder.DefaultCreatedAt = builderDescCreatedAt.Default.(func() time.Time)
+	// builderDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	builderDescLastModifiedAt := builderMixinFields0[1].Descriptor()
+	// builder.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	builder.DefaultLastModifiedAt = builderDescLastModifiedAt.Default.(func() time.Time)
+	// builder.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	builder.UpdateDefaultLastModifiedAt = builderDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0

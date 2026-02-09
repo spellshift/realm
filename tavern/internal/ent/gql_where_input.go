@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -1036,6 +1037,252 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 		return predicates[0], nil
 	default:
 		return beacon.And(predicates...), nil
+	}
+}
+
+// BuilderWhereInput represents a where input for filtering Builder queries.
+type BuilderWhereInput struct {
+	Predicates []predicate.Builder  `json:"-"`
+	Not        *BuilderWhereInput   `json:"not,omitempty"`
+	Or         []*BuilderWhereInput `json:"or,omitempty"`
+	And        []*BuilderWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "upstream" field predicates.
+	Upstream             *string  `json:"upstream,omitempty"`
+	UpstreamNEQ          *string  `json:"upstreamNEQ,omitempty"`
+	UpstreamIn           []string `json:"upstreamIn,omitempty"`
+	UpstreamNotIn        []string `json:"upstreamNotIn,omitempty"`
+	UpstreamGT           *string  `json:"upstreamGT,omitempty"`
+	UpstreamGTE          *string  `json:"upstreamGTE,omitempty"`
+	UpstreamLT           *string  `json:"upstreamLT,omitempty"`
+	UpstreamLTE          *string  `json:"upstreamLTE,omitempty"`
+	UpstreamContains     *string  `json:"upstreamContains,omitempty"`
+	UpstreamHasPrefix    *string  `json:"upstreamHasPrefix,omitempty"`
+	UpstreamHasSuffix    *string  `json:"upstreamHasSuffix,omitempty"`
+	UpstreamEqualFold    *string  `json:"upstreamEqualFold,omitempty"`
+	UpstreamContainsFold *string  `json:"upstreamContainsFold,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BuilderWhereInput) AddPredicates(predicates ...predicate.Builder) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BuilderWhereInput filter on the BuilderQuery builder.
+func (i *BuilderWhereInput) Filter(q *BuilderQuery) (*BuilderQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBuilderWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBuilderWhereInput is returned in case the BuilderWhereInput is empty.
+var ErrEmptyBuilderWhereInput = errors.New("ent: empty predicate BuilderWhereInput")
+
+// P returns a predicate for filtering builders.
+// An error is returned if the input is empty or invalid.
+func (i *BuilderWhereInput) P() (predicate.Builder, error) {
+	var predicates []predicate.Builder
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, builder.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Builder, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, builder.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Builder, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, builder.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, builder.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, builder.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, builder.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, builder.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, builder.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, builder.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, builder.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, builder.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, builder.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, builder.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, builder.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, builder.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, builder.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, builder.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, builder.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, builder.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, builder.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, builder.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, builder.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, builder.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, builder.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, builder.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, builder.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, builder.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Upstream != nil {
+		predicates = append(predicates, builder.UpstreamEQ(*i.Upstream))
+	}
+	if i.UpstreamNEQ != nil {
+		predicates = append(predicates, builder.UpstreamNEQ(*i.UpstreamNEQ))
+	}
+	if len(i.UpstreamIn) > 0 {
+		predicates = append(predicates, builder.UpstreamIn(i.UpstreamIn...))
+	}
+	if len(i.UpstreamNotIn) > 0 {
+		predicates = append(predicates, builder.UpstreamNotIn(i.UpstreamNotIn...))
+	}
+	if i.UpstreamGT != nil {
+		predicates = append(predicates, builder.UpstreamGT(*i.UpstreamGT))
+	}
+	if i.UpstreamGTE != nil {
+		predicates = append(predicates, builder.UpstreamGTE(*i.UpstreamGTE))
+	}
+	if i.UpstreamLT != nil {
+		predicates = append(predicates, builder.UpstreamLT(*i.UpstreamLT))
+	}
+	if i.UpstreamLTE != nil {
+		predicates = append(predicates, builder.UpstreamLTE(*i.UpstreamLTE))
+	}
+	if i.UpstreamContains != nil {
+		predicates = append(predicates, builder.UpstreamContains(*i.UpstreamContains))
+	}
+	if i.UpstreamHasPrefix != nil {
+		predicates = append(predicates, builder.UpstreamHasPrefix(*i.UpstreamHasPrefix))
+	}
+	if i.UpstreamHasSuffix != nil {
+		predicates = append(predicates, builder.UpstreamHasSuffix(*i.UpstreamHasSuffix))
+	}
+	if i.UpstreamEqualFold != nil {
+		predicates = append(predicates, builder.UpstreamEqualFold(*i.UpstreamEqualFold))
+	}
+	if i.UpstreamContainsFold != nil {
+		predicates = append(predicates, builder.UpstreamContainsFold(*i.UpstreamContainsFold))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBuilderWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return builder.And(predicates...), nil
 	}
 }
 

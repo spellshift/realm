@@ -7,10 +7,19 @@ package graphql
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/base64"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
+	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
@@ -55,6 +64,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
 	}
 
 	// Commit
@@ -274,6 +286,82 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 		SetExpiresAt(time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)).
 		SetDownloadsRemaining(0).
 		Save(ctx)
+}
+
+// RegisterBuilder is the resolver for the registerBuilder field.
+func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
+	// 1. Create builder ent
+	builder, err := r.client.Builder.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create builder: %w", err)
+	}
+
+	// 2. Generate self-signed X.509 certificate for mTLS
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate serial number: %w", err)
+	}
+
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName:   fmt.Sprintf("builder-%d", builder.ID),
+			Organization: []string{"Realm"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		BasicConstraintsValid: true,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privKey.PublicKey, privKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(privKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal private key: %w", err)
+	}
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+
+	// Combine cert and key into a single PEM bundle, base64-encode it
+	combinedPEM := append(certPEM, keyPEM...)
+	mtlsCert := base64.StdEncoding.EncodeToString(combinedPEM)
+
+	// 3. Build YAML config
+	targetNames := make([]string, len(builder.SupportedTargets))
+	for i, t := range builder.SupportedTargets {
+		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
+	}
+
+	configData := struct {
+		SupportedTargets []string `yaml:"supported_targets"`
+		MTLS             string   `yaml:"mtls"`
+		Upstream         string   `yaml:"upstream"`
+	}{
+		SupportedTargets: targetNames,
+		MTLS:             mtlsCert,
+		Upstream:         builder.Upstream,
+	}
+
+	configBytes, err := yaml.Marshal(configData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
+	}
+
+	return &models.RegisterBuilderOutput{
+		Builder:  builder,
+		MtlsCert: mtlsCert,
+		Config:   string(configBytes),
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
