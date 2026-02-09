@@ -55,12 +55,9 @@ func NewCredentialsFromConfig(cfg *Config) (credentials.PerRPCCredentials, error
 }
 
 // parseMTLSCredentials loads the certificate and private key from the config's
-// base64-encoded PEM bundle.
-func parseMTLSCredentials(mtlsBase64 string) (*builderCredentials, error) {
-	pemBundle, err := base64.StdEncoding.DecodeString(mtlsBase64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode mTLS base64: %w", err)
-	}
+// PEM bundle string.
+func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
+	pemBundle := []byte(mtlsPEM)
 
 	var certDER []byte
 	var privKey *ecdsa.PrivateKey
@@ -74,6 +71,7 @@ func parseMTLSCredentials(mtlsBase64 string) (*builderCredentials, error) {
 		case "CERTIFICATE":
 			certDER = block.Bytes
 		case "EC PRIVATE KEY":
+			var err error
 			privKey, err = x509.ParseECPrivateKey(block.Bytes)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse EC private key: %w", err)

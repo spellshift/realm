@@ -7,7 +7,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -296,9 +295,9 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
 	}
 
-	// Combine cert and key into a single PEM bundle, base64-encode it
+	// Combine cert and key into a single PEM bundle
 	combinedPEM := append(certPEM, keyPEM...)
-	mtlsCert := base64.StdEncoding.EncodeToString(combinedPEM)
+	mtlsCert := string(combinedPEM)
 
 	// 3. Build YAML config
 	targetNames := make([]string, len(b.SupportedTargets))

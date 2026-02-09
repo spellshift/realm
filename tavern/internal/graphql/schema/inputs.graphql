@@ -53,7 +53,7 @@ type RegisterBuilderOutput {
   """The created builder entity."""
   builder: Builder!
 
-  """mTLS certificate in base64 encoding for the builder to authenticate."""
+  """mTLS certificate PEM bundle for the builder to authenticate."""
   mtlsCert: String!
 
   """YAML-formatted configuration for the builder."""
