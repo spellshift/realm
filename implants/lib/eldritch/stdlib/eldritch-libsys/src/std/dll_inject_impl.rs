@@ -92,9 +92,7 @@ mod tests {
     #[cfg(target_os = "windows")]
     use std::{fs, path::Path, process::Command, thread};
     #[cfg(target_os = "windows")]
-    use sysinfo::{Pid, Signal};
-    #[cfg(target_os = "windows")]
-    use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+    use sysinfo::{Pid, Signal, System};
     #[cfg(target_os = "windows")]
     use tempfile::NamedTempFile;
 
@@ -134,10 +132,10 @@ mod tests {
         let _ = fs::remove_file(test_path);
 
         // kill the target process notepad
-        let mut sys = System::new();
-        sys.refresh_processes();
+        let sys = System::new_all();
+        // Pid::from_u32 exists in 0.33
         if let Some(res) = sys.process(Pid::from_u32(target_pid)) {
-            res.kill_with(Signal::Kill);
+            let _ = res.kill_with(Signal::Kill);
         }
 
         Ok(())

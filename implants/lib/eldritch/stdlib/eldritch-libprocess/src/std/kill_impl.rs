@@ -1,14 +1,13 @@
 use alloc::format;
 use alloc::string::ToString;
-use sysinfo::{Pid, ProcessExt, Signal, System, SystemExt};
+use sysinfo::{IS_SUPPORTED_SYSTEM, Pid, Signal, System};
 
 pub fn kill(pid: i64) -> Result<(), String> {
-    if !System::IS_SUPPORTED {
+    if !IS_SUPPORTED_SYSTEM {
         return Err("System not supported".to_string());
     }
 
-    let mut sys = System::new();
-    sys.refresh_processes();
+    let sys = System::new_all();
 
     if let Some(process) = sys.process(Pid::from(pid as usize)) {
         if process.kill_with(Signal::Kill).unwrap_or(false) {
