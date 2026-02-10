@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"crypto/ecdh"
-	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
@@ -404,7 +404,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, builderCACert *x509.Certificate, builderCAKey *ecdsa.PrivateKey) http.Handler {
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, builderCACert *x509.Certificate, builderCAKey ed25519.PrivateKey) http.Handler {
 	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, builderCACert, builderCAKey))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
@@ -522,13 +522,24 @@ func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
 }
 
 // getBuilderCA returns the Builder CA certificate and private key for signing builder certificates.
-func getBuilderCA() (caCert *x509.Certificate, caKey *ecdsa.PrivateKey, err error) {
+// It uses the existing ED25519 key from the secrets manager.
+func getBuilderCA() (caCert *x509.Certificate, caKey ed25519.PrivateKey, err error) {
 	secretsManager, err := newSecretsManager()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return builder.GetOrCreateCA(secretsManager)
+	caKey, err = crypto.GetPrivKeyED25519(secretsManager)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get ED25519 private key: %w", err)
+	}
+
+	caCert, err = builder.CreateCA(caKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create builder CA: %w", err)
+	}
+
+	return caCert, caKey, nil
 }
 
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {

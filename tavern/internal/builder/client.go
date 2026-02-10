@@ -2,9 +2,7 @@ package builder
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha256"
+	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -22,7 +20,7 @@ import (
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
 type builderCredentials struct {
 	certDERBase64 string
-	privKey       *ecdsa.PrivateKey
+	privKey       ed25519.PrivateKey
 }
 
 // GetRequestMetadata generates fresh authentication metadata for each RPC call.
@@ -30,11 +28,7 @@ type builderCredentials struct {
 func (c *builderCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339Nano)
 
-	hash := sha256.Sum256([]byte(timestamp))
-	sig, err := ecdsa.SignASN1(rand.Reader, c.privKey, hash[:])
-	if err != nil {
-		return nil, fmt.Errorf("failed to sign timestamp: %w", err)
-	}
+	sig := ed25519.Sign(c.privKey, []byte(timestamp))
 
 	return map[string]string{
 		mdKeyBuilderCert:      c.certDERBase64,
@@ -60,7 +54,7 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 	pemBundle := []byte(mtlsPEM)
 
 	var certDER []byte
-	var privKey *ecdsa.PrivateKey
+	var privKey ed25519.PrivateKey
 
 	for {
 		block, rest := pem.Decode(pemBundle)
@@ -70,12 +64,16 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 		switch block.Type {
 		case "CERTIFICATE":
 			certDER = block.Bytes
-		case "EC PRIVATE KEY":
-			var err error
-			privKey, err = x509.ParseECPrivateKey(block.Bytes)
+		case "PRIVATE KEY":
+			key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse EC private key: %w", err)
+				return nil, fmt.Errorf("failed to parse private key: %w", err)
 			}
+			edKey, ok := key.(ed25519.PrivateKey)
+			if !ok {
+				return nil, fmt.Errorf("private key is not ED25519")
+			}
+			privKey = edKey
 		}
 		pemBundle = rest
 	}

@@ -2,8 +2,7 @@ package builder
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/sha256"
+	"crypto/ed25519"
 	"crypto/x509"
 	"encoding/base64"
 	"log/slog"
@@ -99,12 +98,11 @@ func NewAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.UnaryS
 			return nil, status.Error(codes.Unauthenticated, "invalid signature encoding")
 		}
 
-		hash := sha256.Sum256([]byte(timestamp))
-		pubKey, ok := cert.PublicKey.(*ecdsa.PublicKey)
+		pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
 		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "certificate does not contain ECDSA public key")
+			return nil, status.Error(codes.Unauthenticated, "certificate does not contain ED25519 public key")
 		}
-		if !ecdsa.VerifyASN1(pubKey, hash[:], sigBytes) {
+		if !ed25519.Verify(pubKey, []byte(timestamp), sigBytes) {
 			return nil, status.Error(codes.Unauthenticated, "invalid signature")
 		}
 

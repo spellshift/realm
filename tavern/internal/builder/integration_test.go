@@ -2,6 +2,8 @@ package builder_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"net"
 	"testing"
 
@@ -21,7 +23,6 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
-	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/tomes"
 )
 
@@ -32,20 +33,18 @@ func TestBuilderE2E(t *testing.T) {
 	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer graph.Close()
 
-	// 2. Initialize Builder CA
-	secretsDir := t.TempDir()
-	secretsManager, err := secrets.NewDebugFileSecrets(secretsDir + "/secrets.yaml")
+	// 2. Generate ED25519 key pair and create Builder CA
+	_, caPrivKey, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
-	caCert, caKey, err := builder.GetOrCreateCA(secretsManager)
+	caCert, err := builder.CreateCA(caPrivKey)
 	require.NoError(t, err)
 	require.NotNil(t, caCert)
-	require.NotNil(t, caKey)
 
 	// 3. Setup GraphQL server with authentication bypass and Builder CA
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)

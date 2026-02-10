@@ -2,7 +2,7 @@ package graphql
 
 import (
 	"context"
-	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/x509"
 	"fmt"
 
@@ -21,19 +21,19 @@ type RepoImporter interface {
 
 // Resolver is the resolver root.
 type Resolver struct {
-	client      *ent.Client
-	importer    RepoImporter
-	builderCA   *x509.Certificate
-	builderCAKey *ecdsa.PrivateKey
+	client       *ent.Client
+	importer     RepoImporter
+	builderCA    *x509.Certificate
+	builderCAKey ed25519.PrivateKey
 }
 
 // NewSchema creates a graphql executable schema.
-func NewSchema(client *ent.Client, importer RepoImporter, builderCA *x509.Certificate, builderCAKey *ecdsa.PrivateKey) graphql.ExecutableSchema {
+func NewSchema(client *ent.Client, importer RepoImporter, builderCA *x509.Certificate, builderCAKey ed25519.PrivateKey) graphql.ExecutableSchema {
 	cfg := generated.Config{
 		Resolvers: &Resolver{
-			client:      client,
-			importer:    importer,
-			builderCA:   builderCA,
+			client:       client,
+			importer:     importer,
+			builderCA:    builderCA,
 			builderCAKey: builderCAKey,
 		},
 	}
