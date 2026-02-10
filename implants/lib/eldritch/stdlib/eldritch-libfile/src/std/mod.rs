@@ -15,6 +15,7 @@ pub mod follow_impl;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;
+pub mod list_recent_impl;
 pub mod mkdir_impl;
 pub mod move_impl;
 pub mod parent_dir_impl;
@@ -74,6 +75,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         list_impl::list(path)
+    }
+
+    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String> {
+        list_recent_impl::list_recent(path, limit)
     }
 
     fn mkdir(&self, path: String, parent: Option<bool>) -> Result<(), String> {

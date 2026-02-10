@@ -265,7 +265,14 @@ func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.Creat
 
 // CreateLink is the resolver for the createLink field.
 func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error) {
-	return r.client.Link.Create().SetInput(input).Save(ctx)
+	var creatorID *int
+	if creator := auth.UserFromContext(ctx); creator != nil {
+		creatorID = &creator.ID
+	}
+	return r.client.Link.Create().
+		SetNillableCreatorID(creatorID).
+		SetInput(input).
+		Save(ctx)
 }
 
 // UpdateLink is the resolver for the updateLink field.
@@ -276,8 +283,7 @@ func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent
 // DisableLink is the resolver for the disableLink field.
 func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Link, error) {
 	return r.client.Link.UpdateOneID(linkID).
-		SetExpiresAt(time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)).
-		SetDownloadsRemaining(0).
+		SetExpiresAt(time.Now().Add(-1 * time.Second)).
 		Save(ctx)
 }
 

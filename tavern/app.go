@@ -83,12 +83,17 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Usage: "Transport protocol to use for redirector",
 					Value: "grpc",
 				},
+				cli.StringFlag{
+					Name:  "tls-hostname",
+					Usage: "Enable TLS and use this hostname for certificate provisioning via ACME (e.g. redirector.example.com); falls back to self-signed if ACME fails",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				var (
-					upstream  = c.Args().First()
-					listenOn  = c.String("listen")
-					transport = c.String("transport")
+					upstream    = c.Args().First()
+					listenOn    = c.String("listen")
+					transport   = c.String("transport")
+					tlsHostname = c.String("tls-hostname")
 				)
 				if upstream == "" {
 					return fmt.Errorf("gRPC upstream address is required (first argument)")
@@ -99,8 +104,19 @@ func newApp(ctx context.Context) (app *cli.App) {
 				if transport == "" {
 					transport = "grpc"
 				}
-				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
-				return redirectors.Run(ctx, transport, listenOn, upstream)
+
+				var tlsCfg *tls.Config
+				if tlsHostname != "" {
+					var err error
+					tlsCfg, err = redirectors.NewTLSConfig(ctx, tlsHostname)
+					if err != nil {
+						return fmt.Errorf("failed to configure TLS: %w", err)
+					}
+					slog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
+				}
+
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
+				return redirectors.Run(ctx, transport, listenOn, upstream, tlsCfg)
 			},
 			Subcommands: cli.Commands{
 				cli.Command{
@@ -331,6 +347,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/cdn/hostfiles/": tavernhttp.Endpoint{
 			Handler: cdn.NewHostFileDownloadHandler(client, "/cdn/hostfiles/"),
+		},
+		"/assets/download/": tavernhttp.Endpoint{
+			Handler: cdn.NewDownloadHandler(client, "/assets/download/"),
 		},
 		"/cdn/upload": tavernhttp.Endpoint{
 			Handler: cdn.NewUploadHandler(client),

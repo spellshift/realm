@@ -1,9 +1,9 @@
 import { XCircleIcon } from '@heroicons/react/20/solid'
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 type AlertErrorProps = {
     label: string,
-    details: string
+    details: ReactNode
 }
 const AlertError: FC<AlertErrorProps> = ({ label, details }) => {
     return (

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { SortsProvider, useSorts, Sorts } from '../SortContext';
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../../utils/enums';
+import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../../utils/enums';
 import { OrderByField } from '../../../utils/interfacesQuery';
 
 const STORAGE_KEY = 'realm-sorting-v1.0';
@@ -31,6 +31,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Desc,
           field: TaskOrderField.LastModifiedAt,
         },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
       });
     });
 
@@ -47,6 +51,10 @@ describe('SortContext', () => {
         [PageNavItem.tasks]: {
           direction: OrderDirection.Asc,
           field: TaskOrderField.CreatedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
         },
       };
 
@@ -147,6 +155,10 @@ describe('SortContext', () => {
         [PageNavItem.tasks]: {
           direction: OrderDirection.Asc,
           field: TaskOrderField.CreatedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
         },
       };
 
@@ -265,6 +277,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Desc,
           field: TaskOrderField.LastModifiedAt,
         },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
       });
     });
 
@@ -303,6 +319,10 @@ describe('SortContext', () => {
             direction: OrderDirection.Desc,
             field: TaskOrderField.LastModifiedAt,
           },
+          [PageNavItem.assets]: {
+            direction: OrderDirection.Desc,
+            field: AssetOrderField.CreatedAt,
+          },
         });
       });
     });
@@ -327,6 +347,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Asc,
           field: TaskOrderField.CreatedAt,
         },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        }
       };
 
       act(() => {

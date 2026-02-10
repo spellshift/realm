@@ -28,10 +28,10 @@ func TestCreateLinkWithExplicitExpiresAt(t *testing.T) {
 
 	// Create a link with explicit expiresAt
 	futureTime := time.Now().Add(24 * time.Hour)
-	downloadsRemaining := 5
+	downloadLimit := 5
 	input := ent.CreateLinkInput{
 		AssetID:            asset.ID,
-		DownloadsRemaining: &downloadsRemaining,
+		DownloadLimit:      &downloadLimit,
 		ExpiresAt:          &futureTime,
 	}
 
@@ -40,5 +40,5 @@ func TestCreateLinkWithExplicitExpiresAt(t *testing.T) {
 
 	// Verify the explicit expiresAt was used
 	assert.WithinDuration(t, futureTime, link.ExpiresAt, time.Second)
-	assert.Equal(t, 5, link.DownloadsRemaining)
+	assert.Equal(t, downloadLimit, *link.DownloadLimit)
 }

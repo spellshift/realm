@@ -3,7 +3,7 @@ import { FC } from "react";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import AlertError from "../../../components/tavern-base-ui/AlertError";
 import { RepositoryNode } from "../../../utils/interfacesQuery";
-import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
+import { useFetchRepositoryTome } from "../hooks/useFetchRepositoryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
 type StepAddDeploymentKeyProps = {

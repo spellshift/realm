@@ -431,6 +431,22 @@ Here is an example of the Dict layout:
 ]
 ```
 
+### file.list_recent
+
+`file.list_recent(path: str, limit: int) -> List<str>`
+
+The <b>file.list_recent</b> method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.
+
+- `path`: The directory to scan. Defaults to `/`.
+- `limit`: The maximum number of files to return. Defaults to `10`.
+
+```python
+# Get the 5 most recently modified files in /var/log
+recent_logs = file.list_recent("/var/log", 5)
+for log in recent_logs:
+    print(log)
+```
+
 ### file.mkdir
 
 `file.mkdir(path: str, parent: Option<bool>) -> None`
