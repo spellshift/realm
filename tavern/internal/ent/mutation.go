@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -43,6 +44,7 @@ const (
 	// Node types.
 	TypeAsset          = "Asset"
 	TypeBeacon         = "Beacon"
+	TypeBuildTask      = "BuildTask"
 	TypeBuilder        = "Builder"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
@@ -2108,6 +2110,983 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Beacon edge %s", name)
 }
 
+// BuildTaskMutation represents an operation that mutates the BuildTask nodes in the graph.
+type BuildTaskMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	target_os        *c2pb.Host_Platform
+	build_image      *string
+	build_script     *string
+	claimed_at       *time.Time
+	started_at       *time.Time
+	finished_at      *time.Time
+	output           *string
+	error            *string
+	clearedFields    map[string]struct{}
+	builder          *int
+	clearedbuilder   bool
+	done             bool
+	oldValue         func(context.Context) (*BuildTask, error)
+	predicates       []predicate.BuildTask
+}
+
+var _ ent.Mutation = (*BuildTaskMutation)(nil)
+
+// buildtaskOption allows management of the mutation configuration using functional options.
+type buildtaskOption func(*BuildTaskMutation)
+
+// newBuildTaskMutation creates new mutation for the BuildTask entity.
+func newBuildTaskMutation(c config, op Op, opts ...buildtaskOption) *BuildTaskMutation {
+	m := &BuildTaskMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBuildTask,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBuildTaskID sets the ID field of the mutation.
+func withBuildTaskID(id int) buildtaskOption {
+	return func(m *BuildTaskMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BuildTask
+		)
+		m.oldValue = func(ctx context.Context) (*BuildTask, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BuildTask.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBuildTask sets the old BuildTask of the mutation.
+func withBuildTask(node *BuildTask) buildtaskOption {
+	return func(m *BuildTaskMutation) {
+		m.oldValue = func(context.Context) (*BuildTask, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BuildTaskMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BuildTaskMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BuildTaskMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BuildTaskMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BuildTask.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BuildTaskMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BuildTaskMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BuildTaskMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *BuildTaskMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *BuildTaskMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *BuildTaskMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetTargetOs sets the "target_os" field.
+func (m *BuildTaskMutation) SetTargetOs(cp c2pb.Host_Platform) {
+	m.target_os = &cp
+}
+
+// TargetOs returns the value of the "target_os" field in the mutation.
+func (m *BuildTaskMutation) TargetOs() (r c2pb.Host_Platform, exists bool) {
+	v := m.target_os
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetOs returns the old "target_os" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldTargetOs(ctx context.Context) (v c2pb.Host_Platform, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetOs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetOs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetOs: %w", err)
+	}
+	return oldValue.TargetOs, nil
+}
+
+// ResetTargetOs resets all changes to the "target_os" field.
+func (m *BuildTaskMutation) ResetTargetOs() {
+	m.target_os = nil
+}
+
+// SetBuildImage sets the "build_image" field.
+func (m *BuildTaskMutation) SetBuildImage(s string) {
+	m.build_image = &s
+}
+
+// BuildImage returns the value of the "build_image" field in the mutation.
+func (m *BuildTaskMutation) BuildImage() (r string, exists bool) {
+	v := m.build_image
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuildImage returns the old "build_image" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldBuildImage(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuildImage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuildImage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuildImage: %w", err)
+	}
+	return oldValue.BuildImage, nil
+}
+
+// ResetBuildImage resets all changes to the "build_image" field.
+func (m *BuildTaskMutation) ResetBuildImage() {
+	m.build_image = nil
+}
+
+// SetBuildScript sets the "build_script" field.
+func (m *BuildTaskMutation) SetBuildScript(s string) {
+	m.build_script = &s
+}
+
+// BuildScript returns the value of the "build_script" field in the mutation.
+func (m *BuildTaskMutation) BuildScript() (r string, exists bool) {
+	v := m.build_script
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuildScript returns the old "build_script" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldBuildScript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuildScript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuildScript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuildScript: %w", err)
+	}
+	return oldValue.BuildScript, nil
+}
+
+// ResetBuildScript resets all changes to the "build_script" field.
+func (m *BuildTaskMutation) ResetBuildScript() {
+	m.build_script = nil
+}
+
+// SetClaimedAt sets the "claimed_at" field.
+func (m *BuildTaskMutation) SetClaimedAt(t time.Time) {
+	m.claimed_at = &t
+}
+
+// ClaimedAt returns the value of the "claimed_at" field in the mutation.
+func (m *BuildTaskMutation) ClaimedAt() (r time.Time, exists bool) {
+	v := m.claimed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaimedAt returns the old "claimed_at" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaimedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaimedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaimedAt: %w", err)
+	}
+	return oldValue.ClaimedAt, nil
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (m *BuildTaskMutation) ClearClaimedAt() {
+	m.claimed_at = nil
+	m.clearedFields[buildtask.FieldClaimedAt] = struct{}{}
+}
+
+// ClaimedAtCleared returns if the "claimed_at" field was cleared in this mutation.
+func (m *BuildTaskMutation) ClaimedAtCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldClaimedAt]
+	return ok
+}
+
+// ResetClaimedAt resets all changes to the "claimed_at" field.
+func (m *BuildTaskMutation) ResetClaimedAt() {
+	m.claimed_at = nil
+	delete(m.clearedFields, buildtask.FieldClaimedAt)
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *BuildTaskMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *BuildTaskMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *BuildTaskMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[buildtask.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *BuildTaskMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *BuildTaskMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, buildtask.FieldStartedAt)
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *BuildTaskMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *BuildTaskMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ClearFinishedAt clears the value of the "finished_at" field.
+func (m *BuildTaskMutation) ClearFinishedAt() {
+	m.finished_at = nil
+	m.clearedFields[buildtask.FieldFinishedAt] = struct{}{}
+}
+
+// FinishedAtCleared returns if the "finished_at" field was cleared in this mutation.
+func (m *BuildTaskMutation) FinishedAtCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldFinishedAt]
+	return ok
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *BuildTaskMutation) ResetFinishedAt() {
+	m.finished_at = nil
+	delete(m.clearedFields, buildtask.FieldFinishedAt)
+}
+
+// SetOutput sets the "output" field.
+func (m *BuildTaskMutation) SetOutput(s string) {
+	m.output = &s
+}
+
+// Output returns the value of the "output" field in the mutation.
+func (m *BuildTaskMutation) Output() (r string, exists bool) {
+	v := m.output
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutput returns the old "output" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldOutput(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutput: %w", err)
+	}
+	return oldValue.Output, nil
+}
+
+// ClearOutput clears the value of the "output" field.
+func (m *BuildTaskMutation) ClearOutput() {
+	m.output = nil
+	m.clearedFields[buildtask.FieldOutput] = struct{}{}
+}
+
+// OutputCleared returns if the "output" field was cleared in this mutation.
+func (m *BuildTaskMutation) OutputCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldOutput]
+	return ok
+}
+
+// ResetOutput resets all changes to the "output" field.
+func (m *BuildTaskMutation) ResetOutput() {
+	m.output = nil
+	delete(m.clearedFields, buildtask.FieldOutput)
+}
+
+// SetError sets the "error" field.
+func (m *BuildTaskMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *BuildTaskMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *BuildTaskMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[buildtask.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *BuildTaskMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *BuildTaskMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, buildtask.FieldError)
+}
+
+// SetBuilderID sets the "builder" edge to the Builder entity by id.
+func (m *BuildTaskMutation) SetBuilderID(id int) {
+	m.builder = &id
+}
+
+// ClearBuilder clears the "builder" edge to the Builder entity.
+func (m *BuildTaskMutation) ClearBuilder() {
+	m.clearedbuilder = true
+}
+
+// BuilderCleared reports if the "builder" edge to the Builder entity was cleared.
+func (m *BuildTaskMutation) BuilderCleared() bool {
+	return m.clearedbuilder
+}
+
+// BuilderID returns the "builder" edge ID in the mutation.
+func (m *BuildTaskMutation) BuilderID() (id int, exists bool) {
+	if m.builder != nil {
+		return *m.builder, true
+	}
+	return
+}
+
+// BuilderIDs returns the "builder" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BuilderID instead. It exists only for internal usage by the builders.
+func (m *BuildTaskMutation) BuilderIDs() (ids []int) {
+	if id := m.builder; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBuilder resets all changes to the "builder" edge.
+func (m *BuildTaskMutation) ResetBuilder() {
+	m.builder = nil
+	m.clearedbuilder = false
+}
+
+// Where appends a list predicates to the BuildTaskMutation builder.
+func (m *BuildTaskMutation) Where(ps ...predicate.BuildTask) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BuildTaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BuildTaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BuildTask, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BuildTaskMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BuildTaskMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BuildTask).
+func (m *BuildTaskMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BuildTaskMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, buildtask.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, buildtask.FieldLastModifiedAt)
+	}
+	if m.target_os != nil {
+		fields = append(fields, buildtask.FieldTargetOs)
+	}
+	if m.build_image != nil {
+		fields = append(fields, buildtask.FieldBuildImage)
+	}
+	if m.build_script != nil {
+		fields = append(fields, buildtask.FieldBuildScript)
+	}
+	if m.claimed_at != nil {
+		fields = append(fields, buildtask.FieldClaimedAt)
+	}
+	if m.started_at != nil {
+		fields = append(fields, buildtask.FieldStartedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, buildtask.FieldFinishedAt)
+	}
+	if m.output != nil {
+		fields = append(fields, buildtask.FieldOutput)
+	}
+	if m.error != nil {
+		fields = append(fields, buildtask.FieldError)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case buildtask.FieldCreatedAt:
+		return m.CreatedAt()
+	case buildtask.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case buildtask.FieldTargetOs:
+		return m.TargetOs()
+	case buildtask.FieldBuildImage:
+		return m.BuildImage()
+	case buildtask.FieldBuildScript:
+		return m.BuildScript()
+	case buildtask.FieldClaimedAt:
+		return m.ClaimedAt()
+	case buildtask.FieldStartedAt:
+		return m.StartedAt()
+	case buildtask.FieldFinishedAt:
+		return m.FinishedAt()
+	case buildtask.FieldOutput:
+		return m.Output()
+	case buildtask.FieldError:
+		return m.Error()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case buildtask.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case buildtask.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case buildtask.FieldTargetOs:
+		return m.OldTargetOs(ctx)
+	case buildtask.FieldBuildImage:
+		return m.OldBuildImage(ctx)
+	case buildtask.FieldBuildScript:
+		return m.OldBuildScript(ctx)
+	case buildtask.FieldClaimedAt:
+		return m.OldClaimedAt(ctx)
+	case buildtask.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case buildtask.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	case buildtask.FieldOutput:
+		return m.OldOutput(ctx)
+	case buildtask.FieldError:
+		return m.OldError(ctx)
+	}
+	return nil, fmt.Errorf("unknown BuildTask field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case buildtask.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case buildtask.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case buildtask.FieldTargetOs:
+		v, ok := value.(c2pb.Host_Platform)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetOs(v)
+		return nil
+	case buildtask.FieldBuildImage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuildImage(v)
+		return nil
+	case buildtask.FieldBuildScript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuildScript(v)
+		return nil
+	case buildtask.FieldClaimedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaimedAt(v)
+		return nil
+	case buildtask.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case buildtask.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	case buildtask.FieldOutput:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutput(v)
+		return nil
+	case buildtask.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BuildTask field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BuildTaskMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown BuildTask numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BuildTaskMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(buildtask.FieldClaimedAt) {
+		fields = append(fields, buildtask.FieldClaimedAt)
+	}
+	if m.FieldCleared(buildtask.FieldStartedAt) {
+		fields = append(fields, buildtask.FieldStartedAt)
+	}
+	if m.FieldCleared(buildtask.FieldFinishedAt) {
+		fields = append(fields, buildtask.FieldFinishedAt)
+	}
+	if m.FieldCleared(buildtask.FieldOutput) {
+		fields = append(fields, buildtask.FieldOutput)
+	}
+	if m.FieldCleared(buildtask.FieldError) {
+		fields = append(fields, buildtask.FieldError)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BuildTaskMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BuildTaskMutation) ClearField(name string) error {
+	switch name {
+	case buildtask.FieldClaimedAt:
+		m.ClearClaimedAt()
+		return nil
+	case buildtask.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case buildtask.FieldFinishedAt:
+		m.ClearFinishedAt()
+		return nil
+	case buildtask.FieldOutput:
+		m.ClearOutput()
+		return nil
+	case buildtask.FieldError:
+		m.ClearError()
+		return nil
+	}
+	return fmt.Errorf("unknown BuildTask nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BuildTaskMutation) ResetField(name string) error {
+	switch name {
+	case buildtask.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case buildtask.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case buildtask.FieldTargetOs:
+		m.ResetTargetOs()
+		return nil
+	case buildtask.FieldBuildImage:
+		m.ResetBuildImage()
+		return nil
+	case buildtask.FieldBuildScript:
+		m.ResetBuildScript()
+		return nil
+	case buildtask.FieldClaimedAt:
+		m.ResetClaimedAt()
+		return nil
+	case buildtask.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case buildtask.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	case buildtask.FieldOutput:
+		m.ResetOutput()
+		return nil
+	case buildtask.FieldError:
+		m.ResetError()
+		return nil
+	}
+	return fmt.Errorf("unknown BuildTask field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BuildTaskMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.builder != nil {
+		edges = append(edges, buildtask.EdgeBuilder)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BuildTaskMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case buildtask.EdgeBuilder:
+		if id := m.builder; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BuildTaskMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BuildTaskMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BuildTaskMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedbuilder {
+		edges = append(edges, buildtask.EdgeBuilder)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BuildTaskMutation) EdgeCleared(name string) bool {
+	switch name {
+	case buildtask.EdgeBuilder:
+		return m.clearedbuilder
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BuildTaskMutation) ClearEdge(name string) error {
+	switch name {
+	case buildtask.EdgeBuilder:
+		m.ClearBuilder()
+		return nil
+	}
+	return fmt.Errorf("unknown BuildTask unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BuildTaskMutation) ResetEdge(name string) error {
+	switch name {
+	case buildtask.EdgeBuilder:
+		m.ResetBuilder()
+		return nil
+	}
+	return fmt.Errorf("unknown BuildTask edge %s", name)
+}
+
 // BuilderMutation represents an operation that mutates the Builder nodes in the graph.
 type BuilderMutation struct {
 	config
@@ -2121,6 +3100,9 @@ type BuilderMutation struct {
 	appendsupported_targets []c2pb.Host_Platform
 	upstream                *string
 	clearedFields           map[string]struct{}
+	build_tasks             map[int]struct{}
+	removedbuild_tasks      map[int]struct{}
+	clearedbuild_tasks      bool
 	done                    bool
 	oldValue                func(context.Context) (*Builder, error)
 	predicates              []predicate.Builder
@@ -2419,6 +3401,60 @@ func (m *BuilderMutation) ResetUpstream() {
 	m.upstream = nil
 }
 
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by ids.
+func (m *BuilderMutation) AddBuildTaskIDs(ids ...int) {
+	if m.build_tasks == nil {
+		m.build_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.build_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBuildTasks clears the "build_tasks" edge to the BuildTask entity.
+func (m *BuilderMutation) ClearBuildTasks() {
+	m.clearedbuild_tasks = true
+}
+
+// BuildTasksCleared reports if the "build_tasks" edge to the BuildTask entity was cleared.
+func (m *BuilderMutation) BuildTasksCleared() bool {
+	return m.clearedbuild_tasks
+}
+
+// RemoveBuildTaskIDs removes the "build_tasks" edge to the BuildTask entity by IDs.
+func (m *BuilderMutation) RemoveBuildTaskIDs(ids ...int) {
+	if m.removedbuild_tasks == nil {
+		m.removedbuild_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.build_tasks, ids[i])
+		m.removedbuild_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBuildTasks returns the removed IDs of the "build_tasks" edge to the BuildTask entity.
+func (m *BuilderMutation) RemovedBuildTasksIDs() (ids []int) {
+	for id := range m.removedbuild_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BuildTasksIDs returns the "build_tasks" edge IDs in the mutation.
+func (m *BuilderMutation) BuildTasksIDs() (ids []int) {
+	for id := range m.build_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBuildTasks resets all changes to the "build_tasks" edge.
+func (m *BuilderMutation) ResetBuildTasks() {
+	m.build_tasks = nil
+	m.clearedbuild_tasks = false
+	m.removedbuild_tasks = nil
+}
+
 // Where appends a list predicates to the BuilderMutation builder.
 func (m *BuilderMutation) Where(ps ...predicate.Builder) {
 	m.predicates = append(m.predicates, ps...)
@@ -2620,49 +3656,85 @@ func (m *BuilderMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BuilderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.build_tasks != nil {
+		edges = append(edges, builder.EdgeBuildTasks)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *BuilderMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case builder.EdgeBuildTasks:
+		ids := make([]ent.Value, 0, len(m.build_tasks))
+		for id := range m.build_tasks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BuilderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removedbuild_tasks != nil {
+		edges = append(edges, builder.EdgeBuildTasks)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *BuilderMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case builder.EdgeBuildTasks:
+		ids := make([]ent.Value, 0, len(m.removedbuild_tasks))
+		for id := range m.removedbuild_tasks {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BuilderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedbuild_tasks {
+		edges = append(edges, builder.EdgeBuildTasks)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *BuilderMutation) EdgeCleared(name string) bool {
+	switch name {
+	case builder.EdgeBuildTasks:
+		return m.clearedbuild_tasks
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *BuilderMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Builder unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *BuilderMutation) ResetEdge(name string) error {
+	switch name {
+	case builder.EdgeBuildTasks:
+		m.ResetBuildTasks()
+		return nil
+	}
 	return fmt.Errorf("unknown Builder edge %s", name)
 }
 

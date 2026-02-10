@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
@@ -40,7 +41,15 @@ func (Builder) Fields() []ent.Field {
 
 // Edges of the Builder.
 func (Builder) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("build_tasks", BuildTask.Type).
+			Ref("builder").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Build tasks assigned to this builder."),
+	}
 }
 
 // Annotations describes additional information for the ent.

@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -666,6 +667,157 @@ func newBeaconPaginateArgs(rv map[string]any) *beaconPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (bt *BuildTaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuildTaskQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return bt, nil
+	}
+	if err := bt.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return bt, nil
+}
+
+func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(buildtask.Columns))
+		selectedFields = []string{buildtask.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "builder":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BuilderClient{config: bt.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, builderImplementors)...); err != nil {
+				return err
+			}
+			bt.withBuilder = query
+		case "createdAt":
+			if _, ok := fieldSeen[buildtask.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldCreatedAt)
+				fieldSeen[buildtask.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[buildtask.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldLastModifiedAt)
+				fieldSeen[buildtask.FieldLastModifiedAt] = struct{}{}
+			}
+		case "targetOs":
+			if _, ok := fieldSeen[buildtask.FieldTargetOs]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTargetOs)
+				fieldSeen[buildtask.FieldTargetOs] = struct{}{}
+			}
+		case "buildImage":
+			if _, ok := fieldSeen[buildtask.FieldBuildImage]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldBuildImage)
+				fieldSeen[buildtask.FieldBuildImage] = struct{}{}
+			}
+		case "buildScript":
+			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
+				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
+			}
+		case "claimedAt":
+			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldClaimedAt)
+				fieldSeen[buildtask.FieldClaimedAt] = struct{}{}
+			}
+		case "startedAt":
+			if _, ok := fieldSeen[buildtask.FieldStartedAt]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldStartedAt)
+				fieldSeen[buildtask.FieldStartedAt] = struct{}{}
+			}
+		case "finishedAt":
+			if _, ok := fieldSeen[buildtask.FieldFinishedAt]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldFinishedAt)
+				fieldSeen[buildtask.FieldFinishedAt] = struct{}{}
+			}
+		case "output":
+			if _, ok := fieldSeen[buildtask.FieldOutput]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldOutput)
+				fieldSeen[buildtask.FieldOutput] = struct{}{}
+			}
+		case "error":
+			if _, ok := fieldSeen[buildtask.FieldError]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldError)
+				fieldSeen[buildtask.FieldError] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		bt.Select(selectedFields...)
+	}
+	return nil
+}
+
+type buildtaskPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BuildTaskPaginateOption
+}
+
+func newBuildTaskPaginateArgs(rv map[string]any) *buildtaskPaginateArgs {
+	args := &buildtaskPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*BuildTaskOrder:
+			args.opts = append(args.opts, WithBuildTaskOrder(v))
+		case []any:
+			var orders []*BuildTaskOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &BuildTaskOrder{Field: &BuildTaskOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithBuildTaskOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*BuildTaskWhereInput); ok {
+		args.opts = append(args.opts, WithBuildTaskFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (b *BuilderQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuilderQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -686,6 +838,95 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "buildTasks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BuildTaskClient{config: b.config}).Query()
+			)
+			args := newBuildTaskPaginateArgs(fieldArgs(ctx, new(BuildTaskWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newBuildTaskPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Builder) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"build_task_builder"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(builder.BuildTasksColumn), ids...))
+						})
+						if err := query.GroupBy(builder.BuildTasksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
+						}
+						return nil
+					})
+				} else {
+					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Builder) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.BuildTasks)
+							if nodes[i].Edges.totalCount[0] == nil {
+								nodes[i].Edges.totalCount[0] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[0][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, buildtaskImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(builder.BuildTasksColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			b.WithNamedBuildTasks(alias, func(wq *BuildTaskQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[builder.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, builder.FieldCreatedAt)

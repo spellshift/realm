@@ -92,7 +92,8 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 }
 
 // Run starts the builder process using the provided configuration.
-// It connects to the configured upstream server with mTLS credentials and sends a ping request.
+// It connects to the configured upstream server with mTLS credentials,
+// then enters a polling loop to claim and execute build tasks.
 func Run(ctx context.Context, cfg *Config) error {
 	slog.InfoContext(ctx, "builder started",
 		"id", cfg.ID,
@@ -115,6 +116,8 @@ func Run(ctx context.Context, cfg *Config) error {
 	defer conn.Close()
 
 	client := builderpb.NewBuilderClient(conn)
+
+	// Initial ping to verify connectivity
 	_, err = client.Ping(ctx, &builderpb.PingRequest{})
 	if err != nil {
 		return fmt.Errorf("failed to ping upstream: %w", err)
@@ -122,7 +125,54 @@ func Run(ctx context.Context, cfg *Config) error {
 
 	slog.InfoContext(ctx, "successfully pinged upstream", "upstream", cfg.Upstream)
 
-	// Wait for context cancellation
-	<-ctx.Done()
-	return ctx.Err()
+	// Main polling loop
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if err := claimAndExecuteTasks(ctx, client); err != nil {
+				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
+			}
+		}
+	}
+}
+
+func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient) error {
+	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+	if err != nil {
+		return fmt.Errorf("failed to claim build tasks: %w", err)
+	}
+
+	for _, task := range resp.Tasks {
+		slog.InfoContext(ctx, "claimed build task",
+			"task_id", task.Id,
+			"target_os", task.TargetOs,
+			"build_image", task.BuildImage,
+		)
+
+		// Print the build script
+		fmt.Printf("=== Build Task %d ===\n", task.Id)
+		fmt.Printf("Target OS: %s\n", task.TargetOs)
+		fmt.Printf("Build Image: %s\n", task.BuildImage)
+		fmt.Printf("Build Script:\n%s\n", task.BuildScript)
+		fmt.Println("====================")
+
+		// Report completion
+		_, err := client.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+			TaskId: task.Id,
+			Output: fmt.Sprintf("Build script printed successfully for target %s", task.TargetOs),
+		})
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to submit build task output",
+				"task_id", task.Id,
+				"error", err,
+			)
+		}
+	}
+
+	return nil
 }

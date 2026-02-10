@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 )
 
 // BuilderCreate is the builder for creating a Builder entity.
@@ -75,6 +76,21 @@ func (bc *BuilderCreate) SetSupportedTargets(cp []c2pb.Host_Platform) *BuilderCr
 func (bc *BuilderCreate) SetUpstream(s string) *BuilderCreate {
 	bc.mutation.SetUpstream(s)
 	return bc
+}
+
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
+func (bc *BuilderCreate) AddBuildTaskIDs(ids ...int) *BuilderCreate {
+	bc.mutation.AddBuildTaskIDs(ids...)
+	return bc
+}
+
+// AddBuildTasks adds the "build_tasks" edges to the BuildTask entity.
+func (bc *BuilderCreate) AddBuildTasks(b ...*BuildTask) *BuilderCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return bc.AddBuildTaskIDs(ids...)
 }
 
 // Mutation returns the BuilderMutation object of the builder.
@@ -194,6 +210,22 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
 		_node.Upstream = value
+	}
+	if nodes := bc.mutation.BuildTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

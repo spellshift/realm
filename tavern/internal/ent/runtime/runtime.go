@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -94,6 +95,29 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	buildtaskMixin := schema.BuildTask{}.Mixin()
+	buildtaskMixinFields0 := buildtaskMixin[0].Fields()
+	_ = buildtaskMixinFields0
+	buildtaskFields := schema.BuildTask{}.Fields()
+	_ = buildtaskFields
+	// buildtaskDescCreatedAt is the schema descriptor for created_at field.
+	buildtaskDescCreatedAt := buildtaskMixinFields0[0].Descriptor()
+	// buildtask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	buildtask.DefaultCreatedAt = buildtaskDescCreatedAt.Default.(func() time.Time)
+	// buildtaskDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	buildtaskDescLastModifiedAt := buildtaskMixinFields0[1].Descriptor()
+	// buildtask.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	buildtask.DefaultLastModifiedAt = buildtaskDescLastModifiedAt.Default.(func() time.Time)
+	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// buildtaskDescBuildImage is the schema descriptor for build_image field.
+	buildtaskDescBuildImage := buildtaskFields[1].Descriptor()
+	// buildtask.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
+	buildtask.BuildImageValidator = buildtaskDescBuildImage.Validators[0].(func(string) error)
+	// buildtaskDescBuildScript is the schema descriptor for build_script field.
+	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
+	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
+	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	builderMixin := schema.Builder{}.Mixin()
 	builderMixinFields0 := builderMixin[0].Fields()
 	_ = builderMixinFields0

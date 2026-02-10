@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -12,18 +13,21 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
 // BuilderQuery is the builder for querying Builder entities.
 type BuilderQuery struct {
 	config
-	ctx        *QueryContext
-	order      []builder.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Builder
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Builder) error
+	ctx                 *QueryContext
+	order               []builder.OrderOption
+	inters              []Interceptor
+	predicates          []predicate.Builder
+	withBuildTasks      *BuildTaskQuery
+	modifiers           []func(*sql.Selector)
+	loadTotal           []func(context.Context, []*Builder) error
+	withNamedBuildTasks map[string]*BuildTaskQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (bq *BuilderQuery) Unique(unique bool) *BuilderQuery {
 func (bq *BuilderQuery) Order(o ...builder.OrderOption) *BuilderQuery {
 	bq.order = append(bq.order, o...)
 	return bq
+}
+
+// QueryBuildTasks chains the current query on the "build_tasks" edge.
+func (bq *BuilderQuery) QueryBuildTasks() *BuildTaskQuery {
+	query := (&BuildTaskClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(builder.Table, builder.FieldID, selector),
+			sqlgraph.To(buildtask.Table, buildtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, builder.BuildTasksTable, builder.BuildTasksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Builder entity from the query.
@@ -247,15 +273,27 @@ func (bq *BuilderQuery) Clone() *BuilderQuery {
 		return nil
 	}
 	return &BuilderQuery{
-		config:     bq.config,
-		ctx:        bq.ctx.Clone(),
-		order:      append([]builder.OrderOption{}, bq.order...),
-		inters:     append([]Interceptor{}, bq.inters...),
-		predicates: append([]predicate.Builder{}, bq.predicates...),
+		config:         bq.config,
+		ctx:            bq.ctx.Clone(),
+		order:          append([]builder.OrderOption{}, bq.order...),
+		inters:         append([]Interceptor{}, bq.inters...),
+		predicates:     append([]predicate.Builder{}, bq.predicates...),
+		withBuildTasks: bq.withBuildTasks.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
 	}
+}
+
+// WithBuildTasks tells the query-builder to eager-load the nodes that are connected to
+// the "build_tasks" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BuilderQuery) WithBuildTasks(opts ...func(*BuildTaskQuery)) *BuilderQuery {
+	query := (&BuildTaskClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withBuildTasks = query
+	return bq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,8 +372,11 @@ func (bq *BuilderQuery) prepareQuery(ctx context.Context) error {
 
 func (bq *BuilderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Builder, error) {
 	var (
-		nodes = []*Builder{}
-		_spec = bq.querySpec()
+		nodes       = []*Builder{}
+		_spec       = bq.querySpec()
+		loadedTypes = [1]bool{
+			bq.withBuildTasks != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Builder).scanValues(nil, columns)
@@ -343,6 +384,7 @@ func (bq *BuilderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Buil
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Builder{config: bq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(bq.modifiers) > 0 {
@@ -357,12 +399,58 @@ func (bq *BuilderQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Buil
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := bq.withBuildTasks; query != nil {
+		if err := bq.loadBuildTasks(ctx, query, nodes,
+			func(n *Builder) { n.Edges.BuildTasks = []*BuildTask{} },
+			func(n *Builder, e *BuildTask) { n.Edges.BuildTasks = append(n.Edges.BuildTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range bq.withNamedBuildTasks {
+		if err := bq.loadBuildTasks(ctx, query, nodes,
+			func(n *Builder) { n.appendNamedBuildTasks(name) },
+			func(n *Builder, e *BuildTask) { n.appendNamedBuildTasks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range bq.loadTotal {
 		if err := bq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (bq *BuilderQuery) loadBuildTasks(ctx context.Context, query *BuildTaskQuery, nodes []*Builder, init func(*Builder), assign func(*Builder, *BuildTask)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Builder)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.BuildTask(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(builder.BuildTasksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.build_task_builder
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "build_task_builder" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "build_task_builder" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (bq *BuilderQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +535,20 @@ func (bq *BuilderQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedBuildTasks tells the query-builder to eager-load the nodes that are connected to the "build_tasks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (bq *BuilderQuery) WithNamedBuildTasks(name string, opts ...func(*BuildTaskQuery)) *BuilderQuery {
+	query := (&BuildTaskClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if bq.withNamedBuildTasks == nil {
+		bq.withNamedBuildTasks = make(map[string]*BuildTaskQuery)
+	}
+	bq.withNamedBuildTasks[name] = query
+	return bq
 }
 
 // BuilderGroupBy is the group-by builder for Builder entities.

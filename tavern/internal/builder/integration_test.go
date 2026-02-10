@@ -20,6 +20,7 @@ import (
 
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
@@ -144,5 +145,198 @@ func TestBuilderE2E(t *testing.T) {
 		pingResp, err := authClient.Ping(ctx, &builderpb.PingRequest{})
 		require.NoError(t, err)
 		require.NotNil(t, pingResp)
+	})
+
+	// 10. Test: ClaimBuildTasks returns unclaimed tasks and marks them as claimed
+	t.Run("ClaimBuildTasks", func(t *testing.T) {
+		// Create an authenticated client
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		authClient := builderpb.NewBuilderClient(conn)
+
+		// Create a build task assigned to this builder
+		bt := graph.BuildTask.Create().
+			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+			SetBuildImage("golang:1.21").
+			SetBuildScript("echo hello && go build ./...").
+			SetBuilderID(builders[0].ID).
+			SaveX(ctx)
+
+		// Claim tasks
+		resp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		require.Len(t, resp.Tasks, 1)
+		assert.Equal(t, int64(bt.ID), resp.Tasks[0].Id)
+		assert.Equal(t, "golang:1.21", resp.Tasks[0].BuildImage)
+		assert.Equal(t, "echo hello && go build ./...", resp.Tasks[0].BuildScript)
+
+		// Verify claimed_at is set
+		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
+		assert.False(t, reloaded.ClaimedAt.IsZero())
+
+		// Claim again -> should return empty (already claimed)
+		resp2, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		assert.Empty(t, resp2.Tasks)
+	})
+
+	// 11. Test: SubmitBuildTaskOutput sets output and finished_at
+	t.Run("SubmitBuildTaskOutput", func(t *testing.T) {
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		authClient := builderpb.NewBuilderClient(conn)
+
+		// Create and claim a build task
+		bt := graph.BuildTask.Create().
+			SetTargetOs(c2pb.Host_PLATFORM_MACOS).
+			SetBuildImage("rust:1.75").
+			SetBuildScript("cargo build --release").
+			SetBuilderID(builders[0].ID).
+			SaveX(ctx)
+
+		// Claim the task
+		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		require.Len(t, claimResp.Tasks, 1)
+
+		// Submit output
+		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+			TaskId: int64(bt.ID),
+			Output: "build succeeded",
+		})
+		require.NoError(t, err)
+
+		// Verify the build task was updated
+		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
+		assert.Equal(t, "build succeeded", reloaded.Output)
+		assert.False(t, reloaded.FinishedAt.IsZero())
+		assert.Empty(t, reloaded.Error)
+	})
+
+	// 12. Test: SubmitBuildTaskOutput with error
+	t.Run("SubmitBuildTaskOutputWithError", func(t *testing.T) {
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		authClient := builderpb.NewBuilderClient(conn)
+
+		// Create and claim a build task
+		bt := graph.BuildTask.Create().
+			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+			SetBuildImage("golang:1.21").
+			SetBuildScript("go build ./...").
+			SetBuilderID(builders[0].ID).
+			SaveX(ctx)
+
+		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
+		require.NoError(t, err)
+		require.Len(t, claimResp.Tasks, 1)
+
+		// Submit output with error
+		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+			TaskId: int64(bt.ID),
+			Output: "partial output before failure",
+			Error:  "compilation failed: missing dependency",
+		})
+		require.NoError(t, err)
+
+		// Verify the build task has both output and error
+		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
+		assert.Equal(t, "partial output before failure", reloaded.Output)
+		assert.Equal(t, "compilation failed: missing dependency", reloaded.Error)
+		assert.False(t, reloaded.FinishedAt.IsZero())
+	})
+
+	// 13. Test: SubmitBuildTaskOutput for another builder's task is rejected
+	t.Run("SubmitBuildTaskOutputWrongBuilder", func(t *testing.T) {
+		// Register a second builder
+		var registerResp2 struct {
+			RegisterBuilder struct {
+				Builder struct {
+					ID string
+				}
+				Config string
+			}
+		}
+		err := gqlClient.Post(`mutation registerNewBuilder($input: CreateBuilderInput!) {
+			registerBuilder(input: $input) {
+				builder { id }
+				config
+			}
+		}`, &registerResp2, client.Var("input", map[string]any{
+			"supportedTargets": []string{"PLATFORM_WINDOWS"},
+			"upstream":         "https://tavern.example.com:443",
+		}))
+		require.NoError(t, err)
+
+		cfg2, err := builder.ParseConfigBytes([]byte(registerResp2.RegisterBuilder.Config))
+		require.NoError(t, err)
+
+		// Get the second builder's DB entity
+		allBuilders, err := graph.Builder.Query().All(ctx)
+		require.NoError(t, err)
+		require.Len(t, allBuilders, 2)
+
+		var secondBuilder int
+		for _, b := range allBuilders {
+			if b.Identifier == cfg2.ID {
+				secondBuilder = b.ID
+			}
+		}
+
+		// Create a build task assigned to the second builder
+		bt := graph.BuildTask.Create().
+			SetTargetOs(c2pb.Host_PLATFORM_WINDOWS).
+			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
+			SetBuildScript("msbuild /t:Build").
+			SetBuilderID(secondBuilder).
+			SaveX(ctx)
+
+		// Try to submit output using the FIRST builder's credentials
+		creds, err := builder.NewCredentialsFromConfig(cfg)
+		require.NoError(t, err)
+
+		conn, err := grpc.NewClient("passthrough:///bufnet",
+			grpc.WithContextDialer(bufDialer),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithPerRPCCredentials(creds),
+		)
+		require.NoError(t, err)
+		defer conn.Close()
+
+		authClient := builderpb.NewBuilderClient(conn)
+
+		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+			TaskId: int64(bt.ID),
+			Output: "should not be allowed",
+		})
+		require.Error(t, err)
+		assert.Equal(t, codes.PermissionDenied, status.Code(err))
 	})
 }

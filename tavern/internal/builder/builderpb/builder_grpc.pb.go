@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Builder_Ping_FullMethodName = "/builder.Builder/Ping"
+	Builder_Ping_FullMethodName                  = "/builder.Builder/Ping"
+	Builder_ClaimBuildTasks_FullMethodName       = "/builder.Builder/ClaimBuildTasks"
+	Builder_SubmitBuildTaskOutput_FullMethodName = "/builder.Builder/SubmitBuildTaskOutput"
 )
 
 // BuilderClient is the client API for Builder service.
@@ -27,6 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BuilderClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error)
+	SubmitBuildTaskOutput(ctx context.Context, in *SubmitBuildTaskOutputRequest, opts ...grpc.CallOption) (*SubmitBuildTaskOutputResponse, error)
 }
 
 type builderClient struct {
@@ -47,11 +51,33 @@ func (c *builderClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.
 	return out, nil
 }
 
+func (c *builderClient) ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClaimBuildTasksResponse)
+	err := c.cc.Invoke(ctx, Builder_ClaimBuildTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *builderClient) SubmitBuildTaskOutput(ctx context.Context, in *SubmitBuildTaskOutputRequest, opts ...grpc.CallOption) (*SubmitBuildTaskOutputResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitBuildTaskOutputResponse)
+	err := c.cc.Invoke(ctx, Builder_SubmitBuildTaskOutput_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BuilderServer is the server API for Builder service.
 // All implementations must embed UnimplementedBuilderServer
 // for forward compatibility
 type BuilderServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error)
+	SubmitBuildTaskOutput(context.Context, *SubmitBuildTaskOutputRequest) (*SubmitBuildTaskOutputResponse, error)
 	mustEmbedUnimplementedBuilderServer()
 }
 
@@ -61,6 +87,12 @@ type UnimplementedBuilderServer struct {
 
 func (UnimplementedBuilderServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedBuilderServer) ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimBuildTasks not implemented")
+}
+func (UnimplementedBuilderServer) SubmitBuildTaskOutput(context.Context, *SubmitBuildTaskOutputRequest) (*SubmitBuildTaskOutputResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitBuildTaskOutput not implemented")
 }
 func (UnimplementedBuilderServer) mustEmbedUnimplementedBuilderServer() {}
 
@@ -93,6 +125,42 @@ func _Builder_Ping_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Builder_ClaimBuildTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClaimBuildTasksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BuilderServer).ClaimBuildTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Builder_ClaimBuildTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BuilderServer).ClaimBuildTasks(ctx, req.(*ClaimBuildTasksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Builder_SubmitBuildTaskOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitBuildTaskOutputRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BuilderServer).SubmitBuildTaskOutput(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Builder_SubmitBuildTaskOutput_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BuilderServer).SubmitBuildTaskOutput(ctx, req.(*SubmitBuildTaskOutputRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Builder_ServiceDesc is the grpc.ServiceDesc for Builder service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -103,6 +171,14 @@ var Builder_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Builder_Ping_Handler,
+		},
+		{
+			MethodName: "ClaimBuildTasks",
+			Handler:    _Builder_ClaimBuildTasks_Handler,
+		},
+		{
+			MethodName: "SubmitBuildTaskOutput",
+			Handler:    _Builder_SubmitBuildTaskOutput_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

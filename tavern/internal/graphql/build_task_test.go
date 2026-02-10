@@ -1,0 +1,161 @@
+package graphql_test
+
+import (
+	"context"
+	"testing"
+
+	"github.com/99designs/gqlgen/client"
+	"github.com/99designs/gqlgen/graphql/handler"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent/enttest"
+	"realm.pub/tavern/internal/graphql"
+	tavernhttp "realm.pub/tavern/internal/http"
+	"realm.pub/tavern/tomes"
+)
+
+func TestCreateBuildTask(t *testing.T) {
+	ctx := context.Background()
+	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	defer graph.Close()
+
+	git := tomes.NewGitImporter(graph)
+	srv := tavernhttp.NewServer(
+		tavernhttp.RouteMap{
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, nil, nil)),
+		},
+		tavernhttp.WithAuthenticationBypass(graph),
+	)
+	gqlClient := client.New(srv, client.Path("/graphql"))
+
+	mutFull := `mutation createBuildTask($input: CreateBuildTaskInput!) {
+		createBuildTask(input: $input) {
+			id
+			targetOs
+			buildImage
+			buildScript
+			builder { id }
+		}
+	}`
+	mutIDOnly := `mutation createBuildTask($input: CreateBuildTaskInput!) {
+		createBuildTask(input: $input) {
+			id
+		}
+	}`
+
+	t.Run("NoBuilders", func(t *testing.T) {
+		var resp struct {
+			CreateBuildTask struct {
+				ID string
+			}
+		}
+		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
+			"targetOS":    "PLATFORM_LINUX",
+			"buildImage":  "golang:1.21",
+			"buildScript": "go build ./...",
+		}))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no builder available")
+	})
+
+	t.Run("NoMatchingBuilder", func(t *testing.T) {
+		// Create a builder that only supports Windows
+		graph.Builder.Create().
+			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).
+			SetUpstream("https://example.com").
+			SaveX(ctx)
+
+		var resp struct {
+			CreateBuildTask struct {
+				ID string
+			}
+		}
+		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
+			"targetOS":    "PLATFORM_LINUX",
+			"buildImage":  "golang:1.21",
+			"buildScript": "go build ./...",
+		}))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "no builder available")
+	})
+
+	t.Run("SingleMatchingBuilder", func(t *testing.T) {
+		// Clean up previous builders
+		graph.BuildTask.Delete().ExecX(ctx)
+		graph.Builder.Delete().ExecX(ctx)
+
+		linuxBuilder := graph.Builder.Create().
+			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
+			SetUpstream("https://example.com").
+			SaveX(ctx)
+
+		var resp struct {
+			CreateBuildTask struct {
+				ID          string
+				TargetOs    string
+				BuildImage  string
+				BuildScript string
+				Builder     struct {
+					ID string
+				}
+			}
+		}
+		err := gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
+			"targetOS":    "PLATFORM_LINUX",
+			"buildImage":  "golang:1.21",
+			"buildScript": "go build ./...",
+		}))
+		require.NoError(t, err)
+		require.NotEmpty(t, resp.CreateBuildTask.ID)
+		assert.Equal(t, "PLATFORM_LINUX", resp.CreateBuildTask.TargetOs)
+		assert.Equal(t, "golang:1.21", resp.CreateBuildTask.BuildImage)
+		assert.Equal(t, "go build ./...", resp.CreateBuildTask.BuildScript)
+
+		// Verify the builder edge
+		bt := graph.BuildTask.GetX(ctx, convertID(resp.CreateBuildTask.ID))
+		assignedBuilder := bt.QueryBuilder().OnlyX(ctx)
+		assert.Equal(t, linuxBuilder.ID, assignedBuilder.ID)
+	})
+
+	t.Run("MultipleMatchingBuilders", func(t *testing.T) {
+		// Clean up
+		graph.BuildTask.Delete().ExecX(ctx)
+		graph.Builder.Delete().ExecX(ctx)
+
+		// Create 3 builders that all support Linux
+		builders := make(map[int]bool)
+		for i := 0; i < 3; i++ {
+			b := graph.Builder.Create().
+				SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
+				SetUpstream("https://example.com").
+				SaveX(ctx)
+			builders[b.ID] = true
+		}
+
+		// Create 20 build tasks and track which builders get selected
+		selectedBuilders := make(map[int]bool)
+		for i := 0; i < 20; i++ {
+			var resp struct {
+				CreateBuildTask struct {
+					ID string
+				}
+			}
+			err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
+				"targetOS":    "PLATFORM_LINUX",
+				"buildImage":  "golang:1.21",
+				"buildScript": "go build ./...",
+			}))
+			require.NoError(t, err)
+
+			bt := graph.BuildTask.GetX(ctx, convertID(resp.CreateBuildTask.ID))
+			assignedBuilder := bt.QueryBuilder().OnlyX(ctx)
+			assert.True(t, builders[assignedBuilder.ID], "selected builder should be one of the candidates")
+			selectedBuilders[assignedBuilder.ID] = true
+		}
+
+		// With 3 builders and 20 attempts, we should see at least 2 different builders selected
+		assert.Greater(t, len(selectedBuilders), 1, "expected random selection across multiple builders")
+	})
+}

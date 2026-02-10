@@ -8,6 +8,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -57,6 +58,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.BuildTask.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete build tasks: %w", err))
 	}
 	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
@@ -333,6 +337,46 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 		MtlsCert: mtlsCert,
 		Config:   string(configBytes),
 	}, nil
+}
+
+// CreateBuildTask is the resolver for the createBuildTask field.
+func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
+	// 1. Query all builders
+	allBuilders, err := r.client.Builder.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query builders: %w", err)
+	}
+
+	// 2. Filter builders that support the target OS
+	var candidates []*ent.Builder
+	for _, b := range allBuilders {
+		for _, target := range b.SupportedTargets {
+			if target == input.TargetOs {
+				candidates = append(candidates, b)
+				break
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("no builder available that supports target %s", input.TargetOs.String())
+	}
+
+	// 3. Randomly select one builder
+	selected := candidates[rand.Intn(len(candidates))]
+
+	// 4. Create the build task
+	bt, err := r.client.BuildTask.Create().
+		SetTargetOs(input.TargetOs).
+		SetBuildImage(input.BuildImage).
+		SetBuildScript(input.BuildScript).
+		SetBuilder(selected).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create build task: %w", err)
+	}
+
+	return bt, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

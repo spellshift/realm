@@ -35,11 +35,23 @@ type MutationResolver interface {
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
 	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error)
+	CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createBuildTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createCredential_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -1572,6 +1584,91 @@ func (ec *executionContext) fieldContext_Mutation_registerBuilder(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createBuildTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createBuildTask,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateBuildTask(ctx, fc.Args["input"].(models.CreateBuildTaskInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal *ent.BuildTask
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.BuildTask
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNBuildTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTask,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BuildTask_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_BuildTask_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_BuildTask_lastModifiedAt(ctx, field)
+			case "targetOs":
+				return ec.fieldContext_BuildTask_targetOs(ctx, field)
+			case "buildImage":
+				return ec.fieldContext_BuildTask_buildImage(ctx, field)
+			case "buildScript":
+				return ec.fieldContext_BuildTask_buildScript(ctx, field)
+			case "claimedAt":
+				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
+			case "startedAt":
+				return ec.fieldContext_BuildTask_startedAt(ctx, field)
+			case "finishedAt":
+				return ec.fieldContext_BuildTask_finishedAt(ctx, field)
+			case "output":
+				return ec.fieldContext_BuildTask_output(ctx, field)
+			case "error":
+				return ec.fieldContext_BuildTask_error(ctx, field)
+			case "builder":
+				return ec.fieldContext_BuildTask_builder(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildTask", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createBuildTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -1712,6 +1809,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "registerBuilder":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_registerBuilder(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createBuildTask":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBuildTask(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

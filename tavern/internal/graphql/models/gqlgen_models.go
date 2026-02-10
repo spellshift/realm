@@ -30,6 +30,16 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+// Input for creating a new build task.
+type CreateBuildTaskInput struct {
+	// The target operating system for the build.
+	TargetOs c2pb.Host_Platform `json:"targetOS"`
+	// Docker container image name to use for the build.
+	BuildImage string `json:"buildImage"`
+	// The script to execute inside the build container.
+	BuildScript string `json:"buildScript"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
@@ -40,7 +50,7 @@ type ImportRepositoryInput struct {
 type RegisterBuilderOutput struct {
 	// The created builder entity.
 	Builder *ent.Builder `json:"builder"`
-	// mTLS certificate in base64 encoding for the builder to authenticate.
+	// mTLS certificate PEM bundle for the builder to authenticate.
 	MtlsCert string `json:"mtlsCert"`
 	// YAML-formatted configuration for the builder.
 	Config string `json:"config"`

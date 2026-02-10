@@ -7,6 +7,29 @@ option go_package = "realm.pub/tavern/internal/builder/builderpb";
 message PingRequest {}
 message PingResponse {}
 
+message ClaimBuildTasksRequest {}
+
+message BuildTaskSpec {
+    int64 id = 1;
+    string target_os = 2;
+    string build_image = 3;
+    string build_script = 4;
+}
+
+message ClaimBuildTasksResponse {
+    repeated BuildTaskSpec tasks = 1;
+}
+
+message SubmitBuildTaskOutputRequest {
+    int64 task_id = 1;
+    string output = 2;
+    string error = 3;
+}
+
+message SubmitBuildTaskOutputResponse {}
+
 service Builder {
     rpc Ping(PingRequest) returns (PingResponse) {}
+    rpc ClaimBuildTasks(ClaimBuildTasksRequest) returns (ClaimBuildTasksResponse) {}
+    rpc SubmitBuildTaskOutput(SubmitBuildTaskOutputRequest) returns (SubmitBuildTaskOutputResponse) {}
 }

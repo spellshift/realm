@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
@@ -282,6 +283,29 @@ func UpstreamEqualFold(v string) predicate.Builder {
 // UpstreamContainsFold applies the ContainsFold predicate on the "upstream" field.
 func UpstreamContainsFold(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldContainsFold(FieldUpstream, v))
+}
+
+// HasBuildTasks applies the HasEdge predicate on the "build_tasks" edge.
+func HasBuildTasks() predicate.Builder {
+	return predicate.Builder(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, BuildTasksTable, BuildTasksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBuildTasksWith applies the HasEdge predicate on the "build_tasks" edge with a given conditions (other predicates).
+func HasBuildTasksWith(preds ...predicate.BuildTask) predicate.Builder {
+	return predicate.Builder(func(s *sql.Selector) {
+		step := newBuildTasksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

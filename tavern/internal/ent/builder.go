@@ -28,8 +28,33 @@ type Builder struct {
 	// The platforms this builder can build agents for.
 	SupportedTargets []c2pb.Host_Platform `json:"supported_targets,omitempty"`
 	// The server address that the builder should connect to.
-	Upstream     string `json:"upstream,omitempty"`
+	Upstream string `json:"upstream,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the BuilderQuery when eager-loading is set.
+	Edges        BuilderEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// BuilderEdges holds the relations/edges for other nodes in the graph.
+type BuilderEdges struct {
+	// Build tasks assigned to this builder.
+	BuildTasks []*BuildTask `json:"build_tasks,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedBuildTasks map[string][]*BuildTask
+}
+
+// BuildTasksOrErr returns the BuildTasks value or an error if the edge
+// was not loaded in eager-loading.
+func (e BuilderEdges) BuildTasksOrErr() ([]*BuildTask, error) {
+	if e.loadedTypes[0] {
+		return e.BuildTasks, nil
+	}
+	return nil, &NotLoadedError{edge: "build_tasks"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -111,6 +136,11 @@ func (b *Builder) Value(name string) (ent.Value, error) {
 	return b.selectValues.Get(name)
 }
 
+// QueryBuildTasks queries the "build_tasks" edge of the Builder entity.
+func (b *Builder) QueryBuildTasks() *BuildTaskQuery {
+	return NewBuilderClient(b.config).QueryBuildTasks(b)
+}
+
 // Update returns a builder for updating this Builder.
 // Note that you need to call Builder.Unwrap() before calling this method if this Builder
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -150,6 +180,30 @@ func (b *Builder) String() string {
 	builder.WriteString(b.Upstream)
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedBuildTasks returns the BuildTasks named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (b *Builder) NamedBuildTasks(name string) ([]*BuildTask, error) {
+	if b.Edges.namedBuildTasks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := b.Edges.namedBuildTasks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (b *Builder) appendNamedBuildTasks(name string, edges ...*BuildTask) {
+	if b.Edges.namedBuildTasks == nil {
+		b.Edges.namedBuildTasks = make(map[string][]*BuildTask)
+	}
+	if len(edges) == 0 {
+		b.Edges.namedBuildTasks[name] = []*BuildTask{}
+	} else {
+		b.Edges.namedBuildTasks[name] = append(b.Edges.namedBuildTasks[name], edges...)
+	}
 }
 
 // Builders is a parsable slice of Builder.

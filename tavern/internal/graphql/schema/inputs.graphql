@@ -48,6 +48,18 @@ input ImportRepositoryInput {
   includeDirs: [String!]
 }
 
+"""Input for creating a new build task."""
+input CreateBuildTaskInput {
+  """The target operating system for the build."""
+  targetOS: HostPlatform!
+
+  """Docker container image name to use for the build."""
+  buildImage: String!
+
+  """The script to execute inside the build container."""
+  buildScript: String!
+}
+
 """Output returned when registering a new builder."""
 type RegisterBuilderOutput {
   """The created builder entity."""
