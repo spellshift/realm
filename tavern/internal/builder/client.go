@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/builder/executor"
 )
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
@@ -93,8 +95,9 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 
 // Run starts the builder process using the provided configuration.
 // It connects to the configured upstream server with mTLS credentials,
-// then enters a polling loop to claim and execute build tasks.
-func Run(ctx context.Context, cfg *Config) error {
+// then enters a polling loop to claim and execute build tasks using the
+// provided executor.
+func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	slog.InfoContext(ctx, "builder started",
 		"id", cfg.ID,
 		"supported_targets", cfg.SupportedTargets,
@@ -134,14 +137,14 @@ func Run(ctx context.Context, cfg *Config) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := claimAndExecuteTasks(ctx, client); err != nil {
+			if err := claimAndExecuteTasks(ctx, client, exec); err != nil {
 				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 			}
 		}
 	}
 }
 
-func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient) error {
+func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor) error {
 	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 	if err != nil {
 		return fmt.Errorf("failed to claim build tasks: %w", err)
@@ -154,25 +157,94 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient) e
 			"build_image", task.BuildImage,
 		)
 
-		// Print the build script
-		fmt.Printf("=== Build Task %d ===\n", task.Id)
-		fmt.Printf("Target OS: %s\n", task.TargetOs)
-		fmt.Printf("Build Image: %s\n", task.BuildImage)
-		fmt.Printf("Build Script:\n%s\n", task.BuildScript)
-		fmt.Println("====================")
-
-		// Report completion
-		_, err := client.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
-			TaskId: task.Id,
-			Output: fmt.Sprintf("Build script printed successfully for target %s", task.TargetOs),
-		})
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to submit build task output",
-				"task_id", task.Id,
-				"error", err,
-			)
-		}
+		executeTask(ctx, client, exec, task)
 	}
 
 	return nil
+}
+
+// executeTask runs a single build task through the executor, streaming output
+// and errors back to the server, then reports completion.
+func executeTask(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, task *builderpb.BuildTaskSpec) {
+	outputCh := make(chan string, 64)
+	errorCh := make(chan string, 64)
+
+	var outputLines []string
+	var errorLines []string
+
+	// Collect output and errors in a background goroutine.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			select {
+			case line, ok := <-outputCh:
+				if !ok {
+					outputCh = nil
+					if errorCh == nil {
+						return
+					}
+					continue
+				}
+				outputLines = append(outputLines, line)
+				slog.InfoContext(ctx, "build output",
+					"task_id", task.Id,
+					"line", line,
+				)
+			case line, ok := <-errorCh:
+				if !ok {
+					errorCh = nil
+					if outputCh == nil {
+						return
+					}
+					continue
+				}
+				errorLines = append(errorLines, line)
+				slog.WarnContext(ctx, "build error output",
+					"task_id", task.Id,
+					"line", line,
+				)
+			}
+		}
+	}()
+
+	// Run the build through the executor.
+	buildErr := exec.Build(ctx, executor.BuildSpec{
+		TaskID:      task.Id,
+		TargetOS:    task.TargetOs,
+		BuildImage:  task.BuildImage,
+		BuildScript: task.BuildScript,
+	}, outputCh, errorCh)
+
+	// Close channels to signal collector goroutine to finish.
+	close(outputCh)
+	close(errorCh)
+	<-done
+
+	// Build the submission request with collected output.
+	submitReq := &builderpb.SubmitBuildTaskOutputRequest{
+		TaskId: task.Id,
+		Output: strings.Join(outputLines, "\n"),
+	}
+
+	if buildErr != nil {
+		errMsg := buildErr.Error()
+		if len(errorLines) > 0 {
+			errMsg = strings.Join(errorLines, "\n") + "\n" + errMsg
+		}
+		submitReq.Error = errMsg
+		slog.ErrorContext(ctx, "build task failed",
+			"task_id", task.Id,
+			"error", buildErr,
+		)
+	} else if len(errorLines) > 0 {
+		submitReq.Error = strings.Join(errorLines, "\n")
+	}
+
+	if _, err := client.SubmitBuildTaskOutput(ctx, submitReq); err != nil {
+		slog.ErrorContext(ctx, "failed to submit build task output",
+			"task_id", task.Id,
+			"error", err,
+		)
+	}
 }

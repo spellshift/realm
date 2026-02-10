@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/builder/executor"
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
@@ -163,7 +164,12 @@ func newApp(ctx context.Context) (app *cli.App) {
 					"supported_targets", cfg.SupportedTargets,
 				)
 
-				return builder.Run(ctx, cfg)
+				exec, err := executor.NewDockerExecutorFromEnv(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to create docker executor: %w", err)
+				}
+
+				return builder.Run(ctx, cfg, exec)
 			},
 		},
 	}
