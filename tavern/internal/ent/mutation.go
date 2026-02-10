@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -42,6 +43,7 @@ const (
 	// Node types.
 	TypeAsset          = "Asset"
 	TypeBeacon         = "Beacon"
+	TypeBuilder        = "Builder"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
 	TypeHostFile       = "HostFile"
@@ -2104,6 +2106,564 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon edge %s", name)
+}
+
+// BuilderMutation represents an operation that mutates the Builder nodes in the graph.
+type BuilderMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int
+	created_at              *time.Time
+	last_modified_at        *time.Time
+	identifier              *string
+	supported_targets       *[]c2pb.Host_Platform
+	appendsupported_targets []c2pb.Host_Platform
+	upstream                *string
+	clearedFields           map[string]struct{}
+	done                    bool
+	oldValue                func(context.Context) (*Builder, error)
+	predicates              []predicate.Builder
+}
+
+var _ ent.Mutation = (*BuilderMutation)(nil)
+
+// builderOption allows management of the mutation configuration using functional options.
+type builderOption func(*BuilderMutation)
+
+// newBuilderMutation creates new mutation for the Builder entity.
+func newBuilderMutation(c config, op Op, opts ...builderOption) *BuilderMutation {
+	m := &BuilderMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBuilder,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBuilderID sets the ID field of the mutation.
+func withBuilderID(id int) builderOption {
+	return func(m *BuilderMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Builder
+		)
+		m.oldValue = func(ctx context.Context) (*Builder, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Builder.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBuilder sets the old Builder of the mutation.
+func withBuilder(node *Builder) builderOption {
+	return func(m *BuilderMutation) {
+		m.oldValue = func(context.Context) (*Builder, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BuilderMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BuilderMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BuilderMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BuilderMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Builder.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BuilderMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BuilderMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BuilderMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *BuilderMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *BuilderMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *BuilderMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetIdentifier sets the "identifier" field.
+func (m *BuilderMutation) SetIdentifier(s string) {
+	m.identifier = &s
+}
+
+// Identifier returns the value of the "identifier" field in the mutation.
+func (m *BuilderMutation) Identifier() (r string, exists bool) {
+	v := m.identifier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdentifier returns the old "identifier" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldIdentifier(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdentifier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdentifier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdentifier: %w", err)
+	}
+	return oldValue.Identifier, nil
+}
+
+// ResetIdentifier resets all changes to the "identifier" field.
+func (m *BuilderMutation) ResetIdentifier() {
+	m.identifier = nil
+}
+
+// SetSupportedTargets sets the "supported_targets" field.
+func (m *BuilderMutation) SetSupportedTargets(cp []c2pb.Host_Platform) {
+	m.supported_targets = &cp
+	m.appendsupported_targets = nil
+}
+
+// SupportedTargets returns the value of the "supported_targets" field in the mutation.
+func (m *BuilderMutation) SupportedTargets() (r []c2pb.Host_Platform, exists bool) {
+	v := m.supported_targets
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupportedTargets returns the old "supported_targets" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldSupportedTargets(ctx context.Context) (v []c2pb.Host_Platform, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupportedTargets is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupportedTargets requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupportedTargets: %w", err)
+	}
+	return oldValue.SupportedTargets, nil
+}
+
+// AppendSupportedTargets adds cp to the "supported_targets" field.
+func (m *BuilderMutation) AppendSupportedTargets(cp []c2pb.Host_Platform) {
+	m.appendsupported_targets = append(m.appendsupported_targets, cp...)
+}
+
+// AppendedSupportedTargets returns the list of values that were appended to the "supported_targets" field in this mutation.
+func (m *BuilderMutation) AppendedSupportedTargets() ([]c2pb.Host_Platform, bool) {
+	if len(m.appendsupported_targets) == 0 {
+		return nil, false
+	}
+	return m.appendsupported_targets, true
+}
+
+// ResetSupportedTargets resets all changes to the "supported_targets" field.
+func (m *BuilderMutation) ResetSupportedTargets() {
+	m.supported_targets = nil
+	m.appendsupported_targets = nil
+}
+
+// SetUpstream sets the "upstream" field.
+func (m *BuilderMutation) SetUpstream(s string) {
+	m.upstream = &s
+}
+
+// Upstream returns the value of the "upstream" field in the mutation.
+func (m *BuilderMutation) Upstream() (r string, exists bool) {
+	v := m.upstream
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstream returns the old "upstream" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldUpstream(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstream is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstream requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstream: %w", err)
+	}
+	return oldValue.Upstream, nil
+}
+
+// ResetUpstream resets all changes to the "upstream" field.
+func (m *BuilderMutation) ResetUpstream() {
+	m.upstream = nil
+}
+
+// Where appends a list predicates to the BuilderMutation builder.
+func (m *BuilderMutation) Where(ps ...predicate.Builder) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BuilderMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BuilderMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Builder, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BuilderMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BuilderMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Builder).
+func (m *BuilderMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BuilderMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, builder.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, builder.FieldLastModifiedAt)
+	}
+	if m.identifier != nil {
+		fields = append(fields, builder.FieldIdentifier)
+	}
+	if m.supported_targets != nil {
+		fields = append(fields, builder.FieldSupportedTargets)
+	}
+	if m.upstream != nil {
+		fields = append(fields, builder.FieldUpstream)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BuilderMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case builder.FieldCreatedAt:
+		return m.CreatedAt()
+	case builder.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case builder.FieldIdentifier:
+		return m.Identifier()
+	case builder.FieldSupportedTargets:
+		return m.SupportedTargets()
+	case builder.FieldUpstream:
+		return m.Upstream()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BuilderMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case builder.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case builder.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case builder.FieldIdentifier:
+		return m.OldIdentifier(ctx)
+	case builder.FieldSupportedTargets:
+		return m.OldSupportedTargets(ctx)
+	case builder.FieldUpstream:
+		return m.OldUpstream(ctx)
+	}
+	return nil, fmt.Errorf("unknown Builder field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuilderMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case builder.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case builder.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case builder.FieldIdentifier:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdentifier(v)
+		return nil
+	case builder.FieldSupportedTargets:
+		v, ok := value.([]c2pb.Host_Platform)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupportedTargets(v)
+		return nil
+	case builder.FieldUpstream:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstream(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Builder field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BuilderMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BuilderMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuilderMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Builder numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BuilderMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BuilderMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BuilderMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Builder nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BuilderMutation) ResetField(name string) error {
+	switch name {
+	case builder.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case builder.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case builder.FieldIdentifier:
+		m.ResetIdentifier()
+		return nil
+	case builder.FieldSupportedTargets:
+		m.ResetSupportedTargets()
+		return nil
+	case builder.FieldUpstream:
+		m.ResetUpstream()
+		return nil
+	}
+	return fmt.Errorf("unknown Builder field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BuilderMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BuilderMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BuilderMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BuilderMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BuilderMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BuilderMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BuilderMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Builder unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BuilderMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Builder edge %s", name)
 }
 
 // HostMutation represents an operation that mutates the Host nodes in the graph.

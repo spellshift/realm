@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -55,6 +57,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
 	}
 
 	// Commit
@@ -280,6 +285,54 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 	return r.client.Link.UpdateOneID(linkID).
 		SetExpiresAt(time.Now().Add(-1 * time.Second)).
 		Save(ctx)
+}
+
+// RegisterBuilder is the resolver for the registerBuilder field.
+func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
+	// 1. Create builder ent (identifier is auto-generated)
+	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create builder: %w", err)
+	}
+
+	// 2. Generate CA-signed X.509 certificate for mTLS
+	certPEM, keyPEM, err := builder.SignBuilderCertificate(r.builderCA, r.builderCAKey, b.Identifier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign builder certificate: %w", err)
+	}
+
+	// Combine cert and key into a single PEM bundle
+	combinedPEM := append(certPEM, keyPEM...)
+	mtlsCert := string(combinedPEM)
+
+	// 3. Build YAML config
+	targetNames := make([]string, len(b.SupportedTargets))
+	for i, t := range b.SupportedTargets {
+		targetNames[i] = strings.ToLower(strings.TrimPrefix(t.String(), "PLATFORM_"))
+	}
+
+	configData := struct {
+		ID               string   `yaml:"id"`
+		SupportedTargets []string `yaml:"supported_targets"`
+		MTLS             string   `yaml:"mtls"`
+		Upstream         string   `yaml:"upstream"`
+	}{
+		ID:               b.Identifier,
+		SupportedTargets: targetNames,
+		MTLS:             mtlsCert,
+		Upstream:         b.Upstream,
+	}
+
+	configBytes, err := yaml.Marshal(configData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal builder config: %w", err)
+	}
+
+	return &models.RegisterBuilderOutput{
+		Builder:  b,
+		MtlsCert: mtlsCert,
+		Config:   string(configBytes),
+	}, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

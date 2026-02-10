@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
@@ -34,6 +35,26 @@ func (c *BeaconUpdate) SetInput(i UpdateBeaconInput) *BeaconUpdate {
 
 // SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdateOne builder.
 func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateBuilderInput represents a mutation input for creating builders.
+type CreateBuilderInput struct {
+	SupportedTargets []c2pb.Host_Platform
+	Upstream         string
+}
+
+// Mutate applies the CreateBuilderInput on the BuilderMutation builder.
+func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
+	if v := i.SupportedTargets; v != nil {
+		m.SetSupportedTargets(v)
+	}
+	m.SetUpstream(i.Upstream)
+}
+
+// SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.
+func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
