@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdh"
 	"crypto/ed25519"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
