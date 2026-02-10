@@ -7,7 +7,7 @@ permalink: user-guide/tomes
 ---
 ## Tomes
 
-A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package that can be run on one or more [Beacons](/user-guide/terminology#beacon). By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. Please take a few minutes to read through the [options available to you](https://github.com/spellshift/realm/tree/main/tavern/tomes) now, and be sure to refer to them as reference when creating your own [Tomes](/user-guide/terminology#tome). If you're looking for information on how to run [Tomes](/user-guide/terminology#tome) and aren't quite ready to write your own, check out our [Getting Started guide](/user-guide/getting-started). Otherwise, adventure onwards, but with a word of warning. [Eldritch](/user-guide/terminology#eldritch) provides a useful abstraction for many offensive operations, however it is under heavy active development at this time and is subject to change. After the release of [Realm](https://github.com/spellshift/realm) version `1.0.0`, [Eldritch](/user-guide/terminology#eldritch) will follow [Semantic Versioning](https://semver.org/), to prevent [Tomes](/user-guide/terminology#tome) from failing when breaking changes are introduced. Until then however, the [Eldritch](/user-guide/terminology#eldritch) API may change. This rapid iteration will enable the language to more quickly reach maturity and ensure we provide the best possible design for operators, so thank you for your patience.
+A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package that can be run on one or more [Beacons](/user-guide/terminology#beacon). By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. Please take a few minutes to read through the [options available to you](https://github.com/spellshift/realm/tree/main/tavern/tomes) now, and be sure to refer to them as a reference when creating your own [Tomes](/user-guide/terminology#tome). If you're looking for information on how to run [Tomes](/user-guide/terminology#tome) and aren't quite ready to write your own, check out our [Getting Started guide](/user-guide/getting-started). Otherwise, adventure onwards, but with a word of warning. [Eldritch](/user-guide/terminology#eldritch) provides a useful abstraction for many offensive operations, however it is under heavy active development at this time and is subject to change. After the release of [Realm](https://github.com/spellshift/realm) version `1.0.0`, [Eldritch](/user-guide/terminology#eldritch) will follow [Semantic Versioning](https://semver.org/), to prevent [Tomes](/user-guide/terminology#tome) from failing when breaking changes are introduced. Until then, however, the [Eldritch](/user-guide/terminology#eldritch) API may change. This rapid iteration will enable the language to more quickly reach maturity and ensure we provide the best possible design for operators, so thank you for your patience.
 
 ## Anatomy of a Tome
 
@@ -55,7 +55,7 @@ paramdefs:
 
 #### Referencing Tome Parameters
 
-If you've defined a parameter for your [Tome](/user-guide/terminology#tome), there's a good chance you'll want to use it. Luckily, [Eldritch](/user-guide/terminology#eldritch) makes this easy for you by providing a global `input_params` dictionary, which is populated with the parameter values provided to your [Tome](/user-guide/terminology#tome). To access a parameter, simply use the `paramdef` name (defined in `metadata.yml`). For example:
+If you've defined a parameter for your [Tome](/user-guide/terminology#tome), there's a good chance you'll want to use it. Luckily, [Eldritch](/user-guide/terminology#eldritch) makes this easy for you by providing a global `input_params` variable, which is populated with the parameter values provided to your [Tome](/user-guide/terminology#tome). To access a parameter, simply use the `paramdef` name (defined in `metadata.yml`). For example:
 
 ```python
 def print_path_param():
@@ -311,7 +311,7 @@ res = sys.shell(f"{shell_client} 127.0.0.1 id")
 
 ### Idempotence
 In many situations especially when deploying persistence you'll want to ensure that running a tome twice won't cause issues.
-The best way to handle this is to when possible check the current state of the resource you're about to modify.
+The best way to handle this is to, when possible, check the current state of the resource you're about to modify.
 
 This often takes the shape of running validation before and after taking an action.
 In the same way during manual operation you might check if a file is on disk and the right size you can automate that with eldritch.

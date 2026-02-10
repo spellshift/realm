@@ -11,7 +11,7 @@ Imix is an offensive security implant designed for stealthy communication and ad
 
 ## Configuration
 
-Imix has compile-time configuration, that may be specified using environment variables during `cargo build`.
+Imix has compile-time configuration that may be specified using environment variables during `cargo build`.
 
 **We strongly recommend building agents inside the provided devcontainer `.devcontainer`**
 Building in the dev container limits variables that might cause issues and is the most tested way to compile.
@@ -26,7 +26,7 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
 
 
-Imix has run-time configuration, that may be specified using environment variables during execution.
+Imix has run-time configuration that may be specified using environment variables during execution.
 
 | Env Var | Description | Default | Required |
 | ------- | ----------- | ------- | -------- |
@@ -42,7 +42,7 @@ Building in the dev container limits variables that might cause issues and is th
 
 **Imix requires a server public key so it can encrypt messages to and from the server check the server status page `http://example.com/status` or logs for `level=INFO msg="public key: <SERVER_PUBKEY_B64>"`. This base64 encoded string should be passed to the agent using the environment variable `IMIX_SERVER_PUBKEY`**
 
-**🚨 Note:** You must cd into the imix directory `implants/imix/` not `implants/` in order to build the agent.
+**🚨 Note:** To generate the associated agent protos, use cargo build in the `implants` directory. You must cd into the imix directory `implants/imix/` not `implants/` in order to build the agent.
 
 ## Setting encryption key
 
@@ -238,13 +238,13 @@ Imix communicates which host it's on to Tavern enabling operators to reliably pe
 
 Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
 
-We recommend that you use the `File` for the most reliability:
+We recommend that you use the `File` selector for the most reliability:
 
 - Exists across reboots
 - Guaranteed to be unique per host (because the bot creates it)
 - Can be used by multiple instances of the beacon on the same host.
 
-If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+If you cannot use the `File` selector, we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
 
 For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
 

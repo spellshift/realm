@@ -39,7 +39,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `crypto` Is used to encrypt/decrypt or hash data.
 * `file`: Is used for any on disk file processing.
 * `http`: Is used for any web requests needed to be made.
-* `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
+* `pivot`: Is used to identify targets and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
 * `random` - Used to generate cryptographically secure random values.
 * `regex`: Is used to perform regex operations on strings.
@@ -50,7 +50,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 If your function does not fall under a specific standard library reach out to the core developers about adding a new library or finding the right fit.
 
 Specify the input and output according to the [supported types.](/user-guide/eldritch#data-types)
-If there are OS or edge case specific behaviors make sure to document them here. If there are limitations (e.g. if a function doesn't use file streaming) specify that it can't be used for large files.
+If there are OS- or edge-case-specific behaviors make sure to document them here. If there are limitations (e.g. if a function doesn't use file streaming) specify that it can't be used for large files.
 
 Please add your function in alphabetical order this makes it easy to search by key words.
 
@@ -97,7 +97,7 @@ impl FileLibrary for StdFileLibrary {
         function_impl::function(arg1, arg2, arg3)
     }
 
-    // If your function does not return a value, return a () and error as string.
+    // If your function does not return a value, return () and error as string.
     fn other_function(&self) -> Result<(), String> {
         other_function_impl::other_function()
     }
@@ -163,7 +163,7 @@ mod tests {
 ### Testing
 
 Testing can be really daunting especially with complex system functions required by security professionals.
-If you have any questions or hit any road blocks please reach out we'd love to help, also feel free to open a draft PR with what you have and mark it with the `help wanted` tag.
+If you have any questions or hit any road blocks please reach out we'd love to help, also, feel free to open a draft PR with what you have and mark it with the `help wanted` tag.
 Testing isn't meant to be a barrier to contributing but instead a safety net so you know your code doesn't affect other systems. If it becomes a blocker please reach out so we can help 🙂
 
 #### How to Test
@@ -200,7 +200,7 @@ For all non supported OSes return an error with a message explaining which OSes 
     return Err(anyhow::anyhow!("This OS isn't supported by the dll_inject function.\nOnly windows systems are supported"));
 ```
 
-### Using `Dict`
+### Using `Dict`s
 
 ---
 The `Dict` type requires dynamic memory allocation in eldritch. In order to achieve this we can leverage the `BTreeMap<String, Value>` and push entries onto it. It's pretty simple to implement and starlark does some magic to streamline the process. To make the heap available to your function simply add it as an argument to your function.
@@ -246,10 +246,10 @@ pub fn get_os() -> Result<Dict> {
 }
 ```
 
-### Using `Async`
+### Using Asynchronous Code
 
 ---
-When writing performant code bound by many I/O operations, it can be greatly beneficial to use `async` methods and a scheduler, to enable CPU bound operations to be performed while awaiting I/O. This can dramatically reduce latency for many applications. Using `async` for your eldritch function implementations can be difficult however. It can be done, but it will add complexity to your code and must be implemented carefully. **YOU SHOULD NOT** implement `async` functions without having a complete understanding of how eldritch manages threads and it's own async runtime. Doing so will likely result in bugs, where you attempt to create a new `tokio::Runtime` within an existing runtime. By default, the `eldritch::Runtime` creates a new blocking thread (`tokio::task::spawn_blocking`), which helps prevent it from blocking other tome evaluation. Any results reported via the `report` library will already be concurrent with the thread that started the eldritch evaluation. **ALL ELDRITCH CODE IS SYNCHRONOUS** which means that creating an `async` function will not enable tome developers to run code in parallel, it just may allow the `tokio` scheduler to allocate CPU away from your code while it awaits an I/O operation. The primary performance benefits of using `async` is for the environment from which eldritch is being run, it is unlikely to impact the performance of any individual Tome (due to their synchronous nature).
+When writing performant code bound by many I/O operations, it can be greatly beneficial to use `async` methods and a scheduler, to enable CPU bound operations to be performed while awaiting I/O. This can dramatically reduce latency for many applications. Using `async` for your eldritch function implementations can be difficult however. It can be done, but it will add complexity to your code and must be implemented carefully. **YOU SHOULD NOT** implement `async` functions without having a complete understanding of how eldritch manages threads and its own async runtime. Doing so will likely result in bugs, where you attempt to create a new `tokio::Runtime` within an existing runtime. By default, the `eldritch::Runtime` creates a new blocking thread (`tokio::task::spawn_blocking`), which helps prevent it from blocking other tome evaluation. Any results reported via the `report` library will already be concurrent with the thread that started the eldritch evaluation. **ALL ELDRITCH CODE IS SYNCHRONOUS** which means that creating an `async` function will not enable tome developers to run code in parallel, it just may allow the `tokio` scheduler to allocate CPU away from your code while it awaits an I/O operation. The primary performance benefits of using `async` is for the environment from which eldritch is being run, it is unlikely to impact the performance of any individual Tome (due to their synchronous nature).
 
 #### Async Testing
 

@@ -87,7 +87,7 @@ These configurations can be controlled via Environment Variables at `imix` compi
 
 ### Quests
 
-Now it's time to provide our [Beacon](/user-guide/terminology#beacon) its first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+Now it's time to provide our [Beacon](/user-guide/terminology#beacon) its first [Task](/user-guide/terminology#task). We do this by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 #### Beacon Selection
 
@@ -101,11 +101,11 @@ This view will show all of our active [Beacons](/user-guide/terminology#beacon) 
 
 #### Tome Selection
 
-A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package ready for execution by `imix`. By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. But don't worry, for more customization and advanced capabilities, it's easy to write your own [Tomes](/user-guide/terminology#tome)! These [Tomes](/user-guide/terminology#tome) are designed to be cross-platform, so it shouldn't matter which platform you're running on. You can view the underlying [Eldritch](/user-guide/terminology#eldritch) code a [Tome](/user-guide/terminology#tome) will run by clicking on the "details" dropdown. Feel free to take a minute to read through some of the core [Tomes](/user-guide/terminology#tome) available to you.
+A [Tome](/user-guide/terminology#tome) is an [Eldritch](/user-guide/terminology#eldritch) package ready for execution by `imix`. By default, Tavern includes several core [Tomes](/user-guide/terminology#tome) to get you started. But don't worry, for more customization and advanced capabilities, it's easy to write your own [Tomes](/user-guide/terminology#tome)! These [Tomes](/user-guide/terminology#tome) are designed to be cross-platform, so it shouldn't matter which platform you're running on. You can view the underlying [Eldritch](/user-guide/terminology#eldritch) code that a [Tome](/user-guide/terminology#tome) will run by clicking on the "details" dropdown. Feel free to take a minute to read through some of the core [Tomes](/user-guide/terminology#tome) available to you.
 
 ![select-tome](/assets/img/user-guide/getting-started/select-tome.png)
 
-Let's select "System Info", which will print the OS, hostname, and IP of the [Host](/user-guide/terminology#host) `imix` is running on as well as the user the [Beacon](/user-guide/terminology#beacon) is running as. You may filter [Tomes](/user-guide/terminology#tome) using the search bar above. Certain [Tomes](/user-guide/terminology#tome) will allow / require you to specify parameters to inform their execution, which will be displayed in this step (for relevant [Tomes](/user-guide/terminology#tome)). When you're ready, select "Continue".
+Let's select "System Info", which will print the OS, hostname, and IP of the [Host](/user-guide/terminology#host) `imix` is running on as well as the user the [Beacon](/user-guide/terminology#beacon) is running as. You may filter [Tomes](/user-guide/terminology#tome) using the search bar above. Certain [Tomes](/user-guide/terminology#tome) will allow/require you to specify parameters to inform their execution, which will be displayed in this step (for relevant [Tomes](/user-guide/terminology#tome)). When you're ready, select "Continue".
 
 #### Confirm and Submit
 
@@ -119,7 +119,7 @@ Now, in your `imix` logs you'll see that when it calls back, it will obtain the 
 
 ![imix-tome-eval](/assets/img/user-guide/getting-started/imix-tome-eval.png)
 
-Refresh the UI, you should see the output is now available!
+Refresh the UI; you should see the output is now available!
 
 ![quest-result](/assets/img/user-guide/getting-started/quest-result.png)
 
