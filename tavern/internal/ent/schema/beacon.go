@@ -1,7 +1,10 @@
 package schema
 
 import (
-	"github.com/google/uuid"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"io"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
@@ -131,5 +134,10 @@ func (Beacon) Mixin() []ent.Mixin {
 }
 
 func newRandomIdentifier() string {
-	return uuid.New().String()
+	buf := make([]byte, 64)
+	_, err := io.ReadFull(rand.Reader, buf)
+	if err != nil {
+		panic(fmt.Errorf("failed to generate random identifier: %w", err))
+	}
+	return base64.StdEncoding.EncodeToString(buf)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/x509"
-	"encoding/base64"
 	"log/slog"
 	"strings"
 	"time"
@@ -20,8 +19,9 @@ import (
 
 const (
 	// Metadata keys for mTLS authentication.
-	mdKeyBuilderCert      = "builder-cert"
-	mdKeyBuilderSignature = "builder-signature"
+	// Keys ending in "-bin" use gRPC binary metadata encoding.
+	mdKeyBuilderCert      = "builder-cert-bin"
+	mdKeyBuilderSignature = "builder-signature-bin"
 	mdKeyBuilderTimestamp  = "builder-timestamp"
 
 	// Maximum age for a timestamp to be considered valid.
@@ -39,35 +39,31 @@ func BuilderFromContext(ctx context.Context) (*ent.Builder, bool) {
 	return b, ok
 }
 
-// NewAuthInterceptor creates a gRPC unary server interceptor that validates
+// NewMTLSAuthInterceptor creates a gRPC unary server interceptor that validates
 // builder mTLS credentials. It verifies:
 // 1. The certificate was signed by the provided CA
 // 2. The signature proves possession of the corresponding private key
 // 3. The timestamp is recent (prevents replay)
 // 4. The builder identifier from the CN exists in the database
-func NewAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.UnaryServerInterceptor {
+func NewMTLSAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "missing metadata")
 		}
 
-		// Extract metadata values
-		certB64 := getMetadataValue(md, mdKeyBuilderCert)
-		sigB64 := getMetadataValue(md, mdKeyBuilderSignature)
+		// Extract metadata values.
+		// Binary metadata (keys ending in "-bin") is automatically base64 decoded by gRPC.
+		certDER := getMetadataValue(md, mdKeyBuilderCert)
+		signature := getMetadataValue(md, mdKeyBuilderSignature)
 		timestamp := getMetadataValue(md, mdKeyBuilderTimestamp)
 
-		if certB64 == "" || sigB64 == "" || timestamp == "" {
+		if certDER == "" || signature == "" || timestamp == "" {
 			return nil, status.Error(codes.Unauthenticated, "missing builder credentials")
 		}
 
 		// Parse the certificate
-		certDER, err := base64.StdEncoding.DecodeString(certB64)
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid certificate encoding")
-		}
-
-		cert, err := x509.ParseCertificate(certDER)
+		cert, err := x509.ParseCertificate([]byte(certDER))
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "invalid certificate")
 		}
@@ -93,16 +89,11 @@ func NewAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.UnaryS
 		}
 
 		// Verify signature (proof of private key possession)
-		sigBytes, err := base64.StdEncoding.DecodeString(sigB64)
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid signature encoding")
-		}
-
 		pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
 		if !ok {
 			return nil, status.Error(codes.Unauthenticated, "certificate does not contain ED25519 public key")
 		}
-		if !ed25519.Verify(pubKey, []byte(timestamp), sigBytes) {
+		if !ed25519.Verify(pubKey, []byte(timestamp), []byte(signature)) {
 			return nil, status.Error(codes.Unauthenticated, "invalid signature")
 		}
 

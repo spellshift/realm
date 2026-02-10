@@ -95,7 +95,7 @@ func TestBuilderE2E(t *testing.T) {
 	lis := bufconn.Listen(1024 * 1024)
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			builder.NewAuthInterceptor(caCert, graph),
+			builder.NewMTLSAuthInterceptor(caCert, graph),
 		),
 	)
 	builderSrv := builder.New(graph)

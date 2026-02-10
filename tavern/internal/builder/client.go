@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"log/slog"
@@ -19,20 +18,21 @@ import (
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
 type builderCredentials struct {
-	certDERBase64 string
-	privKey       ed25519.PrivateKey
+	certDER []byte
+	privKey ed25519.PrivateKey
 }
 
 // GetRequestMetadata generates fresh authentication metadata for each RPC call.
 // It signs the current timestamp with the builder's private key to prove possession.
+// Binary metadata (keys ending in "-bin") is automatically base64 encoded by gRPC.
 func (c *builderCredentials) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
 	timestamp := time.Now().UTC().Format(time.RFC3339Nano)
 
 	sig := ed25519.Sign(c.privKey, []byte(timestamp))
 
 	return map[string]string{
-		mdKeyBuilderCert:      c.certDERBase64,
-		mdKeyBuilderSignature: base64.StdEncoding.EncodeToString(sig),
+		mdKeyBuilderCert:      string(c.certDER),
+		mdKeyBuilderSignature: string(sig),
 		mdKeyBuilderTimestamp: timestamp,
 	}, nil
 }
@@ -86,8 +86,8 @@ func parseMTLSCredentials(mtlsPEM string) (*builderCredentials, error) {
 	}
 
 	return &builderCredentials{
-		certDERBase64: base64.StdEncoding.EncodeToString(certDER),
-		privKey:       privKey,
+		certDER: certDER,
+		privKey: privKey,
 	}, nil
 }
 

@@ -19,7 +19,7 @@ supported_targets:
   - linux
   - macos
   - windows
-mtls: <base64-encoded mTLS certificate and key PEM bundle>
+mtls: <mTLS certificate and key PEM bundle>
 upstream: <tavern server address>
 ```
 
@@ -27,17 +27,17 @@ upstream: <tavern server address>
 |-------|-------------|
 | `id` | Unique identifier for this builder, assigned during registration. Embedded in the mTLS certificate CN as `builder-{id}`. |
 | `supported_targets` | List of platforms this builder can compile agents for. Valid values: `linux`, `macos`, `windows`. |
-| `mtls` | Base64-encoded PEM bundle containing the CA-signed mTLS certificate and private key for authenticating with Tavern. |
+| `mtls` | PEM bundle containing the CA-signed mTLS certificate and private key for authenticating with Tavern. |
 | `upstream` | The Tavern server address to connect to. |
 
 ## Authentication Flow
 
 1. An admin registers a builder via the `registerBuilder` GraphQL mutation.
-2. Tavern generates a unique identifier and an ECDSA P-256 client certificate signed by the Tavern Builder CA, with CN=`builder-{identifier}`.
+2. Tavern generates a unique identifier and an Ed25519 client certificate signed by the Tavern Builder CA, with CN=`builder-{identifier}`.
 3. The builder config YAML is returned containing the certificate, private key, identifier, and upstream address.
 4. On each gRPC call, the builder client sends three metadata fields:
-   - `builder-cert`: Base64-encoded DER certificate
-   - `builder-signature`: Base64-encoded ECDSA signature over the timestamp
+   - `builder-cert-bin`: DER-encoded certificate (binary metadata)
+   - `builder-signature-bin`: Ed25519 signature over the timestamp (binary metadata)
    - `builder-timestamp`: RFC3339Nano timestamp
 5. The server interceptor verifies:
    - Certificate was signed by the Tavern Builder CA

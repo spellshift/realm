@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"github.com/google/uuid"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -18,7 +20,7 @@ type Builder struct {
 func (Builder) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("identifier").
-			DefaultFunc(newRandomIdentifier).
+			DefaultFunc(func() string { return uuid.New().String() }).
 			NotEmpty().
 			Unique().
 			Immutable().

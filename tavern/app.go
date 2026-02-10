@@ -568,7 +568,7 @@ func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate) http.Ha
 	builderSrv := builder.New(client)
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
-			builder.NewAuthInterceptor(caCert, client),
+			builder.NewMTLSAuthInterceptor(caCert, client),
 			grpcWithUnaryMetrics,
 		),
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
