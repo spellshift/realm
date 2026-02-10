@@ -80,7 +80,7 @@ Check out our [developer docs!](https://docs.realm.pub/dev-guide/introduction)
 
 ## Contact Support
 
-Need a hand? We're here to help! If you're facing an issue with Realm, we're happy to assist! To ensure we can provide the best support, please [create an issue on our Github](https://github.com/spellshift/realm/issues/new?labels=bug&template=bug_report.md).
+Need a hand? We're here to help! If you're facing an issue with Realm, we're happy to assist! To ensure we can provide the best support, please [create an issue on our GitHub](https://github.com/spellshift/realm/issues/new?labels=bug&template=bug_report.md).
 
 ### Bug Support
 
