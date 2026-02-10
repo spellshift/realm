@@ -2,16 +2,15 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use eldritch_core::Value;
-use sysinfo::{PidExt, ProcessExt, System, SystemExt, UserExt};
+use sysinfo::{IS_SUPPORTED_SYSTEM, System, Users};
 
 pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
-    if !System::IS_SUPPORTED {
+    if !IS_SUPPORTED_SYSTEM {
         return Err("System not supported".to_string());
     }
 
-    let mut sys = System::new();
-    sys.refresh_processes();
-    sys.refresh_users_list();
+    let sys = System::new_all();
+    let users = Users::new_with_refreshed_list();
 
     let mut list = Vec::new();
     for (pid, process) in sys.processes() {
@@ -31,30 +30,54 @@ pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
 
         let user_name = process
             .user_id()
-            .and_then(|uid| sys.get_user_by_id(uid))
+            .and_then(|uid| users.iter().find(|u| u.id() == uid))
             .map(|u| u.name())
             .unwrap_or("???");
         map.insert("username".to_string(), Value::String(user_name.to_string()));
 
         map.insert(
             "path".to_string(),
-            Value::String(process.exe().to_string_lossy().into_owned()),
+            Value::String(
+                process
+                    .exe()
+                    .map(|e| e.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+            ),
         );
         map.insert(
             "command".to_string(),
-            Value::String(process.cmd().join(" ")),
+            Value::String(
+                process
+                    .cmd()
+                    .iter()
+                    .map(|c| c.to_string_lossy())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
         );
         map.insert(
             "cwd".to_string(),
-            Value::String(process.cwd().to_string_lossy().into_owned()),
+            Value::String(
+                process
+                    .cwd()
+                    .map(|c| c.to_string_lossy().into_owned())
+                    .unwrap_or_default(),
+            ),
         );
         map.insert(
             "environ".to_string(),
-            Value::String(process.environ().join(" ")),
+            Value::String(
+                process
+                    .environ()
+                    .iter()
+                    .map(|e| e.to_string_lossy())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
         );
         map.insert(
             "name".to_string(),
-            Value::String(process.name().to_string()),
+            Value::String(process.name().to_string_lossy().into_owned()),
         );
 
         list.push(map);

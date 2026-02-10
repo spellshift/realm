@@ -2,14 +2,13 @@ use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use eldritch_core::Value;
 use spin::RwLock;
-use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{Pid, System};
 
 pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
-    let mut sys = System::new();
-    sys.refresh_processes();
-    sys.refresh_users_list();
+    let sys = System::new_all();
 
     let target_pid = pid
         .map(|p| p as usize)
@@ -21,16 +20,32 @@ pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
         map.insert("pid".to_string(), Value::Int(target_pid as i64));
         map.insert(
             "name".to_string(),
-            Value::String(process.name().to_string()),
+            Value::String(process.name().to_string_lossy().into_owned()),
         );
-        map.insert("cmd".to_string(), Value::String(process.cmd().join(" ")));
+        map.insert(
+            "cmd".to_string(),
+            Value::String(
+                process
+                    .cmd()
+                    .iter()
+                    .map(|c| c.to_string_lossy())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+        );
         map.insert(
             "exe".to_string(),
-            Value::String(process.exe().display().to_string()),
+            Value::String(
+                process
+                    .exe()
+                    .map(|e| e.display().to_string())
+                    .unwrap_or_default(),
+            ),
         );
 
         let mut env_map = BTreeMap::new();
-        for env_str in process.environ() {
+        for env_os in process.environ() {
+            let env_str = env_os.to_string_lossy();
             if let Some((key, val)) = env_str.split_once('=') {
                 env_map.insert(
                     Value::String(key.to_string()),
@@ -45,11 +60,21 @@ pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
 
         map.insert(
             "cwd".to_string(),
-            Value::String(process.cwd().display().to_string()),
+            Value::String(
+                process
+                    .cwd()
+                    .map(|c| c.display().to_string())
+                    .unwrap_or_default(),
+            ),
         );
         map.insert(
             "root".to_string(),
-            Value::String(process.root().display().to_string()),
+            Value::String(
+                process
+                    .root()
+                    .map(|c| c.display().to_string())
+                    .unwrap_or_default(),
+            ),
         );
         map.insert(
             "memory_usage".to_string(),

@@ -1,16 +1,15 @@
 use alloc::format;
 use alloc::string::{String, ToString};
-use sysinfo::{Pid, ProcessExt, System, SystemExt};
+use sysinfo::{IS_SUPPORTED_SYSTEM, Pid, System};
 
 pub fn name(pid: i64) -> Result<String, String> {
-    if !System::IS_SUPPORTED {
+    if !IS_SUPPORTED_SYSTEM {
         return Err("System not supported".to_string());
     }
-    let mut sys = System::new();
-    sys.refresh_processes();
+    let sys = System::new_all();
 
     if let Some(process) = sys.process(Pid::from(pid as usize)) {
-        Ok(process.name().to_string())
+        Ok(process.name().to_string_lossy().into_owned())
     } else {
         Err(format!("Process {pid} not found"))
     }
