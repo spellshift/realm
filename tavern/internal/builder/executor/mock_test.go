@@ -39,8 +39,6 @@ func TestMockExecutor_DefaultBehavior(t *testing.T) {
 
 func TestMockExecutor_RecordsMultipleCalls(t *testing.T) {
 	mock := executor.NewMockExecutor()
-	outputCh := make(chan string, 10)
-	errorCh := make(chan string, 10)
 
 	specs := []executor.BuildSpec{
 		{TaskID: 1, BuildImage: "golang:1.21", BuildScript: "go build ./..."},
@@ -49,6 +47,8 @@ func TestMockExecutor_RecordsMultipleCalls(t *testing.T) {
 	}
 
 	for _, s := range specs {
+		outputCh := make(chan string, 10)
+		errorCh := make(chan string, 10)
 		err := mock.Build(context.Background(), s, outputCh, errorCh)
 		require.NoError(t, err)
 	}
@@ -74,9 +74,7 @@ func TestMockExecutor_CustomBuildFn_StreamsOutput(t *testing.T) {
 	err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 1}, outputCh, errorCh)
 	require.NoError(t, err)
 
-	close(outputCh)
-	close(errorCh)
-
+	// Channels are closed by Build; drain them.
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)
@@ -101,9 +99,7 @@ func TestMockExecutor_CustomBuildFn_StreamsErrors(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "build failed")
 
-	close(outputCh)
-	close(errorCh)
-
+	// Channels are closed by Build; drain them.
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)
@@ -169,9 +165,7 @@ func TestMockExecutor_CustomBuildFn_InterleavedOutputAndErrors(t *testing.T) {
 	err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 4}, outputCh, errorCh)
 	require.NoError(t, err)
 
-	close(outputCh)
-	close(errorCh)
-
+	// Channels are closed by Build; drain them.
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)

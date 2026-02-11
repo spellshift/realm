@@ -143,9 +143,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	}, outputCh, errorCh)
 	require.NoError(t, buildErr)
 
-	close(outputCh)
-	close(errorCh)
-
+	// Channels are closed by Build; drain them.
 	var outputLines []string
 	for line := range outputCh {
 		outputLines = append(outputLines, line)
@@ -273,9 +271,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	}, outputCh, errorCh)
 	require.Error(t, buildErr)
 
-	close(outputCh)
-	close(errorCh)
-
+	// Channels are closed by Build; drain them.
 	var outputLines []string
 	for line := range outputCh {
 		outputLines = append(outputLines, line)

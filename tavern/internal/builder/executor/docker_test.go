@@ -52,9 +52,6 @@ func TestDockerExecutor_Build_SimpleEcho(t *testing.T) {
 	err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
 
-	close(outputCh)
-	close(errorCh)
-
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)
@@ -82,9 +79,6 @@ func TestDockerExecutor_Build_MultiLineOutput(t *testing.T) {
 	err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
 
-	close(outputCh)
-	close(errorCh)
-
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)
@@ -111,9 +105,6 @@ func TestDockerExecutor_Build_StderrOutput(t *testing.T) {
 
 	err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
-
-	close(outputCh)
-	close(errorCh)
 
 	var output []string
 	for line := range outputCh {
@@ -149,7 +140,6 @@ func TestDockerExecutor_Build_NonZeroExit(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "42")
 
-	close(outputCh)
 	var output []string
 	for line := range outputCh {
 		output = append(output, line)
@@ -217,8 +207,7 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 	}()
 
 	err := exec.Build(ctx, spec, outputCh, errorCh)
-	close(outputCh)
-	close(errorCh)
+	// Build closes outputCh, which unblocks the range loop in the goroutine.
 	wg.Wait()
 
 	require.NoError(t, err)

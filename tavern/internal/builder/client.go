@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -21,6 +22,9 @@ import (
 const (
 	// taskPollInterval is how often the builder polls for new build tasks.
 	taskPollInterval = 5 * time.Second
+
+	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
+	maxConcurrentBuilds = 4
 )
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
@@ -133,8 +137,12 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 
 	slog.InfoContext(ctx, "successfully pinged upstream", "upstream", cfg.Upstream)
 
+	// Semaphore limits concurrent builds.
+	sem := make(chan struct{}, maxConcurrentBuilds)
+	var wg sync.WaitGroup
+
 	// Check for tasks immediately, then poll on interval
-	if err := claimAndExecuteTasks(ctx, client, exec); err != nil {
+	if err := claimAndExecuteTasks(ctx, client, exec, sem, &wg); err != nil {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
@@ -144,16 +152,17 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	for {
 		select {
 		case <-ctx.Done():
+			wg.Wait()
 			return ctx.Err()
 		case <-ticker.C:
-			if err := claimAndExecuteTasks(ctx, client, exec); err != nil {
+			if err := claimAndExecuteTasks(ctx, client, exec, sem, &wg); err != nil {
 				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 			}
 		}
 	}
 }
 
-func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor) error {
+func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, sem chan struct{}, wg *sync.WaitGroup) error {
 	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 	if err != nil {
 		return fmt.Errorf("failed to claim build tasks: %w", err)
@@ -166,7 +175,14 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 			"build_image", task.BuildImage,
 		)
 
-		executeTask(ctx, client, exec, task)
+		// Acquire semaphore slot (blocks if at max concurrency).
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(t *builderpb.BuildTaskSpec) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			executeTask(ctx, client, exec, t)
+		}(task)
 	}
 
 	return nil
@@ -218,6 +234,7 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 	}()
 
 	// Run the build through the executor.
+	// The executor closes both channels when done.
 	buildErr := exec.Build(ctx, executor.BuildSpec{
 		TaskID:      task.Id,
 		TargetOS:    task.TargetOs,
@@ -225,9 +242,7 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		BuildScript: task.BuildScript,
 	}, outputCh, errorCh)
 
-	// Close channels to signal collector goroutine to finish.
-	close(outputCh)
-	close(errorCh)
+	// Wait for collector goroutine to drain remaining channel data.
 	<-done
 
 	// Build the submission request with collected output.

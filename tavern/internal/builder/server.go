@@ -135,7 +135,16 @@ func (s *Server) SubmitBuildTaskOutput(ctx context.Context, req *builderpb.Submi
 		return nil, status.Errorf(codes.PermissionDenied, "build task %d is not assigned to this builder", req.TaskId)
 	}
 
-	// 3. Update the build task with output and mark as finished
+	// 3. Idempotency: if the task is already finished, return success without modification
+	if !bt.FinishedAt.IsZero() {
+		slog.WarnContext(ctx, "duplicate build task output submission (already finished)",
+			"task_id", req.TaskId,
+			"builder_id", b.ID,
+		)
+		return &builderpb.SubmitBuildTaskOutputResponse{}, nil
+	}
+
+	// 4. Update the build task with output and mark as finished
 	update := s.graph.BuildTask.UpdateOne(bt).
 		SetFinishedAt(now).
 		SetOutput(req.Output)

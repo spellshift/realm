@@ -38,6 +38,9 @@ func NewDockerExecutorFromEnv(ctx context.Context) (*DockerExecutor, error) {
 // Build pulls the build image, starts a container with the build script as
 // the shell entrypoint, and streams output/error lines over the channels.
 func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	defer close(outputCh)
+	defer close(errorCh)
+
 	slog.InfoContext(ctx, "pulling docker image", "image", spec.BuildImage, "task_id", spec.TaskID)
 
 	pullReader, err := d.client.ImagePull(ctx, spec.BuildImage, image.PullOptions{})

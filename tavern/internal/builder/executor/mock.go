@@ -23,9 +23,12 @@ func NewMockExecutor() *MockExecutor {
 	return &MockExecutor{}
 }
 
-// Build implements Executor. It records the call and delegates to BuildFn
-// if set, otherwise returns nil.
+// Build implements Executor. It records the call, delegates to BuildFn
+// if set, and closes both channels before returning.
 func (m *MockExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	defer close(outputCh)
+	defer close(errorCh)
+
 	m.BuildCalls = append(m.BuildCalls, spec)
 	if m.BuildFn != nil {
 		return m.BuildFn(ctx, spec, outputCh, errorCh)
