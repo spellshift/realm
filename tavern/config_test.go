@@ -27,7 +27,7 @@ func TestConfigureMySQLFromEnv(t *testing.T) {
 		require.NoError(t, os.Unsetenv(EnvDBMaxConnLifetime.Key))
 	}
 
-	t.Run("SQLLite", func(t *testing.T) {
+	t.Run("SQLite", func(t *testing.T) {
 		defer cleanup()
 
 		cfg := &Config{}
@@ -80,7 +80,7 @@ func TestConfigureMySQLFromEnv(t *testing.T) {
 		assert.Equal(t, "root@tcp(127.0.0.1)/tavern?parseTime=true", cfg.mysqlDSN)
 	})
 
-	t.Run("SQLLite", func(t *testing.T) {
+	t.Run("SQLite", func(t *testing.T) {
 		defer cleanup()
 		require.NoError(t, os.Setenv(EnvDBMaxIdleConns.Key, "1337"))
 		require.NoError(t, os.Setenv(EnvDBMaxOpenConns.Key, "420"))
