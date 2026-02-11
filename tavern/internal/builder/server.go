@@ -75,7 +75,6 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 	for _, t := range tasks {
 		_, err := client.BuildTask.UpdateOne(t).
 			SetClaimedAt(now).
-			SetStartedAt(now).
 			Save(ctx)
 		if err != nil {
 			return nil, rollback(tx, fmt.Errorf("failed to update build task %d: %w", t.ID, err))

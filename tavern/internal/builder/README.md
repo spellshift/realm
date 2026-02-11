@@ -6,7 +6,8 @@ The builder package orchestrates agent compilation for target platforms. It conn
 
 - **Registration**: Builders register with Tavern via the `registerBuilder` GraphQL mutation, which returns an mTLS certificate signed by the Tavern Builder CA and a YAML configuration file.
 - **mTLS Authentication**: All gRPC requests are authenticated using application-level mTLS. The builder presents its CA-signed certificate and a signed timestamp in gRPC metadata on each request. The server verifies the certificate chain, proof of private key possession, and looks up the builder by the identifier embedded in the certificate CN.
-- **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Currently supports a `Ping` health check endpoint.
+- **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Supports `Ping` (health check), `ClaimBuildTasks` (poll for unclaimed tasks), and `SubmitBuildTaskOutput` (report build results).
+- **Executor**: Build tasks are executed via the `executor.Executor` interface. The `DockerExecutor` runs builds inside Docker containers; the `MockExecutor` is used in tests.
 - **CLI**: Run a builder using the `builder` subcommand with a `--config` flag pointing to a YAML configuration file.
 
 ## Configuration
@@ -66,9 +67,14 @@ go run ./tavern builder --config /path/to/builder-config.yaml
 |------|---------|
 | `auth.go` | gRPC unary interceptor for mTLS authentication |
 | `ca.go` | Builder CA generation, persistence, and certificate signing |
-| `client.go` | Builder client with `PerRPCCredentials` for mTLS auth |
+| `client.go` | Builder client: mTLS credentials, polling loop, task execution |
 | `config.go` | YAML configuration parsing and validation |
-| `server.go` | gRPC server implementation (Ping) |
+| `server.go` | gRPC server: `Ping`, `ClaimBuildTasks`, `SubmitBuildTaskOutput` |
+| `rollback.go` | Transaction rollback helper (matches c2 pattern) |
+| `executor/executor.go` | `Executor` interface and `BuildSpec` definition |
+| `executor/docker.go` | `DockerExecutor`: runs builds in Docker containers |
+| `executor/mock.go` | `MockExecutor`: test double for unit tests |
 | `proto/builder.proto` | Protobuf service definition |
 | `builderpb/` | Generated protobuf Go code |
-| `integration_test.go` | End-to-end test covering registration, mTLS auth, and unauthenticated rejection |
+| `integration_test.go` | End-to-end test: registration, mTLS auth, task claiming |
+| `executor_integration_test.go` | End-to-end test: claim → execute → submit flow |

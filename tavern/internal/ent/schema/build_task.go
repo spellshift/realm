@@ -59,7 +59,7 @@ func (BuildTask) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT",
 			}).
 			Comment("Output from the build execution."),
-		field.String("error").
+		field.Text("error").
 			Optional().
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT",
