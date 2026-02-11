@@ -2,6 +2,7 @@ package builder
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -37,13 +38,13 @@ func (s *Server) Ping(ctx context.Context, req *builderpb.PingRequest) (*builder
 func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildTasksRequest) (*builderpb.ClaimBuildTasksResponse, error) {
 	now := time.Now()
 
-	// 1. Extract authenticated builder from context
+	// Extract authenticated builder from context
 	b, ok := BuilderFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "builder not authenticated")
 	}
 
-	// 2. Query unclaimed build tasks assigned to this builder
+	// Load unclaimed build tasks assigned to this builder
 	tasks, err := s.graph.BuildTask.Query().
 		Where(
 			buildtask.HasBuilderWith(entbuilder.ID(b.ID)),
@@ -54,23 +55,14 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		return nil, status.Errorf(codes.Internal, "failed to query build tasks: %v", err)
 	}
 
-	if len(tasks) == 0 {
-		// Log for debugging: count total tasks (including claimed) for this builder
-		total, _ := s.graph.BuildTask.Query().
-			Where(buildtask.HasBuilderWith(entbuilder.ID(b.ID))).
-			Count(ctx)
-		slog.InfoContext(ctx, "no unclaimed build tasks found",
-			"builder_id", b.ID,
-			"total_tasks_for_builder", total,
-		)
-		return &builderpb.ClaimBuildTasksResponse{}, nil
-	}
-
-	// 3. Begin transaction to claim tasks atomically
+	// Prepare transaction for claiming tasks
 	tx, err := s.graph.Tx(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to start transaction: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
 	}
+	client := tx.Client()
+
+	// Rollback transaction if we panic
 	defer func() {
 		if v := recover(); v != nil {
 			tx.Rollback()
@@ -78,7 +70,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		}
 	}()
 
-	client := tx.Client()
+	// Update all ClaimedAt timestamps to claim tasks
 	taskIDs := make([]int, 0, len(tasks))
 	for _, t := range tasks {
 		_, err := client.BuildTask.UpdateOne(t).
@@ -86,24 +78,29 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			SetStartedAt(now).
 			Save(ctx)
 		if err != nil {
-			tx.Rollback()
-			return nil, status.Errorf(codes.Internal, "failed to claim build task %d: %v", t.ID, err)
+			return nil, rollback(tx, fmt.Errorf("failed to update build task %d: %w", t.ID, err))
 		}
 		taskIDs = append(taskIDs, t.ID)
 	}
 
+	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to commit transaction: %v", err)
+		return nil, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
 	}
 
-	// 4. Build response from claimed tasks
+	// Load the tasks with our non-transactional client (cannot use transaction after commit)
 	resp := &builderpb.ClaimBuildTasksResponse{}
-	for _, t := range tasks {
+	resp.Tasks = make([]*builderpb.BuildTaskSpec, 0, len(taskIDs))
+	for _, taskID := range taskIDs {
+		claimedTask, err := s.graph.BuildTask.Get(ctx, taskID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to load claimed build task (but it was still claimed) %d: %v", taskID, err)
+		}
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
-			Id:          int64(t.ID),
-			TargetOs:    t.TargetOs.String(),
-			BuildImage:  t.BuildImage,
-			BuildScript: t.BuildScript,
+			Id:          int64(claimedTask.ID),
+			TargetOs:    claimedTask.TargetOs.String(),
+			BuildImage:  claimedTask.BuildImage,
+			BuildScript: claimedTask.BuildScript,
 		})
 	}
 

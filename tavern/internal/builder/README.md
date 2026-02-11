@@ -54,6 +54,12 @@ upstream: <tavern server address>
 go run ./tavern builder --config /path/to/builder-config.yaml
 ```
 
+## TODO
+
+- Add support for concurrent builds
+- Test client to server output streaming
+- Update `SubmitBuildTaskOutput` to use gRPC streaming
+
 ## Package Structure
 
 | File | Purpose |

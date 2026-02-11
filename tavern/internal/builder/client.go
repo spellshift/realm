@@ -18,6 +18,11 @@ import (
 	"realm.pub/tavern/internal/builder/executor"
 )
 
+const (
+	// taskPollInterval is how often the builder polls for new build tasks.
+	taskPollInterval = 5 * time.Second
+)
+
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
 type builderCredentials struct {
 	certDER []byte
@@ -133,7 +138,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(taskPollInterval)
 	defer ticker.Stop()
 
 	for {
