@@ -104,7 +104,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		stderrPW.CloseWithError(err)
 	}()
 
-	// Stream stdout lines over outputCh.
+	// Stream stderr lines over errorCh in a background goroutine.
 	done := make(chan struct{})
 	go func() {
 		defer close(done)

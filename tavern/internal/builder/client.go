@@ -128,7 +128,11 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 
 	slog.InfoContext(ctx, "successfully pinged upstream", "upstream", cfg.Upstream)
 
-	// Main polling loop
+	// Check for tasks immediately, then poll on interval
+	if err := claimAndExecuteTasks(ctx, client, exec); err != nil {
+		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
+	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
