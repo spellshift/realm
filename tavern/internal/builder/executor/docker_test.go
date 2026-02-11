@@ -49,7 +49,7 @@ func TestDockerExecutor_Build_SimpleEcho(t *testing.T) {
 	outputCh := make(chan string, 100)
 	errorCh := make(chan string, 100)
 
-	err := exec.Build(ctx, spec, outputCh, errorCh)
+	_, err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
 
 	var output []string
@@ -76,7 +76,7 @@ func TestDockerExecutor_Build_MultiLineOutput(t *testing.T) {
 	outputCh := make(chan string, 100)
 	errorCh := make(chan string, 100)
 
-	err := exec.Build(ctx, spec, outputCh, errorCh)
+	_, err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
 
 	var output []string
@@ -103,7 +103,7 @@ func TestDockerExecutor_Build_StderrOutput(t *testing.T) {
 	outputCh := make(chan string, 100)
 	errorCh := make(chan string, 100)
 
-	err := exec.Build(ctx, spec, outputCh, errorCh)
+	_, err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.NoError(t, err)
 
 	var output []string
@@ -136,7 +136,7 @@ func TestDockerExecutor_Build_NonZeroExit(t *testing.T) {
 	outputCh := make(chan string, 100)
 	errorCh := make(chan string, 100)
 
-	err := exec.Build(ctx, spec, outputCh, errorCh)
+	_, err := exec.Build(ctx, spec, outputCh, errorCh)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "42")
 
@@ -169,7 +169,7 @@ func TestDockerExecutor_Build_ContextCancellation(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		buildErr = exec.Build(ctx, spec, outputCh, errorCh)
+		_, buildErr = exec.Build(ctx, spec, outputCh, errorCh)
 	}()
 
 	wg.Wait()
@@ -206,7 +206,7 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 		}
 	}()
 
-	err := exec.Build(ctx, spec, outputCh, errorCh)
+	_, err := exec.Build(ctx, spec, outputCh, errorCh)
 	// Build closes outputCh, which unblocks the range loop in the goroutine.
 	wg.Wait()
 

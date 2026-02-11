@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 )
@@ -34,10 +35,20 @@ type ClaimTasksInput struct {
 type CreateBuildTaskInput struct {
 	// The target operating system for the build.
 	TargetOs c2pb.Host_Platform `json:"targetOS"`
+	// The output format for the build.
+	TargetFormat builderpb.TargetFormat `json:"targetFormat"`
 	// Docker container image name to use for the build.
 	BuildImage string `json:"buildImage"`
-	// The script to execute inside the build container.
-	BuildScript string `json:"buildScript"`
+	// The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000.
+	CallbackURI *string `json:"callbackURI,omitempty"`
+	// The callback interval in seconds for the IMIX agent.
+	Interval *int `json:"interval,omitempty"`
+	// The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC.
+	TransportType *c2pb.Transport_Type `json:"transportType,omitempty"`
+	// Extra transport configuration for the IMIX agent.
+	Extra *string `json:"extra,omitempty"`
+	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
+	ArtifactPath *string `json:"artifactPath,omitempty"`
 }
 
 type ImportRepositoryInput struct {

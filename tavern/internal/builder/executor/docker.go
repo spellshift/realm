@@ -1,11 +1,13 @@
 package executor
 
 import (
+	"archive/tar"
 	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -37,7 +39,9 @@ func NewDockerExecutorFromEnv(ctx context.Context) (*DockerExecutor, error) {
 
 // Build pulls the build image, starts a container with the build script as
 // the shell entrypoint, and streams output/error lines over the channels.
-func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+// After the container exits successfully, if spec.ArtifactPath is set, the
+// artifact is copied from the stopped container before removal.
+func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) (*BuildResult, error) {
 	defer close(outputCh)
 	defer close(errorCh)
 
@@ -45,12 +49,12 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	pullReader, err := d.client.ImagePull(ctx, spec.BuildImage, image.PullOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to pull image %q: %w", spec.BuildImage, err)
+		return nil, fmt.Errorf("failed to pull image %q: %w", spec.BuildImage, err)
 	}
 	// Drain and close the pull output to ensure the image is fully downloaded.
 	if _, err := io.Copy(io.Discard, pullReader); err != nil {
 		pullReader.Close()
-		return fmt.Errorf("error reading image pull output: %w", err)
+		return nil, fmt.Errorf("error reading image pull output: %w", err)
 	}
 	pullReader.Close()
 
@@ -60,6 +64,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		&container.Config{
 			Image:      spec.BuildImage,
 			Entrypoint: []string{"/bin/sh", "-c", spec.BuildScript},
+			Env:        spec.Env,
 		},
 		nil, // host config
 		nil, // networking config
@@ -67,7 +72,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"",  // container name (auto-generated)
 	)
 	if err != nil {
-		return fmt.Errorf("failed to create container: %w", err)
+		return nil, fmt.Errorf("failed to create container: %w", err)
 	}
 	containerID := resp.ID
 
@@ -80,7 +85,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}()
 
 	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
-		return fmt.Errorf("failed to start container: %w", err)
+		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
 
 	slog.InfoContext(ctx, "container started", "container_id", containerID, "task_id", spec.TaskID)
@@ -92,7 +97,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		Follow:     true,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to attach to container logs: %w", err)
+		return nil, fmt.Errorf("failed to attach to container logs: %w", err)
 	}
 	defer logReader.Close()
 
@@ -127,18 +132,67 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	// Wait for the container to exit and check its status.
 	statusCh, errCh := d.client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
+	var exitCode int64
 	select {
 	case err := <-errCh:
 		if err != nil {
-			return fmt.Errorf("error waiting for container: %w", err)
+			return nil, fmt.Errorf("error waiting for container: %w", err)
 		}
 	case result := <-statusCh:
-		if result.StatusCode != 0 {
-			return fmt.Errorf("container exited with status %d", result.StatusCode)
-		}
+		exitCode = result.StatusCode
 	case <-ctx.Done():
-		return ctx.Err()
+		return nil, ctx.Err()
 	}
 
-	return nil
+	// Extract artifact from the stopped container (before deferred removal).
+	buildResult := BuildResult{ExitCode: exitCode}
+	if exitCode == ExpectedExitCode && spec.ArtifactPath != "" {
+		data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
+		if extractErr != nil {
+			slog.WarnContext(ctx, "artifact extraction failed",
+				"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
+		} else {
+			buildResult.Artifact = data
+			buildResult.ArtifactName = name
+			slog.InfoContext(ctx, "artifact extracted",
+				"task_id", spec.TaskID, "name", name, "size", len(data))
+		}
+	}
+
+	if exitCode != ExpectedExitCode {
+		return &buildResult, fmt.Errorf("container exited with status %d", exitCode)
+	}
+
+	return &buildResult, nil
+}
+
+// extractArtifact copies a file from a stopped container using the Docker API.
+// CopyFromContainer returns a tar archive; this method extracts the first
+// regular file from that archive and returns its contents and basename.
+func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path string) ([]byte, string, error) {
+	tarReader, _, err := d.client.CopyFromContainer(ctx, containerID, path)
+	if err != nil {
+		return nil, "", fmt.Errorf("CopyFromContainer %q: %w", path, err)
+	}
+	defer tarReader.Close()
+
+	tr := tar.NewReader(tarReader)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, "", fmt.Errorf("reading tar entry: %w", err)
+		}
+		if hdr.Typeflag == tar.TypeReg {
+			data, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, "", fmt.Errorf("reading artifact data: %w", err)
+			}
+			return data, filepath.Base(hdr.Name), nil
+		}
+	}
+
+	return nil, "", fmt.Errorf("no regular file found at %q", path)
 }

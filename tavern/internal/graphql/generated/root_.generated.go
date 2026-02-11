@@ -96,19 +96,27 @@ type ComplexityRoot struct {
 	}
 
 	BuildTask struct {
+		Artifact       func(childComplexity int) int
+		ArtifactPath   func(childComplexity int) int
 		BuildImage     func(childComplexity int) int
 		BuildScript    func(childComplexity int) int
 		Builder        func(childComplexity int) int
+		CallbackURI    func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
+		ErrorSize      func(childComplexity int) int
+		Extra          func(childComplexity int) int
 		FinishedAt     func(childComplexity int) int
 		ID             func(childComplexity int) int
+		Interval       func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
+		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
+		TransportType  func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -783,6 +791,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
 
+	case "BuildTask.artifact":
+		if e.complexity.BuildTask.Artifact == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Artifact(childComplexity), true
+
+	case "BuildTask.artifactPath":
+		if e.complexity.BuildTask.ArtifactPath == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.ArtifactPath(childComplexity), true
+
 	case "BuildTask.buildImage":
 		if e.complexity.BuildTask.BuildImage == nil {
 			break
@@ -803,6 +825,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.Builder(childComplexity), true
+
+	case "BuildTask.callbackURI":
+		if e.complexity.BuildTask.CallbackURI == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.CallbackURI(childComplexity), true
 
 	case "BuildTask.claimedAt":
 		if e.complexity.BuildTask.ClaimedAt == nil {
@@ -825,6 +854,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.Error(childComplexity), true
 
+	case "BuildTask.errorSize":
+		if e.complexity.BuildTask.ErrorSize == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.ErrorSize(childComplexity), true
+
+	case "BuildTask.extra":
+		if e.complexity.BuildTask.Extra == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Extra(childComplexity), true
+
 	case "BuildTask.finishedAt":
 		if e.complexity.BuildTask.FinishedAt == nil {
 			break
@@ -838,6 +881,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.ID(childComplexity), true
+
+	case "BuildTask.interval":
+		if e.complexity.BuildTask.Interval == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Interval(childComplexity), true
 
 	case "BuildTask.lastModifiedAt":
 		if e.complexity.BuildTask.LastModifiedAt == nil {
@@ -867,12 +917,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.StartedAt(childComplexity), true
 
+	case "BuildTask.targetFormat":
+		if e.complexity.BuildTask.TargetFormat == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.TargetFormat(childComplexity), true
+
 	case "BuildTask.targetOs":
 		if e.complexity.BuildTask.TargetOs == nil {
 			break
 		}
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
+
+	case "BuildTask.transportType":
+		if e.complexity.BuildTask.TransportType == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.TransportType(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -3685,13 +3749,33 @@ type BuildTask implements Node {
   """
   targetOs: HostPlatform!
   """
+  The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE).
+  """
+  targetFormat: BuildTaskTargetFormat!
+  """
   Docker container image name to use for the build.
   """
   buildImage: String!
   """
-  The script to execute inside the build container.
+  The derived script to execute inside the build container.
   """
   buildScript: String!
+  """
+  The callback URI for the IMIX agent to connect to.
+  """
+  callbackURI: String!
+  """
+  The callback interval in seconds for the IMIX agent.
+  """
+  interval: Int!
+  """
+  The transport type for the IMIX agent.
+  """
+  transportType: BeaconTransport_Type!
+  """
+  Extra transport configuration for the IMIX agent.
+  """
+  extra: String
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -3717,9 +3801,21 @@ type BuildTask implements Node {
   """
   error: String
   """
+  The size of the error in bytes
+  """
+  errorSize: Int!
+  """
+  Path inside the container where the build artifact is located. Derived from target_os if not set.
+  """
+  artifactPath: String
+  """
   The builder assigned to execute this build task.
   """
   builder: Builder!
+  """
+  The compiled artifact produced by this build task, stored as an Asset.
+  """
+  artifact: Asset
 }
 """
 A connection to a list of items.
@@ -3775,6 +3871,15 @@ enum BuildTaskOrderField {
   STARTED_AT
   FINISHED_AT
   OUTPUT_SIZE
+  ERROR_SIZE
+}
+"""
+BuildTaskTargetFormat is enum for the field target_format
+"""
+enum BuildTaskTargetFormat @goModel(model: "realm.pub/tavern/internal/builder/builderpb.TargetFormat") {
+  BIN
+  CDYLIB
+  WINDOWS_SERVICE
 }
 """
 BuildTaskWhereInput is used for filtering BuildTask objects.
@@ -3825,6 +3930,13 @@ input BuildTaskWhereInput {
   targetOsIn: [HostPlatform!]
   targetOsNotIn: [HostPlatform!]
   """
+  target_format field predicates
+  """
+  targetFormat: BuildTaskTargetFormat
+  targetFormatNEQ: BuildTaskTargetFormat
+  targetFormatIn: [BuildTaskTargetFormat!]
+  targetFormatNotIn: [BuildTaskTargetFormat!]
+  """
   build_image field predicates
   """
   buildImage: String
@@ -3856,6 +3968,58 @@ input BuildTaskWhereInput {
   buildScriptHasSuffix: String
   buildScriptEqualFold: String
   buildScriptContainsFold: String
+  """
+  callback_uri field predicates
+  """
+  callbackURI: String
+  callbackURINEQ: String
+  callbackURIIn: [String!]
+  callbackURINotIn: [String!]
+  callbackURIGT: String
+  callbackURIGTE: String
+  callbackURILT: String
+  callbackURILTE: String
+  callbackURIContains: String
+  callbackURIHasPrefix: String
+  callbackURIHasSuffix: String
+  callbackURIEqualFold: String
+  callbackURIContainsFold: String
+  """
+  interval field predicates
+  """
+  interval: Int
+  intervalNEQ: Int
+  intervalIn: [Int!]
+  intervalNotIn: [Int!]
+  intervalGT: Int
+  intervalGTE: Int
+  intervalLT: Int
+  intervalLTE: Int
+  """
+  transport_type field predicates
+  """
+  transportType: BeaconTransport_Type
+  transportTypeNEQ: BeaconTransport_Type
+  transportTypeIn: [BeaconTransport_Type!]
+  transportTypeNotIn: [BeaconTransport_Type!]
+  """
+  extra field predicates
+  """
+  extra: String
+  extraNEQ: String
+  extraIn: [String!]
+  extraNotIn: [String!]
+  extraGT: String
+  extraGTE: String
+  extraLT: String
+  extraLTE: String
+  extraContains: String
+  extraHasPrefix: String
+  extraHasSuffix: String
+  extraIsNil: Boolean
+  extraNotNil: Boolean
+  extraEqualFold: String
+  extraContainsFold: String
   """
   claimed_at field predicates
   """
@@ -3943,10 +4107,44 @@ input BuildTaskWhereInput {
   errorEqualFold: String
   errorContainsFold: String
   """
+  error_size field predicates
+  """
+  errorSize: Int
+  errorSizeNEQ: Int
+  errorSizeIn: [Int!]
+  errorSizeNotIn: [Int!]
+  errorSizeGT: Int
+  errorSizeGTE: Int
+  errorSizeLT: Int
+  errorSizeLTE: Int
+  """
+  artifact_path field predicates
+  """
+  artifactPath: String
+  artifactPathNEQ: String
+  artifactPathIn: [String!]
+  artifactPathNotIn: [String!]
+  artifactPathGT: String
+  artifactPathGTE: String
+  artifactPathLT: String
+  artifactPathLTE: String
+  artifactPathContains: String
+  artifactPathHasPrefix: String
+  artifactPathHasSuffix: String
+  artifactPathIsNil: Boolean
+  artifactPathNotNil: Boolean
+  artifactPathEqualFold: String
+  artifactPathContainsFold: String
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
   hasBuilderWith: [BuilderWhereInput!]
+  """
+  artifact edge predicates
+  """
+  hasArtifact: Boolean
+  hasArtifactWith: [AssetWhereInput!]
 }
 type Builder implements Node {
   id: ID!
@@ -8168,11 +8366,26 @@ input CreateBuildTaskInput {
   """The target operating system for the build."""
   targetOS: HostPlatform!
 
+  """The output format for the build."""
+  targetFormat: BuildTaskTargetFormat!
+
   """Docker container image name to use for the build."""
   buildImage: String!
 
-  """The script to execute inside the build container."""
-  buildScript: String!
+  """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
+  callbackURI: String
+
+  """The callback interval in seconds for the IMIX agent."""
+  interval: Int = 5
+
+  """The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC."""
+  transportType: BeaconTransport_Type
+
+  """Extra transport configuration for the IMIX agent."""
+  extra: String
+
+  """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
+  artifactPath: String
 }
 
 """Output returned when registering a new builder."""

@@ -25,7 +25,7 @@ func TestMockExecutor_DefaultBehavior(t *testing.T) {
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)
 
-	err := mock.Build(context.Background(), spec, outputCh, errorCh)
+	_, err := mock.Build(context.Background(), spec, outputCh, errorCh)
 	require.NoError(t, err)
 
 	// Should have recorded the call.
@@ -49,7 +49,7 @@ func TestMockExecutor_RecordsMultipleCalls(t *testing.T) {
 	for _, s := range specs {
 		outputCh := make(chan string, 10)
 		errorCh := make(chan string, 10)
-		err := mock.Build(context.Background(), s, outputCh, errorCh)
+		_, err := mock.Build(context.Background(), s, outputCh, errorCh)
 		require.NoError(t, err)
 	}
 
@@ -61,17 +61,17 @@ func TestMockExecutor_RecordsMultipleCalls(t *testing.T) {
 
 func TestMockExecutor_CustomBuildFn_StreamsOutput(t *testing.T) {
 	mock := executor.NewMockExecutor()
-	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) (*executor.BuildResult, error) {
 		outputCh <- "Compiling main.go"
 		outputCh <- "Linking binary"
 		outputCh <- "Build succeeded"
-		return nil
+		return &executor.BuildResult{}, nil
 	}
 
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)
 
-	err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 1}, outputCh, errorCh)
+	_, err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 1}, outputCh, errorCh)
 	require.NoError(t, err)
 
 	// Channels are closed by Build; drain them.
@@ -85,17 +85,17 @@ func TestMockExecutor_CustomBuildFn_StreamsOutput(t *testing.T) {
 
 func TestMockExecutor_CustomBuildFn_StreamsErrors(t *testing.T) {
 	mock := executor.NewMockExecutor()
-	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) (*executor.BuildResult, error) {
 		outputCh <- "Compiling..."
 		errorCh <- "warning: unused variable"
 		errorCh <- "error: type mismatch"
-		return errors.New("build failed with exit code 1")
+		return &executor.BuildResult{}, errors.New("build failed with exit code 1")
 	}
 
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)
 
-	err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 2}, outputCh, errorCh)
+	_, err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 2}, outputCh, errorCh)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "build failed")
 
@@ -115,10 +115,10 @@ func TestMockExecutor_CustomBuildFn_StreamsErrors(t *testing.T) {
 
 func TestMockExecutor_CustomBuildFn_ContextCancellation(t *testing.T) {
 	mock := executor.NewMockExecutor()
-	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) (*executor.BuildResult, error) {
 		outputCh <- "Starting build..."
 		<-ctx.Done()
-		return ctx.Err()
+		return nil, ctx.Err()
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -130,7 +130,7 @@ func TestMockExecutor_CustomBuildFn_ContextCancellation(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		buildErr = mock.Build(ctx, executor.BuildSpec{TaskID: 3}, outputCh, errorCh)
+		_, buildErr = mock.Build(ctx, executor.BuildSpec{TaskID: 3}, outputCh, errorCh)
 	}()
 
 	// Wait for the first output line to confirm Build started.
@@ -150,19 +150,19 @@ func TestMockExecutor_CustomBuildFn_ContextCancellation(t *testing.T) {
 
 func TestMockExecutor_CustomBuildFn_InterleavedOutputAndErrors(t *testing.T) {
 	mock := executor.NewMockExecutor()
-	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+	mock.BuildFn = func(ctx context.Context, spec executor.BuildSpec, outputCh chan<- string, errorCh chan<- string) (*executor.BuildResult, error) {
 		outputCh <- "step 1"
 		errorCh <- "warn 1"
 		outputCh <- "step 2"
 		errorCh <- "warn 2"
 		outputCh <- "step 3"
-		return nil
+		return &executor.BuildResult{}, nil
 	}
 
 	outputCh := make(chan string, 10)
 	errorCh := make(chan string, 10)
 
-	err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 4}, outputCh, errorCh)
+	_, err := mock.Build(context.Background(), executor.BuildSpec{TaskID: 4}, outputCh, errorCh)
 	require.NoError(t, err)
 
 	// Channels are closed by Build; drain them.

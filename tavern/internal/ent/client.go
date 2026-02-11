@@ -826,6 +826,22 @@ func (c *BuildTaskClient) QueryBuilder(bt *BuildTask) *BuilderQuery {
 	return query
 }
 
+// QueryArtifact queries the artifact edge of a BuildTask.
+func (c *BuildTaskClient) QueryArtifact(bt *BuildTask) *AssetQuery {
+	query := (&AssetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, id),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.ArtifactTable, buildtask.ArtifactColumn),
+		)
+		fromV = sqlgraph.Neighbors(bt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BuildTaskClient) Hooks() []Hook {
 	hooks := c.hooks.BuildTask

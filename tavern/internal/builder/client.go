@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"log/slog"
-	"strings"
 	"sync"
 	"time"
 
@@ -129,14 +128,6 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 
 	client := builderpb.NewBuilderClient(conn)
 
-	// Initial ping to verify connectivity
-	_, err = client.Ping(ctx, &builderpb.PingRequest{})
-	if err != nil {
-		return fmt.Errorf("failed to ping upstream: %w", err)
-	}
-
-	slog.InfoContext(ctx, "successfully pinged upstream", "upstream", cfg.Upstream)
-
 	// Semaphore limits concurrent builds.
 	sem := make(chan struct{}, maxConcurrentBuilds)
 	var wg sync.WaitGroup
@@ -189,86 +180,151 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 }
 
 // executeTask runs a single build task through the executor, streaming output
-// and errors back to the server, then reports completion.
+// and errors back to the server via the StreamBuildTaskOutput RPC.
 func executeTask(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, task *builderpb.BuildTaskSpec) {
+	stream, err := client.StreamBuildTaskOutput(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to open build output stream",
+			"task_id", task.Id, "error", err)
+		return
+	}
+
 	outputCh := make(chan string, 64)
 	errorCh := make(chan string, 64)
 
-	var outputLines []string
-	var errorLines []string
-
-	// Collect output and errors in a background goroutine.
-	done := make(chan struct{})
+	// Stream output and errors to the server in a background goroutine.
+	var sendErr error
+	collectorDone := make(chan struct{})
 	go func() {
-		defer close(done)
-		for {
+		defer close(collectorDone)
+		outCh, errCh := outputCh, errorCh
+		for outCh != nil || errCh != nil {
 			select {
-			case line, ok := <-outputCh:
+			case line, ok := <-outCh:
 				if !ok {
-					outputCh = nil
-					if errorCh == nil {
-						return
-					}
+					outCh = nil
 					continue
 				}
-				outputLines = append(outputLines, line)
+				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+					TaskId: task.Id,
+					Output: line,
+				}); err != nil {
+					sendErr = err
+					return
+				}
 				slog.InfoContext(ctx, "build output",
-					"task_id", task.Id,
-					"line", line,
-				)
-			case line, ok := <-errorCh:
+					"task_id", task.Id, "line", line)
+			case line, ok := <-errCh:
 				if !ok {
-					errorCh = nil
-					if outputCh == nil {
-						return
-					}
+					errCh = nil
 					continue
 				}
-				errorLines = append(errorLines, line)
+				if err := stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+					TaskId: task.Id,
+					Error:  line,
+				}); err != nil {
+					sendErr = err
+					return
+				}
 				slog.WarnContext(ctx, "build error output",
-					"task_id", task.Id,
-					"line", line,
-				)
+					"task_id", task.Id, "line", line)
 			}
 		}
 	}()
 
 	// Run the build through the executor.
 	// The executor closes both channels when done.
-	buildErr := exec.Build(ctx, executor.BuildSpec{
-		TaskID:      task.Id,
-		TargetOS:    task.TargetOs,
-		BuildImage:  task.BuildImage,
-		BuildScript: task.BuildScript,
+	result, buildErr := exec.Build(ctx, executor.BuildSpec{
+		TaskID:       task.Id,
+		TargetOS:     task.TargetOs,
+		BuildImage:   task.BuildImage,
+		BuildScript:  task.BuildScript,
+		ArtifactPath: task.ArtifactPath,
+		Env:          task.Env,
 	}, outputCh, errorCh)
 
-	// Wait for collector goroutine to drain remaining channel data.
-	<-done
+	// Wait for the collector goroutine to drain remaining channel data.
+	<-collectorDone
 
-	// Build the submission request with collected output.
-	submitReq := &builderpb.SubmitBuildTaskOutputRequest{
-		TaskId: task.Id,
-		Output: strings.Join(outputLines, "\n"),
+	if sendErr != nil {
+		slog.ErrorContext(ctx, "stream send failed during build",
+			"task_id", task.Id, "error", sendErr)
+		return
 	}
 
+	// Send the final message signaling completion.
+	finalMsg := &builderpb.StreamBuildTaskOutputRequest{
+		TaskId:   task.Id,
+		Finished: true,
+	}
 	if buildErr != nil {
-		errMsg := buildErr.Error()
-		if len(errorLines) > 0 {
-			errMsg = strings.Join(errorLines, "\n") + "\n" + errMsg
-		}
-		submitReq.Error = errMsg
+		finalMsg.Error = buildErr.Error()
 		slog.ErrorContext(ctx, "build task failed",
-			"task_id", task.Id,
-			"error", buildErr,
-		)
-	} else if len(errorLines) > 0 {
-		submitReq.Error = strings.Join(errorLines, "\n")
+			"task_id", task.Id, "error", buildErr)
 	}
 
-	if _, err := client.SubmitBuildTaskOutput(ctx, submitReq); err != nil {
-		slog.ErrorContext(ctx, "failed to submit build task output",
-			"task_id", task.Id,
-			"error", err,
-		)
+	if err := stream.Send(finalMsg); err != nil {
+		slog.ErrorContext(ctx, "failed to send final stream message",
+			"task_id", task.Id, "error", err)
+		return
 	}
+
+	if _, err := stream.CloseAndRecv(); err != nil {
+		slog.ErrorContext(ctx, "failed to close build output stream",
+			"task_id", task.Id, "error", err)
+		return
+	}
+
+	// Upload artifact if the build succeeded and produced one.
+	if buildErr == nil && result != nil && result.Artifact != nil {
+		if err := uploadArtifact(ctx, client, task.Id, result); err != nil {
+			slog.ErrorContext(ctx, "failed to upload build artifact",
+				"task_id", task.Id, "error", err)
+		}
+	}
+}
+
+// uploadArtifact streams the build artifact to the server in chunks via the
+// UploadBuildArtifact RPC.
+func uploadArtifact(ctx context.Context, client builderpb.BuilderClient, taskID int64, result *executor.BuildResult) error {
+	stream, err := client.UploadBuildArtifact(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to open artifact upload stream: %w", err)
+	}
+
+	const chunkSize = 1 * 1024 * 1024 // 1MB chunks
+	data := result.Artifact
+
+	for i := 0; i < len(data); i += chunkSize {
+		end := i + chunkSize
+		if end > len(data) {
+			end = len(data)
+		}
+
+		msg := &builderpb.UploadBuildArtifactRequest{
+			Chunk: data[i:end],
+		}
+		// Set metadata only on the first message.
+		if i == 0 {
+			msg.TaskId = taskID
+			msg.ArtifactName = result.ArtifactName
+		}
+
+		if err := stream.Send(msg); err != nil {
+			return fmt.Errorf("failed to send artifact chunk: %w", err)
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return fmt.Errorf("failed to close artifact stream: %w", err)
+	}
+
+	slog.InfoContext(ctx, "artifact uploaded",
+		"task_id", taskID,
+		"asset_id", resp.AssetId,
+		"size", len(data),
+	)
+
+	return nil
 }

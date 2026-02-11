@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/hook"
 )
@@ -30,6 +31,12 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.OrderField("TARGET_OS"),
 			).
 			Comment("The target operating system platform for this build."),
+		field.Enum("target_format").
+			GoType(builderpb.TargetFormat("")).
+			Annotations(
+				entgql.Type("BuildTaskTargetFormat"),
+			).
+			Comment("The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE)."),
 		field.String("build_image").
 			NotEmpty().
 			Comment("Docker container image name to use for the build."),
@@ -38,7 +45,25 @@ func (BuildTask) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT",
 			}).
-			Comment("The script to execute inside the build container."),
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("The derived script to execute inside the build container."),
+		field.String("callback_uri").
+			NotEmpty().
+			Comment("The callback URI for the IMIX agent to connect to."),
+		field.Int("interval").
+			Default(builderpb.DefaultInterval).
+			Comment("The callback interval in seconds for the IMIX agent."),
+		field.Enum("transport_type").
+			GoType(c2pb.Transport_Type(0)).
+			Annotations(
+				entgql.Type("BeaconTransport_Type"),
+			).
+			Comment("The transport type for the IMIX agent."),
+		field.String("extra").
+			Optional().
+			Comment("Extra transport configuration for the IMIX agent."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(
@@ -76,6 +101,19 @@ func (BuildTask) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT",
 			}).
 			Comment("Error message if the build failed."),
+		field.Int("error_size").
+			Default(0).
+			Min(0).
+			Annotations(
+				entgql.OrderField("ERROR_SIZE"),
+			).
+			Comment("The size of the error in bytes"),
+		field.String("artifact_path").
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Path inside the container where the build artifact is located. Derived from target_os if not set."),
 	}
 }
 
@@ -89,6 +127,9 @@ func (BuildTask) Edges() []ent.Edge {
 			Required().
 			Unique().
 			Comment("The builder assigned to execute this build task."),
+		edge.To("artifact", Asset.Type).
+			Unique().
+			Comment("The compiled artifact produced by this build task, stored as an Asset."),
 	}
 }
 
@@ -117,11 +158,13 @@ func (BuildTask) Hooks() []ent.Hook {
 	}
 }
 
-// HookDeriveBuildTaskInfo will update build task info (e.g. output_size) whenever it is mutated.
+// HookDeriveBuildTaskInfo will update build task info (e.g. output_size, error_size) whenever it is mutated.
 func HookDeriveBuildTaskInfo() ent.Hook {
 	type btMutation interface {
 		Output() (string, bool)
 		SetOutputSize(i int)
+		Error() (string, bool)
+		SetErrorSize(i int)
 	}
 
 	return func(next ent.Mutator) ent.Mutator {
@@ -133,6 +176,9 @@ func HookDeriveBuildTaskInfo() ent.Hook {
 
 			output, _ := bt.Output()
 			bt.SetOutputSize(len([]byte(output)))
+
+			errStr, _ := bt.Error()
+			bt.SetErrorSize(len([]byte(errStr)))
 
 			return next.Mutate(ctx, m)
 		})

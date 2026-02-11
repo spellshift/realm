@@ -116,6 +116,14 @@ func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	return result, err
 }
 
+func (bt *BuildTask) Artifact(ctx context.Context) (*Asset, error) {
+	result, err := bt.Edges.ArtifactOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryArtifact().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (b *Builder) BuildTasks(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BuildTaskOrder, where *BuildTaskWhereInput,
 ) (*BuildTaskConnection, error) {

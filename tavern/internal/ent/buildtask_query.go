@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -19,14 +20,15 @@ import (
 // BuildTaskQuery is the builder for querying BuildTask entities.
 type BuildTaskQuery struct {
 	config
-	ctx         *QueryContext
-	order       []buildtask.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.BuildTask
-	withBuilder *BuilderQuery
-	withFKs     bool
-	modifiers   []func(*sql.Selector)
-	loadTotal   []func(context.Context, []*BuildTask) error
+	ctx          *QueryContext
+	order        []buildtask.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.BuildTask
+	withBuilder  *BuilderQuery
+	withArtifact *AssetQuery
+	withFKs      bool
+	modifiers    []func(*sql.Selector)
+	loadTotal    []func(context.Context, []*BuildTask) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +80,28 @@ func (btq *BuildTaskQuery) QueryBuilder() *BuilderQuery {
 			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
 			sqlgraph.To(builder.Table, builder.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BuilderTable, buildtask.BuilderColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryArtifact chains the current query on the "artifact" edge.
+func (btq *BuildTaskQuery) QueryArtifact() *AssetQuery {
+	query := (&AssetClient{config: btq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := btq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := btq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
+			sqlgraph.To(asset.Table, asset.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.ArtifactTable, buildtask.ArtifactColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +296,13 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 		return nil
 	}
 	return &BuildTaskQuery{
-		config:      btq.config,
-		ctx:         btq.ctx.Clone(),
-		order:       append([]buildtask.OrderOption{}, btq.order...),
-		inters:      append([]Interceptor{}, btq.inters...),
-		predicates:  append([]predicate.BuildTask{}, btq.predicates...),
-		withBuilder: btq.withBuilder.Clone(),
+		config:       btq.config,
+		ctx:          btq.ctx.Clone(),
+		order:        append([]buildtask.OrderOption{}, btq.order...),
+		inters:       append([]Interceptor{}, btq.inters...),
+		predicates:   append([]predicate.BuildTask{}, btq.predicates...),
+		withBuilder:  btq.withBuilder.Clone(),
+		withArtifact: btq.withArtifact.Clone(),
 		// clone intermediate query.
 		sql:  btq.sql.Clone(),
 		path: btq.path,
@@ -292,6 +317,17 @@ func (btq *BuildTaskQuery) WithBuilder(opts ...func(*BuilderQuery)) *BuildTaskQu
 		opt(query)
 	}
 	btq.withBuilder = query
+	return btq
+}
+
+// WithArtifact tells the query-builder to eager-load the nodes that are connected to
+// the "artifact" edge. The optional arguments are used to configure the query builder of the edge.
+func (btq *BuildTaskQuery) WithArtifact(opts ...func(*AssetQuery)) *BuildTaskQuery {
+	query := (&AssetClient{config: btq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	btq.withArtifact = query
 	return btq
 }
 
@@ -374,11 +410,12 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 		nodes       = []*BuildTask{}
 		withFKs     = btq.withFKs
 		_spec       = btq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			btq.withBuilder != nil,
+			btq.withArtifact != nil,
 		}
 	)
-	if btq.withBuilder != nil {
+	if btq.withBuilder != nil || btq.withArtifact != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -408,6 +445,12 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	if query := btq.withBuilder; query != nil {
 		if err := btq.loadBuilder(ctx, query, nodes, nil,
 			func(n *BuildTask, e *Builder) { n.Edges.Builder = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := btq.withArtifact; query != nil {
+		if err := btq.loadArtifact(ctx, query, nodes, nil,
+			func(n *BuildTask, e *Asset) { n.Edges.Artifact = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -444,6 +487,38 @@ func (btq *BuildTaskQuery) loadBuilder(ctx context.Context, query *BuilderQuery,
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "build_task_builder" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (btq *BuildTaskQuery) loadArtifact(ctx context.Context, query *AssetQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *Asset)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*BuildTask)
+	for i := range nodes {
+		if nodes[i].build_task_artifact == nil {
+			continue
+		}
+		fk := *nodes[i].build_task_artifact
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(asset.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "build_task_artifact" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

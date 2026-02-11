@@ -272,6 +272,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize builder CA: %w", err)
 	}
 
+	// Get server X25519 public key for agent builds
+	serverX25519PubKey, err := GetPubKey()
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to get server X25519 public key: %w", err)
+	}
+	serverPubkeyB64 := base64.StdEncoding.EncodeToString(serverX25519PubKey.Bytes())
+
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
 		createTestData(ctx, client)
@@ -343,7 +351,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: newPortalGRPCHandler(client, portalMux),
 		},
 		"/builder.Builder/": tavernhttp.Endpoint{
-			Handler:              newBuilderGRPCHandler(client, builderCACert),
+			Handler:              newBuilderGRPCHandler(client, builderCACert, serverPubkeyB64),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -590,14 +598,17 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	})
 }
 
-func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate) http.Handler {
-	builderSrv := builder.New(client)
+func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverPubkey string) http.Handler {
+	builderSrv := builder.New(client, serverPubkey)
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			builder.NewMTLSAuthInterceptor(caCert, client),
 			grpcWithUnaryMetrics,
 		),
-		grpc.StreamInterceptor(grpcWithStreamMetrics),
+		grpc.ChainStreamInterceptor(
+			builder.NewMTLSStreamAuthInterceptor(caCert, client),
+			grpcWithStreamMetrics,
+		),
 	)
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

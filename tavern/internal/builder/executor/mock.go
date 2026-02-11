@@ -13,8 +13,8 @@ type MockExecutor struct {
 
 	// BuildFn, if set, is called for each Build invocation.
 	// It gives tests full control over what gets sent to the channels
-	// and what error (if any) is returned.
-	BuildFn func(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) error
+	// and what result/error is returned.
+	BuildFn func(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) (*BuildResult, error)
 }
 
 // NewMockExecutor returns a MockExecutor with no configured behavior.
@@ -25,7 +25,7 @@ func NewMockExecutor() *MockExecutor {
 
 // Build implements Executor. It records the call, delegates to BuildFn
 // if set, and closes both channels before returning.
-func (m *MockExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) error {
+func (m *MockExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) (*BuildResult, error) {
 	defer close(outputCh)
 	defer close(errorCh)
 
@@ -33,5 +33,5 @@ func (m *MockExecutor) Build(ctx context.Context, spec BuildSpec, outputCh chan<
 	if m.BuildFn != nil {
 		return m.BuildFn(ctx, spec, outputCh, errorCh)
 	}
-	return nil
+	return &BuildResult{}, nil
 }

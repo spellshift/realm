@@ -211,7 +211,11 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"targetOS", "buildImage", "buildScript"}
+	if _, present := asMap["interval"]; !present {
+		asMap["interval"] = 5
+	}
+
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "callbackURI", "interval", "transportType", "extra", "artifactPath"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -225,6 +229,13 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.TargetOs = data
+		case "targetFormat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetFormat"))
+			data, err := ec.unmarshalNBuildTaskTargetFormat2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetFormat = data
 		case "buildImage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImage"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -232,13 +243,41 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.BuildImage = data
-		case "buildScript":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildScript"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+		case "callbackURI":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURI"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.BuildScript = data
+			it.CallbackURI = data
+		case "interval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Interval = data
+		case "transportType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportType"))
+			data, err := ec.unmarshalOBeaconTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TransportType = data
+		case "extra":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extra"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Extra = data
+		case "artifactPath":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPath"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ArtifactPath = data
 		}
 	}
 

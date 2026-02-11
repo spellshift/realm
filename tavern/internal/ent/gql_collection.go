@@ -698,6 +698,17 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			bt.withBuilder = query
+
+		case "artifact":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AssetClient{config: bt.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, assetImplementors)...); err != nil {
+				return err
+			}
+			bt.withArtifact = query
 		case "createdAt":
 			if _, ok := fieldSeen[buildtask.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldCreatedAt)
@@ -713,6 +724,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldTargetOs)
 				fieldSeen[buildtask.FieldTargetOs] = struct{}{}
 			}
+		case "targetFormat":
+			if _, ok := fieldSeen[buildtask.FieldTargetFormat]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTargetFormat)
+				fieldSeen[buildtask.FieldTargetFormat] = struct{}{}
+			}
 		case "buildImage":
 			if _, ok := fieldSeen[buildtask.FieldBuildImage]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildImage)
@@ -722,6 +738,26 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
 				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
+			}
+		case "callbackURI":
+			if _, ok := fieldSeen[buildtask.FieldCallbackURI]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldCallbackURI)
+				fieldSeen[buildtask.FieldCallbackURI] = struct{}{}
+			}
+		case "interval":
+			if _, ok := fieldSeen[buildtask.FieldInterval]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldInterval)
+				fieldSeen[buildtask.FieldInterval] = struct{}{}
+			}
+		case "transportType":
+			if _, ok := fieldSeen[buildtask.FieldTransportType]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTransportType)
+				fieldSeen[buildtask.FieldTransportType] = struct{}{}
+			}
+		case "extra":
+			if _, ok := fieldSeen[buildtask.FieldExtra]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldExtra)
+				fieldSeen[buildtask.FieldExtra] = struct{}{}
 			}
 		case "claimedAt":
 			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {
@@ -752,6 +788,16 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldError]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldError)
 				fieldSeen[buildtask.FieldError] = struct{}{}
+			}
+		case "errorSize":
+			if _, ok := fieldSeen[buildtask.FieldErrorSize]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldErrorSize)
+				fieldSeen[buildtask.FieldErrorSize] = struct{}{}
+			}
+		case "artifactPath":
+			if _, ok := fieldSeen[buildtask.FieldArtifactPath]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldArtifactPath)
+				fieldSeen[buildtask.FieldArtifactPath] = struct{}{}
 			}
 		case "id":
 		case "__typename":

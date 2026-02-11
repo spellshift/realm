@@ -98,8 +98,11 @@ func TestBuilderE2E(t *testing.T) {
 		grpc.ChainUnaryInterceptor(
 			builder.NewMTLSAuthInterceptor(caCert, graph),
 		),
+		grpc.ChainStreamInterceptor(
+			builder.NewMTLSStreamAuthInterceptor(caCert, graph),
+		),
 	)
-	builderSrv := builder.New(graph)
+	builderSrv := builder.New(graph, "dGVzdC1wdWJrZXk=")
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 
 	go func() {
@@ -123,7 +126,7 @@ func TestBuilderE2E(t *testing.T) {
 		defer conn.Close()
 
 		unauthClient := builderpb.NewBuilderClient(conn)
-		_, err = unauthClient.Ping(ctx, &builderpb.PingRequest{})
+		_, err = unauthClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 		require.Error(t, err)
 		assert.Equal(t, codes.Unauthenticated, status.Code(err))
 	})
@@ -142,9 +145,9 @@ func TestBuilderE2E(t *testing.T) {
 		defer conn.Close()
 
 		authClient := builderpb.NewBuilderClient(conn)
-		pingResp, err := authClient.Ping(ctx, &builderpb.PingRequest{})
+		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 		require.NoError(t, err)
-		require.NotNil(t, pingResp)
+		require.NotNil(t, claimResp)
 	})
 
 	// 10. Test: ClaimBuildTasks returns unclaimed tasks and marks them as claimed
@@ -166,8 +169,12 @@ func TestBuilderE2E(t *testing.T) {
 		// Create a build task assigned to this builder
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+			SetTargetFormat("BIN").
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
+			SetCallbackURI("https://callback.example.com").
+			SetInterval(10).
+			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -179,6 +186,14 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Equal(t, "golang:1.21", resp.Tasks[0].BuildImage)
 		assert.Equal(t, "echo hello && go build ./...", resp.Tasks[0].BuildScript)
 
+		// Verify IMIX_CONFIG env var is set
+		require.Len(t, resp.Tasks[0].Env, 1)
+		assert.Contains(t, resp.Tasks[0].Env[0], "IMIX_CONFIG=")
+		assert.Contains(t, resp.Tasks[0].Env[0], "transports:")
+		assert.Contains(t, resp.Tasks[0].Env[0], "uri: https://callback.example.com")
+		assert.Contains(t, resp.Tasks[0].Env[0], "interval: 10")
+		assert.Contains(t, resp.Tasks[0].Env[0], "type: grpc")
+
 		// Verify claimed_at is set
 		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
 		assert.False(t, reloaded.ClaimedAt.IsZero())
@@ -189,8 +204,8 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Empty(t, resp2.Tasks)
 	})
 
-	// 11. Test: SubmitBuildTaskOutput sets output and finished_at
-	t.Run("SubmitBuildTaskOutput", func(t *testing.T) {
+	// 11. Test: StreamBuildTaskOutput sets output and finished_at
+	t.Run("StreamBuildTaskOutput", func(t *testing.T) {
 		creds, err := builder.NewCredentialsFromConfig(cfg)
 		require.NoError(t, err)
 
@@ -207,8 +222,11 @@ func TestBuilderE2E(t *testing.T) {
 		// Create and claim a build task
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_MACOS).
+			SetTargetFormat("BIN").
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
+			SetCallbackURI("https://callback.example.com").
+			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -217,11 +235,20 @@ func TestBuilderE2E(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, claimResp.Tasks, 1)
 
-		// Submit output
-		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+		// Stream output
+		stream, err := authClient.StreamBuildTaskOutput(ctx)
+		require.NoError(t, err)
+
+		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 			TaskId: int64(bt.ID),
 			Output: "build succeeded",
-		})
+		}))
+		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+			TaskId:   int64(bt.ID),
+			Finished: true,
+		}))
+
+		_, err = stream.CloseAndRecv()
 		require.NoError(t, err)
 
 		// Verify the build task was updated
@@ -231,8 +258,8 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Empty(t, reloaded.Error)
 	})
 
-	// 12. Test: SubmitBuildTaskOutput with error
-	t.Run("SubmitBuildTaskOutputWithError", func(t *testing.T) {
+	// 12. Test: StreamBuildTaskOutput with error
+	t.Run("StreamBuildTaskOutputWithError", func(t *testing.T) {
 		creds, err := builder.NewCredentialsFromConfig(cfg)
 		require.NoError(t, err)
 
@@ -249,8 +276,11 @@ func TestBuilderE2E(t *testing.T) {
 		// Create and claim a build task
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
+			SetTargetFormat("BIN").
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
+			SetCallbackURI("https://callback.example.com").
+			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -258,12 +288,21 @@ func TestBuilderE2E(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, claimResp.Tasks, 1)
 
-		// Submit output with error
-		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+		// Stream output with error
+		stream, err := authClient.StreamBuildTaskOutput(ctx)
+		require.NoError(t, err)
+
+		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 			TaskId: int64(bt.ID),
 			Output: "partial output before failure",
-			Error:  "compilation failed: missing dependency",
-		})
+		}))
+		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
+			TaskId:   int64(bt.ID),
+			Error:    "compilation failed: missing dependency",
+			Finished: true,
+		}))
+
+		_, err = stream.CloseAndRecv()
 		require.NoError(t, err)
 
 		// Verify the build task has both output and error
@@ -273,8 +312,8 @@ func TestBuilderE2E(t *testing.T) {
 		assert.False(t, reloaded.FinishedAt.IsZero())
 	})
 
-	// 13. Test: SubmitBuildTaskOutput for another builder's task is rejected
-	t.Run("SubmitBuildTaskOutputWrongBuilder", func(t *testing.T) {
+	// 13. Test: StreamBuildTaskOutput for another builder's task is rejected
+	t.Run("StreamBuildTaskOutputWrongBuilder", func(t *testing.T) {
 		// Register a second builder
 		var registerResp2 struct {
 			RegisterBuilder struct {
@@ -313,12 +352,15 @@ func TestBuilderE2E(t *testing.T) {
 		// Create a build task assigned to the second builder
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_WINDOWS).
+			SetTargetFormat("BIN").
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
+			SetCallbackURI("https://callback.example.com").
+			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
 			SetBuilderID(secondBuilder).
 			SaveX(ctx)
 
-		// Try to submit output using the FIRST builder's credentials
+		// Try to stream output using the FIRST builder's credentials
 		creds, err := builder.NewCredentialsFromConfig(cfg)
 		require.NoError(t, err)
 
@@ -332,10 +374,18 @@ func TestBuilderE2E(t *testing.T) {
 
 		authClient := builderpb.NewBuilderClient(conn)
 
-		_, err = authClient.SubmitBuildTaskOutput(ctx, &builderpb.SubmitBuildTaskOutputRequest{
+		stream, err := authClient.StreamBuildTaskOutput(ctx)
+		require.NoError(t, err)
+
+		// Send a message for the wrong builder's task
+		err = stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 			TaskId: int64(bt.ID),
 			Output: "should not be allowed",
 		})
+		// The send might succeed but the server will reject on recv
+		if err == nil {
+			_, err = stream.CloseAndRecv()
+		}
 		require.Error(t, err)
 		assert.Equal(t, codes.PermissionDenied, status.Code(err))
 	})

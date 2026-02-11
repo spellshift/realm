@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -76,6 +77,21 @@ func BuildScript(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldBuildScript, v))
 }
 
+// CallbackURI applies equality check predicate on the "callback_uri" field. It's identical to CallbackURIEQ.
+func CallbackURI(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldCallbackURI, v))
+}
+
+// Interval applies equality check predicate on the "interval" field. It's identical to IntervalEQ.
+func Interval(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldInterval, v))
+}
+
+// Extra applies equality check predicate on the "extra" field. It's identical to ExtraEQ.
+func Extra(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldExtra, v))
+}
+
 // ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
 func ClaimedAt(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldClaimedAt, v))
@@ -104,6 +120,16 @@ func OutputSize(v int) predicate.BuildTask {
 // Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
 func Error(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldError, v))
+}
+
+// ErrorSize applies equality check predicate on the "error_size" field. It's identical to ErrorSizeEQ.
+func ErrorSize(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldErrorSize, v))
+}
+
+// ArtifactPath applies equality check predicate on the "artifact_path" field. It's identical to ArtifactPathEQ.
+func ArtifactPath(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldArtifactPath, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -204,6 +230,26 @@ func TargetOsIn(vs ...c2pb.Host_Platform) predicate.BuildTask {
 // TargetOsNotIn applies the NotIn predicate on the "target_os" field.
 func TargetOsNotIn(vs ...c2pb.Host_Platform) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldNotIn(FieldTargetOs, vs...))
+}
+
+// TargetFormatEQ applies the EQ predicate on the "target_format" field.
+func TargetFormatEQ(v builderpb.TargetFormat) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldTargetFormat, v))
+}
+
+// TargetFormatNEQ applies the NEQ predicate on the "target_format" field.
+func TargetFormatNEQ(v builderpb.TargetFormat) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldTargetFormat, v))
+}
+
+// TargetFormatIn applies the In predicate on the "target_format" field.
+func TargetFormatIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldTargetFormat, vs...))
+}
+
+// TargetFormatNotIn applies the NotIn predicate on the "target_format" field.
+func TargetFormatNotIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldTargetFormat, vs...))
 }
 
 // BuildImageEQ applies the EQ predicate on the "build_image" field.
@@ -334,6 +380,206 @@ func BuildScriptEqualFold(v string) predicate.BuildTask {
 // BuildScriptContainsFold applies the ContainsFold predicate on the "build_script" field.
 func BuildScriptContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldBuildScript, v))
+}
+
+// CallbackURIEQ applies the EQ predicate on the "callback_uri" field.
+func CallbackURIEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldCallbackURI, v))
+}
+
+// CallbackURINEQ applies the NEQ predicate on the "callback_uri" field.
+func CallbackURINEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldCallbackURI, v))
+}
+
+// CallbackURIIn applies the In predicate on the "callback_uri" field.
+func CallbackURIIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldCallbackURI, vs...))
+}
+
+// CallbackURINotIn applies the NotIn predicate on the "callback_uri" field.
+func CallbackURINotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldCallbackURI, vs...))
+}
+
+// CallbackURIGT applies the GT predicate on the "callback_uri" field.
+func CallbackURIGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldCallbackURI, v))
+}
+
+// CallbackURIGTE applies the GTE predicate on the "callback_uri" field.
+func CallbackURIGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldCallbackURI, v))
+}
+
+// CallbackURILT applies the LT predicate on the "callback_uri" field.
+func CallbackURILT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldCallbackURI, v))
+}
+
+// CallbackURILTE applies the LTE predicate on the "callback_uri" field.
+func CallbackURILTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldCallbackURI, v))
+}
+
+// CallbackURIContains applies the Contains predicate on the "callback_uri" field.
+func CallbackURIContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldCallbackURI, v))
+}
+
+// CallbackURIHasPrefix applies the HasPrefix predicate on the "callback_uri" field.
+func CallbackURIHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldCallbackURI, v))
+}
+
+// CallbackURIHasSuffix applies the HasSuffix predicate on the "callback_uri" field.
+func CallbackURIHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldCallbackURI, v))
+}
+
+// CallbackURIEqualFold applies the EqualFold predicate on the "callback_uri" field.
+func CallbackURIEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldCallbackURI, v))
+}
+
+// CallbackURIContainsFold applies the ContainsFold predicate on the "callback_uri" field.
+func CallbackURIContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldCallbackURI, v))
+}
+
+// IntervalEQ applies the EQ predicate on the "interval" field.
+func IntervalEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldInterval, v))
+}
+
+// IntervalNEQ applies the NEQ predicate on the "interval" field.
+func IntervalNEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldInterval, v))
+}
+
+// IntervalIn applies the In predicate on the "interval" field.
+func IntervalIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldInterval, vs...))
+}
+
+// IntervalNotIn applies the NotIn predicate on the "interval" field.
+func IntervalNotIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldInterval, vs...))
+}
+
+// IntervalGT applies the GT predicate on the "interval" field.
+func IntervalGT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldInterval, v))
+}
+
+// IntervalGTE applies the GTE predicate on the "interval" field.
+func IntervalGTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldInterval, v))
+}
+
+// IntervalLT applies the LT predicate on the "interval" field.
+func IntervalLT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldInterval, v))
+}
+
+// IntervalLTE applies the LTE predicate on the "interval" field.
+func IntervalLTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldInterval, v))
+}
+
+// TransportTypeEQ applies the EQ predicate on the "transport_type" field.
+func TransportTypeEQ(v c2pb.Transport_Type) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldTransportType, v))
+}
+
+// TransportTypeNEQ applies the NEQ predicate on the "transport_type" field.
+func TransportTypeNEQ(v c2pb.Transport_Type) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldTransportType, v))
+}
+
+// TransportTypeIn applies the In predicate on the "transport_type" field.
+func TransportTypeIn(vs ...c2pb.Transport_Type) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldTransportType, vs...))
+}
+
+// TransportTypeNotIn applies the NotIn predicate on the "transport_type" field.
+func TransportTypeNotIn(vs ...c2pb.Transport_Type) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldTransportType, vs...))
+}
+
+// ExtraEQ applies the EQ predicate on the "extra" field.
+func ExtraEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldExtra, v))
+}
+
+// ExtraNEQ applies the NEQ predicate on the "extra" field.
+func ExtraNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldExtra, v))
+}
+
+// ExtraIn applies the In predicate on the "extra" field.
+func ExtraIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldExtra, vs...))
+}
+
+// ExtraNotIn applies the NotIn predicate on the "extra" field.
+func ExtraNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldExtra, vs...))
+}
+
+// ExtraGT applies the GT predicate on the "extra" field.
+func ExtraGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldExtra, v))
+}
+
+// ExtraGTE applies the GTE predicate on the "extra" field.
+func ExtraGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldExtra, v))
+}
+
+// ExtraLT applies the LT predicate on the "extra" field.
+func ExtraLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldExtra, v))
+}
+
+// ExtraLTE applies the LTE predicate on the "extra" field.
+func ExtraLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldExtra, v))
+}
+
+// ExtraContains applies the Contains predicate on the "extra" field.
+func ExtraContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldExtra, v))
+}
+
+// ExtraHasPrefix applies the HasPrefix predicate on the "extra" field.
+func ExtraHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldExtra, v))
+}
+
+// ExtraHasSuffix applies the HasSuffix predicate on the "extra" field.
+func ExtraHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldExtra, v))
+}
+
+// ExtraIsNil applies the IsNil predicate on the "extra" field.
+func ExtraIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldExtra))
+}
+
+// ExtraNotNil applies the NotNil predicate on the "extra" field.
+func ExtraNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldExtra))
+}
+
+// ExtraEqualFold applies the EqualFold predicate on the "extra" field.
+func ExtraEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldExtra, v))
+}
+
+// ExtraContainsFold applies the ContainsFold predicate on the "extra" field.
+func ExtraContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldExtra, v))
 }
 
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.
@@ -676,6 +922,121 @@ func ErrorContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldError, v))
 }
 
+// ErrorSizeEQ applies the EQ predicate on the "error_size" field.
+func ErrorSizeEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldErrorSize, v))
+}
+
+// ErrorSizeNEQ applies the NEQ predicate on the "error_size" field.
+func ErrorSizeNEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldErrorSize, v))
+}
+
+// ErrorSizeIn applies the In predicate on the "error_size" field.
+func ErrorSizeIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldErrorSize, vs...))
+}
+
+// ErrorSizeNotIn applies the NotIn predicate on the "error_size" field.
+func ErrorSizeNotIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldErrorSize, vs...))
+}
+
+// ErrorSizeGT applies the GT predicate on the "error_size" field.
+func ErrorSizeGT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldErrorSize, v))
+}
+
+// ErrorSizeGTE applies the GTE predicate on the "error_size" field.
+func ErrorSizeGTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldErrorSize, v))
+}
+
+// ErrorSizeLT applies the LT predicate on the "error_size" field.
+func ErrorSizeLT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldErrorSize, v))
+}
+
+// ErrorSizeLTE applies the LTE predicate on the "error_size" field.
+func ErrorSizeLTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldErrorSize, v))
+}
+
+// ArtifactPathEQ applies the EQ predicate on the "artifact_path" field.
+func ArtifactPathEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldArtifactPath, v))
+}
+
+// ArtifactPathNEQ applies the NEQ predicate on the "artifact_path" field.
+func ArtifactPathNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldArtifactPath, v))
+}
+
+// ArtifactPathIn applies the In predicate on the "artifact_path" field.
+func ArtifactPathIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldArtifactPath, vs...))
+}
+
+// ArtifactPathNotIn applies the NotIn predicate on the "artifact_path" field.
+func ArtifactPathNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldArtifactPath, vs...))
+}
+
+// ArtifactPathGT applies the GT predicate on the "artifact_path" field.
+func ArtifactPathGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldArtifactPath, v))
+}
+
+// ArtifactPathGTE applies the GTE predicate on the "artifact_path" field.
+func ArtifactPathGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldArtifactPath, v))
+}
+
+// ArtifactPathLT applies the LT predicate on the "artifact_path" field.
+func ArtifactPathLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldArtifactPath, v))
+}
+
+// ArtifactPathLTE applies the LTE predicate on the "artifact_path" field.
+func ArtifactPathLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldArtifactPath, v))
+}
+
+// ArtifactPathContains applies the Contains predicate on the "artifact_path" field.
+func ArtifactPathContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldArtifactPath, v))
+}
+
+// ArtifactPathHasPrefix applies the HasPrefix predicate on the "artifact_path" field.
+func ArtifactPathHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldArtifactPath, v))
+}
+
+// ArtifactPathHasSuffix applies the HasSuffix predicate on the "artifact_path" field.
+func ArtifactPathHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldArtifactPath, v))
+}
+
+// ArtifactPathIsNil applies the IsNil predicate on the "artifact_path" field.
+func ArtifactPathIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldArtifactPath))
+}
+
+// ArtifactPathNotNil applies the NotNil predicate on the "artifact_path" field.
+func ArtifactPathNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldArtifactPath))
+}
+
+// ArtifactPathEqualFold applies the EqualFold predicate on the "artifact_path" field.
+func ArtifactPathEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldArtifactPath, v))
+}
+
+// ArtifactPathContainsFold applies the ContainsFold predicate on the "artifact_path" field.
+func ArtifactPathContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldArtifactPath, v))
+}
+
 // HasBuilder applies the HasEdge predicate on the "builder" edge.
 func HasBuilder() predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {
@@ -691,6 +1052,29 @@ func HasBuilder() predicate.BuildTask {
 func HasBuilderWith(preds ...predicate.Builder) predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {
 		step := newBuilderStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasArtifact applies the HasEdge predicate on the "artifact" edge.
+func HasArtifact() predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ArtifactTable, ArtifactColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasArtifactWith applies the HasEdge predicate on the "artifact" edge with a given conditions (other predicates).
+func HasArtifactWith(preds ...predicate.Asset) predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := newArtifactStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

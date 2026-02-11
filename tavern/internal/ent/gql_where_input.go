@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/asset"
@@ -1106,6 +1107,12 @@ type BuildTaskWhereInput struct {
 	TargetOsIn    []c2pb.Host_Platform `json:"targetOsIn,omitempty"`
 	TargetOsNotIn []c2pb.Host_Platform `json:"targetOsNotIn,omitempty"`
 
+	// "target_format" field predicates.
+	TargetFormat      *builderpb.TargetFormat  `json:"targetFormat,omitempty"`
+	TargetFormatNEQ   *builderpb.TargetFormat  `json:"targetFormatNEQ,omitempty"`
+	TargetFormatIn    []builderpb.TargetFormat `json:"targetFormatIn,omitempty"`
+	TargetFormatNotIn []builderpb.TargetFormat `json:"targetFormatNotIn,omitempty"`
+
 	// "build_image" field predicates.
 	BuildImage             *string  `json:"buildImage,omitempty"`
 	BuildImageNEQ          *string  `json:"buildImageNEQ,omitempty"`
@@ -1135,6 +1142,54 @@ type BuildTaskWhereInput struct {
 	BuildScriptHasSuffix    *string  `json:"buildScriptHasSuffix,omitempty"`
 	BuildScriptEqualFold    *string  `json:"buildScriptEqualFold,omitempty"`
 	BuildScriptContainsFold *string  `json:"buildScriptContainsFold,omitempty"`
+
+	// "callback_uri" field predicates.
+	CallbackURI             *string  `json:"callbackURI,omitempty"`
+	CallbackURINEQ          *string  `json:"callbackURINEQ,omitempty"`
+	CallbackURIIn           []string `json:"callbackURIIn,omitempty"`
+	CallbackURINotIn        []string `json:"callbackURINotIn,omitempty"`
+	CallbackURIGT           *string  `json:"callbackURIGT,omitempty"`
+	CallbackURIGTE          *string  `json:"callbackURIGTE,omitempty"`
+	CallbackURILT           *string  `json:"callbackURILT,omitempty"`
+	CallbackURILTE          *string  `json:"callbackURILTE,omitempty"`
+	CallbackURIContains     *string  `json:"callbackURIContains,omitempty"`
+	CallbackURIHasPrefix    *string  `json:"callbackURIHasPrefix,omitempty"`
+	CallbackURIHasSuffix    *string  `json:"callbackURIHasSuffix,omitempty"`
+	CallbackURIEqualFold    *string  `json:"callbackURIEqualFold,omitempty"`
+	CallbackURIContainsFold *string  `json:"callbackURIContainsFold,omitempty"`
+
+	// "interval" field predicates.
+	Interval      *int  `json:"interval,omitempty"`
+	IntervalNEQ   *int  `json:"intervalNEQ,omitempty"`
+	IntervalIn    []int `json:"intervalIn,omitempty"`
+	IntervalNotIn []int `json:"intervalNotIn,omitempty"`
+	IntervalGT    *int  `json:"intervalGT,omitempty"`
+	IntervalGTE   *int  `json:"intervalGTE,omitempty"`
+	IntervalLT    *int  `json:"intervalLT,omitempty"`
+	IntervalLTE   *int  `json:"intervalLTE,omitempty"`
+
+	// "transport_type" field predicates.
+	TransportType      *c2pb.Transport_Type  `json:"transportType,omitempty"`
+	TransportTypeNEQ   *c2pb.Transport_Type  `json:"transportTypeNEQ,omitempty"`
+	TransportTypeIn    []c2pb.Transport_Type `json:"transportTypeIn,omitempty"`
+	TransportTypeNotIn []c2pb.Transport_Type `json:"transportTypeNotIn,omitempty"`
+
+	// "extra" field predicates.
+	Extra             *string  `json:"extra,omitempty"`
+	ExtraNEQ          *string  `json:"extraNEQ,omitempty"`
+	ExtraIn           []string `json:"extraIn,omitempty"`
+	ExtraNotIn        []string `json:"extraNotIn,omitempty"`
+	ExtraGT           *string  `json:"extraGT,omitempty"`
+	ExtraGTE          *string  `json:"extraGTE,omitempty"`
+	ExtraLT           *string  `json:"extraLT,omitempty"`
+	ExtraLTE          *string  `json:"extraLTE,omitempty"`
+	ExtraContains     *string  `json:"extraContains,omitempty"`
+	ExtraHasPrefix    *string  `json:"extraHasPrefix,omitempty"`
+	ExtraHasSuffix    *string  `json:"extraHasSuffix,omitempty"`
+	ExtraIsNil        bool     `json:"extraIsNil,omitempty"`
+	ExtraNotNil       bool     `json:"extraNotNil,omitempty"`
+	ExtraEqualFold    *string  `json:"extraEqualFold,omitempty"`
+	ExtraContainsFold *string  `json:"extraContainsFold,omitempty"`
 
 	// "claimed_at" field predicates.
 	ClaimedAt       *time.Time  `json:"claimedAt,omitempty"`
@@ -1216,9 +1271,40 @@ type BuildTaskWhereInput struct {
 	ErrorEqualFold    *string  `json:"errorEqualFold,omitempty"`
 	ErrorContainsFold *string  `json:"errorContainsFold,omitempty"`
 
+	// "error_size" field predicates.
+	ErrorSize      *int  `json:"errorSize,omitempty"`
+	ErrorSizeNEQ   *int  `json:"errorSizeNEQ,omitempty"`
+	ErrorSizeIn    []int `json:"errorSizeIn,omitempty"`
+	ErrorSizeNotIn []int `json:"errorSizeNotIn,omitempty"`
+	ErrorSizeGT    *int  `json:"errorSizeGT,omitempty"`
+	ErrorSizeGTE   *int  `json:"errorSizeGTE,omitempty"`
+	ErrorSizeLT    *int  `json:"errorSizeLT,omitempty"`
+	ErrorSizeLTE   *int  `json:"errorSizeLTE,omitempty"`
+
+	// "artifact_path" field predicates.
+	ArtifactPath             *string  `json:"artifactPath,omitempty"`
+	ArtifactPathNEQ          *string  `json:"artifactPathNEQ,omitempty"`
+	ArtifactPathIn           []string `json:"artifactPathIn,omitempty"`
+	ArtifactPathNotIn        []string `json:"artifactPathNotIn,omitempty"`
+	ArtifactPathGT           *string  `json:"artifactPathGT,omitempty"`
+	ArtifactPathGTE          *string  `json:"artifactPathGTE,omitempty"`
+	ArtifactPathLT           *string  `json:"artifactPathLT,omitempty"`
+	ArtifactPathLTE          *string  `json:"artifactPathLTE,omitempty"`
+	ArtifactPathContains     *string  `json:"artifactPathContains,omitempty"`
+	ArtifactPathHasPrefix    *string  `json:"artifactPathHasPrefix,omitempty"`
+	ArtifactPathHasSuffix    *string  `json:"artifactPathHasSuffix,omitempty"`
+	ArtifactPathIsNil        bool     `json:"artifactPathIsNil,omitempty"`
+	ArtifactPathNotNil       bool     `json:"artifactPathNotNil,omitempty"`
+	ArtifactPathEqualFold    *string  `json:"artifactPathEqualFold,omitempty"`
+	ArtifactPathContainsFold *string  `json:"artifactPathContainsFold,omitempty"`
+
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
 	HasBuilderWith []*BuilderWhereInput `json:"hasBuilderWith,omitempty"`
+
+	// "artifact" edge predicates.
+	HasArtifact     *bool              `json:"hasArtifact,omitempty"`
+	HasArtifactWith []*AssetWhereInput `json:"hasArtifactWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1376,6 +1462,18 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	if len(i.TargetOsNotIn) > 0 {
 		predicates = append(predicates, buildtask.TargetOsNotIn(i.TargetOsNotIn...))
 	}
+	if i.TargetFormat != nil {
+		predicates = append(predicates, buildtask.TargetFormatEQ(*i.TargetFormat))
+	}
+	if i.TargetFormatNEQ != nil {
+		predicates = append(predicates, buildtask.TargetFormatNEQ(*i.TargetFormatNEQ))
+	}
+	if len(i.TargetFormatIn) > 0 {
+		predicates = append(predicates, buildtask.TargetFormatIn(i.TargetFormatIn...))
+	}
+	if len(i.TargetFormatNotIn) > 0 {
+		predicates = append(predicates, buildtask.TargetFormatNotIn(i.TargetFormatNotIn...))
+	}
 	if i.BuildImage != nil {
 		predicates = append(predicates, buildtask.BuildImageEQ(*i.BuildImage))
 	}
@@ -1453,6 +1551,126 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if i.BuildScriptContainsFold != nil {
 		predicates = append(predicates, buildtask.BuildScriptContainsFold(*i.BuildScriptContainsFold))
+	}
+	if i.CallbackURI != nil {
+		predicates = append(predicates, buildtask.CallbackURIEQ(*i.CallbackURI))
+	}
+	if i.CallbackURINEQ != nil {
+		predicates = append(predicates, buildtask.CallbackURINEQ(*i.CallbackURINEQ))
+	}
+	if len(i.CallbackURIIn) > 0 {
+		predicates = append(predicates, buildtask.CallbackURIIn(i.CallbackURIIn...))
+	}
+	if len(i.CallbackURINotIn) > 0 {
+		predicates = append(predicates, buildtask.CallbackURINotIn(i.CallbackURINotIn...))
+	}
+	if i.CallbackURIGT != nil {
+		predicates = append(predicates, buildtask.CallbackURIGT(*i.CallbackURIGT))
+	}
+	if i.CallbackURIGTE != nil {
+		predicates = append(predicates, buildtask.CallbackURIGTE(*i.CallbackURIGTE))
+	}
+	if i.CallbackURILT != nil {
+		predicates = append(predicates, buildtask.CallbackURILT(*i.CallbackURILT))
+	}
+	if i.CallbackURILTE != nil {
+		predicates = append(predicates, buildtask.CallbackURILTE(*i.CallbackURILTE))
+	}
+	if i.CallbackURIContains != nil {
+		predicates = append(predicates, buildtask.CallbackURIContains(*i.CallbackURIContains))
+	}
+	if i.CallbackURIHasPrefix != nil {
+		predicates = append(predicates, buildtask.CallbackURIHasPrefix(*i.CallbackURIHasPrefix))
+	}
+	if i.CallbackURIHasSuffix != nil {
+		predicates = append(predicates, buildtask.CallbackURIHasSuffix(*i.CallbackURIHasSuffix))
+	}
+	if i.CallbackURIEqualFold != nil {
+		predicates = append(predicates, buildtask.CallbackURIEqualFold(*i.CallbackURIEqualFold))
+	}
+	if i.CallbackURIContainsFold != nil {
+		predicates = append(predicates, buildtask.CallbackURIContainsFold(*i.CallbackURIContainsFold))
+	}
+	if i.Interval != nil {
+		predicates = append(predicates, buildtask.IntervalEQ(*i.Interval))
+	}
+	if i.IntervalNEQ != nil {
+		predicates = append(predicates, buildtask.IntervalNEQ(*i.IntervalNEQ))
+	}
+	if len(i.IntervalIn) > 0 {
+		predicates = append(predicates, buildtask.IntervalIn(i.IntervalIn...))
+	}
+	if len(i.IntervalNotIn) > 0 {
+		predicates = append(predicates, buildtask.IntervalNotIn(i.IntervalNotIn...))
+	}
+	if i.IntervalGT != nil {
+		predicates = append(predicates, buildtask.IntervalGT(*i.IntervalGT))
+	}
+	if i.IntervalGTE != nil {
+		predicates = append(predicates, buildtask.IntervalGTE(*i.IntervalGTE))
+	}
+	if i.IntervalLT != nil {
+		predicates = append(predicates, buildtask.IntervalLT(*i.IntervalLT))
+	}
+	if i.IntervalLTE != nil {
+		predicates = append(predicates, buildtask.IntervalLTE(*i.IntervalLTE))
+	}
+	if i.TransportType != nil {
+		predicates = append(predicates, buildtask.TransportTypeEQ(*i.TransportType))
+	}
+	if i.TransportTypeNEQ != nil {
+		predicates = append(predicates, buildtask.TransportTypeNEQ(*i.TransportTypeNEQ))
+	}
+	if len(i.TransportTypeIn) > 0 {
+		predicates = append(predicates, buildtask.TransportTypeIn(i.TransportTypeIn...))
+	}
+	if len(i.TransportTypeNotIn) > 0 {
+		predicates = append(predicates, buildtask.TransportTypeNotIn(i.TransportTypeNotIn...))
+	}
+	if i.Extra != nil {
+		predicates = append(predicates, buildtask.ExtraEQ(*i.Extra))
+	}
+	if i.ExtraNEQ != nil {
+		predicates = append(predicates, buildtask.ExtraNEQ(*i.ExtraNEQ))
+	}
+	if len(i.ExtraIn) > 0 {
+		predicates = append(predicates, buildtask.ExtraIn(i.ExtraIn...))
+	}
+	if len(i.ExtraNotIn) > 0 {
+		predicates = append(predicates, buildtask.ExtraNotIn(i.ExtraNotIn...))
+	}
+	if i.ExtraGT != nil {
+		predicates = append(predicates, buildtask.ExtraGT(*i.ExtraGT))
+	}
+	if i.ExtraGTE != nil {
+		predicates = append(predicates, buildtask.ExtraGTE(*i.ExtraGTE))
+	}
+	if i.ExtraLT != nil {
+		predicates = append(predicates, buildtask.ExtraLT(*i.ExtraLT))
+	}
+	if i.ExtraLTE != nil {
+		predicates = append(predicates, buildtask.ExtraLTE(*i.ExtraLTE))
+	}
+	if i.ExtraContains != nil {
+		predicates = append(predicates, buildtask.ExtraContains(*i.ExtraContains))
+	}
+	if i.ExtraHasPrefix != nil {
+		predicates = append(predicates, buildtask.ExtraHasPrefix(*i.ExtraHasPrefix))
+	}
+	if i.ExtraHasSuffix != nil {
+		predicates = append(predicates, buildtask.ExtraHasSuffix(*i.ExtraHasSuffix))
+	}
+	if i.ExtraIsNil {
+		predicates = append(predicates, buildtask.ExtraIsNil())
+	}
+	if i.ExtraNotNil {
+		predicates = append(predicates, buildtask.ExtraNotNil())
+	}
+	if i.ExtraEqualFold != nil {
+		predicates = append(predicates, buildtask.ExtraEqualFold(*i.ExtraEqualFold))
+	}
+	if i.ExtraContainsFold != nil {
+		predicates = append(predicates, buildtask.ExtraContainsFold(*i.ExtraContainsFold))
 	}
 	if i.ClaimedAt != nil {
 		predicates = append(predicates, buildtask.ClaimedAtEQ(*i.ClaimedAt))
@@ -1658,6 +1876,75 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	if i.ErrorContainsFold != nil {
 		predicates = append(predicates, buildtask.ErrorContainsFold(*i.ErrorContainsFold))
 	}
+	if i.ErrorSize != nil {
+		predicates = append(predicates, buildtask.ErrorSizeEQ(*i.ErrorSize))
+	}
+	if i.ErrorSizeNEQ != nil {
+		predicates = append(predicates, buildtask.ErrorSizeNEQ(*i.ErrorSizeNEQ))
+	}
+	if len(i.ErrorSizeIn) > 0 {
+		predicates = append(predicates, buildtask.ErrorSizeIn(i.ErrorSizeIn...))
+	}
+	if len(i.ErrorSizeNotIn) > 0 {
+		predicates = append(predicates, buildtask.ErrorSizeNotIn(i.ErrorSizeNotIn...))
+	}
+	if i.ErrorSizeGT != nil {
+		predicates = append(predicates, buildtask.ErrorSizeGT(*i.ErrorSizeGT))
+	}
+	if i.ErrorSizeGTE != nil {
+		predicates = append(predicates, buildtask.ErrorSizeGTE(*i.ErrorSizeGTE))
+	}
+	if i.ErrorSizeLT != nil {
+		predicates = append(predicates, buildtask.ErrorSizeLT(*i.ErrorSizeLT))
+	}
+	if i.ErrorSizeLTE != nil {
+		predicates = append(predicates, buildtask.ErrorSizeLTE(*i.ErrorSizeLTE))
+	}
+	if i.ArtifactPath != nil {
+		predicates = append(predicates, buildtask.ArtifactPathEQ(*i.ArtifactPath))
+	}
+	if i.ArtifactPathNEQ != nil {
+		predicates = append(predicates, buildtask.ArtifactPathNEQ(*i.ArtifactPathNEQ))
+	}
+	if len(i.ArtifactPathIn) > 0 {
+		predicates = append(predicates, buildtask.ArtifactPathIn(i.ArtifactPathIn...))
+	}
+	if len(i.ArtifactPathNotIn) > 0 {
+		predicates = append(predicates, buildtask.ArtifactPathNotIn(i.ArtifactPathNotIn...))
+	}
+	if i.ArtifactPathGT != nil {
+		predicates = append(predicates, buildtask.ArtifactPathGT(*i.ArtifactPathGT))
+	}
+	if i.ArtifactPathGTE != nil {
+		predicates = append(predicates, buildtask.ArtifactPathGTE(*i.ArtifactPathGTE))
+	}
+	if i.ArtifactPathLT != nil {
+		predicates = append(predicates, buildtask.ArtifactPathLT(*i.ArtifactPathLT))
+	}
+	if i.ArtifactPathLTE != nil {
+		predicates = append(predicates, buildtask.ArtifactPathLTE(*i.ArtifactPathLTE))
+	}
+	if i.ArtifactPathContains != nil {
+		predicates = append(predicates, buildtask.ArtifactPathContains(*i.ArtifactPathContains))
+	}
+	if i.ArtifactPathHasPrefix != nil {
+		predicates = append(predicates, buildtask.ArtifactPathHasPrefix(*i.ArtifactPathHasPrefix))
+	}
+	if i.ArtifactPathHasSuffix != nil {
+		predicates = append(predicates, buildtask.ArtifactPathHasSuffix(*i.ArtifactPathHasSuffix))
+	}
+	if i.ArtifactPathIsNil {
+		predicates = append(predicates, buildtask.ArtifactPathIsNil())
+	}
+	if i.ArtifactPathNotNil {
+		predicates = append(predicates, buildtask.ArtifactPathNotNil())
+	}
+	if i.ArtifactPathEqualFold != nil {
+		predicates = append(predicates, buildtask.ArtifactPathEqualFold(*i.ArtifactPathEqualFold))
+	}
+	if i.ArtifactPathContainsFold != nil {
+		predicates = append(predicates, buildtask.ArtifactPathContainsFold(*i.ArtifactPathContainsFold))
+	}
 
 	if i.HasBuilder != nil {
 		p := buildtask.HasBuilder()
@@ -1676,6 +1963,24 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, buildtask.HasBuilderWith(with...))
+	}
+	if i.HasArtifact != nil {
+		p := buildtask.HasArtifact()
+		if !*i.HasArtifact {
+			p = buildtask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasArtifactWith) > 0 {
+		with := make([]predicate.Asset, 0, len(i.HasArtifactWith))
+		for _, w := range i.HasArtifactWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasArtifactWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, buildtask.HasArtifactWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

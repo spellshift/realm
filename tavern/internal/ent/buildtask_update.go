@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -50,6 +52,20 @@ func (btu *BuildTaskUpdate) SetNillableTargetOs(cp *c2pb.Host_Platform) *BuildTa
 	return btu
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (btu *BuildTaskUpdate) SetTargetFormat(bf builderpb.TargetFormat) *BuildTaskUpdate {
+	btu.mutation.SetTargetFormat(bf)
+	return btu
+}
+
+// SetNillableTargetFormat sets the "target_format" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableTargetFormat(bf *builderpb.TargetFormat) *BuildTaskUpdate {
+	if bf != nil {
+		btu.SetTargetFormat(*bf)
+	}
+	return btu
+}
+
 // SetBuildImage sets the "build_image" field.
 func (btu *BuildTaskUpdate) SetBuildImage(s string) *BuildTaskUpdate {
 	btu.mutation.SetBuildImage(s)
@@ -75,6 +91,75 @@ func (btu *BuildTaskUpdate) SetNillableBuildScript(s *string) *BuildTaskUpdate {
 	if s != nil {
 		btu.SetBuildScript(*s)
 	}
+	return btu
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (btu *BuildTaskUpdate) SetCallbackURI(s string) *BuildTaskUpdate {
+	btu.mutation.SetCallbackURI(s)
+	return btu
+}
+
+// SetNillableCallbackURI sets the "callback_uri" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableCallbackURI(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetCallbackURI(*s)
+	}
+	return btu
+}
+
+// SetInterval sets the "interval" field.
+func (btu *BuildTaskUpdate) SetInterval(i int) *BuildTaskUpdate {
+	btu.mutation.ResetInterval()
+	btu.mutation.SetInterval(i)
+	return btu
+}
+
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableInterval(i *int) *BuildTaskUpdate {
+	if i != nil {
+		btu.SetInterval(*i)
+	}
+	return btu
+}
+
+// AddInterval adds i to the "interval" field.
+func (btu *BuildTaskUpdate) AddInterval(i int) *BuildTaskUpdate {
+	btu.mutation.AddInterval(i)
+	return btu
+}
+
+// SetTransportType sets the "transport_type" field.
+func (btu *BuildTaskUpdate) SetTransportType(ct c2pb.Transport_Type) *BuildTaskUpdate {
+	btu.mutation.SetTransportType(ct)
+	return btu
+}
+
+// SetNillableTransportType sets the "transport_type" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableTransportType(ct *c2pb.Transport_Type) *BuildTaskUpdate {
+	if ct != nil {
+		btu.SetTransportType(*ct)
+	}
+	return btu
+}
+
+// SetExtra sets the "extra" field.
+func (btu *BuildTaskUpdate) SetExtra(s string) *BuildTaskUpdate {
+	btu.mutation.SetExtra(s)
+	return btu
+}
+
+// SetNillableExtra sets the "extra" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableExtra(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetExtra(*s)
+	}
+	return btu
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (btu *BuildTaskUpdate) ClearExtra() *BuildTaskUpdate {
+	btu.mutation.ClearExtra()
 	return btu
 }
 
@@ -199,6 +284,47 @@ func (btu *BuildTaskUpdate) ClearError() *BuildTaskUpdate {
 	return btu
 }
 
+// SetErrorSize sets the "error_size" field.
+func (btu *BuildTaskUpdate) SetErrorSize(i int) *BuildTaskUpdate {
+	btu.mutation.ResetErrorSize()
+	btu.mutation.SetErrorSize(i)
+	return btu
+}
+
+// SetNillableErrorSize sets the "error_size" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableErrorSize(i *int) *BuildTaskUpdate {
+	if i != nil {
+		btu.SetErrorSize(*i)
+	}
+	return btu
+}
+
+// AddErrorSize adds i to the "error_size" field.
+func (btu *BuildTaskUpdate) AddErrorSize(i int) *BuildTaskUpdate {
+	btu.mutation.AddErrorSize(i)
+	return btu
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (btu *BuildTaskUpdate) SetArtifactPath(s string) *BuildTaskUpdate {
+	btu.mutation.SetArtifactPath(s)
+	return btu
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableArtifactPath(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetArtifactPath(*s)
+	}
+	return btu
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
+	btu.mutation.ClearArtifactPath()
+	return btu
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -210,6 +336,25 @@ func (btu *BuildTaskUpdate) SetBuilder(b *Builder) *BuildTaskUpdate {
 	return btu.SetBuilderID(b.ID)
 }
 
+// SetArtifactID sets the "artifact" edge to the Asset entity by ID.
+func (btu *BuildTaskUpdate) SetArtifactID(id int) *BuildTaskUpdate {
+	btu.mutation.SetArtifactID(id)
+	return btu
+}
+
+// SetNillableArtifactID sets the "artifact" edge to the Asset entity by ID if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableArtifactID(id *int) *BuildTaskUpdate {
+	if id != nil {
+		btu = btu.SetArtifactID(*id)
+	}
+	return btu
+}
+
+// SetArtifact sets the "artifact" edge to the Asset entity.
+func (btu *BuildTaskUpdate) SetArtifact(a *Asset) *BuildTaskUpdate {
+	return btu.SetArtifactID(a.ID)
+}
+
 // Mutation returns the BuildTaskMutation object of the builder.
 func (btu *BuildTaskUpdate) Mutation() *BuildTaskMutation {
 	return btu.mutation
@@ -218,6 +363,12 @@ func (btu *BuildTaskUpdate) Mutation() *BuildTaskMutation {
 // ClearBuilder clears the "builder" edge to the Builder entity.
 func (btu *BuildTaskUpdate) ClearBuilder() *BuildTaskUpdate {
 	btu.mutation.ClearBuilder()
+	return btu
+}
+
+// ClearArtifact clears the "artifact" edge to the Asset entity.
+func (btu *BuildTaskUpdate) ClearArtifact() *BuildTaskUpdate {
+	btu.mutation.ClearArtifact()
 	return btu
 }
 
@@ -270,6 +421,11 @@ func (btu *BuildTaskUpdate) check() error {
 			return &ValidationError{Name: "target_os", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_os": %w`, err)}
 		}
 	}
+	if v, ok := btu.mutation.TargetFormat(); ok {
+		if err := buildtask.TargetFormatValidator(v); err != nil {
+			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
+		}
+	}
 	if v, ok := btu.mutation.BuildImage(); ok {
 		if err := buildtask.BuildImageValidator(v); err != nil {
 			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
@@ -280,9 +436,24 @@ func (btu *BuildTaskUpdate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
+	if v, ok := btu.mutation.CallbackURI(); ok {
+		if err := buildtask.CallbackURIValidator(v); err != nil {
+			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
+		}
+	}
+	if v, ok := btu.mutation.TransportType(); ok {
+		if err := buildtask.TransportTypeValidator(v); err != nil {
+			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
+		}
+	}
 	if v, ok := btu.mutation.OutputSize(); ok {
 		if err := buildtask.OutputSizeValidator(v); err != nil {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
+		}
+	}
+	if v, ok := btu.mutation.ErrorSize(); ok {
+		if err := buildtask.ErrorSizeValidator(v); err != nil {
+			return &ValidationError{Name: "error_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.error_size": %w`, err)}
 		}
 	}
 	if btu.mutation.BuilderCleared() && len(btu.mutation.BuilderIDs()) > 0 {
@@ -309,11 +480,32 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.TargetOs(); ok {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)
 	}
+	if value, ok := btu.mutation.TargetFormat(); ok {
+		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
+	}
 	if value, ok := btu.mutation.BuildImage(); ok {
 		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
 	}
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
+	}
+	if value, ok := btu.mutation.CallbackURI(); ok {
+		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
+	}
+	if value, ok := btu.mutation.Interval(); ok {
+		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.AddedInterval(); ok {
+		_spec.AddField(buildtask.FieldInterval, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.TransportType(); ok {
+		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
+	}
+	if value, ok := btu.mutation.Extra(); ok {
+		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
+	}
+	if btu.mutation.ExtraCleared() {
+		_spec.ClearField(buildtask.FieldExtra, field.TypeString)
 	}
 	if value, ok := btu.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -351,6 +543,18 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if btu.mutation.ErrorCleared() {
 		_spec.ClearField(buildtask.FieldError, field.TypeString)
 	}
+	if value, ok := btu.mutation.ErrorSize(); ok {
+		_spec.SetField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.AddedErrorSize(); ok {
+		_spec.AddField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
+	}
+	if btu.mutation.ArtifactPathCleared() {
+		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -373,6 +577,35 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if btu.mutation.ArtifactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ArtifactTable,
+			Columns: []string{buildtask.ArtifactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btu.mutation.ArtifactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ArtifactTable,
+			Columns: []string{buildtask.ArtifactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -420,6 +653,20 @@ func (btuo *BuildTaskUpdateOne) SetNillableTargetOs(cp *c2pb.Host_Platform) *Bui
 	return btuo
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (btuo *BuildTaskUpdateOne) SetTargetFormat(bf builderpb.TargetFormat) *BuildTaskUpdateOne {
+	btuo.mutation.SetTargetFormat(bf)
+	return btuo
+}
+
+// SetNillableTargetFormat sets the "target_format" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableTargetFormat(bf *builderpb.TargetFormat) *BuildTaskUpdateOne {
+	if bf != nil {
+		btuo.SetTargetFormat(*bf)
+	}
+	return btuo
+}
+
 // SetBuildImage sets the "build_image" field.
 func (btuo *BuildTaskUpdateOne) SetBuildImage(s string) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuildImage(s)
@@ -445,6 +692,75 @@ func (btuo *BuildTaskUpdateOne) SetNillableBuildScript(s *string) *BuildTaskUpda
 	if s != nil {
 		btuo.SetBuildScript(*s)
 	}
+	return btuo
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (btuo *BuildTaskUpdateOne) SetCallbackURI(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetCallbackURI(s)
+	return btuo
+}
+
+// SetNillableCallbackURI sets the "callback_uri" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableCallbackURI(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetCallbackURI(*s)
+	}
+	return btuo
+}
+
+// SetInterval sets the "interval" field.
+func (btuo *BuildTaskUpdateOne) SetInterval(i int) *BuildTaskUpdateOne {
+	btuo.mutation.ResetInterval()
+	btuo.mutation.SetInterval(i)
+	return btuo
+}
+
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableInterval(i *int) *BuildTaskUpdateOne {
+	if i != nil {
+		btuo.SetInterval(*i)
+	}
+	return btuo
+}
+
+// AddInterval adds i to the "interval" field.
+func (btuo *BuildTaskUpdateOne) AddInterval(i int) *BuildTaskUpdateOne {
+	btuo.mutation.AddInterval(i)
+	return btuo
+}
+
+// SetTransportType sets the "transport_type" field.
+func (btuo *BuildTaskUpdateOne) SetTransportType(ct c2pb.Transport_Type) *BuildTaskUpdateOne {
+	btuo.mutation.SetTransportType(ct)
+	return btuo
+}
+
+// SetNillableTransportType sets the "transport_type" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableTransportType(ct *c2pb.Transport_Type) *BuildTaskUpdateOne {
+	if ct != nil {
+		btuo.SetTransportType(*ct)
+	}
+	return btuo
+}
+
+// SetExtra sets the "extra" field.
+func (btuo *BuildTaskUpdateOne) SetExtra(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetExtra(s)
+	return btuo
+}
+
+// SetNillableExtra sets the "extra" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableExtra(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetExtra(*s)
+	}
+	return btuo
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (btuo *BuildTaskUpdateOne) ClearExtra() *BuildTaskUpdateOne {
+	btuo.mutation.ClearExtra()
 	return btuo
 }
 
@@ -569,6 +885,47 @@ func (btuo *BuildTaskUpdateOne) ClearError() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetErrorSize sets the "error_size" field.
+func (btuo *BuildTaskUpdateOne) SetErrorSize(i int) *BuildTaskUpdateOne {
+	btuo.mutation.ResetErrorSize()
+	btuo.mutation.SetErrorSize(i)
+	return btuo
+}
+
+// SetNillableErrorSize sets the "error_size" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableErrorSize(i *int) *BuildTaskUpdateOne {
+	if i != nil {
+		btuo.SetErrorSize(*i)
+	}
+	return btuo
+}
+
+// AddErrorSize adds i to the "error_size" field.
+func (btuo *BuildTaskUpdateOne) AddErrorSize(i int) *BuildTaskUpdateOne {
+	btuo.mutation.AddErrorSize(i)
+	return btuo
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (btuo *BuildTaskUpdateOne) SetArtifactPath(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetArtifactPath(s)
+	return btuo
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableArtifactPath(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetArtifactPath(*s)
+	}
+	return btuo
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
+	btuo.mutation.ClearArtifactPath()
+	return btuo
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -580,6 +937,25 @@ func (btuo *BuildTaskUpdateOne) SetBuilder(b *Builder) *BuildTaskUpdateOne {
 	return btuo.SetBuilderID(b.ID)
 }
 
+// SetArtifactID sets the "artifact" edge to the Asset entity by ID.
+func (btuo *BuildTaskUpdateOne) SetArtifactID(id int) *BuildTaskUpdateOne {
+	btuo.mutation.SetArtifactID(id)
+	return btuo
+}
+
+// SetNillableArtifactID sets the "artifact" edge to the Asset entity by ID if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableArtifactID(id *int) *BuildTaskUpdateOne {
+	if id != nil {
+		btuo = btuo.SetArtifactID(*id)
+	}
+	return btuo
+}
+
+// SetArtifact sets the "artifact" edge to the Asset entity.
+func (btuo *BuildTaskUpdateOne) SetArtifact(a *Asset) *BuildTaskUpdateOne {
+	return btuo.SetArtifactID(a.ID)
+}
+
 // Mutation returns the BuildTaskMutation object of the builder.
 func (btuo *BuildTaskUpdateOne) Mutation() *BuildTaskMutation {
 	return btuo.mutation
@@ -588,6 +964,12 @@ func (btuo *BuildTaskUpdateOne) Mutation() *BuildTaskMutation {
 // ClearBuilder clears the "builder" edge to the Builder entity.
 func (btuo *BuildTaskUpdateOne) ClearBuilder() *BuildTaskUpdateOne {
 	btuo.mutation.ClearBuilder()
+	return btuo
+}
+
+// ClearArtifact clears the "artifact" edge to the Asset entity.
+func (btuo *BuildTaskUpdateOne) ClearArtifact() *BuildTaskUpdateOne {
+	btuo.mutation.ClearArtifact()
 	return btuo
 }
 
@@ -653,6 +1035,11 @@ func (btuo *BuildTaskUpdateOne) check() error {
 			return &ValidationError{Name: "target_os", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_os": %w`, err)}
 		}
 	}
+	if v, ok := btuo.mutation.TargetFormat(); ok {
+		if err := buildtask.TargetFormatValidator(v); err != nil {
+			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
+		}
+	}
 	if v, ok := btuo.mutation.BuildImage(); ok {
 		if err := buildtask.BuildImageValidator(v); err != nil {
 			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
@@ -663,9 +1050,24 @@ func (btuo *BuildTaskUpdateOne) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
+	if v, ok := btuo.mutation.CallbackURI(); ok {
+		if err := buildtask.CallbackURIValidator(v); err != nil {
+			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
+		}
+	}
+	if v, ok := btuo.mutation.TransportType(); ok {
+		if err := buildtask.TransportTypeValidator(v); err != nil {
+			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
+		}
+	}
 	if v, ok := btuo.mutation.OutputSize(); ok {
 		if err := buildtask.OutputSizeValidator(v); err != nil {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
+		}
+	}
+	if v, ok := btuo.mutation.ErrorSize(); ok {
+		if err := buildtask.ErrorSizeValidator(v); err != nil {
+			return &ValidationError{Name: "error_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.error_size": %w`, err)}
 		}
 	}
 	if btuo.mutation.BuilderCleared() && len(btuo.mutation.BuilderIDs()) > 0 {
@@ -709,11 +1111,32 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if value, ok := btuo.mutation.TargetOs(); ok {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)
 	}
+	if value, ok := btuo.mutation.TargetFormat(); ok {
+		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
+	}
 	if value, ok := btuo.mutation.BuildImage(); ok {
 		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
 	}
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
+	}
+	if value, ok := btuo.mutation.CallbackURI(); ok {
+		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
+	}
+	if value, ok := btuo.mutation.Interval(); ok {
+		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.AddedInterval(); ok {
+		_spec.AddField(buildtask.FieldInterval, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.TransportType(); ok {
+		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
+	}
+	if value, ok := btuo.mutation.Extra(); ok {
+		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
+	}
+	if btuo.mutation.ExtraCleared() {
+		_spec.ClearField(buildtask.FieldExtra, field.TypeString)
 	}
 	if value, ok := btuo.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -751,6 +1174,18 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if btuo.mutation.ErrorCleared() {
 		_spec.ClearField(buildtask.FieldError, field.TypeString)
 	}
+	if value, ok := btuo.mutation.ErrorSize(); ok {
+		_spec.SetField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.AddedErrorSize(); ok {
+		_spec.AddField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
+	}
+	if btuo.mutation.ArtifactPathCleared() {
+		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -773,6 +1208,35 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if btuo.mutation.ArtifactCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ArtifactTable,
+			Columns: []string{buildtask.ArtifactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btuo.mutation.ArtifactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ArtifactTable,
+			Columns: []string{buildtask.ArtifactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

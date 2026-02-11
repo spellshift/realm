@@ -11,6 +11,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/asset"
@@ -2119,8 +2120,14 @@ type BuildTaskMutation struct {
 	created_at       *time.Time
 	last_modified_at *time.Time
 	target_os        *c2pb.Host_Platform
+	target_format    *builderpb.TargetFormat
 	build_image      *string
 	build_script     *string
+	callback_uri     *string
+	interval         *int
+	addinterval      *int
+	transport_type   *c2pb.Transport_Type
+	extra            *string
 	claimed_at       *time.Time
 	started_at       *time.Time
 	finished_at      *time.Time
@@ -2128,9 +2135,14 @@ type BuildTaskMutation struct {
 	output_size      *int
 	addoutput_size   *int
 	error            *string
+	error_size       *int
+	adderror_size    *int
+	artifact_path    *string
 	clearedFields    map[string]struct{}
 	builder          *int
 	clearedbuilder   bool
+	artifact         *int
+	clearedartifact  bool
 	done             bool
 	oldValue         func(context.Context) (*BuildTask, error)
 	predicates       []predicate.BuildTask
@@ -2342,6 +2354,42 @@ func (m *BuildTaskMutation) ResetTargetOs() {
 	m.target_os = nil
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (m *BuildTaskMutation) SetTargetFormat(bf builderpb.TargetFormat) {
+	m.target_format = &bf
+}
+
+// TargetFormat returns the value of the "target_format" field in the mutation.
+func (m *BuildTaskMutation) TargetFormat() (r builderpb.TargetFormat, exists bool) {
+	v := m.target_format
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetFormat returns the old "target_format" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldTargetFormat(ctx context.Context) (v builderpb.TargetFormat, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetFormat is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetFormat requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetFormat: %w", err)
+	}
+	return oldValue.TargetFormat, nil
+}
+
+// ResetTargetFormat resets all changes to the "target_format" field.
+func (m *BuildTaskMutation) ResetTargetFormat() {
+	m.target_format = nil
+}
+
 // SetBuildImage sets the "build_image" field.
 func (m *BuildTaskMutation) SetBuildImage(s string) {
 	m.build_image = &s
@@ -2412,6 +2460,183 @@ func (m *BuildTaskMutation) OldBuildScript(ctx context.Context) (v string, err e
 // ResetBuildScript resets all changes to the "build_script" field.
 func (m *BuildTaskMutation) ResetBuildScript() {
 	m.build_script = nil
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (m *BuildTaskMutation) SetCallbackURI(s string) {
+	m.callback_uri = &s
+}
+
+// CallbackURI returns the value of the "callback_uri" field in the mutation.
+func (m *BuildTaskMutation) CallbackURI() (r string, exists bool) {
+	v := m.callback_uri
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCallbackURI returns the old "callback_uri" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldCallbackURI(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCallbackURI is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCallbackURI requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCallbackURI: %w", err)
+	}
+	return oldValue.CallbackURI, nil
+}
+
+// ResetCallbackURI resets all changes to the "callback_uri" field.
+func (m *BuildTaskMutation) ResetCallbackURI() {
+	m.callback_uri = nil
+}
+
+// SetInterval sets the "interval" field.
+func (m *BuildTaskMutation) SetInterval(i int) {
+	m.interval = &i
+	m.addinterval = nil
+}
+
+// Interval returns the value of the "interval" field in the mutation.
+func (m *BuildTaskMutation) Interval() (r int, exists bool) {
+	v := m.interval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInterval returns the old "interval" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldInterval(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInterval is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInterval requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInterval: %w", err)
+	}
+	return oldValue.Interval, nil
+}
+
+// AddInterval adds i to the "interval" field.
+func (m *BuildTaskMutation) AddInterval(i int) {
+	if m.addinterval != nil {
+		*m.addinterval += i
+	} else {
+		m.addinterval = &i
+	}
+}
+
+// AddedInterval returns the value that was added to the "interval" field in this mutation.
+func (m *BuildTaskMutation) AddedInterval() (r int, exists bool) {
+	v := m.addinterval
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInterval resets all changes to the "interval" field.
+func (m *BuildTaskMutation) ResetInterval() {
+	m.interval = nil
+	m.addinterval = nil
+}
+
+// SetTransportType sets the "transport_type" field.
+func (m *BuildTaskMutation) SetTransportType(ct c2pb.Transport_Type) {
+	m.transport_type = &ct
+}
+
+// TransportType returns the value of the "transport_type" field in the mutation.
+func (m *BuildTaskMutation) TransportType() (r c2pb.Transport_Type, exists bool) {
+	v := m.transport_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransportType returns the old "transport_type" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldTransportType(ctx context.Context) (v c2pb.Transport_Type, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransportType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransportType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransportType: %w", err)
+	}
+	return oldValue.TransportType, nil
+}
+
+// ResetTransportType resets all changes to the "transport_type" field.
+func (m *BuildTaskMutation) ResetTransportType() {
+	m.transport_type = nil
+}
+
+// SetExtra sets the "extra" field.
+func (m *BuildTaskMutation) SetExtra(s string) {
+	m.extra = &s
+}
+
+// Extra returns the value of the "extra" field in the mutation.
+func (m *BuildTaskMutation) Extra() (r string, exists bool) {
+	v := m.extra
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtra returns the old "extra" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldExtra(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtra is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtra requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtra: %w", err)
+	}
+	return oldValue.Extra, nil
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (m *BuildTaskMutation) ClearExtra() {
+	m.extra = nil
+	m.clearedFields[buildtask.FieldExtra] = struct{}{}
+}
+
+// ExtraCleared returns if the "extra" field was cleared in this mutation.
+func (m *BuildTaskMutation) ExtraCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldExtra]
+	return ok
+}
+
+// ResetExtra resets all changes to the "extra" field.
+func (m *BuildTaskMutation) ResetExtra() {
+	m.extra = nil
+	delete(m.clearedFields, buildtask.FieldExtra)
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -2715,6 +2940,111 @@ func (m *BuildTaskMutation) ResetError() {
 	delete(m.clearedFields, buildtask.FieldError)
 }
 
+// SetErrorSize sets the "error_size" field.
+func (m *BuildTaskMutation) SetErrorSize(i int) {
+	m.error_size = &i
+	m.adderror_size = nil
+}
+
+// ErrorSize returns the value of the "error_size" field in the mutation.
+func (m *BuildTaskMutation) ErrorSize() (r int, exists bool) {
+	v := m.error_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorSize returns the old "error_size" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldErrorSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorSize: %w", err)
+	}
+	return oldValue.ErrorSize, nil
+}
+
+// AddErrorSize adds i to the "error_size" field.
+func (m *BuildTaskMutation) AddErrorSize(i int) {
+	if m.adderror_size != nil {
+		*m.adderror_size += i
+	} else {
+		m.adderror_size = &i
+	}
+}
+
+// AddedErrorSize returns the value that was added to the "error_size" field in this mutation.
+func (m *BuildTaskMutation) AddedErrorSize() (r int, exists bool) {
+	v := m.adderror_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetErrorSize resets all changes to the "error_size" field.
+func (m *BuildTaskMutation) ResetErrorSize() {
+	m.error_size = nil
+	m.adderror_size = nil
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (m *BuildTaskMutation) SetArtifactPath(s string) {
+	m.artifact_path = &s
+}
+
+// ArtifactPath returns the value of the "artifact_path" field in the mutation.
+func (m *BuildTaskMutation) ArtifactPath() (r string, exists bool) {
+	v := m.artifact_path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldArtifactPath returns the old "artifact_path" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldArtifactPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldArtifactPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldArtifactPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldArtifactPath: %w", err)
+	}
+	return oldValue.ArtifactPath, nil
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (m *BuildTaskMutation) ClearArtifactPath() {
+	m.artifact_path = nil
+	m.clearedFields[buildtask.FieldArtifactPath] = struct{}{}
+}
+
+// ArtifactPathCleared returns if the "artifact_path" field was cleared in this mutation.
+func (m *BuildTaskMutation) ArtifactPathCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldArtifactPath]
+	return ok
+}
+
+// ResetArtifactPath resets all changes to the "artifact_path" field.
+func (m *BuildTaskMutation) ResetArtifactPath() {
+	m.artifact_path = nil
+	delete(m.clearedFields, buildtask.FieldArtifactPath)
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by id.
 func (m *BuildTaskMutation) SetBuilderID(id int) {
 	m.builder = &id
@@ -2754,6 +3084,45 @@ func (m *BuildTaskMutation) ResetBuilder() {
 	m.clearedbuilder = false
 }
 
+// SetArtifactID sets the "artifact" edge to the Asset entity by id.
+func (m *BuildTaskMutation) SetArtifactID(id int) {
+	m.artifact = &id
+}
+
+// ClearArtifact clears the "artifact" edge to the Asset entity.
+func (m *BuildTaskMutation) ClearArtifact() {
+	m.clearedartifact = true
+}
+
+// ArtifactCleared reports if the "artifact" edge to the Asset entity was cleared.
+func (m *BuildTaskMutation) ArtifactCleared() bool {
+	return m.clearedartifact
+}
+
+// ArtifactID returns the "artifact" edge ID in the mutation.
+func (m *BuildTaskMutation) ArtifactID() (id int, exists bool) {
+	if m.artifact != nil {
+		return *m.artifact, true
+	}
+	return
+}
+
+// ArtifactIDs returns the "artifact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ArtifactID instead. It exists only for internal usage by the builders.
+func (m *BuildTaskMutation) ArtifactIDs() (ids []int) {
+	if id := m.artifact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetArtifact resets all changes to the "artifact" edge.
+func (m *BuildTaskMutation) ResetArtifact() {
+	m.artifact = nil
+	m.clearedartifact = false
+}
+
 // Where appends a list predicates to the BuildTaskMutation builder.
 func (m *BuildTaskMutation) Where(ps ...predicate.BuildTask) {
 	m.predicates = append(m.predicates, ps...)
@@ -2788,7 +3157,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -2798,11 +3167,26 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.target_os != nil {
 		fields = append(fields, buildtask.FieldTargetOs)
 	}
+	if m.target_format != nil {
+		fields = append(fields, buildtask.FieldTargetFormat)
+	}
 	if m.build_image != nil {
 		fields = append(fields, buildtask.FieldBuildImage)
 	}
 	if m.build_script != nil {
 		fields = append(fields, buildtask.FieldBuildScript)
+	}
+	if m.callback_uri != nil {
+		fields = append(fields, buildtask.FieldCallbackURI)
+	}
+	if m.interval != nil {
+		fields = append(fields, buildtask.FieldInterval)
+	}
+	if m.transport_type != nil {
+		fields = append(fields, buildtask.FieldTransportType)
+	}
+	if m.extra != nil {
+		fields = append(fields, buildtask.FieldExtra)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, buildtask.FieldClaimedAt)
@@ -2822,6 +3206,12 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.error != nil {
 		fields = append(fields, buildtask.FieldError)
 	}
+	if m.error_size != nil {
+		fields = append(fields, buildtask.FieldErrorSize)
+	}
+	if m.artifact_path != nil {
+		fields = append(fields, buildtask.FieldArtifactPath)
+	}
 	return fields
 }
 
@@ -2836,10 +3226,20 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.LastModifiedAt()
 	case buildtask.FieldTargetOs:
 		return m.TargetOs()
+	case buildtask.FieldTargetFormat:
+		return m.TargetFormat()
 	case buildtask.FieldBuildImage:
 		return m.BuildImage()
 	case buildtask.FieldBuildScript:
 		return m.BuildScript()
+	case buildtask.FieldCallbackURI:
+		return m.CallbackURI()
+	case buildtask.FieldInterval:
+		return m.Interval()
+	case buildtask.FieldTransportType:
+		return m.TransportType()
+	case buildtask.FieldExtra:
+		return m.Extra()
 	case buildtask.FieldClaimedAt:
 		return m.ClaimedAt()
 	case buildtask.FieldStartedAt:
@@ -2852,6 +3252,10 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.OutputSize()
 	case buildtask.FieldError:
 		return m.Error()
+	case buildtask.FieldErrorSize:
+		return m.ErrorSize()
+	case buildtask.FieldArtifactPath:
+		return m.ArtifactPath()
 	}
 	return nil, false
 }
@@ -2867,10 +3271,20 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLastModifiedAt(ctx)
 	case buildtask.FieldTargetOs:
 		return m.OldTargetOs(ctx)
+	case buildtask.FieldTargetFormat:
+		return m.OldTargetFormat(ctx)
 	case buildtask.FieldBuildImage:
 		return m.OldBuildImage(ctx)
 	case buildtask.FieldBuildScript:
 		return m.OldBuildScript(ctx)
+	case buildtask.FieldCallbackURI:
+		return m.OldCallbackURI(ctx)
+	case buildtask.FieldInterval:
+		return m.OldInterval(ctx)
+	case buildtask.FieldTransportType:
+		return m.OldTransportType(ctx)
+	case buildtask.FieldExtra:
+		return m.OldExtra(ctx)
 	case buildtask.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case buildtask.FieldStartedAt:
@@ -2883,6 +3297,10 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldOutputSize(ctx)
 	case buildtask.FieldError:
 		return m.OldError(ctx)
+	case buildtask.FieldErrorSize:
+		return m.OldErrorSize(ctx)
+	case buildtask.FieldArtifactPath:
+		return m.OldArtifactPath(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -2913,6 +3331,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTargetOs(v)
 		return nil
+	case buildtask.FieldTargetFormat:
+		v, ok := value.(builderpb.TargetFormat)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetFormat(v)
+		return nil
 	case buildtask.FieldBuildImage:
 		v, ok := value.(string)
 		if !ok {
@@ -2926,6 +3351,34 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBuildScript(v)
+		return nil
+	case buildtask.FieldCallbackURI:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCallbackURI(v)
+		return nil
+	case buildtask.FieldInterval:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInterval(v)
+		return nil
+	case buildtask.FieldTransportType:
+		v, ok := value.(c2pb.Transport_Type)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransportType(v)
+		return nil
+	case buildtask.FieldExtra:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtra(v)
 		return nil
 	case buildtask.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -2969,6 +3422,20 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetError(v)
 		return nil
+	case buildtask.FieldErrorSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorSize(v)
+		return nil
+	case buildtask.FieldArtifactPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetArtifactPath(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -2977,8 +3444,14 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *BuildTaskMutation) AddedFields() []string {
 	var fields []string
+	if m.addinterval != nil {
+		fields = append(fields, buildtask.FieldInterval)
+	}
 	if m.addoutput_size != nil {
 		fields = append(fields, buildtask.FieldOutputSize)
+	}
+	if m.adderror_size != nil {
+		fields = append(fields, buildtask.FieldErrorSize)
 	}
 	return fields
 }
@@ -2988,8 +3461,12 @@ func (m *BuildTaskMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case buildtask.FieldInterval:
+		return m.AddedInterval()
 	case buildtask.FieldOutputSize:
 		return m.AddedOutputSize()
+	case buildtask.FieldErrorSize:
+		return m.AddedErrorSize()
 	}
 	return nil, false
 }
@@ -2999,12 +3476,26 @@ func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case buildtask.FieldInterval:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInterval(v)
+		return nil
 	case buildtask.FieldOutputSize:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddOutputSize(v)
+		return nil
+	case buildtask.FieldErrorSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddErrorSize(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask numeric field %s", name)
@@ -3014,6 +3505,9 @@ func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuildTaskMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(buildtask.FieldExtra) {
+		fields = append(fields, buildtask.FieldExtra)
+	}
 	if m.FieldCleared(buildtask.FieldClaimedAt) {
 		fields = append(fields, buildtask.FieldClaimedAt)
 	}
@@ -3029,6 +3523,9 @@ func (m *BuildTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(buildtask.FieldError) {
 		fields = append(fields, buildtask.FieldError)
 	}
+	if m.FieldCleared(buildtask.FieldArtifactPath) {
+		fields = append(fields, buildtask.FieldArtifactPath)
+	}
 	return fields
 }
 
@@ -3043,6 +3540,9 @@ func (m *BuildTaskMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuildTaskMutation) ClearField(name string) error {
 	switch name {
+	case buildtask.FieldExtra:
+		m.ClearExtra()
+		return nil
 	case buildtask.FieldClaimedAt:
 		m.ClearClaimedAt()
 		return nil
@@ -3057,6 +3557,9 @@ func (m *BuildTaskMutation) ClearField(name string) error {
 		return nil
 	case buildtask.FieldError:
 		m.ClearError()
+		return nil
+	case buildtask.FieldArtifactPath:
+		m.ClearArtifactPath()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask nullable field %s", name)
@@ -3075,11 +3578,26 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 	case buildtask.FieldTargetOs:
 		m.ResetTargetOs()
 		return nil
+	case buildtask.FieldTargetFormat:
+		m.ResetTargetFormat()
+		return nil
 	case buildtask.FieldBuildImage:
 		m.ResetBuildImage()
 		return nil
 	case buildtask.FieldBuildScript:
 		m.ResetBuildScript()
+		return nil
+	case buildtask.FieldCallbackURI:
+		m.ResetCallbackURI()
+		return nil
+	case buildtask.FieldInterval:
+		m.ResetInterval()
+		return nil
+	case buildtask.FieldTransportType:
+		m.ResetTransportType()
+		return nil
+	case buildtask.FieldExtra:
+		m.ResetExtra()
 		return nil
 	case buildtask.FieldClaimedAt:
 		m.ResetClaimedAt()
@@ -3099,15 +3617,24 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 	case buildtask.FieldError:
 		m.ResetError()
 		return nil
+	case buildtask.FieldErrorSize:
+		m.ResetErrorSize()
+		return nil
+	case buildtask.FieldArtifactPath:
+		m.ResetArtifactPath()
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BuildTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.builder != nil {
 		edges = append(edges, buildtask.EdgeBuilder)
+	}
+	if m.artifact != nil {
+		edges = append(edges, buildtask.EdgeArtifact)
 	}
 	return edges
 }
@@ -3120,13 +3647,17 @@ func (m *BuildTaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.builder; id != nil {
 			return []ent.Value{*id}
 		}
+	case buildtask.EdgeArtifact:
+		if id := m.artifact; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BuildTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -3138,9 +3669,12 @@ func (m *BuildTaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BuildTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedbuilder {
 		edges = append(edges, buildtask.EdgeBuilder)
+	}
+	if m.clearedartifact {
+		edges = append(edges, buildtask.EdgeArtifact)
 	}
 	return edges
 }
@@ -3151,6 +3685,8 @@ func (m *BuildTaskMutation) EdgeCleared(name string) bool {
 	switch name {
 	case buildtask.EdgeBuilder:
 		return m.clearedbuilder
+	case buildtask.EdgeArtifact:
+		return m.clearedartifact
 	}
 	return false
 }
@@ -3162,6 +3698,9 @@ func (m *BuildTaskMutation) ClearEdge(name string) error {
 	case buildtask.EdgeBuilder:
 		m.ClearBuilder()
 		return nil
+	case buildtask.EdgeArtifact:
+		m.ClearArtifact()
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask unique edge %s", name)
 }
@@ -3172,6 +3711,9 @@ func (m *BuildTaskMutation) ResetEdge(name string) error {
 	switch name {
 	case buildtask.EdgeBuilder:
 		m.ResetBuilder()
+		return nil
+	case buildtask.EdgeArtifact:
+		m.ResetArtifact()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask edge %s", name)

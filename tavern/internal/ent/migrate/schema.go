@@ -69,15 +69,23 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "target_os", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
+		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"BIN", "CDYLIB", "WINDOWS_SERVICE"}},
 		{Name: "build_image", Type: field.TypeString},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "callback_uri", Type: field.TypeString},
+		{Name: "interval", Type: field.TypeInt, Default: 5},
+		{Name: "transport_type", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
+		{Name: "extra", Type: field.TypeString, Nullable: true},
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
 		{Name: "output", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "output_size", Type: field.TypeInt, Default: 0},
 		{Name: "error", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "error_size", Type: field.TypeInt, Default: 0},
+		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
+		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
 	}
 	// BuildTasksTable holds the schema information for the "build_tasks" table.
 	BuildTasksTable = &schema.Table{
@@ -87,9 +95,15 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[12]},
+				Columns:    []*schema.Column{BuildTasksColumns[19]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "build_tasks_assets_artifact",
+				Columns:    []*schema.Column{BuildTasksColumns[20]},
+				RefColumns: []*schema.Column{AssetsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -643,6 +657,7 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	BuildTasksTable.ForeignKeys[0].RefTable = BuildersTable
+	BuildTasksTable.ForeignKeys[1].RefTable = AssetsTable
 	BuildTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

@@ -113,19 +113,33 @@ func init() {
 	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	// buildtaskDescBuildImage is the schema descriptor for build_image field.
-	buildtaskDescBuildImage := buildtaskFields[1].Descriptor()
+	buildtaskDescBuildImage := buildtaskFields[2].Descriptor()
 	// buildtask.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	buildtask.BuildImageValidator = buildtaskDescBuildImage.Validators[0].(func(string) error)
 	// buildtaskDescBuildScript is the schema descriptor for build_script field.
-	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
+	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
+	// buildtaskDescCallbackURI is the schema descriptor for callback_uri field.
+	buildtaskDescCallbackURI := buildtaskFields[4].Descriptor()
+	// buildtask.CallbackURIValidator is a validator for the "callback_uri" field. It is called by the builders before save.
+	buildtask.CallbackURIValidator = buildtaskDescCallbackURI.Validators[0].(func(string) error)
+	// buildtaskDescInterval is the schema descriptor for interval field.
+	buildtaskDescInterval := buildtaskFields[5].Descriptor()
+	// buildtask.DefaultInterval holds the default value on creation for the interval field.
+	buildtask.DefaultInterval = buildtaskDescInterval.Default.(int)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[7].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[12].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
+	// buildtaskDescErrorSize is the schema descriptor for error_size field.
+	buildtaskDescErrorSize := buildtaskFields[14].Descriptor()
+	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
+	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
+	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
+	buildtask.ErrorSizeValidator = buildtaskDescErrorSize.Validators[0].(func(int) error)
 	builderMixin := schema.Builder{}.Mixin()
 	builderMixinFields0 := builderMixin[0].Fields()
 	_ = builderMixinFields0

@@ -1635,10 +1635,20 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_lastModifiedAt(ctx, field)
 			case "targetOs":
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
+			case "targetFormat":
+				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
 			case "buildImage":
 				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
+			case "callbackURI":
+				return ec.fieldContext_BuildTask_callbackURI(ctx, field)
+			case "interval":
+				return ec.fieldContext_BuildTask_interval(ctx, field)
+			case "transportType":
+				return ec.fieldContext_BuildTask_transportType(ctx, field)
+			case "extra":
+				return ec.fieldContext_BuildTask_extra(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":
@@ -1651,8 +1661,14 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_outputSize(ctx, field)
 			case "error":
 				return ec.fieldContext_BuildTask_error(ctx, field)
+			case "errorSize":
+				return ec.fieldContext_BuildTask_errorSize(ctx, field)
+			case "artifactPath":
+				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
+			case "artifact":
+				return ec.fieldContext_BuildTask_artifact(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuildTask", field.Name)
 		},

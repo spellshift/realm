@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
@@ -58,6 +60,12 @@ func (btc *BuildTaskCreate) SetTargetOs(cp c2pb.Host_Platform) *BuildTaskCreate 
 	return btc
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (btc *BuildTaskCreate) SetTargetFormat(bf builderpb.TargetFormat) *BuildTaskCreate {
+	btc.mutation.SetTargetFormat(bf)
+	return btc
+}
+
 // SetBuildImage sets the "build_image" field.
 func (btc *BuildTaskCreate) SetBuildImage(s string) *BuildTaskCreate {
 	btc.mutation.SetBuildImage(s)
@@ -67,6 +75,46 @@ func (btc *BuildTaskCreate) SetBuildImage(s string) *BuildTaskCreate {
 // SetBuildScript sets the "build_script" field.
 func (btc *BuildTaskCreate) SetBuildScript(s string) *BuildTaskCreate {
 	btc.mutation.SetBuildScript(s)
+	return btc
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (btc *BuildTaskCreate) SetCallbackURI(s string) *BuildTaskCreate {
+	btc.mutation.SetCallbackURI(s)
+	return btc
+}
+
+// SetInterval sets the "interval" field.
+func (btc *BuildTaskCreate) SetInterval(i int) *BuildTaskCreate {
+	btc.mutation.SetInterval(i)
+	return btc
+}
+
+// SetNillableInterval sets the "interval" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableInterval(i *int) *BuildTaskCreate {
+	if i != nil {
+		btc.SetInterval(*i)
+	}
+	return btc
+}
+
+// SetTransportType sets the "transport_type" field.
+func (btc *BuildTaskCreate) SetTransportType(ct c2pb.Transport_Type) *BuildTaskCreate {
+	btc.mutation.SetTransportType(ct)
+	return btc
+}
+
+// SetExtra sets the "extra" field.
+func (btc *BuildTaskCreate) SetExtra(s string) *BuildTaskCreate {
+	btc.mutation.SetExtra(s)
+	return btc
+}
+
+// SetNillableExtra sets the "extra" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableExtra(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetExtra(*s)
+	}
 	return btc
 }
 
@@ -154,6 +202,34 @@ func (btc *BuildTaskCreate) SetNillableError(s *string) *BuildTaskCreate {
 	return btc
 }
 
+// SetErrorSize sets the "error_size" field.
+func (btc *BuildTaskCreate) SetErrorSize(i int) *BuildTaskCreate {
+	btc.mutation.SetErrorSize(i)
+	return btc
+}
+
+// SetNillableErrorSize sets the "error_size" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableErrorSize(i *int) *BuildTaskCreate {
+	if i != nil {
+		btc.SetErrorSize(*i)
+	}
+	return btc
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (btc *BuildTaskCreate) SetArtifactPath(s string) *BuildTaskCreate {
+	btc.mutation.SetArtifactPath(s)
+	return btc
+}
+
+// SetNillableArtifactPath sets the "artifact_path" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableArtifactPath(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetArtifactPath(*s)
+	}
+	return btc
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btc *BuildTaskCreate) SetBuilderID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderID(id)
@@ -163,6 +239,25 @@ func (btc *BuildTaskCreate) SetBuilderID(id int) *BuildTaskCreate {
 // SetBuilder sets the "builder" edge to the Builder entity.
 func (btc *BuildTaskCreate) SetBuilder(b *Builder) *BuildTaskCreate {
 	return btc.SetBuilderID(b.ID)
+}
+
+// SetArtifactID sets the "artifact" edge to the Asset entity by ID.
+func (btc *BuildTaskCreate) SetArtifactID(id int) *BuildTaskCreate {
+	btc.mutation.SetArtifactID(id)
+	return btc
+}
+
+// SetNillableArtifactID sets the "artifact" edge to the Asset entity by ID if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableArtifactID(id *int) *BuildTaskCreate {
+	if id != nil {
+		btc = btc.SetArtifactID(*id)
+	}
+	return btc
+}
+
+// SetArtifact sets the "artifact" edge to the Asset entity.
+func (btc *BuildTaskCreate) SetArtifact(a *Asset) *BuildTaskCreate {
+	return btc.SetArtifactID(a.ID)
 }
 
 // Mutation returns the BuildTaskMutation object of the builder.
@@ -216,9 +311,17 @@ func (btc *BuildTaskCreate) defaults() error {
 		v := buildtask.DefaultLastModifiedAt()
 		btc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := btc.mutation.Interval(); !ok {
+		v := buildtask.DefaultInterval
+		btc.mutation.SetInterval(v)
+	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		v := buildtask.DefaultOutputSize
 		btc.mutation.SetOutputSize(v)
+	}
+	if _, ok := btc.mutation.ErrorSize(); !ok {
+		v := buildtask.DefaultErrorSize
+		btc.mutation.SetErrorSize(v)
 	}
 	return nil
 }
@@ -239,6 +342,14 @@ func (btc *BuildTaskCreate) check() error {
 			return &ValidationError{Name: "target_os", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_os": %w`, err)}
 		}
 	}
+	if _, ok := btc.mutation.TargetFormat(); !ok {
+		return &ValidationError{Name: "target_format", err: errors.New(`ent: missing required field "BuildTask.target_format"`)}
+	}
+	if v, ok := btc.mutation.TargetFormat(); ok {
+		if err := buildtask.TargetFormatValidator(v); err != nil {
+			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
+		}
+	}
 	if _, ok := btc.mutation.BuildImage(); !ok {
 		return &ValidationError{Name: "build_image", err: errors.New(`ent: missing required field "BuildTask.build_image"`)}
 	}
@@ -255,12 +366,39 @@ func (btc *BuildTaskCreate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
+	if _, ok := btc.mutation.CallbackURI(); !ok {
+		return &ValidationError{Name: "callback_uri", err: errors.New(`ent: missing required field "BuildTask.callback_uri"`)}
+	}
+	if v, ok := btc.mutation.CallbackURI(); ok {
+		if err := buildtask.CallbackURIValidator(v); err != nil {
+			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
+		}
+	}
+	if _, ok := btc.mutation.Interval(); !ok {
+		return &ValidationError{Name: "interval", err: errors.New(`ent: missing required field "BuildTask.interval"`)}
+	}
+	if _, ok := btc.mutation.TransportType(); !ok {
+		return &ValidationError{Name: "transport_type", err: errors.New(`ent: missing required field "BuildTask.transport_type"`)}
+	}
+	if v, ok := btc.mutation.TransportType(); ok {
+		if err := buildtask.TransportTypeValidator(v); err != nil {
+			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
+		}
+	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		return &ValidationError{Name: "output_size", err: errors.New(`ent: missing required field "BuildTask.output_size"`)}
 	}
 	if v, ok := btc.mutation.OutputSize(); ok {
 		if err := buildtask.OutputSizeValidator(v); err != nil {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
+		}
+	}
+	if _, ok := btc.mutation.ErrorSize(); !ok {
+		return &ValidationError{Name: "error_size", err: errors.New(`ent: missing required field "BuildTask.error_size"`)}
+	}
+	if v, ok := btc.mutation.ErrorSize(); ok {
+		if err := buildtask.ErrorSizeValidator(v); err != nil {
+			return &ValidationError{Name: "error_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.error_size": %w`, err)}
 		}
 	}
 	if len(btc.mutation.BuilderIDs()) == 0 {
@@ -305,6 +443,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldTargetOs, field.TypeEnum, value)
 		_node.TargetOs = value
 	}
+	if value, ok := btc.mutation.TargetFormat(); ok {
+		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
+		_node.TargetFormat = value
+	}
 	if value, ok := btc.mutation.BuildImage(); ok {
 		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
 		_node.BuildImage = value
@@ -312,6 +454,22 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 		_node.BuildScript = value
+	}
+	if value, ok := btc.mutation.CallbackURI(); ok {
+		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
+		_node.CallbackURI = value
+	}
+	if value, ok := btc.mutation.Interval(); ok {
+		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
+		_node.Interval = value
+	}
+	if value, ok := btc.mutation.TransportType(); ok {
+		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
+		_node.TransportType = value
+	}
+	if value, ok := btc.mutation.Extra(); ok {
+		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
+		_node.Extra = value
 	}
 	if value, ok := btc.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -337,6 +495,14 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldError, field.TypeString, value)
 		_node.Error = value
 	}
+	if value, ok := btc.mutation.ErrorSize(); ok {
+		_spec.SetField(buildtask.FieldErrorSize, field.TypeInt, value)
+		_node.ErrorSize = value
+	}
+	if value, ok := btc.mutation.ArtifactPath(); ok {
+		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
+		_node.ArtifactPath = value
+	}
 	if nodes := btc.mutation.BuilderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -352,6 +518,23 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.build_task_builder = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := btc.mutation.ArtifactIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ArtifactTable,
+			Columns: []string{buildtask.ArtifactColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.build_task_artifact = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -430,6 +613,18 @@ func (u *BuildTaskUpsert) UpdateTargetOs() *BuildTaskUpsert {
 	return u
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (u *BuildTaskUpsert) SetTargetFormat(v builderpb.TargetFormat) *BuildTaskUpsert {
+	u.Set(buildtask.FieldTargetFormat, v)
+	return u
+}
+
+// UpdateTargetFormat sets the "target_format" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateTargetFormat() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldTargetFormat)
+	return u
+}
+
 // SetBuildImage sets the "build_image" field.
 func (u *BuildTaskUpsert) SetBuildImage(v string) *BuildTaskUpsert {
 	u.Set(buildtask.FieldBuildImage, v)
@@ -451,6 +646,66 @@ func (u *BuildTaskUpsert) SetBuildScript(v string) *BuildTaskUpsert {
 // UpdateBuildScript sets the "build_script" field to the value that was provided on create.
 func (u *BuildTaskUpsert) UpdateBuildScript() *BuildTaskUpsert {
 	u.SetExcluded(buildtask.FieldBuildScript)
+	return u
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (u *BuildTaskUpsert) SetCallbackURI(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldCallbackURI, v)
+	return u
+}
+
+// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateCallbackURI() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldCallbackURI)
+	return u
+}
+
+// SetInterval sets the "interval" field.
+func (u *BuildTaskUpsert) SetInterval(v int) *BuildTaskUpsert {
+	u.Set(buildtask.FieldInterval, v)
+	return u
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateInterval() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldInterval)
+	return u
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BuildTaskUpsert) AddInterval(v int) *BuildTaskUpsert {
+	u.Add(buildtask.FieldInterval, v)
+	return u
+}
+
+// SetTransportType sets the "transport_type" field.
+func (u *BuildTaskUpsert) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsert {
+	u.Set(buildtask.FieldTransportType, v)
+	return u
+}
+
+// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateTransportType() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldTransportType)
+	return u
+}
+
+// SetExtra sets the "extra" field.
+func (u *BuildTaskUpsert) SetExtra(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldExtra, v)
+	return u
+}
+
+// UpdateExtra sets the "extra" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateExtra() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldExtra)
+	return u
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (u *BuildTaskUpsert) ClearExtra() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldExtra)
 	return u
 }
 
@@ -562,6 +817,42 @@ func (u *BuildTaskUpsert) ClearError() *BuildTaskUpsert {
 	return u
 }
 
+// SetErrorSize sets the "error_size" field.
+func (u *BuildTaskUpsert) SetErrorSize(v int) *BuildTaskUpsert {
+	u.Set(buildtask.FieldErrorSize, v)
+	return u
+}
+
+// UpdateErrorSize sets the "error_size" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateErrorSize() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldErrorSize)
+	return u
+}
+
+// AddErrorSize adds v to the "error_size" field.
+func (u *BuildTaskUpsert) AddErrorSize(v int) *BuildTaskUpsert {
+	u.Add(buildtask.FieldErrorSize, v)
+	return u
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildTaskUpsert) SetArtifactPath(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldArtifactPath, v)
+	return u
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateArtifactPath() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldArtifactPath)
+	return u
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (u *BuildTaskUpsert) ClearArtifactPath() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldArtifactPath)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -635,6 +926,20 @@ func (u *BuildTaskUpsertOne) UpdateTargetOs() *BuildTaskUpsertOne {
 	})
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (u *BuildTaskUpsertOne) SetTargetFormat(v builderpb.TargetFormat) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTargetFormat(v)
+	})
+}
+
+// UpdateTargetFormat sets the "target_format" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateTargetFormat() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTargetFormat()
+	})
+}
+
 // SetBuildImage sets the "build_image" field.
 func (u *BuildTaskUpsertOne) SetBuildImage(v string) *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
@@ -660,6 +965,76 @@ func (u *BuildTaskUpsertOne) SetBuildScript(v string) *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) UpdateBuildScript() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
+	})
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (u *BuildTaskUpsertOne) SetCallbackURI(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetCallbackURI(v)
+	})
+}
+
+// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateCallbackURI() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateCallbackURI()
+	})
+}
+
+// SetInterval sets the "interval" field.
+func (u *BuildTaskUpsertOne) SetInterval(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetInterval(v)
+	})
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BuildTaskUpsertOne) AddInterval(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddInterval(v)
+	})
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateInterval() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateInterval()
+	})
+}
+
+// SetTransportType sets the "transport_type" field.
+func (u *BuildTaskUpsertOne) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTransportType(v)
+	})
+}
+
+// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateTransportType() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTransportType()
+	})
+}
+
+// SetExtra sets the "extra" field.
+func (u *BuildTaskUpsertOne) SetExtra(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetExtra(v)
+	})
+}
+
+// UpdateExtra sets the "extra" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateExtra() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateExtra()
+	})
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (u *BuildTaskUpsertOne) ClearExtra() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearExtra()
 	})
 }
 
@@ -786,6 +1161,48 @@ func (u *BuildTaskUpsertOne) UpdateError() *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) ClearError() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearError()
+	})
+}
+
+// SetErrorSize sets the "error_size" field.
+func (u *BuildTaskUpsertOne) SetErrorSize(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetErrorSize(v)
+	})
+}
+
+// AddErrorSize adds v to the "error_size" field.
+func (u *BuildTaskUpsertOne) AddErrorSize(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddErrorSize(v)
+	})
+}
+
+// UpdateErrorSize sets the "error_size" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateErrorSize() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateErrorSize()
+	})
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildTaskUpsertOne) SetArtifactPath(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetArtifactPath(v)
+	})
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateArtifactPath() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateArtifactPath()
+	})
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (u *BuildTaskUpsertOne) ClearArtifactPath() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearArtifactPath()
 	})
 }
 
@@ -1028,6 +1445,20 @@ func (u *BuildTaskUpsertBulk) UpdateTargetOs() *BuildTaskUpsertBulk {
 	})
 }
 
+// SetTargetFormat sets the "target_format" field.
+func (u *BuildTaskUpsertBulk) SetTargetFormat(v builderpb.TargetFormat) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTargetFormat(v)
+	})
+}
+
+// UpdateTargetFormat sets the "target_format" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateTargetFormat() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTargetFormat()
+	})
+}
+
 // SetBuildImage sets the "build_image" field.
 func (u *BuildTaskUpsertBulk) SetBuildImage(v string) *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
@@ -1053,6 +1484,76 @@ func (u *BuildTaskUpsertBulk) SetBuildScript(v string) *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) UpdateBuildScript() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
+	})
+}
+
+// SetCallbackURI sets the "callback_uri" field.
+func (u *BuildTaskUpsertBulk) SetCallbackURI(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetCallbackURI(v)
+	})
+}
+
+// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateCallbackURI() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateCallbackURI()
+	})
+}
+
+// SetInterval sets the "interval" field.
+func (u *BuildTaskUpsertBulk) SetInterval(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetInterval(v)
+	})
+}
+
+// AddInterval adds v to the "interval" field.
+func (u *BuildTaskUpsertBulk) AddInterval(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddInterval(v)
+	})
+}
+
+// UpdateInterval sets the "interval" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateInterval() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateInterval()
+	})
+}
+
+// SetTransportType sets the "transport_type" field.
+func (u *BuildTaskUpsertBulk) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTransportType(v)
+	})
+}
+
+// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateTransportType() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTransportType()
+	})
+}
+
+// SetExtra sets the "extra" field.
+func (u *BuildTaskUpsertBulk) SetExtra(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetExtra(v)
+	})
+}
+
+// UpdateExtra sets the "extra" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateExtra() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateExtra()
+	})
+}
+
+// ClearExtra clears the value of the "extra" field.
+func (u *BuildTaskUpsertBulk) ClearExtra() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearExtra()
 	})
 }
 
@@ -1179,6 +1680,48 @@ func (u *BuildTaskUpsertBulk) UpdateError() *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) ClearError() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearError()
+	})
+}
+
+// SetErrorSize sets the "error_size" field.
+func (u *BuildTaskUpsertBulk) SetErrorSize(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetErrorSize(v)
+	})
+}
+
+// AddErrorSize adds v to the "error_size" field.
+func (u *BuildTaskUpsertBulk) AddErrorSize(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddErrorSize(v)
+	})
+}
+
+// UpdateErrorSize sets the "error_size" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateErrorSize() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateErrorSize()
+	})
+}
+
+// SetArtifactPath sets the "artifact_path" field.
+func (u *BuildTaskUpsertBulk) SetArtifactPath(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetArtifactPath(v)
+	})
+}
+
+// UpdateArtifactPath sets the "artifact_path" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateArtifactPath() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateArtifactPath()
+	})
+}
+
+// ClearArtifactPath clears the value of the "artifact_path" field.
+func (u *BuildTaskUpsertBulk) ClearArtifactPath() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearArtifactPath()
 	})
 }
 

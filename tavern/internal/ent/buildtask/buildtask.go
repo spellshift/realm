@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
 
@@ -24,10 +25,20 @@ const (
 	FieldLastModifiedAt = "last_modified_at"
 	// FieldTargetOs holds the string denoting the target_os field in the database.
 	FieldTargetOs = "target_os"
+	// FieldTargetFormat holds the string denoting the target_format field in the database.
+	FieldTargetFormat = "target_format"
 	// FieldBuildImage holds the string denoting the build_image field in the database.
 	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
+	// FieldCallbackURI holds the string denoting the callback_uri field in the database.
+	FieldCallbackURI = "callback_uri"
+	// FieldInterval holds the string denoting the interval field in the database.
+	FieldInterval = "interval"
+	// FieldTransportType holds the string denoting the transport_type field in the database.
+	FieldTransportType = "transport_type"
+	// FieldExtra holds the string denoting the extra field in the database.
+	FieldExtra = "extra"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -40,8 +51,14 @@ const (
 	FieldOutputSize = "output_size"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
+	// FieldErrorSize holds the string denoting the error_size field in the database.
+	FieldErrorSize = "error_size"
+	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
+	FieldArtifactPath = "artifact_path"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
+	// EdgeArtifact holds the string denoting the artifact edge name in mutations.
+	EdgeArtifact = "artifact"
 	// Table holds the table name of the buildtask in the database.
 	Table = "build_tasks"
 	// BuilderTable is the table that holds the builder relation/edge.
@@ -51,6 +68,13 @@ const (
 	BuilderInverseTable = "builders"
 	// BuilderColumn is the table column denoting the builder relation/edge.
 	BuilderColumn = "build_task_builder"
+	// ArtifactTable is the table that holds the artifact relation/edge.
+	ArtifactTable = "build_tasks"
+	// ArtifactInverseTable is the table name for the Asset entity.
+	// It exists in this package in order to avoid circular dependency with the "asset" package.
+	ArtifactInverseTable = "assets"
+	// ArtifactColumn is the table column denoting the artifact relation/edge.
+	ArtifactColumn = "build_task_artifact"
 )
 
 // Columns holds all SQL columns for buildtask fields.
@@ -59,20 +83,28 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldLastModifiedAt,
 	FieldTargetOs,
+	FieldTargetFormat,
 	FieldBuildImage,
 	FieldBuildScript,
+	FieldCallbackURI,
+	FieldInterval,
+	FieldTransportType,
+	FieldExtra,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,
 	FieldOutput,
 	FieldOutputSize,
 	FieldError,
+	FieldErrorSize,
+	FieldArtifactPath,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"build_task_builder",
+	"build_task_artifact",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -107,10 +139,18 @@ var (
 	BuildImageValidator func(string) error
 	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	BuildScriptValidator func(string) error
+	// CallbackURIValidator is a validator for the "callback_uri" field. It is called by the builders before save.
+	CallbackURIValidator func(string) error
+	// DefaultInterval holds the default value on creation for the "interval" field.
+	DefaultInterval int
 	// DefaultOutputSize holds the default value on creation for the "output_size" field.
 	DefaultOutputSize int
 	// OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	OutputSizeValidator func(int) error
+	// DefaultErrorSize holds the default value on creation for the "error_size" field.
+	DefaultErrorSize int
+	// ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
+	ErrorSizeValidator func(int) error
 )
 
 // TargetOsValidator is a validator for the "target_os" field enum values. It is called by the builders before save.
@@ -120,6 +160,26 @@ func TargetOsValidator(to c2pb.Host_Platform) error {
 		return nil
 	default:
 		return fmt.Errorf("buildtask: invalid enum value for target_os field: %q", to)
+	}
+}
+
+// TargetFormatValidator is a validator for the "target_format" field enum values. It is called by the builders before save.
+func TargetFormatValidator(tf builderpb.TargetFormat) error {
+	switch tf {
+	case "BIN", "CDYLIB", "WINDOWS_SERVICE":
+		return nil
+	default:
+		return fmt.Errorf("buildtask: invalid enum value for target_format field: %q", tf)
+	}
+}
+
+// TransportTypeValidator is a validator for the "transport_type" field enum values. It is called by the builders before save.
+func TransportTypeValidator(tt c2pb.Transport_Type) error {
+	switch tt.String() {
+	case "TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED":
+		return nil
+	default:
+		return fmt.Errorf("buildtask: invalid enum value for transport_type field: %q", tt)
 	}
 }
 
@@ -146,6 +206,11 @@ func ByTargetOs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTargetOs, opts...).ToFunc()
 }
 
+// ByTargetFormat orders the results by the target_format field.
+func ByTargetFormat(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTargetFormat, opts...).ToFunc()
+}
+
 // ByBuildImage orders the results by the build_image field.
 func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildImage, opts...).ToFunc()
@@ -154,6 +219,26 @@ func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
 // ByBuildScript orders the results by the build_script field.
 func ByBuildScript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildScript, opts...).ToFunc()
+}
+
+// ByCallbackURI orders the results by the callback_uri field.
+func ByCallbackURI(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCallbackURI, opts...).ToFunc()
+}
+
+// ByInterval orders the results by the interval field.
+func ByInterval(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInterval, opts...).ToFunc()
+}
+
+// ByTransportType orders the results by the transport_type field.
+func ByTransportType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransportType, opts...).ToFunc()
+}
+
+// ByExtra orders the results by the extra field.
+func ByExtra(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExtra, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.
@@ -186,10 +271,27 @@ func ByError(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldError, opts...).ToFunc()
 }
 
+// ByErrorSize orders the results by the error_size field.
+func ByErrorSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErrorSize, opts...).ToFunc()
+}
+
+// ByArtifactPath orders the results by the artifact_path field.
+func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
+}
+
 // ByBuilderField orders the results by builder field.
 func ByBuilderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newBuilderStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByArtifactField orders the results by artifact field.
+func ByArtifactField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newArtifactStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newBuilderStep() *sqlgraph.Step {
@@ -199,10 +301,31 @@ func newBuilderStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, false, BuilderTable, BuilderColumn),
 	)
 }
+func newArtifactStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ArtifactInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ArtifactTable, ArtifactColumn),
+	)
+}
 
 var (
 	// c2pb.Host_Platform must implement graphql.Marshaler.
 	_ graphql.Marshaler = (*c2pb.Host_Platform)(nil)
 	// c2pb.Host_Platform must implement graphql.Unmarshaler.
 	_ graphql.Unmarshaler = (*c2pb.Host_Platform)(nil)
+)
+
+var (
+	// builderpb.TargetFormat must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*builderpb.TargetFormat)(nil)
+	// builderpb.TargetFormat must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*builderpb.TargetFormat)(nil)
+)
+
+var (
+	// c2pb.Transport_Type must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*c2pb.Transport_Type)(nil)
+	// c2pb.Transport_Type must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*c2pb.Transport_Type)(nil)
 )

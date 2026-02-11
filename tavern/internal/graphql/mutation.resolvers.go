@@ -341,13 +341,45 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
-	// 1. Query all builders
+	// 1. Validate target format for the given OS
+	if err := builder.ValidateTargetFormat(input.TargetOs, input.TargetFormat); err != nil {
+		return nil, err
+	}
+
+	// 2. Resolve defaults for optional fields
+	interval := builder.DefaultInterval
+	if input.Interval != nil {
+		interval = *input.Interval
+	}
+
+	callbackURI := builder.DefaultCallbackURI
+	if input.CallbackURI != nil {
+		callbackURI = *input.CallbackURI
+	}
+
+	transportType := builder.DefaultTransportType
+	if input.TransportType != nil {
+		transportType = *input.TransportType
+	}
+
+	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
+	if input.ArtifactPath != nil {
+		artifactPath = *input.ArtifactPath
+	}
+
+	// 3. Derive the build script from configuration
+	buildScript, err := builder.GenerateBuildScript(input.TargetOs, input.TargetFormat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate build script: %w", err)
+	}
+
+	// 4. Query all builders
 	allBuilders, err := r.client.Builder.Query().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query builders: %w", err)
 	}
 
-	// 2. Filter builders that support the target OS
+	// 5. Filter builders that support the target OS
 	var candidates []*ent.Builder
 	for _, b := range allBuilders {
 		for _, target := range b.SupportedTargets {
@@ -362,16 +394,26 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("no builder available that supports target %s", input.TargetOs.String())
 	}
 
-	// 3. Randomly select one builder
+	// 6. Randomly select one builder
 	selected := candidates[rand.Intn(len(candidates))]
 
-	// 4. Create the build task
-	bt, err := r.client.BuildTask.Create().
+	// 7. Create the build task
+	create := r.client.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
+		SetTargetFormat(input.TargetFormat).
 		SetBuildImage(input.BuildImage).
-		SetBuildScript(input.BuildScript).
-		SetBuilder(selected).
-		Save(ctx)
+		SetBuildScript(buildScript).
+		SetCallbackURI(callbackURI).
+		SetInterval(interval).
+		SetTransportType(transportType).
+		SetArtifactPath(artifactPath).
+		SetBuilder(selected)
+
+	if input.Extra != nil {
+		create = create.SetExtra(*input.Extra)
+	}
+
+	bt, err := create.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create build task: %w", err)
 	}
