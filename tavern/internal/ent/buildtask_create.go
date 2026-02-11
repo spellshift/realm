@@ -216,6 +216,20 @@ func (btc *BuildTaskCreate) SetNillableErrorSize(i *int) *BuildTaskCreate {
 	return btc
 }
 
+// SetExitCode sets the "exit_code" field.
+func (btc *BuildTaskCreate) SetExitCode(i int) *BuildTaskCreate {
+	btc.mutation.SetExitCode(i)
+	return btc
+}
+
+// SetNillableExitCode sets the "exit_code" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableExitCode(i *int) *BuildTaskCreate {
+	if i != nil {
+		btc.SetExitCode(*i)
+	}
+	return btc
+}
+
 // SetArtifactPath sets the "artifact_path" field.
 func (btc *BuildTaskCreate) SetArtifactPath(s string) *BuildTaskCreate {
 	btc.mutation.SetArtifactPath(s)
@@ -498,6 +512,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.ErrorSize(); ok {
 		_spec.SetField(buildtask.FieldErrorSize, field.TypeInt, value)
 		_node.ErrorSize = value
+	}
+	if value, ok := btc.mutation.ExitCode(); ok {
+		_spec.SetField(buildtask.FieldExitCode, field.TypeInt, value)
+		_node.ExitCode = &value
 	}
 	if value, ok := btc.mutation.ArtifactPath(); ok {
 		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
@@ -832,6 +850,30 @@ func (u *BuildTaskUpsert) UpdateErrorSize() *BuildTaskUpsert {
 // AddErrorSize adds v to the "error_size" field.
 func (u *BuildTaskUpsert) AddErrorSize(v int) *BuildTaskUpsert {
 	u.Add(buildtask.FieldErrorSize, v)
+	return u
+}
+
+// SetExitCode sets the "exit_code" field.
+func (u *BuildTaskUpsert) SetExitCode(v int) *BuildTaskUpsert {
+	u.Set(buildtask.FieldExitCode, v)
+	return u
+}
+
+// UpdateExitCode sets the "exit_code" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateExitCode() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldExitCode)
+	return u
+}
+
+// AddExitCode adds v to the "exit_code" field.
+func (u *BuildTaskUpsert) AddExitCode(v int) *BuildTaskUpsert {
+	u.Add(buildtask.FieldExitCode, v)
+	return u
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (u *BuildTaskUpsert) ClearExitCode() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldExitCode)
 	return u
 }
 
@@ -1182,6 +1224,34 @@ func (u *BuildTaskUpsertOne) AddErrorSize(v int) *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) UpdateErrorSize() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateErrorSize()
+	})
+}
+
+// SetExitCode sets the "exit_code" field.
+func (u *BuildTaskUpsertOne) SetExitCode(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetExitCode(v)
+	})
+}
+
+// AddExitCode adds v to the "exit_code" field.
+func (u *BuildTaskUpsertOne) AddExitCode(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddExitCode(v)
+	})
+}
+
+// UpdateExitCode sets the "exit_code" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateExitCode() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateExitCode()
+	})
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (u *BuildTaskUpsertOne) ClearExitCode() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearExitCode()
 	})
 }
 
@@ -1701,6 +1771,34 @@ func (u *BuildTaskUpsertBulk) AddErrorSize(v int) *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) UpdateErrorSize() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateErrorSize()
+	})
+}
+
+// SetExitCode sets the "exit_code" field.
+func (u *BuildTaskUpsertBulk) SetExitCode(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetExitCode(v)
+	})
+}
+
+// AddExitCode adds v to the "exit_code" field.
+func (u *BuildTaskUpsertBulk) AddExitCode(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddExitCode(v)
+	})
+}
+
+// UpdateExitCode sets the "exit_code" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateExitCode() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateExitCode()
+	})
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (u *BuildTaskUpsertBulk) ClearExitCode() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearExitCode()
 	})
 }
 

@@ -53,6 +53,8 @@ const (
 	FieldError = "error"
 	// FieldErrorSize holds the string denoting the error_size field in the database.
 	FieldErrorSize = "error_size"
+	// FieldExitCode holds the string denoting the exit_code field in the database.
+	FieldExitCode = "exit_code"
 	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
 	FieldArtifactPath = "artifact_path"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
@@ -97,6 +99,7 @@ var Columns = []string{
 	FieldOutputSize,
 	FieldError,
 	FieldErrorSize,
+	FieldExitCode,
 	FieldArtifactPath,
 }
 
@@ -274,6 +277,11 @@ func ByError(opts ...sql.OrderTermOption) OrderOption {
 // ByErrorSize orders the results by the error_size field.
 func ByErrorSize(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldErrorSize, opts...).ToFunc()
+}
+
+// ByExitCode orders the results by the exit_code field.
+func ByExitCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExitCode, opts...).ToFunc()
 }
 
 // ByArtifactPath orders the results by the artifact_path field.

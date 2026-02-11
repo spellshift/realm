@@ -23,6 +23,12 @@ const (
 	// DefaultTransportType is the default transport type for the IMIX agent,
 	// derived from the IMIX default behavior for http:// URIs.
 	DefaultTransportType = c2pb.Transport_TRANSPORT_GRPC
+
+	// DefaultBuildImage is the default Docker image for building agents.
+	DefaultBuildImage = "spellshift/devcontainer:main"
+
+	// DefaultTargetFormat is the default output format for builds.
+	DefaultTargetFormat = builderpb.TargetFormatBin
 )
 
 // TargetFormat is an alias for builderpb.TargetFormat.

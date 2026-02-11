@@ -108,6 +108,13 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.OrderField("ERROR_SIZE"),
 			).
 			Comment("The size of the error in bytes"),
+		field.Int("exit_code").
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.OrderField("EXIT_CODE"),
+			).
+			Comment("Exit code from the build container process. Null if the build has not finished."),
 		field.String("artifact_path").
 			Optional().
 			Annotations(

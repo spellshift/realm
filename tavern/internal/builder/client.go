@@ -257,6 +257,9 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		TaskId:   task.Id,
 		Finished: true,
 	}
+	if result != nil {
+		finalMsg.ExitCode = result.ExitCode
+	}
 	if buildErr != nil {
 		finalMsg.Error = buildErr.Error()
 		slog.ErrorContext(ctx, "build task failed",

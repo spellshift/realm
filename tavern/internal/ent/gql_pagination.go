@@ -1261,6 +1261,20 @@ var (
 			}
 		},
 	}
+	// BuildTaskOrderFieldExitCode orders BuildTask by exit_code.
+	BuildTaskOrderFieldExitCode = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.ExitCode, nil
+		},
+		column: buildtask.FieldExitCode,
+		toTerm: buildtask.ByExitCode,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.ExitCode,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1283,6 +1297,8 @@ func (f BuildTaskOrderField) String() string {
 		str = "OUTPUT_SIZE"
 	case BuildTaskOrderFieldErrorSize.column:
 		str = "ERROR_SIZE"
+	case BuildTaskOrderFieldExitCode.column:
+		str = "EXIT_CODE"
 	}
 	return str
 }
@@ -1315,6 +1331,8 @@ func (f *BuildTaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *BuildTaskOrderFieldOutputSize
 	case "ERROR_SIZE":
 		*f = *BuildTaskOrderFieldErrorSize
+	case "EXIT_CODE":
+		*f = *BuildTaskOrderFieldExitCode
 	default:
 		return fmt.Errorf("%s is not a valid BuildTaskOrderField", str)
 	}
@@ -1635,6 +1653,20 @@ var (
 			}
 		},
 	}
+	// BuilderOrderFieldLastSeenAt orders Builder by last_seen_at.
+	BuilderOrderFieldLastSeenAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.LastSeenAt, nil
+		},
+		column: builder.FieldLastSeenAt,
+		toTerm: builder.ByLastSeenAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.LastSeenAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1645,6 +1677,8 @@ func (f BuilderOrderField) String() string {
 		str = "CREATED_AT"
 	case BuilderOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
+	case BuilderOrderFieldLastSeenAt.column:
+		str = "LAST_SEEN_AT"
 	}
 	return str
 }
@@ -1665,6 +1699,8 @@ func (f *BuilderOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *BuilderOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *BuilderOrderFieldLastModifiedAt
+	case "LAST_SEEN_AT":
+		*f = *BuilderOrderFieldLastSeenAt
 	default:
 		return fmt.Errorf("%s is not a valid BuilderOrderField", str)
 	}

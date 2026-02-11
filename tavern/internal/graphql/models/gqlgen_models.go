@@ -35,10 +35,10 @@ type ClaimTasksInput struct {
 type CreateBuildTaskInput struct {
 	// The target operating system for the build.
 	TargetOs c2pb.Host_Platform `json:"targetOS"`
-	// The output format for the build.
-	TargetFormat builderpb.TargetFormat `json:"targetFormat"`
-	// Docker container image name to use for the build.
-	BuildImage string `json:"buildImage"`
+	// The output format for the build. Defaults to BIN.
+	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
+	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
+	BuildImage *string `json:"buildImage,omitempty"`
 	// The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000.
 	CallbackURI *string `json:"callbackURI,omitempty"`
 	// The callback interval in seconds for the IMIX agent.

@@ -83,6 +83,7 @@ var (
 		{Name: "output_size", Type: field.TypeInt, Default: 0},
 		{Name: "error", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "error_size", Type: field.TypeInt, Default: 0},
+		{Name: "exit_code", Type: field.TypeInt, Nullable: true},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
@@ -95,13 +96,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[19]},
+				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[20]},
+				Columns:    []*schema.Column{BuildTasksColumns[21]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -115,6 +116,7 @@ var (
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
 		{Name: "upstream", Type: field.TypeString},
+		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.
 	BuildersTable = &schema.Table{

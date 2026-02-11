@@ -55,6 +55,8 @@ type BuildTask struct {
 	Error string `json:"error,omitempty"`
 	// The size of the error in bytes
 	ErrorSize int `json:"error_size,omitempty"`
+	// Exit code from the build container process. Null if the build has not finished.
+	ExitCode *int `json:"exit_code,omitempty"`
 	// Path inside the container where the build artifact is located. Derived from target_os if not set.
 	ArtifactPath string `json:"artifact_path,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -111,7 +113,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case buildtask.FieldTransportType:
 			values[i] = new(c2pb.Transport_Type)
-		case buildtask.FieldID, buildtask.FieldInterval, buildtask.FieldOutputSize, buildtask.FieldErrorSize:
+		case buildtask.FieldID, buildtask.FieldInterval, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
 		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldCallbackURI, buildtask.FieldExtra, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath:
 			values[i] = new(sql.NullString)
@@ -244,6 +246,13 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bt.ErrorSize = int(value.Int64)
 			}
+		case buildtask.FieldExitCode:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field exit_code", values[i])
+			} else if value.Valid {
+				bt.ExitCode = new(int)
+				*bt.ExitCode = int(value.Int64)
+			}
 		case buildtask.FieldArtifactPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field artifact_path", values[i])
@@ -360,6 +369,11 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("error_size=")
 	builder.WriteString(fmt.Sprintf("%v", bt.ErrorSize))
+	builder.WriteString(", ")
+	if v := bt.ExitCode; v != nil {
+		builder.WriteString("exit_code=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("artifact_path=")
 	builder.WriteString(bt.ArtifactPath)

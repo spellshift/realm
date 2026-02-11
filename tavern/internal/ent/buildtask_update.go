@@ -305,6 +305,33 @@ func (btu *BuildTaskUpdate) AddErrorSize(i int) *BuildTaskUpdate {
 	return btu
 }
 
+// SetExitCode sets the "exit_code" field.
+func (btu *BuildTaskUpdate) SetExitCode(i int) *BuildTaskUpdate {
+	btu.mutation.ResetExitCode()
+	btu.mutation.SetExitCode(i)
+	return btu
+}
+
+// SetNillableExitCode sets the "exit_code" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableExitCode(i *int) *BuildTaskUpdate {
+	if i != nil {
+		btu.SetExitCode(*i)
+	}
+	return btu
+}
+
+// AddExitCode adds i to the "exit_code" field.
+func (btu *BuildTaskUpdate) AddExitCode(i int) *BuildTaskUpdate {
+	btu.mutation.AddExitCode(i)
+	return btu
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (btu *BuildTaskUpdate) ClearExitCode() *BuildTaskUpdate {
+	btu.mutation.ClearExitCode()
+	return btu
+}
+
 // SetArtifactPath sets the "artifact_path" field.
 func (btu *BuildTaskUpdate) SetArtifactPath(s string) *BuildTaskUpdate {
 	btu.mutation.SetArtifactPath(s)
@@ -548,6 +575,15 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := btu.mutation.AddedErrorSize(); ok {
 		_spec.AddField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.ExitCode(); ok {
+		_spec.SetField(buildtask.FieldExitCode, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.AddedExitCode(); ok {
+		_spec.AddField(buildtask.FieldExitCode, field.TypeInt, value)
+	}
+	if btu.mutation.ExitCodeCleared() {
+		_spec.ClearField(buildtask.FieldExitCode, field.TypeInt)
 	}
 	if value, ok := btu.mutation.ArtifactPath(); ok {
 		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
@@ -906,6 +942,33 @@ func (btuo *BuildTaskUpdateOne) AddErrorSize(i int) *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetExitCode sets the "exit_code" field.
+func (btuo *BuildTaskUpdateOne) SetExitCode(i int) *BuildTaskUpdateOne {
+	btuo.mutation.ResetExitCode()
+	btuo.mutation.SetExitCode(i)
+	return btuo
+}
+
+// SetNillableExitCode sets the "exit_code" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableExitCode(i *int) *BuildTaskUpdateOne {
+	if i != nil {
+		btuo.SetExitCode(*i)
+	}
+	return btuo
+}
+
+// AddExitCode adds i to the "exit_code" field.
+func (btuo *BuildTaskUpdateOne) AddExitCode(i int) *BuildTaskUpdateOne {
+	btuo.mutation.AddExitCode(i)
+	return btuo
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (btuo *BuildTaskUpdateOne) ClearExitCode() *BuildTaskUpdateOne {
+	btuo.mutation.ClearExitCode()
+	return btuo
+}
+
 // SetArtifactPath sets the "artifact_path" field.
 func (btuo *BuildTaskUpdateOne) SetArtifactPath(s string) *BuildTaskUpdateOne {
 	btuo.mutation.SetArtifactPath(s)
@@ -1179,6 +1242,15 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if value, ok := btuo.mutation.AddedErrorSize(); ok {
 		_spec.AddField(buildtask.FieldErrorSize, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.ExitCode(); ok {
+		_spec.SetField(buildtask.FieldExitCode, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.AddedExitCode(); ok {
+		_spec.AddField(buildtask.FieldExitCode, field.TypeInt, value)
+	}
+	if btuo.mutation.ExitCodeCleared() {
+		_spec.ClearField(buildtask.FieldExitCode, field.TypeInt)
 	}
 	if value, ok := btuo.mutation.ArtifactPath(); ok {
 		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)

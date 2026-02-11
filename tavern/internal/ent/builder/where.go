@@ -75,6 +75,11 @@ func Upstream(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldUpstream, v))
 }
 
+// LastSeenAt applies equality check predicate on the "last_seen_at" field. It's identical to LastSeenAtEQ.
+func LastSeenAt(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldLastSeenAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Builder {
 	return predicate.Builder(sql.FieldEQ(FieldCreatedAt, v))
@@ -283,6 +288,56 @@ func UpstreamEqualFold(v string) predicate.Builder {
 // UpstreamContainsFold applies the ContainsFold predicate on the "upstream" field.
 func UpstreamContainsFold(v string) predicate.Builder {
 	return predicate.Builder(sql.FieldContainsFold(FieldUpstream, v))
+}
+
+// LastSeenAtEQ applies the EQ predicate on the "last_seen_at" field.
+func LastSeenAtEQ(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldEQ(FieldLastSeenAt, v))
+}
+
+// LastSeenAtNEQ applies the NEQ predicate on the "last_seen_at" field.
+func LastSeenAtNEQ(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldNEQ(FieldLastSeenAt, v))
+}
+
+// LastSeenAtIn applies the In predicate on the "last_seen_at" field.
+func LastSeenAtIn(vs ...time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldIn(FieldLastSeenAt, vs...))
+}
+
+// LastSeenAtNotIn applies the NotIn predicate on the "last_seen_at" field.
+func LastSeenAtNotIn(vs ...time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldNotIn(FieldLastSeenAt, vs...))
+}
+
+// LastSeenAtGT applies the GT predicate on the "last_seen_at" field.
+func LastSeenAtGT(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldGT(FieldLastSeenAt, v))
+}
+
+// LastSeenAtGTE applies the GTE predicate on the "last_seen_at" field.
+func LastSeenAtGTE(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldGTE(FieldLastSeenAt, v))
+}
+
+// LastSeenAtLT applies the LT predicate on the "last_seen_at" field.
+func LastSeenAtLT(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldLT(FieldLastSeenAt, v))
+}
+
+// LastSeenAtLTE applies the LTE predicate on the "last_seen_at" field.
+func LastSeenAtLTE(v time.Time) predicate.Builder {
+	return predicate.Builder(sql.FieldLTE(FieldLastSeenAt, v))
+}
+
+// LastSeenAtIsNil applies the IsNil predicate on the "last_seen_at" field.
+func LastSeenAtIsNil() predicate.Builder {
+	return predicate.Builder(sql.FieldIsNull(FieldLastSeenAt))
+}
+
+// LastSeenAtNotNil applies the NotNil predicate on the "last_seen_at" field.
+func LastSeenAtNotNil() predicate.Builder {
+	return predicate.Builder(sql.FieldNotNull(FieldLastSeenAt))
 }
 
 // HasBuildTasks applies the HasEdge predicate on the "build_tasks" edge.

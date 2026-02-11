@@ -46,6 +46,14 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		return nil, status.Error(codes.Unauthenticated, "builder not authenticated")
 	}
 
+	// Update builder's last_seen_at timestamp
+	if _, err := s.graph.Builder.UpdateOne(b).
+		SetLastSeenAt(now).
+		Save(ctx); err != nil {
+		slog.ErrorContext(ctx, "failed to update builder last_seen_at",
+			"builder_id", b.ID, "error", err)
+	}
+
 	// Load unclaimed build tasks assigned to this builder
 	tasks, err := s.graph.BuildTask.Query().
 		Where(
@@ -205,7 +213,7 @@ func (s *Server) StreamBuildTaskOutput(stream builderpb.Builder_StreamBuildTaskO
 
 		// Flush every message to the database immediately.
 		if req.Output != "" || req.Error != "" || finished {
-			if err := s.flushStreamOutput(ctx, int(taskID), req.Output, req.Error, finished); err != nil {
+			if err := s.flushStreamOutput(ctx, int(taskID), req.Output, req.Error, finished, req.ExitCode); err != nil {
 				return status.Errorf(codes.Internal, "failed to flush build output for task %d: %v", taskID, err)
 			}
 		}
@@ -324,8 +332,8 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 }
 
 // flushStreamOutput appends output and error to the build task in the database.
-// If finished is true, it also sets finished_at to mark the task as complete.
-func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output string, errMsg string, finished bool) error {
+// If finished is true, it also sets finished_at and exit_code to mark the task as complete.
+func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output string, errMsg string, finished bool, exitCode int64) error {
 	bt, err := s.graph.BuildTask.Get(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to load build task %d: %w", taskID, err)
@@ -352,7 +360,8 @@ func (s *Server) flushStreamOutput(ctx context.Context, taskID int, output strin
 		update = update.SetError(newError)
 	}
 	if finished {
-		update = update.SetFinishedAt(time.Now())
+		update = update.SetFinishedAt(time.Now()).
+			SetExitCode(int(exitCode))
 	}
 
 	if _, err := update.Save(ctx); err != nil {

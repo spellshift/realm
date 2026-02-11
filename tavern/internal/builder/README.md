@@ -6,7 +6,8 @@ The builder package orchestrates agent compilation for target platforms. It conn
 
 - **Registration**: Builders register with Tavern via the `registerBuilder` GraphQL mutation, which returns an mTLS certificate signed by the Tavern Builder CA and a YAML configuration file.
 - **mTLS Authentication**: All gRPC requests are authenticated using application-level mTLS. The builder presents its CA-signed certificate and a signed timestamp in gRPC metadata on each request. The server verifies the certificate chain, proof of private key possession, and looks up the builder by the identifier embedded in the certificate CN.
-- **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Supports `Ping` (health check), `ClaimBuildTasks` (poll for unclaimed tasks), `StreamBuildTaskOutput` (stream build output incrementally), and `UploadBuildArtifact` (upload compiled binaries).
+- **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Supports `ClaimBuildTasks` (poll for unclaimed tasks), `StreamBuildTaskOutput` (stream build output and exit code incrementally), and `UploadBuildArtifact` (upload compiled binaries).
+- **Builder Management**: Builders are queryable via the `builders` GraphQL query (paginated, filterable, orderable by `LAST_SEEN_AT`) and removable via `deleteBuilder`. Deleting a builder cascade-deletes its build tasks. The `last_seen_at` field is updated on each `ClaimBuildTasks` call.
 - **Executor**: Build tasks are executed via the `executor.Executor` interface. The `DockerExecutor` runs builds inside Docker containers; the `MockExecutor` is used in tests.
 - **CLI**: Run a builder using the `builder` subcommand with a `--config` flag pointing to a YAML configuration file.
 
@@ -59,42 +60,41 @@ go run ./tavern builder --config /path/to/builder-config.yaml
 
 The `StreamBuildTaskOutput` RPC uses client-streaming to send build output incrementally.
 The builder sends one message per output/error line as the executor produces them, and each
-message is flushed to the database immediately. The final message sets `finished=true` to
-signal completion. The `started_at` timestamp is set when the first message is received.
-If the stream is interrupted before `finished=true`, partial output is preserved but
-`finished_at` is not set.
+message is flushed to the database immediately. The final message sets `finished=true` and
+includes the container's `exit_code` to signal completion. The server persists both
+`finished_at` and `exit_code` on the build task. The `started_at` timestamp is set when
+the first message is received. If the stream is interrupted before `finished=true`, partial
+output is preserved but `finished_at` and `exit_code` are not set.
+
+## Build Task Defaults
+
+The `createBuildTask` mutation requires only `targetOS`. All other fields have sensible
+defaults resolved server-side:
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `targetFormat` | `BIN` | Can also be `CDYLIB` or `WINDOWS_SERVICE` (Windows only) |
+| `buildImage` | `spellshift/devcontainer:main` | Docker image for the build container |
+| `callbackURI` | `http://127.0.0.1:8000` | IMIX agent callback address |
+| `interval` | `5` | Callback interval in seconds |
+| `transportType` | `TRANSPORT_GRPC` | IMIX agent transport |
+| `artifactPath` | Derived from `targetOS` | Path inside the container to extract the compiled binary |
 
 ## Artifact Extraction
 
 Build tasks can specify an `artifact_path` field — the path inside the container where the
-compiled binary or output file is written. When the build finishes successfully, the
-`DockerExecutor` copies the file from the stopped container using Docker's `CopyFromContainer`
-API (which returns a tar archive), extracts the first regular file, and returns the bytes in
-`BuildResult`. The builder client then streams the artifact to Tavern via the
-`UploadBuildArtifact` RPC in 1 MB chunks. The server creates an `Asset` entity.
-The artifact is downloadable via the existing CDN endpoint at `GET /assets/download/{name}`.
+compiled binary or output file is written. If not specified, it is derived from the target
+OS (e.g. `/home/vscode/realm/implants/target/x86_64-unknown-linux-musl/release/imix` for
+Linux). When the build finishes successfully, the `DockerExecutor` copies the file from
+the stopped container using Docker's `CopyFromContainer` API (which returns a tar archive),
+extracts the first regular file, and returns the bytes in `BuildResult`. The builder client
+then streams the artifact to Tavern via the `UploadBuildArtifact` RPC in 1 MB chunks. The
+server creates an `Asset` entity. The artifact is downloadable via the existing CDN endpoint
+at `GET /assets/download/{name}`.
 
 
-### Easy
-- Add exitCode to the buildTask ent update executor and build client with build exitCode.
-- Builder management
-   - Add a remove builder mutation
-   - Add Builder as a queryable type
-   - Add a last seen at field to builder ent that's updated on each `ClaimBuildTask` call
-- Defaults
-   - Add default bulidImage: `spellshift/devcontainer:main`
-   - Add default target format: `BIN`
-   - 'buildImage' should be optional in the mutation and default to `spellshift/devcontainer:main`
-   - `artifactPath` should be an optional param to the createBuildTask mutation.
-   - `artifactPath` should default to the derived path only if no other path is specified. Use the same pattern as interval:
-   ```
-      interval := builder.DefaultInterval
-      if input.Interval != nil {
-         interval = *input.Interval
-      }
-   ```
-
-
+### Fix
+- Debug why the second job in a parallel set of builds never finished
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
@@ -110,6 +110,8 @@ The artifact is downloadable via the existing CDN endpoint at `GET /assets/downl
 
 
 ### Planning
+- Change exit Code to a bool and rename to errored to make API querying easier
+- Change exit Code to a bool and rename to errored to
 - Where should realm source code be pulled?
    - which version'd copy of the code to checkout
       - Can we automatically determine which version / main,edge the server is and pass that ot the build script.
@@ -130,10 +132,11 @@ The artifact is downloadable via the existing CDN endpoint at `GET /assets/downl
 | File | Purpose |
 |------|---------|
 | `auth.go` | gRPC unary and stream interceptors for mTLS authentication |
+| `build_config.go` | Build defaults, target formats, IMIX config, build script generation |
 | `ca.go` | Builder CA generation, persistence, and certificate signing |
 | `client.go` | Builder client: mTLS credentials, polling loop, task execution |
 | `config.go` | YAML configuration parsing and validation |
-| `server.go` | gRPC server: `Ping`, `ClaimBuildTasks`, `StreamBuildTaskOutput`, `UploadBuildArtifact` |
+| `server.go` | gRPC server: `ClaimBuildTasks`, `StreamBuildTaskOutput`, `UploadBuildArtifact` |
 | `rollback.go` | Transaction rollback helper (matches c2 pattern) |
 | `executor/executor.go` | `Executor` interface, `BuildSpec`, and `BuildResult` definitions |
 | `executor/docker.go` | `DockerExecutor`: runs builds in Docker containers |

@@ -794,6 +794,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldErrorSize)
 				fieldSeen[buildtask.FieldErrorSize] = struct{}{}
 			}
+		case "exitCode":
+			if _, ok := fieldSeen[buildtask.FieldExitCode]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldExitCode)
+				fieldSeen[buildtask.FieldExitCode] = struct{}{}
+			}
 		case "artifactPath":
 			if _, ok := fieldSeen[buildtask.FieldArtifactPath]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldArtifactPath)
@@ -1002,6 +1007,11 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			if _, ok := fieldSeen[builder.FieldUpstream]; !ok {
 				selectedFields = append(selectedFields, builder.FieldUpstream)
 				fieldSeen[builder.FieldUpstream] = struct{}{}
+			}
+		case "lastSeenAt":
+			if _, ok := fieldSeen[builder.FieldLastSeenAt]; !ok {
+				selectedFields = append(selectedFields, builder.FieldLastSeenAt)
+				fieldSeen[builder.FieldLastSeenAt] = struct{}{}
 			}
 		case "id":
 		case "__typename":

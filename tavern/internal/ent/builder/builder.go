@@ -24,6 +24,8 @@ const (
 	FieldSupportedTargets = "supported_targets"
 	// FieldUpstream holds the string denoting the upstream field in the database.
 	FieldUpstream = "upstream"
+	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
+	FieldLastSeenAt = "last_seen_at"
 	// EdgeBuildTasks holds the string denoting the build_tasks edge name in mutations.
 	EdgeBuildTasks = "build_tasks"
 	// Table holds the table name of the builder in the database.
@@ -45,6 +47,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldSupportedTargets,
 	FieldUpstream,
+	FieldLastSeenAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -96,6 +99,11 @@ func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByUpstream orders the results by the upstream field.
 func ByUpstream(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpstream, opts...).ToFunc()
+}
+
+// ByLastSeenAt orders the results by the last_seen_at field.
+func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
 }
 
 // ByBuildTasksCount orders the results by build_tasks count.

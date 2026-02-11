@@ -59,6 +59,7 @@ type Mutation {
     # Builder
     ###
     registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # BuildTask

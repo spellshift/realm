@@ -63,6 +63,26 @@ func (bu *BuilderUpdate) SetNillableUpstream(s *string) *BuilderUpdate {
 	return bu
 }
 
+// SetLastSeenAt sets the "last_seen_at" field.
+func (bu *BuilderUpdate) SetLastSeenAt(t time.Time) *BuilderUpdate {
+	bu.mutation.SetLastSeenAt(t)
+	return bu
+}
+
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
+func (bu *BuilderUpdate) SetNillableLastSeenAt(t *time.Time) *BuilderUpdate {
+	if t != nil {
+		bu.SetLastSeenAt(*t)
+	}
+	return bu
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (bu *BuilderUpdate) ClearLastSeenAt() *BuilderUpdate {
+	bu.mutation.ClearLastSeenAt()
+	return bu
+}
+
 // AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
 func (bu *BuilderUpdate) AddBuildTaskIDs(ids ...int) *BuilderUpdate {
 	bu.mutation.AddBuildTaskIDs(ids...)
@@ -163,6 +183,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := bu.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
 	}
+	if value, ok := bu.mutation.LastSeenAt(); ok {
+		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
+	}
+	if bu.mutation.LastSeenAtCleared() {
+		_spec.ClearField(builder.FieldLastSeenAt, field.TypeTime)
+	}
 	if bu.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -257,6 +283,26 @@ func (buo *BuilderUpdateOne) SetNillableUpstream(s *string) *BuilderUpdateOne {
 	if s != nil {
 		buo.SetUpstream(*s)
 	}
+	return buo
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (buo *BuilderUpdateOne) SetLastSeenAt(t time.Time) *BuilderUpdateOne {
+	buo.mutation.SetLastSeenAt(t)
+	return buo
+}
+
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
+func (buo *BuilderUpdateOne) SetNillableLastSeenAt(t *time.Time) *BuilderUpdateOne {
+	if t != nil {
+		buo.SetLastSeenAt(*t)
+	}
+	return buo
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (buo *BuilderUpdateOne) ClearLastSeenAt() *BuilderUpdateOne {
+	buo.mutation.ClearLastSeenAt()
 	return buo
 }
 
@@ -389,6 +435,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 	}
 	if value, ok := buo.mutation.Upstream(); ok {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
+	}
+	if value, ok := buo.mutation.LastSeenAt(); ok {
+		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
+	}
+	if buo.mutation.LastSeenAtCleared() {
+		_spec.ClearField(builder.FieldLastSeenAt, field.TypeTime)
 	}
 	if buo.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{

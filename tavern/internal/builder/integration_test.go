@@ -190,13 +190,18 @@ func TestBuilderE2E(t *testing.T) {
 		require.Len(t, resp.Tasks[0].Env, 1)
 		assert.Contains(t, resp.Tasks[0].Env[0], "IMIX_CONFIG=")
 		assert.Contains(t, resp.Tasks[0].Env[0], "transports:")
-		assert.Contains(t, resp.Tasks[0].Env[0], "uri: https://callback.example.com")
+		assert.Contains(t, resp.Tasks[0].Env[0], "URI: https://callback.example.com")
 		assert.Contains(t, resp.Tasks[0].Env[0], "interval: 10")
 		assert.Contains(t, resp.Tasks[0].Env[0], "type: grpc")
 
 		// Verify claimed_at is set
 		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
 		assert.False(t, reloaded.ClaimedAt.IsZero())
+
+		// Verify builder's last_seen_at was updated
+		reloadedBuilder := graph.Builder.GetX(ctx, builders[0].ID)
+		require.NotNil(t, reloadedBuilder.LastSeenAt)
+		assert.False(t, reloadedBuilder.LastSeenAt.IsZero())
 
 		// Claim again -> should return empty (already claimed)
 		resp2, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
@@ -246,6 +251,7 @@ func TestBuilderE2E(t *testing.T) {
 		require.NoError(t, stream.Send(&builderpb.StreamBuildTaskOutputRequest{
 			TaskId:   int64(bt.ID),
 			Finished: true,
+			ExitCode: 0,
 		}))
 
 		_, err = stream.CloseAndRecv()
@@ -256,6 +262,8 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Equal(t, "build succeeded", reloaded.Output)
 		assert.False(t, reloaded.FinishedAt.IsZero())
 		assert.Empty(t, reloaded.Error)
+		require.NotNil(t, reloaded.ExitCode)
+		assert.Equal(t, 0, *reloaded.ExitCode)
 	})
 
 	// 12. Test: StreamBuildTaskOutput with error
@@ -300,6 +308,7 @@ func TestBuilderE2E(t *testing.T) {
 			TaskId:   int64(bt.ID),
 			Error:    "compilation failed: missing dependency",
 			Finished: true,
+			ExitCode: 1,
 		}))
 
 		_, err = stream.CloseAndRecv()
@@ -310,6 +319,8 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Equal(t, "partial output before failure", reloaded.Output)
 		assert.Equal(t, "compilation failed: missing dependency", reloaded.Error)
 		assert.False(t, reloaded.FinishedAt.IsZero())
+		require.NotNil(t, reloaded.ExitCode)
+		assert.Equal(t, 1, *reloaded.ExitCode)
 	})
 
 	// 13. Test: StreamBuildTaskOutput for another builder's task is rejected

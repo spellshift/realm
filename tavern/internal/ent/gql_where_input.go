@@ -1281,6 +1281,18 @@ type BuildTaskWhereInput struct {
 	ErrorSizeLT    *int  `json:"errorSizeLT,omitempty"`
 	ErrorSizeLTE   *int  `json:"errorSizeLTE,omitempty"`
 
+	// "exit_code" field predicates.
+	ExitCode       *int  `json:"exitCode,omitempty"`
+	ExitCodeNEQ    *int  `json:"exitCodeNEQ,omitempty"`
+	ExitCodeIn     []int `json:"exitCodeIn,omitempty"`
+	ExitCodeNotIn  []int `json:"exitCodeNotIn,omitempty"`
+	ExitCodeGT     *int  `json:"exitCodeGT,omitempty"`
+	ExitCodeGTE    *int  `json:"exitCodeGTE,omitempty"`
+	ExitCodeLT     *int  `json:"exitCodeLT,omitempty"`
+	ExitCodeLTE    *int  `json:"exitCodeLTE,omitempty"`
+	ExitCodeIsNil  bool  `json:"exitCodeIsNil,omitempty"`
+	ExitCodeNotNil bool  `json:"exitCodeNotNil,omitempty"`
+
 	// "artifact_path" field predicates.
 	ArtifactPath             *string  `json:"artifactPath,omitempty"`
 	ArtifactPathNEQ          *string  `json:"artifactPathNEQ,omitempty"`
@@ -1900,6 +1912,36 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	if i.ErrorSizeLTE != nil {
 		predicates = append(predicates, buildtask.ErrorSizeLTE(*i.ErrorSizeLTE))
 	}
+	if i.ExitCode != nil {
+		predicates = append(predicates, buildtask.ExitCodeEQ(*i.ExitCode))
+	}
+	if i.ExitCodeNEQ != nil {
+		predicates = append(predicates, buildtask.ExitCodeNEQ(*i.ExitCodeNEQ))
+	}
+	if len(i.ExitCodeIn) > 0 {
+		predicates = append(predicates, buildtask.ExitCodeIn(i.ExitCodeIn...))
+	}
+	if len(i.ExitCodeNotIn) > 0 {
+		predicates = append(predicates, buildtask.ExitCodeNotIn(i.ExitCodeNotIn...))
+	}
+	if i.ExitCodeGT != nil {
+		predicates = append(predicates, buildtask.ExitCodeGT(*i.ExitCodeGT))
+	}
+	if i.ExitCodeGTE != nil {
+		predicates = append(predicates, buildtask.ExitCodeGTE(*i.ExitCodeGTE))
+	}
+	if i.ExitCodeLT != nil {
+		predicates = append(predicates, buildtask.ExitCodeLT(*i.ExitCodeLT))
+	}
+	if i.ExitCodeLTE != nil {
+		predicates = append(predicates, buildtask.ExitCodeLTE(*i.ExitCodeLTE))
+	}
+	if i.ExitCodeIsNil {
+		predicates = append(predicates, buildtask.ExitCodeIsNil())
+	}
+	if i.ExitCodeNotNil {
+		predicates = append(predicates, buildtask.ExitCodeNotNil())
+	}
 	if i.ArtifactPath != nil {
 		predicates = append(predicates, buildtask.ArtifactPathEQ(*i.ArtifactPath))
 	}
@@ -2058,6 +2100,18 @@ type BuilderWhereInput struct {
 	UpstreamHasSuffix    *string  `json:"upstreamHasSuffix,omitempty"`
 	UpstreamEqualFold    *string  `json:"upstreamEqualFold,omitempty"`
 	UpstreamContainsFold *string  `json:"upstreamContainsFold,omitempty"`
+
+	// "last_seen_at" field predicates.
+	LastSeenAt       *time.Time  `json:"lastSeenAt,omitempty"`
+	LastSeenAtNEQ    *time.Time  `json:"lastSeenAtNEQ,omitempty"`
+	LastSeenAtIn     []time.Time `json:"lastSeenAtIn,omitempty"`
+	LastSeenAtNotIn  []time.Time `json:"lastSeenAtNotIn,omitempty"`
+	LastSeenAtGT     *time.Time  `json:"lastSeenAtGT,omitempty"`
+	LastSeenAtGTE    *time.Time  `json:"lastSeenAtGTE,omitempty"`
+	LastSeenAtLT     *time.Time  `json:"lastSeenAtLT,omitempty"`
+	LastSeenAtLTE    *time.Time  `json:"lastSeenAtLTE,omitempty"`
+	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
+	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
 	// "build_tasks" edge predicates.
 	HasBuildTasks     *bool                  `json:"hasBuildTasks,omitempty"`
@@ -2284,6 +2338,36 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 	}
 	if i.UpstreamContainsFold != nil {
 		predicates = append(predicates, builder.UpstreamContainsFold(*i.UpstreamContainsFold))
+	}
+	if i.LastSeenAt != nil {
+		predicates = append(predicates, builder.LastSeenAtEQ(*i.LastSeenAt))
+	}
+	if i.LastSeenAtNEQ != nil {
+		predicates = append(predicates, builder.LastSeenAtNEQ(*i.LastSeenAtNEQ))
+	}
+	if len(i.LastSeenAtIn) > 0 {
+		predicates = append(predicates, builder.LastSeenAtIn(i.LastSeenAtIn...))
+	}
+	if len(i.LastSeenAtNotIn) > 0 {
+		predicates = append(predicates, builder.LastSeenAtNotIn(i.LastSeenAtNotIn...))
+	}
+	if i.LastSeenAtGT != nil {
+		predicates = append(predicates, builder.LastSeenAtGT(*i.LastSeenAtGT))
+	}
+	if i.LastSeenAtGTE != nil {
+		predicates = append(predicates, builder.LastSeenAtGTE(*i.LastSeenAtGTE))
+	}
+	if i.LastSeenAtLT != nil {
+		predicates = append(predicates, builder.LastSeenAtLT(*i.LastSeenAtLT))
+	}
+	if i.LastSeenAtLTE != nil {
+		predicates = append(predicates, builder.LastSeenAtLTE(*i.LastSeenAtLTE))
+	}
+	if i.LastSeenAtIsNil {
+		predicates = append(predicates, builder.LastSeenAtIsNil())
+	}
+	if i.LastSeenAtNotNil {
+		predicates = append(predicates, builder.LastSeenAtNotNil())
 	}
 
 	if i.HasBuildTasks != nil {

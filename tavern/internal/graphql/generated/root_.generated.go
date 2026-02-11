@@ -106,6 +106,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
 		ErrorSize      func(childComplexity int) int
+		ExitCode       func(childComplexity int) int
 		Extra          func(childComplexity int) int
 		FinishedAt     func(childComplexity int) int
 		ID             func(childComplexity int) int
@@ -136,6 +137,7 @@ type ComplexityRoot struct {
 		ID               func(childComplexity int) int
 		Identifier       func(childComplexity int) int
 		LastModifiedAt   func(childComplexity int) int
+		LastSeenAt       func(childComplexity int) int
 		SupportedTargets func(childComplexity int) int
 		Upstream         func(childComplexity int) int
 	}
@@ -286,6 +288,7 @@ type ComplexityRoot struct {
 		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder    func(childComplexity int, builderID int) int
 		DeleteTome       func(childComplexity int, tomeID int) int
 		DisableLink      func(childComplexity int, linkID int) int
 		DropAllData      func(childComplexity int) int
@@ -332,6 +335,7 @@ type ComplexityRoot struct {
 		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		BuildTasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		Builders     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
 		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me           func(childComplexity int) int
 		Node         func(childComplexity int, id int) int
@@ -861,6 +865,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.ErrorSize(childComplexity), true
 
+	case "BuildTask.exitCode":
+		if e.complexity.BuildTask.ExitCode == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.ExitCode(childComplexity), true
+
 	case "BuildTask.extra":
 		if e.complexity.BuildTask.Extra == nil {
 			break
@@ -1012,6 +1023,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Builder.LastModifiedAt(childComplexity), true
+
+	case "Builder.lastSeenAt":
+		if e.complexity.Builder.LastSeenAt == nil {
+			break
+		}
+
+		return e.complexity.Builder.LastSeenAt(childComplexity), true
 
 	case "Builder.supportedTargets":
 		if e.complexity.Builder.SupportedTargets == nil {
@@ -1745,6 +1763,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateTome(childComplexity, args["input"].(ent.CreateTomeInput)), true
 
+	case "Mutation.deleteBuilder":
+		if e.complexity.Mutation.DeleteBuilder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBuilder_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBuilder(childComplexity, args["builderID"].(int)), true
+
 	case "Mutation.deleteTome":
 		if e.complexity.Mutation.DeleteTome == nil {
 			break
@@ -2031,6 +2061,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.BuildTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
+
+	case "Query.builders":
+		if e.complexity.Query.Builders == nil {
+			break
+		}
+
+		args, err := ec.field_Query_builders_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Builders(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuilderOrder), args["where"].(*ent.BuilderWhereInput)), true
 
 	case "Query.hosts":
 		if e.complexity.Query.Hosts == nil {
@@ -3805,6 +3847,10 @@ type BuildTask implements Node {
   """
   errorSize: Int!
   """
+  Exit code from the build container process. Null if the build has not finished.
+  """
+  exitCode: Int
+  """
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
@@ -3872,6 +3918,7 @@ enum BuildTaskOrderField {
   FINISHED_AT
   OUTPUT_SIZE
   ERROR_SIZE
+  EXIT_CODE
 }
 """
 BuildTaskTargetFormat is enum for the field target_format
@@ -4118,6 +4165,19 @@ input BuildTaskWhereInput {
   errorSizeLT: Int
   errorSizeLTE: Int
   """
+  exit_code field predicates
+  """
+  exitCode: Int
+  exitCodeNEQ: Int
+  exitCodeIn: [Int!]
+  exitCodeNotIn: [Int!]
+  exitCodeGT: Int
+  exitCodeGTE: Int
+  exitCodeLT: Int
+  exitCodeLTE: Int
+  exitCodeIsNil: Boolean
+  exitCodeNotNil: Boolean
+  """
   artifact_path field predicates
   """
   artifactPath: String
@@ -4168,6 +4228,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
+  """
+  lastSeenAt: Time
   buildTasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -4249,6 +4313,7 @@ Properties by which Builder connections can be ordered.
 enum BuilderOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_SEEN_AT
 }
 """
 BuilderWhereInput is used for filtering Builder objects.
@@ -4323,6 +4388,19 @@ input BuilderWhereInput {
   upstreamHasSuffix: String
   upstreamEqualFold: String
   upstreamContainsFold: String
+  """
+  last_seen_at field predicates
+  """
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
   """
   build_tasks edge predicates
   """
@@ -8240,6 +8318,25 @@ scalar Uint64
     """Filtering options for BuildTasks returned from the connection."""
     where: BuildTaskWhereInput
   ): BuildTaskConnection! @requireRole(role: USER)
+  builders(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Builders returned from the connection."""
+    orderBy: [BuilderOrder!]
+
+    """Filtering options for Builders returned from the connection."""
+    where: BuilderWhereInput
+  ): BuilderConnection! @requireRole(role: ADMIN)
   me: User!
 }
 `, BuiltIn: false},
@@ -8304,6 +8401,7 @@ scalar Uint64
     # Builder
     ###
     registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # BuildTask
@@ -8366,11 +8464,11 @@ input CreateBuildTaskInput {
   """The target operating system for the build."""
   targetOS: HostPlatform!
 
-  """The output format for the build."""
-  targetFormat: BuildTaskTargetFormat!
+  """The output format for the build. Defaults to BIN."""
+  targetFormat: BuildTaskTargetFormat
 
-  """Docker container image name to use for the build."""
-  buildImage: String!
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
 
   """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
   callbackURI: String

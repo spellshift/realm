@@ -339,14 +339,27 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 	}, nil
 }
 
+// DeleteBuilder is the resolver for the deleteBuilder field.
+func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (int, error) {
+	if err := r.client.Builder.DeleteOneID(builderID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return builderID, nil
+}
+
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
-	// 1. Validate target format for the given OS
-	if err := builder.ValidateTargetFormat(input.TargetOs, input.TargetFormat); err != nil {
-		return nil, err
+	// 1. Resolve defaults for optional fields
+	targetFormat := builder.DefaultTargetFormat
+	if input.TargetFormat != nil {
+		targetFormat = *input.TargetFormat
 	}
 
-	// 2. Resolve defaults for optional fields
+	buildImage := builder.DefaultBuildImage
+	if input.BuildImage != nil {
+		buildImage = *input.BuildImage
+	}
+
 	interval := builder.DefaultInterval
 	if input.Interval != nil {
 		interval = *input.Interval
@@ -367,8 +380,13 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		artifactPath = *input.ArtifactPath
 	}
 
+	// 2. Validate target format for the given OS
+	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
+		return nil, err
+	}
+
 	// 3. Derive the build script from configuration
-	buildScript, err := builder.GenerateBuildScript(input.TargetOs, input.TargetFormat)
+	buildScript, err := builder.GenerateBuildScript(input.TargetOs, targetFormat)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate build script: %w", err)
 	}
@@ -400,8 +418,8 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// 7. Create the build task
 	create := r.client.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
-		SetTargetFormat(input.TargetFormat).
-		SetBuildImage(input.BuildImage).
+		SetTargetFormat(targetFormat).
+		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
 		SetCallbackURI(callbackURI).
 		SetInterval(interval).

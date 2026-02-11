@@ -24,6 +24,7 @@ message StreamBuildTaskOutputRequest {
     string output = 2;
     string error = 3;
     bool finished = 4;
+    int64 exit_code = 5;
 }
 
 message StreamBuildTaskOutputResponse {}

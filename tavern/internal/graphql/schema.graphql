@@ -659,6 +659,10 @@ type BuildTask implements Node {
   """
   errorSize: Int!
   """
+  Exit code from the build container process. Null if the build has not finished.
+  """
+  exitCode: Int
+  """
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
@@ -726,6 +730,7 @@ enum BuildTaskOrderField {
   FINISHED_AT
   OUTPUT_SIZE
   ERROR_SIZE
+  EXIT_CODE
 }
 """
 BuildTaskTargetFormat is enum for the field target_format
@@ -972,6 +977,19 @@ input BuildTaskWhereInput {
   errorSizeLT: Int
   errorSizeLTE: Int
   """
+  exit_code field predicates
+  """
+  exitCode: Int
+  exitCodeNEQ: Int
+  exitCodeIn: [Int!]
+  exitCodeNotIn: [Int!]
+  exitCodeGT: Int
+  exitCodeGTE: Int
+  exitCodeLT: Int
+  exitCodeLTE: Int
+  exitCodeIsNil: Boolean
+  exitCodeNotNil: Boolean
+  """
   artifact_path field predicates
   """
   artifactPath: String
@@ -1022,6 +1040,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
+  """
+  lastSeenAt: Time
   buildTasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1103,6 +1125,7 @@ Properties by which Builder connections can be ordered.
 enum BuilderOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_SEEN_AT
 }
 """
 BuilderWhereInput is used for filtering Builder objects.
@@ -1177,6 +1200,19 @@ input BuilderWhereInput {
   upstreamHasSuffix: String
   upstreamEqualFold: String
   upstreamContainsFold: String
+  """
+  last_seen_at field predicates
+  """
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
   """
   build_tasks edge predicates
   """
@@ -4916,11 +4952,11 @@ input CreateBuildTaskInput {
   """The target operating system for the build."""
   targetOS: HostPlatform!
 
-  """The output format for the build."""
-  targetFormat: BuildTaskTargetFormat!
+  """The output format for the build. Defaults to BIN."""
+  targetFormat: BuildTaskTargetFormat
 
-  """Docker container image name to use for the build."""
-  buildImage: String!
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
 
   """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
   callbackURI: String
@@ -5010,6 +5046,7 @@ type Mutation {
     # Builder
     ###
     registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # BuildTask
@@ -5245,6 +5282,25 @@ extend type Query {
     """Filtering options for BuildTasks returned from the connection."""
     where: BuildTaskWhereInput
   ): BuildTaskConnection! @requireRole(role: USER)
+  builders(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Builders returned from the connection."""
+    orderBy: [BuilderOrder!]
+
+    """Filtering options for Builders returned from the connection."""
+    where: BuilderWhereInput
+  ): BuilderConnection! @requireRole(role: ADMIN)
   me: User!
 }
 scalar Time

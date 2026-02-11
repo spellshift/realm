@@ -654,6 +654,10 @@ type BuildTask implements Node {
   """
   errorSize: Int!
   """
+  Exit code from the build container process. Null if the build has not finished.
+  """
+  exitCode: Int
+  """
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
@@ -721,6 +725,7 @@ enum BuildTaskOrderField {
   FINISHED_AT
   OUTPUT_SIZE
   ERROR_SIZE
+  EXIT_CODE
 }
 """
 BuildTaskTargetFormat is enum for the field target_format
@@ -967,6 +972,19 @@ input BuildTaskWhereInput {
   errorSizeLT: Int
   errorSizeLTE: Int
   """
+  exit_code field predicates
+  """
+  exitCode: Int
+  exitCodeNEQ: Int
+  exitCodeIn: [Int!]
+  exitCodeNotIn: [Int!]
+  exitCodeGT: Int
+  exitCodeGTE: Int
+  exitCodeLT: Int
+  exitCodeLTE: Int
+  exitCodeIsNil: Boolean
+  exitCodeNotNil: Boolean
+  """
   artifact_path field predicates
   """
   artifactPath: String
@@ -1017,6 +1035,10 @@ type Builder implements Node {
   The server address that the builder should connect to.
   """
   upstream: String!
+  """
+  Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
+  """
+  lastSeenAt: Time
   buildTasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -1098,6 +1120,7 @@ Properties by which Builder connections can be ordered.
 enum BuilderOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  LAST_SEEN_AT
 }
 """
 BuilderWhereInput is used for filtering Builder objects.
@@ -1172,6 +1195,19 @@ input BuilderWhereInput {
   upstreamHasSuffix: String
   upstreamEqualFold: String
   upstreamContainsFold: String
+  """
+  last_seen_at field predicates
+  """
+  lastSeenAt: Time
+  lastSeenAtNEQ: Time
+  lastSeenAtIn: [Time!]
+  lastSeenAtNotIn: [Time!]
+  lastSeenAtGT: Time
+  lastSeenAtGTE: Time
+  lastSeenAtLT: Time
+  lastSeenAtLTE: Time
+  lastSeenAtIsNil: Boolean
+  lastSeenAtNotNil: Boolean
   """
   build_tasks edge predicates
   """

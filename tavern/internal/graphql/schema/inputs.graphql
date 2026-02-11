@@ -53,11 +53,11 @@ input CreateBuildTaskInput {
   """The target operating system for the build."""
   targetOS: HostPlatform!
 
-  """The output format for the build."""
-  targetFormat: BuildTaskTargetFormat!
+  """The output format for the build. Defaults to BIN."""
+  targetFormat: BuildTaskTargetFormat
 
-  """Docker container image name to use for the build."""
-  buildImage: String!
+  """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
+  buildImage: String
 
   """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
   callbackURI: String

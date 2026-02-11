@@ -36,6 +36,14 @@ func (Builder) Fields() []ent.Field {
 			Comment("The platforms this builder can build agents for."),
 		field.String("upstream").
 			Comment("The server address that the builder should connect to."),
+		field.Time("last_seen_at").
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.OrderField("LAST_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Timestamp of the builder's last ClaimBuildTasks call. Null if never seen."),
 	}
 }
 

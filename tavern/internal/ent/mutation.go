@@ -2137,6 +2137,8 @@ type BuildTaskMutation struct {
 	error            *string
 	error_size       *int
 	adderror_size    *int
+	exit_code        *int
+	addexit_code     *int
 	artifact_path    *string
 	clearedFields    map[string]struct{}
 	builder          *int
@@ -2996,6 +2998,76 @@ func (m *BuildTaskMutation) ResetErrorSize() {
 	m.adderror_size = nil
 }
 
+// SetExitCode sets the "exit_code" field.
+func (m *BuildTaskMutation) SetExitCode(i int) {
+	m.exit_code = &i
+	m.addexit_code = nil
+}
+
+// ExitCode returns the value of the "exit_code" field in the mutation.
+func (m *BuildTaskMutation) ExitCode() (r int, exists bool) {
+	v := m.exit_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExitCode returns the old "exit_code" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldExitCode(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExitCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExitCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExitCode: %w", err)
+	}
+	return oldValue.ExitCode, nil
+}
+
+// AddExitCode adds i to the "exit_code" field.
+func (m *BuildTaskMutation) AddExitCode(i int) {
+	if m.addexit_code != nil {
+		*m.addexit_code += i
+	} else {
+		m.addexit_code = &i
+	}
+}
+
+// AddedExitCode returns the value that was added to the "exit_code" field in this mutation.
+func (m *BuildTaskMutation) AddedExitCode() (r int, exists bool) {
+	v := m.addexit_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearExitCode clears the value of the "exit_code" field.
+func (m *BuildTaskMutation) ClearExitCode() {
+	m.exit_code = nil
+	m.addexit_code = nil
+	m.clearedFields[buildtask.FieldExitCode] = struct{}{}
+}
+
+// ExitCodeCleared returns if the "exit_code" field was cleared in this mutation.
+func (m *BuildTaskMutation) ExitCodeCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldExitCode]
+	return ok
+}
+
+// ResetExitCode resets all changes to the "exit_code" field.
+func (m *BuildTaskMutation) ResetExitCode() {
+	m.exit_code = nil
+	m.addexit_code = nil
+	delete(m.clearedFields, buildtask.FieldExitCode)
+}
+
 // SetArtifactPath sets the "artifact_path" field.
 func (m *BuildTaskMutation) SetArtifactPath(s string) {
 	m.artifact_path = &s
@@ -3157,7 +3229,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -3209,6 +3281,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.error_size != nil {
 		fields = append(fields, buildtask.FieldErrorSize)
 	}
+	if m.exit_code != nil {
+		fields = append(fields, buildtask.FieldExitCode)
+	}
 	if m.artifact_path != nil {
 		fields = append(fields, buildtask.FieldArtifactPath)
 	}
@@ -3254,6 +3329,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.Error()
 	case buildtask.FieldErrorSize:
 		return m.ErrorSize()
+	case buildtask.FieldExitCode:
+		return m.ExitCode()
 	case buildtask.FieldArtifactPath:
 		return m.ArtifactPath()
 	}
@@ -3299,6 +3376,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldError(ctx)
 	case buildtask.FieldErrorSize:
 		return m.OldErrorSize(ctx)
+	case buildtask.FieldExitCode:
+		return m.OldExitCode(ctx)
 	case buildtask.FieldArtifactPath:
 		return m.OldArtifactPath(ctx)
 	}
@@ -3429,6 +3508,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetErrorSize(v)
 		return nil
+	case buildtask.FieldExitCode:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExitCode(v)
+		return nil
 	case buildtask.FieldArtifactPath:
 		v, ok := value.(string)
 		if !ok {
@@ -3453,6 +3539,9 @@ func (m *BuildTaskMutation) AddedFields() []string {
 	if m.adderror_size != nil {
 		fields = append(fields, buildtask.FieldErrorSize)
 	}
+	if m.addexit_code != nil {
+		fields = append(fields, buildtask.FieldExitCode)
+	}
 	return fields
 }
 
@@ -3467,6 +3556,8 @@ func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedOutputSize()
 	case buildtask.FieldErrorSize:
 		return m.AddedErrorSize()
+	case buildtask.FieldExitCode:
+		return m.AddedExitCode()
 	}
 	return nil, false
 }
@@ -3497,6 +3588,13 @@ func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddErrorSize(v)
 		return nil
+	case buildtask.FieldExitCode:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExitCode(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask numeric field %s", name)
 }
@@ -3522,6 +3620,9 @@ func (m *BuildTaskMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(buildtask.FieldError) {
 		fields = append(fields, buildtask.FieldError)
+	}
+	if m.FieldCleared(buildtask.FieldExitCode) {
+		fields = append(fields, buildtask.FieldExitCode)
 	}
 	if m.FieldCleared(buildtask.FieldArtifactPath) {
 		fields = append(fields, buildtask.FieldArtifactPath)
@@ -3557,6 +3658,9 @@ func (m *BuildTaskMutation) ClearField(name string) error {
 		return nil
 	case buildtask.FieldError:
 		m.ClearError()
+		return nil
+	case buildtask.FieldExitCode:
+		m.ClearExitCode()
 		return nil
 	case buildtask.FieldArtifactPath:
 		m.ClearArtifactPath()
@@ -3619,6 +3723,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldErrorSize:
 		m.ResetErrorSize()
+		return nil
+	case buildtask.FieldExitCode:
+		m.ResetExitCode()
 		return nil
 	case buildtask.FieldArtifactPath:
 		m.ResetArtifactPath()
@@ -3731,6 +3838,7 @@ type BuilderMutation struct {
 	supported_targets       *[]c2pb.Host_Platform
 	appendsupported_targets []c2pb.Host_Platform
 	upstream                *string
+	last_seen_at            *time.Time
 	clearedFields           map[string]struct{}
 	build_tasks             map[int]struct{}
 	removedbuild_tasks      map[int]struct{}
@@ -4033,6 +4141,55 @@ func (m *BuilderMutation) ResetUpstream() {
 	m.upstream = nil
 }
 
+// SetLastSeenAt sets the "last_seen_at" field.
+func (m *BuilderMutation) SetLastSeenAt(t time.Time) {
+	m.last_seen_at = &t
+}
+
+// LastSeenAt returns the value of the "last_seen_at" field in the mutation.
+func (m *BuilderMutation) LastSeenAt() (r time.Time, exists bool) {
+	v := m.last_seen_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastSeenAt returns the old "last_seen_at" field's value of the Builder entity.
+// If the Builder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderMutation) OldLastSeenAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastSeenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastSeenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastSeenAt: %w", err)
+	}
+	return oldValue.LastSeenAt, nil
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (m *BuilderMutation) ClearLastSeenAt() {
+	m.last_seen_at = nil
+	m.clearedFields[builder.FieldLastSeenAt] = struct{}{}
+}
+
+// LastSeenAtCleared returns if the "last_seen_at" field was cleared in this mutation.
+func (m *BuilderMutation) LastSeenAtCleared() bool {
+	_, ok := m.clearedFields[builder.FieldLastSeenAt]
+	return ok
+}
+
+// ResetLastSeenAt resets all changes to the "last_seen_at" field.
+func (m *BuilderMutation) ResetLastSeenAt() {
+	m.last_seen_at = nil
+	delete(m.clearedFields, builder.FieldLastSeenAt)
+}
+
 // AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by ids.
 func (m *BuilderMutation) AddBuildTaskIDs(ids ...int) {
 	if m.build_tasks == nil {
@@ -4121,7 +4278,7 @@ func (m *BuilderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, builder.FieldCreatedAt)
 	}
@@ -4136,6 +4293,9 @@ func (m *BuilderMutation) Fields() []string {
 	}
 	if m.upstream != nil {
 		fields = append(fields, builder.FieldUpstream)
+	}
+	if m.last_seen_at != nil {
+		fields = append(fields, builder.FieldLastSeenAt)
 	}
 	return fields
 }
@@ -4155,6 +4315,8 @@ func (m *BuilderMutation) Field(name string) (ent.Value, bool) {
 		return m.SupportedTargets()
 	case builder.FieldUpstream:
 		return m.Upstream()
+	case builder.FieldLastSeenAt:
+		return m.LastSeenAt()
 	}
 	return nil, false
 }
@@ -4174,6 +4336,8 @@ func (m *BuilderMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSupportedTargets(ctx)
 	case builder.FieldUpstream:
 		return m.OldUpstream(ctx)
+	case builder.FieldLastSeenAt:
+		return m.OldLastSeenAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Builder field %s", name)
 }
@@ -4218,6 +4382,13 @@ func (m *BuilderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpstream(v)
 		return nil
+	case builder.FieldLastSeenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastSeenAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Builder field %s", name)
 }
@@ -4247,7 +4418,11 @@ func (m *BuilderMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *BuilderMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(builder.FieldLastSeenAt) {
+		fields = append(fields, builder.FieldLastSeenAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -4260,6 +4435,11 @@ func (m *BuilderMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *BuilderMutation) ClearField(name string) error {
+	switch name {
+	case builder.FieldLastSeenAt:
+		m.ClearLastSeenAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Builder nullable field %s", name)
 }
 
@@ -4281,6 +4461,9 @@ func (m *BuilderMutation) ResetField(name string) error {
 		return nil
 	case builder.FieldUpstream:
 		m.ResetUpstream()
+		return nil
+	case builder.FieldLastSeenAt:
+		m.ResetLastSeenAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Builder field %s", name)

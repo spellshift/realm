@@ -150,27 +150,31 @@ func TestCreateBuildTask(t *testing.T) {
 		var resp struct {
 			CreateBuildTask struct {
 				ID            string
+				TargetFormat  string
+				BuildImage    string
 				CallbackURI   string
 				Interval      int
 				TransportType string
 				ArtifactPath  string
 			}
 		}
-		// Only specify required fields; callbackURI, transportType, and artifactPath should get defaults.
+		// Only specify targetOS; all other fields should get defaults.
 		err := gqlClient.Post(`mutation createBuildTask($input: CreateBuildTaskInput!) {
 			createBuildTask(input: $input) {
 				id
+				targetFormat
+				buildImage
 				callbackURI
 				interval
 				transportType
 				artifactPath
 			}
 		}`, &resp, client.Var("input", map[string]any{
-			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "BIN",
-			"buildImage":   "golang:1.21",
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.NoError(t, err)
+		assert.Equal(t, "BIN", resp.CreateBuildTask.TargetFormat)
+		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.CallbackURI)
 		assert.Equal(t, 5, resp.CreateBuildTask.Interval)
 		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.TransportType)

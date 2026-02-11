@@ -64,6 +64,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_supportedTargets(ctx, field)
 			case "upstream":
 				return ec.fieldContext_Builder_upstream(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
 			case "buildTasks":
 				return ec.fieldContext_Builder_buildTasks(ctx, field)
 			}
@@ -231,14 +233,14 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 			it.TargetOs = data
 		case "targetFormat":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetFormat"))
-			data, err := ec.unmarshalNBuildTaskTargetFormat2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, v)
+			data, err := ec.unmarshalOBuildTaskTargetFormat2ᚖrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.TargetFormat = data
 		case "buildImage":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImage"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

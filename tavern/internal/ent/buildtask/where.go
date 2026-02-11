@@ -127,6 +127,11 @@ func ErrorSize(v int) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldErrorSize, v))
 }
 
+// ExitCode applies equality check predicate on the "exit_code" field. It's identical to ExitCodeEQ.
+func ExitCode(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldExitCode, v))
+}
+
 // ArtifactPath applies equality check predicate on the "artifact_path" field. It's identical to ArtifactPathEQ.
 func ArtifactPath(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldArtifactPath, v))
@@ -960,6 +965,56 @@ func ErrorSizeLT(v int) predicate.BuildTask {
 // ErrorSizeLTE applies the LTE predicate on the "error_size" field.
 func ErrorSizeLTE(v int) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldLTE(FieldErrorSize, v))
+}
+
+// ExitCodeEQ applies the EQ predicate on the "exit_code" field.
+func ExitCodeEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldExitCode, v))
+}
+
+// ExitCodeNEQ applies the NEQ predicate on the "exit_code" field.
+func ExitCodeNEQ(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldExitCode, v))
+}
+
+// ExitCodeIn applies the In predicate on the "exit_code" field.
+func ExitCodeIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldExitCode, vs...))
+}
+
+// ExitCodeNotIn applies the NotIn predicate on the "exit_code" field.
+func ExitCodeNotIn(vs ...int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldExitCode, vs...))
+}
+
+// ExitCodeGT applies the GT predicate on the "exit_code" field.
+func ExitCodeGT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldExitCode, v))
+}
+
+// ExitCodeGTE applies the GTE predicate on the "exit_code" field.
+func ExitCodeGTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldExitCode, v))
+}
+
+// ExitCodeLT applies the LT predicate on the "exit_code" field.
+func ExitCodeLT(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldExitCode, v))
+}
+
+// ExitCodeLTE applies the LTE predicate on the "exit_code" field.
+func ExitCodeLTE(v int) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldExitCode, v))
+}
+
+// ExitCodeIsNil applies the IsNil predicate on the "exit_code" field.
+func ExitCodeIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldExitCode))
+}
+
+// ExitCodeNotNil applies the NotNil predicate on the "exit_code" field.
+func ExitCodeNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldExitCode))
 }
 
 // ArtifactPathEQ applies the EQ predicate on the "artifact_path" field.

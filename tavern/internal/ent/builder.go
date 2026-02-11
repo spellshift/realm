@@ -29,6 +29,8 @@ type Builder struct {
 	SupportedTargets []c2pb.Host_Platform `json:"supported_targets,omitempty"`
 	// The server address that the builder should connect to.
 	Upstream string `json:"upstream,omitempty"`
+	// Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
+	LastSeenAt *time.Time `json:"last_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuilderQuery when eager-loading is set.
 	Edges        BuilderEdges `json:"edges"`
@@ -68,7 +70,7 @@ func (*Builder) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case builder.FieldIdentifier, builder.FieldUpstream:
 			values[i] = new(sql.NullString)
-		case builder.FieldCreatedAt, builder.FieldLastModifiedAt:
+		case builder.FieldCreatedAt, builder.FieldLastModifiedAt, builder.FieldLastSeenAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -122,6 +124,13 @@ func (b *Builder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field upstream", values[i])
 			} else if value.Valid {
 				b.Upstream = value.String
+			}
+		case builder.FieldLastSeenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_seen_at", values[i])
+			} else if value.Valid {
+				b.LastSeenAt = new(time.Time)
+				*b.LastSeenAt = value.Time
 			}
 		default:
 			b.selectValues.Set(columns[i], values[i])
@@ -178,6 +187,11 @@ func (b *Builder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("upstream=")
 	builder.WriteString(b.Upstream)
+	builder.WriteString(", ")
+	if v := b.LastSeenAt; v != nil {
+		builder.WriteString("last_seen_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }
