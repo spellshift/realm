@@ -58,7 +58,7 @@ var (
 	EnvOAuthClientSecret = EnvString{"OAUTH_CLIENT_SECRET", ""}
 	EnvOAuthDomain       = EnvString{"OAUTH_DOMAIN", ""}
 
-	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLLite is used.
+	// EnvMySQLAddr defines the MySQL address to connect to, if unset SQLite is used.
 	// EnvMySQLNet defines the network used to connect to MySQL (e.g. unix).
 	// EnvMySQLUser defines the MySQL user to authenticate as.
 	// EnvMySQLPasswd defines the password for the MySQL user to authenticate with.
