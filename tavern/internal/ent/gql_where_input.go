@@ -1189,6 +1189,16 @@ type BuildTaskWhereInput struct {
 	OutputEqualFold    *string  `json:"outputEqualFold,omitempty"`
 	OutputContainsFold *string  `json:"outputContainsFold,omitempty"`
 
+	// "output_size" field predicates.
+	OutputSize      *int  `json:"outputSize,omitempty"`
+	OutputSizeNEQ   *int  `json:"outputSizeNEQ,omitempty"`
+	OutputSizeIn    []int `json:"outputSizeIn,omitempty"`
+	OutputSizeNotIn []int `json:"outputSizeNotIn,omitempty"`
+	OutputSizeGT    *int  `json:"outputSizeGT,omitempty"`
+	OutputSizeGTE   *int  `json:"outputSizeGTE,omitempty"`
+	OutputSizeLT    *int  `json:"outputSizeLT,omitempty"`
+	OutputSizeLTE   *int  `json:"outputSizeLTE,omitempty"`
+
 	// "error" field predicates.
 	Error             *string  `json:"error,omitempty"`
 	ErrorNEQ          *string  `json:"errorNEQ,omitempty"`
@@ -1578,6 +1588,30 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if i.OutputContainsFold != nil {
 		predicates = append(predicates, buildtask.OutputContainsFold(*i.OutputContainsFold))
+	}
+	if i.OutputSize != nil {
+		predicates = append(predicates, buildtask.OutputSizeEQ(*i.OutputSize))
+	}
+	if i.OutputSizeNEQ != nil {
+		predicates = append(predicates, buildtask.OutputSizeNEQ(*i.OutputSizeNEQ))
+	}
+	if len(i.OutputSizeIn) > 0 {
+		predicates = append(predicates, buildtask.OutputSizeIn(i.OutputSizeIn...))
+	}
+	if len(i.OutputSizeNotIn) > 0 {
+		predicates = append(predicates, buildtask.OutputSizeNotIn(i.OutputSizeNotIn...))
+	}
+	if i.OutputSizeGT != nil {
+		predicates = append(predicates, buildtask.OutputSizeGT(*i.OutputSizeGT))
+	}
+	if i.OutputSizeGTE != nil {
+		predicates = append(predicates, buildtask.OutputSizeGTE(*i.OutputSizeGTE))
+	}
+	if i.OutputSizeLT != nil {
+		predicates = append(predicates, buildtask.OutputSizeLT(*i.OutputSizeLT))
+	}
+	if i.OutputSizeLTE != nil {
+		predicates = append(predicates, buildtask.OutputSizeLTE(*i.OutputSizeLTE))
 	}
 	if i.Error != nil {
 		predicates = append(predicates, buildtask.ErrorEQ(*i.Error))

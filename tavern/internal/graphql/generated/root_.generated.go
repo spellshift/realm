@@ -106,6 +106,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
+		OutputSize     func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
 	}
@@ -851,6 +852,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.Output(childComplexity), true
+
+	case "BuildTask.outputSize":
+		if e.complexity.BuildTask.OutputSize == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.OutputSize(childComplexity), true
 
 	case "BuildTask.startedAt":
 		if e.complexity.BuildTask.StartedAt == nil {
@@ -3701,6 +3709,10 @@ type BuildTask implements Node {
   """
   output: String
   """
+  The size of the output in bytes
+  """
+  outputSize: Int!
+  """
   Error message if the build failed.
   """
   error: String
@@ -3762,6 +3774,7 @@ enum BuildTaskOrderField {
   CLAIMED_AT
   STARTED_AT
   FINISHED_AT
+  OUTPUT_SIZE
 }
 """
 BuildTaskWhereInput is used for filtering BuildTask objects.
@@ -3900,6 +3913,17 @@ input BuildTaskWhereInput {
   outputNotNil: Boolean
   outputEqualFold: String
   outputContainsFold: String
+  """
+  output_size field predicates
+  """
+  outputSize: Int
+  outputSizeNEQ: Int
+  outputSizeIn: [Int!]
+  outputSizeNotIn: [Int!]
+  outputSizeGT: Int
+  outputSizeGTE: Int
+  outputSizeLT: Int
+  outputSizeLTE: Int
   """
   error field predicates
   """

@@ -1233,6 +1233,20 @@ var (
 			}
 		},
 	}
+	// BuildTaskOrderFieldOutputSize orders BuildTask by output_size.
+	BuildTaskOrderFieldOutputSize = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.OutputSize, nil
+		},
+		column: buildtask.FieldOutputSize,
+		toTerm: buildtask.ByOutputSize,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.OutputSize,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -1251,6 +1265,8 @@ func (f BuildTaskOrderField) String() string {
 		str = "STARTED_AT"
 	case BuildTaskOrderFieldFinishedAt.column:
 		str = "FINISHED_AT"
+	case BuildTaskOrderFieldOutputSize.column:
+		str = "OUTPUT_SIZE"
 	}
 	return str
 }
@@ -1279,6 +1295,8 @@ func (f *BuildTaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *BuildTaskOrderFieldStartedAt
 	case "FINISHED_AT":
 		*f = *BuildTaskOrderFieldFinishedAt
+	case "OUTPUT_SIZE":
+		*f = *BuildTaskOrderFieldOutputSize
 	default:
 		return fmt.Errorf("%s is not a valid BuildTaskOrderField", str)
 	}

@@ -158,6 +158,27 @@ func (btu *BuildTaskUpdate) ClearOutput() *BuildTaskUpdate {
 	return btu
 }
 
+// SetOutputSize sets the "output_size" field.
+func (btu *BuildTaskUpdate) SetOutputSize(i int) *BuildTaskUpdate {
+	btu.mutation.ResetOutputSize()
+	btu.mutation.SetOutputSize(i)
+	return btu
+}
+
+// SetNillableOutputSize sets the "output_size" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableOutputSize(i *int) *BuildTaskUpdate {
+	if i != nil {
+		btu.SetOutputSize(*i)
+	}
+	return btu
+}
+
+// AddOutputSize adds i to the "output_size" field.
+func (btu *BuildTaskUpdate) AddOutputSize(i int) *BuildTaskUpdate {
+	btu.mutation.AddOutputSize(i)
+	return btu
+}
+
 // SetError sets the "error" field.
 func (btu *BuildTaskUpdate) SetError(s string) *BuildTaskUpdate {
 	btu.mutation.SetError(s)
@@ -202,7 +223,9 @@ func (btu *BuildTaskUpdate) ClearBuilder() *BuildTaskUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (btu *BuildTaskUpdate) Save(ctx context.Context) (int, error) {
-	btu.defaults()
+	if err := btu.defaults(); err != nil {
+		return 0, err
+	}
 	return withHooks(ctx, btu.sqlSave, btu.mutation, btu.hooks)
 }
 
@@ -229,11 +252,15 @@ func (btu *BuildTaskUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (btu *BuildTaskUpdate) defaults() {
+func (btu *BuildTaskUpdate) defaults() error {
 	if _, ok := btu.mutation.LastModifiedAt(); !ok {
+		if buildtask.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized buildtask.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := buildtask.UpdateDefaultLastModifiedAt()
 		btu.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -251,6 +278,11 @@ func (btu *BuildTaskUpdate) check() error {
 	if v, ok := btu.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
+		}
+	}
+	if v, ok := btu.mutation.OutputSize(); ok {
+		if err := buildtask.OutputSizeValidator(v); err != nil {
+			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
 		}
 	}
 	if btu.mutation.BuilderCleared() && len(btu.mutation.BuilderIDs()) > 0 {
@@ -306,6 +338,12 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if btu.mutation.OutputCleared() {
 		_spec.ClearField(buildtask.FieldOutput, field.TypeString)
+	}
+	if value, ok := btu.mutation.OutputSize(); ok {
+		_spec.SetField(buildtask.FieldOutputSize, field.TypeInt, value)
+	}
+	if value, ok := btu.mutation.AddedOutputSize(); ok {
+		_spec.AddField(buildtask.FieldOutputSize, field.TypeInt, value)
 	}
 	if value, ok := btu.mutation.Error(); ok {
 		_spec.SetField(buildtask.FieldError, field.TypeString, value)
@@ -490,6 +528,27 @@ func (btuo *BuildTaskUpdateOne) ClearOutput() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetOutputSize sets the "output_size" field.
+func (btuo *BuildTaskUpdateOne) SetOutputSize(i int) *BuildTaskUpdateOne {
+	btuo.mutation.ResetOutputSize()
+	btuo.mutation.SetOutputSize(i)
+	return btuo
+}
+
+// SetNillableOutputSize sets the "output_size" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableOutputSize(i *int) *BuildTaskUpdateOne {
+	if i != nil {
+		btuo.SetOutputSize(*i)
+	}
+	return btuo
+}
+
+// AddOutputSize adds i to the "output_size" field.
+func (btuo *BuildTaskUpdateOne) AddOutputSize(i int) *BuildTaskUpdateOne {
+	btuo.mutation.AddOutputSize(i)
+	return btuo
+}
+
 // SetError sets the "error" field.
 func (btuo *BuildTaskUpdateOne) SetError(s string) *BuildTaskUpdateOne {
 	btuo.mutation.SetError(s)
@@ -547,7 +606,9 @@ func (btuo *BuildTaskUpdateOne) Select(field string, fields ...string) *BuildTas
 
 // Save executes the query and returns the updated BuildTask entity.
 func (btuo *BuildTaskUpdateOne) Save(ctx context.Context) (*BuildTask, error) {
-	btuo.defaults()
+	if err := btuo.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, btuo.sqlSave, btuo.mutation, btuo.hooks)
 }
 
@@ -574,11 +635,15 @@ func (btuo *BuildTaskUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (btuo *BuildTaskUpdateOne) defaults() {
+func (btuo *BuildTaskUpdateOne) defaults() error {
 	if _, ok := btuo.mutation.LastModifiedAt(); !ok {
+		if buildtask.UpdateDefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized buildtask.UpdateDefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := buildtask.UpdateDefaultLastModifiedAt()
 		btuo.mutation.SetLastModifiedAt(v)
 	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -596,6 +661,11 @@ func (btuo *BuildTaskUpdateOne) check() error {
 	if v, ok := btuo.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
+		}
+	}
+	if v, ok := btuo.mutation.OutputSize(); ok {
+		if err := buildtask.OutputSizeValidator(v); err != nil {
+			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
 		}
 	}
 	if btuo.mutation.BuilderCleared() && len(btuo.mutation.BuilderIDs()) > 0 {
@@ -668,6 +738,12 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if btuo.mutation.OutputCleared() {
 		_spec.ClearField(buildtask.FieldOutput, field.TypeString)
+	}
+	if value, ok := btuo.mutation.OutputSize(); ok {
+		_spec.SetField(buildtask.FieldOutputSize, field.TypeInt, value)
+	}
+	if value, ok := btuo.mutation.AddedOutputSize(); ok {
+		_spec.AddField(buildtask.FieldOutputSize, field.TypeInt, value)
 	}
 	if value, ok := btuo.mutation.Error(); ok {
 		_spec.SetField(buildtask.FieldError, field.TypeString, value)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/99designs/gqlgen/graphql"
@@ -35,6 +36,8 @@ const (
 	FieldFinishedAt = "finished_at"
 	// FieldOutput holds the string denoting the output field in the database.
 	FieldOutput = "output"
+	// FieldOutputSize holds the string denoting the output_size field in the database.
+	FieldOutputSize = "output_size"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
@@ -62,6 +65,7 @@ var Columns = []string{
 	FieldStartedAt,
 	FieldFinishedAt,
 	FieldOutput,
+	FieldOutputSize,
 	FieldError,
 }
 
@@ -86,7 +90,13 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+// Note that the variables below are initialized by the runtime
+// package on the initialization of the application. Therefore,
+// it should be imported in the main as follows:
+//
+//	import _ "realm.pub/tavern/internal/ent/runtime"
 var (
+	Hooks [1]ent.Hook
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultLastModifiedAt holds the default value on creation for the "last_modified_at" field.
@@ -97,6 +107,10 @@ var (
 	BuildImageValidator func(string) error
 	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	BuildScriptValidator func(string) error
+	// DefaultOutputSize holds the default value on creation for the "output_size" field.
+	DefaultOutputSize int
+	// OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
+	OutputSizeValidator func(int) error
 )
 
 // TargetOsValidator is a validator for the "target_os" field enum values. It is called by the builders before save.
@@ -160,6 +174,11 @@ func ByFinishedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByOutput orders the results by the output field.
 func ByOutput(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOutput, opts...).ToFunc()
+}
+
+// ByOutputSize orders the results by the output_size field.
+func ByOutputSize(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOutputSize, opts...).ToFunc()
 }
 
 // ByError orders the results by the error field.

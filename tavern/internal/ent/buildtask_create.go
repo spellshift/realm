@@ -126,6 +126,20 @@ func (btc *BuildTaskCreate) SetNillableOutput(s *string) *BuildTaskCreate {
 	return btc
 }
 
+// SetOutputSize sets the "output_size" field.
+func (btc *BuildTaskCreate) SetOutputSize(i int) *BuildTaskCreate {
+	btc.mutation.SetOutputSize(i)
+	return btc
+}
+
+// SetNillableOutputSize sets the "output_size" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableOutputSize(i *int) *BuildTaskCreate {
+	if i != nil {
+		btc.SetOutputSize(*i)
+	}
+	return btc
+}
+
 // SetError sets the "error" field.
 func (btc *BuildTaskCreate) SetError(s string) *BuildTaskCreate {
 	btc.mutation.SetError(s)
@@ -158,7 +172,9 @@ func (btc *BuildTaskCreate) Mutation() *BuildTaskMutation {
 
 // Save creates the BuildTask in the database.
 func (btc *BuildTaskCreate) Save(ctx context.Context) (*BuildTask, error) {
-	btc.defaults()
+	if err := btc.defaults(); err != nil {
+		return nil, err
+	}
 	return withHooks(ctx, btc.sqlSave, btc.mutation, btc.hooks)
 }
 
@@ -185,15 +201,26 @@ func (btc *BuildTaskCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (btc *BuildTaskCreate) defaults() {
+func (btc *BuildTaskCreate) defaults() error {
 	if _, ok := btc.mutation.CreatedAt(); !ok {
+		if buildtask.DefaultCreatedAt == nil {
+			return fmt.Errorf("ent: uninitialized buildtask.DefaultCreatedAt (forgotten import ent/runtime?)")
+		}
 		v := buildtask.DefaultCreatedAt()
 		btc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := btc.mutation.LastModifiedAt(); !ok {
+		if buildtask.DefaultLastModifiedAt == nil {
+			return fmt.Errorf("ent: uninitialized buildtask.DefaultLastModifiedAt (forgotten import ent/runtime?)")
+		}
 		v := buildtask.DefaultLastModifiedAt()
 		btc.mutation.SetLastModifiedAt(v)
 	}
+	if _, ok := btc.mutation.OutputSize(); !ok {
+		v := buildtask.DefaultOutputSize
+		btc.mutation.SetOutputSize(v)
+	}
+	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -226,6 +253,14 @@ func (btc *BuildTaskCreate) check() error {
 	if v, ok := btc.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
+		}
+	}
+	if _, ok := btc.mutation.OutputSize(); !ok {
+		return &ValidationError{Name: "output_size", err: errors.New(`ent: missing required field "BuildTask.output_size"`)}
+	}
+	if v, ok := btc.mutation.OutputSize(); ok {
+		if err := buildtask.OutputSizeValidator(v); err != nil {
+			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
 		}
 	}
 	if len(btc.mutation.BuilderIDs()) == 0 {
@@ -293,6 +328,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.Output(); ok {
 		_spec.SetField(buildtask.FieldOutput, field.TypeString, value)
 		_node.Output = value
+	}
+	if value, ok := btc.mutation.OutputSize(); ok {
+		_spec.SetField(buildtask.FieldOutputSize, field.TypeInt, value)
+		_node.OutputSize = value
 	}
 	if value, ok := btc.mutation.Error(); ok {
 		_spec.SetField(buildtask.FieldError, field.TypeString, value)
@@ -484,6 +523,24 @@ func (u *BuildTaskUpsert) UpdateOutput() *BuildTaskUpsert {
 // ClearOutput clears the value of the "output" field.
 func (u *BuildTaskUpsert) ClearOutput() *BuildTaskUpsert {
 	u.SetNull(buildtask.FieldOutput)
+	return u
+}
+
+// SetOutputSize sets the "output_size" field.
+func (u *BuildTaskUpsert) SetOutputSize(v int) *BuildTaskUpsert {
+	u.Set(buildtask.FieldOutputSize, v)
+	return u
+}
+
+// UpdateOutputSize sets the "output_size" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateOutputSize() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldOutputSize)
+	return u
+}
+
+// AddOutputSize adds v to the "output_size" field.
+func (u *BuildTaskUpsert) AddOutputSize(v int) *BuildTaskUpsert {
+	u.Add(buildtask.FieldOutputSize, v)
 	return u
 }
 
@@ -687,6 +744,27 @@ func (u *BuildTaskUpsertOne) UpdateOutput() *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) ClearOutput() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearOutput()
+	})
+}
+
+// SetOutputSize sets the "output_size" field.
+func (u *BuildTaskUpsertOne) SetOutputSize(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetOutputSize(v)
+	})
+}
+
+// AddOutputSize adds v to the "output_size" field.
+func (u *BuildTaskUpsertOne) AddOutputSize(v int) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddOutputSize(v)
+	})
+}
+
+// UpdateOutputSize sets the "output_size" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateOutputSize() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateOutputSize()
 	})
 }
 
@@ -1059,6 +1137,27 @@ func (u *BuildTaskUpsertBulk) UpdateOutput() *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) ClearOutput() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearOutput()
+	})
+}
+
+// SetOutputSize sets the "output_size" field.
+func (u *BuildTaskUpsertBulk) SetOutputSize(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetOutputSize(v)
+	})
+}
+
+// AddOutputSize adds v to the "output_size" field.
+func (u *BuildTaskUpsertBulk) AddOutputSize(v int) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.AddOutputSize(v)
+	})
+}
+
+// UpdateOutputSize sets the "output_size" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateOutputSize() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateOutputSize()
 	})
 }
 

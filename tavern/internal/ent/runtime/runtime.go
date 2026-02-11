@@ -96,6 +96,8 @@ func init() {
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
+	buildtaskHooks := schema.BuildTask{}.Hooks()
+	buildtask.Hooks[0] = buildtaskHooks[0]
 	buildtaskMixinFields0 := buildtaskMixin[0].Fields()
 	_ = buildtaskMixinFields0
 	buildtaskFields := schema.BuildTask{}.Fields()
@@ -118,6 +120,12 @@ func init() {
 	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
+	// buildtaskDescOutputSize is the schema descriptor for output_size field.
+	buildtaskDescOutputSize := buildtaskFields[7].Descriptor()
+	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
+	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
+	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
+	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	builderMixin := schema.Builder{}.Mixin()
 	builderMixinFields0 := builderMixin[0].Fields()
 	_ = builderMixinFields0

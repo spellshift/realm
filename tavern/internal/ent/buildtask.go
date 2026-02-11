@@ -37,6 +37,8 @@ type BuildTask struct {
 	FinishedAt time.Time `json:"finished_at,omitempty"`
 	// Output from the build execution.
 	Output string `json:"output,omitempty"`
+	// The size of the output in bytes
+	OutputSize int `json:"output_size,omitempty"`
 	// Error message if the build failed.
 	Error string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -75,7 +77,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case buildtask.FieldTargetOs:
 			values[i] = new(c2pb.Host_Platform)
-		case buildtask.FieldID:
+		case buildtask.FieldID, buildtask.FieldOutputSize:
 			values[i] = new(sql.NullInt64)
 		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError:
 			values[i] = new(sql.NullString)
@@ -158,6 +160,12 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bt.Output = value.String
 			}
+		case buildtask.FieldOutputSize:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field output_size", values[i])
+			} else if value.Valid {
+				bt.OutputSize = int(value.Int64)
+			}
 		case buildtask.FieldError:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
@@ -238,6 +246,9 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("output=")
 	builder.WriteString(bt.Output)
+	builder.WriteString(", ")
+	builder.WriteString("output_size=")
+	builder.WriteString(fmt.Sprintf("%v", bt.OutputSize))
 	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(bt.Error)

@@ -828,7 +828,8 @@ func (c *BuildTaskClient) QueryBuilder(bt *BuildTask) *BuilderQuery {
 
 // Hooks returns the client hooks.
 func (c *BuildTaskClient) Hooks() []Hook {
-	return c.hooks.BuildTask
+	hooks := c.hooks.BuildTask
+	return append(hooks[:len(hooks):len(hooks)], buildtask.Hooks[:]...)
 }
 
 // Interceptors returns the client interceptors.

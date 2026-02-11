@@ -622,6 +622,10 @@ type BuildTask implements Node {
   """
   output: String
   """
+  The size of the output in bytes
+  """
+  outputSize: Int!
+  """
   Error message if the build failed.
   """
   error: String
@@ -683,6 +687,7 @@ enum BuildTaskOrderField {
   CLAIMED_AT
   STARTED_AT
   FINISHED_AT
+  OUTPUT_SIZE
 }
 """
 BuildTaskWhereInput is used for filtering BuildTask objects.
@@ -821,6 +826,17 @@ input BuildTaskWhereInput {
   outputNotNil: Boolean
   outputEqualFold: String
   outputContainsFold: String
+  """
+  output_size field predicates
+  """
+  outputSize: Int
+  outputSizeNEQ: Int
+  outputSizeIn: [Int!]
+  outputSizeNotIn: [Int!]
+  outputSizeGT: Int
+  outputSizeGTE: Int
+  outputSizeLT: Int
+  outputSizeLTE: Int
   """
   error field predicates
   """

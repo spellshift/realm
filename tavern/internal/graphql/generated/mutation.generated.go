@@ -1647,6 +1647,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_finishedAt(ctx, field)
 			case "output":
 				return ec.fieldContext_BuildTask_output(ctx, field)
+			case "outputSize":
+				return ec.fieldContext_BuildTask_outputSize(ctx, field)
 			case "error":
 				return ec.fieldContext_BuildTask_error(ctx, field)
 			case "builder":

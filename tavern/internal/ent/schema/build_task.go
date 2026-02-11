@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"context"
+	"fmt"
+
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -9,6 +12,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent/hook"
 )
 
 // BuildTask holds the schema definition for the BuildTask entity.
@@ -59,6 +63,13 @@ func (BuildTask) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT",
 			}).
 			Comment("Output from the build execution."),
+		field.Int("output_size").
+			Default(0).
+			Min(0).
+			Annotations(
+				entgql.OrderField("OUTPUT_SIZE"),
+			).
+			Comment("The size of the output in bytes"),
 		field.Text("error").
 			Optional().
 			SchemaType(map[string]string{
@@ -96,5 +107,34 @@ func (BuildTask) Annotations() []schema.Annotation {
 func (BuildTask) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
+	}
+}
+
+// Hooks defines middleware for mutations for the ent.
+func (BuildTask) Hooks() []ent.Hook {
+	return []ent.Hook{
+		hook.On(HookDeriveBuildTaskInfo(), ent.OpCreate|ent.OpUpdate|ent.OpUpdateOne),
+	}
+}
+
+// HookDeriveBuildTaskInfo will update build task info (e.g. output_size) whenever it is mutated.
+func HookDeriveBuildTaskInfo() ent.Hook {
+	type btMutation interface {
+		Output() (string, bool)
+		SetOutputSize(i int)
+	}
+
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			bt, ok := m.(btMutation)
+			if !ok {
+				return nil, fmt.Errorf("expected build task mutation in schema hook, got: %+v", m)
+			}
+
+			output, _ := bt.Output()
+			bt.SetOutputSize(len([]byte(output)))
+
+			return next.Mutate(ctx, m)
+		})
 	}
 }

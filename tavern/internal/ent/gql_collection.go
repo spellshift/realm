@@ -743,6 +743,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldOutput)
 				fieldSeen[buildtask.FieldOutput] = struct{}{}
 			}
+		case "outputSize":
+			if _, ok := fieldSeen[buildtask.FieldOutputSize]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldOutputSize)
+				fieldSeen[buildtask.FieldOutputSize] = struct{}{}
+			}
 		case "error":
 			if _, ok := fieldSeen[buildtask.FieldError]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldError)

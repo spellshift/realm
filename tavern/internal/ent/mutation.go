@@ -2125,6 +2125,8 @@ type BuildTaskMutation struct {
 	started_at       *time.Time
 	finished_at      *time.Time
 	output           *string
+	output_size      *int
+	addoutput_size   *int
 	error            *string
 	clearedFields    map[string]struct{}
 	builder          *int
@@ -2608,6 +2610,62 @@ func (m *BuildTaskMutation) ResetOutput() {
 	delete(m.clearedFields, buildtask.FieldOutput)
 }
 
+// SetOutputSize sets the "output_size" field.
+func (m *BuildTaskMutation) SetOutputSize(i int) {
+	m.output_size = &i
+	m.addoutput_size = nil
+}
+
+// OutputSize returns the value of the "output_size" field in the mutation.
+func (m *BuildTaskMutation) OutputSize() (r int, exists bool) {
+	v := m.output_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutputSize returns the old "output_size" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldOutputSize(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutputSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutputSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutputSize: %w", err)
+	}
+	return oldValue.OutputSize, nil
+}
+
+// AddOutputSize adds i to the "output_size" field.
+func (m *BuildTaskMutation) AddOutputSize(i int) {
+	if m.addoutput_size != nil {
+		*m.addoutput_size += i
+	} else {
+		m.addoutput_size = &i
+	}
+}
+
+// AddedOutputSize returns the value that was added to the "output_size" field in this mutation.
+func (m *BuildTaskMutation) AddedOutputSize() (r int, exists bool) {
+	v := m.addoutput_size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOutputSize resets all changes to the "output_size" field.
+func (m *BuildTaskMutation) ResetOutputSize() {
+	m.output_size = nil
+	m.addoutput_size = nil
+}
+
 // SetError sets the "error" field.
 func (m *BuildTaskMutation) SetError(s string) {
 	m.error = &s
@@ -2730,7 +2788,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -2757,6 +2815,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	}
 	if m.output != nil {
 		fields = append(fields, buildtask.FieldOutput)
+	}
+	if m.output_size != nil {
+		fields = append(fields, buildtask.FieldOutputSize)
 	}
 	if m.error != nil {
 		fields = append(fields, buildtask.FieldError)
@@ -2787,6 +2848,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.FinishedAt()
 	case buildtask.FieldOutput:
 		return m.Output()
+	case buildtask.FieldOutputSize:
+		return m.OutputSize()
 	case buildtask.FieldError:
 		return m.Error()
 	}
@@ -2816,6 +2879,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldFinishedAt(ctx)
 	case buildtask.FieldOutput:
 		return m.OldOutput(ctx)
+	case buildtask.FieldOutputSize:
+		return m.OldOutputSize(ctx)
 	case buildtask.FieldError:
 		return m.OldError(ctx)
 	}
@@ -2890,6 +2955,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetOutput(v)
 		return nil
+	case buildtask.FieldOutputSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutputSize(v)
+		return nil
 	case buildtask.FieldError:
 		v, ok := value.(string)
 		if !ok {
@@ -2904,13 +2976,21 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *BuildTaskMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addoutput_size != nil {
+		fields = append(fields, buildtask.FieldOutputSize)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case buildtask.FieldOutputSize:
+		return m.AddedOutputSize()
+	}
 	return nil, false
 }
 
@@ -2919,6 +2999,13 @@ func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case buildtask.FieldOutputSize:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOutputSize(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask numeric field %s", name)
 }
@@ -3005,6 +3092,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldOutput:
 		m.ResetOutput()
+		return nil
+	case buildtask.FieldOutputSize:
+		m.ResetOutputSize()
 		return nil
 	case buildtask.FieldError:
 		m.ResetError()
