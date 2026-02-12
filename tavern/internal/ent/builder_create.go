@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 )
 
 // BuilderCreate is the builder for creating a Builder entity.
@@ -75,6 +76,35 @@ func (bc *BuilderCreate) SetSupportedTargets(cp []c2pb.Host_Platform) *BuilderCr
 func (bc *BuilderCreate) SetUpstream(s string) *BuilderCreate {
 	bc.mutation.SetUpstream(s)
 	return bc
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (bc *BuilderCreate) SetLastSeenAt(t time.Time) *BuilderCreate {
+	bc.mutation.SetLastSeenAt(t)
+	return bc
+}
+
+// SetNillableLastSeenAt sets the "last_seen_at" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillableLastSeenAt(t *time.Time) *BuilderCreate {
+	if t != nil {
+		bc.SetLastSeenAt(*t)
+	}
+	return bc
+}
+
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
+func (bc *BuilderCreate) AddBuildTaskIDs(ids ...int) *BuilderCreate {
+	bc.mutation.AddBuildTaskIDs(ids...)
+	return bc
+}
+
+// AddBuildTasks adds the "build_tasks" edges to the BuildTask entity.
+func (bc *BuilderCreate) AddBuildTasks(b ...*BuildTask) *BuilderCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return bc.AddBuildTaskIDs(ids...)
 }
 
 // Mutation returns the BuilderMutation object of the builder.
@@ -195,6 +225,26 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 		_spec.SetField(builder.FieldUpstream, field.TypeString, value)
 		_node.Upstream = value
 	}
+	if value, ok := bc.mutation.LastSeenAt(); ok {
+		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
+		_node.LastSeenAt = &value
+	}
+	if nodes := bc.mutation.BuildTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -280,6 +330,24 @@ func (u *BuilderUpsert) SetUpstream(v string) *BuilderUpsert {
 // UpdateUpstream sets the "upstream" field to the value that was provided on create.
 func (u *BuilderUpsert) UpdateUpstream() *BuilderUpsert {
 	u.SetExcluded(builder.FieldUpstream)
+	return u
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *BuilderUpsert) SetLastSeenAt(v time.Time) *BuilderUpsert {
+	u.Set(builder.FieldLastSeenAt, v)
+	return u
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *BuilderUpsert) UpdateLastSeenAt() *BuilderUpsert {
+	u.SetExcluded(builder.FieldLastSeenAt)
+	return u
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *BuilderUpsert) ClearLastSeenAt() *BuilderUpsert {
+	u.SetNull(builder.FieldLastSeenAt)
 	return u
 }
 
@@ -370,6 +438,27 @@ func (u *BuilderUpsertOne) SetUpstream(v string) *BuilderUpsertOne {
 func (u *BuilderUpsertOne) UpdateUpstream() *BuilderUpsertOne {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateUpstream()
+	})
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *BuilderUpsertOne) SetLastSeenAt(v time.Time) *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetLastSeenAt(v)
+	})
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *BuilderUpsertOne) UpdateLastSeenAt() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateLastSeenAt()
+	})
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *BuilderUpsertOne) ClearLastSeenAt() *BuilderUpsertOne {
+	return u.Update(func(s *BuilderUpsert) {
+		s.ClearLastSeenAt()
 	})
 }
 
@@ -626,6 +715,27 @@ func (u *BuilderUpsertBulk) SetUpstream(v string) *BuilderUpsertBulk {
 func (u *BuilderUpsertBulk) UpdateUpstream() *BuilderUpsertBulk {
 	return u.Update(func(s *BuilderUpsert) {
 		s.UpdateUpstream()
+	})
+}
+
+// SetLastSeenAt sets the "last_seen_at" field.
+func (u *BuilderUpsertBulk) SetLastSeenAt(v time.Time) *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.SetLastSeenAt(v)
+	})
+}
+
+// UpdateLastSeenAt sets the "last_seen_at" field to the value that was provided on create.
+func (u *BuilderUpsertBulk) UpdateLastSeenAt() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.UpdateLastSeenAt()
+	})
+}
+
+// ClearLastSeenAt clears the value of the "last_seen_at" field.
+func (u *BuilderUpsertBulk) ClearLastSeenAt() *BuilderUpsertBulk {
+	return u.Update(func(s *BuilderUpsert) {
+		s.ClearLastSeenAt()
 	})
 }
 

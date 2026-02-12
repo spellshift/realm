@@ -19,14 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Builder_Ping_FullMethodName = "/builder.Builder/Ping"
+	Builder_ClaimBuildTasks_FullMethodName       = "/builder.Builder/ClaimBuildTasks"
+	Builder_StreamBuildTaskOutput_FullMethodName = "/builder.Builder/StreamBuildTaskOutput"
+	Builder_UploadBuildArtifact_FullMethodName   = "/builder.Builder/UploadBuildArtifact"
 )
 
 // BuilderClient is the client API for Builder service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BuilderClient interface {
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error)
+	StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (Builder_StreamBuildTaskOutputClient, error)
+	UploadBuildArtifact(ctx context.Context, opts ...grpc.CallOption) (Builder_UploadBuildArtifactClient, error)
 }
 
 type builderClient struct {
@@ -37,21 +41,93 @@ func NewBuilderClient(cc grpc.ClientConnInterface) BuilderClient {
 	return &builderClient{cc}
 }
 
-func (c *builderClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+func (c *builderClient) ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, Builder_Ping_FullMethodName, in, out, cOpts...)
+	out := new(ClaimBuildTasksResponse)
+	err := c.cc.Invoke(ctx, Builder_ClaimBuildTasks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
+func (c *builderClient) StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (Builder_StreamBuildTaskOutputClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Builder_ServiceDesc.Streams[0], Builder_StreamBuildTaskOutput_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &builderStreamBuildTaskOutputClient{ClientStream: stream}
+	return x, nil
+}
+
+type Builder_StreamBuildTaskOutputClient interface {
+	Send(*StreamBuildTaskOutputRequest) error
+	CloseAndRecv() (*StreamBuildTaskOutputResponse, error)
+	grpc.ClientStream
+}
+
+type builderStreamBuildTaskOutputClient struct {
+	grpc.ClientStream
+}
+
+func (x *builderStreamBuildTaskOutputClient) Send(m *StreamBuildTaskOutputRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *builderStreamBuildTaskOutputClient) CloseAndRecv() (*StreamBuildTaskOutputResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(StreamBuildTaskOutputResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *builderClient) UploadBuildArtifact(ctx context.Context, opts ...grpc.CallOption) (Builder_UploadBuildArtifactClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Builder_ServiceDesc.Streams[1], Builder_UploadBuildArtifact_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &builderUploadBuildArtifactClient{ClientStream: stream}
+	return x, nil
+}
+
+type Builder_UploadBuildArtifactClient interface {
+	Send(*UploadBuildArtifactRequest) error
+	CloseAndRecv() (*UploadBuildArtifactResponse, error)
+	grpc.ClientStream
+}
+
+type builderUploadBuildArtifactClient struct {
+	grpc.ClientStream
+}
+
+func (x *builderUploadBuildArtifactClient) Send(m *UploadBuildArtifactRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *builderUploadBuildArtifactClient) CloseAndRecv() (*UploadBuildArtifactResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadBuildArtifactResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BuilderServer is the server API for Builder service.
 // All implementations must embed UnimplementedBuilderServer
 // for forward compatibility
 type BuilderServer interface {
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error)
+	StreamBuildTaskOutput(Builder_StreamBuildTaskOutputServer) error
+	UploadBuildArtifact(Builder_UploadBuildArtifactServer) error
 	mustEmbedUnimplementedBuilderServer()
 }
 
@@ -59,8 +135,14 @@ type BuilderServer interface {
 type UnimplementedBuilderServer struct {
 }
 
-func (UnimplementedBuilderServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+func (UnimplementedBuilderServer) ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimBuildTasks not implemented")
+}
+func (UnimplementedBuilderServer) StreamBuildTaskOutput(Builder_StreamBuildTaskOutputServer) error {
+	return status.Errorf(codes.Unimplemented, "method StreamBuildTaskOutput not implemented")
+}
+func (UnimplementedBuilderServer) UploadBuildArtifact(Builder_UploadBuildArtifactServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadBuildArtifact not implemented")
 }
 func (UnimplementedBuilderServer) mustEmbedUnimplementedBuilderServer() {}
 
@@ -75,22 +157,74 @@ func RegisterBuilderServer(s grpc.ServiceRegistrar, srv BuilderServer) {
 	s.RegisterService(&Builder_ServiceDesc, srv)
 }
 
-func _Builder_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+func _Builder_ClaimBuildTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClaimBuildTasksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(BuilderServer).Ping(ctx, in)
+		return srv.(BuilderServer).ClaimBuildTasks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Builder_Ping_FullMethodName,
+		FullMethod: Builder_ClaimBuildTasks_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuilderServer).Ping(ctx, req.(*PingRequest))
+		return srv.(BuilderServer).ClaimBuildTasks(ctx, req.(*ClaimBuildTasksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _Builder_StreamBuildTaskOutput_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(BuilderServer).StreamBuildTaskOutput(&builderStreamBuildTaskOutputServer{ServerStream: stream})
+}
+
+type Builder_StreamBuildTaskOutputServer interface {
+	SendAndClose(*StreamBuildTaskOutputResponse) error
+	Recv() (*StreamBuildTaskOutputRequest, error)
+	grpc.ServerStream
+}
+
+type builderStreamBuildTaskOutputServer struct {
+	grpc.ServerStream
+}
+
+func (x *builderStreamBuildTaskOutputServer) SendAndClose(m *StreamBuildTaskOutputResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *builderStreamBuildTaskOutputServer) Recv() (*StreamBuildTaskOutputRequest, error) {
+	m := new(StreamBuildTaskOutputRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Builder_UploadBuildArtifact_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(BuilderServer).UploadBuildArtifact(&builderUploadBuildArtifactServer{ServerStream: stream})
+}
+
+type Builder_UploadBuildArtifactServer interface {
+	SendAndClose(*UploadBuildArtifactResponse) error
+	Recv() (*UploadBuildArtifactRequest, error)
+	grpc.ServerStream
+}
+
+type builderUploadBuildArtifactServer struct {
+	grpc.ServerStream
+}
+
+func (x *builderUploadBuildArtifactServer) SendAndClose(m *UploadBuildArtifactResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *builderUploadBuildArtifactServer) Recv() (*UploadBuildArtifactRequest, error) {
+	m := new(UploadBuildArtifactRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Builder_ServiceDesc is the grpc.ServiceDesc for Builder service.
@@ -101,10 +235,21 @@ var Builder_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*BuilderServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Ping",
-			Handler:    _Builder_Ping_Handler,
+			MethodName: "ClaimBuildTasks",
+			Handler:    _Builder_ClaimBuildTasks_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamBuildTaskOutput",
+			Handler:       _Builder_StreamBuildTaskOutput_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadBuildArtifact",
+			Handler:       _Builder_UploadBuildArtifact_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "builder.proto",
 }

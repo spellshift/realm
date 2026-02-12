@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -94,6 +95,51 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	buildtaskMixin := schema.BuildTask{}.Mixin()
+	buildtaskHooks := schema.BuildTask{}.Hooks()
+	buildtask.Hooks[0] = buildtaskHooks[0]
+	buildtaskMixinFields0 := buildtaskMixin[0].Fields()
+	_ = buildtaskMixinFields0
+	buildtaskFields := schema.BuildTask{}.Fields()
+	_ = buildtaskFields
+	// buildtaskDescCreatedAt is the schema descriptor for created_at field.
+	buildtaskDescCreatedAt := buildtaskMixinFields0[0].Descriptor()
+	// buildtask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	buildtask.DefaultCreatedAt = buildtaskDescCreatedAt.Default.(func() time.Time)
+	// buildtaskDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	buildtaskDescLastModifiedAt := buildtaskMixinFields0[1].Descriptor()
+	// buildtask.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	buildtask.DefaultLastModifiedAt = buildtaskDescLastModifiedAt.Default.(func() time.Time)
+	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// buildtaskDescBuildImage is the schema descriptor for build_image field.
+	buildtaskDescBuildImage := buildtaskFields[2].Descriptor()
+	// buildtask.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
+	buildtask.BuildImageValidator = buildtaskDescBuildImage.Validators[0].(func(string) error)
+	// buildtaskDescBuildScript is the schema descriptor for build_script field.
+	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
+	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
+	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
+	// buildtaskDescCallbackURI is the schema descriptor for callback_uri field.
+	buildtaskDescCallbackURI := buildtaskFields[4].Descriptor()
+	// buildtask.CallbackURIValidator is a validator for the "callback_uri" field. It is called by the builders before save.
+	buildtask.CallbackURIValidator = buildtaskDescCallbackURI.Validators[0].(func(string) error)
+	// buildtaskDescInterval is the schema descriptor for interval field.
+	buildtaskDescInterval := buildtaskFields[5].Descriptor()
+	// buildtask.DefaultInterval holds the default value on creation for the interval field.
+	buildtask.DefaultInterval = buildtaskDescInterval.Default.(int)
+	// buildtaskDescOutputSize is the schema descriptor for output_size field.
+	buildtaskDescOutputSize := buildtaskFields[12].Descriptor()
+	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
+	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
+	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
+	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
+	// buildtaskDescErrorSize is the schema descriptor for error_size field.
+	buildtaskDescErrorSize := buildtaskFields[14].Descriptor()
+	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
+	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
+	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
+	buildtask.ErrorSizeValidator = buildtaskDescErrorSize.Validators[0].(func(int) error)
 	builderMixin := schema.Builder{}.Mixin()
 	builderMixinFields0 := builderMixin[0].Fields()
 	_ = builderMixinFields0

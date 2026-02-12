@@ -39,6 +39,79 @@ func BuilderFromContext(ctx context.Context) (*ent.Builder, bool) {
 	return b, ok
 }
 
+// authenticateBuilder extracts and validates mTLS credentials from gRPC metadata,
+// returning a context enriched with the authenticated builder entity.
+func authenticateBuilder(ctx context.Context, caCert *x509.Certificate, graph *ent.Client) (context.Context, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing metadata")
+	}
+
+	// Extract metadata values.
+	// Binary metadata (keys ending in "-bin") is automatically base64 decoded by gRPC.
+	certDER := getMetadataValue(md, mdKeyBuilderCert)
+	signature := getMetadataValue(md, mdKeyBuilderSignature)
+	timestamp := getMetadataValue(md, mdKeyBuilderTimestamp)
+
+	if certDER == "" || signature == "" || timestamp == "" {
+		return nil, status.Error(codes.Unauthenticated, "missing builder credentials")
+	}
+
+	// Parse the certificate
+	cert, err := x509.ParseCertificate([]byte(certDER))
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid certificate")
+	}
+
+	// Verify certificate was signed by our CA
+	if err := cert.CheckSignatureFrom(caCert); err != nil {
+		return nil, status.Error(codes.Unauthenticated, "certificate not signed by trusted CA")
+	}
+
+	// Verify certificate validity period
+	now := time.Now()
+	if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
+		return nil, status.Error(codes.Unauthenticated, "certificate expired or not yet valid")
+	}
+
+	// Verify timestamp freshness
+	ts, err := time.Parse(time.RFC3339Nano, timestamp)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid timestamp format")
+	}
+	if now.Sub(ts).Abs() > maxTimestampAge {
+		return nil, status.Error(codes.Unauthenticated, "timestamp too old or too far in the future")
+	}
+
+	// Verify signature (proof of private key possession)
+	pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "certificate does not contain ED25519 public key")
+	}
+	if !ed25519.Verify(pubKey, []byte(timestamp), []byte(signature)) {
+		return nil, status.Error(codes.Unauthenticated, "invalid signature")
+	}
+
+	// Extract builder identifier from CN
+	cn := cert.Subject.CommonName
+	if !strings.HasPrefix(cn, builderCNPrefix) {
+		return nil, status.Error(codes.Unauthenticated, "invalid certificate CN format")
+	}
+	identifier := strings.TrimPrefix(cn, builderCNPrefix)
+
+	// Look up builder in database
+	b, err := graph.Builder.Query().Where(entbuilder.IdentifierEQ(identifier)).Only(ctx)
+	if err != nil {
+		slog.WarnContext(ctx, "builder authentication failed: builder not found", "identifier", identifier, "error", err)
+		return nil, status.Error(codes.Unauthenticated, "builder not found")
+	}
+
+	slog.InfoContext(ctx, "builder authenticated", "builder_id", b.ID, "identifier", identifier)
+
+	// Store builder in context for downstream handlers
+	return context.WithValue(ctx, builderContextKey{}, b), nil
+}
+
 // NewMTLSAuthInterceptor creates a gRPC unary server interceptor that validates
 // builder mTLS credentials. It verifies:
 // 1. The certificate was signed by the provided CA
@@ -47,76 +120,34 @@ func BuilderFromContext(ctx context.Context) (*ent.Builder, bool) {
 // 4. The builder identifier from the CN exists in the database
 func NewMTLSAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "missing metadata")
-		}
-
-		// Extract metadata values.
-		// Binary metadata (keys ending in "-bin") is automatically base64 decoded by gRPC.
-		certDER := getMetadataValue(md, mdKeyBuilderCert)
-		signature := getMetadataValue(md, mdKeyBuilderSignature)
-		timestamp := getMetadataValue(md, mdKeyBuilderTimestamp)
-
-		if certDER == "" || signature == "" || timestamp == "" {
-			return nil, status.Error(codes.Unauthenticated, "missing builder credentials")
-		}
-
-		// Parse the certificate
-		cert, err := x509.ParseCertificate([]byte(certDER))
+		authCtx, err := authenticateBuilder(ctx, caCert, graph)
 		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid certificate")
+			return nil, err
 		}
-
-		// Verify certificate was signed by our CA
-		if err := cert.CheckSignatureFrom(caCert); err != nil {
-			return nil, status.Error(codes.Unauthenticated, "certificate not signed by trusted CA")
-		}
-
-		// Verify certificate validity period
-		now := time.Now()
-		if now.Before(cert.NotBefore) || now.After(cert.NotAfter) {
-			return nil, status.Error(codes.Unauthenticated, "certificate expired or not yet valid")
-		}
-
-		// Verify timestamp freshness
-		ts, err := time.Parse(time.RFC3339Nano, timestamp)
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "invalid timestamp format")
-		}
-		if now.Sub(ts).Abs() > maxTimestampAge {
-			return nil, status.Error(codes.Unauthenticated, "timestamp too old or too far in the future")
-		}
-
-		// Verify signature (proof of private key possession)
-		pubKey, ok := cert.PublicKey.(ed25519.PublicKey)
-		if !ok {
-			return nil, status.Error(codes.Unauthenticated, "certificate does not contain ED25519 public key")
-		}
-		if !ed25519.Verify(pubKey, []byte(timestamp), []byte(signature)) {
-			return nil, status.Error(codes.Unauthenticated, "invalid signature")
-		}
-
-		// Extract builder identifier from CN
-		cn := cert.Subject.CommonName
-		if !strings.HasPrefix(cn, builderCNPrefix) {
-			return nil, status.Error(codes.Unauthenticated, "invalid certificate CN format")
-		}
-		identifier := strings.TrimPrefix(cn, builderCNPrefix)
-
-		// Look up builder in database
-		b, err := graph.Builder.Query().Where(entbuilder.IdentifierEQ(identifier)).Only(ctx)
-		if err != nil {
-			slog.WarnContext(ctx, "builder authentication failed: builder not found", "identifier", identifier, "error", err)
-			return nil, status.Error(codes.Unauthenticated, "builder not found")
-		}
-
-		slog.InfoContext(ctx, "builder authenticated", "builder_id", b.ID, "identifier", identifier)
-
-		// Store builder in context for downstream handlers
-		ctx = context.WithValue(ctx, builderContextKey{}, b)
-		return handler(ctx, req)
+		return handler(authCtx, req)
 	}
+}
+
+// NewMTLSStreamAuthInterceptor creates a gRPC stream server interceptor that validates
+// builder mTLS credentials. It uses the same authentication logic as the unary interceptor.
+func NewMTLSStreamAuthInterceptor(caCert *x509.Certificate, graph *ent.Client) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		authCtx, err := authenticateBuilder(ss.Context(), caCert, graph)
+		if err != nil {
+			return err
+		}
+		return handler(srv, &wrappedServerStream{ServerStream: ss, ctx: authCtx})
+	}
+}
+
+// wrappedServerStream wraps a grpc.ServerStream to override its Context().
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
 }
 
 func getMetadataValue(md metadata.MD, key string) string {

@@ -33,6 +33,18 @@ func (f BeaconFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BeaconMutation", m)
 }
 
+// The BuildTaskFunc type is an adapter to allow the use of ordinary
+// function as BuildTask mutator.
+type BuildTaskFunc func(context.Context, *ent.BuildTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BuildTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BuildTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuildTaskMutation", m)
+}
+
 // The BuilderFunc type is an adapter to allow the use of ordinary
 // function as Builder mutator.
 type BuilderFunc func(context.Context, *ent.BuilderMutation) (ent.Value, error)

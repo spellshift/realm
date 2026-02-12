@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -23,8 +24,19 @@ const (
 	FieldSupportedTargets = "supported_targets"
 	// FieldUpstream holds the string denoting the upstream field in the database.
 	FieldUpstream = "upstream"
+	// FieldLastSeenAt holds the string denoting the last_seen_at field in the database.
+	FieldLastSeenAt = "last_seen_at"
+	// EdgeBuildTasks holds the string denoting the build_tasks edge name in mutations.
+	EdgeBuildTasks = "build_tasks"
 	// Table holds the table name of the builder in the database.
 	Table = "builders"
+	// BuildTasksTable is the table that holds the build_tasks relation/edge.
+	BuildTasksTable = "build_tasks"
+	// BuildTasksInverseTable is the table name for the BuildTask entity.
+	// It exists in this package in order to avoid circular dependency with the "buildtask" package.
+	BuildTasksInverseTable = "build_tasks"
+	// BuildTasksColumn is the table column denoting the build_tasks relation/edge.
+	BuildTasksColumn = "build_task_builder"
 )
 
 // Columns holds all SQL columns for builder fields.
@@ -35,6 +47,7 @@ var Columns = []string{
 	FieldIdentifier,
 	FieldSupportedTargets,
 	FieldUpstream,
+	FieldLastSeenAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -86,4 +99,30 @@ func ByIdentifier(opts ...sql.OrderTermOption) OrderOption {
 // ByUpstream orders the results by the upstream field.
 func ByUpstream(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpstream, opts...).ToFunc()
+}
+
+// ByLastSeenAt orders the results by the last_seen_at field.
+func ByLastSeenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastSeenAt, opts...).ToFunc()
+}
+
+// ByBuildTasksCount orders the results by build_tasks count.
+func ByBuildTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBuildTasksStep(), opts...)
+	}
+}
+
+// ByBuildTasks orders the results by build_tasks terms.
+func ByBuildTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBuildTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newBuildTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BuildTasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, BuildTasksTable, BuildTasksColumn),
+	)
 }

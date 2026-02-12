@@ -64,6 +64,10 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_supportedTargets(ctx, field)
 			case "upstream":
 				return ec.fieldContext_Builder_upstream(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
+			case "buildTasks":
+				return ec.fieldContext_Builder_buildTasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Builder", field.Name)
 		},
@@ -196,6 +200,86 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 				return it, err
 			}
 			it.AgentIdentifier = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Context, obj any) (models.CreateBuildTaskInput, error) {
+	var it models.CreateBuildTaskInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["interval"]; !present {
+		asMap["interval"] = 5
+	}
+
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "callbackURI", "interval", "transportType", "extra", "artifactPath"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "targetOS":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetOS"))
+			data, err := ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetOs = data
+		case "targetFormat":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetFormat"))
+			data, err := ec.unmarshalOBuildTaskTargetFormat2ᚖrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetFormat = data
+		case "buildImage":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildImage"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.BuildImage = data
+		case "callbackURI":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURI"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CallbackURI = data
+		case "interval":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Interval = data
+		case "transportType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportType"))
+			data, err := ec.unmarshalOBeaconTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TransportType = data
+		case "extra":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extra"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Extra = data
+		case "artifactPath":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("artifactPath"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ArtifactPath = data
 		}
 	}
 
@@ -344,6 +428,11 @@ func (ec *executionContext) _RegisterBuilderOutput(ctx context.Context, sel ast.
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalNCreateBuildTaskInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildTaskInput(ctx context.Context, v any) (models.CreateBuildTaskInput, error) {
+	res, err := ec.unmarshalInputCreateBuildTaskInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
 
 func (ec *executionContext) marshalNRegisterBuilderOutput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRegisterBuilderOutput(ctx context.Context, sel ast.SelectionSet, v models.RegisterBuilderOutput) graphql.Marshaler {
 	return ec._RegisterBuilderOutput(ctx, sel, &v)
