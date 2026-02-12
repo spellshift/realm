@@ -256,12 +256,33 @@ impl Lexer {
         let mut nesting_level = 1;
 
         while nesting_level > 0 && !self.is_at_end() && self.peek() != '\n' {
-            if self.peek() == '{' {
+            let c = self.peek();
+            if c == '{' {
                 nesting_level += 1;
-            } else if self.peek() == '}' {
+                self.advance();
+            } else if c == '}' {
                 nesting_level -= 1;
-            }
-            if nesting_level > 0 {
+                if nesting_level > 0 {
+                    self.advance();
+                }
+            } else if c == '"' || c == '\'' {
+                let quote = c;
+                self.advance();
+                while !self.is_at_end() && self.peek() != '\n' {
+                    let sc = self.peek();
+                    if sc == '\\' {
+                        self.advance();
+                        if !self.is_at_end() {
+                            self.advance();
+                        }
+                    } else if sc == quote {
+                        self.advance();
+                        break;
+                    } else {
+                        self.advance();
+                    }
+                }
+            } else {
                 self.advance();
             }
         }
