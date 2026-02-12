@@ -30,9 +30,9 @@ func TestCreateLinkWithExplicitExpiresAt(t *testing.T) {
 	futureTime := time.Now().Add(24 * time.Hour)
 	downloadLimit := 5
 	input := ent.CreateLinkInput{
-		AssetID:            asset.ID,
-		DownloadLimit:      &downloadLimit,
-		ExpiresAt:          &futureTime,
+		AssetID:       asset.ID,
+		DownloadLimit: &downloadLimit,
+		ExpiresAt:     &futureTime,
 	}
 
 	link, err := graph.Link.Create().SetInput(input).Save(ctx)
