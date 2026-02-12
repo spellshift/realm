@@ -32,7 +32,7 @@ func (BuildTask) Fields() []ent.Field {
 			).
 			Comment("The target operating system platform for this build."),
 		field.Enum("target_format").
-			GoType(builderpb.TargetFormat("")).
+			GoType(builderpb.TargetFormat(0)).
 			Annotations(
 				entgql.Type("BuildTaskTargetFormat"),
 			).
@@ -53,7 +53,7 @@ func (BuildTask) Fields() []ent.Field {
 			NotEmpty().
 			Comment("The callback URI for the IMIX agent to connect to."),
 		field.Int("interval").
-			Default(builderpb.DefaultInterval).
+			Default(5).
 			Comment("The callback interval in seconds for the IMIX agent."),
 		field.Enum("transport_type").
 			GoType(c2pb.Transport_Type(0)).

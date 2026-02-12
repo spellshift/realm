@@ -57,10 +57,7 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "BIN",
-			"buildImage":   "golang:1.21",
-			"callbackURI":  "https://callback.example.com",
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
@@ -79,10 +76,7 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "BIN",
-			"buildImage":   "golang:1.21",
-			"callbackURI":  "https://callback.example.com",
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
@@ -115,16 +109,14 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 		err := gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
-			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "BIN",
-			"buildImage":   "golang:1.21",
-			"callbackURI":  "https://callback.example.com",
+			"targetOS":    "PLATFORM_LINUX",
+			"callbackURI": "https://callback.example.com",
 		}))
 		require.NoError(t, err)
 		require.NotEmpty(t, resp.CreateBuildTask.ID)
 		assert.Equal(t, "PLATFORM_LINUX", resp.CreateBuildTask.TargetOs)
-		assert.Equal(t, "BIN", resp.CreateBuildTask.TargetFormat)
-		assert.Equal(t, "golang:1.21", resp.CreateBuildTask.BuildImage)
+		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
+		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
 		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.CallbackURI)
 		assert.Equal(t, 5, resp.CreateBuildTask.Interval)
@@ -173,7 +165,7 @@ func TestCreateBuildTask(t *testing.T) {
 			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.NoError(t, err)
-		assert.Equal(t, "BIN", resp.CreateBuildTask.TargetFormat)
+		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.CallbackURI)
 		assert.Equal(t, 5, resp.CreateBuildTask.Interval)
@@ -204,8 +196,6 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "BIN",
-			"buildImage":   "golang:1.21",
 			"artifactPath": "/custom/path/to/binary",
 		}))
 		require.NoError(t, err)
@@ -236,10 +226,7 @@ func TestCreateBuildTask(t *testing.T) {
 				}
 			}
 			err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-				"targetOS":     "PLATFORM_LINUX",
-				"targetFormat": "BIN",
-				"buildImage":   "golang:1.21",
-				"callbackURI":  "https://callback.example.com",
+				"targetOS": "PLATFORM_LINUX",
 			}))
 			require.NoError(t, err)
 
@@ -271,9 +258,7 @@ func TestCreateBuildTask(t *testing.T) {
 		// cdylib is not supported on Linux
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
-			"targetFormat": "CDYLIB",
-			"buildImage":   "golang:1.21",
-			"callbackURI":  "https://callback.example.com",
+			"targetFormat": "TARGET_FORMAT_CDYLIB",
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not supported")
@@ -304,12 +289,10 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_WINDOWS",
-			"targetFormat": "WINDOWS_SERVICE",
-			"buildImage":   "golang:1.21",
-			"callbackURI":  "https://callback.example.com",
+			"targetFormat": "TARGET_FORMAT_WINDOWS_SERVICE",
 		}))
 		require.NoError(t, err)
-		assert.Equal(t, "WINDOWS_SERVICE", resp.CreateBuildTask.TargetFormat)
+		assert.Equal(t, "TARGET_FORMAT_WINDOWS_SERVICE", resp.CreateBuildTask.TargetFormat)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "win_service")
 	})
 }

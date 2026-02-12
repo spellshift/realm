@@ -169,7 +169,7 @@ func TestBuilderE2E(t *testing.T) {
 		// Create a build task assigned to this builder
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-			SetTargetFormat("BIN").
+			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
 			SetCallbackURI("https://callback.example.com").
@@ -227,7 +227,7 @@ func TestBuilderE2E(t *testing.T) {
 		// Create and claim a build task
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_MACOS).
-			SetTargetFormat("BIN").
+			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
 			SetCallbackURI("https://callback.example.com").
@@ -284,7 +284,7 @@ func TestBuilderE2E(t *testing.T) {
 		// Create and claim a build task
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-			SetTargetFormat("BIN").
+			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
 			SetCallbackURI("https://callback.example.com").
@@ -363,7 +363,7 @@ func TestBuilderE2E(t *testing.T) {
 		// Create a build task assigned to the second builder
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_WINDOWS).
-			SetTargetFormat("BIN").
+			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
 			SetCallbackURI("https://callback.example.com").

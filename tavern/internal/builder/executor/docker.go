@@ -146,22 +146,26 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	// Extract artifact from the stopped container (before deferred removal).
 	buildResult := BuildResult{ExitCode: exitCode}
-	if exitCode == ExpectedExitCode && spec.ArtifactPath != "" {
-		data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
-		if extractErr != nil {
-			slog.WarnContext(ctx, "artifact extraction failed",
-				"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
-		} else {
-			buildResult.Artifact = data
-			buildResult.ArtifactName = name
-			slog.InfoContext(ctx, "artifact extracted",
-				"task_id", spec.TaskID, "name", name, "size", len(data))
-		}
-	}
 
 	if exitCode != ExpectedExitCode {
 		return &buildResult, fmt.Errorf("container exited with status %d", exitCode)
 	}
+
+	if spec.ArtifactPath == "" {
+		return &buildResult, nil
+	}
+
+	data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
+	if extractErr != nil {
+		slog.WarnContext(ctx, "artifact extraction failed",
+			"task_id", spec.TaskID, "path", spec.ArtifactPath, "error", extractErr)
+		return &buildResult, nil
+	}
+
+	buildResult.Artifact = data
+	buildResult.ArtifactName = name
+	slog.InfoContext(ctx, "artifact extracted",
+		"task_id", spec.TaskID, "name", name, "size", len(data))
 
 	return &buildResult, nil
 }
@@ -185,13 +189,14 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 		if err != nil {
 			return nil, "", fmt.Errorf("reading tar entry: %w", err)
 		}
-		if hdr.Typeflag == tar.TypeReg {
-			data, err := io.ReadAll(tr)
-			if err != nil {
-				return nil, "", fmt.Errorf("reading artifact data: %w", err)
-			}
-			return data, filepath.Base(hdr.Name), nil
+		if hdr.Typeflag != tar.TypeReg {
+			continue
 		}
+		data, err := io.ReadAll(tr)
+		if err != nil {
+			return nil, "", fmt.Errorf("reading artifact data: %w", err)
+		}
+		return data, filepath.Base(hdr.Name), nil
 	}
 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)

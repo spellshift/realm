@@ -13,8 +13,8 @@ const (
 	// RealmRepoURL is the default git repository URL for building realm agents.
 	RealmRepoURL = "https://github.com/spellshift/realm.git"
 
-	// DefaultInterval is re-exported from builderpb for convenience.
-	DefaultInterval = builderpb.DefaultInterval
+	// DefaultInterval is the default callback interval in seconds for the IMIX agent.
+	DefaultInterval = 5
 
 	// DefaultCallbackURI is the default callback URI for the IMIX agent,
 	// derived from the IMIX compile-time default (IMIX_CALLBACK_URI).
@@ -28,16 +28,16 @@ const (
 	DefaultBuildImage = "spellshift/devcontainer:main"
 
 	// DefaultTargetFormat is the default output format for builds.
-	DefaultTargetFormat = builderpb.TargetFormatBin
+	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
 )
 
 // TargetFormat is an alias for builderpb.TargetFormat.
 type TargetFormat = builderpb.TargetFormat
 
 const (
-	TargetFormatBin            = builderpb.TargetFormatBin
-	TargetFormatCdylib         = builderpb.TargetFormatCdylib
-	TargetFormatWindowsService = builderpb.TargetFormatWindowsService
+	TargetFormatBin            = builderpb.TargetFormat_TARGET_FORMAT_BIN
+	TargetFormatCdylib         = builderpb.TargetFormat_TARGET_FORMAT_CDYLIB
+	TargetFormatWindowsService = builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE
 )
 
 // SupportedFormats maps each target OS to its supported output formats.
@@ -81,16 +81,16 @@ func ValidateTargetFormat(os c2pb.Host_Platform, format TargetFormat) error {
 	}
 	supported := make([]string, len(formats))
 	for i, f := range formats {
-		supported[i] = string(f)
+		supported[i] = f.String()
 	}
-	return fmt.Errorf("target format %q is not supported for %s (supported: %s)", format, os.String(), strings.Join(supported, ", "))
+	return fmt.Errorf("target format %q is not supported for %s (supported: %s)", format.String(), os.String(), strings.Join(supported, ", "))
 }
 
 // BuildCommand returns the cargo build command for the given OS and format.
 func BuildCommand(os c2pb.Host_Platform, format TargetFormat) (string, error) {
 	cmd, ok := buildCommands[buildKey{os, format}]
 	if !ok {
-		return "", fmt.Errorf("no build command for %s + %s", os.String(), format)
+		return "", fmt.Errorf("no build command for %s + %s", os.String(), format.String())
 	}
 	return cmd, nil
 }

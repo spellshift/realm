@@ -736,9 +736,10 @@ enum BuildTaskOrderField {
 BuildTaskTargetFormat is enum for the field target_format
 """
 enum BuildTaskTargetFormat @goModel(model: "realm.pub/tavern/internal/builder/builderpb.TargetFormat") {
-  BIN
-  CDYLIB
-  WINDOWS_SERVICE
+  TARGET_FORMAT_BIN
+  TARGET_FORMAT_CDYLIB
+  TARGET_FORMAT_UNSPECIFIED
+  TARGET_FORMAT_WINDOWS_SERVICE
 }
 """
 BuildTaskWhereInput is used for filtering BuildTask objects.

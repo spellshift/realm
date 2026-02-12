@@ -74,7 +74,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	// Create a build task
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-		SetTargetFormat("BIN").
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetCallbackURI("https://callback.example.com").
@@ -219,7 +219,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-		SetTargetFormat("BIN").
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetCallbackURI("https://callback.example.com").
@@ -369,7 +369,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-		SetTargetFormat("BIN").
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetCallbackURI("https://callback.example.com").
@@ -499,7 +499,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-		SetTargetFormat("BIN").
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetCallbackURI("https://callback.example.com").
@@ -626,7 +626,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 
 	graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
-		SetTargetFormat("BIN").
+		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build -o /app/output/binary ./...").
 		SetCallbackURI("https://callback.example.com").
@@ -717,7 +717,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	// Verify the asset was created
 	asset, err := graph.Asset.Get(ctx, int(artifactResp.AssetId))
 	require.NoError(t, err)
-	assert.Contains(t, asset.Name, "build/linux/BIN/imix-")
+	assert.Contains(t, asset.Name, "build/linux/bin/imix-")
 	assert.Equal(t, artifactData, asset.Content)
 	assert.Equal(t, len(artifactData), asset.Size)
 }

@@ -168,8 +168,8 @@ func TargetOsValidator(to c2pb.Host_Platform) error {
 
 // TargetFormatValidator is a validator for the "target_format" field enum values. It is called by the builders before save.
 func TargetFormatValidator(tf builderpb.TargetFormat) error {
-	switch tf {
-	case "BIN", "CDYLIB", "WINDOWS_SERVICE":
+	switch tf.String() {
+	case "TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE":
 		return nil
 	default:
 		return fmt.Errorf("buildtask: invalid enum value for target_format field: %q", tf)

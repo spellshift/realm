@@ -310,7 +310,8 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	randomSuffix := hex.EncodeToString(randomBytes)
 
 	osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
-	assetName := fmt.Sprintf("build/%s/%s/imix-%s", osName, bt.TargetFormat, randomSuffix)
+	formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
+	assetName := fmt.Sprintf("build/%s/%s/imix-%s", osName, formatName, randomSuffix)
 	asset, err := s.graph.Asset.Create().
 		SetName(assetName).
 		SetContent(buf.Bytes()).

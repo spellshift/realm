@@ -4,6 +4,13 @@ package builder;
 
 option go_package = "realm.pub/tavern/internal/builder/builderpb";
 
+enum TargetFormat {
+    TARGET_FORMAT_UNSPECIFIED = 0;
+    TARGET_FORMAT_BIN = 1;
+    TARGET_FORMAT_CDYLIB = 2;
+    TARGET_FORMAT_WINDOWS_SERVICE = 3;
+}
+
 message ClaimBuildTasksRequest {}
 
 message BuildTaskSpec {
