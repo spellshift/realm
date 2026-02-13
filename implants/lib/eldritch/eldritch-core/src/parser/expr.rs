@@ -497,6 +497,8 @@ impl Parser {
     fn finish_call(&mut self, callee: Expr) -> Result<Expr, EldritchError> {
         let start = callee.span;
         let mut args = Vec::new();
+        let mut seen_keyword = false;
+
         if !self.check(&TokenKind::RParen) {
             loop {
                 let is_keyword = if let TokenKind::Identifier(_) = self.peek().kind {
@@ -511,6 +513,7 @@ impl Parser {
                 } else if self.match_token(&[TokenKind::StarStar]) {
                     let expr = self.expression()?;
                     args.push(Argument::KwArgs(expr));
+                    seen_keyword = true;
                 } else if is_keyword {
                     // FIX: Clone to avoid borrow issues, ensure advance is done
                     let name_token = self.advance();
@@ -522,7 +525,11 @@ impl Parser {
                     self.advance(); // Consume '='
                     let val = self.expression()?;
                     args.push(Argument::Keyword(name, val));
+                    seen_keyword = true;
                 } else {
+                    if seen_keyword {
+                        return self.error("Positional argument follows keyword argument");
+                    }
                     args.push(Argument::Positional(self.expression()?));
                 }
 
