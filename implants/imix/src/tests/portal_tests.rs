@@ -19,9 +19,8 @@ async fn test_portal_bytes_ping() {
 
     let first_mote = sequencer.new_bytes_mote(vec![1, 2, 3], BytesPayloadKind::Ping);
 
-    let _handle = tokio::spawn(async move {
-        bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await
-    });
+    let _handle =
+        tokio::spawn(async move { bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await });
 
     let resp = timeout(Duration::from_secs(1), out_rx.recv())
         .await
@@ -44,9 +43,8 @@ async fn test_portal_bytes_keepalive() {
 
     let first_mote = sequencer.new_bytes_mote(vec![], BytesPayloadKind::Keepalive);
 
-    let _handle = tokio::spawn(async move {
-        bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await
-    });
+    let _handle =
+        tokio::spawn(async move { bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await });
 
     // Keepalive should be ignored, so no response expected
     let resp = timeout(Duration::from_millis(100), out_rx.recv()).await;
@@ -61,9 +59,8 @@ async fn test_portal_bytes_unspecified() {
 
     let first_mote = sequencer.new_bytes_mote(vec![1, 2, 3], BytesPayloadKind::Unspecified);
 
-    let _handle = tokio::spawn(async move {
-        bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await
-    });
+    let _handle =
+        tokio::spawn(async move { bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await });
 
     // Unspecified should be ignored
     let resp = timeout(Duration::from_millis(100), out_rx.recv()).await;
@@ -78,9 +75,8 @@ async fn test_portal_bytes_multiple_pings() {
 
     let first_mote = sequencer.new_bytes_mote(vec![1], BytesPayloadKind::Ping);
 
-    let _handle = tokio::spawn(async move {
-        bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await
-    });
+    let _handle =
+        tokio::spawn(async move { bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await });
 
     // Send second ping
     let sequencer2 = PayloadSequencer::new("test-stream");
@@ -116,18 +112,17 @@ async fn test_portal_tcp_basic() {
     let (out_tx, mut out_rx) = mpsc::channel(100);
     let sequencer = PayloadSequencer::new("test-stream");
 
-    let first_mote = sequencer.new_tcp_mote(
-        vec![1, 2, 3],
-        addr.ip().to_string(),
-        addr.port() as u32,
-    );
+    let first_mote =
+        sequencer.new_tcp_mote(vec![1, 2, 3], addr.ip().to_string(), addr.port() as u32);
 
-    let handle = tokio::spawn(async move {
-        tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await
-    });
+    let handle =
+        tokio::spawn(async move { tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await });
 
     // Accept connection on the listener
-    let (mut socket, _) = timeout(Duration::from_secs(1), listener.accept()).await.unwrap().unwrap();
+    let (mut socket, _) = timeout(Duration::from_secs(1), listener.accept())
+        .await
+        .unwrap()
+        .unwrap();
 
     // Verify initial data
     let mut buf = [0u8; 3];
@@ -151,11 +146,8 @@ async fn test_portal_tcp_basic() {
     // Send data from C2 to agent
     let sequencer2 = PayloadSequencer::new("test-stream");
     let _ = sequencer2.next_seq_id(); // Skip 0
-    let second_mote = sequencer2.new_tcp_mote(
-        vec![7, 8, 9],
-        addr.ip().to_string(),
-        addr.port() as u32,
-    );
+    let second_mote =
+        sequencer2.new_tcp_mote(vec![7, 8, 9], addr.ip().to_string(), addr.port() as u32);
     tx.send(second_mote).await.unwrap();
 
     // Verify data received by TCP server
@@ -178,27 +170,27 @@ async fn test_portal_run_udp_dispatch() {
     let (req_tx_c2, mut req_rx_c2) = mpsc::channel(100);
     let (resp_tx_c2, mut resp_rx_c2) = mpsc::channel(100);
 
-    transport.expect_create_portal().return_once(move |mut rx, tx| {
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    Some(req) = rx.recv() => {
-                        req_tx_c2.send(req).await.unwrap();
+    transport
+        .expect_create_portal()
+        .return_once(move |mut rx, tx| {
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        Some(req) = rx.recv() => {
+                            req_tx_c2.send(req).await.unwrap();
+                        }
+                        Some(resp) = resp_rx_c2.recv() => {
+                            if tx.send(resp).await.is_err() { break; }
+                        }
+                        else => break,
                     }
-                    Some(resp) = resp_rx_c2.recv() => {
-                        if tx.send(resp).await.is_err() { break; }
-                    }
-                    else => break,
                 }
-            }
+            });
+            Ok(())
         });
-        Ok(())
-    });
 
     let tc_clone = task_context.clone();
-    let handle = tokio::spawn(async move {
-        run::run(tc_clone, transport).await
-    });
+    let handle = tokio::spawn(async move { run::run(tc_clone, transport).await });
 
     // 1. Verify initial registration
     let _ = timeout(Duration::from_secs(1), req_rx_c2.recv()).await;
@@ -218,13 +210,17 @@ async fn test_portal_run_udp_dispatch() {
         })),
     };
 
-    resp_tx_c2.send(CreatePortalResponse {
-        mote: Some(mote),
-    }).await.unwrap();
+    resp_tx_c2
+        .send(CreatePortalResponse { mote: Some(mote) })
+        .await
+        .unwrap();
 
     // 4. Verify UDP listener receives data
     let mut buf = [0u8; 3];
-    let (n, _) = timeout(Duration::from_secs(1), listener.recv_from(&mut buf)).await.unwrap().unwrap();
+    let (n, _) = timeout(Duration::from_secs(1), listener.recv_from(&mut buf))
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(n, 3);
     assert_eq!(&buf[..3], &[1, 2, 3]);
 
@@ -242,27 +238,27 @@ async fn test_portal_run_ordered_reader() {
     let (req_tx_c2, mut req_rx_c2) = mpsc::channel(100);
     let (resp_tx_c2, mut resp_rx_c2) = mpsc::channel(100);
 
-    transport.expect_create_portal().return_once(move |mut rx, tx| {
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    Some(req) = rx.recv() => {
-                        req_tx_c2.send(req).await.unwrap();
+    transport
+        .expect_create_portal()
+        .return_once(move |mut rx, tx| {
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        Some(req) = rx.recv() => {
+                            req_tx_c2.send(req).await.unwrap();
+                        }
+                        Some(resp) = resp_rx_c2.recv() => {
+                            if tx.send(resp).await.is_err() { break; }
+                        }
+                        else => break,
                     }
-                    Some(resp) = resp_rx_c2.recv() => {
-                        if tx.send(resp).await.is_err() { break; }
-                    }
-                    else => break,
                 }
-            }
+            });
+            Ok(())
         });
-        Ok(())
-    });
 
     let tc_clone = task_context.clone();
-    let handle = tokio::spawn(async move {
-        run::run(tc_clone, transport).await
-    });
+    let handle = tokio::spawn(async move { run::run(tc_clone, transport).await });
 
     // 1. Verify initial registration
     let _ = timeout(Duration::from_secs(1), req_rx_c2.recv()).await;
@@ -285,14 +281,26 @@ async fn test_portal_run_ordered_reader() {
         })),
     };
 
-    resp_tx_c2.send(CreatePortalResponse { mote: Some(mote2) }).await.unwrap();
-    resp_tx_c2.send(CreatePortalResponse { mote: Some(mote1) }).await.unwrap();
+    resp_tx_c2
+        .send(CreatePortalResponse { mote: Some(mote2) })
+        .await
+        .unwrap();
+    resp_tx_c2
+        .send(CreatePortalResponse { mote: Some(mote1) })
+        .await
+        .unwrap();
 
     // 3. Verify they are handled in order (Ping echos back)
-    let resp1 = timeout(Duration::from_secs(1), req_rx_c2.recv()).await.unwrap().unwrap();
+    let resp1 = timeout(Duration::from_secs(1), req_rx_c2.recv())
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(resp1.mote.unwrap().seq_id, 0);
 
-    let resp2 = timeout(Duration::from_secs(1), req_rx_c2.recv()).await.unwrap().unwrap();
+    let resp2 = timeout(Duration::from_secs(1), req_rx_c2.recv())
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(resp2.mote.unwrap().seq_id, 1);
 
     handle.abort();
@@ -307,15 +315,11 @@ async fn test_portal_udp_basic() {
     let (out_tx, mut out_rx) = mpsc::channel(100);
     let sequencer = PayloadSequencer::new("test-stream");
 
-    let first_mote = sequencer.new_udp_mote(
-        vec![1, 2, 3],
-        addr.ip().to_string(),
-        addr.port() as u32,
-    );
+    let first_mote =
+        sequencer.new_udp_mote(vec![1, 2, 3], addr.ip().to_string(), addr.port() as u32);
 
-    let handle = tokio::spawn(async move {
-        udp::handle_udp(first_mote, rx, out_tx, sequencer).await
-    });
+    let handle =
+        tokio::spawn(async move { udp::handle_udp(first_mote, rx, out_tx, sequencer).await });
 
     // Verify initial data on listener
     let mut buf = [0u8; 1024];
@@ -342,11 +346,8 @@ async fn test_portal_udp_basic() {
     // Send data from C2 to agent
     let sequencer2 = PayloadSequencer::new("test-stream");
     let _ = sequencer2.next_seq_id(); // Skip 0
-    let second_mote = sequencer2.new_udp_mote(
-        vec![7, 8, 9],
-        addr.ip().to_string(),
-        addr.port() as u32,
-    );
+    let second_mote =
+        sequencer2.new_udp_mote(vec![7, 8, 9], addr.ip().to_string(), addr.port() as u32);
     tx.send(second_mote).await.unwrap();
 
     // Verify data received by UDP server
@@ -370,27 +371,27 @@ async fn test_portal_run_trace() {
     let (req_tx_c2, mut req_rx_c2) = mpsc::channel(100);
     let (resp_tx_c2, mut resp_rx_c2) = mpsc::channel(100);
 
-    transport.expect_create_portal().return_once(move |mut rx, tx| {
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    Some(req) = rx.recv() => {
-                        req_tx_c2.send(req).await.unwrap();
+    transport
+        .expect_create_portal()
+        .return_once(move |mut rx, tx| {
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        Some(req) = rx.recv() => {
+                            req_tx_c2.send(req).await.unwrap();
+                        }
+                        Some(resp) = resp_rx_c2.recv() => {
+                            if tx.send(resp).await.is_err() { break; }
+                        }
+                        else => break,
                     }
-                    Some(resp) = resp_rx_c2.recv() => {
-                        if tx.send(resp).await.is_err() { break; }
-                    }
-                    else => break,
                 }
-            }
+            });
+            Ok(())
         });
-        Ok(())
-    });
 
     let tc_clone = task_context.clone();
-    let handle = tokio::spawn(async move {
-        run::run(tc_clone, transport).await
-    });
+    let handle = tokio::spawn(async move { run::run(tc_clone, transport).await });
 
     // 1. Verify initial registration
     let req = timeout(Duration::from_secs(1), req_rx_c2.recv())
@@ -414,9 +415,10 @@ async fn test_portal_run_trace() {
         })),
     };
 
-    resp_tx_c2.send(CreatePortalResponse {
-        mote: Some(mote),
-    }).await.unwrap();
+    resp_tx_c2
+        .send(CreatePortalResponse { mote: Some(mote) })
+        .await
+        .unwrap();
 
     // 3. Verify Echoed Trace Mote
     let req = timeout(Duration::from_secs(1), req_rx_c2.recv())
@@ -430,8 +432,14 @@ async fn test_portal_run_trace() {
         let echoed_trace = TraceData::decode(&b.data[..]).unwrap();
         // Should have AgentRecv and AgentSend events
         assert_eq!(echoed_trace.events.len(), 2);
-        assert_eq!(echoed_trace.events[0].kind, TraceEventKind::AgentRecv as i32);
-        assert_eq!(echoed_trace.events[1].kind, TraceEventKind::AgentSend as i32);
+        assert_eq!(
+            echoed_trace.events[0].kind,
+            TraceEventKind::AgentRecv as i32
+        );
+        assert_eq!(
+            echoed_trace.events[1].kind,
+            TraceEventKind::AgentSend as i32
+        );
     } else {
         panic!("Expected bytes payload");
     }
@@ -450,27 +458,27 @@ async fn test_portal_run_tcp_dispatch() {
     let (req_tx_c2, mut req_rx_c2) = mpsc::channel(100);
     let (resp_tx_c2, mut resp_rx_c2) = mpsc::channel(100);
 
-    transport.expect_create_portal().return_once(move |mut rx, tx| {
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    Some(req) = rx.recv() => {
-                        req_tx_c2.send(req).await.unwrap();
+    transport
+        .expect_create_portal()
+        .return_once(move |mut rx, tx| {
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        Some(req) = rx.recv() => {
+                            req_tx_c2.send(req).await.unwrap();
+                        }
+                        Some(resp) = resp_rx_c2.recv() => {
+                            if tx.send(resp).await.is_err() { break; }
+                        }
+                        else => break,
                     }
-                    Some(resp) = resp_rx_c2.recv() => {
-                        if tx.send(resp).await.is_err() { break; }
-                    }
-                    else => break,
                 }
-            }
+            });
+            Ok(())
         });
-        Ok(())
-    });
 
     let tc_clone = task_context.clone();
-    let handle = tokio::spawn(async move {
-        run::run(tc_clone, transport).await
-    });
+    let handle = tokio::spawn(async move { run::run(tc_clone, transport).await });
 
     // 1. Verify initial registration
     let _ = timeout(Duration::from_secs(1), req_rx_c2.recv()).await;
@@ -490,12 +498,16 @@ async fn test_portal_run_tcp_dispatch() {
         })),
     };
 
-    resp_tx_c2.send(CreatePortalResponse {
-        mote: Some(mote),
-    }).await.unwrap();
+    resp_tx_c2
+        .send(CreatePortalResponse { mote: Some(mote) })
+        .await
+        .unwrap();
 
     // 4. Verify TCP listener receives data
-    let (mut socket, _) = timeout(Duration::from_secs(1), listener.accept()).await.unwrap().unwrap();
+    let (mut socket, _) = timeout(Duration::from_secs(1), listener.accept())
+        .await
+        .unwrap()
+        .unwrap();
     let mut buf = [0u8; 3];
     socket.read_exact(&mut buf).await.unwrap();
     assert_eq!(buf, [1, 2, 3]);
