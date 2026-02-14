@@ -19,7 +19,7 @@ type ClaimTasksInput struct {
 	Hostname string `json:"hostname"`
 	// The platform the agent is operating on.
 	HostPlatform c2pb.Host_Platform `json:"hostPlatform"`
-	// The IP address of the hosts primary interface (if available).
+	// The IP address of the host's primary interface (if available).
 	HostPrimaryIP *string `json:"hostPrimaryIP,omitempty"`
 	// Unique identifier of the beacon, each running instance will be different.
 	BeaconIdentifier string `json:"beaconIdentifier"`

@@ -77,7 +77,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 		case <-hostCh:
 			// Success
 		case <-ctx.Done():
-			b.Fatal("Context cancelled")
+			b.Fatal("Context canceled")
 		}
 
 		// 2. Host sends to Client (TopicOut)
@@ -90,7 +90,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 		case <-clientCh:
 			// Success
 		case <-ctx.Done():
-			b.Fatal("Context cancelled")
+			b.Fatal("Context canceled")
 		}
 	}
 }
