@@ -26,12 +26,10 @@ import (
 )
 
 const (
-	convTimeout    = 15 * time.Minute
 	defaultUDPPort = "53"
 
 	// DNS protocol constants
 	dnsHeaderSize  = 12
-	maxLabelLength = 63
 	txtRecordType  = 16
 	aRecordType    = 1
 	aaaaRecordType = 28
@@ -54,10 +52,13 @@ const (
 	MaxActiveConversations     = 200000
 	NormalConversationTimeout  = 15 * time.Minute
 	ReducedConversationTimeout = 5 * time.Minute
+	ServedConversationTimeout  = 2 * time.Minute
 	CapacityRecoveryThreshold  = 0.5 // 50%
 	MaxAckRangesInResponse     = 20
 	MaxNacksInResponse         = 50
 	MaxDataSize                = 50 * 1024 * 1024 // 50MB max data size
+
+	MaxConcurrentHandlers = 256 // Max concurrent handler goroutines
 )
 
 func init() {
@@ -70,6 +71,7 @@ type Redirector struct {
 	baseDomains         []string
 	conversationCount   int32
 	conversationTimeout time.Duration
+	activeHandlers      int32
 }
 
 // Conversation tracks state for a request-response exchange
@@ -86,6 +88,8 @@ type Conversation struct {
 	ResponseChunks   [][]byte // Split response for multi-fetch
 	ResponseCRC      uint32
 	Completed        bool // Set to true when all chunks received
+	Failed           bool // Set when processing fails
+	ResponseServed   bool // Set after first successful FETCH
 }
 
 func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, _ *tls.Config) error {
@@ -116,6 +120,8 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 	go r.cleanupConversations(ctx)
 
+	sem := make(chan struct{}, MaxConcurrentHandlers)
+
 	buf := make([]byte, 4096)
 	for {
 		select {
@@ -133,10 +139,21 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 				continue
 			}
 
-			// Process query synchronously
+			// Copy query data before passing to goroutine
 			queryCopy := make([]byte, n)
 			copy(queryCopy, buf[:n])
-			r.handleDNSQuery(ctx, conn, addr, queryCopy, upstream)
+
+			// Acquire sem slot
+			sem <- struct{}{}
+
+			go func(query []byte, remoteAddr *net.UDPAddr) {
+				defer func() {
+					atomic.AddInt32(&r.activeHandlers, -1)
+					<-sem
+				}()
+				atomic.AddInt32(&r.activeHandlers, 1)
+				r.handleDNSQuery(ctx, conn, remoteAddr, query, upstream)
+			}(queryCopy, addr)
 		}
 	}
 }
@@ -197,16 +214,44 @@ func (r *Redirector) cleanupConversations(ctx context.Context) {
 				r.conversationTimeout = NormalConversationTimeout
 			}
 
+			var cleaned int32
 			r.conversations.Range(func(key, value interface{}) bool {
 				conv := value.(*Conversation)
 				conv.mu.Lock()
-				if now.Sub(conv.LastActivity) > r.conversationTimeout {
+
+				// Use shorter timeout for conversations that already served their response or failed.
+				timeout := r.conversationTimeout
+				if conv.ResponseServed || conv.Failed {
+					timeout = ServedConversationTimeout
+				}
+
+				if now.Sub(conv.LastActivity) > timeout {
 					r.conversations.Delete(key)
 					atomic.AddInt32(&r.conversationCount, -1)
+					cleaned++
 				}
 				conv.mu.Unlock()
 				return true
 			})
+
+			activeConvs := atomic.LoadInt32(&r.conversationCount)
+			activeHdlrs := atomic.LoadInt32(&r.activeHandlers)
+
+			// Warn if handler pool is near capacity
+			if activeHdlrs >= int32(MaxConcurrentHandlers*4/5) {
+				slog.Warn("handler pool near capacity",
+					"active_handlers", activeHdlrs,
+					"max_handlers", MaxConcurrentHandlers,
+					"active_conversations", activeConvs)
+			}
+
+			// Log stats to have better visibility to current load on the redirector
+			slog.Info("dns redirector stats",
+				"active_conversations", activeConvs,
+				"active_handlers", activeHdlrs,
+				"max_handlers", MaxConcurrentHandlers,
+				"cleaned", cleaned,
+				"timeout", r.conversationTimeout)
 		}
 	}
 }
@@ -227,7 +272,6 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	domain = strings.ToLower(domain)
 
-	slog.Info("dns redirector: request", "source", addr.String(), "destination", domain)
 	slog.Debug("dns redirector: query details", "domain", domain, "query_type", queryType, "source", addr.String())
 
 	// Extract subdomain
@@ -301,7 +345,12 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 	}
 
 	if err != nil {
-		slog.Error("dns redirector: upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
+		if strings.Contains(err.Error(), "conversation not found") {
+			slog.Debug("packet for unknown conversation",
+				"type", packet.Type, "conv_id", packet.ConversationId)
+		} else {
+			slog.Error("dns redirector: upstream request failed", "type", packet.Type, "conv_id", packet.ConversationId, "source", addr.String(), "error", err)
+		}
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
 	}
@@ -389,9 +438,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 		slog.Warn("INIT packet missing file_size field", "conv_id", packet.ConversationId, "total_chunks", initPayload.TotalChunks)
 	}
 
-	slog.Debug("creating conversation", "conv_id", packet.ConversationId, "method", initPayload.MethodCode,
-		"total_chunks", initPayload.TotalChunks, "file_size", initPayload.FileSize, "crc32", initPayload.DataCrc32)
-
 	conv := &Conversation{
 		ID:               packet.ConversationId,
 		MethodPath:       initPayload.MethodCode,
@@ -403,7 +449,34 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 		Completed:        false,
 	}
 
-	r.conversations.Store(packet.ConversationId, conv)
+	// Use LoadOrStore to handle duplicate INITs from DNS resolvers idempotently.
+	// DNS recursive resolvers may forward the same query from multiple nodes,
+	// causing duplicate INIT packets. Thanks AWS.
+	actual, loaded := r.conversations.LoadOrStore(packet.ConversationId, conv)
+	if loaded {
+		// Conversation already exists
+		atomic.AddInt32(&r.conversationCount, -1)
+
+		existingConv := actual.(*Conversation)
+		existingConv.mu.Lock()
+		defer existingConv.mu.Unlock()
+		existingConv.LastActivity = time.Now()
+
+		slog.Debug("duplicate INIT for existing conversation", "conv_id", packet.ConversationId)
+
+		acks, nacks := r.computeAcksNacks(existingConv)
+		statusPacket := &dnspb.DNSPacket{
+			Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
+			ConversationId: packet.ConversationId,
+			Acks:           acks,
+			Nacks:          nacks,
+		}
+		statusData, err := proto.Marshal(statusPacket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal duplicate init status: %w", err)
+		}
+		return statusData, nil
+	}
 
 	slog.Debug("C2 conversation started", "conv_id", conv.ID, "method", conv.MethodPath,
 		"total_chunks", conv.TotalChunks, "data_size", initPayload.FileSize)
@@ -427,14 +500,28 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.ClientConn, packet *dnspb.DNSPacket, queryType uint16) ([]byte, error) {
 	val, ok := r.conversations.Load(packet.ConversationId)
 	if !ok {
-		slog.Debug("DATA packet for unknown conversation (INIT may be lost/delayed)",
-			"conv_id", packet.ConversationId, "seq", packet.Sequence)
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
 
 	conv := val.(*Conversation)
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
+
+	// Once the conversation has been forwarded to upstream, return full ack range immediately.
+	if conv.Completed || conv.Failed {
+		conv.LastActivity = time.Now()
+		statusPacket := &dnspb.DNSPacket{
+			Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
+			ConversationId: packet.ConversationId,
+			Acks:           []*dnspb.AckRange{{StartSeq: 1, EndSeq: conv.TotalChunks}},
+			Nacks:          []uint32{},
+		}
+		statusData, err := proto.Marshal(statusPacket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal status packet: %w", err)
+		}
+		return statusData, nil
+	}
 
 	if packet.Sequence < 1 || packet.Sequence > conv.TotalChunks {
 		return nil, fmt.Errorf("sequence out of bounds: %d (expected 1-%d)", packet.Sequence, conv.TotalChunks)
@@ -445,7 +532,7 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 
 	slog.Debug("received chunk", "conv_id", conv.ID, "seq", packet.Sequence, "size", len(packet.Data), "total", len(conv.Chunks))
 
-	if uint32(len(conv.Chunks)) == conv.TotalChunks && !conv.Completed {
+	if uint32(len(conv.Chunks)) == conv.TotalChunks {
 		conv.Completed = true
 		slog.Debug("C2 request complete, forwarding to upstream", "conv_id", conv.ID,
 			"method", conv.MethodPath, "total_chunks", conv.TotalChunks, "data_size", conv.ExpectedDataSize)
@@ -481,6 +568,9 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 
 	// Reassemble data
 	var fullData []byte
+	if conv.ExpectedDataSize > 0 {
+		fullData = make([]byte, 0, conv.ExpectedDataSize)
+	}
 	for i := uint32(1); i <= conv.TotalChunks; i++ {
 		chunk, ok := conv.Chunks[i]
 		if !ok {
@@ -489,25 +579,29 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 		fullData = append(fullData, chunk...)
 	}
 
+	for seq := range conv.Chunks {
+		conv.Chunks[seq] = nil
+	}
+
 	actualCRC := crc32.ChecksumIEEE(fullData)
 	if actualCRC != conv.ExpectedCRC {
-		r.conversations.Delete(conv.ID)
-		atomic.AddInt32(&r.conversationCount, -1)
+		conv.Failed = true
+		conv.ResponseData = []byte{}
 		return fmt.Errorf("data CRC mismatch: expected %d, got %d", conv.ExpectedCRC, actualCRC)
 	}
 
 	slog.Debug("reassembled data", "conv_id", conv.ID, "size", len(fullData), "method", conv.MethodPath)
 
 	if conv.ExpectedDataSize > 0 && uint32(len(fullData)) != conv.ExpectedDataSize {
-		r.conversations.Delete(conv.ID)
-		atomic.AddInt32(&r.conversationCount, -1)
+		conv.Failed = true
+		conv.ResponseData = []byte{}
 		return fmt.Errorf("reassembled data size mismatch: expected %d bytes, got %d bytes", conv.ExpectedDataSize, len(fullData))
 	}
 
 	responseData, err := r.forwardToUpstream(ctx, upstream, conv.MethodPath, fullData)
 	if err != nil {
-		r.conversations.Delete(conv.ID)
-		atomic.AddInt32(&r.conversationCount, -1)
+		conv.Failed = true
+		conv.ResponseData = []byte{}
 		return fmt.Errorf("failed to forward to upstream: %w", err)
 	}
 
@@ -616,8 +710,19 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
+	// If conversation failed, return empty response
+	if conv.Failed {
+		slog.Debug("returning empty response for failed conversation", "conv_id", conv.ID)
+		conv.ResponseServed = true
+		conv.LastActivity = time.Now()
+		return []byte{}, nil
+	}
+
 	if conv.ResponseData == nil {
-		return nil, fmt.Errorf("no response data available")
+		// Response not ready yet, the upstream gRPC call is still in progress.
+		slog.Debug("response not ready yet - upstream call in progress", "conv_id", conv.ID)
+		conv.LastActivity = time.Now()
+		return []byte{}, nil
 	}
 
 	conv.LastActivity = time.Now()
@@ -654,32 +759,21 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 		slog.Debug("returning response chunk", "conv_id", conv.ID, "chunk", fetchPayload.ChunkIndex,
 			"size", len(conv.ResponseChunks[chunkIndex]), "total_chunks", len(conv.ResponseChunks))
 
+		conv.ResponseServed = true
 		return conv.ResponseChunks[chunkIndex], nil
 	}
 
 	slog.Debug("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
 
+	conv.ResponseServed = true
 	return conv.ResponseData, nil
 }
 
 // handleCompletePacket processes COMPLETE packet and cleans up conversation
 func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, error) {
-	val, ok := r.conversations.Load(packet.ConversationId)
-	if !ok {
-		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
-	}
+	val, loaded := r.conversations.LoadAndDelete(packet.ConversationId)
 
-	conv := val.(*Conversation)
-	conv.mu.Lock()
-	defer conv.mu.Unlock()
-
-	slog.Debug("C2 conversation completed and confirmed by client", "conv_id", conv.ID, "method", conv.MethodPath)
-
-	// Delete conversation and decrement counter
-	r.conversations.Delete(packet.ConversationId)
-	atomic.AddInt32(&r.conversationCount, -1)
-
-	// Return empty success status
+	// Build success status
 	statusPacket := &dnspb.DNSPacket{
 		Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
 		ConversationId: packet.ConversationId,
@@ -690,6 +784,22 @@ func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal complete status: %w", err)
 	}
+
+	if !loaded {
+		// Conversation already cleaned up by a prior COMPLETE - return success
+		slog.Debug("duplicate COMPLETE for already-completed conversation", "conv_id", packet.ConversationId)
+		return statusData, nil
+	}
+
+	conv := val.(*Conversation)
+	conv.mu.Lock()
+	defer conv.mu.Unlock()
+
+	slog.Debug("C2 conversation completed and confirmed by client", "conv_id", conv.ID, "method", conv.MethodPath)
+
+	// Decrement counter
+	atomic.AddInt32(&r.conversationCount, -1)
+
 	return statusData, nil
 }
 
