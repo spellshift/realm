@@ -1,4 +1,4 @@
-import { gql, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import Select from "react-select";
 import { UserQueryTopLevel } from "../utils/interfacesQuery";
 import { useFilters } from "../context/FilterContext/FilterContext";

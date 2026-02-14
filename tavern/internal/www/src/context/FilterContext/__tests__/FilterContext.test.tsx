@@ -65,6 +65,8 @@ describe('FilterContext', () => {
         beaconFields: [{ kind: 'beacon', id: '1', name: 'Beacon 1' }],
         tomeFields: [],
         tomeMultiSearch: 'search-term',
+        assetName: '',
+        userId: '',
       });
       expect(result.current.isLocked).toBe(true);
     });
@@ -278,6 +280,8 @@ describe('FilterContext', () => {
         beaconFields: [],
         tomeFields: [],
         tomeMultiSearch: 'external-search',
+        assetName: '',
+        userId: '',
       });
       expect(result.current.isLocked).toBe(true);
     });
