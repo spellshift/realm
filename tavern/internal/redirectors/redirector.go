@@ -2,6 +2,7 @@ package redirectors
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"maps"
@@ -18,7 +19,7 @@ var (
 
 // A Redirector for traffic to an upstream gRPC server
 type Redirector interface {
-	Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn) error
+	Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, tlsConfig *tls.Config) error
 }
 
 // Register makes a Redirector available by the provided name.
@@ -42,8 +43,9 @@ func List() []string {
 	return slices.Sorted(maps.Keys(redirectors))
 }
 
-// Run starts the redirector with the given name, connecting to the specified upstream address
-func Run(ctx context.Context, name string, listenOn string, upstreamAddr string) error {
+// Run starts the redirector with the given name, connecting to the specified upstream address.
+// If tlsConfig is non-nil, the redirector will use TLS for incoming connections.
+func Run(ctx context.Context, name string, listenOn string, upstreamAddr string, tlsConfig *tls.Config) error {
 	// Get the Redirector
 	mu.RLock()
 	redirector, exists := redirectors[name]
@@ -64,5 +66,5 @@ func Run(ctx context.Context, name string, listenOn string, upstreamAddr string)
 	slog.DebugContext(ctx, "redirectors: connected to upstream grpc", "redirector_name", name, "upstream_addr", upstreamAddr)
 
 	// Start the redirector
-	return redirector.Redirect(ctx, listenOn, upstream)
+	return redirector.Redirect(ctx, listenOn, upstream, tlsConfig)
 }
