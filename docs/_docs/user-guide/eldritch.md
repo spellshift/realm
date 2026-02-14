@@ -897,6 +897,12 @@ Reports a captured SSH Key credential to Tavern. It will automatically be associ
 
 Reports a captured username & password combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
 
+### report.ntlm_hash
+
+`report.ntlm_hash(username: str, password_hash: str) -> None`
+
+Reports a captured username & ntlm hash combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
+
 ---
 
 ## Sys
