@@ -121,7 +121,7 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	// Wait for Token, Error, or Cancellation
 	select {
 	case <-ctx.Done():
-		return Token(""), fmt.Errorf("authentication cancelled: %w", ctx.Err())
+		return Token(""), fmt.Errorf("authentication canceled: %w", ctx.Err())
 	case err := <-errCh:
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
