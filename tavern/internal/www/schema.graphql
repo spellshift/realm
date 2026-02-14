@@ -4261,7 +4261,7 @@ input ClaimTasksInput {
   """The platform the agent is operating on."""
   hostPlatform: HostPlatform!
 
-  """The IP address of the hosts primary interface (if available)."""
+  """The IP address of the host's primary interface (if available)."""
   hostPrimaryIP: String
 
   """Unique identifier of the beacon, each running instance will be different."""
