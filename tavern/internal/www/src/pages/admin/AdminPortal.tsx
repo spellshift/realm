@@ -1,15 +1,22 @@
 import { AdminAccessGate } from "../../components/admin-access-gate";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
-import { useQuery } from "@apollo/client";
-import { GET_USER_QUERY } from "../../utils/queries";
+import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
 import { useAuthorization } from "../../context/AuthorizationContext";
-import { UserNode, UserQueryTopLevel } from "../../utils/interfacesQuery";
+import { UserNode } from "../../utils/interfacesQuery";
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import UserTable from "./components/UserTable";
+import UserTable from "./UserTable";
+import { useUserIds } from "./hooks/useUserIds";
 
 export const AdminPortal = () => {
-    const { loading, data, error } = useQuery<UserQueryTopLevel>(GET_USER_QUERY);
+    const {
+        data,
+        userIds,
+        initialLoading,
+        error,
+        hasMore,
+        loadMore,
+    } = useUserIds();
 
     const { data: authData } = useAuthorization();
 
@@ -30,17 +37,22 @@ export const AdminPortal = () => {
                 link: "/admin"
             }]} />
             <PageHeader title="Admin" description="This portal is only accessible to Realm Admin. You can Activate/Deactivate users to grant or remove access to Realm. You can Promote/Demote users to grant or remove Admin privileges." />
-            <div className="flex flex-col justify-center items-center gap-6">
-                {(loading) ? (
-                    <EmptyState type={EmptyStateType.loading} label="Loading users..." />
-                ) : (error) ? (
-                    <EmptyState type={EmptyStateType.error} label="Failed to load users" />
-                ) : (data?.users?.totalCount && data.users.totalCount > 0) ? (
-                    <UserTable currentUser={currentUser} data={data.users.edges} />
-                ) : (
-                    <EmptyState type={EmptyStateType.noData} label="No user data found" />
-                )}
-            </div>
+            <VirtualizedTableWrapper
+                title="Users"
+                totalItems={data?.users?.totalCount}
+                loading={initialLoading}
+                error={error}
+                showSorting={false}
+                showFiltering={false}
+                table={
+                    <UserTable
+                        userIds={userIds}
+                        currentUser={currentUser}
+                        hasMore={hasMore}
+                        onLoadMore={loadMore}
+                    />
+                }
+            />
         </AdminAccessGate>
     );
 }
