@@ -13,7 +13,7 @@ import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import Shell from "./pages/shell/Shell";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
-import { Tomes } from "./pages/tomes/Tomes";
+import Tomes from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
 import Assets from "./pages/assets/Assets";
