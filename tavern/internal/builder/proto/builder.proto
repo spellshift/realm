@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package builder;
+
+option go_package = "realm.pub/tavern/internal/builder/builderpb";
+
+message PingRequest {}
+message PingResponse {}
+
+service Builder {
+    rpc Ping(PingRequest) returns (PingResponse) {}
+}

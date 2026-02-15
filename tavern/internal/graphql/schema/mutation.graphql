@@ -54,4 +54,9 @@ type Mutation {
     createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
     updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
     disableLink(linkID: ID!): Link! @requireRole(role: USER)
+
+    ###
+    # Builder
+    ###
+    registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
 }

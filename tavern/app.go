@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"crypto/ecdh"
+	"crypto/ed25519"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -23,6 +25,8 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
@@ -134,6 +138,34 @@ func newApp(ctx context.Context) (app *cli.App) {
 				},
 			},
 		},
+		{
+			Name:  "builder",
+			Usage: "Run a builder that compiles agents for target platforms",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config",
+					Usage: "Path to the builder YAML configuration file",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				configPath := c.String("config")
+				if configPath == "" {
+					return fmt.Errorf("--config flag is required")
+				}
+
+				cfg, err := builder.ParseConfig(configPath)
+				if err != nil {
+					return fmt.Errorf("failed to parse builder config: %w", err)
+				}
+
+				slog.InfoContext(ctx, "starting builder",
+					"config", configPath,
+					"supported_targets", cfg.SupportedTargets,
+				)
+
+				return builder.Run(ctx, cfg)
+			},
+		},
 	}
 	return
 }
@@ -227,6 +259,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Initialize Git Tome Importer
 	git := cfg.NewGitImporter(client)
 
+	// Initialize Builder CA
+	builderCACert, builderCAKey, err := getBuilderCA()
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize builder CA: %w", err)
+	}
+
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
 		createTestData(ctx, client)
@@ -286,7 +325,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git),
+			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -296,6 +335,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/portal.Portal/": tavernhttp.Endpoint{
 			Handler: newPortalGRPCHandler(client, portalMux),
+		},
+		"/builder.Builder/": tavernhttp.Endpoint{
+			Handler:              newBuilderGRPCHandler(client, builderCACert),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/cdn/": tavernhttp.Endpoint{
 			Handler:              cdn.NewLinkDownloadHandler(client, "/cdn/"),
@@ -380,8 +424,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, options ...func(*graphql.Resolver)) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, options...))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// Configure Raw Query Logging
@@ -497,6 +541,27 @@ func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
 	return pubKey, privKey, nil
 }
 
+// getBuilderCA returns the Builder CA certificate and private key for signing builder certificates.
+// It uses the existing ED25519 key from the secrets manager.
+func getBuilderCA() (caCert *x509.Certificate, caKey ed25519.PrivateKey, err error) {
+	secretsManager, err := newSecretsManager()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	caKey, err = crypto.GetPrivKeyED25519(secretsManager)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get ED25519 private key: %w", err)
+	}
+
+	caCert, err = builder.CreateCA(caKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create builder CA: %w", err)
+	}
+
+	return caCert, caKey, nil
+}
+
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	portalSrv := portals.New(graph, portalMux)
 	grpcSrv := grpc.NewServer(
@@ -504,6 +569,31 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
 	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate) http.Handler {
+	builderSrv := builder.New(client)
+	grpcSrv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			builder.NewMTLSAuthInterceptor(caCert, client),
+			grpcWithUnaryMetrics,
+		),
+		grpc.StreamInterceptor(grpcWithStreamMetrics),
+	)
+	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)

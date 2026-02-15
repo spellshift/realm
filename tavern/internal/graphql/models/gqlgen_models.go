@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 )
 
 type ClaimTasksInput struct {
@@ -33,6 +34,16 @@ type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
 	IncludeDirs []string `json:"includeDirs,omitempty"`
+}
+
+// Output returned when registering a new builder.
+type RegisterBuilderOutput struct {
+	// The created builder entity.
+	Builder *ent.Builder `json:"builder"`
+	// mTLS certificate in base64 encoding for the builder to authenticate.
+	MtlsCert string `json:"mtlsCert"`
+	// YAML-formatted configuration for the builder.
+	Config string `json:"config"`
 }
 
 type SubmitTaskResultInput struct {

@@ -17,6 +17,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -897,6 +898,356 @@ func (b *Beacon) ToEdge(order *BeaconOrder) *BeaconEdge {
 		order = DefaultBeaconOrder
 	}
 	return &BeaconEdge{
+		Node:   b,
+		Cursor: order.Field.toCursor(b),
+	}
+}
+
+// BuilderEdge is the edge representation of Builder.
+type BuilderEdge struct {
+	Node   *Builder `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// BuilderConnection is the connection containing edges to Builder.
+type BuilderConnection struct {
+	Edges      []*BuilderEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *BuilderConnection) build(nodes []*Builder, pager *builderPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Builder
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Builder {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Builder {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BuilderEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BuilderEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BuilderPaginateOption enables pagination customization.
+type BuilderPaginateOption func(*builderPager) error
+
+// WithBuilderOrder configures pagination ordering.
+func WithBuilderOrder(order []*BuilderOrder) BuilderPaginateOption {
+	return func(pager *builderPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithBuilderFilter configures pagination filter.
+func WithBuilderFilter(filter func(*BuilderQuery) (*BuilderQuery, error)) BuilderPaginateOption {
+	return func(pager *builderPager) error {
+		if filter == nil {
+			return errors.New("BuilderQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type builderPager struct {
+	reverse bool
+	order   []*BuilderOrder
+	filter  func(*BuilderQuery) (*BuilderQuery, error)
+}
+
+func newBuilderPager(opts []BuilderPaginateOption, reverse bool) (*builderPager, error) {
+	pager := &builderPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *builderPager) applyFilter(query *BuilderQuery) (*BuilderQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *builderPager) toCursor(b *Builder) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(b).Value)
+	}
+	return Cursor{ID: b.ID, Value: cs_}
+}
+
+func (p *builderPager) applyCursors(query *BuilderQuery, after, before *Cursor) (*BuilderQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultBuilderOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *builderPager) applyOrder(query *BuilderQuery) *BuilderQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultBuilderOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultBuilderOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *builderPager) orderExpr(query *BuilderQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultBuilderOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Builder.
+func (b *BuilderQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BuilderPaginateOption,
+) (*BuilderConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBuilderPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if b, err = pager.applyFilter(b); err != nil {
+		return nil, err
+	}
+	conn := &BuilderConnection{Edges: []*BuilderEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := b.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if b, err = pager.applyCursors(b, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		b.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := b.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	b = pager.applyOrder(b)
+	nodes, err := b.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// BuilderOrderFieldCreatedAt orders Builder by created_at.
+	BuilderOrderFieldCreatedAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.CreatedAt, nil
+		},
+		column: builder.FieldCreatedAt,
+		toTerm: builder.ByCreatedAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.CreatedAt,
+			}
+		},
+	}
+	// BuilderOrderFieldLastModifiedAt orders Builder by last_modified_at.
+	BuilderOrderFieldLastModifiedAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.LastModifiedAt, nil
+		},
+		column: builder.FieldLastModifiedAt,
+		toTerm: builder.ByLastModifiedAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.LastModifiedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f BuilderOrderField) String() string {
+	var str string
+	switch f.column {
+	case BuilderOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case BuilderOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f BuilderOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *BuilderOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("BuilderOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *BuilderOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *BuilderOrderFieldLastModifiedAt
+	default:
+		return fmt.Errorf("%s is not a valid BuilderOrderField", str)
+	}
+	return nil
+}
+
+// BuilderOrderField defines the ordering field of Builder.
+type BuilderOrderField struct {
+	// Value extracts the ordering value from the given Builder.
+	Value    func(*Builder) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) builder.OrderOption
+	toCursor func(*Builder) Cursor
+}
+
+// BuilderOrder defines the ordering of Builder.
+type BuilderOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *BuilderOrderField `json:"field"`
+}
+
+// DefaultBuilderOrder is the default ordering of Builder.
+var DefaultBuilderOrder = &BuilderOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.ID, nil
+		},
+		column: builder.FieldID,
+		toTerm: builder.ByID,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{ID: b.ID}
+		},
+	},
+}
+
+// ToEdge converts Builder into BuilderEdge.
+func (b *Builder) ToEdge(order *BuilderOrder) *BuilderEdge {
+	if order == nil {
+		order = DefaultBuilderOrder
+	}
+	return &BuilderEdge{
 		Node:   b,
 		Cursor: order.Field.toCursor(b),
 	}

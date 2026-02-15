@@ -17,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -41,6 +42,8 @@ type Client struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// Builder is the client for interacting with the Builder builders.
+	Builder *BuilderClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -82,6 +85,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Asset = NewAssetClient(c.config)
 	c.Beacon = NewBeaconClient(c.config)
+	c.Builder = NewBuilderClient(c.config)
 	c.Host = NewHostClient(c.config)
 	c.HostCredential = NewHostCredentialClient(c.config)
 	c.HostFile = NewHostFileClient(c.config)
@@ -189,6 +193,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:         cfg,
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		Builder:        NewBuilderClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -223,6 +228,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:         cfg,
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		Builder:        NewBuilderClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -265,8 +271,9 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Asset, c.Beacon, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
+		c.Asset, c.Beacon, c.Builder, c.Host, c.HostCredential, c.HostFile,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task,
+		c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -276,8 +283,9 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Asset, c.Beacon, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task, c.Tome, c.User,
+		c.Asset, c.Beacon, c.Builder, c.Host, c.HostCredential, c.HostFile,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task,
+		c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -290,6 +298,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Asset.mutate(ctx, m)
 	case *BeaconMutation:
 		return c.Beacon.mutate(ctx, m)
+	case *BuilderMutation:
+		return c.Builder.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
 	case *HostCredentialMutation:
@@ -681,6 +691,139 @@ func (c *BeaconClient) mutate(ctx context.Context, m *BeaconMutation) (Value, er
 		return (&BeaconDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Beacon mutation op: %q", m.Op())
+	}
+}
+
+// BuilderClient is a client for the Builder schema.
+type BuilderClient struct {
+	config
+}
+
+// NewBuilderClient returns a client for the Builder from the given config.
+func NewBuilderClient(c config) *BuilderClient {
+	return &BuilderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `builder.Hooks(f(g(h())))`.
+func (c *BuilderClient) Use(hooks ...Hook) {
+	c.hooks.Builder = append(c.hooks.Builder, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `builder.Intercept(f(g(h())))`.
+func (c *BuilderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Builder = append(c.inters.Builder, interceptors...)
+}
+
+// Create returns a builder for creating a Builder entity.
+func (c *BuilderClient) Create() *BuilderCreate {
+	mutation := newBuilderMutation(c.config, OpCreate)
+	return &BuilderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Builder entities.
+func (c *BuilderClient) CreateBulk(builders ...*BuilderCreate) *BuilderCreateBulk {
+	return &BuilderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BuilderClient) MapCreateBulk(slice any, setFunc func(*BuilderCreate, int)) *BuilderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BuilderCreateBulk{err: fmt.Errorf("calling to BuilderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BuilderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BuilderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Builder.
+func (c *BuilderClient) Update() *BuilderUpdate {
+	mutation := newBuilderMutation(c.config, OpUpdate)
+	return &BuilderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BuilderClient) UpdateOne(b *Builder) *BuilderUpdateOne {
+	mutation := newBuilderMutation(c.config, OpUpdateOne, withBuilder(b))
+	return &BuilderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BuilderClient) UpdateOneID(id int) *BuilderUpdateOne {
+	mutation := newBuilderMutation(c.config, OpUpdateOne, withBuilderID(id))
+	return &BuilderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Builder.
+func (c *BuilderClient) Delete() *BuilderDelete {
+	mutation := newBuilderMutation(c.config, OpDelete)
+	return &BuilderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BuilderClient) DeleteOne(b *Builder) *BuilderDeleteOne {
+	return c.DeleteOneID(b.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BuilderClient) DeleteOneID(id int) *BuilderDeleteOne {
+	builderC := c.Delete().Where(builder.ID(id))
+	builderC.mutation.id = &id
+	builderC.mutation.op = OpDeleteOne
+	return &BuilderDeleteOne{builderC}
+}
+
+// Query returns a query builder for Builder.
+func (c *BuilderClient) Query() *BuilderQuery {
+	return &BuilderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBuilder},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Builder entity by its id.
+func (c *BuilderClient) Get(ctx context.Context, id int) (*Builder, error) {
+	return c.Query().Where(builder.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BuilderClient) GetX(ctx context.Context, id int) *Builder {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *BuilderClient) Hooks() []Hook {
+	return c.hooks.Builder
+}
+
+// Interceptors returns the client interceptors.
+func (c *BuilderClient) Interceptors() []Interceptor {
+	return c.inters.Builder
+}
+
+func (c *BuilderClient) mutate(ctx context.Context, m *BuilderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BuilderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BuilderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BuilderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BuilderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Builder mutation op: %q", m.Op())
 	}
 }
 
@@ -3060,11 +3203,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset, Beacon, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
-		Repository, Shell, Tag, Task, Tome, User []ent.Hook
+		Asset, Beacon, Builder, Host, HostCredential, HostFile, HostProcess, Link,
+		Portal, Quest, Repository, Shell, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Asset, Beacon, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
-		Repository, Shell, Tag, Task, Tome, User []ent.Interceptor
+		Asset, Beacon, Builder, Host, HostCredential, HostFile, HostProcess, Link,
+		Portal, Quest, Repository, Shell, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

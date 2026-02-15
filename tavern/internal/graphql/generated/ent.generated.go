@@ -2439,6 +2439,355 @@ func (ec *executionContext) fieldContext_BeaconEdge_cursor(_ context.Context, fi
 	return fc, nil
 }
 
+func (ec *executionContext) _Builder_id(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Builder_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Builder_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Builder_identifier(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_identifier,
+		func(ctx context.Context) (any, error) {
+			return obj.Identifier, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_identifier(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Builder_supportedTargets(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_supportedTargets,
+		func(ctx context.Context) (any, error) {
+			return obj.SupportedTargets, nil
+		},
+		nil,
+		ec.marshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_supportedTargets(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type HostPlatform does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Builder_upstream(ctx context.Context, field graphql.CollectedField, obj *ent.Builder) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Builder_upstream,
+		func(ctx context.Context) (any, error) {
+			return obj.Upstream, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Builder_upstream(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Builder",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalOBuilderEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_BuilderEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_BuilderEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuilderEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalOBuilder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilder,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Builder_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Builder_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Builder_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Builder_identifier(ctx, field)
+			case "supportedTargets":
+				return ec.fieldContext_Builder_supportedTargets(ctx, field)
+			case "upstream":
+				return ec.fieldContext_Builder_upstream(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Builder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuilderEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Host_id(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -12201,6 +12550,469 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBuilderOrder(ctx context.Context, obj any) (ent.BuilderOrder, error) {
+	var it ent.BuilderOrder
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNBuilderOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context, obj any) (ent.BuilderWhereInput, error) {
+	var it ent.BuilderWhereInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "upstream", "upstreamNEQ", "upstreamIn", "upstreamNotIn", "upstreamGT", "upstreamGTE", "upstreamLT", "upstreamLTE", "upstreamContains", "upstreamHasPrefix", "upstreamHasSuffix", "upstreamEqualFold", "upstreamContainsFold"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalOBuilderWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalOBuilderWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalOBuilderWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "lastModifiedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAt = data
+		case "lastModifiedAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtNEQ = data
+		case "lastModifiedAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtIn = data
+		case "lastModifiedAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtNotIn = data
+		case "lastModifiedAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtGT = data
+		case "lastModifiedAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtGTE = data
+		case "lastModifiedAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtLT = data
+		case "lastModifiedAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtLTE = data
+		case "identifier":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifier"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Identifier = data
+		case "identifierNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierNEQ = data
+		case "identifierIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierIn = data
+		case "identifierNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierNotIn = data
+		case "identifierGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierGT = data
+		case "identifierGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierGTE = data
+		case "identifierLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierLT = data
+		case "identifierLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierLTE = data
+		case "identifierContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierContains = data
+		case "identifierHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierHasPrefix = data
+		case "identifierHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierHasSuffix = data
+		case "identifierEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierEqualFold = data
+		case "identifierContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("identifierContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IdentifierContainsFold = data
+		case "upstream":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstream"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Upstream = data
+		case "upstreamNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamNEQ = data
+		case "upstreamIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamIn = data
+		case "upstreamNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamNotIn = data
+		case "upstreamGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamGT = data
+		case "upstreamGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamGTE = data
+		case "upstreamLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamLT = data
+		case "upstreamLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamLTE = data
+		case "upstreamContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamContains = data
+		case "upstreamHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamHasPrefix = data
+		case "upstreamHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamHasSuffix = data
+		case "upstreamEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamEqualFold = data
+		case "upstreamContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstreamContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UpstreamContainsFold = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context, obj any) (ent.CreateBuilderInput, error) {
+	var it ent.CreateBuilderInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"supportedTargets", "upstream"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "supportedTargets":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("supportedTargets"))
+			data, err := ec.unmarshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SupportedTargets = data
+		case "upstream":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstream"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Upstream = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.Context, obj any) (ent.CreateHostCredentialInput, error) {
 	var it ent.CreateHostCredentialInput
 	asMap := map[string]any{}
@@ -21304,6 +22116,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Host(ctx, sel, obj)
+	case *ent.Builder:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Builder(ctx, sel, obj)
 	case *ent.Beacon:
 		if obj == nil {
 			return graphql.Null
@@ -21826,6 +22643,157 @@ func (ec *executionContext) _BeaconEdge(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._BeaconEdge_node(ctx, field, obj)
 		case "cursor":
 			out.Values[i] = ec._BeaconEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var builderImplementors = []string{"Builder", "Node"}
+
+func (ec *executionContext) _Builder(ctx context.Context, sel ast.SelectionSet, obj *ent.Builder) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, builderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Builder")
+		case "id":
+			out.Values[i] = ec._Builder_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Builder_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastModifiedAt":
+			out.Values[i] = ec._Builder_lastModifiedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "identifier":
+			out.Values[i] = ec._Builder_identifier(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "supportedTargets":
+			out.Values[i] = ec._Builder_supportedTargets(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "upstream":
+			out.Values[i] = ec._Builder_upstream(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var builderConnectionImplementors = []string{"BuilderConnection"}
+
+func (ec *executionContext) _BuilderConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.BuilderConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, builderConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuilderConnection")
+		case "edges":
+			out.Values[i] = ec._BuilderConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._BuilderConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._BuilderConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var builderEdgeImplementors = []string{"BuilderEdge"}
+
+func (ec *executionContext) _BuilderEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.BuilderEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, builderEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BuilderEdge")
+		case "node":
+			out.Values[i] = ec._BuilderEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._BuilderEdge_cursor(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -25762,6 +26730,42 @@ func (ec *executionContext) unmarshalNBeaconWhereInput2ᚖrealmᚗpubᚋtavern�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNBuilder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilder(ctx context.Context, sel ast.SelectionSet, v *ent.Builder) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Builder(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBuilderOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderOrderField(ctx context.Context, v any) (*ent.BuilderOrderField, error) {
+	var res = new(ent.BuilderOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBuilderOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.BuilderOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNBuilderWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInput(ctx context.Context, v any) (*ent.BuilderWhereInput, error) {
+	res, err := ec.unmarshalInputBuilderWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateBuilderInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateBuilderInput(ctx context.Context, v any) (ent.CreateBuilderInput, error) {
+	res, err := ec.unmarshalInputCreateBuilderInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateHostCredentialInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateHostCredentialInput(ctx context.Context, v any) (ent.CreateHostCredentialInput, error) {
 	res, err := ec.unmarshalInputCreateHostCredentialInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -25955,6 +26959,65 @@ func (ec *executionContext) unmarshalNHostPlatform2realmᚗpubᚋtavernᚋintern
 
 func (ec *executionContext) marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx context.Context, sel ast.SelectionSet, v c2pb.Host_Platform) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx context.Context, v any) ([]c2pb.Host_Platform, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]c2pb.Host_Platform, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.Host_Platform) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcessConnection) graphql.Marshaler {
@@ -26842,6 +27905,87 @@ func (ec *executionContext) unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavern�
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputBeaconWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBuilder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilder(ctx context.Context, sel ast.SelectionSet, v *ent.Builder) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Builder(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOBuilderEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.BuilderEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge(ctx context.Context, sel ast.SelectionSet, v *ent.BuilderEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BuilderEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBuilderWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInputᚄ(ctx context.Context, v any) ([]*ent.BuilderWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.BuilderWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBuilderWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOBuilderWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderWhereInput(ctx context.Context, v any) (*ent.BuilderWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputBuilderWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

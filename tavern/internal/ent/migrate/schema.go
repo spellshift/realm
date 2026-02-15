@@ -63,6 +63,21 @@ var (
 			},
 		},
 	}
+	// BuildersColumns holds the columns for the "builders" table.
+	BuildersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "identifier", Type: field.TypeString, Unique: true},
+		{Name: "supported_targets", Type: field.TypeJSON},
+		{Name: "upstream", Type: field.TypeString},
+	}
+	// BuildersTable holds the schema information for the "builders" table.
+	BuildersTable = &schema.Table{
+		Name:       "builders",
+		Columns:    BuildersColumns,
+		PrimaryKey: []*schema.Column{BuildersColumns[0]},
+	}
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -567,6 +582,7 @@ var (
 	Tables = []*schema.Table{
 		AssetsTable,
 		BeaconsTable,
+		BuildersTable,
 		HostsTable,
 		HostCredentialsTable,
 		HostFilesTable,
@@ -593,6 +609,9 @@ func init() {
 	}
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
 	BeaconsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	BuildersTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostsTable.ForeignKeys[0].RefTable = TomesTable
