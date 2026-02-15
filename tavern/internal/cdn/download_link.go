@@ -2,8 +2,8 @@ package cdn
 
 import (
 	"bytes"
-	"net/http"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
 
@@ -55,15 +55,15 @@ func NewLinkDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		if l.DownloadLimit != nil {
 			downloadLimit = *l.DownloadLimit
 		}
-		if  downloadLimit > 0 && l.Downloads >= downloadLimit {
+		if downloadLimit > 0 && l.Downloads >= downloadLimit {
 			slog.Info("Failed attempt to download link, maximum downloads reached", "path", linkPath, "downloads", l.Downloads, "download_limit", l.DownloadLimit)
 			return ErrFileNotFound
 		}
 
 		// Increment Link Downloads
 		if _, err := graph.Link.UpdateOne(l).
-		SetDownloads(l.Downloads + 1).
-		Save(ctx); err != nil {
+			SetDownloads(l.Downloads + 1).
+			Save(ctx); err != nil {
 			slog.Error("failed to increment downloads for link", "path", linkPath, "downloads", l.Downloads, "err", err)
 
 			// Only error if a download limit is enforced

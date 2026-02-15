@@ -19,5 +19,5 @@ bundle exec jekyll serve --livereload
 
 ## Docsy Jekyll Template
 
-* [Source on Github](https://github.com/vsoch/docsy-jekyll)
-* [View on Github Pages](https://vsoch.github.io/docsy-jekyll/)
+* [Source on GitHub](https://github.com/vsoch/docsy-jekyll)
+* [View on GitHub Pages](https://vsoch.github.io/docsy-jekyll/)
