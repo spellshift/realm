@@ -29,7 +29,7 @@ func TestUserMutations(t *testing.T) {
 
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, nil, nil)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
