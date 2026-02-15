@@ -1,4 +1,3 @@
-import { useFormik } from "formik";
 import { Checkbox, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
 import Button from "../../../../components/tavern-base-ui/button/Button";
 
