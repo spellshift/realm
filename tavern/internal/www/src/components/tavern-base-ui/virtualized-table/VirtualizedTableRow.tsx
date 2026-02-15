@@ -11,7 +11,7 @@ export function VirtualizedTableRow<TData, TResponse = unknown>({
     columns,
     onRowClick,
     isVisible,
-    pollInterval = 10000,
+    pollInterval = 5000,
     extractData,
     className = "",
     minWidth = "800px",
@@ -96,7 +96,7 @@ export function VirtualizedTableRow<TData, TResponse = unknown>({
                 ))}
             </div>
             {isExpanded && canExpand && renderExpandedContent && (
-                <div className="bg-gray-50 border-b border-gray-200">
+                <div className="bg-gray-50 border-b border-gray-200" style={{ minWidth }}>
                     {renderExpandedContent(itemData)}
                 </div>
             )}

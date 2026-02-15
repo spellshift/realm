@@ -4,11 +4,10 @@ export const VirtualizedTableHeader = ({
     columns,
     gridCols,
     minWidth = '800px',
-    className = '',
 }: VirtualizedTableHeaderProps) => {
     return (
         <div
-            className={`bg-gray-50 sticky top-0 z-10 grid gap-4 px-6 py-3 border-b border-gray-200 ${className}`}
+            className='bg-gray-50 sticky top-0 z-10 grid gap-4 px-6 py-3 border-b border-gray-200'
             style={{
                 gridTemplateColumns: gridCols,
                 minWidth,

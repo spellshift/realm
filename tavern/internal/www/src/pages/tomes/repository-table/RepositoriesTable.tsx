@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { VirtualizedTableHeader } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTableHeader";
 import { VirtualizedTable } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { RepositoryRowFirstParty } from "./RepositoryRowFirstParty";
@@ -11,20 +11,7 @@ interface RepositoriesTableProps {
 }
 
 export const RepositoriesTable = ({ repositoryIds }: RepositoriesTableProps) => {
-    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const { importRepositoryTomes, loading: isRefetching } = useFetchRepositoryTome(undefined, true);
-
-    const handleToggleExpand = useCallback((repoId: string) => {
-        setExpandedItems(prev => {
-            const next = new Set(prev);
-            if (next.has(repoId)) {
-                next.delete(repoId);
-            } else {
-                next.add(repoId);
-            }
-            return next;
-        });
-    }, []);
 
     const handleRefetch = useCallback((repoId: string) => {
         importRepositoryTomes(repoId);
@@ -57,7 +44,6 @@ export const RepositoriesTable = ({ repositoryIds }: RepositoriesTableProps) => 
     }: {
         itemId: string;
         isVisible: boolean;
-        onItemClick: (id: string) => void;
         isExpanded: boolean;
         onToggleExpand: (id: string) => void;
     }) => {
@@ -90,8 +76,7 @@ export const RepositoriesTable = ({ repositoryIds }: RepositoriesTableProps) => 
             renderHeader={renderHeader}
             estimateRowSize={73}
             overscan={5}
-            expandedItems={expandedItems}
-            onToggleExpand={handleToggleExpand}
+            expandable
         />
     );
 };

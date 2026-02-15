@@ -95,11 +95,8 @@ export interface VirtualizedTableProps {
     /** Enable dynamic sizing - measures actual element heights after render (default: false) */
     dynamicSizing?: boolean;
 
-    /** Set of expanded item IDs (for expandable rows) */
-    expandedItems?: Set<string>;
-
-    /** Callback when an item's expand state is toggled */
-    onToggleExpand?: (id: string) => void;
+    /** Enable expandable rows - table manages expand state internally (default: false) */
+    expandable?: boolean;
 }
 
 /**

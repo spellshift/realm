@@ -14,12 +14,10 @@ export const VirtualizedTable = ({
     height = "calc(100vh - 180px)",
     minHeight = "400px",
     dynamicSizing = false,
-    expandedItems,
-    onToggleExpand,
+    expandable = false,
 }: VirtualizedTableProps) => {
-
-    const hasExpandableRows = expandedItems !== undefined && onToggleExpand !== undefined;
-    const useDynamicSizing = dynamicSizing || hasExpandableRows;
+    const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+    const useDynamicSizing = dynamicSizing || expandable;
     const parentRef = useRef<HTMLDivElement>(null);
     const [visibleItemIds, setVisibleItemIds] = useState<Set<string>>(new Set());
 
@@ -30,10 +28,16 @@ export const VirtualizedTable = ({
     }, [onItemClick]);
 
     const handleToggleExpand = useCallback((itemId: string) => {
-        if (onToggleExpand) {
-            onToggleExpand(itemId);
-        }
-    }, [onToggleExpand]);
+        setExpandedItems(prev => {
+            const next = new Set(prev);
+            if (next.has(itemId)) {
+                next.delete(itemId);
+            } else {
+                next.add(itemId);
+            }
+            return next;
+        });
+    }, []);
 
     const rowVirtualizer = useVirtualizer({
         count: items.length,

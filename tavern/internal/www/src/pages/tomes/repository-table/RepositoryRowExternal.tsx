@@ -1,6 +1,5 @@
 import { useMemo, useCallback } from "react";
 import { Tooltip } from "@chakra-ui/react";
-import { ArrowPathIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { formatDistance } from "date-fns";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
@@ -16,6 +15,7 @@ import {
     GetRepositoryDetailQueryVariables,
     RepositoryDisplayData,
 } from "../types";
+import { Copy, RefreshCw } from "lucide-react";
 
 interface RepositoryRowExternalProps {
     repositoryId: string;
@@ -143,25 +143,25 @@ export const RepositoryRowExternal = ({
                     <div className="flex flex-row">
                         <Tooltip label="Refetch tomes">
                             <Button
-                                id="ignoreRowClick"
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
-                                leftIcon={<ArrowPathIcon className="w-4 h-4" id="ignoreRowClick" />}
+                                leftIcon={<RefreshCw className="w-4 h-4"/>}
                                 aria-label="Refetch tomes"
                                 disabled={isRefetching}
                                 onClick={(e) => handleRefetch(e, repo.id)}
                             />
                         </Tooltip>
+                       {repo.publicKey !== "" && (
                         <Tooltip label="Copy public key">
                             <Button
-                                id="ignoreRowClick"
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
                                 aria-label="Copy public key"
-                                leftIcon={<ClipboardDocumentIcon className="w-4 h-4" id="ignoreRowClick" />}
+                                leftIcon={<Copy className="w-4 h-4" />}
                                 onClick={(e) => handleCopyPublicKey(e, repo.publicKey)}
                             />
                         </Tooltip>
+                        )}
                     </div>
                 </div>
             ),
