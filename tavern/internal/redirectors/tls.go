@@ -51,9 +51,9 @@ func tryACME(ctx context.Context, host string) (tlsCfg *tls.Config, err error) {
 		slog.Debug("redirectors: using short lived certificates")
 	}
 	acme := certmagic.ACMEIssuer{
-		Agreed: true,
-		Email:  "",
-		CA:     certmagic.LetsEncryptProductionCA,
+		Agreed:  true,
+		Email:   "",
+		CA:      certmagic.LetsEncryptProductionCA,
 		Profile: profile,
 	}
 
@@ -85,9 +85,8 @@ func selfSignedTLSConfig(host string) (*tls.Config, error) {
 	}
 
 	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-		},
+		SerialNumber:          serialNumber,
+		Subject:               pkix.Name{},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
