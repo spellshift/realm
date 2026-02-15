@@ -1,20 +1,6 @@
 import { ApolloError, DocumentNode, OperationVariables } from "@apollo/client";
 import { ReactNode } from "react";
 
-export interface VirtualizedTableHeaderProps {
-    /** Column labels to display */
-    columns: string[];
-
-    /** Grid template columns (e.g., "minmax(200px,2fr) 1fr 100px") */
-    gridCols: string;
-
-    /** Minimum width for horizontal scrolling */
-    minWidth?: string;
-
-    /** Additional CSS class names */
-    className?: string;
-}
-
 export interface VirtualizedTableWrapperProps {
     /** Total number of items (used to determine empty states) */
     totalItems?: number;
@@ -42,34 +28,49 @@ export interface VirtualizedTableWrapperProps {
 }
 
 /**
- * Defines a column in the virtualized table
+ * Unified column definition that includes both header and cell configuration
  */
 export interface VirtualizedTableColumn<TData> {
     /** Unique identifier for the column */
     key: string;
+    /** Column header label */
+    label: string;
     /** Grid width specification (e.g., "minmax(250px,3fr)") */
-    gridWidth: string;
-    /** Render function for the column content */
+    width: string;
+    /** Render function for the row of the column content */
     render: (data: TData) => ReactNode;
     /** Render function for the loading skeleton (optional - uses default if not provided) */
     renderSkeleton?: () => ReactNode;
 }
 
-export interface VirtualizedTableProps {
+/**
+ * Configuration for expandable row behavior
+ */
+export interface ExpandableConfig<TData> {
+    /** Render function for expanded content below the row */
+    render: (data: TData) => ReactNode;
+    /** Function to determine if this specific row is expandable based on its data (default: true) */
+    isExpandable?: (data: TData) => boolean;
+}
+
+export interface VirtualizedTableProps<TData, TResponse = unknown> {
     /** Array of item IDs to display */
     items: string[];
 
-    /** Function to render each row */
-    renderRow: (props: {
-        itemId: string;
-        isVisible: boolean;
-        onItemClick: (id: string) => void;
-        isExpanded: boolean;
-        onToggleExpand: (id: string) => void;
-    }) => ReactNode;
+    /** Column definitions including header labels, widths, and render functions */
+    columns: VirtualizedTableColumn<TData>[];
 
-    /** Function to render the table header */
-    renderHeader: () => ReactNode;
+    /** GraphQL query to fetch data for each row. Can be a function for different queries per row. */
+    query: DocumentNode | ((itemId: string) => DocumentNode);
+
+    /** Function to generate query variables from itemId */
+    getVariables: (itemId: string) => OperationVariables;
+
+    /** Function to extract the data node from the query response */
+    extractData: (response: TResponse, itemId: string) => TData | null;
+
+    /** Poll interval in milliseconds when row is visible (default: 5000) */
+    pollInterval?: number;
 
     /** Callback when a row is clicked */
     onItemClick?: (id: string) => void;
@@ -79,6 +80,12 @@ export interface VirtualizedTableProps {
 
     /** Callback to load more items */
     onLoadMore?: () => void;
+
+    /** Configuration for expandable rows */
+    expandable?: ExpandableConfig<TData>;
+
+    /** Minimum width for horizontal scrolling (default: '800px') */
+    minWidth?: string;
 
     /** Estimated height of each row in pixels */
     estimateRowSize?: number;
@@ -91,44 +98,36 @@ export interface VirtualizedTableProps {
 
     /** Minimum height in pixels */
     minHeight?: string;
-
-    /** Enable dynamic sizing - measures actual element heights after render (default: false) */
-    dynamicSizing?: boolean;
-
-    /** Enable expandable rows - table manages expand state internally (default: false) */
-    expandable?: boolean;
 }
 
 /**
- * Props for the VirtualizedTableRow component
+ * Props for the internal row component that handles data fetching
  */
-export interface VirtualizedTableRowProps<TData, TResponse = unknown> {
+export interface VirtualizedTableRowInternalProps<TData, TResponse> {
     /** Unique identifier for this row's item */
     itemId: string;
     /** GraphQL query to fetch data for this row */
     query: DocumentNode;
     /** Function to generate query variables from itemId */
-    getVariables: (itemId: string) => OperationVariables | undefined;
+    getVariables: (itemId: string) => Record<string, unknown>;
     /** Function to extract the data node from the query response */
-    extractData: (response: TResponse) => TData | null;
-    /** Whether the row is currently visible in viewport */
-    isVisible: boolean;
-    /** Poll interval in milliseconds when visible (default: 10000) */
-    pollInterval?: number;
+    extractData: (response: TResponse, itemId: string) => TData | null;
     /** Column definitions */
     columns: VirtualizedTableColumn<TData>[];
-    /** Callback when row is clicked */
-    onRowClick?: (itemId: string) => void;
-    /** Custom CSS class for the row */
-    className?: string;
-    /** Minimum width for the row (default: '800px') */
-    minWidth?: string;
+    /** Whether this row is currently visible in the viewport */
+    isVisible: boolean;
+    /** Poll interval in milliseconds when row is visible */
+    pollInterval: number;
+    /** Callback when the row is clicked */
+    onRowClick?: (id: string) => void;
+    /** Minimum width for horizontal scrolling */
+    minWidth: string;
+    /** Grid template columns for row layout */
+    gridTemplateColumns: string;
     /** Whether the row is currently expanded */
-    isExpanded?: boolean;
-    /** Callback when the expand toggle is clicked */
-    onToggleExpand?: (itemId: string) => void;
-    /** Function to render expanded content below the row */
-    renderExpandedContent?: (data: TData) => ReactNode;
-    /** Function to determine if this specific row is expandable based on its data (default: true if renderExpandedContent is provided) */
-    isExpandable?: (data: TData) => boolean;
+    isExpanded: boolean;
+    /** Callback to toggle row expansion */
+    onToggleExpand: (id: string) => void;
+    /** Configuration for expandable row behavior */
+    expandable?: ExpandableConfig<TData>;
 }

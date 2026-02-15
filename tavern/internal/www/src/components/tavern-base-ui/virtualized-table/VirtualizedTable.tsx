@@ -1,25 +1,50 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { DocumentNode } from "@apollo/client";
 import { VirtualizedTableProps } from "./types";
+import { VirtualizedTableRowInternal } from "./VirtualizedTableRowInternal";
 
-export const VirtualizedTable = ({
+export function VirtualizedTable<TData, TResponse = unknown>({
     items,
-    renderRow,
-    renderHeader,
+    columns,
+    query,
+    getVariables,
+    extractData,
+    pollInterval = 5000,
     onItemClick,
     hasMore = false,
     onLoadMore,
+    expandable,
+    minWidth = "800px",
     estimateRowSize = 73,
     overscan = 5,
     height = "calc(100vh - 180px)",
     minHeight = "400px",
-    dynamicSizing = false,
-    expandable = false,
-}: VirtualizedTableProps) => {
+}: VirtualizedTableProps<TData, TResponse>) {
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-    const useDynamicSizing = dynamicSizing || expandable;
+    const useDynamicSizing = expandable !== undefined;
     const parentRef = useRef<HTMLDivElement>(null);
     const [visibleItemIds, setVisibleItemIds] = useState<Set<string>>(new Set());
+
+    // Compute grid template from columns
+    const gridTemplateColumns = useMemo(
+        () => columns.map(col => col.width).join(' '),
+        [columns]
+    );
+
+    // Compute header grid (with expand column if needed)
+    const headerGridTemplateColumns = useMemo(
+        () => expandable ? `32px ${gridTemplateColumns}` : gridTemplateColumns,
+        [expandable, gridTemplateColumns]
+    );
+
+    // Get query for a specific item (supports both static and dynamic queries)
+    const getQueryForItem = useCallback((itemId: string): DocumentNode => {
+        if (typeof query === 'function') {
+            return query(itemId);
+        }
+        return query;
+    }, [query]);
 
     const handleItemClick = useCallback((itemId: string) => {
         if (onItemClick) {
@@ -44,7 +69,6 @@ export const VirtualizedTable = ({
         getScrollElement: () => parentRef.current,
         estimateSize: () => estimateRowSize,
         overscan,
-        // Enable dynamic measurement of actual element sizes
         measureElement: useDynamicSizing
             ? (element) => element.getBoundingClientRect().height
             : undefined,
@@ -107,8 +131,26 @@ export const VirtualizedTable = ({
                 width: '100%'
             }}
         >
-            {renderHeader()}
+            {/* Header */}
+            <div
+                className='bg-gray-50 sticky top-0 z-10 grid gap-4 px-6 py-3 border-b border-gray-200'
+                style={{
+                    gridTemplateColumns: headerGridTemplateColumns,
+                    minWidth,
+                }}
+            >
+                {expandable && <div />}
+                {columns.map((column) => (
+                    <div
+                        key={column.key}
+                        className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                        {column.label}
+                    </div>
+                ))}
+            </div>
 
+            {/* Virtualized rows */}
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                 {rowVirtualizer.getVirtualItems().map(virtualRow => {
                     const itemId = items[virtualRow.index];
@@ -126,17 +168,25 @@ export const VirtualizedTable = ({
                                 transform: `translateY(${virtualRow.start}px)`,
                             }}
                         >
-                            {renderRow({
-                                itemId,
-                                isVisible,
-                                onItemClick: handleItemClick,
-                                isExpanded: expandedItems?.has(itemId) ?? false,
-                                onToggleExpand: handleToggleExpand,
-                            })}
+                            <VirtualizedTableRowInternal<TData, TResponse>
+                                itemId={itemId}
+                                query={getQueryForItem(itemId)}
+                                getVariables={getVariables}
+                                extractData={extractData}
+                                columns={columns}
+                                isVisible={isVisible}
+                                pollInterval={pollInterval}
+                                onRowClick={onItemClick ? handleItemClick : undefined}
+                                minWidth={minWidth}
+                                gridTemplateColumns={gridTemplateColumns}
+                                isExpanded={expandedItems.has(itemId)}
+                                onToggleExpand={handleToggleExpand}
+                                expandable={expandable}
+                            />
                         </div>
                     );
                 })}
             </div>
         </div>
     );
-};
+}
