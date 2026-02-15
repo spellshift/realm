@@ -20,7 +20,7 @@ type Builder struct {
 func (Builder) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("identifier").
-			DefaultFunc(func() string { return uuid.New().String() }).
+			DefaultFunc(uuid.New().String).
 			NotEmpty().
 			Unique().
 			Immutable().

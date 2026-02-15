@@ -44,7 +44,7 @@ func TestBuilderE2E(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
