@@ -12,6 +12,7 @@ interface ShellState {
     prompt: string;
     isSearching: boolean;
     searchQuery: string;
+    currentBlock: string;
 }
 
 const ShellV2 = () => {
@@ -27,7 +28,8 @@ const ShellV2 = () => {
         historyIndex: -1,
         prompt: ">>> ",
         isSearching: false,
-        searchQuery: ""
+        searchQuery: "",
+        currentBlock: ""
     });
 
     // UI state
@@ -36,6 +38,8 @@ const ShellV2 = () => {
     const [showCompletions, setShowCompletions] = useState(false);
     const [completionIndex, setCompletionIndex] = useState(0);
     const [completionPos, setCompletionPos] = useState({ x: 0, y: 0 });
+
+    const lastBufferHeight = useRef(0);
 
     // We need a ref to access current completions inside onData without stale closure
     const completionsRef = useRef<{ list: string[], start: number, show: boolean, index: number }>({
@@ -102,14 +106,42 @@ const ShellV2 = () => {
                 }
                 term.write(prompt + match);
             } else {
-                // Optimized redraw: Move to start, rewrite prompt + buffer, clear rest
-                term.write("\r" + state.prompt + state.inputBuffer + "\x1b[K");
+                // Optimized redraw: Handle multi-line
+                const fullContent = state.prompt + state.inputBuffer;
+                const rows = fullContent.split('\n').length - 1;
 
-                const visualCursor = state.prompt.length + state.cursorPos;
-                const totalLen = state.prompt.length + state.inputBuffer.length;
-                const back = totalLen - visualCursor;
-                if (back > 0) {
-                    term.write(`\x1b[${back}D`);
+                // Move up to start of previous rendering
+                const prevRows = lastBufferHeight.current;
+                if (prevRows > 0) {
+                    term.write(`\x1b[${prevRows}A`);
+                }
+
+                // Clear everything below
+                term.write("\r\x1b[J");
+
+                // Write new content
+                term.write(fullContent);
+
+                // Update last height
+                lastBufferHeight.current = rows;
+
+                // Move cursor to correct position
+                // Calculate cursor position in terms of rows/cols relative to start
+                const prefix = fullContent.slice(0, state.prompt.length + state.cursorPos);
+                const cursorRow = prefix.split('\n').length - 1;
+                const cursorCol = prefix.split('\n').pop()?.length || 0;
+
+                // Current position after write is at end of content
+                const totalRows = rows;
+                // We need to move UP from end to cursorRow
+                const moveUp = totalRows - cursorRow;
+                if (moveUp > 0) {
+                    term.write(`\x1b[${moveUp}A`);
+                }
+
+                term.write("\r"); // Go to start of line
+                if (cursorCol > 0) {
+                    term.write(`\x1b[${cursorCol}C`);
                 }
             }
         };
@@ -168,8 +200,11 @@ const ShellV2 = () => {
              // If completions are showing, handle navigation
              if (completionsRef.current.show) {
                  if (code === 9) { // Tab: cycle
-                     const next = (completionsRef.current.index + 1) % completionsRef.current.list.length;
-                     updateCompletionsUI(completionsRef.current.list, completionsRef.current.start, true, next);
+                     const list = completionsRef.current.list;
+                     if (list.length > 0) {
+                         const next = (completionsRef.current.index + 1) % list.length;
+                         updateCompletionsUI(list, completionsRef.current.start, true, next);
+                     }
                      return;
                  }
                  if (code === 13) { // Enter: select
@@ -177,21 +212,26 @@ const ShellV2 = () => {
                      return;
                  }
                  if (data === "\x1b[B") { // Down
-                     const next = (completionsRef.current.index + 1) % completionsRef.current.list.length;
-                     updateCompletionsUI(completionsRef.current.list, completionsRef.current.start, true, next);
+                     const list = completionsRef.current.list;
+                     if (list.length > 0) {
+                         const next = (completionsRef.current.index + 1) % list.length;
+                         updateCompletionsUI(list, completionsRef.current.start, true, next);
+                     }
                      return;
                  }
                  if (data === "\x1b[A") { // Up
-                     const next = (completionsRef.current.index - 1 + completionsRef.current.list.length) % completionsRef.current.list.length;
-                     updateCompletionsUI(completionsRef.current.list, completionsRef.current.start, true, next);
+                     const list = completionsRef.current.list;
+                     if (list.length > 0) {
+                         const next = (completionsRef.current.index - 1 + list.length) % list.length;
+                         updateCompletionsUI(list, completionsRef.current.start, true, next);
+                     }
                      return;
                  }
                  if (code === 27) { // Esc: cancel
                      updateCompletionsUI([], 0, false, 0);
                      return;
                  }
-                 // Any other key closes completion
-                 updateCompletionsUI([], 0, false, 0);
+                 // Allow other keys to fall through to input handler
              }
 
              if (state.isSearching) {
@@ -248,10 +288,12 @@ const ShellV2 = () => {
                  adapter.current?.reset();
                  term.write("^C\r\n");
                  state.inputBuffer = "";
+                 state.currentBlock = "";
                  state.cursorPos = 0;
                  state.historyIndex = -1;
                  state.prompt = ">>> ";
                  term.write(state.prompt);
+                 lastBufferHeight.current = 0;
                  return;
              }
 
@@ -263,10 +305,9 @@ const ShellV2 = () => {
              }
 
              if (data === "\x0c") { // Ctrl+L
-                 term.clear();
-                 term.write(state.prompt + state.inputBuffer);
-                 const back = state.inputBuffer.length - state.cursorPos;
-                 if (back > 0) term.write(`\x1b[${back}D`);
+                 term.write('\x1b[2J\x1b[H');
+                 lastBufferHeight.current = 0;
+                 redrawLine();
                  return;
              }
 
@@ -391,8 +432,12 @@ const ShellV2 = () => {
              } else if (code === 13) { // Enter
                  term.write("\r\n");
                  const res = adapter.current?.input(state.inputBuffer);
+
+                 state.currentBlock += state.inputBuffer + "\n";
+
                  if (res?.status === "complete") {
-                     if (state.inputBuffer.trim()) state.history.push(state.inputBuffer);
+                     if (state.currentBlock.trim()) state.history.push(state.currentBlock.trimEnd());
+                     state.currentBlock = "";
                      state.historyIndex = -1;
                      state.inputBuffer = "";
                      state.cursorPos = 0;
@@ -400,15 +445,16 @@ const ShellV2 = () => {
                  } else if (res?.status === "incomplete") {
                      state.prompt = res.prompt || ".. ";
                      term.write(state.prompt);
-                     if (state.inputBuffer.trim()) state.history.push(state.inputBuffer);
                      state.inputBuffer = "";
                      state.cursorPos = 0;
                  } else {
                      term.write(`Error: ${res?.message}\r\n>>> `);
+                     state.currentBlock = "";
                      state.inputBuffer = "";
                      state.cursorPos = 0;
                      state.prompt = ">>> ";
                  }
+                 lastBufferHeight.current = 0;
              } else if (code === 127) { // Backspace
                  if (state.cursorPos > 0) {
                      if (state.cursorPos === state.inputBuffer.length) {
@@ -420,6 +466,18 @@ const ShellV2 = () => {
                          state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
                          state.cursorPos--;
                          redrawLine();
+                     }
+                 }
+             }
+
+             // Trigger completion updates if needed
+             if (completionsRef.current.show || code === 46 /* . */) {
+                 const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                 if (res && res.suggestions.length > 0) {
+                     updateCompletionsUI(res.suggestions, res.start, true, 0);
+                 } else {
+                     if (completionsRef.current.show) {
+                         updateCompletionsUI([], 0, false, 0);
                      }
                  }
              }
