@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
 
 const (
-	// RealmRepoURL is the default git repository URL for building realm agents.
-	RealmRepoURL = "https://github.com/spellshift/realm.git"
+	// DefaultRealmRepoURL is the default git repository URL for building realm agents.
+	DefaultRealmRepoURL = "https://github.com/spellshift/realm.git"
 
 	// DefaultInterval is the default callback interval in seconds for the IMIX agent.
 	DefaultInterval = 5
@@ -134,16 +133,6 @@ func DeriveArtifactPath(os c2pb.Host_Platform) string {
 	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix", target)
 }
 
-// MarshalImixConfig serializes the ImixConfig to a YAML string suitable
-// for passing as the IMIX_CONFIG environment variable.
-func MarshalImixConfig(cfg ImixConfig) (string, error) {
-	cfgBytes, err := yaml.Marshal(cfg)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal IMIX config: %w", err)
-	}
-	return string(cfgBytes), nil
-}
-
 // GenerateBuildScript generates the full build script from the build configuration.
 // It clones the repository and runs the build command. The IMIX configuration
 // is passed via the IMIX_CONFIG environment variable rather than being written
@@ -156,7 +145,7 @@ func GenerateBuildScript(os c2pb.Host_Platform, format TargetFormat) (string, er
 
 	script := fmt.Sprintf(
 		`cd /home/vscode && git clone %s realm && cd realm/implants/imix && %s`,
-		RealmRepoURL,
+		DefaultRealmRepoURL,
 		buildCmd,
 	)
 

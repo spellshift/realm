@@ -13,6 +13,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	yaml "gopkg.in/yaml.v3"
 
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent"
@@ -118,7 +119,11 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 				},
 			},
 		}
-		imixCfgYAML, err := MarshalImixConfig(imixCfg)
+		cfgBytes, err := yaml.Marshal(imixCfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal IMIX config: %w", err)
+		}
+		// string(cfgBytes)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to marshal IMIX config for task %d: %v", taskID, err)
 		}
@@ -129,7 +134,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			BuildImage:   claimedTask.BuildImage,
 			BuildScript:  claimedTask.BuildScript,
 			ArtifactPath: claimedTask.ArtifactPath,
-			Env:          []string{fmt.Sprintf("IMIX_CONFIG=%s", imixCfgYAML)},
+			Env:          []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
 		})
 	}
 

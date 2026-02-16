@@ -7,9 +7,9 @@ import (
 	"encoding/pem"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -24,6 +24,9 @@ const (
 
 	// maxConcurrentBuilds is the maximum number of builds that can run simultaneously.
 	maxConcurrentBuilds = 4
+
+	maxOutputChSize = 64
+	maxErrorChSize = 64
 )
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
@@ -129,11 +132,10 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	client := builderpb.NewBuilderClient(conn)
 
 	// Semaphore limits concurrent builds.
-	sem := make(chan struct{}, maxConcurrentBuilds)
-	var wg sync.WaitGroup
+	sem := semaphore.NewWeighted(maxConcurrentBuilds)
 
 	// Check for tasks immediately, then poll on interval
-	if err := claimAndExecuteTasks(ctx, client, exec, sem, &wg); err != nil {
+	if err := claimAndExecuteTasks(ctx, client, exec, sem); err != nil {
 		slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 	}
 
@@ -143,17 +145,19 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 	for {
 		select {
 		case <-ctx.Done():
-			wg.Wait()
+			// Wait for all in-flight builds to finish by acquiring all slots.
+			//nolint:errcheck // context is already cancelled; use background to drain.
+			sem.Acquire(context.Background(), maxConcurrentBuilds)
 			return ctx.Err()
 		case <-ticker.C:
-			if err := claimAndExecuteTasks(ctx, client, exec, sem, &wg); err != nil {
+			if err := claimAndExecuteTasks(ctx, client, exec, sem); err != nil {
 				slog.ErrorContext(ctx, "error processing build tasks", "error", err)
 			}
 		}
 	}
 }
 
-func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, sem chan struct{}, wg *sync.WaitGroup) error {
+func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, sem *semaphore.Weighted) error {
 	resp, err := client.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
 	if err != nil {
 		return fmt.Errorf("failed to claim build tasks: %w", err)
@@ -167,11 +171,11 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 		)
 
 		// Acquire semaphore slot (blocks if at max concurrency).
-		sem <- struct{}{}
-		wg.Add(1)
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return fmt.Errorf("failed to acquire semaphore: %w", err)
+		}
 		go func(t *builderpb.BuildTaskSpec) {
-			defer wg.Done()
-			defer func() { <-sem }()
+			defer sem.Release(1)
 			executeTask(ctx, client, exec, t)
 		}(task)
 	}
@@ -189,8 +193,8 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		return
 	}
 
-	outputCh := make(chan string, 64)
-	errorCh := make(chan string, 64)
+	outputCh := make(chan string, maxOutputChSize)
+	errorCh := make(chan string, maxErrorChSize)
 
 	// Stream output and errors to the server in a background goroutine.
 	var sendErr error
