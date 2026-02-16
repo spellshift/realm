@@ -38,6 +38,7 @@ const ShellV2 = () => {
     const [showCompletions, setShowCompletions] = useState(false);
     const [completionIndex, setCompletionIndex] = useState(0);
     const [completionPos, setCompletionPos] = useState({ x: 0, y: 0 });
+    const completionsListRef = useRef<HTMLUListElement>(null);
 
     const lastBufferHeight = useRef(0);
 
@@ -90,10 +91,11 @@ const ShellV2 = () => {
             if (!term) return;
             const state = shellState.current;
 
+            let contentToWrite = "";
+            let cursorIndex = 0;
+
             if (state.isSearching) {
-                term.write("\r\x1b[K"); // Clear line for search
                 const prompt = `(reverse-i-search)'${state.searchQuery}': `;
-                // Find match
                 let match = "";
                 if (state.searchQuery) {
                     // Simple search backwards
@@ -104,30 +106,36 @@ const ShellV2 = () => {
                         }
                     }
                 }
-                term.write(prompt + match);
+                contentToWrite = prompt + match;
+                // In search mode, cursor is typically at the end of the match
+                cursorIndex = contentToWrite.length;
             } else {
-                // Optimized redraw: Handle multi-line
-                const fullContent = state.prompt + state.inputBuffer;
-                const rows = fullContent.split('\n').length - 1;
+                contentToWrite = state.prompt + state.inputBuffer;
+                cursorIndex = state.prompt.length + state.cursorPos;
+            }
 
-                // Move up to start of previous rendering
-                const prevRows = lastBufferHeight.current;
-                if (prevRows > 0) {
-                    term.write(`\x1b[${prevRows}A`);
-                }
+            // Calculate rows based on newlines
+            const rows = contentToWrite.split('\n').length - 1;
 
-                // Clear everything below
-                term.write("\r\x1b[J");
+            // Move up to start of previous rendering (regardless of mode)
+            const prevRows = lastBufferHeight.current;
+            if (prevRows > 0) {
+                term.write(`\x1b[${prevRows}A`);
+            }
 
-                // Write new content
-                term.write(fullContent);
+            // Clear everything below
+            term.write("\r\x1b[J");
 
-                // Update last height
-                lastBufferHeight.current = rows;
+            // Write new content, ensuring newlines are carriage-return + newline
+            term.write(contentToWrite.replace(/\n/g, "\r\n"));
 
-                // Move cursor to correct position
+            // Update last height
+            lastBufferHeight.current = rows;
+
+            // Move cursor to correct position
+            if (!state.isSearching) {
                 // Calculate cursor position in terms of rows/cols relative to start
-                const prefix = fullContent.slice(0, state.prompt.length + state.cursorPos);
+                const prefix = contentToWrite.slice(0, cursorIndex);
                 const cursorRow = prefix.split('\n').length - 1;
                 const cursorCol = prefix.split('\n').pop()?.length || 0;
 
@@ -490,6 +498,16 @@ const ShellV2 = () => {
         };
     }, []);
 
+    // Scroll active completion into view
+    useEffect(() => {
+        if (showCompletions && completionsListRef.current) {
+            const activeElement = completionsListRef.current.children[completionIndex] as HTMLElement;
+            if (activeElement) {
+                activeElement.scrollIntoView({ block: "nearest" });
+            }
+        }
+    }, [completionIndex, showCompletions]);
+
     return (
         <div style={{ padding: "20px", height: "calc(100vh - 100px)", position: "relative" }}>
             <h1 className="text-xl font-bold mb-4">Shell V2 (Headless REPL)</h1>
@@ -510,7 +528,7 @@ const ShellV2 = () => {
                     fontFamily: 'Menlo, Monaco, "Courier New", monospace',
                     fontSize: "14px"
                 }}>
-                    <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                    <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
                         {completions.map((c, i) => (
                             <li key={i} style={{
                                 padding: "4px 8px",
