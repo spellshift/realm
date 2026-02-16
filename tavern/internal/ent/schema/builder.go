@@ -53,6 +53,7 @@ func (Builder) Edges() []ent.Edge {
 		edge.From("build_tasks", BuildTask.Type).
 			Ref("builder").
 			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
 			).

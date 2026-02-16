@@ -92,16 +92,18 @@ then streams the artifact to Tavern via the `UploadBuildArtifact` RPC in 1 MB ch
 server creates an `Asset` entity. The artifact is downloadable via the existing CDN endpoint
 at `GET /assets/download/{name}`.
 
+## TODO
 
 ### Fix
-- Debug why the second job in a parallel set of builds never finished
+- Set createBuildTask input upstream default to `127.0.0.1:8000`
+- Update builder upstream parsing to accept schema
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
 - Add support for build caching between jobs (will speed up rust builds a lot)
 - Instead of assuming  `/home/vscode` create a correctly permissioned build dir
 - Add support for mulitple transports in the builder
-
+- Don't task builders that are stale
 
 ### future
 - Register redirectors so bulider callback uri can be a drop down.

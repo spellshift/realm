@@ -4421,7 +4421,6 @@ input CreateBuilderInput {
   The server address that the builder should connect to.
   """
   upstream: String!
-  buildTaskIDs: [ID!]
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.

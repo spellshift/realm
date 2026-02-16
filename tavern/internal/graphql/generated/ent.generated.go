@@ -15780,7 +15780,7 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"supportedTargets", "upstream", "buildTaskIDs"}
+	fieldsInOrder := [...]string{"supportedTargets", "upstream"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15801,13 +15801,6 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 				return it, err
 			}
 			it.Upstream = data
-		case "buildTaskIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildTaskIDs"))
-			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BuildTaskIDs = data
 		}
 	}
 
