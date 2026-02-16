@@ -150,22 +150,20 @@ impl HeadlessRepl {
         // The interpreter has builtins loaded.
         let (start, candidates) = self.interpreter.complete(line, cursor);
 
-        // Return JSON list
-        // Format: { "suggestions": [...], "start": start }
-        // We'll just return the list as requested: "Return a JSON list of autocomplete suggestions"
-        // But the prompt implies just a list?
-        // "Return a JSON list of autocomplete suggestions"
-        // I'll return a JSON array of strings.
-
-        let mut json = String::from("[");
+        // Return JSON object with suggestions and start index
+        let mut json = String::from("{ \"suggestions\": [");
         for (i, c) in candidates.iter().enumerate() {
             if i > 0 {
                 json.push(',');
             }
             json.push_str(&format!("{:?}", c));
         }
-        json.push(']');
+        json.push_str(&format!("], \"start\": {} }}", start));
         json
+    }
+
+    pub fn reset(&mut self) {
+        self.buffer.clear();
     }
 }
 
@@ -201,6 +199,19 @@ mod tests {
     fn test_headless_repl_complete() {
         let repl = HeadlessRepl::new();
         let res = repl.complete("pri", 3);
+        assert!(res.contains("\"suggestions\":"));
         assert!(res.contains("print"));
+        assert!(res.contains("\"start\":"));
+    }
+
+    #[test]
+    fn test_headless_repl_reset() {
+        let mut repl = HeadlessRepl::new();
+        let res = repl.input("def foo():");
+        assert!(res.contains("\"status\": \"incomplete\""));
+        repl.reset();
+        let res = repl.input("print('reset')");
+        assert!(res.contains("\"status\": \"complete\""));
+        assert!(res.contains("print('reset')"));
     }
 }

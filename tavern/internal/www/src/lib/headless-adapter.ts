@@ -87,15 +87,21 @@ export class HeadlessWasmAdapter {
         }
     }
 
-    complete(line: string, cursor: number): string[] {
-        if (!this.repl) return [];
-        // complete returns a JSON string array
+    complete(line: string, cursor: number): { suggestions: string[], start: number } {
+        if (!this.repl) return { suggestions: [], start: cursor };
+        // complete returns a JSON object { suggestions: [...], start: number }
         const resultJson = this.repl.complete(line, cursor);
         try {
             return JSON.parse(resultJson);
         } catch (e) {
             console.error("Failed to parse completion result", e);
-            return [];
+            return { suggestions: [], start: cursor };
+        }
+    }
+
+    reset() {
+        if (this.repl) {
+            this.repl.reset();
         }
     }
 
