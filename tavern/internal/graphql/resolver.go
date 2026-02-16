@@ -14,6 +14,9 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+// An option to configure the graphql resolver.
+type Option func(*Resolver)
+
 // A RepoImporter is responsible for importing tomes from the provided URL (filter based on provided filter options).
 type RepoImporter interface {
 	Import(ctx context.Context, repo *ent.Repository, filters ...func(path string) bool) error
@@ -37,6 +40,13 @@ func NewSchema(client *ent.Client, importer RepoImporter, builderCA *x509.Certif
 			builderCAKey: builderCAKey,
 		},
 	}
+	for _, opt := range options {
+      opt(resolver)
+    }
+	cfg := generated.Config{
+		Resolvers: resolver,
+	}
+
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
 		// Allow unauthenticated contexts to continue for open endpoints
 		if requiredRole != models.RoleAdmin && requiredRole != models.RoleUser {

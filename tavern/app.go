@@ -339,7 +339,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git, builderCACert, builderCAKey),
+			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -438,8 +438,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, builderCACert *x509.Certificate, builderCAKey ed25519.PrivateKey) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, builderCACert, builderCAKey))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, options ...func(*graphql.Resolver)) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, options...))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// Configure Raw Query Logging

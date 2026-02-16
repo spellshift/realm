@@ -7,13 +7,19 @@
 pub mod doh {
     use hickory_resolver::config::{ResolverConfig, ResolverOpts};
     use hickory_resolver::TokioAsyncResolver;
-    use hyper::client::connect::dns::Name;
-    use hyper::client::HttpConnector;
-    use hyper::service::Service;
+    use hyper_legacy::client::connect::dns::Name;
+    use hyper_legacy::client::HttpConnector;
+    use hyper_legacy::service::Service;
+    #[cfg(feature = "grpc")]
+    use hyper_util::client::legacy::connect::dns::Name as Hyper1Name;
+    #[cfg(feature = "grpc")]
+    use hyper_util::client::legacy::connect::HttpConnector as Hyper1HttpConnector;
     use std::future::Future;
     use std::net::SocketAddr;
     use std::pin::Pin;
     use std::task::{Context, Poll};
+    #[cfg(feature = "grpc")]
+    use tower::Service as TowerService;
 
     #[allow(dead_code)]
     #[derive(Debug, Clone, Copy)]
@@ -90,6 +96,59 @@ pub mod doh {
         }
     }
 
+    /// Wrapper around hickory-resolver's TokioAsyncResolver that implements
+    /// tower's Service<Name> trait for DNS resolution (Hyper 1.x / hyper-util)
+    #[cfg(feature = "grpc")]
+    #[derive(Clone)]
+    pub struct HickoryResolverServiceHyper1 {
+        resolver: TokioAsyncResolver,
+    }
+
+    #[cfg(feature = "grpc")]
+    impl HickoryResolverServiceHyper1 {
+        /// Create a new resolver service with the specified provider (DOH or system DNS)
+        pub fn new(provider: DohProvider) -> Result<Self, anyhow::Error> {
+            let config = provider.resolver_config()?;
+            let opts = ResolverOpts::default();
+
+            let resolver = TokioAsyncResolver::tokio(config, opts);
+
+            Ok(Self { resolver })
+        }
+    }
+
+    #[cfg(feature = "grpc")]
+    impl TowerService<Hyper1Name> for HickoryResolverServiceHyper1 {
+        type Response = HickoryAddressIter;
+        type Error = Box<dyn std::error::Error + Send + Sync>;
+        type Future =
+            Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send + 'static>>;
+
+        fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+            Poll::Ready(Ok(()))
+        }
+
+        fn call(&mut self, name: Hyper1Name) -> Self::Future {
+            let resolver = self.resolver.clone();
+
+            let name_str = name.as_str().to_string();
+
+            Box::pin(async move {
+                let lookup = resolver
+                    .lookup_ip(&name_str)
+                    .await
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+                let addrs: Vec<SocketAddr> =
+                    lookup.iter().map(|ip| SocketAddr::new(ip, 0)).collect();
+
+                Ok(HickoryAddressIter {
+                    addrs: addrs.into_iter(),
+                })
+            })
+        }
+    }
+
     /// Iterator over resolved socket addresses
     pub struct HickoryAddressIter {
         addrs: std::vec::IntoIter<SocketAddr>,
@@ -109,6 +168,15 @@ pub mod doh {
     ) -> Result<HttpConnector<HickoryResolverService>, anyhow::Error> {
         let resolver = HickoryResolverService::new(provider)?;
         Ok(HttpConnector::new_with_resolver(resolver))
+    }
+
+    /// Create a hyper-util (Hyper 1.x) HTTP connector with DoH support using the specified provider
+    #[cfg(feature = "grpc")]
+    pub fn create_doh_connector_hyper1(
+        provider: DohProvider,
+    ) -> Result<Hyper1HttpConnector<HickoryResolverServiceHyper1>, anyhow::Error> {
+        let resolver = HickoryResolverServiceHyper1::new(provider)?;
+        Ok(Hyper1HttpConnector::new_with_resolver(resolver))
     }
 }
 
@@ -131,11 +199,25 @@ mod tests {
         assert!(result.is_ok(), "Failed to create DoH connector");
     }
 
+    #[cfg(all(feature = "doh", feature = "grpc"))]
+    #[tokio::test]
+    async fn test_doh_resolver_hyper1_creation() {
+        let result = HickoryResolverServiceHyper1::new(DohProvider::Cloudflare);
+        assert!(result.is_ok(), "Failed to create DoH resolver (Hyper 1.x)");
+    }
+
+    #[cfg(all(feature = "doh", feature = "grpc"))]
+    #[tokio::test]
+    async fn test_doh_connector_hyper1_creation() {
+        let result = create_doh_connector_hyper1(DohProvider::Cloudflare);
+        assert!(result.is_ok(), "Failed to create DoH connector (Hyper 1.x)");
+    }
+
     #[cfg(feature = "doh")]
     #[tokio::test]
     async fn test_dns_resolution() {
-        use hyper::client::connect::dns::Name;
-        use hyper::service::Service;
+        use hyper_legacy::client::connect::dns::Name;
+        use hyper_legacy::service::Service;
         use std::str::FromStr;
 
         let mut resolver = HickoryResolverService::new(DohProvider::Cloudflare)

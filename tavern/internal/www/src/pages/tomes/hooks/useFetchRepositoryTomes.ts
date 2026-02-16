@@ -2,7 +2,7 @@ import { gql, useMutation } from "@apollo/client";
 import { ApolloError } from "@apollo/client/errors";
 import { useToast } from "@chakra-ui/react";
 import { useState } from "react";
-import { GET_REPOSITORY_QUERY } from "../../../utils/queries";
+import { GET_REPOSITORY_DETAIL_QUERY } from "../queries";
 
 export const useFetchRepositoryTome = (handleOnSuccess?:()=>void, showToast?: boolean) => {
     const [error, setError] = useState("");
@@ -55,8 +55,8 @@ export const useFetchRepositoryTome = (handleOnSuccess?:()=>void, showToast?: bo
 
     const [createRepositoryLinkMutation, {loading}] = useMutation(IMPORT_REPOSITORY_TOMES_MUTATION, {onCompleted: handleSuccess, onError: handleError,
         refetchQueries: [
-            GET_REPOSITORY_QUERY,
-            'GetRepository'
+            GET_REPOSITORY_DETAIL_QUERY,
+            'GetRepositoryDetail'
         ]
     });
 
