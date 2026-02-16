@@ -1,0 +1,82 @@
+package schema
+
+import (
+	"github.com/google/uuid"
+
+	"entgo.io/contrib/entgql"
+	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/c2/c2pb"
+)
+
+// Builder holds the schema definition for the Builder entity.
+type Builder struct {
+	ent.Schema
+}
+
+// Fields of the Builder.
+func (Builder) Fields() []ent.Field {
+	return []ent.Field{
+		field.String("identifier").
+			DefaultFunc(func() string { return uuid.New().String() }).
+			NotEmpty().
+			Unique().
+			Immutable().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Unique identifier for the builder, embedded in its mTLS certificate CN."),
+		field.JSON("supported_targets", []c2pb.Host_Platform{}).
+			Annotations(
+				entgql.Type("[HostPlatform!]"),
+			).
+			Comment("The platforms this builder can build agents for."),
+		field.String("upstream").
+			Comment("The server address that the builder should connect to."),
+		field.Time("last_seen_at").
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.OrderField("LAST_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Timestamp of the builder's last ClaimBuildTasks call. Null if never seen."),
+	}
+}
+
+// Edges of the Builder.
+func (Builder) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.From("build_tasks", BuildTask.Type).
+			Ref("builder").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Build tasks assigned to this builder."),
+	}
+}
+
+// Annotations describes additional information for the ent.
+func (Builder) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.MultiOrder(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+		),
+		entsql.Annotation{
+			Collation: "utf8mb4_general_ci",
+		},
+	}
+}
+
+// Mixin defines common shared properties for the ent.
+func (Builder) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		MixinHistory{}, // created_at, last_modified_at
+	}
+}
