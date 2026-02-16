@@ -3,6 +3,7 @@ package graphql_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/99designs/gqlgen/client"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -68,6 +69,7 @@ func TestCreateBuildTask(t *testing.T) {
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {
@@ -90,6 +92,7 @@ func TestCreateBuildTask(t *testing.T) {
 		linuxBuilder := graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {
@@ -137,6 +140,7 @@ func TestCreateBuildTask(t *testing.T) {
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {
@@ -181,6 +185,7 @@ func TestCreateBuildTask(t *testing.T) {
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {
@@ -213,6 +218,7 @@ func TestCreateBuildTask(t *testing.T) {
 			b := graph.Builder.Create().
 				SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 				SetUpstream("https://example.com").
+				SetLastSeenAt(time.Now()).
 				SaveX(ctx)
 			builders[b.ID] = true
 		}
@@ -248,6 +254,7 @@ func TestCreateBuildTask(t *testing.T) {
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {
@@ -272,6 +279,7 @@ func TestCreateBuildTask(t *testing.T) {
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).
 			SetUpstream("https://example.com").
+			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
 
 		var resp struct {

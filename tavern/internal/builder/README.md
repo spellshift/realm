@@ -94,14 +94,19 @@ at `GET /assets/download/{name}`.
 
 ## TODO
 
+## Easy
+- Update the create build task mutation in builder/server.go - Don't task builders if lastSeenAt is nil or now+interval > lastSeenAt
+- Add support for multiple transports in the builder
+   - Update the createBuildTask mutation to allow a list of transports
+
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
 - Add support for build caching between jobs (will speed up rust builds a lot)
 - Instead of assuming  `/home/vscode` create a correctly permissioned build dir
 - Add support for mulitple transports in the builder
-- Don't task builders that are stale
 
 ### future
+- Add terraform for build server
 - Register redirectors so bulider callback uri can be a drop down.
 - Modifying the agent IMIX_CONFIG currently requires changes to both imix and tavern code bases now. Is there a way to codegen a YAML spec from tavern to the agent?
 - De-dupe agent builds should the API stop builds that have the same params and point to the existing build? Or is this a UI thing?

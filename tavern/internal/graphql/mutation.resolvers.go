@@ -397,9 +397,21 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("failed to query builders: %w", err)
 	}
 
-	// 5. Filter builders that support the target OS
+	// 5. Filter builders that support the target OS and are healthy.
+	// A builder is considered healthy if it has checked in (lastSeenAt != nil)
+	// and its last check-in is within the configured interval.
+	now := time.Now()
+	staleThreshold := time.Duration(interval) * time.Second
 	var candidates []*ent.Builder
 	for _, b := range allBuilders {
+		// Skip builders that have never checked in
+		if b.LastSeenAt == nil {
+			continue
+		}
+		// Skip builders that haven't checked in recently
+		if now.Sub(*b.LastSeenAt) > staleThreshold {
+			continue
+		}
 		for _, target := range b.SupportedTargets {
 			if target == input.TargetOs {
 				candidates = append(candidates, b)
@@ -409,7 +421,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no builder available that supports target %s", input.TargetOs.String())
+		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
 	}
 
 	// 6. Randomly select one builder
