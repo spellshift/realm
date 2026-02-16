@@ -8,6 +8,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -57,6 +58,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Tag.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tags: %w", err))
+	}
+	if _, err := client.BuildTask.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete build tasks: %w", err))
 	}
 	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
@@ -333,6 +337,106 @@ func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.Create
 		MtlsCert: mtlsCert,
 		Config:   string(configBytes),
 	}, nil
+}
+
+// DeleteBuilder is the resolver for the deleteBuilder field.
+func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (int, error) {
+	if err := r.client.Builder.DeleteOneID(builderID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return builderID, nil
+}
+
+// CreateBuildTask is the resolver for the createBuildTask field.
+func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
+	// 1. Resolve defaults for optional fields
+	targetFormat := builder.DefaultTargetFormat
+	if input.TargetFormat != nil {
+		targetFormat = *input.TargetFormat
+	}
+
+	buildImage := builder.DefaultBuildImage
+	if input.BuildImage != nil {
+		buildImage = *input.BuildImage
+	}
+
+	interval := builder.DefaultInterval
+	if input.Interval != nil {
+		interval = *input.Interval
+	}
+
+	callbackURI := builder.DefaultCallbackURI
+	if input.CallbackURI != nil {
+		callbackURI = *input.CallbackURI
+	}
+
+	transportType := builder.DefaultTransportType
+	if input.TransportType != nil {
+		transportType = *input.TransportType
+	}
+
+	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
+	if input.ArtifactPath != nil {
+		artifactPath = *input.ArtifactPath
+	}
+
+	// 2. Validate target format for the given OS
+	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
+		return nil, err
+	}
+
+	// 3. Derive the build script from configuration
+	buildScript, err := builder.GenerateBuildScript(input.TargetOs, targetFormat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate build script: %w", err)
+	}
+
+	// 4. Query all builders
+	allBuilders, err := r.client.Builder.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query builders: %w", err)
+	}
+
+	// 5. Filter builders that support the target OS
+	var candidates []*ent.Builder
+	for _, b := range allBuilders {
+		for _, target := range b.SupportedTargets {
+			if target == input.TargetOs {
+				candidates = append(candidates, b)
+				break
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("no builder available that supports target %s", input.TargetOs.String())
+	}
+
+	// 6. Randomly select one builder
+	selected := candidates[rand.Intn(len(candidates))]
+
+	// 7. Create the build task
+	create := r.client.BuildTask.Create().
+		SetTargetOs(input.TargetOs).
+		SetTargetFormat(targetFormat).
+		SetBuildImage(buildImage).
+		SetBuildScript(buildScript).
+		SetCallbackURI(callbackURI).
+		SetInterval(interval).
+		SetTransportType(transportType).
+		SetArtifactPath(artifactPath).
+		SetBuilder(selected)
+
+	if input.Extra != nil {
+		create = create.SetExtra(*input.Extra)
+	}
+
+	bt, err := create.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create build task: %w", err)
+	}
+
+	return bt, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

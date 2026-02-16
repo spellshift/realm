@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 )
@@ -30,6 +31,26 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+// Input for creating a new build task.
+type CreateBuildTaskInput struct {
+	// The target operating system for the build.
+	TargetOs c2pb.Host_Platform `json:"targetOS"`
+	// The output format for the build. Defaults to BIN.
+	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
+	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
+	BuildImage *string `json:"buildImage,omitempty"`
+	// The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000.
+	CallbackURI *string `json:"callbackURI,omitempty"`
+	// The callback interval in seconds for the IMIX agent.
+	Interval *int `json:"interval,omitempty"`
+	// The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC.
+	TransportType *c2pb.Transport_Type `json:"transportType,omitempty"`
+	// Extra transport configuration for the IMIX agent.
+	Extra *string `json:"extra,omitempty"`
+	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
+	ArtifactPath *string `json:"artifactPath,omitempty"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
@@ -40,7 +61,7 @@ type ImportRepositoryInput struct {
 type RegisterBuilderOutput struct {
 	// The created builder entity.
 	Builder *ent.Builder `json:"builder"`
-	// mTLS certificate in base64 encoding for the builder to authenticate.
+	// mTLS certificate PEM bundle for the builder to authenticate.
 	MtlsCert string `json:"mtlsCert"`
 	// YAML-formatted configuration for the builder.
 	Config string `json:"config"`

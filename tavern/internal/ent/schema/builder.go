@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 )
@@ -20,7 +21,7 @@ type Builder struct {
 func (Builder) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("identifier").
-			DefaultFunc(uuid.New().String).
+			DefaultFunc(func() string { return uuid.New().String() }).
 			NotEmpty().
 			Unique().
 			Immutable().
@@ -35,12 +36,28 @@ func (Builder) Fields() []ent.Field {
 			Comment("The platforms this builder can build agents for."),
 		field.String("upstream").
 			Comment("The server address that the builder should connect to."),
+		field.Time("last_seen_at").
+			Optional().
+			Nillable().
+			Annotations(
+				entgql.OrderField("LAST_SEEN_AT"),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Timestamp of the builder's last ClaimBuildTasks call. Null if never seen."),
 	}
 }
 
 // Edges of the Builder.
 func (Builder) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("build_tasks", BuildTask.Type).
+			Ref("builder").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Build tasks assigned to this builder."),
+	}
 }
 
 // Annotations describes additional information for the ent.

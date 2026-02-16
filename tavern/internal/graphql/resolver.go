@@ -30,7 +30,6 @@ type Resolver struct {
 	builderCAKey ed25519.PrivateKey
 }
 
-
 func WithBuilderCAKey(builderCAKey ed25519.PrivateKey) Option {
 	return Option(func(resolver *Resolver) {
 		resolver.builderCAKey = builderCAKey
@@ -44,7 +43,6 @@ func WithBuilderCA(builderCA *x509.Certificate) Option {
 }
 
 // NewSchema creates a graphql executable schema.
-// builderCA *x509.Certificate, builderCAKey ed25519.PrivateKey
 func NewSchema(client *ent.Client, importer RepoImporter, options ...func(*Resolver)) graphql.ExecutableSchema {
 	resolver := &Resolver{
 		client:       client,

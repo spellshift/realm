@@ -108,6 +108,43 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
+	result, err := bt.Edges.BuilderOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryBuilder().Only(ctx)
+	}
+	return result, err
+}
+
+func (bt *BuildTask) Artifact(ctx context.Context) (*Asset, error) {
+	result, err := bt.Edges.ArtifactOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryArtifact().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (b *Builder) BuildTasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BuildTaskOrder, where *BuildTaskWhereInput,
+) (*BuildTaskConnection, error) {
+	opts := []BuildTaskPaginateOption{
+		WithBuildTaskOrder(orderBy),
+		WithBuildTaskFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := b.Edges.totalCount[0][alias]
+	if nodes, err := b.NamedBuildTasks(alias); err == nil || hasTotalCount {
+		pager, err := newBuildTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &BuildTaskConnection{Edges: []*BuildTaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return b.QueryBuildTasks().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (h *Host) Tags(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TagOrder, where *TagWhereInput,
 ) (*TagConnection, error) {
