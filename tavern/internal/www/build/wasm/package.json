@@ -1,0 +1,13 @@
+{
+  "name": "eldritch-wasm",
+  "type": "module",
+  "version": "0.3.2",
+  "files": [
+    "eldritch_wasm_bg.wasm",
+    "eldritch_wasm.js"
+  ],
+  "main": "eldritch_wasm.js",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
