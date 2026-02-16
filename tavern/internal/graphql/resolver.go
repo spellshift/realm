@@ -52,10 +52,7 @@ func NewSchema(client *ent.Client, importer RepoImporter, options ...func(*Resol
       opt(resolver)
     }
 	cfg := generated.Config{
-		Resolvers: &Resolver{
-			client:       client,
-			importer:     importer,
-		},
+		Resolvers: resolver,
 	}
 
 	cfg.Directives.RequireRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, requiredRole models.Role) (interface{}, error) {
