@@ -5,6 +5,15 @@ use alloc::vec::Vec;
 use eldritch_core::{BufferPrinter, Interpreter, Lexer, TokenKind};
 use wasm_bindgen::prelude::*;
 
+#[cfg(feature = "fake_bindings")]
+use eldritch::{
+    agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
+    crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
+    pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
+    random::fake::RandomLibraryFake, regex::fake::RegexLibraryFake,
+    report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
+};
+
 #[wasm_bindgen]
 pub struct HeadlessRepl {
     buffer: String,
@@ -16,9 +25,27 @@ impl HeadlessRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> HeadlessRepl {
         let printer = Arc::new(BufferPrinter::new());
+        let mut interp = Interpreter::new_with_printer(printer);
+
+        #[cfg(feature = "fake_bindings")]
+        {
+            interp.register_lib(FileLibraryFake::default());
+            interp.register_lib(ProcessLibraryFake::default());
+            interp.register_lib(SysLibraryFake::default());
+            interp.register_lib(HttpLibraryFake::default());
+            interp.register_lib(CryptoLibraryFake::default());
+            interp.register_lib(AgentLibraryFake::default());
+            interp.register_lib(FakeAssetsLibrary::default());
+            interp.register_lib(PivotLibraryFake::default());
+            interp.register_lib(RandomLibraryFake::default());
+            interp.register_lib(RegexLibraryFake::default());
+            interp.register_lib(ReportLibraryFake::default());
+            interp.register_lib(TimeLibraryFake::default());
+        }
+
         HeadlessRepl {
             buffer: String::new(),
-            interpreter: Interpreter::new_with_printer(printer),
+            interpreter: interp,
         }
     }
 

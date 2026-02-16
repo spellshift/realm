@@ -89,6 +89,7 @@ export class HeadlessWasmAdapter {
 
     complete(line: string, cursor: number): string[] {
         if (!this.repl) return [];
+        // complete returns a JSON string array
         const resultJson = this.repl.complete(line, cursor);
         try {
             return JSON.parse(resultJson);

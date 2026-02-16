@@ -65,6 +65,47 @@ const ShellV2 = () => {
                      currentLine = currentLine.slice(0, -1);
                      termInstance.current?.write("\b \b");
                  }
+             } else if (code === 9) { // Tab
+                 // Check content for completion trigger
+                 // If line is empty or we are at start, just indent.
+                 if (currentLine.trim().length === 0) {
+                     const indent = "    ";
+                     currentLine += indent;
+                     termInstance.current?.write(indent);
+                 } else {
+                     // Attempt completion
+                     const completions = adapter.current?.complete(currentLine, currentLine.length);
+                     if (completions && completions.length > 0) {
+                         // Simple completion: print possibilities
+                         // In a real shell, we might complete inline if unique, or show list.
+                         // For now, let's print them on a new line and reprint prompt/buffer.
+
+                         // If only one completion, append the suffix.
+                         // But our completion engine returns full suggestions or suffixes?
+                         // Interpreter::complete returns full strings usually.
+                         // Actually, eldritch-core `complete` returns `(start_index, candidates)`.
+                         // Our headless adapter returns `candidates` (array of strings).
+
+                         // If we have candidates, let's see.
+                         // To properly implement inline completion, we need to know the start index.
+                         // But `HeadlessRepl.complete` in rust returns just the list.
+                         // The user asked for "show potential autocompletions".
+
+                         termInstance.current?.write("\r\n");
+                         termInstance.current?.write(completions.join("  "));
+                         termInstance.current?.write("\r\n");
+
+                         // Re-print prompt and buffer
+                         // We don't track prompt state perfectly here (could be ">>> " or ".. ")
+                         // Assuming ">>> " for single line contexts where we usually complete.
+                         // Ideally `adapter` should expose current prompt.
+                         termInstance.current?.write(">>> " + currentLine);
+                     } else {
+                         // No completions, fallback to indent? Or do nothing?
+                         // Usually tab does nothing if no completion.
+                     }
+                 }
+
              } else if (code >= 32) { // Printable
                  currentLine += data;
                  termInstance.current?.write(data);
