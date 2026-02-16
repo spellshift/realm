@@ -42,7 +42,7 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 // CreateBuilderInput represents a mutation input for creating builders.
 type CreateBuilderInput struct {
 	SupportedTargets []c2pb.Host_Platform
-	Upstream         string
+	Upstream         *string
 }
 
 // Mutate applies the CreateBuilderInput on the BuilderMutation builder.
@@ -50,7 +50,9 @@ func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
 	if v := i.SupportedTargets; v != nil {
 		m.SetSupportedTargets(v)
 	}
-	m.SetUpstream(i.Upstream)
+	if v := i.Upstream; v != nil {
+		m.SetUpstream(*v)
+	}
 }
 
 // SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.

@@ -94,10 +94,6 @@ at `GET /assets/download/{name}`.
 
 ## TODO
 
-### Fix
-- Set createBuildTask input upstream default to `127.0.0.1:8000`
-- Update builder upstream parsing to accept schema
-
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
 - Add support for build caching between jobs (will speed up rust builds a lot)

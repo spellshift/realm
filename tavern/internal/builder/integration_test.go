@@ -84,7 +84,7 @@ func TestBuilderE2E(t *testing.T) {
 	assert.Contains(t, cfg.SupportedTargets, "macos")
 	assert.NotEmpty(t, cfg.MTLS)
 	assert.NotEmpty(t, cfg.ID)
-	assert.Equal(t, "https://tavern.example.com:443", cfg.Upstream)
+	assert.Equal(t, "tavern.example.com:443", cfg.Upstream)
 
 	// 6. Verify builder exists in DB
 	builders, err := graph.Builder.Query().All(ctx)

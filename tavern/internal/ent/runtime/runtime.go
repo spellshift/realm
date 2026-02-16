@@ -161,6 +161,10 @@ func init() {
 	builder.DefaultIdentifier = builderDescIdentifier.Default.(func() string)
 	// builder.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	builder.IdentifierValidator = builderDescIdentifier.Validators[0].(func(string) error)
+	// builderDescUpstream is the schema descriptor for upstream field.
+	builderDescUpstream := builderFields[2].Descriptor()
+	// builder.DefaultUpstream holds the default value on creation for the upstream field.
+	builder.DefaultUpstream = builderDescUpstream.Default.(string)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0

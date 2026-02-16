@@ -115,7 +115,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
-		{Name: "upstream", Type: field.TypeString},
+		{Name: "upstream", Type: field.TypeString, Default: "127.0.0.1:8000"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.

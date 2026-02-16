@@ -15796,7 +15796,7 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 			it.SupportedTargets = data
 		case "upstream":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstream"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

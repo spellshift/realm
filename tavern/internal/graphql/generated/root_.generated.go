@@ -4420,7 +4420,7 @@ input CreateBuilderInput {
   """
   The server address that the builder should connect to.
   """
-  upstream: String!
+  upstream: String
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.
