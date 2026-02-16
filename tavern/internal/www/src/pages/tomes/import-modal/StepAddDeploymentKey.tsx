@@ -36,7 +36,12 @@ const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newR
             )}
             <div className="flex flex-col gap-2">
                 <Heading size="sm">Copy public key</Heading>
-                <CodeBlock code={newRepository?.publicKey || ""} showCopyButton />
+                <CodeBlock
+                    code={newRepository?.publicKey || ""}
+                    showCopyButton
+                    copyButtonPosition="left"
+                    copyButtonSize="sm"
+                />
             </div>
             <div className="flex flex-row gap-2">
                 <Button

@@ -59,9 +59,11 @@ type CodeBlockProps = {
     language?: CodeBlockLanguageSupport;
     showCopyButton?: boolean;
     inlineButton?: boolean;
+    copyButtonPosition?: "left" | "right";
+    copyButtonSize?: "xs" | "sm" | "md" | "lg" | "xl";
 };
 
-const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton= false }: CodeBlockProps) => {
+const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inlineButton = false, copyButtonPosition = 'right', copyButtonSize = 'xs' }: CodeBlockProps) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -80,8 +82,8 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                 <Button
                     onClick={handleCopy}
                     buttonVariant="ghost"
-                    buttonStyle={{ color: "gray", size: "xs" }}
-                    className="absolute top-2 right-2"
+                    buttonStyle={{ color: "gray", size: copyButtonSize }}
+                    className={`absolute top-2 ${copyButtonPosition === 'left' ? 'left-2' : 'right-2'}`}
                     aria-label={copied ? "Copied" : "Copy code"}
                     leftIcon={copied
                         ? <ClipboardDocumentCheckIcon className="w-4 h-4 text-green-600" />
@@ -97,8 +99,10 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                             ...style,
                             margin: 0,
                             padding: "0.75rem",
-                            paddingRight: !inlineButton && showCopyButton ? "3rem" : "0.75rem",
-                            marginRight:  showCopyButton ? "2rem" : "0rem",
+                            paddingLeft: !inlineButton && showCopyButton && copyButtonPosition === 'left' ? "3rem" : "0.75rem",
+                            paddingRight: !inlineButton && showCopyButton && copyButtonPosition === 'right' ? "3rem" : "0.75rem",
+                            marginLeft: showCopyButton && copyButtonPosition === 'left' ? "2rem" : "0rem",
+                            marginRight: showCopyButton && copyButtonPosition === 'right' ? "2rem" : "0rem",
                             borderRadius: "0.375rem",
                             fontSize: "0.8rem",
                             overflowX: "auto",
