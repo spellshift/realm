@@ -42,7 +42,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -190,7 +190,7 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -340,7 +340,7 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -470,7 +470,7 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
@@ -597,7 +597,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, caCert, caPrivKey)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, graphql.WithBuilderCA(caCert), graphql.WithBuilderCAKey(caPrivKey))),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)

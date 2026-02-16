@@ -24,7 +24,7 @@ func TestCreateBuildTask(t *testing.T) {
 	git := tomes.NewGitImporter(graph)
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{
-			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git, nil, nil)),
+			"/graphql": handler.NewDefaultServer(graphql.NewSchema(graph, git)),
 		},
 		tavernhttp.WithAuthenticationBypass(graph),
 	)
