@@ -23,6 +23,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
+    "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream",
 ]
 exclude = [

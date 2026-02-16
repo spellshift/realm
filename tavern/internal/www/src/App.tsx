@@ -12,6 +12,7 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import Shell from "./pages/shell/Shell";
+import ShellV2 from "./pages/shellv2";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import Tomes from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
       {
         path: "shells/:shellId",
         element: <Shell />,
+      },
+      {
+        path: "shellv2",
+        element: <ShellV2 />,
       },
       {
         path: "admin",
