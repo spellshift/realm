@@ -70,7 +70,7 @@ Your tome Metadata should look like this:
 ```yaml
 name: List files # The name of your tome.
 description: List the files and directories found at the path # A description to help users understand what your tome does.
-author: hulto # Your Github username.
+author: hulto # Your GitHub username.
 support_model: FIRST_PARTY # Is this a tome that ships with Realm or not?
 tactic: RECON # Which MITRE ATT&CK Tactic best describes this tome?
 paramdefs: # A list of inputs the tome requires.
