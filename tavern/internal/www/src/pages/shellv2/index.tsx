@@ -86,9 +86,8 @@ const ShellV2 = () => {
             if (!term) return;
             const state = shellState.current;
 
-            term.write("\r\x1b[K"); // Clear line
-
             if (state.isSearching) {
+                term.write("\r\x1b[K"); // Clear line for search
                 const prompt = `(reverse-i-search)'${state.searchQuery}': `;
                 // Find match
                 let match = "";
@@ -102,15 +101,10 @@ const ShellV2 = () => {
                     }
                 }
                 term.write(prompt + match);
-                // Cursor at end of query in prompt? usually yes.
-                // Or maybe we highlight the match?
-                // Standard: `(reverse-i-search)` prompt, user types query. Match is displayed.
-                // If match found, use it.
-                // Cursor stays at prompt end?
-                const cursorVis = prompt.length;
-                // We leave cursor after prompt to indicate typing query
             } else {
-                term.write(state.prompt + state.inputBuffer);
+                // Optimized redraw: Move to start, rewrite prompt + buffer, clear rest
+                term.write("\r" + state.prompt + state.inputBuffer + "\x1b[K");
+
                 const visualCursor = state.prompt.length + state.cursorPos;
                 const totalLen = state.prompt.length + state.inputBuffer.length;
                 const back = totalLen - visualCursor;
@@ -350,6 +344,15 @@ const ShellV2 = () => {
              }
 
              if (code === 9) { // Tab
+                 // Indent if line is empty or whitespace
+                 if (!state.inputBuffer.trim()) {
+                     const indent = "    ";
+                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
+                     state.cursorPos += 4;
+                     term.write(indent);
+                     return;
+                 }
+
                  // Trigger completion
                  const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
                  if (res && res.suggestions.length > 0) {
@@ -374,9 +377,17 @@ const ShellV2 = () => {
              }
 
              if (code >= 32 && code !== 127) {
-                 state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                 state.cursorPos += data.length;
-                 redrawLine();
+                 if (state.cursorPos === state.inputBuffer.length) {
+                     // Fast path: append at end
+                     state.inputBuffer += data;
+                     state.cursorPos += data.length;
+                     term.write(data);
+                 } else {
+                     // Insert in middle
+                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                     state.cursorPos += data.length;
+                     redrawLine();
+                 }
              } else if (code === 13) { // Enter
                  term.write("\r\n");
                  const res = adapter.current?.input(state.inputBuffer);
@@ -385,6 +396,7 @@ const ShellV2 = () => {
                      state.historyIndex = -1;
                      state.inputBuffer = "";
                      state.cursorPos = 0;
+                     state.prompt = ">>> ";
                  } else if (res?.status === "incomplete") {
                      state.prompt = res.prompt || ".. ";
                      term.write(state.prompt);
@@ -399,9 +411,16 @@ const ShellV2 = () => {
                  }
              } else if (code === 127) { // Backspace
                  if (state.cursorPos > 0) {
-                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
-                     state.cursorPos--;
-                     redrawLine();
+                     if (state.cursorPos === state.inputBuffer.length) {
+                         // Fast path: delete at end
+                         state.inputBuffer = state.inputBuffer.slice(0, -1);
+                         state.cursorPos--;
+                         term.write("\b \b");
+                     } else {
+                         state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
+                         state.cursorPos--;
+                         redrawLine();
+                     }
                  }
              }
         });
