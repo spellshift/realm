@@ -22,7 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/user"
 )
 
-// TestNewOAuthLoginHandler ensures the OAuth Login Handler exhibits expected behaviour
+// TestNewOAuthLoginHandler ensures the OAuth Login Handler exhibits expected behavior
 func TestNewOAuthLoginHandler(t *testing.T) {
 	// Generate keys for signing JWTs
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
@@ -78,7 +78,7 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 	assert.Less(t, claims.ExpiresAt.Time.Unix(), time.Now().Add(11*time.Minute).Unix())
 }
 
-// TestNewOAuthAuthorizationHandler ensures the OAuth Authorization Handler exhibits expected behaviour
+// TestNewOAuthAuthorizationHandler ensures the OAuth Authorization Handler exhibits expected behavior
 func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	var (
 		expectedClientID     = "12345"

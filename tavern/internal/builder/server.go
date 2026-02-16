@@ -112,10 +112,10 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			ServerPubkey: s.serverPubkey,
 			Transports: []ImixTransportConfig{
 				{
-					URI: claimedTask.CallbackURI,
-					Interval:    claimedTask.Interval,
-					Type:        TransportTypeToString(claimedTask.TransportType),
-					Extra:       claimedTask.Extra,
+					URI:      claimedTask.CallbackURI,
+					Interval: claimedTask.Interval,
+					Type:     TransportTypeToString(claimedTask.TransportType),
+					Extra:    claimedTask.Extra,
 				},
 			},
 		}

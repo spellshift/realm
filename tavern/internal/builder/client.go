@@ -26,7 +26,7 @@ const (
 	maxConcurrentBuilds = 4
 
 	maxOutputChSize = 64
-	maxErrorChSize = 64
+	maxErrorChSize  = 64
 )
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
@@ -146,7 +146,7 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		select {
 		case <-ctx.Done():
 			// Wait for all in-flight builds to finish by acquiring all slots.
-			//nolint:errcheck // context is already cancelled; use background to drain.
+			//nolint:errcheck // context is already canceled; use background to drain.
 			sem.Acquire(context.Background(), maxConcurrentBuilds)
 			return ctx.Err()
 		case <-ticker.C:
