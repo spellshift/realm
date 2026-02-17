@@ -119,7 +119,7 @@ var (
 	EnvSecretsManagerPath = EnvString{"SECRETS_FILE_PATH", ""}
 )
 
-// Config holds information that controls the behaviour of Tavern
+// Config holds information that controls the behavior of Tavern
 type Config struct {
 	srv *http.Server
 
