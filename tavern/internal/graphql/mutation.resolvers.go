@@ -15,6 +15,8 @@ import (
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -360,19 +362,22 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		buildImage = *input.BuildImage
 	}
 
-	interval := builder.DefaultInterval
-	if input.Interval != nil {
-		interval = *input.Interval
-	}
-
-	callbackURI := builder.DefaultCallbackURI
-	if input.CallbackURI != nil {
-		callbackURI = *input.CallbackURI
-	}
-
-	transportType := builder.DefaultTransportType
-	if input.TransportType != nil {
-		transportType = *input.TransportType
+	// Resolve transports: use default if none provided
+	transports := builder.DefaultTransports
+	if len(input.Transports) > 0 {
+		transports = make([]builderpb.BuildTaskTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildTaskTransport{
+				URI:      t.CallbackURI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.TransportType),
+				Extra:    extra,
+			}
+		}
 	}
 
 	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
@@ -400,8 +405,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// 5. Filter builders that support the target OS and are healthy.
 	// A builder is considered healthy if it has checked in (lastSeenAt != nil)
 	// and its last check-in is within the configured interval.
+	// Use the first transport's interval for the stale threshold.
 	now := time.Now()
-	staleThreshold := time.Duration(interval) * time.Second
+	staleThreshold := time.Duration(transports[0].Interval) * time.Second
 	var candidates []*ent.Builder
 	for _, b := range allBuilders {
 		// Skip builders that have never checked in
@@ -433,15 +439,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetTargetFormat(targetFormat).
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
-		SetCallbackURI(callbackURI).
-		SetInterval(interval).
-		SetTransportType(transportType).
+		SetTransports(transports).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
-
-	if input.Extra != nil {
-		create = create.SetExtra(*input.Extra)
-	}
 
 	bt, err := create.Save(ctx)
 	if err != nil {

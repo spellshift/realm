@@ -38,9 +38,7 @@ func TestCreateBuildTask(t *testing.T) {
 			targetFormat
 			buildImage
 			buildScript
-			callbackURI
-			interval
-			transportType
+			transports { callbackURI interval transportType extra }
 			artifactPath
 			builder { id }
 		}
@@ -97,23 +95,32 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID            string
-				TargetOs      string
-				TargetFormat  string
-				BuildImage    string
-				BuildScript   string
-				CallbackURI   string
-				Interval      int
-				TransportType string
-				ArtifactPath  string
-				Builder       struct {
+				ID           string
+				TargetOs     string
+				TargetFormat string
+				BuildImage   string
+				BuildScript  string
+				Transports   []struct {
+					CallbackURI   string
+					Interval      int
+					TransportType string
+					Extra         *string
+				}
+				ArtifactPath string
+				Builder      struct {
 					ID string
 				}
 			}
 		}
 		err := gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
-			"targetOS":    "PLATFORM_LINUX",
-			"callbackURI": "https://callback.example.com",
+			"targetOS": "PLATFORM_LINUX",
+			"transports": []map[string]any{
+				{
+					"callbackURI":   "https://callback.example.com",
+					"interval":      10,
+					"transportType": "TRANSPORT_GRPC",
+				},
+			},
 		}))
 		require.NoError(t, err)
 		require.NotEmpty(t, resp.CreateBuildTask.ID)
@@ -121,9 +128,10 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
-		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.CallbackURI)
-		assert.Equal(t, 5, resp.CreateBuildTask.Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.TransportType)
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].CallbackURI)
+		assert.Equal(t, 10, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].TransportType)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 
 		// Verify the builder edge
@@ -145,13 +153,15 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID            string
-				TargetFormat  string
-				BuildImage    string
-				CallbackURI   string
-				Interval      int
-				TransportType string
-				ArtifactPath  string
+				ID         string
+				TargetFormat string
+				BuildImage   string
+				Transports []struct {
+					CallbackURI   string
+					Interval      int
+					TransportType string
+				}
+				ArtifactPath string
 			}
 		}
 		// Only specify targetOS; all other fields should get defaults.
@@ -160,9 +170,7 @@ func TestCreateBuildTask(t *testing.T) {
 				id
 				targetFormat
 				buildImage
-				callbackURI
-				interval
-				transportType
+				transports { callbackURI interval transportType }
 				artifactPath
 			}
 		}`, &resp, client.Var("input", map[string]any{
@@ -171,9 +179,10 @@ func TestCreateBuildTask(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
-		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.CallbackURI)
-		assert.Equal(t, 5, resp.CreateBuildTask.Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.TransportType)
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].CallbackURI)
+		assert.Equal(t, 5, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].TransportType)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 	})
 

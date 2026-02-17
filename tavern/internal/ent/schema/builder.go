@@ -35,7 +35,7 @@ func (Builder) Fields() []ent.Field {
 			).
 			Comment("The platforms this builder can build agents for."),
 		field.String("upstream").
-			Default("127.0.0.1:8000").
+			Default("http://127.0.0.1:8000").
 			Comment("The server address that the builder should connect to."),
 		field.Time("last_seen_at").
 			Optional().

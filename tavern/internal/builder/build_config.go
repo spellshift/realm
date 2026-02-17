@@ -12,23 +12,19 @@ const (
 	// DefaultRealmRepoURL is the default git repository URL for building realm agents.
 	DefaultRealmRepoURL = "https://github.com/spellshift/realm.git"
 
-	// DefaultInterval is the default callback interval in seconds for the IMIX agent.
-	DefaultInterval = 5
-
-	// DefaultCallbackURI is the default callback URI for the IMIX agent,
-	// derived from the IMIX compile-time default (IMIX_CALLBACK_URI).
-	DefaultCallbackURI = "http://127.0.0.1:8000"
-
-	// DefaultTransportType is the default transport type for the IMIX agent,
-	// derived from the IMIX default behavior for http:// URIs.
-	DefaultTransportType = c2pb.Transport_TRANSPORT_GRPC
-
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
 
 	// DefaultTargetFormat is the default output format for builds.
 	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
 )
+
+// DefaultTransports is the default transport configuration for a build task.
+var DefaultTransports = []builderpb.BuildTaskTransport{{
+	URI:   "http://127.0.0.1:8000",
+	Interval:      5,
+	Type: c2pb.Transport_TRANSPORT_GRPC,
+}}
 
 // TargetFormat is an alias for builderpb.TargetFormat.
 type TargetFormat = builderpb.TargetFormat

@@ -75,9 +75,6 @@ defaults resolved server-side:
 |-------|---------|-------|
 | `targetFormat` | `BIN` | Can also be `CDYLIB` or `WINDOWS_SERVICE` (Windows only) |
 | `buildImage` | `spellshift/devcontainer:main` | Docker image for the build container |
-| `callbackURI` | `http://127.0.0.1:8000` | IMIX agent callback address |
-| `interval` | `5` | Callback interval in seconds |
-| `transportType` | `TRANSPORT_GRPC` | IMIX agent transport |
 | `artifactPath` | Derived from `targetOS` | Path inside the container to extract the compiled binary |
 
 ## Artifact Extraction
@@ -94,10 +91,10 @@ at `GET /assets/download/{name}`.
 
 ## TODO
 
+- What is tavern/internal/graphql/inputs.resolvers.go doing?
+
 ## Easy
-- Update the create build task mutation in builder/server.go - Don't task builders if lastSeenAt is nil or now+interval > lastSeenAt
-- Add support for multiple transports in the builder
-   - Update the createBuildTask mutation to allow a list of transports
+- Update builder query to check TS instead of querying all builders
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.

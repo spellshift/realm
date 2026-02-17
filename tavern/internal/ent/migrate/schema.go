@@ -72,10 +72,7 @@ var (
 		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE"}},
 		{Name: "build_image", Type: field.TypeString},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
-		{Name: "callback_uri", Type: field.TypeString},
-		{Name: "interval", Type: field.TypeInt, Default: 5},
-		{Name: "transport_type", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
-		{Name: "extra", Type: field.TypeString, Nullable: true},
+		{Name: "transports", Type: field.TypeJSON},
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
@@ -96,13 +93,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[20]},
+				Columns:    []*schema.Column{BuildTasksColumns[17]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[21]},
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -115,7 +112,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "identifier", Type: field.TypeString, Unique: true},
 		{Name: "supported_targets", Type: field.TypeJSON},
-		{Name: "upstream", Type: field.TypeString, Default: "127.0.0.1:8000"},
+		{Name: "upstream", Type: field.TypeString, Default: "http://127.0.0.1:8000"},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 	}
 	// BuildersTable holds the schema information for the "builders" table.
