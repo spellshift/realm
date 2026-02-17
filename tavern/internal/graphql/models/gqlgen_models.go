@@ -16,8 +16,8 @@ import (
 
 // Input for a single transport configuration.
 type BuildTaskTransportInput struct {
-	// The callback URI for the IMIX agent.
-	CallbackURI string `json:"callbackURI"`
+	// The URI for the IMIX agent.
+	URI string `json:"uri"`
 	// The callback interval in seconds.
 	Interval int `json:"interval"`
 	// The transport type.

@@ -130,10 +130,10 @@ type ComplexityRoot struct {
 	}
 
 	BuildTaskTransport struct {
-		CallbackURI   func(childComplexity int) int
 		Extra         func(childComplexity int) int
 		Interval      func(childComplexity int) int
 		TransportType func(childComplexity int) int
+		URI           func(childComplexity int) int
 	}
 
 	Builder struct {
@@ -968,13 +968,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
 
-	case "BuildTaskTransport.callbackURI":
-		if e.complexity.BuildTaskTransport.CallbackURI == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.CallbackURI(childComplexity), true
-
 	case "BuildTaskTransport.extra":
 		if e.complexity.BuildTaskTransport.Extra == nil {
 			break
@@ -995,6 +988,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTaskTransport.TransportType(childComplexity), true
+
+	case "BuildTaskTransport.uri":
+		if e.complexity.BuildTaskTransport.URI == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.URI(childComplexity), true
 
 	case "Builder.buildTasks":
 		if e.complexity.Builder.BuildTasks == nil {
@@ -8410,8 +8410,8 @@ input ImportRepositoryInput {
 
 """A single transport configuration for a build task."""
 type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
-  """The callback URI for the IMIX agent."""
-  callbackURI: String!
+  """The URI for the IMIX agent."""
+  uri: String!
 
   """The callback interval in seconds."""
   interval: Int!
@@ -8425,8 +8425,8 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
 
 """Input for a single transport configuration."""
 input BuildTaskTransportInput {
-  """The callback URI for the IMIX agent."""
-  callbackURI: String!
+  """The URI for the IMIX agent."""
+  uri: String!
 
   """The callback interval in seconds."""
   interval: Int! = 5

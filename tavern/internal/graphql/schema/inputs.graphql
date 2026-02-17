@@ -50,8 +50,8 @@ input ImportRepositoryInput {
 
 """A single transport configuration for a build task."""
 type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
-  """The callback URI for the IMIX agent."""
-  callbackURI: String!
+  """The URI for the IMIX agent."""
+  uri: String!
 
   """The callback interval in seconds."""
   interval: Int!
@@ -65,8 +65,8 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
 
 """Input for a single transport configuration."""
 input BuildTaskTransportInput {
-  """The callback URI for the IMIX agent."""
-  callbackURI: String!
+  """The URI for the IMIX agent."""
+  uri: String!
 
   """The callback interval in seconds."""
   interval: Int! = 5

@@ -372,7 +372,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 				extra = *t.Extra
 			}
 			transports[i] = builderpb.BuildTaskTransport{
-				URI:      t.CallbackURI,
+				URI:      t.URI,
 				Interval: t.Interval,
 				Type:     c2pb.Transport_Type(t.TransportType),
 				Extra:    extra,

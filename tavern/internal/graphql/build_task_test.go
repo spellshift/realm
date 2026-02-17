@@ -38,7 +38,7 @@ func TestCreateBuildTask(t *testing.T) {
 			targetFormat
 			buildImage
 			buildScript
-			transports { callbackURI interval transportType extra }
+			transports { uri interval transportType extra }
 			artifactPath
 			builder { id }
 		}
@@ -101,7 +101,7 @@ func TestCreateBuildTask(t *testing.T) {
 				BuildImage   string
 				BuildScript  string
 				Transports   []struct {
-					CallbackURI   string
+					URI   string
 					Interval      int
 					TransportType string
 					Extra         *string
@@ -116,7 +116,7 @@ func TestCreateBuildTask(t *testing.T) {
 			"targetOS": "PLATFORM_LINUX",
 			"transports": []map[string]any{
 				{
-					"callbackURI":   "https://callback.example.com",
+					"uri":   "https://callback.example.com",
 					"interval":      10,
 					"transportType": "TRANSPORT_GRPC",
 				},
@@ -129,7 +129,7 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
 		require.Len(t, resp.CreateBuildTask.Transports, 1)
-		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].CallbackURI)
+		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].URI)
 		assert.Equal(t, 10, resp.CreateBuildTask.Transports[0].Interval)
 		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].TransportType)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
@@ -157,7 +157,7 @@ func TestCreateBuildTask(t *testing.T) {
 				TargetFormat string
 				BuildImage   string
 				Transports []struct {
-					CallbackURI   string
+					URI   string
 					Interval      int
 					TransportType string
 				}
@@ -170,7 +170,7 @@ func TestCreateBuildTask(t *testing.T) {
 				id
 				targetFormat
 				buildImage
-				transports { callbackURI interval transportType }
+				transports { uri interval transportType }
 				artifactPath
 			}
 		}`, &resp, client.Var("input", map[string]any{
@@ -180,7 +180,7 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		require.Len(t, resp.CreateBuildTask.Transports, 1)
-		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].CallbackURI)
+		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].URI)
 		assert.Equal(t, 5, resp.CreateBuildTask.Transports[0].Interval)
 		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].TransportType)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")

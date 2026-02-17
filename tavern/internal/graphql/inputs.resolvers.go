@@ -7,21 +7,15 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/graphql/generated"
 )
 
-// CallbackURI is the resolver for the callbackURI field.
-func (r *buildTaskTransportResolver) CallbackURI(ctx context.Context, obj *builderpb.BuildTaskTransport) (string, error) {
-	panic(fmt.Errorf("not implemented: CallbackURI - callbackURI"))
-}
-
 // TransportType is the resolver for the transportType field.
 func (r *buildTaskTransportResolver) TransportType(ctx context.Context, obj *builderpb.BuildTaskTransport) (c2pb.Transport_Type, error) {
-	panic(fmt.Errorf("not implemented: TransportType - transportType"))
+	return obj.Type, nil
 }
 
 // BuildTaskTransport returns generated.BuildTaskTransportResolver implementation.

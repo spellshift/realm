@@ -2777,8 +2777,8 @@ func (ec *executionContext) fieldContext_BuildTask_transports(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "callbackURI":
-				return ec.fieldContext_BuildTaskTransport_callbackURI(ctx, field)
+			case "uri":
+				return ec.fieldContext_BuildTaskTransport_uri(ctx, field)
 			case "interval":
 				return ec.fieldContext_BuildTaskTransport_interval(ctx, field)
 			case "transportType":
