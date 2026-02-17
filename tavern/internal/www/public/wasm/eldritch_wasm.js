@@ -1,3 +1,5 @@
+/* @ts-self-types="./eldritch_wasm.d.ts" */
+
 export class ExecutionResult {
     static __wrap(ptr) {
         ptr = ptr >>> 0;

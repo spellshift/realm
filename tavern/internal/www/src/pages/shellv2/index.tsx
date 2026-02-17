@@ -58,7 +58,7 @@ const ShellV2 = () => {
                 foreground: "#d4d4d4",
             },
             fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-            fontSize: 14,
+            fontSize: 18,
         });
 
         const fitAddon = new FitAddon();
@@ -200,295 +200,295 @@ const ShellV2 = () => {
         };
 
         termInstance.current.onData((data) => {
-             const code = data.charCodeAt(0);
-             const state = shellState.current;
-             const term = termInstance.current;
-             if (!term) return;
+            const code = data.charCodeAt(0);
+            const state = shellState.current;
+            const term = termInstance.current;
+            if (!term) return;
 
-             // If completions are showing, handle navigation
-             if (completionsRef.current.show) {
-                 if (code === 9) { // Tab: cycle
-                     const list = completionsRef.current.list;
-                     if (list.length > 0) {
-                         const next = (completionsRef.current.index + 1) % list.length;
-                         updateCompletionsUI(list, completionsRef.current.start, true, next);
-                     }
-                     return;
-                 }
-                 if (code === 13) { // Enter: select
-                     applyCompletion(completionsRef.current.list[completionsRef.current.index]);
-                     return;
-                 }
-                 if (data === "\x1b[B") { // Down
-                     const list = completionsRef.current.list;
-                     if (list.length > 0) {
-                         const next = (completionsRef.current.index + 1) % list.length;
-                         updateCompletionsUI(list, completionsRef.current.start, true, next);
-                     }
-                     return;
-                 }
-                 if (data === "\x1b[A") { // Up
-                     const list = completionsRef.current.list;
-                     if (list.length > 0) {
-                         const next = (completionsRef.current.index - 1 + list.length) % list.length;
-                         updateCompletionsUI(list, completionsRef.current.start, true, next);
-                     }
-                     return;
-                 }
-                 if (code === 27) { // Esc: cancel
-                     updateCompletionsUI([], 0, false, 0);
-                     return;
-                 }
-                 // Allow other keys to fall through to input handler
-             }
+            // If completions are showing, handle navigation
+            if (completionsRef.current.show) {
+                if (code === 9) { // Tab: cycle
+                    const list = completionsRef.current.list;
+                    if (list.length > 0) {
+                        const next = (completionsRef.current.index + 1) % list.length;
+                        updateCompletionsUI(list, completionsRef.current.start, true, next);
+                    }
+                    return;
+                }
+                if (code === 13) { // Enter: select
+                    applyCompletion(completionsRef.current.list[completionsRef.current.index]);
+                    return;
+                }
+                if (data === "\x1b[B") { // Down
+                    const list = completionsRef.current.list;
+                    if (list.length > 0) {
+                        const next = (completionsRef.current.index + 1) % list.length;
+                        updateCompletionsUI(list, completionsRef.current.start, true, next);
+                    }
+                    return;
+                }
+                if (data === "\x1b[A") { // Up
+                    const list = completionsRef.current.list;
+                    if (list.length > 0) {
+                        const next = (completionsRef.current.index - 1 + list.length) % list.length;
+                        updateCompletionsUI(list, completionsRef.current.start, true, next);
+                    }
+                    return;
+                }
+                if (code === 27) { // Esc: cancel
+                    updateCompletionsUI([], 0, false, 0);
+                    return;
+                }
+                // Allow other keys to fall through to input handler
+            }
 
-             if (state.isSearching) {
-                 if (data === "\x12") { // Ctrl+R (Next match)
-                     // Logic to find next match (skipping current index?)
-                     // For simplicity, just redraw which finds the first match from end.
-                     // To implement "next match", we need to track search index.
-                     // But user requirement was just "provide history searching".
-                     // Basic reverse search is usually sufficient.
-                     // If we want to find next, we need state.searchIndex.
-                     // Let's keep it simple: Ctrl+R just redraws for now (noop effectively unless we track index).
-                     return;
-                 }
-                 if (data === "\x03" || data === "\x07") { // Ctrl+C / Ctrl+G
-                     state.isSearching = false;
-                     state.searchQuery = "";
-                     redrawLine();
-                     return;
-                 }
-                 if (code === 13) { // Enter
-                     // Use the match
-                     state.isSearching = false;
-                     let match = "";
-                     if (state.searchQuery) {
+            if (state.isSearching) {
+                if (data === "\x12") { // Ctrl+R (Next match)
+                    // Logic to find next match (skipping current index?)
+                    // For simplicity, just redraw which finds the first match from end.
+                    // To implement "next match", we need to track search index.
+                    // But user requirement was just "provide history searching".
+                    // Basic reverse search is usually sufficient.
+                    // If we want to find next, we need state.searchIndex.
+                    // Let's keep it simple: Ctrl+R just redraws for now (noop effectively unless we track index).
+                    return;
+                }
+                if (data === "\x03" || data === "\x07") { // Ctrl+C / Ctrl+G
+                    state.isSearching = false;
+                    state.searchQuery = "";
+                    redrawLine();
+                    return;
+                }
+                if (code === 13) { // Enter
+                    // Use the match
+                    state.isSearching = false;
+                    let match = "";
+                    if (state.searchQuery) {
                         for (let i = state.history.length - 1; i >= 0; i--) {
                             if (state.history[i].includes(state.searchQuery)) {
                                 match = state.history[i];
                                 break;
                             }
                         }
-                     }
-                     state.inputBuffer = match;
-                     state.cursorPos = match.length;
-                     state.searchQuery = "";
-                     redrawLine();
-                     return;
-                 }
-                 if (code === 127) { // Backspace
-                     state.searchQuery = state.searchQuery.slice(0, -1);
-                     redrawLine();
-                     return;
-                 }
-                 if (code >= 32) {
-                     state.searchQuery += data;
-                     redrawLine();
-                     return;
-                 }
-                 // Ignore other keys in search mode for now
-                 return;
-             }
+                    }
+                    state.inputBuffer = match;
+                    state.cursorPos = match.length;
+                    state.searchQuery = "";
+                    redrawLine();
+                    return;
+                }
+                if (code === 127) { // Backspace
+                    state.searchQuery = state.searchQuery.slice(0, -1);
+                    redrawLine();
+                    return;
+                }
+                if (code >= 32) {
+                    state.searchQuery += data;
+                    redrawLine();
+                    return;
+                }
+                // Ignore other keys in search mode for now
+                return;
+            }
 
-             // Normal mode
-             if (data === "\x03") { // Ctrl+C
-                 adapter.current?.reset();
-                 term.write("^C\r\n");
-                 state.inputBuffer = "";
-                 state.currentBlock = "";
-                 state.cursorPos = 0;
-                 state.historyIndex = -1;
-                 state.prompt = ">>> ";
-                 term.write(state.prompt);
-                 lastBufferHeight.current = 0;
-                 return;
-             }
+            // Normal mode
+            if (data === "\x03") { // Ctrl+C
+                adapter.current?.reset();
+                term.write("^C\r\n");
+                state.inputBuffer = "";
+                state.currentBlock = "";
+                state.cursorPos = 0;
+                state.historyIndex = -1;
+                state.prompt = ">>> ";
+                term.write(state.prompt);
+                lastBufferHeight.current = 0;
+                return;
+            }
 
-             if (data === "\x12") { // Ctrl+R
-                 state.isSearching = true;
-                 state.searchQuery = "";
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x12") { // Ctrl+R
+                state.isSearching = true;
+                state.searchQuery = "";
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x0c") { // Ctrl+L
-                 term.write('\x1b[2J\x1b[H');
-                 lastBufferHeight.current = 0;
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x0c") { // Ctrl+L
+                term.write('\x1b[2J\x1b[H');
+                lastBufferHeight.current = 0;
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x01") { // Ctrl+A
-                 state.cursorPos = 0;
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x01") { // Ctrl+A
+                state.cursorPos = 0;
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x05") { // Ctrl+E
-                 state.cursorPos = state.inputBuffer.length;
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x05") { // Ctrl+E
+                state.cursorPos = state.inputBuffer.length;
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x15") { // Ctrl+U
-                 state.inputBuffer = "";
-                 state.cursorPos = 0;
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x15") { // Ctrl+U
+                state.inputBuffer = "";
+                state.cursorPos = 0;
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x17") { // Ctrl+W
-                 const beforeCursor = state.inputBuffer.slice(0, state.cursorPos);
-                 const trimmed = beforeCursor.trimEnd();
-                 const lastSpace = trimmed.lastIndexOf(" ");
-                 const newPos = lastSpace === -1 ? 0 : lastSpace + 1;
-                 const afterCursor = state.inputBuffer.slice(state.cursorPos);
-                 state.inputBuffer = state.inputBuffer.slice(0, newPos) + afterCursor;
-                 state.cursorPos = newPos;
-                 redrawLine();
-                 return;
-             }
+            if (data === "\x17") { // Ctrl+W
+                const beforeCursor = state.inputBuffer.slice(0, state.cursorPos);
+                const trimmed = beforeCursor.trimEnd();
+                const lastSpace = trimmed.lastIndexOf(" ");
+                const newPos = lastSpace === -1 ? 0 : lastSpace + 1;
+                const afterCursor = state.inputBuffer.slice(state.cursorPos);
+                state.inputBuffer = state.inputBuffer.slice(0, newPos) + afterCursor;
+                state.cursorPos = newPos;
+                redrawLine();
+                return;
+            }
 
-             if (data === "\x1b[A") { // Up
-                 if (state.history.length > 0) {
-                     if (state.historyIndex === -1) state.historyIndex = state.history.length - 1;
-                     else if (state.historyIndex > 0) state.historyIndex--;
-                     state.inputBuffer = state.history[state.historyIndex];
-                     state.cursorPos = state.inputBuffer.length;
-                     redrawLine();
-                 }
-                 return;
-             }
+            if (data === "\x1b[A") { // Up
+                if (state.history.length > 0) {
+                    if (state.historyIndex === -1) state.historyIndex = state.history.length - 1;
+                    else if (state.historyIndex > 0) state.historyIndex--;
+                    state.inputBuffer = state.history[state.historyIndex];
+                    state.cursorPos = state.inputBuffer.length;
+                    redrawLine();
+                }
+                return;
+            }
 
-             if (data === "\x1b[B") { // Down
-                 if (state.historyIndex !== -1) {
-                     if (state.historyIndex < state.history.length - 1) {
-                         state.historyIndex++;
-                         state.inputBuffer = state.history[state.historyIndex];
-                     } else {
-                         state.historyIndex = -1;
-                         state.inputBuffer = "";
-                     }
-                     state.cursorPos = state.inputBuffer.length;
-                     redrawLine();
-                 }
-                 return;
-             }
+            if (data === "\x1b[B") { // Down
+                if (state.historyIndex !== -1) {
+                    if (state.historyIndex < state.history.length - 1) {
+                        state.historyIndex++;
+                        state.inputBuffer = state.history[state.historyIndex];
+                    } else {
+                        state.historyIndex = -1;
+                        state.inputBuffer = "";
+                    }
+                    state.cursorPos = state.inputBuffer.length;
+                    redrawLine();
+                }
+                return;
+            }
 
-             if (data === "\x1b[D") { // Left
-                 if (state.cursorPos > 0) {
-                     state.cursorPos--;
-                     term.write("\x1b[D");
-                 }
-                 return;
-             }
+            if (data === "\x1b[D") { // Left
+                if (state.cursorPos > 0) {
+                    state.cursorPos--;
+                    term.write("\x1b[D");
+                }
+                return;
+            }
 
-             if (data === "\x1b[C") { // Right
-                 if (state.cursorPos < state.inputBuffer.length) {
-                     state.cursorPos++;
-                     term.write("\x1b[C");
-                 }
-                 return;
-             }
+            if (data === "\x1b[C") { // Right
+                if (state.cursorPos < state.inputBuffer.length) {
+                    state.cursorPos++;
+                    term.write("\x1b[C");
+                }
+                return;
+            }
 
-             if (code === 9) { // Tab
-                 // Indent if line is empty or whitespace
-                 if (!state.inputBuffer.trim()) {
-                     const indent = "    ";
-                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
-                     state.cursorPos += 4;
-                     term.write(indent);
-                     return;
-                 }
+            if (code === 9) { // Tab
+                // Indent if line is empty or whitespace
+                if (!state.inputBuffer.trim()) {
+                    const indent = "    ";
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos += 4;
+                    term.write(indent);
+                    return;
+                }
 
-                 // Trigger completion
-                 const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
-                 if (res && res.suggestions.length > 0) {
-                     if (res.suggestions.length === 1) {
-                         // Auto complete
-                         // Use applyCompletion logic but locally
-                         const completion = res.suggestions[0];
-                         const start = res.start;
-                         if (start >= 0 && start <= state.cursorPos) {
-                             const prefix = state.inputBuffer.slice(0, start);
-                             const suffix = state.inputBuffer.slice(state.cursorPos);
-                             state.inputBuffer = prefix + completion + suffix;
-                             state.cursorPos = start + completion.length;
-                             redrawLine();
-                         }
-                     } else {
-                         // Show dropdown
-                         updateCompletionsUI(res.suggestions, res.start, true, 0);
-                     }
-                 }
-                 return;
-             }
+                // Trigger completion
+                const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                if (res && res.suggestions.length > 0) {
+                    if (res.suggestions.length === 1) {
+                        // Auto complete
+                        // Use applyCompletion logic but locally
+                        const completion = res.suggestions[0];
+                        const start = res.start;
+                        if (start >= 0 && start <= state.cursorPos) {
+                            const prefix = state.inputBuffer.slice(0, start);
+                            const suffix = state.inputBuffer.slice(state.cursorPos);
+                            state.inputBuffer = prefix + completion + suffix;
+                            state.cursorPos = start + completion.length;
+                            redrawLine();
+                        }
+                    } else {
+                        // Show dropdown
+                        updateCompletionsUI(res.suggestions, res.start, true, 0);
+                    }
+                }
+                return;
+            }
 
-             if (code >= 32 && code !== 127) {
-                 if (state.cursorPos === state.inputBuffer.length) {
-                     // Fast path: append at end
-                     state.inputBuffer += data;
-                     state.cursorPos += data.length;
-                     term.write(data);
-                 } else {
-                     // Insert in middle
-                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                     state.cursorPos += data.length;
-                     redrawLine();
-                 }
-             } else if (code === 13) { // Enter
-                 term.write("\r\n");
-                 const res = adapter.current?.input(state.inputBuffer);
+            if (code >= 32 && code !== 127) {
+                if (state.cursorPos === state.inputBuffer.length) {
+                    // Fast path: append at end
+                    state.inputBuffer += data;
+                    state.cursorPos += data.length;
+                    term.write(data);
+                } else {
+                    // Insert in middle
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos += data.length;
+                    redrawLine();
+                }
+            } else if (code === 13) { // Enter
+                term.write("\r\n");
+                const res = adapter.current?.input(state.inputBuffer);
 
-                 state.currentBlock += state.inputBuffer + "\n";
+                state.currentBlock += state.inputBuffer + "\n";
 
-                 if (res?.status === "complete") {
-                     if (state.currentBlock.trim()) state.history.push(state.currentBlock.trimEnd());
-                     state.currentBlock = "";
-                     state.historyIndex = -1;
-                     state.inputBuffer = "";
-                     state.cursorPos = 0;
-                     state.prompt = ">>> ";
-                 } else if (res?.status === "incomplete") {
-                     state.prompt = res.prompt || ".. ";
-                     term.write(state.prompt);
-                     state.inputBuffer = "";
-                     state.cursorPos = 0;
-                 } else {
-                     term.write(`Error: ${res?.message}\r\n>>> `);
-                     state.currentBlock = "";
-                     state.inputBuffer = "";
-                     state.cursorPos = 0;
-                     state.prompt = ">>> ";
-                 }
-                 lastBufferHeight.current = 0;
-             } else if (code === 127) { // Backspace
-                 if (state.cursorPos > 0) {
-                     if (state.cursorPos === state.inputBuffer.length) {
-                         // Fast path: delete at end
-                         state.inputBuffer = state.inputBuffer.slice(0, -1);
-                         state.cursorPos--;
-                         term.write("\b \b");
-                     } else {
-                         state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
-                         state.cursorPos--;
-                         redrawLine();
-                     }
-                 }
-             }
+                if (res?.status === "complete") {
+                    if (state.currentBlock.trim()) state.history.push(state.currentBlock.trimEnd());
+                    state.currentBlock = "";
+                    state.historyIndex = -1;
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                } else if (res?.status === "incomplete") {
+                    state.prompt = res.prompt || ".. ";
+                    term.write(state.prompt);
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                } else {
+                    term.write(`Error: ${res?.message}\r\n>>> `);
+                    state.currentBlock = "";
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                }
+                lastBufferHeight.current = 0;
+            } else if (code === 127) { // Backspace
+                if (state.cursorPos > 0) {
+                    if (state.cursorPos === state.inputBuffer.length) {
+                        // Fast path: delete at end
+                        state.inputBuffer = state.inputBuffer.slice(0, -1);
+                        state.cursorPos--;
+                        term.write("\b \b");
+                    } else {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos--;
+                        redrawLine();
+                    }
+                }
+            }
 
-             // Trigger completion updates if needed
-             if (completionsRef.current.show || code === 46 /* . */) {
-                 const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
-                 if (res && res.suggestions.length > 0) {
-                     updateCompletionsUI(res.suggestions, res.start, true, 0);
-                 } else {
-                     if (completionsRef.current.show) {
-                         updateCompletionsUI([], 0, false, 0);
-                     }
-                 }
-             }
+            // Trigger completion updates if needed
+            if (completionsRef.current.show || code === 46 /* . */) {
+                const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                if (res && res.suggestions.length > 0) {
+                    updateCompletionsUI(res.suggestions, res.start, true, 0);
+                } else {
+                    if (completionsRef.current.show) {
+                        updateCompletionsUI([], 0, false, 0);
+                    }
+                }
+            }
         });
 
         return () => {
