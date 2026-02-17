@@ -14,19 +14,21 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellTaskQuery is the builder for querying ShellTask entities.
 type ShellTaskQuery struct {
 	config
-	ctx        *QueryContext
-	order      []shelltask.OrderOption
-	inters     []Interceptor
-	predicates []predicate.ShellTask
-	withShell  *ShellQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*ShellTask) error
+	ctx         *QueryContext
+	order       []shelltask.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.ShellTask
+	withShell   *ShellQuery
+	withCreator *UserQuery
+	withFKs     bool
+	modifiers   []func(*sql.Selector)
+	loadTotal   []func(context.Context, []*ShellTask) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +80,28 @@ func (stq *ShellTaskQuery) QueryShell() *ShellQuery {
 			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, shelltask.ShellTable, shelltask.ShellColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCreator chains the current query on the "creator" edge.
+func (stq *ShellTaskQuery) QueryCreator() *UserQuery {
+	query := (&UserClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shelltask.CreatorTable, shelltask.CreatorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +296,13 @@ func (stq *ShellTaskQuery) Clone() *ShellTaskQuery {
 		return nil
 	}
 	return &ShellTaskQuery{
-		config:     stq.config,
-		ctx:        stq.ctx.Clone(),
-		order:      append([]shelltask.OrderOption{}, stq.order...),
-		inters:     append([]Interceptor{}, stq.inters...),
-		predicates: append([]predicate.ShellTask{}, stq.predicates...),
-		withShell:  stq.withShell.Clone(),
+		config:      stq.config,
+		ctx:         stq.ctx.Clone(),
+		order:       append([]shelltask.OrderOption{}, stq.order...),
+		inters:      append([]Interceptor{}, stq.inters...),
+		predicates:  append([]predicate.ShellTask{}, stq.predicates...),
+		withShell:   stq.withShell.Clone(),
+		withCreator: stq.withCreator.Clone(),
 		// clone intermediate query.
 		sql:  stq.sql.Clone(),
 		path: stq.path,
@@ -292,6 +317,17 @@ func (stq *ShellTaskQuery) WithShell(opts ...func(*ShellQuery)) *ShellTaskQuery 
 		opt(query)
 	}
 	stq.withShell = query
+	return stq
+}
+
+// WithCreator tells the query-builder to eager-load the nodes that are connected to
+// the "creator" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithCreator(opts ...func(*UserQuery)) *ShellTaskQuery {
+	query := (&UserClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withCreator = query
 	return stq
 }
 
@@ -374,11 +410,12 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 		nodes       = []*ShellTask{}
 		withFKs     = stq.withFKs
 		_spec       = stq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			stq.withShell != nil,
+			stq.withCreator != nil,
 		}
 	)
-	if stq.withShell != nil {
+	if stq.withShell != nil || stq.withCreator != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -408,6 +445,12 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 	if query := stq.withShell; query != nil {
 		if err := stq.loadShell(ctx, query, nodes, nil,
 			func(n *ShellTask, e *Shell) { n.Edges.Shell = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := stq.withCreator; query != nil {
+		if err := stq.loadCreator(ctx, query, nodes, nil,
+			func(n *ShellTask, e *User) { n.Edges.Creator = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -444,6 +487,38 @@ func (stq *ShellTaskQuery) loadShell(ctx context.Context, query *ShellQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "shell_shell_tasks" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (stq *ShellTaskQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*ShellTask, init func(*ShellTask), assign func(*ShellTask, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*ShellTask)
+	for i := range nodes {
+		if nodes[i].shell_task_creator == nil {
+			continue
+		}
+		fk := *nodes[i].shell_task_creator
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_task_creator" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

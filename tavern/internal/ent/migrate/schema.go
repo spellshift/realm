@@ -452,8 +452,11 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "input", Type: field.TypeString},
 		{Name: "output", Type: field.TypeString, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "stream_id", Type: field.TypeString},
 		{Name: "sequence_id", Type: field.TypeUint64},
 		{Name: "shell_shell_tasks", Type: field.TypeInt},
+		{Name: "shell_task_creator", Type: field.TypeInt},
 	}
 	// ShellTasksTable holds the schema information for the "shell_tasks" table.
 	ShellTasksTable = &schema.Table{
@@ -463,8 +466,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "shell_tasks_shells_shell_tasks",
-				Columns:    []*schema.Column{ShellTasksColumns[6]},
+				Columns:    []*schema.Column{ShellTasksColumns[8]},
 				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shell_tasks_users_creator",
+				Columns:    []*schema.Column{ShellTasksColumns[9]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -749,6 +758,7 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	ShellTasksTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellTasksTable.ForeignKeys[1].RefTable = UsersTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

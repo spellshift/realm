@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellTaskCreate is the builder for creating a ShellTask entity.
@@ -71,6 +72,26 @@ func (stc *ShellTaskCreate) SetNillableOutput(s *string) *ShellTaskCreate {
 	return stc
 }
 
+// SetError sets the "error" field.
+func (stc *ShellTaskCreate) SetError(s string) *ShellTaskCreate {
+	stc.mutation.SetError(s)
+	return stc
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (stc *ShellTaskCreate) SetNillableError(s *string) *ShellTaskCreate {
+	if s != nil {
+		stc.SetError(*s)
+	}
+	return stc
+}
+
+// SetStreamID sets the "stream_id" field.
+func (stc *ShellTaskCreate) SetStreamID(s string) *ShellTaskCreate {
+	stc.mutation.SetStreamID(s)
+	return stc
+}
+
 // SetSequenceID sets the "sequence_id" field.
 func (stc *ShellTaskCreate) SetSequenceID(u uint64) *ShellTaskCreate {
 	stc.mutation.SetSequenceID(u)
@@ -86,6 +107,17 @@ func (stc *ShellTaskCreate) SetShellID(id int) *ShellTaskCreate {
 // SetShell sets the "shell" edge to the Shell entity.
 func (stc *ShellTaskCreate) SetShell(s *Shell) *ShellTaskCreate {
 	return stc.SetShellID(s.ID)
+}
+
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stc *ShellTaskCreate) SetCreatorID(id int) *ShellTaskCreate {
+	stc.mutation.SetCreatorID(id)
+	return stc
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stc *ShellTaskCreate) SetCreator(u *User) *ShellTaskCreate {
+	return stc.SetCreatorID(u.ID)
 }
 
 // Mutation returns the ShellTaskMutation object of the builder.
@@ -144,11 +176,17 @@ func (stc *ShellTaskCreate) check() error {
 	if _, ok := stc.mutation.Input(); !ok {
 		return &ValidationError{Name: "input", err: errors.New(`ent: missing required field "ShellTask.input"`)}
 	}
+	if _, ok := stc.mutation.StreamID(); !ok {
+		return &ValidationError{Name: "stream_id", err: errors.New(`ent: missing required field "ShellTask.stream_id"`)}
+	}
 	if _, ok := stc.mutation.SequenceID(); !ok {
 		return &ValidationError{Name: "sequence_id", err: errors.New(`ent: missing required field "ShellTask.sequence_id"`)}
 	}
 	if len(stc.mutation.ShellIDs()) == 0 {
 		return &ValidationError{Name: "shell", err: errors.New(`ent: missing required edge "ShellTask.shell"`)}
+	}
+	if len(stc.mutation.CreatorIDs()) == 0 {
+		return &ValidationError{Name: "creator", err: errors.New(`ent: missing required edge "ShellTask.creator"`)}
 	}
 	return nil
 }
@@ -193,6 +231,14 @@ func (stc *ShellTaskCreate) createSpec() (*ShellTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(shelltask.FieldOutput, field.TypeString, value)
 		_node.Output = value
 	}
+	if value, ok := stc.mutation.Error(); ok {
+		_spec.SetField(shelltask.FieldError, field.TypeString, value)
+		_node.Error = value
+	}
+	if value, ok := stc.mutation.StreamID(); ok {
+		_spec.SetField(shelltask.FieldStreamID, field.TypeString, value)
+		_node.StreamID = value
+	}
 	if value, ok := stc.mutation.SequenceID(); ok {
 		_spec.SetField(shelltask.FieldSequenceID, field.TypeUint64, value)
 		_node.SequenceID = value
@@ -212,6 +258,23 @@ func (stc *ShellTaskCreate) createSpec() (*ShellTask, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.shell_shell_tasks = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shelltask.CreatorTable,
+			Columns: []string{shelltask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_task_creator = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -305,6 +368,36 @@ func (u *ShellTaskUpsert) UpdateOutput() *ShellTaskUpsert {
 // ClearOutput clears the value of the "output" field.
 func (u *ShellTaskUpsert) ClearOutput() *ShellTaskUpsert {
 	u.SetNull(shelltask.FieldOutput)
+	return u
+}
+
+// SetError sets the "error" field.
+func (u *ShellTaskUpsert) SetError(v string) *ShellTaskUpsert {
+	u.Set(shelltask.FieldError, v)
+	return u
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *ShellTaskUpsert) UpdateError() *ShellTaskUpsert {
+	u.SetExcluded(shelltask.FieldError)
+	return u
+}
+
+// ClearError clears the value of the "error" field.
+func (u *ShellTaskUpsert) ClearError() *ShellTaskUpsert {
+	u.SetNull(shelltask.FieldError)
+	return u
+}
+
+// SetStreamID sets the "stream_id" field.
+func (u *ShellTaskUpsert) SetStreamID(v string) *ShellTaskUpsert {
+	u.Set(shelltask.FieldStreamID, v)
+	return u
+}
+
+// UpdateStreamID sets the "stream_id" field to the value that was provided on create.
+func (u *ShellTaskUpsert) UpdateStreamID() *ShellTaskUpsert {
+	u.SetExcluded(shelltask.FieldStreamID)
 	return u
 }
 
@@ -417,6 +510,41 @@ func (u *ShellTaskUpsertOne) UpdateOutput() *ShellTaskUpsertOne {
 func (u *ShellTaskUpsertOne) ClearOutput() *ShellTaskUpsertOne {
 	return u.Update(func(s *ShellTaskUpsert) {
 		s.ClearOutput()
+	})
+}
+
+// SetError sets the "error" field.
+func (u *ShellTaskUpsertOne) SetError(v string) *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetError(v)
+	})
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *ShellTaskUpsertOne) UpdateError() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateError()
+	})
+}
+
+// ClearError clears the value of the "error" field.
+func (u *ShellTaskUpsertOne) ClearError() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearError()
+	})
+}
+
+// SetStreamID sets the "stream_id" field.
+func (u *ShellTaskUpsertOne) SetStreamID(v string) *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetStreamID(v)
+	})
+}
+
+// UpdateStreamID sets the "stream_id" field to the value that was provided on create.
+func (u *ShellTaskUpsertOne) UpdateStreamID() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateStreamID()
 	})
 }
 
@@ -698,6 +826,41 @@ func (u *ShellTaskUpsertBulk) UpdateOutput() *ShellTaskUpsertBulk {
 func (u *ShellTaskUpsertBulk) ClearOutput() *ShellTaskUpsertBulk {
 	return u.Update(func(s *ShellTaskUpsert) {
 		s.ClearOutput()
+	})
+}
+
+// SetError sets the "error" field.
+func (u *ShellTaskUpsertBulk) SetError(v string) *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetError(v)
+	})
+}
+
+// UpdateError sets the "error" field to the value that was provided on create.
+func (u *ShellTaskUpsertBulk) UpdateError() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateError()
+	})
+}
+
+// ClearError clears the value of the "error" field.
+func (u *ShellTaskUpsertBulk) ClearError() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearError()
+	})
+}
+
+// SetStreamID sets the "stream_id" field.
+func (u *ShellTaskUpsertBulk) SetStreamID(v string) *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetStreamID(v)
+	})
+}
+
+// UpdateStreamID sets the "stream_id" field to the value that was provided on create.
+func (u *ShellTaskUpsertBulk) UpdateStreamID() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateStreamID()
 	})
 }
 

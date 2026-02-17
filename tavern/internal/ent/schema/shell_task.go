@@ -20,9 +20,14 @@ func (ShellTask) Fields() []ent.Field {
 			Comment("The command input sent to the shell"),
 		field.String("output").
 			Optional().
-			Comment("The output received from the shell"),
+			Comment("Any output received from the shell"),
+		field.String("error").
+			Optional().
+			Comment("Any error received from the shell"),
+		field.String("stream_id").
+			Comment("Unique identifier for the stream that created this shell task (likely a websocket uuid)"),
 		field.Uint64("sequence_id").
-			Comment("Sequence number for ordering tasks within a shell"),
+			Comment("Sequence number for ordering tasks within the same stream_id"),
 	}
 }
 
@@ -34,6 +39,10 @@ func (ShellTask) Edges() []ent.Edge {
 			Unique().
 			Required().
 			Comment("The shell this task belongs to"),
+		edge.To("creator", User.Type).
+			Unique().
+			Required().
+			Comment("The user who created this ShellTask"),
 	}
 }
 

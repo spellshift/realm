@@ -2812,6 +2812,22 @@ func (c *ShellTaskClient) QueryShell(st *ShellTask) *ShellQuery {
 	return query
 }
 
+// QueryCreator queries the creator edge of a ShellTask.
+func (c *ShellTaskClient) QueryCreator(st *ShellTask) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shelltask.CreatorTable, shelltask.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellTaskClient) Hooks() []Hook {
 	return c.hooks.ShellTask

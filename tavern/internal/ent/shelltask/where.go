@@ -75,6 +75,16 @@ func Output(v string) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldEQ(FieldOutput, v))
 }
 
+// Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
+func Error(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldError, v))
+}
+
+// StreamID applies equality check predicate on the "stream_id" field. It's identical to StreamIDEQ.
+func StreamID(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldStreamID, v))
+}
+
 // SequenceID applies equality check predicate on the "sequence_id" field. It's identical to SequenceIDEQ.
 func SequenceID(v uint64) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldEQ(FieldSequenceID, v))
@@ -300,6 +310,146 @@ func OutputContainsFold(v string) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldContainsFold(FieldOutput, v))
 }
 
+// ErrorEQ applies the EQ predicate on the "error" field.
+func ErrorEQ(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldError, v))
+}
+
+// ErrorNEQ applies the NEQ predicate on the "error" field.
+func ErrorNEQ(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNEQ(FieldError, v))
+}
+
+// ErrorIn applies the In predicate on the "error" field.
+func ErrorIn(vs ...string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIn(FieldError, vs...))
+}
+
+// ErrorNotIn applies the NotIn predicate on the "error" field.
+func ErrorNotIn(vs ...string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotIn(FieldError, vs...))
+}
+
+// ErrorGT applies the GT predicate on the "error" field.
+func ErrorGT(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGT(FieldError, v))
+}
+
+// ErrorGTE applies the GTE predicate on the "error" field.
+func ErrorGTE(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGTE(FieldError, v))
+}
+
+// ErrorLT applies the LT predicate on the "error" field.
+func ErrorLT(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLT(FieldError, v))
+}
+
+// ErrorLTE applies the LTE predicate on the "error" field.
+func ErrorLTE(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLTE(FieldError, v))
+}
+
+// ErrorContains applies the Contains predicate on the "error" field.
+func ErrorContains(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldContains(FieldError, v))
+}
+
+// ErrorHasPrefix applies the HasPrefix predicate on the "error" field.
+func ErrorHasPrefix(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldHasPrefix(FieldError, v))
+}
+
+// ErrorHasSuffix applies the HasSuffix predicate on the "error" field.
+func ErrorHasSuffix(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldHasSuffix(FieldError, v))
+}
+
+// ErrorIsNil applies the IsNil predicate on the "error" field.
+func ErrorIsNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIsNull(FieldError))
+}
+
+// ErrorNotNil applies the NotNil predicate on the "error" field.
+func ErrorNotNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotNull(FieldError))
+}
+
+// ErrorEqualFold applies the EqualFold predicate on the "error" field.
+func ErrorEqualFold(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEqualFold(FieldError, v))
+}
+
+// ErrorContainsFold applies the ContainsFold predicate on the "error" field.
+func ErrorContainsFold(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldContainsFold(FieldError, v))
+}
+
+// StreamIDEQ applies the EQ predicate on the "stream_id" field.
+func StreamIDEQ(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldStreamID, v))
+}
+
+// StreamIDNEQ applies the NEQ predicate on the "stream_id" field.
+func StreamIDNEQ(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNEQ(FieldStreamID, v))
+}
+
+// StreamIDIn applies the In predicate on the "stream_id" field.
+func StreamIDIn(vs ...string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIn(FieldStreamID, vs...))
+}
+
+// StreamIDNotIn applies the NotIn predicate on the "stream_id" field.
+func StreamIDNotIn(vs ...string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotIn(FieldStreamID, vs...))
+}
+
+// StreamIDGT applies the GT predicate on the "stream_id" field.
+func StreamIDGT(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGT(FieldStreamID, v))
+}
+
+// StreamIDGTE applies the GTE predicate on the "stream_id" field.
+func StreamIDGTE(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGTE(FieldStreamID, v))
+}
+
+// StreamIDLT applies the LT predicate on the "stream_id" field.
+func StreamIDLT(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLT(FieldStreamID, v))
+}
+
+// StreamIDLTE applies the LTE predicate on the "stream_id" field.
+func StreamIDLTE(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLTE(FieldStreamID, v))
+}
+
+// StreamIDContains applies the Contains predicate on the "stream_id" field.
+func StreamIDContains(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldContains(FieldStreamID, v))
+}
+
+// StreamIDHasPrefix applies the HasPrefix predicate on the "stream_id" field.
+func StreamIDHasPrefix(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldHasPrefix(FieldStreamID, v))
+}
+
+// StreamIDHasSuffix applies the HasSuffix predicate on the "stream_id" field.
+func StreamIDHasSuffix(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldHasSuffix(FieldStreamID, v))
+}
+
+// StreamIDEqualFold applies the EqualFold predicate on the "stream_id" field.
+func StreamIDEqualFold(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEqualFold(FieldStreamID, v))
+}
+
+// StreamIDContainsFold applies the ContainsFold predicate on the "stream_id" field.
+func StreamIDContainsFold(v string) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldContainsFold(FieldStreamID, v))
+}
+
 // SequenceIDEQ applies the EQ predicate on the "sequence_id" field.
 func SequenceIDEQ(v uint64) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldEQ(FieldSequenceID, v))
@@ -355,6 +505,29 @@ func HasShell() predicate.ShellTask {
 func HasShellWith(preds ...predicate.Shell) predicate.ShellTask {
 	return predicate.ShellTask(func(s *sql.Selector) {
 		step := newShellStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasCreator applies the HasEdge predicate on the "creator" edge.
+func HasCreator() predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCreatorWith applies the HasEdge predicate on the "creator" edge with a given conditions (other predicates).
+func HasCreatorWith(preds ...predicate.User) predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := newCreatorStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

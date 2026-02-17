@@ -22,10 +22,16 @@ const (
 	FieldInput = "input"
 	// FieldOutput holds the string denoting the output field in the database.
 	FieldOutput = "output"
+	// FieldError holds the string denoting the error field in the database.
+	FieldError = "error"
+	// FieldStreamID holds the string denoting the stream_id field in the database.
+	FieldStreamID = "stream_id"
 	// FieldSequenceID holds the string denoting the sequence_id field in the database.
 	FieldSequenceID = "sequence_id"
 	// EdgeShell holds the string denoting the shell edge name in mutations.
 	EdgeShell = "shell"
+	// EdgeCreator holds the string denoting the creator edge name in mutations.
+	EdgeCreator = "creator"
 	// Table holds the table name of the shelltask in the database.
 	Table = "shell_tasks"
 	// ShellTable is the table that holds the shell relation/edge.
@@ -35,6 +41,13 @@ const (
 	ShellInverseTable = "shells"
 	// ShellColumn is the table column denoting the shell relation/edge.
 	ShellColumn = "shell_shell_tasks"
+	// CreatorTable is the table that holds the creator relation/edge.
+	CreatorTable = "shell_tasks"
+	// CreatorInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	CreatorInverseTable = "users"
+	// CreatorColumn is the table column denoting the creator relation/edge.
+	CreatorColumn = "shell_task_creator"
 )
 
 // Columns holds all SQL columns for shelltask fields.
@@ -44,6 +57,8 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldInput,
 	FieldOutput,
+	FieldError,
+	FieldStreamID,
 	FieldSequenceID,
 }
 
@@ -51,6 +66,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"shell_shell_tasks",
+	"shell_task_creator",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -105,6 +121,16 @@ func ByOutput(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOutput, opts...).ToFunc()
 }
 
+// ByError orders the results by the error field.
+func ByError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldError, opts...).ToFunc()
+}
+
+// ByStreamID orders the results by the stream_id field.
+func ByStreamID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStreamID, opts...).ToFunc()
+}
+
 // BySequenceID orders the results by the sequence_id field.
 func BySequenceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSequenceID, opts...).ToFunc()
@@ -116,10 +142,24 @@ func ByShellField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newShellStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByCreatorField orders the results by creator field.
+func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newShellStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ShellInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ShellTable, ShellColumn),
+	)
+}
+func newCreatorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CreatorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
 	)
 }

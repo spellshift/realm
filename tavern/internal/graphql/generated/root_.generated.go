@@ -432,12 +432,15 @@ type ComplexityRoot struct {
 
 	ShellTask struct {
 		CreatedAt      func(childComplexity int) int
+		Creator        func(childComplexity int) int
+		Error          func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Input          func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		SequenceID     func(childComplexity int) int
 		Shell          func(childComplexity int) int
+		StreamID       func(childComplexity int) int
 	}
 
 	ShellTaskConnection struct {
@@ -2607,6 +2610,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ShellTask.CreatedAt(childComplexity), true
 
+	case "ShellTask.creator":
+		if e.complexity.ShellTask.Creator == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Creator(childComplexity), true
+
+	case "ShellTask.error":
+		if e.complexity.ShellTask.Error == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Error(childComplexity), true
+
 	case "ShellTask.id":
 		if e.complexity.ShellTask.ID == nil {
 			break
@@ -2648,6 +2665,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellTask.Shell(childComplexity), true
+
+	case "ShellTask.streamID":
+		if e.complexity.ShellTask.StreamID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.StreamID(childComplexity), true
 
 	case "ShellTaskConnection.edges":
 		if e.complexity.ShellTaskConnection.Edges == nil {
@@ -6936,17 +6960,29 @@ type ShellTask implements Node {
   """
   input: String!
   """
-  The output received from the shell
+  Any output received from the shell
   """
   output: String
   """
-  Sequence number for ordering tasks within a shell
+  Any error received from the shell
+  """
+  error: String
+  """
+  Unique identifier for the stream that created this shell task (likely a websocket uuid)
+  """
+  streamID: String!
+  """
+  Sequence number for ordering tasks within the same stream_id
   """
   sequenceID: Int!
   """
   The shell this task belongs to
   """
   shell: Shell!
+  """
+  The user who created this ShellTask
+  """
+  creator: User!
 }
 """
 A connection to a list of items.
@@ -7074,6 +7110,40 @@ input ShellTaskWhereInput {
   outputEqualFold: String
   outputContainsFold: String
   """
+  error field predicates
+  """
+  error: String
+  errorNEQ: String
+  errorIn: [String!]
+  errorNotIn: [String!]
+  errorGT: String
+  errorGTE: String
+  errorLT: String
+  errorLTE: String
+  errorContains: String
+  errorHasPrefix: String
+  errorHasSuffix: String
+  errorIsNil: Boolean
+  errorNotNil: Boolean
+  errorEqualFold: String
+  errorContainsFold: String
+  """
+  stream_id field predicates
+  """
+  streamID: String
+  streamIDNEQ: String
+  streamIDIn: [String!]
+  streamIDNotIn: [String!]
+  streamIDGT: String
+  streamIDGTE: String
+  streamIDLT: String
+  streamIDLTE: String
+  streamIDContains: String
+  streamIDHasPrefix: String
+  streamIDHasSuffix: String
+  streamIDEqualFold: String
+  streamIDContainsFold: String
+  """
   sequence_id field predicates
   """
   sequenceID: Int
@@ -7089,6 +7159,11 @@ input ShellTaskWhereInput {
   """
   hasShell: Boolean
   hasShellWith: [ShellWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.

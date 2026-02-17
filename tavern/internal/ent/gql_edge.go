@@ -519,6 +519,14 @@ func (st *ShellTask) Shell(ctx context.Context) (*Shell, error) {
 	return result, err
 }
 
+func (st *ShellTask) Creator(ctx context.Context) (*User, error) {
+	result, err := st.Edges.CreatorOrErr()
+	if IsNotLoaded(err) {
+		result, err = st.QueryCreator().Only(ctx)
+	}
+	return result, err
+}
+
 func (t *Tag) Hosts(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
 ) (*HostConnection, error) {

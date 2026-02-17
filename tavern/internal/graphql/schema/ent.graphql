@@ -3599,17 +3599,29 @@ type ShellTask implements Node {
   """
   input: String!
   """
-  The output received from the shell
+  Any output received from the shell
   """
   output: String
   """
-  Sequence number for ordering tasks within a shell
+  Any error received from the shell
+  """
+  error: String
+  """
+  Unique identifier for the stream that created this shell task (likely a websocket uuid)
+  """
+  streamID: String!
+  """
+  Sequence number for ordering tasks within the same stream_id
   """
   sequenceID: Int!
   """
   The shell this task belongs to
   """
   shell: Shell!
+  """
+  The user who created this ShellTask
+  """
+  creator: User!
 }
 """
 A connection to a list of items.
@@ -3737,6 +3749,40 @@ input ShellTaskWhereInput {
   outputEqualFold: String
   outputContainsFold: String
   """
+  error field predicates
+  """
+  error: String
+  errorNEQ: String
+  errorIn: [String!]
+  errorNotIn: [String!]
+  errorGT: String
+  errorGTE: String
+  errorLT: String
+  errorLTE: String
+  errorContains: String
+  errorHasPrefix: String
+  errorHasSuffix: String
+  errorIsNil: Boolean
+  errorNotNil: Boolean
+  errorEqualFold: String
+  errorContainsFold: String
+  """
+  stream_id field predicates
+  """
+  streamID: String
+  streamIDNEQ: String
+  streamIDIn: [String!]
+  streamIDNotIn: [String!]
+  streamIDGT: String
+  streamIDGTE: String
+  streamIDLT: String
+  streamIDLTE: String
+  streamIDContains: String
+  streamIDHasPrefix: String
+  streamIDHasSuffix: String
+  streamIDEqualFold: String
+  streamIDContainsFold: String
+  """
   sequence_id field predicates
   """
   sequenceID: Int
@@ -3752,6 +3798,11 @@ input ShellTaskWhereInput {
   """
   hasShell: Boolean
   hasShellWith: [ShellWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.

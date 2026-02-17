@@ -6718,6 +6718,38 @@ type ShellTaskWhereInput struct {
 	OutputEqualFold    *string  `json:"outputEqualFold,omitempty"`
 	OutputContainsFold *string  `json:"outputContainsFold,omitempty"`
 
+	// "error" field predicates.
+	Error             *string  `json:"error,omitempty"`
+	ErrorNEQ          *string  `json:"errorNEQ,omitempty"`
+	ErrorIn           []string `json:"errorIn,omitempty"`
+	ErrorNotIn        []string `json:"errorNotIn,omitempty"`
+	ErrorGT           *string  `json:"errorGT,omitempty"`
+	ErrorGTE          *string  `json:"errorGTE,omitempty"`
+	ErrorLT           *string  `json:"errorLT,omitempty"`
+	ErrorLTE          *string  `json:"errorLTE,omitempty"`
+	ErrorContains     *string  `json:"errorContains,omitempty"`
+	ErrorHasPrefix    *string  `json:"errorHasPrefix,omitempty"`
+	ErrorHasSuffix    *string  `json:"errorHasSuffix,omitempty"`
+	ErrorIsNil        bool     `json:"errorIsNil,omitempty"`
+	ErrorNotNil       bool     `json:"errorNotNil,omitempty"`
+	ErrorEqualFold    *string  `json:"errorEqualFold,omitempty"`
+	ErrorContainsFold *string  `json:"errorContainsFold,omitempty"`
+
+	// "stream_id" field predicates.
+	StreamID             *string  `json:"streamID,omitempty"`
+	StreamIDNEQ          *string  `json:"streamIDNEQ,omitempty"`
+	StreamIDIn           []string `json:"streamIDIn,omitempty"`
+	StreamIDNotIn        []string `json:"streamIDNotIn,omitempty"`
+	StreamIDGT           *string  `json:"streamIDGT,omitempty"`
+	StreamIDGTE          *string  `json:"streamIDGTE,omitempty"`
+	StreamIDLT           *string  `json:"streamIDLT,omitempty"`
+	StreamIDLTE          *string  `json:"streamIDLTE,omitempty"`
+	StreamIDContains     *string  `json:"streamIDContains,omitempty"`
+	StreamIDHasPrefix    *string  `json:"streamIDHasPrefix,omitempty"`
+	StreamIDHasSuffix    *string  `json:"streamIDHasSuffix,omitempty"`
+	StreamIDEqualFold    *string  `json:"streamIDEqualFold,omitempty"`
+	StreamIDContainsFold *string  `json:"streamIDContainsFold,omitempty"`
+
 	// "sequence_id" field predicates.
 	SequenceID      *uint64  `json:"sequenceID,omitempty"`
 	SequenceIDNEQ   *uint64  `json:"sequenceIDNEQ,omitempty"`
@@ -6731,6 +6763,10 @@ type ShellTaskWhereInput struct {
 	// "shell" edge predicates.
 	HasShell     *bool              `json:"hasShell,omitempty"`
 	HasShellWith []*ShellWhereInput `json:"hasShellWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6960,6 +6996,90 @@ func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
 	if i.OutputContainsFold != nil {
 		predicates = append(predicates, shelltask.OutputContainsFold(*i.OutputContainsFold))
 	}
+	if i.Error != nil {
+		predicates = append(predicates, shelltask.ErrorEQ(*i.Error))
+	}
+	if i.ErrorNEQ != nil {
+		predicates = append(predicates, shelltask.ErrorNEQ(*i.ErrorNEQ))
+	}
+	if len(i.ErrorIn) > 0 {
+		predicates = append(predicates, shelltask.ErrorIn(i.ErrorIn...))
+	}
+	if len(i.ErrorNotIn) > 0 {
+		predicates = append(predicates, shelltask.ErrorNotIn(i.ErrorNotIn...))
+	}
+	if i.ErrorGT != nil {
+		predicates = append(predicates, shelltask.ErrorGT(*i.ErrorGT))
+	}
+	if i.ErrorGTE != nil {
+		predicates = append(predicates, shelltask.ErrorGTE(*i.ErrorGTE))
+	}
+	if i.ErrorLT != nil {
+		predicates = append(predicates, shelltask.ErrorLT(*i.ErrorLT))
+	}
+	if i.ErrorLTE != nil {
+		predicates = append(predicates, shelltask.ErrorLTE(*i.ErrorLTE))
+	}
+	if i.ErrorContains != nil {
+		predicates = append(predicates, shelltask.ErrorContains(*i.ErrorContains))
+	}
+	if i.ErrorHasPrefix != nil {
+		predicates = append(predicates, shelltask.ErrorHasPrefix(*i.ErrorHasPrefix))
+	}
+	if i.ErrorHasSuffix != nil {
+		predicates = append(predicates, shelltask.ErrorHasSuffix(*i.ErrorHasSuffix))
+	}
+	if i.ErrorIsNil {
+		predicates = append(predicates, shelltask.ErrorIsNil())
+	}
+	if i.ErrorNotNil {
+		predicates = append(predicates, shelltask.ErrorNotNil())
+	}
+	if i.ErrorEqualFold != nil {
+		predicates = append(predicates, shelltask.ErrorEqualFold(*i.ErrorEqualFold))
+	}
+	if i.ErrorContainsFold != nil {
+		predicates = append(predicates, shelltask.ErrorContainsFold(*i.ErrorContainsFold))
+	}
+	if i.StreamID != nil {
+		predicates = append(predicates, shelltask.StreamIDEQ(*i.StreamID))
+	}
+	if i.StreamIDNEQ != nil {
+		predicates = append(predicates, shelltask.StreamIDNEQ(*i.StreamIDNEQ))
+	}
+	if len(i.StreamIDIn) > 0 {
+		predicates = append(predicates, shelltask.StreamIDIn(i.StreamIDIn...))
+	}
+	if len(i.StreamIDNotIn) > 0 {
+		predicates = append(predicates, shelltask.StreamIDNotIn(i.StreamIDNotIn...))
+	}
+	if i.StreamIDGT != nil {
+		predicates = append(predicates, shelltask.StreamIDGT(*i.StreamIDGT))
+	}
+	if i.StreamIDGTE != nil {
+		predicates = append(predicates, shelltask.StreamIDGTE(*i.StreamIDGTE))
+	}
+	if i.StreamIDLT != nil {
+		predicates = append(predicates, shelltask.StreamIDLT(*i.StreamIDLT))
+	}
+	if i.StreamIDLTE != nil {
+		predicates = append(predicates, shelltask.StreamIDLTE(*i.StreamIDLTE))
+	}
+	if i.StreamIDContains != nil {
+		predicates = append(predicates, shelltask.StreamIDContains(*i.StreamIDContains))
+	}
+	if i.StreamIDHasPrefix != nil {
+		predicates = append(predicates, shelltask.StreamIDHasPrefix(*i.StreamIDHasPrefix))
+	}
+	if i.StreamIDHasSuffix != nil {
+		predicates = append(predicates, shelltask.StreamIDHasSuffix(*i.StreamIDHasSuffix))
+	}
+	if i.StreamIDEqualFold != nil {
+		predicates = append(predicates, shelltask.StreamIDEqualFold(*i.StreamIDEqualFold))
+	}
+	if i.StreamIDContainsFold != nil {
+		predicates = append(predicates, shelltask.StreamIDContainsFold(*i.StreamIDContainsFold))
+	}
 	if i.SequenceID != nil {
 		predicates = append(predicates, shelltask.SequenceIDEQ(*i.SequenceID))
 	}
@@ -7002,6 +7122,24 @@ func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shelltask.HasShellWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := shelltask.HasCreator()
+		if !*i.HasCreator {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

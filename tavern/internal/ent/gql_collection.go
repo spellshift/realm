@@ -3314,6 +3314,17 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			st.withShell = query
+
+		case "creator":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: st.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			st.withCreator = query
 		case "createdAt":
 			if _, ok := fieldSeen[shelltask.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, shelltask.FieldCreatedAt)
@@ -3333,6 +3344,16 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[shelltask.FieldOutput]; !ok {
 				selectedFields = append(selectedFields, shelltask.FieldOutput)
 				fieldSeen[shelltask.FieldOutput] = struct{}{}
+			}
+		case "error":
+			if _, ok := fieldSeen[shelltask.FieldError]; !ok {
+				selectedFields = append(selectedFields, shelltask.FieldError)
+				fieldSeen[shelltask.FieldError] = struct{}{}
+			}
+		case "streamID":
+			if _, ok := fieldSeen[shelltask.FieldStreamID]; !ok {
+				selectedFields = append(selectedFields, shelltask.FieldStreamID)
+				fieldSeen[shelltask.FieldStreamID] = struct{}{}
 			}
 		case "sequenceID":
 			if _, ok := fieldSeen[shelltask.FieldSequenceID]; !ok {

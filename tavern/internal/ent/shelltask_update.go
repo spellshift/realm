@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellTaskUpdate is the builder for updating ShellTask entities.
@@ -69,6 +70,40 @@ func (stu *ShellTaskUpdate) ClearOutput() *ShellTaskUpdate {
 	return stu
 }
 
+// SetError sets the "error" field.
+func (stu *ShellTaskUpdate) SetError(s string) *ShellTaskUpdate {
+	stu.mutation.SetError(s)
+	return stu
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (stu *ShellTaskUpdate) SetNillableError(s *string) *ShellTaskUpdate {
+	if s != nil {
+		stu.SetError(*s)
+	}
+	return stu
+}
+
+// ClearError clears the value of the "error" field.
+func (stu *ShellTaskUpdate) ClearError() *ShellTaskUpdate {
+	stu.mutation.ClearError()
+	return stu
+}
+
+// SetStreamID sets the "stream_id" field.
+func (stu *ShellTaskUpdate) SetStreamID(s string) *ShellTaskUpdate {
+	stu.mutation.SetStreamID(s)
+	return stu
+}
+
+// SetNillableStreamID sets the "stream_id" field if the given value is not nil.
+func (stu *ShellTaskUpdate) SetNillableStreamID(s *string) *ShellTaskUpdate {
+	if s != nil {
+		stu.SetStreamID(*s)
+	}
+	return stu
+}
+
 // SetSequenceID sets the "sequence_id" field.
 func (stu *ShellTaskUpdate) SetSequenceID(u uint64) *ShellTaskUpdate {
 	stu.mutation.ResetSequenceID()
@@ -101,6 +136,17 @@ func (stu *ShellTaskUpdate) SetShell(s *Shell) *ShellTaskUpdate {
 	return stu.SetShellID(s.ID)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stu *ShellTaskUpdate) SetCreatorID(id int) *ShellTaskUpdate {
+	stu.mutation.SetCreatorID(id)
+	return stu
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stu *ShellTaskUpdate) SetCreator(u *User) *ShellTaskUpdate {
+	return stu.SetCreatorID(u.ID)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stu *ShellTaskUpdate) Mutation() *ShellTaskMutation {
 	return stu.mutation
@@ -109,6 +155,12 @@ func (stu *ShellTaskUpdate) Mutation() *ShellTaskMutation {
 // ClearShell clears the "shell" edge to the Shell entity.
 func (stu *ShellTaskUpdate) ClearShell() *ShellTaskUpdate {
 	stu.mutation.ClearShell()
+	return stu
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (stu *ShellTaskUpdate) ClearCreator() *ShellTaskUpdate {
+	stu.mutation.ClearCreator()
 	return stu
 }
 
@@ -153,6 +205,9 @@ func (stu *ShellTaskUpdate) check() error {
 	if stu.mutation.ShellCleared() && len(stu.mutation.ShellIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ShellTask.shell"`)
 	}
+	if stu.mutation.CreatorCleared() && len(stu.mutation.CreatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "ShellTask.creator"`)
+	}
 	return nil
 }
 
@@ -179,6 +234,15 @@ func (stu *ShellTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if stu.mutation.OutputCleared() {
 		_spec.ClearField(shelltask.FieldOutput, field.TypeString)
+	}
+	if value, ok := stu.mutation.Error(); ok {
+		_spec.SetField(shelltask.FieldError, field.TypeString, value)
+	}
+	if stu.mutation.ErrorCleared() {
+		_spec.ClearField(shelltask.FieldError, field.TypeString)
+	}
+	if value, ok := stu.mutation.StreamID(); ok {
+		_spec.SetField(shelltask.FieldStreamID, field.TypeString, value)
 	}
 	if value, ok := stu.mutation.SequenceID(); ok {
 		_spec.SetField(shelltask.FieldSequenceID, field.TypeUint64, value)
@@ -208,6 +272,35 @@ func (stu *ShellTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stu.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shelltask.CreatorTable,
+			Columns: []string{shelltask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shelltask.CreatorTable,
+			Columns: []string{shelltask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -275,6 +368,40 @@ func (stuo *ShellTaskUpdateOne) ClearOutput() *ShellTaskUpdateOne {
 	return stuo
 }
 
+// SetError sets the "error" field.
+func (stuo *ShellTaskUpdateOne) SetError(s string) *ShellTaskUpdateOne {
+	stuo.mutation.SetError(s)
+	return stuo
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (stuo *ShellTaskUpdateOne) SetNillableError(s *string) *ShellTaskUpdateOne {
+	if s != nil {
+		stuo.SetError(*s)
+	}
+	return stuo
+}
+
+// ClearError clears the value of the "error" field.
+func (stuo *ShellTaskUpdateOne) ClearError() *ShellTaskUpdateOne {
+	stuo.mutation.ClearError()
+	return stuo
+}
+
+// SetStreamID sets the "stream_id" field.
+func (stuo *ShellTaskUpdateOne) SetStreamID(s string) *ShellTaskUpdateOne {
+	stuo.mutation.SetStreamID(s)
+	return stuo
+}
+
+// SetNillableStreamID sets the "stream_id" field if the given value is not nil.
+func (stuo *ShellTaskUpdateOne) SetNillableStreamID(s *string) *ShellTaskUpdateOne {
+	if s != nil {
+		stuo.SetStreamID(*s)
+	}
+	return stuo
+}
+
 // SetSequenceID sets the "sequence_id" field.
 func (stuo *ShellTaskUpdateOne) SetSequenceID(u uint64) *ShellTaskUpdateOne {
 	stuo.mutation.ResetSequenceID()
@@ -307,6 +434,17 @@ func (stuo *ShellTaskUpdateOne) SetShell(s *Shell) *ShellTaskUpdateOne {
 	return stuo.SetShellID(s.ID)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stuo *ShellTaskUpdateOne) SetCreatorID(id int) *ShellTaskUpdateOne {
+	stuo.mutation.SetCreatorID(id)
+	return stuo
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stuo *ShellTaskUpdateOne) SetCreator(u *User) *ShellTaskUpdateOne {
+	return stuo.SetCreatorID(u.ID)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stuo *ShellTaskUpdateOne) Mutation() *ShellTaskMutation {
 	return stuo.mutation
@@ -315,6 +453,12 @@ func (stuo *ShellTaskUpdateOne) Mutation() *ShellTaskMutation {
 // ClearShell clears the "shell" edge to the Shell entity.
 func (stuo *ShellTaskUpdateOne) ClearShell() *ShellTaskUpdateOne {
 	stuo.mutation.ClearShell()
+	return stuo
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (stuo *ShellTaskUpdateOne) ClearCreator() *ShellTaskUpdateOne {
+	stuo.mutation.ClearCreator()
 	return stuo
 }
 
@@ -372,6 +516,9 @@ func (stuo *ShellTaskUpdateOne) check() error {
 	if stuo.mutation.ShellCleared() && len(stuo.mutation.ShellIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ShellTask.shell"`)
 	}
+	if stuo.mutation.CreatorCleared() && len(stuo.mutation.CreatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "ShellTask.creator"`)
+	}
 	return nil
 }
 
@@ -416,6 +563,15 @@ func (stuo *ShellTaskUpdateOne) sqlSave(ctx context.Context) (_node *ShellTask, 
 	if stuo.mutation.OutputCleared() {
 		_spec.ClearField(shelltask.FieldOutput, field.TypeString)
 	}
+	if value, ok := stuo.mutation.Error(); ok {
+		_spec.SetField(shelltask.FieldError, field.TypeString, value)
+	}
+	if stuo.mutation.ErrorCleared() {
+		_spec.ClearField(shelltask.FieldError, field.TypeString)
+	}
+	if value, ok := stuo.mutation.StreamID(); ok {
+		_spec.SetField(shelltask.FieldStreamID, field.TypeString, value)
+	}
 	if value, ok := stuo.mutation.SequenceID(); ok {
 		_spec.SetField(shelltask.FieldSequenceID, field.TypeUint64, value)
 	}
@@ -444,6 +600,35 @@ func (stuo *ShellTaskUpdateOne) sqlSave(ctx context.Context) (_node *ShellTask, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shelltask.CreatorTable,
+			Columns: []string{shelltask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   shelltask.CreatorTable,
+			Columns: []string{shelltask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

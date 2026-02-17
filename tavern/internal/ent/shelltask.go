@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ShellTask is the model entity for the ShellTask schema.
@@ -24,26 +25,33 @@ type ShellTask struct {
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
 	// The command input sent to the shell
 	Input string `json:"input,omitempty"`
-	// The output received from the shell
+	// Any output received from the shell
 	Output string `json:"output,omitempty"`
-	// Sequence number for ordering tasks within a shell
+	// Any error received from the shell
+	Error string `json:"error,omitempty"`
+	// Unique identifier for the stream that created this shell task (likely a websocket uuid)
+	StreamID string `json:"stream_id,omitempty"`
+	// Sequence number for ordering tasks within the same stream_id
 	SequenceID uint64 `json:"sequence_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ShellTaskQuery when eager-loading is set.
-	Edges             ShellTaskEdges `json:"edges"`
-	shell_shell_tasks *int
-	selectValues      sql.SelectValues
+	Edges              ShellTaskEdges `json:"edges"`
+	shell_shell_tasks  *int
+	shell_task_creator *int
+	selectValues       sql.SelectValues
 }
 
 // ShellTaskEdges holds the relations/edges for other nodes in the graph.
 type ShellTaskEdges struct {
 	// The shell this task belongs to
 	Shell *Shell `json:"shell,omitempty"`
+	// The user who created this ShellTask
+	Creator *User `json:"creator,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 }
 
 // ShellOrErr returns the Shell value or an error if the edge
@@ -57,6 +65,17 @@ func (e ShellTaskEdges) ShellOrErr() (*Shell, error) {
 	return nil, &NotLoadedError{edge: "shell"}
 }
 
+// CreatorOrErr returns the Creator value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ShellTaskEdges) CreatorOrErr() (*User, error) {
+	if e.Creator != nil {
+		return e.Creator, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "creator"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*ShellTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -64,11 +83,13 @@ func (*ShellTask) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case shelltask.FieldID, shelltask.FieldSequenceID:
 			values[i] = new(sql.NullInt64)
-		case shelltask.FieldInput, shelltask.FieldOutput:
+		case shelltask.FieldInput, shelltask.FieldOutput, shelltask.FieldError, shelltask.FieldStreamID:
 			values[i] = new(sql.NullString)
 		case shelltask.FieldCreatedAt, shelltask.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		case shelltask.ForeignKeys[0]: // shell_shell_tasks
+			values[i] = new(sql.NullInt64)
+		case shelltask.ForeignKeys[1]: // shell_task_creator
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -115,6 +136,18 @@ func (st *ShellTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				st.Output = value.String
 			}
+		case shelltask.FieldError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field error", values[i])
+			} else if value.Valid {
+				st.Error = value.String
+			}
+		case shelltask.FieldStreamID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field stream_id", values[i])
+			} else if value.Valid {
+				st.StreamID = value.String
+			}
 		case shelltask.FieldSequenceID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field sequence_id", values[i])
@@ -127,6 +160,13 @@ func (st *ShellTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				st.shell_shell_tasks = new(int)
 				*st.shell_shell_tasks = int(value.Int64)
+			}
+		case shelltask.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_task_creator", value)
+			} else if value.Valid {
+				st.shell_task_creator = new(int)
+				*st.shell_task_creator = int(value.Int64)
 			}
 		default:
 			st.selectValues.Set(columns[i], values[i])
@@ -144,6 +184,11 @@ func (st *ShellTask) Value(name string) (ent.Value, error) {
 // QueryShell queries the "shell" edge of the ShellTask entity.
 func (st *ShellTask) QueryShell() *ShellQuery {
 	return NewShellTaskClient(st.config).QueryShell(st)
+}
+
+// QueryCreator queries the "creator" edge of the ShellTask entity.
+func (st *ShellTask) QueryCreator() *UserQuery {
+	return NewShellTaskClient(st.config).QueryCreator(st)
 }
 
 // Update returns a builder for updating this ShellTask.
@@ -180,6 +225,12 @@ func (st *ShellTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("output=")
 	builder.WriteString(st.Output)
+	builder.WriteString(", ")
+	builder.WriteString("error=")
+	builder.WriteString(st.Error)
+	builder.WriteString(", ")
+	builder.WriteString("stream_id=")
+	builder.WriteString(st.StreamID)
 	builder.WriteString(", ")
 	builder.WriteString("sequence_id=")
 	builder.WriteString(fmt.Sprintf("%v", st.SequenceID))
