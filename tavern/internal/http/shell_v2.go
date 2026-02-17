@@ -27,6 +27,11 @@ var shellV2Upgrader = websocket.Upgrader{
 	},
 }
 
+type WebsocketMessage struct {
+	Type    string `json:"type"`
+	Command string `json:"command"`
+}
+
 type ShellV2Handler struct {
 	graph *ent.Client
 	mux   *mux.Mux
@@ -241,10 +246,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case msg := <-wsReadCh:
 			slog.DebugContext(ctx, "ShellV2 Recv", "msg", string(msg))
 
-			var req struct {
-				Type    string `json:"type"`
-				Command string `json:"command"`
-			}
+			var req WebsocketMessage
 			if err := json.Unmarshal(msg, &req); err != nil {
 				slog.ErrorContext(ctx, "ShellV2 JSON Parse Error", "error", err)
 				continue
