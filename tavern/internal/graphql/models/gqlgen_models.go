@@ -21,7 +21,7 @@ type BuildTaskTransportInput struct {
 	// The callback interval in seconds.
 	Interval int `json:"interval"`
 	// The transport type.
-	TransportType c2pb.Transport_Type `json:"transportType"`
+	Type c2pb.Transport_Type `json:"type"`
 	// Extra transport configuration.
 	Extra *string `json:"extra,omitempty"`
 }

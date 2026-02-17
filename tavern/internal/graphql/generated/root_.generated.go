@@ -35,7 +35,6 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	BuildTaskTransport() BuildTaskTransportResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -130,10 +129,10 @@ type ComplexityRoot struct {
 	}
 
 	BuildTaskTransport struct {
-		Extra         func(childComplexity int) int
-		Interval      func(childComplexity int) int
-		TransportType func(childComplexity int) int
-		URI           func(childComplexity int) int
+		Extra    func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Type     func(childComplexity int) int
+		URI      func(childComplexity int) int
 	}
 
 	Builder struct {
@@ -982,12 +981,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTaskTransport.Interval(childComplexity), true
 
-	case "BuildTaskTransport.transportType":
-		if e.complexity.BuildTaskTransport.TransportType == nil {
+	case "BuildTaskTransport.type":
+		if e.complexity.BuildTaskTransport.Type == nil {
 			break
 		}
 
-		return e.complexity.BuildTaskTransport.TransportType(childComplexity), true
+		return e.complexity.BuildTaskTransport.Type(childComplexity), true
 
 	case "BuildTaskTransport.uri":
 		if e.complexity.BuildTaskTransport.URI == nil {
@@ -8417,7 +8416,7 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
   interval: Int!
 
   """The transport type."""
-  transportType: BeaconTransport_Type!
+  type: BeaconTransport_Type!
 
   """Extra transport configuration."""
   extra: String
@@ -8432,7 +8431,7 @@ input BuildTaskTransportInput {
   interval: Int! = 5
 
   """The transport type."""
-  transportType: BeaconTransport_Type!
+  type: BeaconTransport_Type!
 
   """Extra transport configuration."""
   extra: String

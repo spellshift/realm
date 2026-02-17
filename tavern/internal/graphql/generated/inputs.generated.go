@@ -13,15 +13,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/ast"
 	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/graphql/models"
 )
 
 // region    ************************** generated!.gotpl **************************
-
-type BuildTaskTransportResolver interface {
-	TransportType(ctx context.Context, obj *builderpb.BuildTaskTransport) (c2pb.Transport_Type, error)
-}
 
 // endregion ************************** generated!.gotpl **************************
 
@@ -93,14 +88,14 @@ func (ec *executionContext) fieldContext_BuildTaskTransport_interval(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTaskTransport_transportType(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildTaskTransport_type(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTaskTransport_transportType,
+		ec.fieldContext_BuildTaskTransport_type,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.BuildTaskTransport().TransportType(ctx, obj)
+			return obj.Type, nil
 		},
 		nil,
 		ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type,
@@ -109,12 +104,12 @@ func (ec *executionContext) _BuildTaskTransport_transportType(ctx context.Contex
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTaskTransport_transportType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildTaskTransport_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "BuildTaskTransport",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type BeaconTransport_Type does not have child fields")
 		},
@@ -271,7 +266,7 @@ func (ec *executionContext) unmarshalInputBuildTaskTransportInput(ctx context.Co
 		asMap["interval"] = 5
 	}
 
-	fieldsInOrder := [...]string{"uri", "interval", "transportType", "extra"}
+	fieldsInOrder := [...]string{"uri", "interval", "type", "extra"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -292,13 +287,13 @@ func (ec *executionContext) unmarshalInputBuildTaskTransportInput(ctx context.Co
 				return it, err
 			}
 			it.Interval = data
-		case "transportType":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportType"))
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
 			data, err := ec.unmarshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.TransportType = data
+			it.Type = data
 		case "extra":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extra"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -540,49 +535,18 @@ func (ec *executionContext) _BuildTaskTransport(ctx context.Context, sel ast.Sel
 		case "uri":
 			out.Values[i] = ec._BuildTaskTransport_uri(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "interval":
 			out.Values[i] = ec._BuildTaskTransport_interval(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
-		case "transportType":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._BuildTaskTransport_transportType(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+		case "type":
+			out.Values[i] = ec._BuildTaskTransport_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "extra":
 			out.Values[i] = ec._BuildTaskTransport_extra(ctx, field, obj)
 		default:

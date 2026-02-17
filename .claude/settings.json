@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(IMIX_SERVER_PUBKEY=\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\" cargo test:*)"
+    ]
+  }
+}

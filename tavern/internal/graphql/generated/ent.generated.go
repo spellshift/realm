@@ -2781,8 +2781,8 @@ func (ec *executionContext) fieldContext_BuildTask_transports(_ context.Context,
 				return ec.fieldContext_BuildTaskTransport_uri(ctx, field)
 			case "interval":
 				return ec.fieldContext_BuildTaskTransport_interval(ctx, field)
-			case "transportType":
-				return ec.fieldContext_BuildTaskTransport_transportType(ctx, field)
+			case "type":
+				return ec.fieldContext_BuildTaskTransport_type(ctx, field)
 			case "extra":
 				return ec.fieldContext_BuildTaskTransport_extra(ctx, field)
 			}

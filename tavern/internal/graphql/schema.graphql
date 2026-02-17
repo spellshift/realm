@@ -4892,7 +4892,7 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
   interval: Int!
 
   """The transport type."""
-  transportType: BeaconTransport_Type!
+  type: BeaconTransport_Type!
 
   """Extra transport configuration."""
   extra: String
@@ -4907,7 +4907,7 @@ input BuildTaskTransportInput {
   interval: Int! = 5
 
   """The transport type."""
-  transportType: BeaconTransport_Type!
+  type: BeaconTransport_Type!
 
   """Extra transport configuration."""
   extra: String
