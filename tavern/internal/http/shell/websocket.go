@@ -27,11 +27,12 @@ type WebsocketMessageKind string
 // WebsocketMessageKindError represents an error for the shell, not necessarily associated with any task.
 // WebsocketMessageKindControlFlow represents a control plane message for the websocket, such as a keep-alive or close message.
 const (
-	WebsocketMessageKindInput       = "INPUT"
-	WebsocketMessageKindOutput      = "OUTPUT"
-	WebsocketMessageKindTaskError   = "TASK_ERROR"
-	WebsocketMessageKindError       = "ERROR"
-	WebsocketMessageKindControlFlow = "CONTROL_FLOW"
+	WebsocketMessageKindInput                 = "INPUT"
+	WebsocketMessageKindOutput                = "OUTPUT"
+	WebsocketMessageKindTaskError             = "TASK_ERROR"
+	WebsocketMessageKindError                 = "ERROR"
+	WebsocketMessageKindControlFlow           = "CONTROL_FLOW"
+	WebsocketMessageKindOutputFromOtherStream = "OUTPUT_FROM_OTHER_STREAM"
 )
 
 // WebsocketControlFlowSignal represents different kinds of control messages that can be sent.
@@ -42,6 +43,7 @@ type WebsocketControlFlowSignal string
 const (
 	WebsocketControlFlowSignalPortalUpgrade   = "PORTAL_UPGRADE"
 	WebsocketControlFlowSignalPortalDowngrade = "PORTAL_DOWNGRADE"
+	WebsocketControlFlowSignalTaskQueued      = "TASK_QUEUED"
 )
 
 // A WebsocketTaskInputMessage is used to deliver input to a shell running on an agent.
@@ -129,6 +131,7 @@ type WebsocketControlFlowMessage struct {
 	Kind     WebsocketMessageKind       `json:"kind"`
 	Signal   WebsocketControlFlowSignal `json:"signal"`
 	PortalID int                        `json:"portal_id"`
+	Message  string                     `json:"message,omitempty"`
 }
 
 // NewWebsocketPortalUpgradeMessage indicates that the connection has been closed.
@@ -137,6 +140,32 @@ func NewWebsocketPortalUpgradeMessage(portal *ent.Portal) *WebsocketControlFlowM
 		Kind:     WebsocketMessageKindControlFlow,
 		Signal:   WebsocketControlFlowSignalPortalUpgrade,
 		PortalID: portal.ID,
+	}
+}
+
+// WebsocketTaskOutputFromOtherStreamMessage is used to deliver output from a shell running on an agent
+// that was initiated by another user/stream.
+type WebsocketTaskOutputFromOtherStreamMessage struct {
+	Kind        WebsocketMessageKind `json:"kind"`
+	Output      string               `json:"output"`
+	ShellTaskID int                  `json:"shell_task_id"`
+	CreatorID   int                  `json:"owner"`
+	StreamID    string               `json:"stream_id"`
+}
+
+// NewWebsocketTaskOutputFromOtherStreamMessage creates a new output message to be sent to the browser on the websocket.
+func NewWebsocketTaskOutputFromOtherStreamMessage(task *ent.ShellTask) *WebsocketTaskOutputFromOtherStreamMessage {
+	var creatorID int
+	if task.Edges.Creator != nil {
+		creatorID = task.Edges.Creator.ID
+	}
+
+	return &WebsocketTaskOutputFromOtherStreamMessage{
+		Kind:        WebsocketMessageKindOutputFromOtherStream,
+		Output:      task.Output,
+		ShellTaskID: task.ID,
+		CreatorID:   creatorID,
+		StreamID:    task.StreamID,
 	}
 }
 

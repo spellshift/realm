@@ -30,6 +30,7 @@ message UDPPayload {
 message ShellPayload {
     string input = 1;
     int64 shell_id = 2;
+    string stream_id = 3;
 }
 
 message Mote {
