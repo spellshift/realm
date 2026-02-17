@@ -269,6 +269,14 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
 						slog.ErrorContext(ctx, "failed to publish to portal", "error", err)
 						// Fallback to just DB? Or error? We continue to DB write.
+						// If publishing fails, the portal might be dead. Check again.
+						checkPortal()
+						if activePortalID == 0 {
+							// Portal is gone, so we rely on DB.
+						} else {
+							// Portal still thinks it's up? Maybe just a glitch.
+							cleanupPortal()
+						}
 					}
 				}
 
