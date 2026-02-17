@@ -12,17 +12,6 @@ const (
 	// DefaultRealmRepoURL is the default git repository URL for building realm agents.
 	DefaultRealmRepoURL = "https://github.com/spellshift/realm.git"
 
-	// DefaultInterval is the default callback interval in seconds for the IMIX agent.
-	DefaultInterval = 5
-
-	// DefaultCallbackURI is the default callback URI for the IMIX agent,
-	// derived from the IMIX compile-time default (IMIX_CALLBACK_URI).
-	DefaultCallbackURI = "http://127.0.0.1:8000"
-
-	// DefaultTransportType is the default transport type for the IMIX agent,
-	// derived from the IMIX default behavior for http:// URIs.
-	DefaultTransportType = c2pb.Transport_TRANSPORT_GRPC
-
 	// DefaultBuildImage is the default Docker image for building agents.
 	DefaultBuildImage = "spellshift/devcontainer:main"
 
@@ -30,20 +19,21 @@ const (
 	DefaultTargetFormat = builderpb.TargetFormat_TARGET_FORMAT_BIN
 )
 
+// DefaultTransports is the default transport configuration for a build task.
+var DefaultTransports = []builderpb.BuildTaskTransport{{
+	URI:   "http://127.0.0.1:8000",
+	Interval:      5,
+	Type: c2pb.Transport_TRANSPORT_GRPC,
+}}
+
 // TargetFormat is an alias for builderpb.TargetFormat.
 type TargetFormat = builderpb.TargetFormat
 
-const (
-	TargetFormatBin            = builderpb.TargetFormat_TARGET_FORMAT_BIN
-	TargetFormatCdylib         = builderpb.TargetFormat_TARGET_FORMAT_CDYLIB
-	TargetFormatWindowsService = builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE
-)
-
 // SupportedFormats maps each target OS to its supported output formats.
 var SupportedFormats = map[c2pb.Host_Platform][]TargetFormat{
-	c2pb.Host_PLATFORM_LINUX:   {TargetFormatBin},
-	c2pb.Host_PLATFORM_WINDOWS: {TargetFormatBin, TargetFormatCdylib, TargetFormatWindowsService},
-	c2pb.Host_PLATFORM_MACOS:   {TargetFormatBin},
+	c2pb.Host_PLATFORM_LINUX:   {builderpb.TargetFormat_TARGET_FORMAT_BIN},
+	c2pb.Host_PLATFORM_WINDOWS: {builderpb.TargetFormat_TARGET_FORMAT_BIN, builderpb.TargetFormat_TARGET_FORMAT_CDYLIB, builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE},
+	c2pb.Host_PLATFORM_MACOS:   {builderpb.TargetFormat_TARGET_FORMAT_BIN},
 }
 
 // buildTarget maps target OS to the Rust --target triple.
@@ -60,11 +50,11 @@ type buildKey struct {
 
 // buildCommands maps (target_os, target_format) -> cargo build command.
 var buildCommands = map[buildKey]string{
-	{c2pb.Host_PLATFORM_LINUX, TargetFormatBin}:              "cargo build --release --bin imix --target=x86_64-unknown-linux-musl",
-	{c2pb.Host_PLATFORM_MACOS, TargetFormatBin}:              "cargo zigbuild --release --target aarch64-apple-darwin",
-	{c2pb.Host_PLATFORM_WINDOWS, TargetFormatBin}:            "cargo build --release --target=x86_64-pc-windows-gnu",
-	{c2pb.Host_PLATFORM_WINDOWS, TargetFormatWindowsService}: "cargo build --release --features win_service --target=x86_64-pc-windows-gnu",
-	{c2pb.Host_PLATFORM_WINDOWS, TargetFormatCdylib}:         "cargo build --release --lib --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN}:              "cargo build --release --bin imix --target=x86_64-unknown-linux-musl",
+	{c2pb.Host_PLATFORM_MACOS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:              "cargo zigbuild --release --target aarch64-apple-darwin",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:            "cargo build --release --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE}: "cargo build --release --features win_service --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_CDYLIB}:         "cargo build --release --lib --target=x86_64-pc-windows-gnu",
 }
 
 // ValidateTargetFormat checks whether the given format is supported for the given OS.

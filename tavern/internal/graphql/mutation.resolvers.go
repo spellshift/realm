@@ -15,8 +15,11 @@ import (
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
+	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 )
@@ -360,19 +363,22 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		buildImage = *input.BuildImage
 	}
 
-	interval := builder.DefaultInterval
-	if input.Interval != nil {
-		interval = *input.Interval
-	}
-
-	callbackURI := builder.DefaultCallbackURI
-	if input.CallbackURI != nil {
-		callbackURI = *input.CallbackURI
-	}
-
-	transportType := builder.DefaultTransportType
-	if input.TransportType != nil {
-		transportType = *input.TransportType
+	// Resolve transports: use default if none provided
+	transports := builder.DefaultTransports
+	if len(input.Transports) > 0 {
+		transports = make([]builderpb.BuildTaskTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildTaskTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
+		}
 	}
 
 	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
@@ -391,15 +397,24 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("failed to generate build script: %w", err)
 	}
 
-	// 4. Query all builders
-	allBuilders, err := r.client.Builder.Query().All(ctx)
+	// 4. Query healthy builders (checked in within the stale threshold).
+	// Use the first transport's interval for the stale threshold.
+	staleThreshold := time.Duration(transports[0].Interval) * time.Second
+	staleCutoff := time.Now().Add(-staleThreshold)
+	healthyBuilders, err := r.client.Builder.Query().
+		Where(
+			entbuilder.LastSeenAtNotNil(),
+			entbuilder.LastSeenAtGTE(staleCutoff),
+		).
+		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query builders: %w", err)
 	}
 
-	// 5. Filter builders that support the target OS
+	// 5. Filter builders that support the target OS.
+	// SupportedTargets is a JSON field so it must be filtered in application code.
 	var candidates []*ent.Builder
-	for _, b := range allBuilders {
+	for _, b := range healthyBuilders {
 		for _, target := range b.SupportedTargets {
 			if target == input.TargetOs {
 				candidates = append(candidates, b)
@@ -409,7 +424,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no builder available that supports target %s", input.TargetOs.String())
+		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
 	}
 
 	// 6. Randomly select one builder
@@ -421,15 +436,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetTargetFormat(targetFormat).
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
-		SetCallbackURI(callbackURI).
-		SetInterval(interval).
-		SetTransportType(transportType).
+		SetTransports(transports).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
-
-	if input.Extra != nil {
-		create = create.SetExtra(*input.Extra)
-	}
 
 	bt, err := create.Save(ctx)
 	if err != nil {

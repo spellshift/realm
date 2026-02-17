@@ -14,6 +14,18 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
+// Input for a single transport configuration.
+type BuildTaskTransportInput struct {
+	// The URI for the IMIX agent.
+	URI string `json:"uri"`
+	// The callback interval in seconds.
+	Interval int `json:"interval"`
+	// The transport type.
+	Type c2pb.Transport_Type `json:"type"`
+	// Extra transport configuration.
+	Extra *string `json:"extra,omitempty"`
+}
+
 type ClaimTasksInput struct {
 	// The identity the beacon is authenticated as (e.g. 'root')
 	Principal string `json:"principal"`
@@ -39,14 +51,8 @@ type CreateBuildTaskInput struct {
 	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
 	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
 	BuildImage *string `json:"buildImage,omitempty"`
-	// The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000.
-	CallbackURI *string `json:"callbackURI,omitempty"`
-	// The callback interval in seconds for the IMIX agent.
-	Interval *int `json:"interval,omitempty"`
-	// The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC.
-	TransportType *c2pb.Transport_Type `json:"transportType,omitempty"`
-	// Extra transport configuration for the IMIX agent.
-	Extra *string `json:"extra,omitempty"`
+	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
+	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
 }

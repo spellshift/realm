@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -94,72 +95,15 @@ func (btu *BuildTaskUpdate) SetNillableBuildScript(s *string) *BuildTaskUpdate {
 	return btu
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (btu *BuildTaskUpdate) SetCallbackURI(s string) *BuildTaskUpdate {
-	btu.mutation.SetCallbackURI(s)
+// SetTransports sets the "transports" field.
+func (btu *BuildTaskUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
+	btu.mutation.SetTransports(btt)
 	return btu
 }
 
-// SetNillableCallbackURI sets the "callback_uri" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableCallbackURI(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetCallbackURI(*s)
-	}
-	return btu
-}
-
-// SetInterval sets the "interval" field.
-func (btu *BuildTaskUpdate) SetInterval(i int) *BuildTaskUpdate {
-	btu.mutation.ResetInterval()
-	btu.mutation.SetInterval(i)
-	return btu
-}
-
-// SetNillableInterval sets the "interval" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableInterval(i *int) *BuildTaskUpdate {
-	if i != nil {
-		btu.SetInterval(*i)
-	}
-	return btu
-}
-
-// AddInterval adds i to the "interval" field.
-func (btu *BuildTaskUpdate) AddInterval(i int) *BuildTaskUpdate {
-	btu.mutation.AddInterval(i)
-	return btu
-}
-
-// SetTransportType sets the "transport_type" field.
-func (btu *BuildTaskUpdate) SetTransportType(ct c2pb.Transport_Type) *BuildTaskUpdate {
-	btu.mutation.SetTransportType(ct)
-	return btu
-}
-
-// SetNillableTransportType sets the "transport_type" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableTransportType(ct *c2pb.Transport_Type) *BuildTaskUpdate {
-	if ct != nil {
-		btu.SetTransportType(*ct)
-	}
-	return btu
-}
-
-// SetExtra sets the "extra" field.
-func (btu *BuildTaskUpdate) SetExtra(s string) *BuildTaskUpdate {
-	btu.mutation.SetExtra(s)
-	return btu
-}
-
-// SetNillableExtra sets the "extra" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableExtra(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetExtra(*s)
-	}
-	return btu
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (btu *BuildTaskUpdate) ClearExtra() *BuildTaskUpdate {
-	btu.mutation.ClearExtra()
+// AppendTransports appends btt to the "transports" field.
+func (btu *BuildTaskUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
+	btu.mutation.AppendTransports(btt)
 	return btu
 }
 
@@ -463,16 +407,6 @@ func (btu *BuildTaskUpdate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
-	if v, ok := btu.mutation.CallbackURI(); ok {
-		if err := buildtask.CallbackURIValidator(v); err != nil {
-			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
-		}
-	}
-	if v, ok := btu.mutation.TransportType(); ok {
-		if err := buildtask.TransportTypeValidator(v); err != nil {
-			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
-		}
-	}
 	if v, ok := btu.mutation.OutputSize(); ok {
 		if err := buildtask.OutputSizeValidator(v); err != nil {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
@@ -516,23 +450,13 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 	}
-	if value, ok := btu.mutation.CallbackURI(); ok {
-		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
+	if value, ok := btu.mutation.Transports(); ok {
+		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
 	}
-	if value, ok := btu.mutation.Interval(); ok {
-		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
-	}
-	if value, ok := btu.mutation.AddedInterval(); ok {
-		_spec.AddField(buildtask.FieldInterval, field.TypeInt, value)
-	}
-	if value, ok := btu.mutation.TransportType(); ok {
-		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
-	}
-	if value, ok := btu.mutation.Extra(); ok {
-		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
-	}
-	if btu.mutation.ExtraCleared() {
-		_spec.ClearField(buildtask.FieldExtra, field.TypeString)
+	if value, ok := btu.mutation.AppendedTransports(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildtask.FieldTransports, value)
+		})
 	}
 	if value, ok := btu.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -731,72 +655,15 @@ func (btuo *BuildTaskUpdateOne) SetNillableBuildScript(s *string) *BuildTaskUpda
 	return btuo
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (btuo *BuildTaskUpdateOne) SetCallbackURI(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetCallbackURI(s)
+// SetTransports sets the "transports" field.
+func (btuo *BuildTaskUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
+	btuo.mutation.SetTransports(btt)
 	return btuo
 }
 
-// SetNillableCallbackURI sets the "callback_uri" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableCallbackURI(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetCallbackURI(*s)
-	}
-	return btuo
-}
-
-// SetInterval sets the "interval" field.
-func (btuo *BuildTaskUpdateOne) SetInterval(i int) *BuildTaskUpdateOne {
-	btuo.mutation.ResetInterval()
-	btuo.mutation.SetInterval(i)
-	return btuo
-}
-
-// SetNillableInterval sets the "interval" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableInterval(i *int) *BuildTaskUpdateOne {
-	if i != nil {
-		btuo.SetInterval(*i)
-	}
-	return btuo
-}
-
-// AddInterval adds i to the "interval" field.
-func (btuo *BuildTaskUpdateOne) AddInterval(i int) *BuildTaskUpdateOne {
-	btuo.mutation.AddInterval(i)
-	return btuo
-}
-
-// SetTransportType sets the "transport_type" field.
-func (btuo *BuildTaskUpdateOne) SetTransportType(ct c2pb.Transport_Type) *BuildTaskUpdateOne {
-	btuo.mutation.SetTransportType(ct)
-	return btuo
-}
-
-// SetNillableTransportType sets the "transport_type" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableTransportType(ct *c2pb.Transport_Type) *BuildTaskUpdateOne {
-	if ct != nil {
-		btuo.SetTransportType(*ct)
-	}
-	return btuo
-}
-
-// SetExtra sets the "extra" field.
-func (btuo *BuildTaskUpdateOne) SetExtra(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetExtra(s)
-	return btuo
-}
-
-// SetNillableExtra sets the "extra" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableExtra(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetExtra(*s)
-	}
-	return btuo
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (btuo *BuildTaskUpdateOne) ClearExtra() *BuildTaskUpdateOne {
-	btuo.mutation.ClearExtra()
+// AppendTransports appends btt to the "transports" field.
+func (btuo *BuildTaskUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
+	btuo.mutation.AppendTransports(btt)
 	return btuo
 }
 
@@ -1113,16 +980,6 @@ func (btuo *BuildTaskUpdateOne) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
-	if v, ok := btuo.mutation.CallbackURI(); ok {
-		if err := buildtask.CallbackURIValidator(v); err != nil {
-			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
-		}
-	}
-	if v, ok := btuo.mutation.TransportType(); ok {
-		if err := buildtask.TransportTypeValidator(v); err != nil {
-			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
-		}
-	}
 	if v, ok := btuo.mutation.OutputSize(); ok {
 		if err := buildtask.OutputSizeValidator(v); err != nil {
 			return &ValidationError{Name: "output_size", err: fmt.Errorf(`ent: validator failed for field "BuildTask.output_size": %w`, err)}
@@ -1183,23 +1040,13 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 	}
-	if value, ok := btuo.mutation.CallbackURI(); ok {
-		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
+	if value, ok := btuo.mutation.Transports(); ok {
+		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
 	}
-	if value, ok := btuo.mutation.Interval(); ok {
-		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
-	}
-	if value, ok := btuo.mutation.AddedInterval(); ok {
-		_spec.AddField(buildtask.FieldInterval, field.TypeInt, value)
-	}
-	if value, ok := btuo.mutation.TransportType(); ok {
-		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
-	}
-	if value, ok := btuo.mutation.Extra(); ok {
-		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
-	}
-	if btuo.mutation.ExtraCleared() {
-		_spec.ClearField(buildtask.FieldExtra, field.TypeString)
+	if value, ok := btuo.mutation.AppendedTransports(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildtask.FieldTransports, value)
+		})
 	}
 	if value, ok := btuo.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
