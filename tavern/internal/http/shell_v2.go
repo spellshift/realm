@@ -116,7 +116,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Channels
 	wsReadCh := make(chan []byte)
 	wsErrorCh := make(chan error, 1)
-	wsWriteCh := make(chan interface{}, 100)
+	wsWriteCh := make(chan WebsocketMessage, 100)
 
 	// Timers
 	portalCheckTicker := time.NewTicker(5 * time.Second)
@@ -126,7 +126,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer dbPollTicker.Stop()
 
 	// Helper to send to WS safely
-	sendToWS := func(msg interface{}) {
+	sendToWS := func(msg WebsocketMessage) {
 		select {
 		case wsWriteCh <- msg:
 		case <-ctx.Done():
@@ -290,16 +290,16 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					Save(ctx)
 				if err != nil {
 					slog.ErrorContext(ctx, "failed to create shell task", "error", err)
-					sendToWS(map[string]string{
-						"type":  "ERROR",
-						"error": "Failed to persist task",
+					sendToWS(WebsocketMessage{
+						Type:    "ERROR",
+						Command: "Failed to persist task",
 					})
 					continue
 				}
 
-				sendToWS(map[string]string{
-					"type":    "OUTPUT",
-					"content": fmt.Sprintf("[*] Task queued for %s \r\n", sh.Edges.Beacon.Name),
+				sendToWS(WebsocketMessage{
+					Type:    "OUTPUT",
+					Command: fmt.Sprintf("[*] Task queued for %s \r\n", sh.Edges.Beacon.Name),
 				})
 			}
 
@@ -324,9 +324,9 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// Deduplicate
 				// Assumption: Portal sends CHUNKS.
 				// We just send them and increment our counter.
-				sendToWS(map[string]string{
-					"type":    "OUTPUT",
-					"content": output,
+				sendToWS(WebsocketMessage{
+					Type:    "OUTPUT",
+					Command: output,
 				})
 				sentBytes[taskID] += len(output)
 			}
@@ -357,9 +357,9 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if len(fullOutput) > sent {
 					newPart := fullOutput[sent:]
-					sendToWS(map[string]string{
-						"type":    "OUTPUT",
-						"content": newPart,
+					sendToWS(WebsocketMessage{
+						Type:    "OUTPUT",
+						Command: newPart,
 					})
 					sentBytes[t.SequenceID] = len(fullOutput)
 				}
