@@ -315,9 +315,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: stream.NewShellHandler(client, wsShellMux),
 		},
 		"/shellv2/ws": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewShellV2Handler(),
-			AllowUnauthenticated: true,
-			AllowUnactivated:     true,
+			Handler: tavernhttp.NewShellV2Handler(),
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
