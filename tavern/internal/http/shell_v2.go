@@ -27,9 +27,17 @@ var shellV2Upgrader = websocket.Upgrader{
 	},
 }
 
+type WebsocketMessageKind string
+
+const (
+	WebsocketMessageKindExecute WebsocketMessageKind = "EXECUTE"
+	WebsocketMessageKindOutput  WebsocketMessageKind = "OUTPUT"
+	WebsocketMessageKindError   WebsocketMessageKind = "ERROR"
+)
+
 type WebsocketMessage struct {
-	Type    string `json:"type"`
-	Command string `json:"command"`
+	Type    WebsocketMessageKind `json:"type"`
+	Command string               `json:"command"`
 }
 
 type ShellV2Handler struct {
@@ -253,7 +261,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			slog.InfoContext(ctx, "shell request", "type", req.Type, "command", req.Command)
-			if req.Type == "EXECUTE" {
+			if req.Type == WebsocketMessageKindExecute {
 				currentSeq := atomic.AddUint64(&seqID, 1)
 
 				// 1. Publish to Portal (if active)
@@ -291,14 +299,14 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					slog.ErrorContext(ctx, "failed to create shell task", "error", err)
 					sendToWS(WebsocketMessage{
-						Type:    "ERROR",
+						Type:    WebsocketMessageKindError,
 						Command: "Failed to persist task",
 					})
 					continue
 				}
 
 				sendToWS(WebsocketMessage{
-					Type:    "OUTPUT",
+					Type:    WebsocketMessageKindOutput,
 					Command: fmt.Sprintf("[*] Task queued for %s \r\n", sh.Edges.Beacon.Name),
 				})
 			}
@@ -325,7 +333,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// Assumption: Portal sends CHUNKS.
 				// We just send them and increment our counter.
 				sendToWS(WebsocketMessage{
-					Type:    "OUTPUT",
+					Type:    WebsocketMessageKindOutput,
 					Command: output,
 				})
 				sentBytes[taskID] += len(output)
@@ -358,7 +366,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if len(fullOutput) > sent {
 					newPart := fullOutput[sent:]
 					sendToWS(WebsocketMessage{
-						Type:    "OUTPUT",
+						Type:    WebsocketMessageKindOutput,
 						Command: newPart,
 					})
 					sentBytes[t.SequenceID] = len(fullOutput)
