@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -33,14 +34,8 @@ type BuildTask struct {
 	BuildImage string `json:"build_image,omitempty"`
 	// The derived script to execute inside the build container.
 	BuildScript string `json:"build_script,omitempty"`
-	// The callback URI for the IMIX agent to connect to.
-	CallbackURI string `json:"callback_uri,omitempty"`
-	// The callback interval in seconds for the IMIX agent.
-	Interval int `json:"interval,omitempty"`
-	// The transport type for the IMIX agent.
-	TransportType c2pb.Transport_Type `json:"transport_type,omitempty"`
-	// Extra transport configuration for the IMIX agent.
-	Extra string `json:"extra,omitempty"`
+	// List of transport configurations for the IMIX agent.
+	Transports []builderpb.BuildTaskTransport `json:"transports,omitempty"`
 	// Timestamp of when a builder claimed this task, null if unclaimed.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// Timestamp of when the build execution started, null if not yet started.
@@ -107,15 +102,15 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case buildtask.FieldTransports:
+			values[i] = new([]byte)
 		case buildtask.FieldTargetFormat:
 			values[i] = new(builderpb.TargetFormat)
 		case buildtask.FieldTargetOs:
 			values[i] = new(c2pb.Host_Platform)
-		case buildtask.FieldTransportType:
-			values[i] = new(c2pb.Transport_Type)
-		case buildtask.FieldID, buildtask.FieldInterval, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
+		case buildtask.FieldID, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
-		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldCallbackURI, buildtask.FieldExtra, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath:
+		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath:
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -180,29 +175,13 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bt.BuildScript = value.String
 			}
-		case buildtask.FieldCallbackURI:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field callback_uri", values[i])
-			} else if value.Valid {
-				bt.CallbackURI = value.String
-			}
-		case buildtask.FieldInterval:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field interval", values[i])
-			} else if value.Valid {
-				bt.Interval = int(value.Int64)
-			}
-		case buildtask.FieldTransportType:
-			if value, ok := values[i].(*c2pb.Transport_Type); !ok {
-				return fmt.Errorf("unexpected type %T for field transport_type", values[i])
-			} else if value != nil {
-				bt.TransportType = *value
-			}
-		case buildtask.FieldExtra:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field extra", values[i])
-			} else if value.Valid {
-				bt.Extra = value.String
+		case buildtask.FieldTransports:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field transports", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bt.Transports); err != nil {
+					return fmt.Errorf("unmarshal field transports: %w", err)
+				}
 			}
 		case buildtask.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -337,17 +316,8 @@ func (bt *BuildTask) String() string {
 	builder.WriteString("build_script=")
 	builder.WriteString(bt.BuildScript)
 	builder.WriteString(", ")
-	builder.WriteString("callback_uri=")
-	builder.WriteString(bt.CallbackURI)
-	builder.WriteString(", ")
-	builder.WriteString("interval=")
-	builder.WriteString(fmt.Sprintf("%v", bt.Interval))
-	builder.WriteString(", ")
-	builder.WriteString("transport_type=")
-	builder.WriteString(fmt.Sprintf("%v", bt.TransportType))
-	builder.WriteString(", ")
-	builder.WriteString("extra=")
-	builder.WriteString(bt.Extra)
+	builder.WriteString("transports=")
+	builder.WriteString(fmt.Sprintf("%v", bt.Transports))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(bt.ClaimedAt.Format(time.ANSIC))
