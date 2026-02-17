@@ -11915,6 +11915,9 @@ type ShellMutation struct {
 	clearedbeacon       bool
 	owner               *int
 	clearedowner        bool
+	portals             map[int]struct{}
+	removedportals      map[int]struct{}
+	clearedportals      bool
 	active_users        map[int]struct{}
 	removedactive_users map[int]struct{}
 	clearedactive_users bool
@@ -12298,6 +12301,60 @@ func (m *ShellMutation) ResetOwner() {
 	m.clearedowner = false
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by ids.
+func (m *ShellMutation) AddPortalIDs(ids ...int) {
+	if m.portals == nil {
+		m.portals = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.portals[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPortals clears the "portals" edge to the Portal entity.
+func (m *ShellMutation) ClearPortals() {
+	m.clearedportals = true
+}
+
+// PortalsCleared reports if the "portals" edge to the Portal entity was cleared.
+func (m *ShellMutation) PortalsCleared() bool {
+	return m.clearedportals
+}
+
+// RemovePortalIDs removes the "portals" edge to the Portal entity by IDs.
+func (m *ShellMutation) RemovePortalIDs(ids ...int) {
+	if m.removedportals == nil {
+		m.removedportals = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.portals, ids[i])
+		m.removedportals[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPortals returns the removed IDs of the "portals" edge to the Portal entity.
+func (m *ShellMutation) RemovedPortalsIDs() (ids []int) {
+	for id := range m.removedportals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PortalsIDs returns the "portals" edge IDs in the mutation.
+func (m *ShellMutation) PortalsIDs() (ids []int) {
+	for id := range m.portals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPortals resets all changes to the "portals" edge.
+func (m *ShellMutation) ResetPortals() {
+	m.portals = nil
+	m.clearedportals = false
+	m.removedportals = nil
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by ids.
 func (m *ShellMutation) AddActiveUserIDs(ids ...int) {
 	if m.active_users == nil {
@@ -12599,7 +12656,7 @@ func (m *ShellMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.task != nil {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -12608,6 +12665,9 @@ func (m *ShellMutation) AddedEdges() []string {
 	}
 	if m.owner != nil {
 		edges = append(edges, shell.EdgeOwner)
+	}
+	if m.portals != nil {
+		edges = append(edges, shell.EdgePortals)
 	}
 	if m.active_users != nil {
 		edges = append(edges, shell.EdgeActiveUsers)
@@ -12634,6 +12694,12 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
 		}
+	case shell.EdgePortals:
+		ids := make([]ent.Value, 0, len(m.portals))
+		for id := range m.portals {
+			ids = append(ids, id)
+		}
+		return ids
 	case shell.EdgeActiveUsers:
 		ids := make([]ent.Value, 0, len(m.active_users))
 		for id := range m.active_users {
@@ -12652,7 +12718,10 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
+	if m.removedportals != nil {
+		edges = append(edges, shell.EdgePortals)
+	}
 	if m.removedactive_users != nil {
 		edges = append(edges, shell.EdgeActiveUsers)
 	}
@@ -12666,6 +12735,12 @@ func (m *ShellMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case shell.EdgePortals:
+		ids := make([]ent.Value, 0, len(m.removedportals))
+		for id := range m.removedportals {
+			ids = append(ids, id)
+		}
+		return ids
 	case shell.EdgeActiveUsers:
 		ids := make([]ent.Value, 0, len(m.removedactive_users))
 		for id := range m.removedactive_users {
@@ -12684,7 +12759,7 @@ func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedtask {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -12693,6 +12768,9 @@ func (m *ShellMutation) ClearedEdges() []string {
 	}
 	if m.clearedowner {
 		edges = append(edges, shell.EdgeOwner)
+	}
+	if m.clearedportals {
+		edges = append(edges, shell.EdgePortals)
 	}
 	if m.clearedactive_users {
 		edges = append(edges, shell.EdgeActiveUsers)
@@ -12713,6 +12791,8 @@ func (m *ShellMutation) EdgeCleared(name string) bool {
 		return m.clearedbeacon
 	case shell.EdgeOwner:
 		return m.clearedowner
+	case shell.EdgePortals:
+		return m.clearedportals
 	case shell.EdgeActiveUsers:
 		return m.clearedactive_users
 	case shell.EdgeShellTasks:
@@ -12750,6 +12830,9 @@ func (m *ShellMutation) ResetEdge(name string) error {
 		return nil
 	case shell.EdgeOwner:
 		m.ResetOwner()
+		return nil
+	case shell.EdgePortals:
+		m.ResetPortals()
 		return nil
 	case shell.EdgeActiveUsers:
 		m.ResetActiveUsers()

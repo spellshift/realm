@@ -310,6 +310,7 @@ var (
 		{Name: "portal_task", Type: field.TypeInt},
 		{Name: "portal_beacon", Type: field.TypeInt},
 		{Name: "portal_owner", Type: field.TypeInt},
+		{Name: "shell_portals", Type: field.TypeInt, Nullable: true},
 	}
 	// PortalsTable holds the schema information for the "portals" table.
 	PortalsTable = &schema.Table{
@@ -334,6 +335,12 @@ var (
 				Columns:    []*schema.Column{PortalsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_shells_portals",
+				Columns:    []*schema.Column{PortalsColumns[7]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -720,6 +727,7 @@ func init() {
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
 	PortalsTable.ForeignKeys[1].RefTable = BeaconsTable
 	PortalsTable.ForeignKeys[2].RefTable = UsersTable
+	PortalsTable.ForeignKeys[3].RefTable = ShellsTable
 	PortalsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

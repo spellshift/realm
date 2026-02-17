@@ -28,6 +28,8 @@ const (
 	EdgeBeacon = "beacon"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
+	// EdgePortals holds the string denoting the portals edge name in mutations.
+	EdgePortals = "portals"
 	// EdgeActiveUsers holds the string denoting the active_users edge name in mutations.
 	EdgeActiveUsers = "active_users"
 	// EdgeShellTasks holds the string denoting the shell_tasks edge name in mutations.
@@ -55,6 +57,13 @@ const (
 	OwnerInverseTable = "users"
 	// OwnerColumn is the table column denoting the owner relation/edge.
 	OwnerColumn = "shell_owner"
+	// PortalsTable is the table that holds the portals relation/edge.
+	PortalsTable = "portals"
+	// PortalsInverseTable is the table name for the Portal entity.
+	// It exists in this package in order to avoid circular dependency with the "portal" package.
+	PortalsInverseTable = "portals"
+	// PortalsColumn is the table column denoting the portals relation/edge.
+	PortalsColumn = "shell_portals"
 	// ActiveUsersTable is the table that holds the active_users relation/edge. The primary key declared below.
 	ActiveUsersTable = "shell_active_users"
 	// ActiveUsersInverseTable is the table name for the User entity.
@@ -160,6 +169,20 @@ func ByOwnerField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByPortalsCount orders the results by portals count.
+func ByPortalsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPortalsStep(), opts...)
+	}
+}
+
+// ByPortals orders the results by portals terms.
+func ByPortals(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPortalsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByActiveUsersCount orders the results by active_users count.
 func ByActiveUsersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -206,6 +229,13 @@ func newOwnerStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OwnerInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, OwnerTable, OwnerColumn),
+	)
+}
+func newPortalsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PortalsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PortalsTable, PortalsColumn),
 	)
 }
 func newActiveUsersStep() *sqlgraph.Step {

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -105,6 +106,21 @@ func (su *ShellUpdate) SetOwner(u *User) *ShellUpdate {
 	return su.SetOwnerID(u.ID)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (su *ShellUpdate) AddPortalIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddPortalIDs(ids...)
+	return su
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (su *ShellUpdate) AddPortals(p ...*Portal) *ShellUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return su.AddPortalIDs(ids...)
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
 func (su *ShellUpdate) AddActiveUserIDs(ids ...int) *ShellUpdate {
 	su.mutation.AddActiveUserIDs(ids...)
@@ -156,6 +172,27 @@ func (su *ShellUpdate) ClearBeacon() *ShellUpdate {
 func (su *ShellUpdate) ClearOwner() *ShellUpdate {
 	su.mutation.ClearOwner()
 	return su
+}
+
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (su *ShellUpdate) ClearPortals() *ShellUpdate {
+	su.mutation.ClearPortals()
+	return su
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (su *ShellUpdate) RemovePortalIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemovePortalIDs(ids...)
+	return su
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (su *ShellUpdate) RemovePortals(p ...*Portal) *ShellUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return su.RemovePortalIDs(ids...)
 }
 
 // ClearActiveUsers clears all "active_users" edges to the User entity.
@@ -358,6 +395,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !su.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if su.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -541,6 +623,21 @@ func (suo *ShellUpdateOne) SetOwner(u *User) *ShellUpdateOne {
 	return suo.SetOwnerID(u.ID)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (suo *ShellUpdateOne) AddPortalIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddPortalIDs(ids...)
+	return suo
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (suo *ShellUpdateOne) AddPortals(p ...*Portal) *ShellUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return suo.AddPortalIDs(ids...)
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
 func (suo *ShellUpdateOne) AddActiveUserIDs(ids ...int) *ShellUpdateOne {
 	suo.mutation.AddActiveUserIDs(ids...)
@@ -592,6 +689,27 @@ func (suo *ShellUpdateOne) ClearBeacon() *ShellUpdateOne {
 func (suo *ShellUpdateOne) ClearOwner() *ShellUpdateOne {
 	suo.mutation.ClearOwner()
 	return suo
+}
+
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (suo *ShellUpdateOne) ClearPortals() *ShellUpdateOne {
+	suo.mutation.ClearPortals()
+	return suo
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (suo *ShellUpdateOne) RemovePortalIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemovePortalIDs(ids...)
+	return suo
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (suo *ShellUpdateOne) RemovePortals(p ...*Portal) *ShellUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return suo.RemovePortalIDs(ids...)
 }
 
 // ClearActiveUsers clears all "active_users" edges to the User entity.
@@ -817,6 +935,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !suo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

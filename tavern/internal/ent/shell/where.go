@@ -314,6 +314,29 @@ func HasOwnerWith(preds ...predicate.User) predicate.Shell {
 	})
 }
 
+// HasPortals applies the HasEdge predicate on the "portals" edge.
+func HasPortals() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PortalsTable, PortalsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPortalsWith applies the HasEdge predicate on the "portals" edge with a given conditions (other predicates).
+func HasPortalsWith(preds ...predicate.Portal) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newPortalsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasActiveUsers applies the HasEdge predicate on the "active_users" edge.
 func HasActiveUsers() predicate.Shell {
 	return predicate.Shell(func(s *sql.Selector) {

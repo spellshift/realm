@@ -2615,6 +2615,22 @@ func (c *ShellClient) QueryOwner(s *Shell) *UserQuery {
 	return query
 }
 
+// QueryPortals queries the portals edge of a Shell.
+func (c *ShellClient) QueryPortals(s *Shell) *PortalQuery {
+	query := (&PortalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(portal.Table, portal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.PortalsTable, shell.PortalsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryActiveUsers queries the active_users edge of a Shell.
 func (c *ShellClient) QueryActiveUsers(s *Shell) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()

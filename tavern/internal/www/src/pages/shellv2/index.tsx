@@ -4,7 +4,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../lib/headless-adapter";
-import { AlertError } from "../../components/tavern-base-ui/AlertError";
+import AlertError from "../../components/tavern-base-ui/AlertError";
 import { gql, useQuery } from "@apollo/client";
 
 // GraphQL query to fetch shell details
@@ -558,9 +558,9 @@ const ShellV2 = () => {
 
     if (connectionError) {
         return (
-             <div style={{ padding: "20px" }}>
-                 <AlertError title="Shell Connection Failed" description={connectionError} />
-             </div>
+            <div style={{ padding: "20px" }}>
+                <AlertError label="Shell Connection Failed" details={connectionError} />
+            </div>
         );
     }
 

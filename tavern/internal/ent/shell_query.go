@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -30,11 +31,13 @@ type ShellQuery struct {
 	withTask             *TaskQuery
 	withBeacon           *BeaconQuery
 	withOwner            *UserQuery
+	withPortals          *PortalQuery
 	withActiveUsers      *UserQuery
 	withShellTasks       *ShellTaskQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Shell) error
+	withNamedPortals     map[string]*PortalQuery
 	withNamedActiveUsers map[string]*UserQuery
 	withNamedShellTasks  map[string]*ShellTaskQuery
 	// intermediate query (i.e. traversal path).
@@ -132,6 +135,28 @@ func (sq *ShellQuery) QueryOwner() *UserQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, shell.OwnerTable, shell.OwnerColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPortals chains the current query on the "portals" edge.
+func (sq *ShellQuery) QueryPortals() *PortalQuery {
+	query := (&PortalClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(portal.Table, portal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.PortalsTable, shell.PortalsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -378,6 +403,7 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		withTask:        sq.withTask.Clone(),
 		withBeacon:      sq.withBeacon.Clone(),
 		withOwner:       sq.withOwner.Clone(),
+		withPortals:     sq.withPortals.Clone(),
 		withActiveUsers: sq.withActiveUsers.Clone(),
 		withShellTasks:  sq.withShellTasks.Clone(),
 		// clone intermediate query.
@@ -416,6 +442,17 @@ func (sq *ShellQuery) WithOwner(opts ...func(*UserQuery)) *ShellQuery {
 		opt(query)
 	}
 	sq.withOwner = query
+	return sq
+}
+
+// WithPortals tells the query-builder to eager-load the nodes that are connected to
+// the "portals" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithPortals(opts ...func(*PortalQuery)) *ShellQuery {
+	query := (&PortalClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withPortals = query
 	return sq
 }
 
@@ -520,10 +557,11 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
+			sq.withPortals != nil,
 			sq.withActiveUsers != nil,
 			sq.withShellTasks != nil,
 		}
@@ -573,6 +611,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withPortals; query != nil {
+		if err := sq.loadPortals(ctx, query, nodes,
+			func(n *Shell) { n.Edges.Portals = []*Portal{} },
+			func(n *Shell, e *Portal) { n.Edges.Portals = append(n.Edges.Portals, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := sq.withActiveUsers; query != nil {
 		if err := sq.loadActiveUsers(ctx, query, nodes,
 			func(n *Shell) { n.Edges.ActiveUsers = []*User{} },
@@ -584,6 +629,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		if err := sq.loadShellTasks(ctx, query, nodes,
 			func(n *Shell) { n.Edges.ShellTasks = []*ShellTask{} },
 			func(n *Shell, e *ShellTask) { n.Edges.ShellTasks = append(n.Edges.ShellTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedPortals {
+		if err := sq.loadPortals(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedPortals(name) },
+			func(n *Shell, e *Portal) { n.appendNamedPortals(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -702,6 +754,37 @@ func (sq *ShellQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (sq *ShellQuery) loadPortals(ctx context.Context, query *PortalQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *Portal)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Portal(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.PortalsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_portals
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_portals" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_portals" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -880,6 +963,20 @@ func (sq *ShellQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedPortals tells the query-builder to eager-load the nodes that are connected to the "portals"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedPortals(name string, opts ...func(*PortalQuery)) *ShellQuery {
+	query := (&PortalClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedPortals == nil {
+		sq.withNamedPortals = make(map[string]*PortalQuery)
+	}
+	sq.withNamedPortals[name] = query
+	return sq
 }
 
 // WithNamedActiveUsers tells the query-builder to eager-load the nodes that are connected to the "active_users"

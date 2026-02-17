@@ -9,11 +9,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/portals/portalpb"
 
 	"github.com/gorilla/websocket"
 )
@@ -36,19 +34,21 @@ func NewShellV2Handler(graph *ent.Client, mux *mux.Mux) *ShellV2Handler {
 	}
 }
 
-func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Extract shell_id from path
-	// Assuming router passes pattern /shellv2/ws/{shellID}
-	// Parsing shellID from URL path manually
-	// URL: /shellv2/ws/<id>
+func (h *ShellV2Handler) parseShellIDFromRequest(r *http.Request) (int, error) {
 	parts := strings.Split(r.URL.Path, "/")
-	// /shellv2/ws/123 -> ["", "shellv2", "ws", "123"]
 	if len(parts) < 4 {
-		http.Error(w, "missing shell id", http.StatusBadRequest)
-		return
+		return 0, fmt.Errorf("missing shell id")
 	}
 	shellIDStr := parts[len(parts)-1]
 	shellID, err := strconv.Atoi(shellIDStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid shell id: %w", err)
+	}
+	return shellID, nil
+}
+
+func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	shellID, err := h.parseShellIDFromRequest(r)
 	if err != nil {
 		http.Error(w, "invalid shell id", http.StatusBadRequest)
 		return
@@ -59,6 +59,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Verify Shell Exists
 	sh, err := h.graph.Shell.Query().
 		Where(shell.ID(shellID)).
+		WithBeacon().
 		WithOwner().
 		Only(ctx)
 	if err != nil {
@@ -71,41 +72,38 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Authorization Check: Current User must be the Owner of the Shell
-	currentUser := auth.UserFromContext(ctx)
-	if currentUser == nil {
-		http.Error(w, "unauthenticated", http.StatusUnauthorized)
-		return
-	}
-	if sh.Edges.Owner == nil || sh.Edges.Owner.ID != currentUser.ID {
-		// Also allow Admins? Requirement said "assert that the topic for the shell exists".
-		// Usually only owner accesses their shell.
-		// "If the shell with the provided id does not exist, it should return an error"
-		// Secure by default: owner only.
-		if !auth.IsAdminContext(ctx) {
-			http.Error(w, "forbidden", http.StatusForbidden)
-			return
-		}
-	}
-
 	// Check if closed
 	if !sh.ClosedAt.IsZero() {
 		http.Error(w, "shell is closed", http.StatusGone)
 		return
 	}
 
-	// Upgrade
+	// Load Portal (if it exists)
+	// TODO: We will want to start publishing to pubsub as soon as a portal exists, so we may need to periodically check to see if a portal has opened for this shell.
+	// entPortal, err := sh.QueryPortals().Where(portal.ClosedAtIsNil()).First(ctx)
+	// if err != nil && !ent.IsNotFound(err) {
+	// 	slog.ErrorContext(ctx, "failed to query portal for shell", "error", err)
+	// 	http.Error(w, "internal server error", http.StatusInternalServerError)
+	// 	return
+	// }
+	// if entPortal != nil {
+	// 	closePortal, err := h.mux.OpenPortal(ctx, entPortal.ID)
+	// 	defer closePortal()
+	// 	if err != nil {
+	// 		slog.ErrorContext(ctx, "failed to open portal in mux", "error", err)
+	// 		http.Error(w, "internal server error", http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// }
+
+	// Upgrade to WebSocket
 	conn, err := shellV2Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		slog.ErrorContext(ctx, "ShellV2 Upgrade error", "error", err)
+		slog.ErrorContext(ctx, "websocket upgrade failed", "error", err)
 		return
 	}
 	defer conn.Close()
-
-	slog.InfoContext(ctx, "ShellV2 Client Connected", "shell_id", shellID)
-
-	// Topic for Shell Input (send to agent)
-	topicName := fmt.Sprintf("SHELL_INPUT_%d", shellID)
+	slog.InfoContext(ctx, "shell client connected", "shell_id", shellID)
 
 	// Determine current sequence ID (count existing tasks)
 	count, err := sh.QueryShellTasks().Count(ctx)
@@ -138,6 +136,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		slog.InfoContext(ctx, "shell request", "type", req.Type, "command", req.Command)
 		if req.Type == "EXECUTE" {
 			currentSeq := atomic.AddUint64(&seqID, 1)
 
@@ -155,24 +154,30 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				})
 				continue
 			}
+			if err := conn.WriteJSON(map[string]string{
+				"type":    "OUTPUT",
+				"content": fmt.Sprintf("[*] Task queued for %s \r\n", sh.Edges.Beacon.Name),
+			}); err != nil {
+				slog.ErrorContext(ctx, "failed to write shell task queued message", "error", err)
+			}
 
+			// TODO: If we have a portal open, use it to publish shell input and subscribe to shell output.
 			// 2. Publish Mote (ShellPayload)
-			mote := &portalpb.Mote{
-				Payload: &portalpb.Mote_Shell{
-					Shell: &portalpb.ShellPayload{
-						Input:   req.Command,
-						ShellId: int64(shellID),
-					},
-				},
-			}
-
-			if err := h.mux.Publish(ctx, topicName, mote); err != nil {
-				slog.ErrorContext(ctx, "failed to publish shell input mote", "shell_id", shellID, "error", err)
-				_ = conn.WriteJSON(map[string]string{
-					"type":  "ERROR",
-					"error": "Failed to send command to agent",
-				})
-			}
+			// mote := &portalpb.Mote{
+			// 	Payload: &portalpb.Mote_Shell{
+			// 		Shell: &portalpb.ShellPayload{
+			// 			Input:   req.Command,
+			// 			ShellId: int64(shellID),
+			// 		},
+			// 	},
+			// }
+			// if err := h.mux.Publish(ctx, topicName, mote); err != nil {
+			// 	slog.ErrorContext(ctx, "failed to publish shell input mote", "shell_id", shellID, "error", err)
+			// 	_ = conn.WriteJSON(map[string]string{
+			// 		"type":  "ERROR",
+			// 		"error": "Failed to send command to agent",
+			// 	})
+			// }
 		}
 	}
 }

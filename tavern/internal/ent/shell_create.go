@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
@@ -113,6 +114,21 @@ func (sc *ShellCreate) SetOwnerID(id int) *ShellCreate {
 // SetOwner sets the "owner" edge to the User entity.
 func (sc *ShellCreate) SetOwner(u *User) *ShellCreate {
 	return sc.SetOwnerID(u.ID)
+}
+
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (sc *ShellCreate) AddPortalIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddPortalIDs(ids...)
+	return sc
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (sc *ShellCreate) AddPortals(p ...*Portal) *ShellCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sc.AddPortalIDs(ids...)
 }
 
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
@@ -299,6 +315,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.shell_owner = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.ActiveUsersIDs(); len(nodes) > 0 {

@@ -3004,6 +3004,19 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			}
 			s.withOwner = query
 
+		case "portals":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PortalClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, portalImplementors)...); err != nil {
+				return err
+			}
+			s.WithNamedPortals(alias, func(wq *PortalQuery) {
+				*wq = *query
+			})
+
 		case "activeUsers":
 			var (
 				alias = field.Alias
@@ -3051,10 +3064,10 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[4][alias] = n
 						}
 						return nil
 					})
@@ -3062,10 +3075,10 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ActiveUsers)
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[4][alias] = n
 						}
 						return nil
 					})
@@ -3140,10 +3153,10 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[4] == nil {
-								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							if nodes[i].Edges.totalCount[5] == nil {
+								nodes[i].Edges.totalCount[5] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[4][alias] = n
+							nodes[i].Edges.totalCount[5][alias] = n
 						}
 						return nil
 					})
@@ -3151,10 +3164,10 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ShellTasks)
-							if nodes[i].Edges.totalCount[4] == nil {
-								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							if nodes[i].Edges.totalCount[5] == nil {
+								nodes[i].Edges.totalCount[5] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[4][alias] = n
+							nodes[i].Edges.totalCount[5][alias] = n
 						}
 						return nil
 					})

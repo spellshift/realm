@@ -45,16 +45,19 @@ type ShellEdges struct {
 	Beacon *Beacon `json:"beacon,omitempty"`
 	// User that created the shell
 	Owner *User `json:"owner,omitempty"`
+	// Portals associated with this shell
+	Portals []*Portal `json:"portals,omitempty"`
 	// Users that are currently using the shell
 	ActiveUsers []*User `json:"active_users,omitempty"`
 	// Tasks executed in this shell
 	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
+	namedPortals     map[string][]*Portal
 	namedActiveUsers map[string][]*User
 	namedShellTasks  map[string][]*ShellTask
 }
@@ -92,10 +95,19 @@ func (e ShellEdges) OwnerOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "owner"}
 }
 
+// PortalsOrErr returns the Portals value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) PortalsOrErr() ([]*Portal, error) {
+	if e.loadedTypes[3] {
+		return e.Portals, nil
+	}
+	return nil, &NotLoadedError{edge: "portals"}
+}
+
 // ActiveUsersOrErr returns the ActiveUsers value or an error if the edge
 // was not loaded in eager-loading.
 func (e ShellEdges) ActiveUsersOrErr() ([]*User, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.ActiveUsers, nil
 	}
 	return nil, &NotLoadedError{edge: "active_users"}
@@ -104,7 +116,7 @@ func (e ShellEdges) ActiveUsersOrErr() ([]*User, error) {
 // ShellTasksOrErr returns the ShellTasks value or an error if the edge
 // was not loaded in eager-loading.
 func (e ShellEdges) ShellTasksOrErr() ([]*ShellTask, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.ShellTasks, nil
 	}
 	return nil, &NotLoadedError{edge: "shell_tasks"}
@@ -221,6 +233,11 @@ func (s *Shell) QueryOwner() *UserQuery {
 	return NewShellClient(s.config).QueryOwner(s)
 }
 
+// QueryPortals queries the "portals" edge of the Shell entity.
+func (s *Shell) QueryPortals() *PortalQuery {
+	return NewShellClient(s.config).QueryPortals(s)
+}
+
 // QueryActiveUsers queries the "active_users" edge of the Shell entity.
 func (s *Shell) QueryActiveUsers() *UserQuery {
 	return NewShellClient(s.config).QueryActiveUsers(s)
@@ -267,6 +284,30 @@ func (s *Shell) String() string {
 	builder.WriteString(fmt.Sprintf("%v", s.Data))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedPortals returns the Portals named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedPortals(name string) ([]*Portal, error) {
+	if s.Edges.namedPortals == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedPortals[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedPortals(name string, edges ...*Portal) {
+	if s.Edges.namedPortals == nil {
+		s.Edges.namedPortals = make(map[string][]*Portal)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedPortals[name] = []*Portal{}
+	} else {
+		s.Edges.namedPortals[name] = append(s.Edges.namedPortals[name], edges...)
+	}
 }
 
 // NamedActiveUsers returns the ActiveUsers named value or an error if the edge was not

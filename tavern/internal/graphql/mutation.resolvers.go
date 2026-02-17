@@ -169,6 +169,15 @@ func (r *mutationResolver) UpdateBeacon(ctx context.Context, beaconID int, input
 	return r.client.Beacon.UpdateOneID(beaconID).SetInput(input).Save(ctx)
 }
 
+// CreateShell is the resolver for the createShell field.
+func (r *mutationResolver) CreateShell(ctx context.Context, input ent.CreateShellInput) (*ent.Shell, error) {
+	mutation := r.client.Shell.Create().SetData([]byte{}).SetInput(input)
+	if owner := auth.UserFromContext(ctx); owner != nil {
+		mutation.SetOwnerID(owner.ID)
+	}
+	return mutation.Save(ctx)
+}
+
 // UpdateHost is the resolver for the updateHost field.
 func (r *mutationResolver) UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error) {
 	return r.client.Host.UpdateOneID(hostID).SetInput(input).Save(ctx)

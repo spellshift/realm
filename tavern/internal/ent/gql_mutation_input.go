@@ -303,6 +303,26 @@ func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
 	return c
 }
 
+// CreateShellInput represents a mutation input for creating shells.
+type CreateShellInput struct {
+	BeaconID  int
+	PortalIDs []int
+}
+
+// Mutate applies the CreateShellInput on the ShellMutation builder.
+func (i *CreateShellInput) Mutate(m *ShellMutation) {
+	m.SetBeaconID(i.BeaconID)
+	if v := i.PortalIDs; len(v) > 0 {
+		m.AddPortalIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
+func (c *ShellCreate) SetInput(i CreateShellInput) *ShellCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateTagInput represents a mutation input for creating tags.
 type CreateTagInput struct {
 	Name    string

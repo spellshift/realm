@@ -6344,6 +6344,10 @@ type ShellWhereInput struct {
 	HasOwner     *bool             `json:"hasOwner,omitempty"`
 	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
 
+	// "portals" edge predicates.
+	HasPortals     *bool               `json:"hasPortals,omitempty"`
+	HasPortalsWith []*PortalWhereInput `json:"hasPortalsWith,omitempty"`
+
 	// "active_users" edge predicates.
 	HasActiveUsers     *bool             `json:"hasActiveUsers,omitempty"`
 	HasActiveUsersWith []*UserWhereInput `json:"hasActiveUsersWith,omitempty"`
@@ -6580,6 +6584,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shell.HasOwnerWith(with...))
+	}
+	if i.HasPortals != nil {
+		p := shell.HasPortals()
+		if !*i.HasPortals {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPortalsWith) > 0 {
+		with := make([]predicate.Portal, 0, len(i.HasPortalsWith))
+		for _, w := range i.HasPortalsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPortalsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasPortalsWith(with...))
 	}
 	if i.HasActiveUsers != nil {
 		p := shell.HasActiveUsers()
