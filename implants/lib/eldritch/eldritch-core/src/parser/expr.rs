@@ -71,8 +71,14 @@ impl Parser {
         allow_annotations: bool,
     ) -> Result<Vec<Param>, EldritchError> {
         let mut params = Vec::new();
+        let mut seen_double_star = false;
+
         if !self.check(&terminator) {
             loop {
+                if seen_double_star {
+                    return self.error("Arguments cannot follow **kwargs.");
+                }
+
                 if self.match_token(&[TokenKind::Star]) {
                     let param_token = self.consume(
                         |t| matches!(t, TokenKind::Identifier(_)),
@@ -111,6 +117,7 @@ impl Parser {
                     };
 
                     params.push(Param::StarStar(param_name, annotation));
+                    seen_double_star = true;
                 } else {
                     let param_name = {
                         let token = self.consume(
