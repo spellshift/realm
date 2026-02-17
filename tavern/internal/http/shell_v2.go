@@ -143,40 +143,13 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Start WS Reader
 	go func() {
-		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
-				select {
-				case wsErrorCh <- err:
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case wsReadCh <- msg:
-			case <-ctx.Done():
-				return
-			}
-		}
+		h.wsReader(ctx, conn, wsReadCh, wsErrorCh)
 	}()
 
 	// Start WS Writer
 	go func() {
 		defer cancel() // Cancel context if writer exits
-		for {
-			select {
-			case msg, ok := <-wsWriteCh:
-				if !ok {
-					return
-				}
-				if err := conn.WriteJSON(msg); err != nil {
-					slog.ErrorContext(ctx, "ws write error", "error", err)
-					return
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
+		h.wsWriter(ctx, conn, wsWriteCh)
 	}()
 
 	// Helper to cleanup portal sub
@@ -218,21 +191,7 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Forward messages
 			go func() {
-				for {
-					select {
-					case mote, ok := <-subCh:
-						if !ok {
-							return
-						}
-						select {
-						case portalMsgCh <- mote:
-						case <-ctx.Done():
-							return
-						}
-					case <-ctx.Done():
-						return
-					}
-				}
+				h.portalForwarder(ctx, subCh, portalMsgCh)
 			}()
 		}
 	}
@@ -372,6 +331,59 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					sentBytes[t.SequenceID] = len(fullOutput)
 				}
 			}
+		}
+	}
+}
+
+func (h *ShellV2Handler) wsReader(ctx context.Context, conn *websocket.Conn, wsReadCh chan<- []byte, wsErrorCh chan<- error) {
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			select {
+			case wsErrorCh <- err:
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case wsReadCh <- msg:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (h *ShellV2Handler) wsWriter(ctx context.Context, conn *websocket.Conn, wsWriteCh <-chan WebsocketMessage) {
+	for {
+		select {
+		case msg, ok := <-wsWriteCh:
+			if !ok {
+				return
+			}
+			if err := conn.WriteJSON(msg); err != nil {
+				slog.ErrorContext(ctx, "ws write error", "error", err)
+				return
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (h *ShellV2Handler) portalForwarder(ctx context.Context, subCh <-chan *portalpb.Mote, portalMsgCh chan<- *portalpb.Mote) {
+	for {
+		select {
+		case mote, ok := <-subCh:
+			if !ok {
+				return
+			}
+			select {
+			case portalMsgCh <- mote:
+			case <-ctx.Done():
+				return
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }
