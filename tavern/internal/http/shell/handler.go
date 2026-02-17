@@ -14,9 +14,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -67,6 +69,12 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 	}
 }
 
+// ShellSession holds the state for a single websocket connection.
+type ShellSession struct {
+	mu           sync.Mutex
+	activePortal *ent.Portal
+}
+
 // ServeHTTP will load prerequisite information and begin a websocket stream to connect to an agent shell.
 // The handler supports both non-interactive and interactive modes of operation for the shell.
 //
@@ -111,11 +119,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	wsTaskInputCh := make(chan *WebsocketTaskInputMessage, h.maxTaskInputsBuffered)
 	wsTaskOutputCh := make(chan *WebsocketTaskOutputMessage, h.maxTaskOutputsBuffered)
+	wsTaskOtherStreamCh := make(chan *WebsocketTaskOutputFromOtherStreamMessage, h.maxTaskOutputsBuffered)
 	wsTaskErrCh := make(chan *WebsocketTaskErrorMessage, h.maxTaskErrorsBuffered)
 	wsErrCh := make(chan *WebsocketErrorMessage, h.maxErrorsBuffered)
 	wsControlFlowCh := make(chan *WebsocketControlFlowMessage, h.maxControlFlowsBuffered)
 	portalCh := make(chan *ent.Portal, 1)
 	streamID := uuid.NewString()
+
+	session := &ShellSession{}
 
 	// Poll for open portals
 	wg.Add(1)
@@ -138,7 +149,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		defer cancel()
-		h.writeMessagesToWebsocket(ctx, wsConn, wsTaskOutputCh, wsTaskErrCh, wsErrCh, wsControlFlowCh)
+		h.writeMessagesToWebsocket(ctx, wsConn, wsTaskOutputCh, wsTaskOtherStreamCh, wsTaskErrCh, wsErrCh, wsControlFlowCh)
 	}()
 
 	// Publish shell input
@@ -146,7 +157,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		defer cancel()
-		h.writeMessagesFromWebsocket(ctx, streamID, sh, portalCh, wsTaskInputCh, wsControlFlowCh, wsErrCh)
+		h.writeMessagesFromWebsocket(ctx, session, streamID, sh, wsTaskInputCh, wsControlFlowCh, wsErrCh)
 	}()
 
 	// Subscribe / Poll shell output
@@ -154,7 +165,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer wg.Done()
 		defer cancel()
-		h.writeMessagesFromShell(ctx, streamID, sh, portalCh, wsTaskOutputCh, wsTaskErrCh, wsControlFlowCh, wsErrCh)
+		h.writeMessagesFromShell(ctx, session, streamID, sh, portalCh, wsTaskOutputCh, wsTaskOtherStreamCh, wsTaskErrCh, wsControlFlowCh, wsErrCh)
 	}()
 
 	wg.Wait()
@@ -175,6 +186,7 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 	// Load Shell
 	sh, err := h.graph.Shell.Query().
 		Where(shell.ID(shellID)).
+		WithBeacon().
 		Select(shell.FieldClosedAt).
 		Only(r.Context())
 	if err != nil {
@@ -233,7 +245,7 @@ func (h *Handler) readMessagesFromWebsocket(ctx context.Context, conn *websocket
 				}
 				return
 			}
-			if kind != websocket.BinaryMessage {
+			if kind != websocket.BinaryMessage && kind != websocket.TextMessage {
 				continue
 			}
 
@@ -249,7 +261,7 @@ func (h *Handler) readMessagesFromWebsocket(ctx context.Context, conn *websocket
 	}
 }
 
-func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.Conn, outputCh <-chan *WebsocketTaskOutputMessage, taskErrCh <-chan *WebsocketTaskErrorMessage, errCh <-chan *WebsocketErrorMessage, controlCh <-chan *WebsocketControlFlowMessage) {
+func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.Conn, outputCh <-chan *WebsocketTaskOutputMessage, otherStreamCh <-chan *WebsocketTaskOutputFromOtherStreamMessage, taskErrCh <-chan *WebsocketTaskErrorMessage, errCh <-chan *WebsocketErrorMessage, controlCh <-chan *WebsocketControlFlowMessage) {
 	// Keep Alives
 	keepAliveTimer := time.NewTicker(h.keepAliveInterval)
 	defer keepAliveTimer.Stop()
@@ -286,6 +298,11 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
 				return
 			}
+		case otherStreamMsg, ok := <-otherStreamCh:
+			if err := writeJSONMessage("shell_output_other", otherStreamMsg, ok); err != nil {
+				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
+				return
+			}
 		case taskErrMsg, ok := <-taskErrCh:
 			if err := writeJSONMessage("shell_task_errors", taskErrMsg, ok); err != nil {
 				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
@@ -310,28 +327,132 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 }
 
 // writeMessagesFromWebsocket receives input and control messages and writes them to the db / pubsub. If any errors occur, it writes them to the provided error channel.
-func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, streamID string, sh *ent.Shell, portalCh <-chan *ent.Portal, taskInputCh chan<- *WebsocketTaskInputMessage, controlCh chan<- *WebsocketControlFlowMessage, errCh <-chan *WebsocketErrorMessage) {
-	// TODO: Publish messages to active portal if it exists
-	// var (
-	// 	activePortal *ent.Portal
-	// 	cleanup      func()
-	// 	portalInCh  <-chan *portalpb.Mote
-	// )
-	// TODO: Create ShellTask ents
+func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *ShellSession, streamID string, sh *ent.Shell, taskInputCh <-chan *WebsocketTaskInputMessage, controlCh chan<- *WebsocketControlFlowMessage, errCh chan<- *WebsocketErrorMessage) {
+	var sequenceID uint64
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case msg, ok := <-taskInputCh:
+			if !ok {
+				return
+			}
+			sequenceID++
+
+			// Get Creator
+			creator := auth.UserFromContext(ctx)
+			if creator == nil {
+				slog.ErrorContext(ctx, "no creator found in context")
+				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to determine creator for shell task"))
+				continue
+			}
+
+			// Create ShellTask
+			task, err := h.graph.ShellTask.Create().
+				SetShell(sh).
+				SetInput(msg.Input).
+				SetCreator(creator).
+				SetStreamID(streamID).
+				SetSequenceID(sequenceID).
+				Save(ctx)
+
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to create shell task", "error", err)
+				errCh <- NewWebsocketErrorMessage(fmt.Errorf("failed to create shell task: %w", err))
+				continue
+			}
+
+			// Check for Active Portal
+			session.mu.Lock()
+			activePortal := session.activePortal
+			session.mu.Unlock()
+
+			if activePortal != nil {
+				// Publish to Portal
+				slog.InfoContext(ctx, "publishing to portal", "portal_id", activePortal.ID, "stream_id", streamID)
+				mote := &portalpb.Mote{
+					StreamId: streamID,
+					SeqId:    sequenceID,
+					Payload: &portalpb.Mote_Shell{
+						Shell: &portalpb.ShellPayload{
+							Input:    msg.Input,
+							ShellId:  int64(sh.ID),
+							StreamId: streamID,
+						},
+					},
+				}
+				if err := h.mux.Publish(ctx, h.mux.TopicIn(activePortal.ID), mote); err != nil {
+					slog.ErrorContext(ctx, "failed to publish shell input mote", "error", err)
+					// We don't error the task because it's already in DB, but maybe we should notify user?
+				}
+			} else {
+				slog.InfoContext(ctx, "no active portal, queuing task", "shell_id", sh.ID)
+				// No Active Portal: Send Control Flow Message
+				beaconName := "Unknown"
+				if sh.Edges.Beacon != nil {
+					beaconName = sh.Edges.Beacon.Name
+				} else {
+					// Need to load beacon if not loaded.
+					// We loaded it in ServeHTTP -> getShellForRequest -> WithBeacon()
+					// But we passed `sh`. `sh` should have Edges populated.
+					if sh.Edges.Beacon != nil {
+						beaconName = sh.Edges.Beacon.Name
+					}
+				}
+
+				controlCh <- &WebsocketControlFlowMessage{
+					Kind:    WebsocketMessageKindControlFlow,
+					Signal:  WebsocketControlFlowSignalTaskQueued,
+					Message: fmt.Sprintf("[*] Task Queued for %s", beaconName),
+				}
+			}
+			// We handle DB writes above (creation). Output writes happen in writeMessagesFromShell.
+			_ = task
+		}
+	}
 }
 
 // writeMessagesFromShell receives output and task errors. It receives them from an open portal if it exists, otherwise it polls the db for any new messages.
 // It caches output and errors that have already been sent to avoid duplication. If any errors occur, it writes them to the provided error channel.
-func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, sh *ent.Shell, portalCh <-chan *ent.Portal, taskOutputCh chan<- *WebsocketTaskOutputMessage, taskErrCh chan<- *WebsocketTaskErrorMessage, controlCh chan<- *WebsocketControlFlowMessage, errCh <-chan *WebsocketErrorMessage) {
+func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSession, streamID string, sh *ent.Shell, portalCh <-chan *ent.Portal, taskOutputCh chan<- *WebsocketTaskOutputMessage, otherStreamCh chan<- *WebsocketTaskOutputFromOtherStreamMessage, taskErrCh chan<- *WebsocketTaskErrorMessage, controlCh chan<- *WebsocketControlFlowMessage, errCh <-chan *WebsocketErrorMessage) {
 	var (
-		activePortal *ent.Portal
-		cleanup      func()
-		portalOutCh  <-chan *portalpb.Mote
+		cleanup     func()
+		portalOutCh <-chan *portalpb.Mote
 	)
 
+	// Cache of sent task IDs to avoid duplication
+	sentTasks := make(map[int]struct{})
+
+	// Polls the DB for any new tasks with output
 	pollForShellTasks := func() {
-		// TODO: Poll db for ShellTasks with output / errors
-		// TODO: Use a local cache to prevent duplicate sends
+		tasks, err := sh.QueryShellTasks().
+			Where(
+				shelltask.Or(
+					shelltask.OutputNEQ(""),
+					shelltask.ErrorNEQ(""),
+				),
+			).
+			WithCreator().
+			All(ctx)
+
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to poll shell tasks", "error", err)
+			return
+		}
+
+		for _, task := range tasks {
+			if _, sent := sentTasks[task.ID]; sent {
+				continue
+			}
+
+			if task.Output != "" {
+				taskOutputCh <- NewWebsocketTaskOutputMessage(task)
+			}
+			if task.Error != "" {
+				taskErrCh <- NewWebsocketTaskErrorMessage(task)
+			}
+			sentTasks[task.ID] = struct{}{}
+		}
 	}
 
 	pollTimer := time.NewTicker(h.outputPollingInterval)
@@ -339,6 +460,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, s
 	for {
 		select {
 		case <-ctx.Done():
+			if cleanup != nil {
+				cleanup()
+			}
 			return
 
 		////
@@ -347,13 +471,21 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, s
 		case mote, ok := <-portalOutCh:
 			// Handle Portal Closing
 			if !ok {
+				session.mu.Lock()
+				portal := session.activePortal
+				session.activePortal = nil
+				session.mu.Unlock()
+
 				// Inform browser that we've downgraded
-				controlCh <- NewWebsocketPortalDowngradeMessage(activePortal)
+				if portal != nil {
+					controlCh <- NewWebsocketPortalDowngradeMessage(portal)
+				}
+
 				if cleanup != nil {
 					cleanup()
 				}
-				activePortal = nil
 				cleanup = nil
+				portalOutCh = nil // Stop receiving from closed channel
 			}
 
 			// Ignore empty motes
@@ -361,12 +493,57 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, s
 				continue
 			}
 
-			// TODO: Handle Trace Motes, Ping Motes, etc
+			// If stream_id matches, we send standard output
+			// We check for bytes payload as it indicates output.
+			bytesPayload := mote.GetBytes()
+			if bytesPayload != nil {
+				// It's output.
+				task, err := h.graph.ShellTask.Query().
+					Where(
+						shelltask.StreamID(mote.StreamId),
+						shelltask.SequenceID(mote.SeqId),
+					).
+					WithCreator().
+					First(ctx)
 
-			// Skip unrelated motes
-			shellPayload := mote.GetShell()
-			if shellPayload == nil {
-				continue
+				if err != nil {
+					slog.DebugContext(ctx, "failed to find shell task for mote", "stream_id", mote.StreamId, "seq_id", mote.SeqId)
+					continue
+				}
+
+				if mote.StreamId == streamID {
+					// Local stream output
+					outputMsg := NewWebsocketTaskOutputMessage(task)
+					outputMsg.Output = string(bytesPayload.Data) // Use real-time chunk
+					taskOutputCh <- outputMsg
+					sentTasks[task.ID] = struct{}{}
+				} else {
+					// Other stream output
+					if _, sent := sentTasks[task.ID]; !sent {
+						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+						// Custom formatting
+						creatorName := "Unknown"
+						if task.Edges.Creator != nil {
+							creatorName = task.Edges.Creator.Name
+						}
+
+						truncatedInput := task.Input
+						if len(truncatedInput) > 255 {
+							truncatedInput = truncatedInput[:255] + "..."
+						}
+
+						otherStreamMsg.Output = fmt.Sprintf("[+] [%s] Task Output for %s\n", creatorName, truncatedInput)
+						otherStreamMsg.Output += string(bytesPayload.Data)
+
+						otherStreamCh <- otherStreamMsg
+						sentTasks[task.ID] = struct{}{}
+					} else {
+						// Already sent header. Send additional data.
+						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+						otherStreamMsg.Output = string(bytesPayload.Data)
+						otherStreamCh <- otherStreamMsg
+					}
+				}
 			}
 
 		////
@@ -374,7 +551,11 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, s
 		////
 		case <-pollTimer.C:
 			// Don't poll the DB if we have an active portal
-			if activePortal != nil {
+			session.mu.Lock()
+			hasActivePortal := session.activePortal != nil
+			session.mu.Unlock()
+
+			if hasActivePortal {
 				continue
 			}
 			pollForShellTasks()
@@ -397,11 +578,24 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, streamID string, s
 				slog.ErrorContext(ctx, "shell failed to upgrade with portal", "error", err, "portal_id", p.ID)
 				continue
 			}
-			defer portalCleanup()
 
 			// Reconfigure to use portal
-			portalOutCh, cleanup = h.mux.Subscribe(h.mux.TopicOut(p.ID))
-			activePortal = p
+			var subCleanup func()
+			portalOutCh, subCleanup = h.mux.Subscribe(h.mux.TopicOut(p.ID))
+
+			// Chain cleanups
+			cleanup = func() {
+				if subCleanup != nil {
+					subCleanup()
+				}
+				if portalCleanup != nil {
+					portalCleanup()
+				}
+			}
+
+			session.mu.Lock()
+			session.activePortal = p
+			session.mu.Unlock()
 
 			// Inform browser that we've upgraded
 			controlCh <- NewWebsocketPortalUpgradeMessage(p)
