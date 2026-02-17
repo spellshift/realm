@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
+	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 )
@@ -396,28 +397,24 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		return nil, fmt.Errorf("failed to generate build script: %w", err)
 	}
 
-	// 4. Query all builders
-	allBuilders, err := r.client.Builder.Query().All(ctx)
+	// 4. Query healthy builders (checked in within the stale threshold).
+	// Use the first transport's interval for the stale threshold.
+	staleThreshold := time.Duration(transports[0].Interval) * time.Second
+	staleCutoff := time.Now().Add(-staleThreshold)
+	healthyBuilders, err := r.client.Builder.Query().
+		Where(
+			entbuilder.LastSeenAtNotNil(),
+			entbuilder.LastSeenAtGTE(staleCutoff),
+		).
+		All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query builders: %w", err)
 	}
 
-	// 5. Filter builders that support the target OS and are healthy.
-	// A builder is considered healthy if it has checked in (lastSeenAt != nil)
-	// and its last check-in is within the configured interval.
-	// Use the first transport's interval for the stale threshold.
-	now := time.Now()
-	staleThreshold := time.Duration(transports[0].Interval) * time.Second
+	// 5. Filter builders that support the target OS.
+	// SupportedTargets is a JSON field so it must be filtered in application code.
 	var candidates []*ent.Builder
-	for _, b := range allBuilders {
-		// Skip builders that have never checked in
-		if b.LastSeenAt == nil {
-			continue
-		}
-		// Skip builders that haven't checked in recently
-		if now.Sub(*b.LastSeenAt) > staleThreshold {
-			continue
-		}
+	for _, b := range healthyBuilders {
 		for _, target := range b.SupportedTargets {
 			if target == input.TargetOs {
 				candidates = append(candidates, b)
