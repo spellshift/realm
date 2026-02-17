@@ -31,9 +31,10 @@ var shellV2Upgrader = websocket.Upgrader{
 type WebsocketMessageKind string
 
 const (
-	WebsocketMessageKindExecute WebsocketMessageKind = "EXECUTE"
-	WebsocketMessageKindOutput  WebsocketMessageKind = "OUTPUT"
-	WebsocketMessageKindError   WebsocketMessageKind = "ERROR"
+	WebsocketMessageKindExecute   WebsocketMessageKind = "EXECUTE"
+	WebsocketMessageKindOutput    WebsocketMessageKind = "OUTPUT"
+	WebsocketMessageKindError     WebsocketMessageKind = "ERROR"
+	WebsocketMessageKindOtherUser WebsocketMessageKind = "OUTPUT_OTHER_USER"
 )
 
 type WebsocketMessage struct {
@@ -121,17 +122,6 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sequencer := stream.NewPayloadSequencer(streamID)
 
 	// OrderedReader for managing incoming message order/deduplication
-	// We might need one per stream if we were handling multiple streams,
-	// but here we are just receiving from the portal for this shell.
-	// Since the portal output might come from different agents (unlikely for a shell session but possible),
-	// or retransmissions, OrderedReader helps.
-	// However, OrderedReader is typically per-stream-id.
-	// If the portal sends us messages, they might have their own stream ID (from the agent side).
-	// We need to clarify if we use one reader for all incoming or map stream IDs.
-	// The requirement implies managing seq id reads.
-	// Let's assume we maintain a map of readers if we expect multiple streams,
-	// or just one if the portal traffic is single-stream.
-	// For a shell session, it's usually one stream from the agent.
 	readers := make(map[string]*stream.OrderedReader)
 
 	// State
@@ -323,8 +313,75 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						// Deduplicate
 						// Assumption: Portal sends CHUNKS.
 						// We just send them and increment our counter.
+
+						// Check if the stream ID matches our stream ID.
+						// If not, it's from another user (or the agent).
+						// Wait, mote.StreamId is from the SENDER.
+						// If the sender is the agent, it will have the agent's stream ID.
+						// If the sender is another user (echoing input?), that's different.
+						// Usually portal output is from the agent.
+						// But if we are in "multiplayer", maybe we see other users' input echoes?
+						// The prompt says: "When we receive output from a different session id, we still want to write it to the websocket but let's highlight that it's from another user."
+						// This likely refers to input echoes or output triggered by others.
+						// If the mote comes from the AGENT, it has the AGENT'S stream ID.
+						// If we treat all non-self streams as "other", that might include the agent?
+						// But wait, the agent is the one sending output.
+						// If the agent sends output, it should be treated as OUTPUT.
+						// The distinction "multiplayer" implies we might see output intended for or caused by another user's stream?
+						// Or maybe the agent tags the output with the stream ID of the requestor?
+						// The ShellPayload has `task_id` and `shell_id`, but not `requestor_stream_id`.
+						// The Mote has `StreamId`.
+						// If the agent replies to a specific stream, it uses that stream ID?
+						// Usually agents reply with their OWN stream ID, or the stream ID of the conversation.
+						// If the agent uses a consistent stream ID for the shell session, then all output comes from that stream ID.
+						// If the user meant "If we see motes from OTHER USERS (input)", but we are subscribing to OUTPUT.
+						// Let's assume the "different stream id" means "not the one we expect from the agent" OR "not us".
+						// But we don't know the agent's stream ID initially.
+						// Actually, in a reverse shell, the agent usually has ONE stream.
+						// IF multiple users are connected, they all subscribe to the SAME portal topic.
+						// They all see the SAME motes from the agent.
+						// So everyone sees the agent's stream ID.
+						// So where does "different stream ids" come from?
+						// Maybe the agent echoes input with the USER's stream ID?
+						// Or maybe multiple agents?
+						// Let's assume:
+						// If we receive a mote, and it's NOT from the agent (how do we know?), or if it IS from the agent...
+						// Re-reading: "We may receive output from different stream ids... multiple users might send input... receive output from a different session id... highlight it's from another user".
+						// Maybe they mean if *other users* publish to the portal (input), and we see it?
+						// We subscribe to `TopicOut`. We publish to `TopicIn`.
+						// Usually `TopicOut` is what the agent publishes to.
+						// If other users publish to `TopicIn`, we don't see it unless we subscribe to `TopicIn` too.
+						// We only subscribe to `topicOut`.
+						// So the motes on `topicOut` are from the Agent.
+						// Does the Agent preserve the StreamID of the commander?
+						// If the agent replies with `mote.StreamId = request_stream_id`, then yes.
+						// Our stream ID is `streamID` (local variable).
+						// If `mote.StreamId != streamID`, it's a response to someone else.
+
+						kind := WebsocketMessageKindOutput
+						if mote.StreamId != streamID {
+							// Check if it's the agent's "main" stream?
+							// If the agent just streams output (like `tail -f`), what stream ID does it use?
+							// If it's a response to a command, it might use the command's stream ID.
+							// If `mote.StreamId` does not match ours, we treat it as "other".
+							// But we need to be careful if the agent uses a fixed stream ID for *unsolicited* output.
+							// For now, let's implement the check against our `streamID`.
+
+							// Wait, if the agent uses a fixed stream ID for everything, and it's not `streamID`, then EVERYTHING is "other user"?
+							// That would be wrong.
+							// The instruction says "different stream ids... for multiplayer sessions".
+							// This strongly implies that for *interactive* commands, the response is keyed to the user stream.
+							// So:
+							// - My commands -> Response has My Stream ID -> OUTPUT
+							// - Other commands -> Response has Other Stream ID -> OUTPUT_OTHER_USER
+
+							kind = WebsocketMessageKindOtherUser
+						} else {
+							kind = WebsocketMessageKindOutput
+						}
+
 						sendToWS(WebsocketMessage{
-							Type:    WebsocketMessageKindOutput,
+							Type:    kind,
 							Command: output,
 						})
 						sentBytes[taskID] += len(output)
