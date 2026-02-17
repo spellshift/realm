@@ -41,7 +41,6 @@ func (Shell) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("task", Task.Type).
 			Unique().
-			Required().
 			Comment("Task that created the shell"),
 		edge.To("beacon", Beacon.Type).
 			Unique().
@@ -57,6 +56,12 @@ func (Shell) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Users that are currently using the shell"),
+		edge.To("shell_tasks", ShellTask.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Tasks executed in this shell"),
 	}
 }
 

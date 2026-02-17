@@ -422,6 +422,30 @@ func (f ShellMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ShellMutation", m)
 }
 
+// The ShellTaskQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ShellTaskQueryRuleFunc func(context.Context, *ent.ShellTaskQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ShellTaskQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ShellTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ShellTaskQuery", q)
+}
+
+// The ShellTaskMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ShellTaskMutationRuleFunc func(context.Context, *ent.ShellTaskMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ShellTaskMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ShellTaskMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ShellTaskMutation", m)
+}
+
 // The TagQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type TagQueryRuleFunc func(context.Context, *ent.TagQuery) error

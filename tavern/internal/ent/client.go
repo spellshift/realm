@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -65,6 +66,8 @@ type Client struct {
 	Repository *RepositoryClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
+	// ShellTask is the client for interacting with the ShellTask builders.
+	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -99,6 +102,7 @@ func (c *Client) init() {
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
 	c.Shell = NewShellClient(c.config)
+	c.ShellTask = NewShellTaskClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
 	c.Tome = NewTomeClient(c.config)
@@ -208,6 +212,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		Shell:          NewShellClient(cfg),
+		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -244,6 +249,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		Shell:          NewShellClient(cfg),
+		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
 		Tome:           NewTomeClient(cfg),
@@ -278,8 +284,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task,
-		c.Tome, c.User,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.ShellTask,
+		c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -290,8 +296,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.Tag, c.Task,
-		c.Tome, c.User,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.ShellTask,
+		c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -326,6 +332,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Repository.mutate(ctx, m)
 	case *ShellMutation:
 		return c.Shell.mutate(ctx, m)
+	case *ShellTaskMutation:
+		return c.ShellTask.mutate(ctx, m)
 	case *TagMutation:
 		return c.Tag.mutate(ctx, m)
 	case *TaskMutation:
@@ -2623,6 +2631,22 @@ func (c *ShellClient) QueryActiveUsers(s *Shell) *UserQuery {
 	return query
 }
 
+// QueryShellTasks queries the shell_tasks edge of a Shell.
+func (c *ShellClient) QueryShellTasks(s *Shell) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ShellTasksTable, shell.ShellTasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell
@@ -2645,6 +2669,155 @@ func (c *ShellClient) mutate(ctx context.Context, m *ShellMutation) (Value, erro
 		return (&ShellDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Shell mutation op: %q", m.Op())
+	}
+}
+
+// ShellTaskClient is a client for the ShellTask schema.
+type ShellTaskClient struct {
+	config
+}
+
+// NewShellTaskClient returns a client for the ShellTask from the given config.
+func NewShellTaskClient(c config) *ShellTaskClient {
+	return &ShellTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `shelltask.Hooks(f(g(h())))`.
+func (c *ShellTaskClient) Use(hooks ...Hook) {
+	c.hooks.ShellTask = append(c.hooks.ShellTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `shelltask.Intercept(f(g(h())))`.
+func (c *ShellTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ShellTask = append(c.inters.ShellTask, interceptors...)
+}
+
+// Create returns a builder for creating a ShellTask entity.
+func (c *ShellTaskClient) Create() *ShellTaskCreate {
+	mutation := newShellTaskMutation(c.config, OpCreate)
+	return &ShellTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ShellTask entities.
+func (c *ShellTaskClient) CreateBulk(builders ...*ShellTaskCreate) *ShellTaskCreateBulk {
+	return &ShellTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ShellTaskClient) MapCreateBulk(slice any, setFunc func(*ShellTaskCreate, int)) *ShellTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ShellTaskCreateBulk{err: fmt.Errorf("calling to ShellTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ShellTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ShellTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ShellTask.
+func (c *ShellTaskClient) Update() *ShellTaskUpdate {
+	mutation := newShellTaskMutation(c.config, OpUpdate)
+	return &ShellTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ShellTaskClient) UpdateOne(st *ShellTask) *ShellTaskUpdateOne {
+	mutation := newShellTaskMutation(c.config, OpUpdateOne, withShellTask(st))
+	return &ShellTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ShellTaskClient) UpdateOneID(id int) *ShellTaskUpdateOne {
+	mutation := newShellTaskMutation(c.config, OpUpdateOne, withShellTaskID(id))
+	return &ShellTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ShellTask.
+func (c *ShellTaskClient) Delete() *ShellTaskDelete {
+	mutation := newShellTaskMutation(c.config, OpDelete)
+	return &ShellTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ShellTaskClient) DeleteOne(st *ShellTask) *ShellTaskDeleteOne {
+	return c.DeleteOneID(st.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ShellTaskClient) DeleteOneID(id int) *ShellTaskDeleteOne {
+	builder := c.Delete().Where(shelltask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ShellTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for ShellTask.
+func (c *ShellTaskClient) Query() *ShellTaskQuery {
+	return &ShellTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeShellTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ShellTask entity by its id.
+func (c *ShellTaskClient) Get(ctx context.Context, id int) (*ShellTask, error) {
+	return c.Query().Where(shelltask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ShellTaskClient) GetX(ctx context.Context, id int) *ShellTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryShell queries the shell edge of a ShellTask.
+func (c *ShellTaskClient) QueryShell(st *ShellTask) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, shelltask.ShellTable, shelltask.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ShellTaskClient) Hooks() []Hook {
+	return c.hooks.ShellTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *ShellTaskClient) Interceptors() []Interceptor {
+	return c.inters.ShellTask
+}
+
+func (c *ShellTaskClient) mutate(ctx context.Context, m *ShellTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ShellTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ShellTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ShellTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ShellTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ShellTask mutation op: %q", m.Op())
 	}
 }
 
@@ -3394,10 +3567,12 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Shell, Tag, Task, Tome, User []ent.Hook
+		Link, Portal, Quest, Repository, Shell, ShellTask, Tag, Task, Tome,
+		User []ent.Hook
 	}
 	inters struct {
 		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Shell, Tag, Task, Tome, User []ent.Interceptor
+		Link, Portal, Quest, Repository, Shell, ShellTask, Tag, Task, Tome,
+		User []ent.Interceptor
 	}
 )

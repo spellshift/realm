@@ -337,6 +337,29 @@ func HasActiveUsersWith(preds ...predicate.User) predicate.Shell {
 	})
 }
 
+// HasShellTasks applies the HasEdge predicate on the "shell_tasks" edge.
+func HasShellTasks() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ShellTasksTable, ShellTasksColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasShellTasksWith applies the HasEdge predicate on the "shell_tasks" edge with a given conditions (other predicates).
+func HasShellTasksWith(preds ...predicate.ShellTask) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newShellTasksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Shell) predicate.Shell {
 	return predicate.Shell(sql.AndPredicates(predicates...))
