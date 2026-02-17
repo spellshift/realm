@@ -60,7 +60,7 @@ portal-stream = { path = "lib/portals/portal-stream" }
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
-anyhow = "1.0.65"
+anyhow = "1.0.101"
 assert_cmd = "2.0.6"
 async-recursion = "1.0.0"
 async-trait = "0.1.68"
