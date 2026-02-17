@@ -24,6 +24,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -6346,6 +6347,10 @@ type ShellWhereInput struct {
 	// "active_users" edge predicates.
 	HasActiveUsers     *bool             `json:"hasActiveUsers,omitempty"`
 	HasActiveUsersWith []*UserWhereInput `json:"hasActiveUsersWith,omitempty"`
+
+	// "shell_tasks" edge predicates.
+	HasShellTasks     *bool                  `json:"hasShellTasks,omitempty"`
+	HasShellTasksWith []*ShellTaskWhereInput `json:"hasShellTasksWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6594,6 +6599,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 		}
 		predicates = append(predicates, shell.HasActiveUsersWith(with...))
 	}
+	if i.HasShellTasks != nil {
+		p := shell.HasShellTasks()
+		if !*i.HasShellTasks {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTasksWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTasksWith))
+		for _, w := range i.HasShellTasksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTasksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasShellTasksWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyShellWhereInput
@@ -6601,6 +6624,370 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 		return predicates[0], nil
 	default:
 		return shell.And(predicates...), nil
+	}
+}
+
+// ShellTaskWhereInput represents a where input for filtering ShellTask queries.
+type ShellTaskWhereInput struct {
+	Predicates []predicate.ShellTask  `json:"-"`
+	Not        *ShellTaskWhereInput   `json:"not,omitempty"`
+	Or         []*ShellTaskWhereInput `json:"or,omitempty"`
+	And        []*ShellTaskWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "input" field predicates.
+	Input             *string  `json:"input,omitempty"`
+	InputNEQ          *string  `json:"inputNEQ,omitempty"`
+	InputIn           []string `json:"inputIn,omitempty"`
+	InputNotIn        []string `json:"inputNotIn,omitempty"`
+	InputGT           *string  `json:"inputGT,omitempty"`
+	InputGTE          *string  `json:"inputGTE,omitempty"`
+	InputLT           *string  `json:"inputLT,omitempty"`
+	InputLTE          *string  `json:"inputLTE,omitempty"`
+	InputContains     *string  `json:"inputContains,omitempty"`
+	InputHasPrefix    *string  `json:"inputHasPrefix,omitempty"`
+	InputHasSuffix    *string  `json:"inputHasSuffix,omitempty"`
+	InputEqualFold    *string  `json:"inputEqualFold,omitempty"`
+	InputContainsFold *string  `json:"inputContainsFold,omitempty"`
+
+	// "output" field predicates.
+	Output             *string  `json:"output,omitempty"`
+	OutputNEQ          *string  `json:"outputNEQ,omitempty"`
+	OutputIn           []string `json:"outputIn,omitempty"`
+	OutputNotIn        []string `json:"outputNotIn,omitempty"`
+	OutputGT           *string  `json:"outputGT,omitempty"`
+	OutputGTE          *string  `json:"outputGTE,omitempty"`
+	OutputLT           *string  `json:"outputLT,omitempty"`
+	OutputLTE          *string  `json:"outputLTE,omitempty"`
+	OutputContains     *string  `json:"outputContains,omitempty"`
+	OutputHasPrefix    *string  `json:"outputHasPrefix,omitempty"`
+	OutputHasSuffix    *string  `json:"outputHasSuffix,omitempty"`
+	OutputIsNil        bool     `json:"outputIsNil,omitempty"`
+	OutputNotNil       bool     `json:"outputNotNil,omitempty"`
+	OutputEqualFold    *string  `json:"outputEqualFold,omitempty"`
+	OutputContainsFold *string  `json:"outputContainsFold,omitempty"`
+
+	// "sequence_id" field predicates.
+	SequenceID      *uint64  `json:"sequenceID,omitempty"`
+	SequenceIDNEQ   *uint64  `json:"sequenceIDNEQ,omitempty"`
+	SequenceIDIn    []uint64 `json:"sequenceIDIn,omitempty"`
+	SequenceIDNotIn []uint64 `json:"sequenceIDNotIn,omitempty"`
+	SequenceIDGT    *uint64  `json:"sequenceIDGT,omitempty"`
+	SequenceIDGTE   *uint64  `json:"sequenceIDGTE,omitempty"`
+	SequenceIDLT    *uint64  `json:"sequenceIDLT,omitempty"`
+	SequenceIDLTE   *uint64  `json:"sequenceIDLTE,omitempty"`
+
+	// "shell" edge predicates.
+	HasShell     *bool              `json:"hasShell,omitempty"`
+	HasShellWith []*ShellWhereInput `json:"hasShellWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *ShellTaskWhereInput) AddPredicates(predicates ...predicate.ShellTask) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the ShellTaskWhereInput filter on the ShellTaskQuery builder.
+func (i *ShellTaskWhereInput) Filter(q *ShellTaskQuery) (*ShellTaskQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyShellTaskWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyShellTaskWhereInput is returned in case the ShellTaskWhereInput is empty.
+var ErrEmptyShellTaskWhereInput = errors.New("ent: empty predicate ShellTaskWhereInput")
+
+// P returns a predicate for filtering shelltasks.
+// An error is returned if the input is empty or invalid.
+func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
+	var predicates []predicate.ShellTask
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, shelltask.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ShellTask, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, shelltask.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ShellTask, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, shelltask.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, shelltask.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, shelltask.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, shelltask.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, shelltask.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, shelltask.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, shelltask.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, shelltask.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, shelltask.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, shelltask.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, shelltask.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, shelltask.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, shelltask.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, shelltask.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, shelltask.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, shelltask.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, shelltask.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, shelltask.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, shelltask.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, shelltask.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Input != nil {
+		predicates = append(predicates, shelltask.InputEQ(*i.Input))
+	}
+	if i.InputNEQ != nil {
+		predicates = append(predicates, shelltask.InputNEQ(*i.InputNEQ))
+	}
+	if len(i.InputIn) > 0 {
+		predicates = append(predicates, shelltask.InputIn(i.InputIn...))
+	}
+	if len(i.InputNotIn) > 0 {
+		predicates = append(predicates, shelltask.InputNotIn(i.InputNotIn...))
+	}
+	if i.InputGT != nil {
+		predicates = append(predicates, shelltask.InputGT(*i.InputGT))
+	}
+	if i.InputGTE != nil {
+		predicates = append(predicates, shelltask.InputGTE(*i.InputGTE))
+	}
+	if i.InputLT != nil {
+		predicates = append(predicates, shelltask.InputLT(*i.InputLT))
+	}
+	if i.InputLTE != nil {
+		predicates = append(predicates, shelltask.InputLTE(*i.InputLTE))
+	}
+	if i.InputContains != nil {
+		predicates = append(predicates, shelltask.InputContains(*i.InputContains))
+	}
+	if i.InputHasPrefix != nil {
+		predicates = append(predicates, shelltask.InputHasPrefix(*i.InputHasPrefix))
+	}
+	if i.InputHasSuffix != nil {
+		predicates = append(predicates, shelltask.InputHasSuffix(*i.InputHasSuffix))
+	}
+	if i.InputEqualFold != nil {
+		predicates = append(predicates, shelltask.InputEqualFold(*i.InputEqualFold))
+	}
+	if i.InputContainsFold != nil {
+		predicates = append(predicates, shelltask.InputContainsFold(*i.InputContainsFold))
+	}
+	if i.Output != nil {
+		predicates = append(predicates, shelltask.OutputEQ(*i.Output))
+	}
+	if i.OutputNEQ != nil {
+		predicates = append(predicates, shelltask.OutputNEQ(*i.OutputNEQ))
+	}
+	if len(i.OutputIn) > 0 {
+		predicates = append(predicates, shelltask.OutputIn(i.OutputIn...))
+	}
+	if len(i.OutputNotIn) > 0 {
+		predicates = append(predicates, shelltask.OutputNotIn(i.OutputNotIn...))
+	}
+	if i.OutputGT != nil {
+		predicates = append(predicates, shelltask.OutputGT(*i.OutputGT))
+	}
+	if i.OutputGTE != nil {
+		predicates = append(predicates, shelltask.OutputGTE(*i.OutputGTE))
+	}
+	if i.OutputLT != nil {
+		predicates = append(predicates, shelltask.OutputLT(*i.OutputLT))
+	}
+	if i.OutputLTE != nil {
+		predicates = append(predicates, shelltask.OutputLTE(*i.OutputLTE))
+	}
+	if i.OutputContains != nil {
+		predicates = append(predicates, shelltask.OutputContains(*i.OutputContains))
+	}
+	if i.OutputHasPrefix != nil {
+		predicates = append(predicates, shelltask.OutputHasPrefix(*i.OutputHasPrefix))
+	}
+	if i.OutputHasSuffix != nil {
+		predicates = append(predicates, shelltask.OutputHasSuffix(*i.OutputHasSuffix))
+	}
+	if i.OutputIsNil {
+		predicates = append(predicates, shelltask.OutputIsNil())
+	}
+	if i.OutputNotNil {
+		predicates = append(predicates, shelltask.OutputNotNil())
+	}
+	if i.OutputEqualFold != nil {
+		predicates = append(predicates, shelltask.OutputEqualFold(*i.OutputEqualFold))
+	}
+	if i.OutputContainsFold != nil {
+		predicates = append(predicates, shelltask.OutputContainsFold(*i.OutputContainsFold))
+	}
+	if i.SequenceID != nil {
+		predicates = append(predicates, shelltask.SequenceIDEQ(*i.SequenceID))
+	}
+	if i.SequenceIDNEQ != nil {
+		predicates = append(predicates, shelltask.SequenceIDNEQ(*i.SequenceIDNEQ))
+	}
+	if len(i.SequenceIDIn) > 0 {
+		predicates = append(predicates, shelltask.SequenceIDIn(i.SequenceIDIn...))
+	}
+	if len(i.SequenceIDNotIn) > 0 {
+		predicates = append(predicates, shelltask.SequenceIDNotIn(i.SequenceIDNotIn...))
+	}
+	if i.SequenceIDGT != nil {
+		predicates = append(predicates, shelltask.SequenceIDGT(*i.SequenceIDGT))
+	}
+	if i.SequenceIDGTE != nil {
+		predicates = append(predicates, shelltask.SequenceIDGTE(*i.SequenceIDGTE))
+	}
+	if i.SequenceIDLT != nil {
+		predicates = append(predicates, shelltask.SequenceIDLT(*i.SequenceIDLT))
+	}
+	if i.SequenceIDLTE != nil {
+		predicates = append(predicates, shelltask.SequenceIDLTE(*i.SequenceIDLTE))
+	}
+
+	if i.HasShell != nil {
+		p := shelltask.HasShell()
+		if !*i.HasShell {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellWith))
+		for _, w := range i.HasShellWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasShellWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyShellTaskWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return shelltask.And(predicates...), nil
 	}
 }
 

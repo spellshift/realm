@@ -7,7 +7,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -15,15 +14,111 @@ import (
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
-	panic(fmt.Errorf("not implemented: Node - node"))
+	return r.client.Noder(ctx, id)
 }
 
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
-	panic(fmt.Errorf("not implemented: Nodes - nodes"))
+	return r.client.Noders(ctx, ids)
+}
+
+// SequenceID is the resolver for the sequenceID field.
+func (r *shellTaskResolver) SequenceID(ctx context.Context, obj *ent.ShellTask) (int, error) {
+	return int(obj.SequenceID), nil
+}
+
+// SequenceID is the resolver for the sequenceID field.
+func (r *shellTaskWhereInputResolver) SequenceID(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data == nil {
+		return nil // Should be handled by generated code usually, but here we set it manually if needed.
+		// Actually, generated `ShellTaskWhereInput` likely has *uint64 for SequenceID.
+		// GraphQL sends *int. We need to cast.
+	}
+	u := uint64(*data)
+	obj.SequenceID = &u
+	return nil
+}
+
+// SequenceIdneq is the resolver for the sequenceIDNEQ field.
+func (r *shellTaskWhereInputResolver) SequenceIdneq(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data != nil {
+		u := uint64(*data)
+		obj.SequenceIDNEQ = &u
+	}
+	return nil
+}
+
+// SequenceIDIn is the resolver for the sequenceIDIn field.
+func (r *shellTaskWhereInputResolver) SequenceIDIn(ctx context.Context, obj *ent.ShellTaskWhereInput, data []int) error {
+	if len(data) > 0 {
+		u := make([]uint64, len(data))
+		for i, v := range data {
+			u[i] = uint64(v)
+		}
+		obj.SequenceIDIn = u
+	}
+	return nil
+}
+
+// SequenceIDNotIn is the resolver for the sequenceIDNotIn field.
+func (r *shellTaskWhereInputResolver) SequenceIDNotIn(ctx context.Context, obj *ent.ShellTaskWhereInput, data []int) error {
+	if len(data) > 0 {
+		u := make([]uint64, len(data))
+		for i, v := range data {
+			u[i] = uint64(v)
+		}
+		obj.SequenceIDNotIn = u
+	}
+	return nil
+}
+
+// SequenceIdgt is the resolver for the sequenceIDGT field.
+func (r *shellTaskWhereInputResolver) SequenceIdgt(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data != nil {
+		u := uint64(*data)
+		obj.SequenceIDGT = &u
+	}
+	return nil
+}
+
+// SequenceIdgte is the resolver for the sequenceIDGTE field.
+func (r *shellTaskWhereInputResolver) SequenceIdgte(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data != nil {
+		u := uint64(*data)
+		obj.SequenceIDGTE = &u
+	}
+	return nil
+}
+
+// SequenceIdlt is the resolver for the sequenceIDLT field.
+func (r *shellTaskWhereInputResolver) SequenceIdlt(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data != nil {
+		u := uint64(*data)
+		obj.SequenceIDLT = &u
+	}
+	return nil
+}
+
+// SequenceIdlte is the resolver for the sequenceIDLTE field.
+func (r *shellTaskWhereInputResolver) SequenceIdlte(ctx context.Context, obj *ent.ShellTaskWhereInput, data *int) error {
+	if data != nil {
+		u := uint64(*data)
+		obj.SequenceIDLTE = &u
+	}
+	return nil
 }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// ShellTask returns generated.ShellTaskResolver implementation.
+func (r *Resolver) ShellTask() generated.ShellTaskResolver { return &shellTaskResolver{r} }
+
+// ShellTaskWhereInput returns generated.ShellTaskWhereInputResolver implementation.
+func (r *Resolver) ShellTaskWhereInput() generated.ShellTaskWhereInputResolver {
+	return &shellTaskWhereInputResolver{r}
+}
+
 type queryResolver struct{ *Resolver }
+type shellTaskResolver struct{ *Resolver }
+type shellTaskWhereInputResolver struct{ *Resolver }

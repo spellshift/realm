@@ -37,6 +37,8 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	ShellTask() ShellTaskResolver
+	ShellTaskWhereInput() ShellTaskWhereInputResolver
 }
 
 type DirectiveRoot struct {
@@ -411,6 +413,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
 		Task           func(childComplexity int) int
 	}
 
@@ -421,6 +424,27 @@ type ComplexityRoot struct {
 	}
 
 	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ShellTask struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Input          func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Output         func(childComplexity int) int
+		SequenceID     func(childComplexity int) int
+		Shell          func(childComplexity int) int
+	}
+
+	ShellTaskConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -2501,6 +2525,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Shell.Owner(childComplexity), true
 
+	case "Shell.shellTasks":
+		if e.complexity.Shell.ShellTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_shellTasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ShellTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellTaskOrder), args["where"].(*ent.ShellTaskWhereInput)), true
+
 	case "Shell.task":
 		if e.complexity.Shell.Task == nil {
 			break
@@ -2542,6 +2578,90 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellEdge.Node(childComplexity), true
+
+	case "ShellTask.createdAt":
+		if e.complexity.ShellTask.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.CreatedAt(childComplexity), true
+
+	case "ShellTask.id":
+		if e.complexity.ShellTask.ID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ID(childComplexity), true
+
+	case "ShellTask.input":
+		if e.complexity.ShellTask.Input == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Input(childComplexity), true
+
+	case "ShellTask.lastModifiedAt":
+		if e.complexity.ShellTask.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.LastModifiedAt(childComplexity), true
+
+	case "ShellTask.output":
+		if e.complexity.ShellTask.Output == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Output(childComplexity), true
+
+	case "ShellTask.sequenceID":
+		if e.complexity.ShellTask.SequenceID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.SequenceID(childComplexity), true
+
+	case "ShellTask.shell":
+		if e.complexity.ShellTask.Shell == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Shell(childComplexity), true
+
+	case "ShellTaskConnection.edges":
+		if e.complexity.ShellTaskConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.Edges(childComplexity), true
+
+	case "ShellTaskConnection.pageInfo":
+		if e.complexity.ShellTaskConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.PageInfo(childComplexity), true
+
+	case "ShellTaskConnection.totalCount":
+		if e.complexity.ShellTaskConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.TotalCount(childComplexity), true
+
+	case "ShellTaskEdge.cursor":
+		if e.complexity.ShellTaskEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskEdge.Cursor(childComplexity), true
+
+	case "ShellTaskEdge.node":
+		if e.complexity.ShellTaskEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -3072,6 +3192,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
 		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellTaskOrder,
+		ec.unmarshalInputShellTaskWhereInput,
 		ec.unmarshalInputShellWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
@@ -6642,7 +6764,7 @@ type Shell implements Node {
   """
   Task that created the shell
   """
-  task: Task!
+  task: Task
   """
   Beacon that created the shell
   """
@@ -6682,6 +6804,37 @@ type Shell implements Node {
     """
     where: UserWhereInput
   ): UserConnection!
+  shellTasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ShellTasks returned from the connection.
+    """
+    orderBy: [ShellTaskOrder!]
+
+    """
+    Filtering options for ShellTasks returned from the connection.
+    """
+    where: ShellTaskWhereInput
+  ): ShellTaskConnection!
 }
 """
 A connection to a list of items.
@@ -6733,6 +6886,175 @@ enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   CLOSED_AT
+}
+type ShellTask implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  The command input sent to the shell
+  """
+  input: String!
+  """
+  The output received from the shell
+  """
+  output: String
+  """
+  Sequence number for ordering tasks within a shell
+  """
+  sequenceID: Int!
+  """
+  The shell this task belongs to
+  """
+  shell: Shell!
+}
+"""
+A connection to a list of items.
+"""
+type ShellTaskConnection {
+  """
+  A list of edges.
+  """
+  edges: [ShellTaskEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ShellTaskEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ShellTask
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for ShellTask connections
+"""
+input ShellTaskOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ShellTasks.
+  """
+  field: ShellTaskOrderField!
+}
+"""
+Properties by which ShellTask connections can be ordered.
+"""
+enum ShellTaskOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+ShellTaskWhereInput is used for filtering ShellTask objects.
+Input was generated by ent.
+"""
+input ShellTaskWhereInput {
+  not: ShellTaskWhereInput
+  and: [ShellTaskWhereInput!]
+  or: [ShellTaskWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  input field predicates
+  """
+  input: String
+  inputNEQ: String
+  inputIn: [String!]
+  inputNotIn: [String!]
+  inputGT: String
+  inputGTE: String
+  inputLT: String
+  inputLTE: String
+  inputContains: String
+  inputHasPrefix: String
+  inputHasSuffix: String
+  inputEqualFold: String
+  inputContainsFold: String
+  """
+  output field predicates
+  """
+  output: String
+  outputNEQ: String
+  outputIn: [String!]
+  outputNotIn: [String!]
+  outputGT: String
+  outputGTE: String
+  outputLT: String
+  outputLTE: String
+  outputContains: String
+  outputHasPrefix: String
+  outputHasSuffix: String
+  outputIsNil: Boolean
+  outputNotNil: Boolean
+  outputEqualFold: String
+  outputContainsFold: String
+  """
+  sequence_id field predicates
+  """
+  sequenceID: Int
+  sequenceIDNEQ: Int
+  sequenceIDIn: [Int!]
+  sequenceIDNotIn: [Int!]
+  sequenceIDGT: Int
+  sequenceIDGTE: Int
+  sequenceIDLT: Int
+  sequenceIDLTE: Int
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -6808,6 +7130,11 @@ input ShellWhereInput {
   """
   hasActiveUsers: Boolean
   hasActiveUsersWith: [UserWhereInput!]
+  """
+  shell_tasks edge predicates
+  """
+  hasShellTasks: Boolean
+  hasShellTasksWith: [ShellTaskWhereInput!]
 }
 type Tag implements Node {
   id: ID!

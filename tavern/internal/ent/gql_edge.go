@@ -438,7 +438,7 @@ func (s *Shell) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = s.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
 }
 
 func (s *Shell) Beacon(ctx context.Context) (*Beacon, error) {
@@ -476,6 +476,35 @@ func (s *Shell) ActiveUsers(
 		return conn, nil
 	}
 	return s.QueryActiveUsers().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Shell) ShellTasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellTaskOrder, where *ShellTaskWhereInput,
+) (*ShellTaskConnection, error) {
+	opts := []ShellTaskPaginateOption{
+		WithShellTaskOrder(orderBy),
+		WithShellTaskFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[4][alias]
+	if nodes, err := s.NamedShellTasks(alias); err == nil || hasTotalCount {
+		pager, err := newShellTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellTaskConnection{Edges: []*ShellTaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryShellTasks().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (st *ShellTask) Shell(ctx context.Context) (*Shell, error) {
+	result, err := st.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = st.QueryShell().Only(ctx)
+	}
+	return result, err
 }
 
 func (t *Tag) Hosts(

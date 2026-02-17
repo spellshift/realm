@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -30,10 +31,12 @@ type ShellQuery struct {
 	withBeacon           *BeaconQuery
 	withOwner            *UserQuery
 	withActiveUsers      *UserQuery
+	withShellTasks       *ShellTaskQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Shell) error
 	withNamedActiveUsers map[string]*UserQuery
+	withNamedShellTasks  map[string]*ShellTaskQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -151,6 +154,28 @@ func (sq *ShellQuery) QueryActiveUsers() *UserQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, shell.ActiveUsersTable, shell.ActiveUsersPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShellTasks chains the current query on the "shell_tasks" edge.
+func (sq *ShellQuery) QueryShellTasks() *ShellTaskQuery {
+	query := (&ShellTaskClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ShellTasksTable, shell.ShellTasksColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -354,6 +379,7 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		withBeacon:      sq.withBeacon.Clone(),
 		withOwner:       sq.withOwner.Clone(),
 		withActiveUsers: sq.withActiveUsers.Clone(),
+		withShellTasks:  sq.withShellTasks.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -401,6 +427,17 @@ func (sq *ShellQuery) WithActiveUsers(opts ...func(*UserQuery)) *ShellQuery {
 		opt(query)
 	}
 	sq.withActiveUsers = query
+	return sq
+}
+
+// WithShellTasks tells the query-builder to eager-load the nodes that are connected to
+// the "shell_tasks" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithShellTasks(opts ...func(*ShellTaskQuery)) *ShellQuery {
+	query := (&ShellTaskClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withShellTasks = query
 	return sq
 }
 
@@ -483,11 +520,12 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
 			sq.withActiveUsers != nil,
+			sq.withShellTasks != nil,
 		}
 	)
 	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
@@ -542,10 +580,24 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withShellTasks; query != nil {
+		if err := sq.loadShellTasks(ctx, query, nodes,
+			func(n *Shell) { n.Edges.ShellTasks = []*ShellTask{} },
+			func(n *Shell, e *ShellTask) { n.Edges.ShellTasks = append(n.Edges.ShellTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range sq.withNamedActiveUsers {
 		if err := sq.loadActiveUsers(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedActiveUsers(name) },
 			func(n *Shell, e *User) { n.appendNamedActiveUsers(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedShellTasks {
+		if err := sq.loadShellTasks(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedShellTasks(name) },
+			func(n *Shell, e *ShellTask) { n.appendNamedShellTasks(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -714,6 +766,37 @@ func (sq *ShellQuery) loadActiveUsers(ctx context.Context, query *UserQuery, nod
 	}
 	return nil
 }
+func (sq *ShellQuery) loadShellTasks(ctx context.Context, query *ShellTaskQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *ShellTask)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ShellTask(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.ShellTasksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_shell_tasks
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_shell_tasks" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_shell_tasks" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -810,6 +893,20 @@ func (sq *ShellQuery) WithNamedActiveUsers(name string, opts ...func(*UserQuery)
 		sq.withNamedActiveUsers = make(map[string]*UserQuery)
 	}
 	sq.withNamedActiveUsers[name] = query
+	return sq
+}
+
+// WithNamedShellTasks tells the query-builder to eager-load the nodes that are connected to the "shell_tasks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedShellTasks(name string, opts ...func(*ShellTaskQuery)) *ShellQuery {
+	query := (&ShellTaskClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedShellTasks == nil {
+		sq.withNamedShellTasks = make(map[string]*ShellTaskQuery)
+	}
+	sq.withNamedShellTasks[name] = query
 	return sq
 }
 

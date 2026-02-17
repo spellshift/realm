@@ -30,6 +30,8 @@ const (
 	EdgeOwner = "owner"
 	// EdgeActiveUsers holds the string denoting the active_users edge name in mutations.
 	EdgeActiveUsers = "active_users"
+	// EdgeShellTasks holds the string denoting the shell_tasks edge name in mutations.
+	EdgeShellTasks = "shell_tasks"
 	// Table holds the table name of the shell in the database.
 	Table = "shells"
 	// TaskTable is the table that holds the task relation/edge.
@@ -58,6 +60,13 @@ const (
 	// ActiveUsersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	ActiveUsersInverseTable = "users"
+	// ShellTasksTable is the table that holds the shell_tasks relation/edge.
+	ShellTasksTable = "shell_tasks"
+	// ShellTasksInverseTable is the table name for the ShellTask entity.
+	// It exists in this package in order to avoid circular dependency with the "shelltask" package.
+	ShellTasksInverseTable = "shell_tasks"
+	// ShellTasksColumn is the table column denoting the shell_tasks relation/edge.
+	ShellTasksColumn = "shell_shell_tasks"
 )
 
 // Columns holds all SQL columns for shell fields.
@@ -164,6 +173,20 @@ func ByActiveUsers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newActiveUsersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByShellTasksCount orders the results by shell_tasks count.
+func ByShellTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newShellTasksStep(), opts...)
+	}
+}
+
+// ByShellTasks orders the results by shell_tasks terms.
+func ByShellTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTaskStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -190,5 +213,12 @@ func newActiveUsersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActiveUsersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, false, ActiveUsersTable, ActiveUsersPrimaryKey...),
+	)
+}
+func newShellTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellTasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ShellTasksTable, ShellTasksColumn),
 	)
 }

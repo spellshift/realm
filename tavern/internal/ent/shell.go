@@ -47,13 +47,16 @@ type ShellEdges struct {
 	Owner *User `json:"owner,omitempty"`
 	// Users that are currently using the shell
 	ActiveUsers []*User `json:"active_users,omitempty"`
+	// Tasks executed in this shell
+	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
 	namedActiveUsers map[string][]*User
+	namedShellTasks  map[string][]*ShellTask
 }
 
 // TaskOrErr returns the Task value or an error if the edge
@@ -96,6 +99,15 @@ func (e ShellEdges) ActiveUsersOrErr() ([]*User, error) {
 		return e.ActiveUsers, nil
 	}
 	return nil, &NotLoadedError{edge: "active_users"}
+}
+
+// ShellTasksOrErr returns the ShellTasks value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) ShellTasksOrErr() ([]*ShellTask, error) {
+	if e.loadedTypes[4] {
+		return e.ShellTasks, nil
+	}
+	return nil, &NotLoadedError{edge: "shell_tasks"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -214,6 +226,11 @@ func (s *Shell) QueryActiveUsers() *UserQuery {
 	return NewShellClient(s.config).QueryActiveUsers(s)
 }
 
+// QueryShellTasks queries the "shell_tasks" edge of the Shell entity.
+func (s *Shell) QueryShellTasks() *ShellTaskQuery {
+	return NewShellClient(s.config).QueryShellTasks(s)
+}
+
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -273,6 +290,30 @@ func (s *Shell) appendNamedActiveUsers(name string, edges ...*User) {
 		s.Edges.namedActiveUsers[name] = []*User{}
 	} else {
 		s.Edges.namedActiveUsers[name] = append(s.Edges.namedActiveUsers[name], edges...)
+	}
+}
+
+// NamedShellTasks returns the ShellTasks named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedShellTasks(name string) ([]*ShellTask, error) {
+	if s.Edges.namedShellTasks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedShellTasks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedShellTasks(name string, edges ...*ShellTask) {
+	if s.Edges.namedShellTasks == nil {
+		s.Edges.namedShellTasks = make(map[string][]*ShellTask)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedShellTasks[name] = []*ShellTask{}
+	} else {
+		s.Edges.namedShellTasks[name] = append(s.Edges.namedShellTasks[name], edges...)
 	}
 }
 

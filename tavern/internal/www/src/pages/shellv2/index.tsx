@@ -1,8 +1,27 @@
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../lib/headless-adapter";
+import { AlertError } from "../../components/tavern-base-ui/AlertError";
+import { gql, useQuery } from "@apollo/client";
+
+// GraphQL query to fetch shell details
+const GET_SHELL = gql`
+  query GetShell($id: ID!) {
+    node(id: $id) {
+      ... on Shell {
+        id
+        closedAt
+        owner {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
 
 interface ShellState {
     inputBuffer: string;
@@ -16,9 +35,18 @@ interface ShellState {
 }
 
 const ShellV2 = () => {
+    const { shellId } = useParams<{ shellId: string }>();
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    // Fetch shell details first
+    const { loading, error, data } = useQuery(GET_SHELL, {
+        variables: { id: shellId },
+        skip: !shellId,
+        fetchPolicy: "network-only"
+    });
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -48,7 +76,27 @@ const ShellV2 = () => {
     });
 
     useEffect(() => {
-        if (!termRef.current) return;
+        if (!termRef.current || loading) return;
+
+        if (!shellId) {
+            setConnectionError("No Shell ID provided in URL.");
+            return;
+        }
+
+        if (error) {
+            setConnectionError(`Failed to load shell: ${error.message}`);
+            return;
+        }
+
+        if (!data?.node) {
+            setConnectionError("Shell not found.");
+            return;
+        }
+
+        if (data.node.closedAt) {
+            setConnectionError("This shell session is closed.");
+            return;
+        }
 
         // Initialize terminal
         termInstance.current = new Terminal({
@@ -74,7 +122,7 @@ const ShellV2 = () => {
         termInstance.current.write("Initializing Headless REPL...\r\n");
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const url = `${scheme}://${window.location.host}/shellv2/ws`;
+        const url = `${scheme}://${window.location.host}/shellv2/ws/${shellId}`;
 
         adapter.current = new HeadlessWasmAdapter(url, (content) => {
             const formatted = content.replace(/\n/g, "\r\n");
@@ -496,7 +544,7 @@ const ShellV2 = () => {
             adapter.current?.close();
             termInstance.current?.dispose();
         };
-    }, []);
+    }, [shellId, loading, error, data]);
 
     // Scroll active completion into view
     useEffect(() => {
@@ -507,6 +555,18 @@ const ShellV2 = () => {
             }
         }
     }, [completionIndex, showCompletions]);
+
+    if (connectionError) {
+        return (
+             <div style={{ padding: "20px" }}>
+                 <AlertError title="Shell Connection Failed" description={connectionError} />
+             </div>
+        );
+    }
+
+    if (loading) {
+        return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
+    }
 
     return (
         <div style={{ padding: "20px", height: "calc(100vh - 100px)", position: "relative" }}>
