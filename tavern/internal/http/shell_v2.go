@@ -187,24 +187,9 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Initial check for portal
 	checkPortal := func() {
-		entPortal, err := sh.QueryPortals().Where(portal.ClosedAtIsNil()).First(ctx)
-		if err != nil && !ent.IsNotFound(err) {
-			slog.ErrorContext(ctx, "failed to query portal for shell", "error", err)
-			return
-		}
-
-		if entPortal == nil {
-			if activePortalID != 0 {
-				slog.InfoContext(ctx, "portal closed or lost", "old_portal_id", activePortalID)
-				cleanupPortal()
-			}
-			return
-		}
-
-		if entPortal.ID != activePortalID {
-			cleanupPortal()
-			slog.InfoContext(ctx, "found new portal", "portal_id", entPortal.ID)
-			activePortalID = entPortal.ID
+		newPortalID := h.checkPortal(ctx, sh, activePortalID, cleanupPortal)
+		if newPortalID != activePortalID && newPortalID != 0 {
+			activePortalID = newPortalID
 
 			// Open portal in Mux (ensure topic exists)
 			// Note: We subscribe to OUT topic
@@ -432,6 +417,30 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func (h *ShellV2Handler) checkPortal(ctx context.Context, sh *ent.Shell, activePortalID int, cleanup func()) int {
+	entPortal, err := sh.QueryPortals().Where(portal.ClosedAtIsNil()).First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		slog.ErrorContext(ctx, "failed to query portal for shell", "error", err)
+		return activePortalID // No change on error
+	}
+
+	if entPortal == nil {
+		if activePortalID != 0 {
+			slog.InfoContext(ctx, "portal closed or lost", "old_portal_id", activePortalID)
+			cleanup()
+		}
+		return 0
+	}
+
+	if entPortal.ID != activePortalID {
+		cleanup()
+		slog.InfoContext(ctx, "found new portal", "portal_id", entPortal.ID)
+		return entPortal.ID
+	}
+
+	return activePortalID
 }
 
 func (h *ShellV2Handler) wsReader(ctx context.Context, conn *websocket.Conn, wsReadCh chan<- []byte, wsErrorCh chan<- error) {
