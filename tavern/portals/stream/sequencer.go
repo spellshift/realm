@@ -6,26 +6,26 @@ import (
 	"realm.pub/tavern/portals/portalpb"
 )
 
-// payloadSequencer sequences payloads with a stream ID and monotonic sequence ID.
-type payloadSequencer struct {
+// PayloadSequencer sequences payloads with a stream ID and monotonic sequence ID.
+type PayloadSequencer struct {
 	nextSeqID atomic.Uint64
 	streamID  string
 }
 
-// newPayloadSequencer creates a new payloadSequencer with the given streamID.
-func newPayloadSequencer(streamID string) *payloadSequencer {
-	return &payloadSequencer{
+// NewPayloadSequencer creates a new PayloadSequencer with the given streamID.
+func NewPayloadSequencer(streamID string) *PayloadSequencer {
+	return &PayloadSequencer{
 		streamID: streamID,
 	}
 }
 
 // newSeqID returns the current sequence ID and increments it.
-func (s *payloadSequencer) newSeqID() uint64 {
+func (s *PayloadSequencer) newSeqID() uint64 {
 	return s.nextSeqID.Add(1) - 1
 }
 
 // NewBytesMote creates a new Mote with a BytesPayload.
-func (s *payloadSequencer) NewBytesMote(data []byte, kind portalpb.BytesPayloadKind) *portalpb.Mote {
+func (s *PayloadSequencer) NewBytesMote(data []byte, kind portalpb.BytesPayloadKind) *portalpb.Mote {
 	return &portalpb.Mote{
 		StreamId: s.streamID,
 		SeqId:    s.newSeqID(),
@@ -39,7 +39,7 @@ func (s *payloadSequencer) NewBytesMote(data []byte, kind portalpb.BytesPayloadK
 }
 
 // NewTCPMote creates a new Mote with a TCPPayload.
-func (s *payloadSequencer) NewTCPMote(data []byte, dstAddr string, dstPort uint32) *portalpb.Mote {
+func (s *PayloadSequencer) NewTCPMote(data []byte, dstAddr string, dstPort uint32) *portalpb.Mote {
 	return &portalpb.Mote{
 		StreamId: s.streamID,
 		SeqId:    s.newSeqID(),
@@ -54,7 +54,7 @@ func (s *payloadSequencer) NewTCPMote(data []byte, dstAddr string, dstPort uint3
 }
 
 // NewUDPMote creates a new Mote with a UDPPayload.
-func (s *payloadSequencer) NewUDPMote(data []byte, dstAddr string, dstPort uint32) *portalpb.Mote {
+func (s *PayloadSequencer) NewUDPMote(data []byte, dstAddr string, dstPort uint32) *portalpb.Mote {
 	return &portalpb.Mote{
 		StreamId: s.streamID,
 		SeqId:    s.newSeqID(),
@@ -63,6 +63,21 @@ func (s *payloadSequencer) NewUDPMote(data []byte, dstAddr string, dstPort uint3
 				Data:    data,
 				DstAddr: dstAddr,
 				DstPort: dstPort,
+			},
+		},
+	}
+}
+
+// NewShellMote creates a new Mote with a ShellPayload.
+func (s *PayloadSequencer) NewShellMote(input string, shellID int64, taskID uint64) *portalpb.Mote {
+	return &portalpb.Mote{
+		StreamId: s.streamID,
+		SeqId:    s.newSeqID(),
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Input:   input,
+				ShellId: shellID,
+				TaskId:  taskID,
 			},
 		},
 	}

@@ -11,14 +11,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
-
-	"github.com/gorilla/websocket"
+	"realm.pub/tavern/portals/stream"
 )
 
 var shellV2Upgrader = websocket.Upgrader{
@@ -114,6 +115,24 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	seqID := uint64(count)
+
+	// Unique stream ID for this connection
+	streamID := uuid.New().String()
+	sequencer := stream.NewPayloadSequencer(streamID)
+
+	// OrderedReader for managing incoming message order/deduplication
+	// We might need one per stream if we were handling multiple streams,
+	// but here we are just receiving from the portal for this shell.
+	// Since the portal output might come from different agents (unlikely for a shell session but possible),
+	// or retransmissions, OrderedReader helps.
+	// However, OrderedReader is typically per-stream-id.
+	// If the portal sends us messages, they might have their own stream ID (from the agent side).
+	// We need to clarify if we use one reader for all incoming or map stream IDs.
+	// The requirement implies managing seq id reads.
+	// Let's assume we maintain a map of readers if we expect multiple streams,
+	// or just one if the portal traffic is single-stream.
+	// For a shell session, it's usually one stream from the agent.
+	readers := make(map[string]*stream.OrderedReader)
 
 	// State
 	var activePortalID int
@@ -226,15 +245,10 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// 1. Publish to Portal (if active)
 				if activePortalID != 0 {
 					topicIn := h.mux.TopicIn(activePortalID)
-					mote := &portalpb.Mote{
-						Payload: &portalpb.Mote_Shell{
-							Shell: &portalpb.ShellPayload{
-								Input:   req.Command,
-								ShellId: int64(shellID),
-								TaskId:  currentSeq,
-							},
-						},
-					}
+
+					// Use sequencer to create mote
+					mote := sequencer.NewShellMote(req.Command, int64(shellID), currentSeq)
+
 					if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
 						slog.ErrorContext(ctx, "failed to publish to portal", "error", err)
 						// Fallback to just DB? Or error? We continue to DB write.
@@ -274,28 +288,48 @@ func (h *ShellV2Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			checkPortal()
 
 		case mote := <-portalMsgCh:
-			// Process Portal Output
-			if shellPayload, ok := mote.Payload.(*portalpb.Mote_Shell); ok {
-				// Verify this is for the correct shell (optional, but good safety)
-				if shellPayload.Shell.ShellId != int64(shellID) {
-					continue
+			// Process Portal Output via OrderedReader
+
+			// Get or create reader for this stream
+			reader, ok := readers[mote.StreamId]
+			if !ok {
+				reader = stream.NewOrderedReader()
+				readers[mote.StreamId] = reader
+			}
+
+			// Process mote
+			orderedMotes, err := reader.Process(mote)
+			if err != nil {
+				slog.WarnContext(ctx, "OrderedReader error", "error", err, "stream_id", mote.StreamId)
+				continue
+			}
+
+			// Process ordered motes
+			if orderedMotes != nil {
+				for _, m := range orderedMotes {
+					if shellPayload, ok := m.Payload.(*portalpb.Mote_Shell); ok {
+						// Verify this is for the correct shell (optional, but good safety)
+						if shellPayload.Shell.ShellId != int64(shellID) {
+							continue
+						}
+
+						output := shellPayload.Shell.Output
+						taskID := shellPayload.Shell.TaskId
+
+						if output == "" {
+							continue
+						}
+
+						// Deduplicate
+						// Assumption: Portal sends CHUNKS.
+						// We just send them and increment our counter.
+						sendToWS(WebsocketMessage{
+							Type:    WebsocketMessageKindOutput,
+							Command: output,
+						})
+						sentBytes[taskID] += len(output)
+					}
 				}
-
-				output := shellPayload.Shell.Output
-				taskID := shellPayload.Shell.TaskId
-
-				if output == "" {
-					continue
-				}
-
-				// Deduplicate
-				// Assumption: Portal sends CHUNKS.
-				// We just send them and increment our counter.
-				sendToWS(WebsocketMessage{
-					Type:    WebsocketMessageKindOutput,
-					Command: output,
-				})
-				sentBytes[taskID] += len(output)
 			}
 
 		case <-dbPollTicker.C:

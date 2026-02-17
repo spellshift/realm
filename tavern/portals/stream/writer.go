@@ -8,16 +8,16 @@ import (
 // This allows OrderedWriter to wrap any gRPC stream method.
 type SenderFunc func(*portalpb.Mote) error
 
-// OrderedWriter uses a payloadSequencer to create motes that are then written to a destination.
+// OrderedWriter uses a PayloadSequencer to create motes that are then written to a destination.
 type OrderedWriter struct {
-	sequencer *payloadSequencer
+	sequencer *PayloadSequencer
 	sender    SenderFunc
 }
 
 // NewOrderedWriter creates a new OrderedWriter.
 func NewOrderedWriter(streamID string, sender SenderFunc) *OrderedWriter {
 	return &OrderedWriter{
-		sequencer: newPayloadSequencer(streamID),
+		sequencer: NewPayloadSequencer(streamID),
 		sender:    sender,
 	}
 }
