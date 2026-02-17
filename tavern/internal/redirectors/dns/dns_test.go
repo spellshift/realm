@@ -3,19 +3,28 @@ package dns
 import (
 	"context"
 	"encoding/base32"
+	"fmt"
 	"hash/crc32"
 	"net"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"realm.pub/tavern/internal/c2/dnspb"
 )
+
+func newTestRedirector() *Redirector {
+	cache, _ := lru.New[string, *Conversation](MaxActiveConversations)
+	return &Redirector{
+		conversations:       cache,
+		conversationTimeout: NormalConversationTimeout,
+	}
+}
 
 // TestParseListenAddr tests the ParseListenAddr function
 func TestParseListenAddr(t *testing.T) {
@@ -81,9 +90,8 @@ func TestParseListenAddr(t *testing.T) {
 
 // TestExtractSubdomain tests subdomain extraction from full domain names
 func TestExtractSubdomain(t *testing.T) {
-	r := &Redirector{
-		baseDomains: []string{"dnsc2.realm.pub", "foo.bar.com"},
-	}
+	r := newTestRedirector()
+	r.baseDomains = []string{"dnsc2.realm.pub", "foo.bar.com"}
 
 	tests := []struct {
 		name           string
@@ -140,7 +148,7 @@ func TestExtractSubdomain(t *testing.T) {
 
 // TestDecodePacket tests Base32 decoding and protobuf unmarshaling
 func TestDecodePacket(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	t.Run("valid INIT packet", func(t *testing.T) {
 		packet := &dnspb.DNSPacket{
@@ -232,7 +240,7 @@ func TestDecodePacket(t *testing.T) {
 
 // TestComputeAcksNacks tests the ACK range and NACK computation
 func TestComputeAcksNacks(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	tests := []struct {
 		name          string
@@ -320,7 +328,7 @@ func TestComputeAcksNacks(t *testing.T) {
 // TestHandleInitPacket tests INIT packet processing
 func TestHandleInitPacket(t *testing.T) {
 	t.Run("valid init packet", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		initPayload := &dnspb.InitPayload{
 			MethodCode:  "/c2.C2/ClaimTasks",
@@ -349,9 +357,8 @@ func TestHandleInitPacket(t *testing.T) {
 		assert.Equal(t, "conv1234", statusPacket.ConversationId)
 
 		// Verify conversation was created
-		val, ok := r.conversations.Load("conv1234")
+		conv, ok := r.conversations.Get("conv1234")
 		require.True(t, ok)
-		conv := val.(*Conversation)
 		assert.Equal(t, "/c2.C2/ClaimTasks", conv.MethodPath)
 		assert.Equal(t, uint32(5), conv.TotalChunks)
 		assert.Equal(t, uint32(0x12345678), conv.ExpectedCRC)
@@ -359,7 +366,7 @@ func TestHandleInitPacket(t *testing.T) {
 	})
 
 	t.Run("invalid init payload", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_INIT,
@@ -372,7 +379,7 @@ func TestHandleInitPacket(t *testing.T) {
 	})
 
 	t.Run("data size exceeds maximum", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		initPayload := &dnspb.InitPayload{
 			MethodCode:  "/c2.C2/ClaimTasks",
@@ -393,9 +400,12 @@ func TestHandleInitPacket(t *testing.T) {
 		assert.Contains(t, err.Error(), "exceeds maximum")
 	})
 
-	t.Run("max conversations reached", func(t *testing.T) {
+	t.Run("max conversations triggers LRU eviction", func(t *testing.T) {
+		// Create a small LRU to test eviction
+		cache, _ := lru.New[string, *Conversation](2)
 		r := &Redirector{
-			conversationCount: MaxActiveConversations,
+			conversations:       cache,
+			conversationTimeout: NormalConversationTimeout,
 		}
 
 		initPayload := &dnspb.InitPayload{
@@ -405,19 +415,40 @@ func TestHandleInitPacket(t *testing.T) {
 		payloadBytes, err := proto.Marshal(initPayload)
 		require.NoError(t, err)
 
-		packet := &dnspb.DNSPacket{
-			Type:           dnspb.PacketType_PACKET_TYPE_INIT,
-			ConversationId: "conv1234",
-			Data:           payloadBytes,
+		// Fill the LRU
+		for i := 0; i < 2; i++ {
+			packet := &dnspb.DNSPacket{
+				Type:           dnspb.PacketType_PACKET_TYPE_INIT,
+				ConversationId: fmt.Sprintf("conv%d", i),
+				Data:           payloadBytes,
+			}
+			_, err = r.handleInitPacket(packet)
+			require.NoError(t, err)
 		}
 
+		assert.Equal(t, 2, r.conversations.Len())
+
+		// Third conversation should evict the oldest
+		packet := &dnspb.DNSPacket{
+			Type:           dnspb.PacketType_PACKET_TYPE_INIT,
+			ConversationId: "conv2",
+			Data:           payloadBytes,
+		}
 		_, err = r.handleInitPacket(packet)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "max active conversations")
+		require.NoError(t, err)
+
+		// LRU should still be at capacity (oldest evicted)
+		assert.Equal(t, 2, r.conversations.Len())
+		// conv0 should have been evicted
+		_, ok := r.conversations.Get("conv0")
+		assert.False(t, ok, "oldest conversation should be evicted")
+		// conv2 (newest) should exist
+		_, ok = r.conversations.Get("conv2")
+		assert.True(t, ok)
 	})
 
-	t.Run("duplicate INIT returns status without counter leak", func(t *testing.T) {
-		r := &Redirector{}
+	t.Run("duplicate INIT returns status without leaking state", func(t *testing.T) {
+		r := newTestRedirector()
 
 		initPayload := &dnspb.InitPayload{
 			MethodCode:  "/c2.C2/ClaimTasks",
@@ -438,7 +469,7 @@ func TestHandleInitPacket(t *testing.T) {
 		resp1, err := r.handleInitPacket(packet)
 		require.NoError(t, err)
 		require.NotNil(t, resp1)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&r.conversationCount))
+		assert.Equal(t, 1, r.conversations.Len())
 
 		// Verify first response is STATUS
 		var status1 dnspb.DNSPacket
@@ -452,7 +483,7 @@ func TestHandleInitPacket(t *testing.T) {
 		require.NotNil(t, resp2)
 
 		// Counter should NOT increment (no leak)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&r.conversationCount), "duplicate INIT should not increment counter")
+		assert.Equal(t, 1, r.conversations.Len(), "duplicate INIT should not create new conversation")
 
 		// Verify duplicate response is also STATUS
 		var status2 dnspb.DNSPacket
@@ -462,15 +493,14 @@ func TestHandleInitPacket(t *testing.T) {
 		assert.Equal(t, "dupinit1234", status2.ConversationId)
 
 		// Conversation should still exist and be unchanged
-		val, ok := r.conversations.Load("dupinit1234")
+		conv, ok := r.conversations.Get("dupinit1234")
 		require.True(t, ok)
-		conv := val.(*Conversation)
 		assert.Equal(t, "/c2.C2/ClaimTasks", conv.MethodPath)
 		assert.Equal(t, uint32(3), conv.TotalChunks)
 	})
 
 	t.Run("concurrent duplicate INITs from resolvers", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		initPayload := &dnspb.InitPayload{
 			MethodCode:  "/c2.C2/ClaimTasks",
@@ -499,11 +529,11 @@ func TestHandleInitPacket(t *testing.T) {
 		}
 		wg.Wait()
 
-		// Counter should be exactly 1 (no leaks)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&r.conversationCount), "concurrent INITs should not cause counter leak")
+		// Should have exactly 1 conversation (no duplicates)
+		assert.Equal(t, 1, r.conversations.Len(), "concurrent INITs should not create duplicates")
 
 		// Conversation should exist
-		_, ok := r.conversations.Load("concurrent-init")
+		_, ok := r.conversations.Get("concurrent-init")
 		assert.True(t, ok)
 	})
 }
@@ -511,7 +541,7 @@ func TestHandleInitPacket(t *testing.T) {
 // TestHandleFetchPacket tests FETCH packet processing
 func TestHandleFetchPacket(t *testing.T) {
 	t.Run("fetch single response", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		responseData := []byte("test response data")
 
 		conv := &Conversation{
@@ -519,7 +549,7 @@ func TestHandleFetchPacket(t *testing.T) {
 			ResponseData: responseData,
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("conv1234", conv)
+		r.conversations.Add("conv1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
@@ -532,7 +562,7 @@ func TestHandleFetchPacket(t *testing.T) {
 	})
 
 	t.Run("fetch chunked response metadata", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		responseData := []byte("full response")
 		responseCRC := crc32.ChecksumIEEE(responseData)
 
@@ -543,7 +573,7 @@ func TestHandleFetchPacket(t *testing.T) {
 			ResponseCRC:    responseCRC,
 			LastActivity:   time.Now(),
 		}
-		r.conversations.Store("conv1234", conv)
+		r.conversations.Add("conv1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
@@ -562,7 +592,7 @@ func TestHandleFetchPacket(t *testing.T) {
 	})
 
 	t.Run("fetch specific chunk", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:             "conv1234",
@@ -570,7 +600,7 @@ func TestHandleFetchPacket(t *testing.T) {
 			ResponseChunks: [][]byte{[]byte("chunk0"), []byte("chunk1"), []byte("chunk2")},
 			LastActivity:   time.Now(),
 		}
-		r.conversations.Store("conv1234", conv)
+		r.conversations.Add("conv1234", conv)
 
 		fetchPayload := &dnspb.FetchPayload{ChunkIndex: 2} // 1-indexed
 		payloadBytes, err := proto.Marshal(fetchPayload)
@@ -588,7 +618,7 @@ func TestHandleFetchPacket(t *testing.T) {
 	})
 
 	t.Run("fetch unknown conversation", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
@@ -600,65 +630,47 @@ func TestHandleFetchPacket(t *testing.T) {
 		assert.Contains(t, err.Error(), "conversation not found")
 	})
 
-	t.Run("fetch on failed conversation returns empty response", func(t *testing.T) {
-		r := &Redirector{}
+	t.Run("fetch on failed conversation returns not found", func(t *testing.T) {
+		r := newTestRedirector()
 
-		conv := &Conversation{
-			ID:           "failconv",
-			ResponseData: []byte{},
-			Failed:       true,
-			LastActivity: time.Now(),
-		}
-		r.conversations.Store("failconv", conv)
-
+		// Failed conversations are immediately removed from the cache,
+		// so a FETCH should get "conversation not found"
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
 			ConversationId: "failconv",
 		}
 
-		data, err := r.handleFetchPacket(packet)
-		require.NoError(t, err)
-		assert.Equal(t, []byte{}, data)
+		_, err := r.handleFetchPacket(packet)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "conversation not found")
 	})
 
-	t.Run("fetch on failed conversation does not spam errors", func(t *testing.T) {
-		r := &Redirector{}
+	t.Run("fetch after failure returns not found consistently", func(t *testing.T) {
+		r := newTestRedirector()
 
-		conv := &Conversation{
-			ID:           "failconv2",
-			ResponseData: []byte{},
-			Failed:       true,
-			LastActivity: time.Now(),
-		}
-		r.conversations.Store("failconv2", conv)
-
-		// Multiple FETCH requests should all succeed (no error) instead of
-		// returning "conversation not found" after deletion
+		// Multiple FETCH requests for a removed conversation should all
+		// consistently return "conversation not found"
 		for i := 0; i < 10; i++ {
 			packet := &dnspb.DNSPacket{
 				Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
 				ConversationId: "failconv2",
 			}
 
-			data, err := r.handleFetchPacket(packet)
-			require.NoError(t, err, "FETCH attempt %d should not error", i)
-			assert.Equal(t, []byte{}, data)
+			_, err := r.handleFetchPacket(packet)
+			assert.Error(t, err, "FETCH attempt %d should error with not found", i)
+			assert.Contains(t, err.Error(), "conversation not found")
 		}
-
-		// Conversation should still exist in the map (not deleted)
-		_, ok := r.conversations.Load("failconv2")
-		assert.True(t, ok, "failed conversation should remain in map for cleanup")
 	})
 
 	t.Run("fetch with no response ready returns empty (upstream in progress)", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:           "conv1234",
 			ResponseData: nil, // upstream call still in progress
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("conv1234", conv)
+		r.conversations.Add("conv1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_FETCH,
@@ -672,7 +684,7 @@ func TestHandleFetchPacket(t *testing.T) {
 	})
 
 	t.Run("fetch chunk out of bounds", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:             "conv1234",
@@ -680,7 +692,7 @@ func TestHandleFetchPacket(t *testing.T) {
 			ResponseChunks: [][]byte{[]byte("chunk0")},
 			LastActivity:   time.Now(),
 		}
-		r.conversations.Store("conv1234", conv)
+		r.conversations.Add("conv1234", conv)
 
 		fetchPayload := &dnspb.FetchPayload{ChunkIndex: 10} // Out of bounds
 		payloadBytes, err := proto.Marshal(fetchPayload)
@@ -701,7 +713,7 @@ func TestHandleFetchPacket(t *testing.T) {
 // TestHandleCompletePacket tests COMPLETE packet processing
 func TestHandleCompletePacket(t *testing.T) {
 	t.Run("successful complete cleans up conversation", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:           "complete1234",
@@ -709,8 +721,7 @@ func TestHandleCompletePacket(t *testing.T) {
 			ResponseData: []byte("response"),
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("complete1234", conv)
-		atomic.StoreInt32(&r.conversationCount, 1)
+		r.conversations.Add("complete1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
@@ -729,15 +740,12 @@ func TestHandleCompletePacket(t *testing.T) {
 		assert.Equal(t, "complete1234", statusPacket.ConversationId)
 
 		// Verify conversation was removed
-		_, ok := r.conversations.Load("complete1234")
+		_, ok := r.conversations.Get("complete1234")
 		assert.False(t, ok, "conversation should be removed after COMPLETE")
-
-		// Verify counter decremented
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.conversationCount))
 	})
 
 	t.Run("duplicate COMPLETE returns success idempotently", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:           "dupcomp1234",
@@ -745,8 +753,7 @@ func TestHandleCompletePacket(t *testing.T) {
 			ResponseData: []byte("response"),
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("dupcomp1234", conv)
-		atomic.StoreInt32(&r.conversationCount, 1)
+		r.conversations.Add("dupcomp1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
@@ -757,19 +764,15 @@ func TestHandleCompletePacket(t *testing.T) {
 		resp1, err := r.handleCompletePacket(packet)
 		require.NoError(t, err)
 		require.NotNil(t, resp1)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.conversationCount))
 
 		// Verify conversation removed
-		_, ok := r.conversations.Load("dupcomp1234")
+		_, ok := r.conversations.Get("dupcomp1234")
 		assert.False(t, ok)
 
 		// Second COMPLETE (duplicate from resolver) should succeed, not error
 		resp2, err := r.handleCompletePacket(packet)
 		require.NoError(t, err, "duplicate COMPLETE should not error")
 		require.NotNil(t, resp2)
-
-		// Counter should still be 0 (no double-decrement)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.conversationCount), "duplicate COMPLETE should not double-decrement")
 
 		// Verify response is also STATUS
 		var status dnspb.DNSPacket
@@ -779,7 +782,7 @@ func TestHandleCompletePacket(t *testing.T) {
 	})
 
 	t.Run("COMPLETE for never-existed conversation returns success", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
@@ -795,13 +798,10 @@ func TestHandleCompletePacket(t *testing.T) {
 		err = proto.Unmarshal(responseData, &statusPacket)
 		require.NoError(t, err)
 		assert.Equal(t, dnspb.PacketType_PACKET_TYPE_STATUS, statusPacket.Type)
-
-		// Counter should remain unchanged
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.conversationCount))
 	})
 
 	t.Run("concurrent COMPLETEs from resolvers", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:           "concurrent-complete",
@@ -809,8 +809,7 @@ func TestHandleCompletePacket(t *testing.T) {
 			ResponseData: []byte("response"),
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("concurrent-complete", conv)
-		atomic.StoreInt32(&r.conversationCount, 1)
+		r.conversations.Add("concurrent-complete", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
@@ -829,18 +828,15 @@ func TestHandleCompletePacket(t *testing.T) {
 		}
 		wg.Wait()
 
-		// Counter should be exactly 0 (no negative values from double-decrement)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.conversationCount), "concurrent COMPLETEs should not cause counter underflow")
-
 		// Conversation should be removed
-		_, ok := r.conversations.Load("concurrent-complete")
+		_, ok := r.conversations.Get("concurrent-complete")
 		assert.False(t, ok)
 	})
 }
 
 // TestParseDomainNameAndType tests DNS query parsing
 func TestParseDomainNameAndType(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	tests := []struct {
 		name         string
@@ -928,60 +924,57 @@ func TestParseDomainNameAndType(t *testing.T) {
 
 // TestConversationCleanup tests cleanup of stale conversations
 func TestConversationCleanup(t *testing.T) {
-	r := &Redirector{
-		conversationTimeout: 15 * time.Minute,
-	}
+	r := newTestRedirector()
 
 	// Create stale conversation
 	staleConv := &Conversation{
 		ID:           "stale",
 		LastActivity: time.Now().Add(-20 * time.Minute),
 	}
-	r.conversations.Store("stale", staleConv)
-	atomic.StoreInt32(&r.conversationCount, 1)
+	r.conversations.Add("stale", staleConv)
 
 	// Create fresh conversation
 	freshConv := &Conversation{
 		ID:           "fresh",
 		LastActivity: time.Now(),
 	}
-	r.conversations.Store("fresh", freshConv)
-	atomic.StoreInt32(&r.conversationCount, 2)
+	r.conversations.Add("fresh", freshConv)
 
 	// Run cleanup (mirrors cleanupConversations logic)
 	now := time.Now()
-	r.conversations.Range(func(key, value any) bool {
-		conv := value.(*Conversation)
-		conv.mu.Lock()
-		timeout := r.conversationTimeout
-		if conv.ResponseServed || conv.Failed {
-			timeout = ServedConversationTimeout
+	for _, key := range r.conversations.Keys() {
+		conv, ok := r.conversations.Peek(key)
+		if !ok {
+			continue
 		}
-		if now.Sub(conv.LastActivity) > timeout {
-			r.conversations.Delete(key)
-			atomic.AddInt32(&r.conversationCount, -1)
+		conv.mu.Lock()
+		shouldDelete := false
+		if conv.ResponseServed {
+			shouldDelete = now.Sub(conv.LastActivity) > ServedConversationTimeout
+		} else {
+			shouldDelete = now.Sub(conv.LastActivity) > r.conversationTimeout
+		}
+		if shouldDelete {
+			r.conversations.Remove(key)
 		}
 		conv.mu.Unlock()
-		return true
-	})
+	}
 
 	// Verify stale was removed
-	_, ok := r.conversations.Load("stale")
+	_, ok := r.conversations.Get("stale")
 	assert.False(t, ok, "stale conversation should be removed")
 
 	// Verify fresh remains
-	_, ok = r.conversations.Load("fresh")
+	_, ok = r.conversations.Get("fresh")
 	assert.True(t, ok, "fresh conversation should remain")
 
-	assert.Equal(t, int32(1), atomic.LoadInt32(&r.conversationCount))
+	assert.Equal(t, 1, r.conversations.Len())
 }
 
 // TestServedConversationCleanup tests that conversations with ResponseServed
-// or Failed flags are cleaned up with the shorter ServedConversationTimeout
+// flag are cleaned up with the shorter ServedConversationTimeout.
 func TestServedConversationCleanup(t *testing.T) {
-	r := &Redirector{
-		conversationTimeout: 15 * time.Minute,
-	}
+	r := newTestRedirector()
 
 	// Served conversation: response was delivered 3 minutes ago (> 2 min served timeout)
 	servedConv := &Conversation{
@@ -989,59 +982,49 @@ func TestServedConversationCleanup(t *testing.T) {
 		ResponseServed: true,
 		LastActivity:   time.Now().Add(-3 * time.Minute),
 	}
-	r.conversations.Store("served", servedConv)
+	r.conversations.Add("served", servedConv)
 
-	// Failed conversation: failed 3 minutes ago (> 2 min served timeout)
-	failedConv := &Conversation{
-		ID:           "failed",
-		Failed:       true,
-		LastActivity: time.Now().Add(-3 * time.Minute),
-	}
-	r.conversations.Store("failed", failedConv)
-
-	// In-progress conversation: 3 minutes old but not served/failed (< 15 min normal timeout)
+	// In-progress conversation: 3 minutes old but not served (< 15 min normal timeout)
 	activeConv := &Conversation{
 		ID:           "active",
 		LastActivity: time.Now().Add(-3 * time.Minute),
 	}
-	r.conversations.Store("active", activeConv)
-
-	atomic.StoreInt32(&r.conversationCount, 3)
+	r.conversations.Add("active", activeConv)
 
 	// Run cleanup
 	now := time.Now()
-	r.conversations.Range(func(key, value any) bool {
-		conv := value.(*Conversation)
-		conv.mu.Lock()
-		timeout := r.conversationTimeout
-		if conv.ResponseServed || conv.Failed {
-			timeout = ServedConversationTimeout
+	for _, key := range r.conversations.Keys() {
+		conv, ok := r.conversations.Peek(key)
+		if !ok {
+			continue
 		}
-		if now.Sub(conv.LastActivity) > timeout {
-			r.conversations.Delete(key)
-			atomic.AddInt32(&r.conversationCount, -1)
+		conv.mu.Lock()
+		shouldDelete := false
+		if conv.ResponseServed {
+			shouldDelete = now.Sub(conv.LastActivity) > ServedConversationTimeout
+		} else {
+			shouldDelete = now.Sub(conv.LastActivity) > r.conversationTimeout
+		}
+		if shouldDelete {
+			r.conversations.Remove(key)
 		}
 		conv.mu.Unlock()
-		return true
-	})
+	}
 
-	// Served and failed conversations should be cleaned (3 min > 2 min served timeout)
-	_, ok := r.conversations.Load("served")
+	// Served conversation should be cleaned (3 min > 2 min served timeout)
+	_, ok := r.conversations.Get("served")
 	assert.False(t, ok, "served conversation should be cleaned up with shorter timeout")
 
-	_, ok = r.conversations.Load("failed")
-	assert.False(t, ok, "failed conversation should be cleaned up with shorter timeout")
-
 	// Active conversation should remain (3 min < 15 min normal timeout)
-	_, ok = r.conversations.Load("active")
+	_, ok = r.conversations.Get("active")
 	assert.True(t, ok, "in-progress conversation should remain")
 
-	assert.Equal(t, int32(1), atomic.LoadInt32(&r.conversationCount))
+	assert.Equal(t, 1, r.conversations.Len())
 }
 
 // TestConcurrentConversationAccess tests thread safety of conversation handling
 func TestConcurrentConversationAccess(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	initPayload := &dnspb.InitPayload{
 		MethodCode:  "/c2.C2/ClaimTasks",
@@ -1068,11 +1051,10 @@ func TestConcurrentConversationAccess(t *testing.T) {
 		go func(seq uint32) {
 			defer wg.Done()
 
-			val, ok := r.conversations.Load("concurrent")
+			conv, ok := r.conversations.Get("concurrent")
 			if !ok {
 				return
 			}
-			conv := val.(*Conversation)
 			conv.mu.Lock()
 			conv.Chunks[seq] = []byte{byte(seq)}
 			conv.mu.Unlock()
@@ -1081,15 +1063,14 @@ func TestConcurrentConversationAccess(t *testing.T) {
 	wg.Wait()
 
 	// Verify all chunks stored
-	val, ok := r.conversations.Load("concurrent")
+	conv, ok := r.conversations.Get("concurrent")
 	require.True(t, ok)
-	conv := val.(*Conversation)
 	assert.Len(t, conv.Chunks, 100)
 }
 
 // TestBuildDNSResponse tests DNS response packet construction
 func TestBuildDNSResponse(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	// Create a mock UDP connection for testing
 	serverAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
@@ -1127,7 +1108,7 @@ func TestBuildDNSResponse(t *testing.T) {
 // TestHandleDataPacket tests DATA packet processing and chunk storage
 func TestHandleDataPacket(t *testing.T) {
 	t.Run("store single chunk", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		ctx := context.Background()
 
 		// Create conversation first with INIT - set TotalChunks > 1 to avoid completion
@@ -1167,15 +1148,14 @@ func TestHandleDataPacket(t *testing.T) {
 		assert.Equal(t, "data1234", statusPacket.ConversationId)
 
 		// Verify chunk was stored
-		val, ok := r.conversations.Load("data1234")
+		conv, ok := r.conversations.Get("data1234")
 		require.True(t, ok)
-		conv := val.(*Conversation)
 		assert.Len(t, conv.Chunks, 1)
 		assert.Equal(t, []byte{0x01}, conv.Chunks[1])
 	})
 
 	t.Run("store multiple chunks with gaps", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		ctx := context.Background()
 
 		// Create conversation
@@ -1219,9 +1199,8 @@ func TestHandleDataPacket(t *testing.T) {
 		}
 
 		// Verify chunks stored
-		val, ok := r.conversations.Load("gaps1234")
+		conv, ok := r.conversations.Get("gaps1234")
 		require.True(t, ok)
-		conv := val.(*Conversation)
 		assert.Len(t, conv.Chunks, 3)
 		assert.Equal(t, []byte{1}, conv.Chunks[1])
 		assert.Equal(t, []byte{3}, conv.Chunks[3])
@@ -1230,7 +1209,7 @@ func TestHandleDataPacket(t *testing.T) {
 	})
 
 	t.Run("unknown conversation", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		ctx := context.Background()
 
 		dataPacket := &dnspb.DNSPacket{
@@ -1246,7 +1225,7 @@ func TestHandleDataPacket(t *testing.T) {
 	})
 
 	t.Run("sequence out of bounds", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		ctx := context.Background()
 
 		// Create conversation
@@ -1280,7 +1259,7 @@ func TestHandleDataPacket(t *testing.T) {
 	})
 
 	t.Run("short-circuit for completed conversation", func(t *testing.T) {
-		r := &Redirector{}
+		r := newTestRedirector()
 		ctx := context.Background()
 
 		// Create a conversation that is already completed
@@ -1295,7 +1274,7 @@ func TestHandleDataPacket(t *testing.T) {
 			},
 			LastActivity: time.Now(),
 		}
-		r.conversations.Store("completed1", conv)
+		r.conversations.Add("completed1", conv)
 
 		// Send a duplicate DATA to completed conversation
 		dataPacket := &dnspb.DNSPacket{
@@ -1322,19 +1301,12 @@ func TestHandleDataPacket(t *testing.T) {
 		assert.Equal(t, []byte{0x01}, conv.Chunks[1])
 	})
 
-	t.Run("short-circuit for failed conversation", func(t *testing.T) {
-		r := &Redirector{}
+	t.Run("data packet for removed conversation returns not found", func(t *testing.T) {
+		r := newTestRedirector()
 		ctx := context.Background()
 
-		conv := &Conversation{
-			ID:           "failed1",
-			TotalChunks:  2,
-			Failed:       true,
-			Chunks:       map[uint32][]byte{1: nil, 2: nil},
-			LastActivity: time.Now(),
-		}
-		r.conversations.Store("failed1", conv)
-
+		// Failed conversations are immediately removed from the cache,
+		// so a DATA packet should get "conversation not found"
 		dataPacket := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_DATA,
 			ConversationId: "failed1",
@@ -1342,16 +1314,9 @@ func TestHandleDataPacket(t *testing.T) {
 			Data:           []byte{0x01},
 		}
 
-		statusData, err := r.handleDataPacket(ctx, nil, dataPacket, txtRecordType)
-		require.NoError(t, err)
-
-		var statusPacket dnspb.DNSPacket
-		err = proto.Unmarshal(statusData, &statusPacket)
-		require.NoError(t, err)
-		assert.Equal(t, dnspb.PacketType_PACKET_TYPE_STATUS, statusPacket.Type)
-		require.Len(t, statusPacket.Acks, 1)
-		assert.Equal(t, uint32(1), statusPacket.Acks[0].StartSeq)
-		assert.Equal(t, uint32(2), statusPacket.Acks[0].EndSeq)
+		_, err := r.handleDataPacket(ctx, nil, dataPacket, txtRecordType)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "conversation not found")
 	})
 }
 
@@ -1419,7 +1384,7 @@ func TestProcessCompletedConversation(t *testing.T) {
 
 // TestConversationNotFoundError verifies the error message for missing conversations
 func TestConversationNotFoundError(t *testing.T) {
-	r := &Redirector{}
+	r := newTestRedirector()
 
 	t.Run("DATA returns conversation not found error", func(t *testing.T) {
 		packet := &dnspb.DNSPacket{
@@ -1448,67 +1413,66 @@ func TestConversationNotFoundError(t *testing.T) {
 	})
 }
 
-// TestActiveHandlersCounter verifies atomic counter operations work correctly
-func TestActiveHandlersCounter(t *testing.T) {
-	t.Run("starts at zero", func(t *testing.T) {
-		r := &Redirector{}
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.activeHandlers))
-	})
-
-	t.Run("concurrent increment and decrement", func(t *testing.T) {
-		r := &Redirector{}
-
-		// Simulate concurrent handler goroutines incrementing and decrementing
-		var wg sync.WaitGroup
-		iterations := 100
-
-		for i := 0; i < iterations; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				// Simulate handler lifecycle: increment at start, decrement at end
-				atomic.AddInt32(&r.activeHandlers, 1)
-				time.Sleep(time.Microsecond) // Small delay to increase contention
-				atomic.AddInt32(&r.activeHandlers, -1)
-			}()
+// TestLRUEvictionBehavior verifies the LRU cache evicts oldest conversations when full
+func TestLRUEvictionBehavior(t *testing.T) {
+	t.Run("evicts oldest when at capacity", func(t *testing.T) {
+		cache, _ := lru.New[string, *Conversation](3)
+		r := &Redirector{
+			conversations:       cache,
+			conversationTimeout: NormalConversationTimeout,
 		}
 
-		wg.Wait()
+		// Add 3 conversations to fill capacity
+		for i := 0; i < 3; i++ {
+			r.conversations.Add(fmt.Sprintf("conv%d", i), &Conversation{
+				ID:           fmt.Sprintf("conv%d", i),
+				LastActivity: time.Now(),
+			})
+		}
+		assert.Equal(t, 3, r.conversations.Len())
 
-		// After all handlers complete, counter should be back to zero
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.activeHandlers), "counter should return to zero after all handlers complete")
+		// Adding a 4th should evict the oldest (conv0)
+		r.conversations.Add("conv3", &Conversation{
+			ID:           "conv3",
+			LastActivity: time.Now(),
+		})
+		assert.Equal(t, 3, r.conversations.Len())
+
+		_, ok := r.conversations.Get("conv0")
+		assert.False(t, ok, "oldest conversation should be evicted")
+
+		_, ok = r.conversations.Get("conv3")
+		assert.True(t, ok, "newest conversation should exist")
 	})
 
-	t.Run("peak tracking under load", func(t *testing.T) {
-		r := &Redirector{}
-
-		var peak int32
-		var peakMu sync.Mutex
-		var wg sync.WaitGroup
-
-		// Start handlers that overlap in time
-		for i := 0; i < 50; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				current := atomic.AddInt32(&r.activeHandlers, 1)
-
-				peakMu.Lock()
-				if current > peak {
-					peak = current
-				}
-				peakMu.Unlock()
-
-				time.Sleep(time.Millisecond)
-				atomic.AddInt32(&r.activeHandlers, -1)
-			}()
+	t.Run("Get refreshes recency", func(t *testing.T) {
+		cache, _ := lru.New[string, *Conversation](3)
+		r := &Redirector{
+			conversations:       cache,
+			conversationTimeout: NormalConversationTimeout,
 		}
 
-		wg.Wait()
+		// Add 3 conversations
+		for i := 0; i < 3; i++ {
+			r.conversations.Add(fmt.Sprintf("conv%d", i), &Conversation{
+				ID:           fmt.Sprintf("conv%d", i),
+				LastActivity: time.Now(),
+			})
+		}
 
-		// Peak should be > 1 (some concurrency achieved)
-		assert.Greater(t, peak, int32(1), "peak should show concurrent handlers")
-		// Final value should be zero
-		assert.Equal(t, int32(0), atomic.LoadInt32(&r.activeHandlers))
+		// Access conv0 to refresh its recency
+		r.conversations.Get("conv0")
+
+		// Adding conv3 should evict conv1 (now the oldest) instead of conv0
+		r.conversations.Add("conv3", &Conversation{
+			ID:           "conv3",
+			LastActivity: time.Now(),
+		})
+
+		_, ok := r.conversations.Get("conv0")
+		assert.True(t, ok, "conv0 should survive due to recent Get")
+
+		_, ok = r.conversations.Get("conv1")
+		assert.False(t, ok, "conv1 should be evicted as the oldest")
 	})
 }
