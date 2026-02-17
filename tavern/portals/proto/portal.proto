@@ -30,6 +30,8 @@ message UDPPayload {
 message ShellPayload {
     string input = 1;
     int64 shell_id = 2;
+    string output = 3;
+    uint64 task_id = 4;
 }
 
 message Mote {
