@@ -6592,6 +6592,42 @@ type ShellTaskWhereInput struct {
 	SequenceIDLT    *uint64  `json:"sequenceIDLT,omitempty"`
 	SequenceIDLTE   *uint64  `json:"sequenceIDLTE,omitempty"`
 
+	// "claimed_at" field predicates.
+	ClaimedAt       *time.Time  `json:"claimedAt,omitempty"`
+	ClaimedAtNEQ    *time.Time  `json:"claimedAtNEQ,omitempty"`
+	ClaimedAtIn     []time.Time `json:"claimedAtIn,omitempty"`
+	ClaimedAtNotIn  []time.Time `json:"claimedAtNotIn,omitempty"`
+	ClaimedAtGT     *time.Time  `json:"claimedAtGT,omitempty"`
+	ClaimedAtGTE    *time.Time  `json:"claimedAtGTE,omitempty"`
+	ClaimedAtLT     *time.Time  `json:"claimedAtLT,omitempty"`
+	ClaimedAtLTE    *time.Time  `json:"claimedAtLTE,omitempty"`
+	ClaimedAtIsNil  bool        `json:"claimedAtIsNil,omitempty"`
+	ClaimedAtNotNil bool        `json:"claimedAtNotNil,omitempty"`
+
+	// "exec_started_at" field predicates.
+	ExecStartedAt       *time.Time  `json:"execStartedAt,omitempty"`
+	ExecStartedAtNEQ    *time.Time  `json:"execStartedAtNEQ,omitempty"`
+	ExecStartedAtIn     []time.Time `json:"execStartedAtIn,omitempty"`
+	ExecStartedAtNotIn  []time.Time `json:"execStartedAtNotIn,omitempty"`
+	ExecStartedAtGT     *time.Time  `json:"execStartedAtGT,omitempty"`
+	ExecStartedAtGTE    *time.Time  `json:"execStartedAtGTE,omitempty"`
+	ExecStartedAtLT     *time.Time  `json:"execStartedAtLT,omitempty"`
+	ExecStartedAtLTE    *time.Time  `json:"execStartedAtLTE,omitempty"`
+	ExecStartedAtIsNil  bool        `json:"execStartedAtIsNil,omitempty"`
+	ExecStartedAtNotNil bool        `json:"execStartedAtNotNil,omitempty"`
+
+	// "exec_finished_at" field predicates.
+	ExecFinishedAt       *time.Time  `json:"execFinishedAt,omitempty"`
+	ExecFinishedAtNEQ    *time.Time  `json:"execFinishedAtNEQ,omitempty"`
+	ExecFinishedAtIn     []time.Time `json:"execFinishedAtIn,omitempty"`
+	ExecFinishedAtNotIn  []time.Time `json:"execFinishedAtNotIn,omitempty"`
+	ExecFinishedAtGT     *time.Time  `json:"execFinishedAtGT,omitempty"`
+	ExecFinishedAtGTE    *time.Time  `json:"execFinishedAtGTE,omitempty"`
+	ExecFinishedAtLT     *time.Time  `json:"execFinishedAtLT,omitempty"`
+	ExecFinishedAtLTE    *time.Time  `json:"execFinishedAtLTE,omitempty"`
+	ExecFinishedAtIsNil  bool        `json:"execFinishedAtIsNil,omitempty"`
+	ExecFinishedAtNotNil bool        `json:"execFinishedAtNotNil,omitempty"`
+
 	// "shell" edge predicates.
 	HasShell     *bool              `json:"hasShell,omitempty"`
 	HasShellWith []*ShellWhereInput `json:"hasShellWith,omitempty"`
@@ -6935,6 +6971,96 @@ func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
 	}
 	if i.SequenceIDLTE != nil {
 		predicates = append(predicates, shelltask.SequenceIDLTE(*i.SequenceIDLTE))
+	}
+	if i.ClaimedAt != nil {
+		predicates = append(predicates, shelltask.ClaimedAtEQ(*i.ClaimedAt))
+	}
+	if i.ClaimedAtNEQ != nil {
+		predicates = append(predicates, shelltask.ClaimedAtNEQ(*i.ClaimedAtNEQ))
+	}
+	if len(i.ClaimedAtIn) > 0 {
+		predicates = append(predicates, shelltask.ClaimedAtIn(i.ClaimedAtIn...))
+	}
+	if len(i.ClaimedAtNotIn) > 0 {
+		predicates = append(predicates, shelltask.ClaimedAtNotIn(i.ClaimedAtNotIn...))
+	}
+	if i.ClaimedAtGT != nil {
+		predicates = append(predicates, shelltask.ClaimedAtGT(*i.ClaimedAtGT))
+	}
+	if i.ClaimedAtGTE != nil {
+		predicates = append(predicates, shelltask.ClaimedAtGTE(*i.ClaimedAtGTE))
+	}
+	if i.ClaimedAtLT != nil {
+		predicates = append(predicates, shelltask.ClaimedAtLT(*i.ClaimedAtLT))
+	}
+	if i.ClaimedAtLTE != nil {
+		predicates = append(predicates, shelltask.ClaimedAtLTE(*i.ClaimedAtLTE))
+	}
+	if i.ClaimedAtIsNil {
+		predicates = append(predicates, shelltask.ClaimedAtIsNil())
+	}
+	if i.ClaimedAtNotNil {
+		predicates = append(predicates, shelltask.ClaimedAtNotNil())
+	}
+	if i.ExecStartedAt != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtEQ(*i.ExecStartedAt))
+	}
+	if i.ExecStartedAtNEQ != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtNEQ(*i.ExecStartedAtNEQ))
+	}
+	if len(i.ExecStartedAtIn) > 0 {
+		predicates = append(predicates, shelltask.ExecStartedAtIn(i.ExecStartedAtIn...))
+	}
+	if len(i.ExecStartedAtNotIn) > 0 {
+		predicates = append(predicates, shelltask.ExecStartedAtNotIn(i.ExecStartedAtNotIn...))
+	}
+	if i.ExecStartedAtGT != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtGT(*i.ExecStartedAtGT))
+	}
+	if i.ExecStartedAtGTE != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtGTE(*i.ExecStartedAtGTE))
+	}
+	if i.ExecStartedAtLT != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtLT(*i.ExecStartedAtLT))
+	}
+	if i.ExecStartedAtLTE != nil {
+		predicates = append(predicates, shelltask.ExecStartedAtLTE(*i.ExecStartedAtLTE))
+	}
+	if i.ExecStartedAtIsNil {
+		predicates = append(predicates, shelltask.ExecStartedAtIsNil())
+	}
+	if i.ExecStartedAtNotNil {
+		predicates = append(predicates, shelltask.ExecStartedAtNotNil())
+	}
+	if i.ExecFinishedAt != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtEQ(*i.ExecFinishedAt))
+	}
+	if i.ExecFinishedAtNEQ != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtNEQ(*i.ExecFinishedAtNEQ))
+	}
+	if len(i.ExecFinishedAtIn) > 0 {
+		predicates = append(predicates, shelltask.ExecFinishedAtIn(i.ExecFinishedAtIn...))
+	}
+	if len(i.ExecFinishedAtNotIn) > 0 {
+		predicates = append(predicates, shelltask.ExecFinishedAtNotIn(i.ExecFinishedAtNotIn...))
+	}
+	if i.ExecFinishedAtGT != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtGT(*i.ExecFinishedAtGT))
+	}
+	if i.ExecFinishedAtGTE != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtGTE(*i.ExecFinishedAtGTE))
+	}
+	if i.ExecFinishedAtLT != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtLT(*i.ExecFinishedAtLT))
+	}
+	if i.ExecFinishedAtLTE != nil {
+		predicates = append(predicates, shelltask.ExecFinishedAtLTE(*i.ExecFinishedAtLTE))
+	}
+	if i.ExecFinishedAtIsNil {
+		predicates = append(predicates, shelltask.ExecFinishedAtIsNil())
+	}
+	if i.ExecFinishedAtNotNil {
+		predicates = append(predicates, shelltask.ExecFinishedAtNotNil())
 	}
 
 	if i.HasShell != nil {

@@ -253,6 +253,7 @@ fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
             exec_finished_at: None,
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -282,6 +283,7 @@ fn spawn_output_consumer(
                     exec_finished_at: None,
                 }),
                 context: Some(task_context.clone().into()),
+                shell_task_output: None,
             }) {
                 Ok(_) => {}
                 Err(_e) => {
@@ -304,6 +306,7 @@ fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) 
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -329,6 +332,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             });
         }
         Err(e) => {
@@ -344,6 +348,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             }) {
                 Ok(_) => {}
                 Err(_e) => {

@@ -73,6 +73,12 @@ message Task {
     string jwt = 4;
 }
 
+message ShellTask {
+    int64 id = 1;
+    string input = 2;
+    int64 shell_id = 3;
+}
+
 // TaskError provides information when task execution fails.
 message TaskError {
     string msg = 1;
@@ -80,6 +86,18 @@ message TaskError {
 
 // TaskOutput provides information about a running task.
 message TaskOutput {
+    int64 id = 1;
+    string output = 2;
+    TaskError error = 3;
+
+    // Indicates the UTC timestamp task execution began, set only in the first message for reporting.
+    google.protobuf.Timestamp exec_started_at = 4;
+
+    // Indicates the UTC timestamp task execution completed, set only in last message for reporting.
+    google.protobuf.Timestamp exec_finished_at = 5;
+}
+
+message ShellTaskOutput {
     int64 id = 1;
     string output = 2;
     TaskError error = 3;
@@ -106,6 +124,7 @@ message ClaimTasksRequest {
 }
 message ClaimTasksResponse {
     repeated Task tasks = 1;
+    repeated ShellTask shell_tasks = 2;
 }
 
 message FetchAssetRequest {
@@ -137,6 +156,7 @@ message ReportProcessListResponse {}
 message ReportTaskOutputRequest {
     TaskOutput output = 1;
     TaskContext context = 2;
+    ShellTaskOutput shell_task_output = 3;
 }
 
 message ReportTaskOutputResponse {}

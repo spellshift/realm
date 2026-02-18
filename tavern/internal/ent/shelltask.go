@@ -33,6 +33,12 @@ type ShellTask struct {
 	StreamID string `json:"stream_id,omitempty"`
 	// Sequence number for ordering tasks within the same stream_id
 	SequenceID uint64 `json:"sequence_id,omitempty"`
+	// Timestamp of when the task was claimed, null if not yet claimed
+	ClaimedAt time.Time `json:"claimed_at,omitempty"`
+	// Timestamp of when execution of the task started, null if not yet started
+	ExecStartedAt time.Time `json:"exec_started_at,omitempty"`
+	// Timestamp of when execution of the task finished, null if not yet finished
+	ExecFinishedAt time.Time `json:"exec_finished_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ShellTaskQuery when eager-loading is set.
 	Edges              ShellTaskEdges `json:"edges"`
@@ -85,7 +91,7 @@ func (*ShellTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case shelltask.FieldInput, shelltask.FieldOutput, shelltask.FieldError, shelltask.FieldStreamID:
 			values[i] = new(sql.NullString)
-		case shelltask.FieldCreatedAt, shelltask.FieldLastModifiedAt:
+		case shelltask.FieldCreatedAt, shelltask.FieldLastModifiedAt, shelltask.FieldClaimedAt, shelltask.FieldExecStartedAt, shelltask.FieldExecFinishedAt:
 			values[i] = new(sql.NullTime)
 		case shelltask.ForeignKeys[0]: // shell_shell_tasks
 			values[i] = new(sql.NullInt64)
@@ -153,6 +159,24 @@ func (st *ShellTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sequence_id", values[i])
 			} else if value.Valid {
 				st.SequenceID = uint64(value.Int64)
+			}
+		case shelltask.FieldClaimedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field claimed_at", values[i])
+			} else if value.Valid {
+				st.ClaimedAt = value.Time
+			}
+		case shelltask.FieldExecStartedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field exec_started_at", values[i])
+			} else if value.Valid {
+				st.ExecStartedAt = value.Time
+			}
+		case shelltask.FieldExecFinishedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field exec_finished_at", values[i])
+			} else if value.Valid {
+				st.ExecFinishedAt = value.Time
 			}
 		case shelltask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -234,6 +258,15 @@ func (st *ShellTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sequence_id=")
 	builder.WriteString(fmt.Sprintf("%v", st.SequenceID))
+	builder.WriteString(", ")
+	builder.WriteString("claimed_at=")
+	builder.WriteString(st.ClaimedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("exec_started_at=")
+	builder.WriteString(st.ExecStartedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("exec_finished_at=")
+	builder.WriteString(st.ExecFinishedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

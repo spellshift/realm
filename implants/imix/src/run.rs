@@ -33,6 +33,9 @@ pub async fn run_agent() -> Result<()> {
         task_registry.clone(),
     ));
 
+    // Start Shell Manager
+    agent.clone().start_shell_manager();
+
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
 
