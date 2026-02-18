@@ -91,6 +91,18 @@ type ShellSession struct {
 //	found, the websocket will automatically switch to Interactive Mode. When the portal closes or if too many errors
 //	occur the handler will automatically revert to Non-Interactive Mode and resume polling for open portals.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Load Authenticated User
+	authUser := auth.UserFromContext(r.Context())
+	var (
+		authUserName = "unknown"
+		authUserID   = 0
+	)
+	if authUser != nil {
+		authUserID = authUser.ID
+		authUserName = authUser.Name
+	}
+	slog.InfoContext(r.Context(), "starting new shell session", "user_id", authUserID, "user_name", authUserName)
+
 	// Load the shell
 	sh, err := h.getShellForRequest(r)
 	if err != nil && errors.Is(err, ErrShellIDInvalid) {
@@ -107,12 +119,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Upgrade to websocket
+	slog.InfoContext(r.Context(), "new shell websocket connection", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "websocket failed to upgrade connection", "err", err, "shell_id", sh.ID)
 		http.Error(w, "failed to upgrade to websocket", http.StatusFailedDependency)
 		return
 	}
+	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
 
 	// Initialize Synchronization
 	ctx, cancel := context.WithCancel(r.Context())

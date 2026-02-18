@@ -192,7 +192,7 @@ const ShellV2 = () => {
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const url = `${scheme}://${window.location.host}/shellv2/ws/${shellId}`;
+        const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
 
         adapter.current = new HeadlessWasmAdapter(url, (msg: WebsocketMessage) => {
             const term = termInstance.current;

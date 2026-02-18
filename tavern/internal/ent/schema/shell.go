@@ -58,6 +58,9 @@ func (Shell) Edges() []ent.Edge {
 			).
 			Comment("User that created the shell"),
 		edge.To("portals", Portal.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
 			Comment("Portals associated with this shell"),
 		edge.To("active_users", User.Type).
 			Annotations(

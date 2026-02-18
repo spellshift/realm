@@ -305,16 +305,12 @@ func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
 
 // CreateShellInput represents a mutation input for creating shells.
 type CreateShellInput struct {
-	BeaconID  int
-	PortalIDs []int
+	BeaconID int
 }
 
 // Mutate applies the CreateShellInput on the ShellMutation builder.
 func (i *CreateShellInput) Mutate(m *ShellMutation) {
 	m.SetBeaconID(i.BeaconID)
-	if v := i.PortalIDs; len(v) > 0 {
-		m.AddPortalIDs(v...)
-	}
 }
 
 // SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
