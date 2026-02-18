@@ -49,21 +49,8 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("The derived script to execute inside the build container."),
-		field.String("callback_uri").
-			NotEmpty().
-			Comment("The callback URI for the IMIX agent to connect to."),
-		field.Int("interval").
-			Default(5).
-			Comment("The callback interval in seconds for the IMIX agent."),
-		field.Enum("transport_type").
-			GoType(c2pb.Transport_Type(0)).
-			Annotations(
-				entgql.Type("BeaconTransport_Type"),
-			).
-			Comment("The transport type for the IMIX agent."),
-		field.String("extra").
-			Optional().
-			Comment("Extra transport configuration for the IMIX agent."),
+		field.JSON("transports", []builderpb.BuildTaskTransport{}).
+			Comment("List of transport configurations for the IMIX agent."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(

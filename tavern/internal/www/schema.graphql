@@ -615,21 +615,9 @@ type BuildTask implements Node {
   """
   buildScript: String!
   """
-  The callback URI for the IMIX agent to connect to.
+  List of transport configurations for the IMIX agent.
   """
-  callbackURI: String!
-  """
-  The callback interval in seconds for the IMIX agent.
-  """
-  interval: Int!
-  """
-  The transport type for the IMIX agent.
-  """
-  transportType: BeaconTransport_Type!
-  """
-  Extra transport configuration for the IMIX agent.
-  """
-  extra: String
+  transports: [BuildTaskTransport!]!
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -828,58 +816,6 @@ input BuildTaskWhereInput {
   buildScriptHasSuffix: String
   buildScriptEqualFold: String
   buildScriptContainsFold: String
-  """
-  callback_uri field predicates
-  """
-  callbackURI: String
-  callbackURINEQ: String
-  callbackURIIn: [String!]
-  callbackURINotIn: [String!]
-  callbackURIGT: String
-  callbackURIGTE: String
-  callbackURILT: String
-  callbackURILTE: String
-  callbackURIContains: String
-  callbackURIHasPrefix: String
-  callbackURIHasSuffix: String
-  callbackURIEqualFold: String
-  callbackURIContainsFold: String
-  """
-  interval field predicates
-  """
-  interval: Int
-  intervalNEQ: Int
-  intervalIn: [Int!]
-  intervalNotIn: [Int!]
-  intervalGT: Int
-  intervalGTE: Int
-  intervalLT: Int
-  intervalLTE: Int
-  """
-  transport_type field predicates
-  """
-  transportType: BeaconTransport_Type
-  transportTypeNEQ: BeaconTransport_Type
-  transportTypeIn: [BeaconTransport_Type!]
-  transportTypeNotIn: [BeaconTransport_Type!]
-  """
-  extra field predicates
-  """
-  extra: String
-  extraNEQ: String
-  extraIn: [String!]
-  extraNotIn: [String!]
-  extraGT: String
-  extraGTE: String
-  extraLT: String
-  extraLTE: String
-  extraContains: String
-  extraHasPrefix: String
-  extraHasSuffix: String
-  extraIsNil: Boolean
-  extraNotNil: Boolean
-  extraEqualFold: String
-  extraContainsFold: String
   """
   claimed_at field predicates
   """
@@ -1232,8 +1168,7 @@ input CreateBuilderInput {
   """
   The server address that the builder should connect to.
   """
-  upstream: String!
-  buildTaskIDs: [ID!]
+  upstream: String
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.
@@ -5220,6 +5155,36 @@ input ImportRepositoryInput {
   includeDirs: [String!]
 }
 
+"""A single transport configuration for a build task."""
+type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int!
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
+"""Input for a single transport configuration."""
+input BuildTaskTransportInput {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int! = 5
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -5231,17 +5196,8 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
-  callbackURI: String
-
-  """The callback interval in seconds for the IMIX agent."""
-  interval: Int = 5
-
-  """The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC."""
-  transportType: BeaconTransport_Type
-
-  """Extra transport configuration for the IMIX agent."""
-  extra: String
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildTaskTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

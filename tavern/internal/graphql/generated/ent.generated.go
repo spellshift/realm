@@ -2803,117 +2803,40 @@ func (ec *executionContext) fieldContext_BuildTask_buildScript(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTask_callbackURI(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildTask_transports(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTask_callbackURI,
+		ec.fieldContext_BuildTask_transports,
 		func(ctx context.Context) (any, error) {
-			return obj.CallbackURI, nil
+			return obj.Transports, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransportᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTask_callbackURI(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildTask_transports(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "BuildTask",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _BuildTask_interval(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_BuildTask_interval,
-		func(ctx context.Context) (any, error) {
-			return obj.Interval, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_BuildTask_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "BuildTask",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _BuildTask_transportType(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_BuildTask_transportType,
-		func(ctx context.Context) (any, error) {
-			return obj.TransportType, nil
-		},
-		nil,
-		ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_BuildTask_transportType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "BuildTask",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type BeaconTransport_Type does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _BuildTask_extra(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_BuildTask_extra,
-		func(ctx context.Context) (any, error) {
-			return obj.Extra, nil
-		},
-		nil,
-		ec.marshalOString2string,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_BuildTask_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "BuildTask",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "uri":
+				return ec.fieldContext_BuildTaskTransport_uri(ctx, field)
+			case "interval":
+				return ec.fieldContext_BuildTaskTransport_interval(ctx, field)
+			case "type":
+				return ec.fieldContext_BuildTaskTransport_type(ctx, field)
+			case "extra":
+				return ec.fieldContext_BuildTaskTransport_extra(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildTaskTransport", field.Name)
 		},
 	}
 	return fc, nil
@@ -3417,14 +3340,8 @@ func (ec *executionContext) fieldContext_BuildTaskEdge_node(_ context.Context, f
 				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
-			case "callbackURI":
-				return ec.fieldContext_BuildTask_callbackURI(ctx, field)
-			case "interval":
-				return ec.fieldContext_BuildTask_interval(ctx, field)
-			case "transportType":
-				return ec.fieldContext_BuildTask_transportType(ctx, field)
-			case "extra":
-				return ec.fieldContext_BuildTask_extra(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuildTask_transports(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":
@@ -14466,7 +14383,7 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "callbackURI", "callbackURINEQ", "callbackURIIn", "callbackURINotIn", "callbackURIGT", "callbackURIGTE", "callbackURILT", "callbackURILTE", "callbackURIContains", "callbackURIHasPrefix", "callbackURIHasSuffix", "callbackURIEqualFold", "callbackURIContainsFold", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "transportType", "transportTypeNEQ", "transportTypeIn", "transportTypeNotIn", "extra", "extraNEQ", "extraIn", "extraNotIn", "extraGT", "extraGTE", "extraLT", "extraLTE", "extraContains", "extraHasPrefix", "extraHasSuffix", "extraIsNil", "extraNotNil", "extraEqualFold", "extraContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "hasBuilder", "hasBuilderWith", "hasArtifact", "hasArtifactWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "hasBuilder", "hasBuilderWith", "hasArtifact", "hasArtifactWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14900,286 +14817,6 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.BuildScriptContainsFold = data
-		case "callbackURI":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURI"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURI = data
-		case "callbackURINEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURINEQ"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURINEQ = data
-		case "callbackURIIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIIn = data
-		case "callbackURINotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURINotIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURINotIn = data
-		case "callbackURIGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIGT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIGT = data
-		case "callbackURIGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIGTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIGTE = data
-		case "callbackURILT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURILT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURILT = data
-		case "callbackURILTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURILTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURILTE = data
-		case "callbackURIContains":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIContains"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIContains = data
-		case "callbackURIHasPrefix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIHasPrefix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIHasPrefix = data
-		case "callbackURIHasSuffix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIHasSuffix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIHasSuffix = data
-		case "callbackURIEqualFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIEqualFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIEqualFold = data
-		case "callbackURIContainsFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("callbackURIContainsFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.CallbackURIContainsFold = data
-		case "interval":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("interval"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Interval = data
-		case "intervalNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalNEQ"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalNEQ = data
-		case "intervalIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalIn = data
-		case "intervalNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalNotIn"))
-			data, err := ec.unmarshalOInt2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalNotIn = data
-		case "intervalGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalGT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalGT = data
-		case "intervalGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalGTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalGTE = data
-		case "intervalLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalLT"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalLT = data
-		case "intervalLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("intervalLTE"))
-			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IntervalLTE = data
-		case "transportType":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportType"))
-			data, err := ec.unmarshalOBeaconTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TransportType = data
-		case "transportTypeNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportTypeNEQ"))
-			data, err := ec.unmarshalOBeaconTransport_Type2ᚖrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TransportTypeNEQ = data
-		case "transportTypeIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportTypeIn"))
-			data, err := ec.unmarshalOBeaconTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Typeᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TransportTypeIn = data
-		case "transportTypeNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transportTypeNotIn"))
-			data, err := ec.unmarshalOBeaconTransport_Type2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Typeᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.TransportTypeNotIn = data
-		case "extra":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extra"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Extra = data
-		case "extraNEQ":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraNEQ"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraNEQ = data
-		case "extraIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraIn = data
-		case "extraNotIn":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraNotIn"))
-			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraNotIn = data
-		case "extraGT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraGT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraGT = data
-		case "extraGTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraGTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraGTE = data
-		case "extraLT":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraLT"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraLT = data
-		case "extraLTE":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraLTE"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraLTE = data
-		case "extraContains":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraContains"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraContains = data
-		case "extraHasPrefix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraHasPrefix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraHasPrefix = data
-		case "extraHasSuffix":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraHasSuffix"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraHasSuffix = data
-		case "extraIsNil":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraIsNil"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraIsNil = data
-		case "extraNotNil":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraNotNil"))
-			data, err := ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraNotNil = data
-		case "extraEqualFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraEqualFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraEqualFold = data
-		case "extraContainsFold":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("extraContainsFold"))
-			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ExtraContainsFold = data
 		case "claimedAt":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("claimedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
@@ -16441,7 +16078,7 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"supportedTargets", "upstream", "buildTaskIDs"}
+	fieldsInOrder := [...]string{"supportedTargets", "upstream"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16457,18 +16094,11 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 			it.SupportedTargets = data
 		case "upstream":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("upstream"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Upstream = data
-		case "buildTaskIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("buildTaskIDs"))
-			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.BuildTaskIDs = data
 		}
 	}
 
@@ -26981,23 +26611,11 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "callbackURI":
-			out.Values[i] = ec._BuildTask_callbackURI(ctx, field, obj)
+		case "transports":
+			out.Values[i] = ec._BuildTask_transports(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "interval":
-			out.Values[i] = ec._BuildTask_interval(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "transportType":
-			out.Values[i] = ec._BuildTask_transportType(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "extra":
-			out.Values[i] = ec._BuildTask_extra(ctx, field, obj)
 		case "claimedAt":
 			out.Values[i] = ec._BuildTask_claimedAt(ctx, field, obj)
 		case "startedAt":

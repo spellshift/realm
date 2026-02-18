@@ -740,25 +740,10 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
 				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
 			}
-		case "callbackURI":
-			if _, ok := fieldSeen[buildtask.FieldCallbackURI]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldCallbackURI)
-				fieldSeen[buildtask.FieldCallbackURI] = struct{}{}
-			}
-		case "interval":
-			if _, ok := fieldSeen[buildtask.FieldInterval]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldInterval)
-				fieldSeen[buildtask.FieldInterval] = struct{}{}
-			}
-		case "transportType":
-			if _, ok := fieldSeen[buildtask.FieldTransportType]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldTransportType)
-				fieldSeen[buildtask.FieldTransportType] = struct{}{}
-			}
-		case "extra":
-			if _, ok := fieldSeen[buildtask.FieldExtra]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldExtra)
-				fieldSeen[buildtask.FieldExtra] = struct{}{}
+		case "transports":
+			if _, ok := fieldSeen[buildtask.FieldTransports]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTransports)
+				fieldSeen[buildtask.FieldTransports] = struct{}{}
 			}
 		case "claimedAt":
 			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {

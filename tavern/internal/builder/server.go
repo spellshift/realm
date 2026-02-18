@@ -107,17 +107,19 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			return nil, status.Errorf(codes.Internal, "failed to load claimed build task (but it was still claimed) %d: %v", taskID, err)
 		}
 
-		// Derive the IMIX config YAML from the build task's stored fields.
+		// Derive the IMIX config YAML from the build task's stored transports.
+		imixTransports := make([]ImixTransportConfig, len(claimedTask.Transports))
+		for i, t := range claimedTask.Transports {
+			imixTransports[i] = ImixTransportConfig{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     TransportTypeToString(t.Type),
+				Extra:    t.Extra,
+			}
+		}
 		imixCfg := ImixConfig{
 			ServerPubkey: s.serverPubkey,
-			Transports: []ImixTransportConfig{
-				{
-					URI: claimedTask.CallbackURI,
-					Interval:    claimedTask.Interval,
-					Type:        TransportTypeToString(claimedTask.TransportType),
-					Extra:       claimedTask.Extra,
-				},
-			},
+			Transports:   imixTransports,
 		}
 		cfgBytes, err := yaml.Marshal(imixCfg)
 		if err != nil {

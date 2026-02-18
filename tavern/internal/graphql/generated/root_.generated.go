@@ -103,23 +103,20 @@ type ComplexityRoot struct {
 		BuildImage     func(childComplexity int) int
 		BuildScript    func(childComplexity int) int
 		Builder        func(childComplexity int) int
-		CallbackURI    func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
 		ErrorSize      func(childComplexity int) int
 		ExitCode       func(childComplexity int) int
-		Extra          func(childComplexity int) int
 		FinishedAt     func(childComplexity int) int
 		ID             func(childComplexity int) int
-		Interval       func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
-		TransportType  func(childComplexity int) int
+		Transports     func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -131,6 +128,13 @@ type ComplexityRoot struct {
 	BuildTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	BuildTaskTransport struct {
+		Extra    func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Type     func(childComplexity int) int
+		URI      func(childComplexity int) int
 	}
 
 	Builder struct {
@@ -859,13 +863,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.Builder(childComplexity), true
 
-	case "BuildTask.callbackURI":
-		if e.complexity.BuildTask.CallbackURI == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.CallbackURI(childComplexity), true
-
 	case "BuildTask.claimedAt":
 		if e.complexity.BuildTask.ClaimedAt == nil {
 			break
@@ -901,13 +898,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.ExitCode(childComplexity), true
 
-	case "BuildTask.extra":
-		if e.complexity.BuildTask.Extra == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Extra(childComplexity), true
-
 	case "BuildTask.finishedAt":
 		if e.complexity.BuildTask.FinishedAt == nil {
 			break
@@ -921,13 +911,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.ID(childComplexity), true
-
-	case "BuildTask.interval":
-		if e.complexity.BuildTask.Interval == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Interval(childComplexity), true
 
 	case "BuildTask.lastModifiedAt":
 		if e.complexity.BuildTask.LastModifiedAt == nil {
@@ -971,12 +954,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
 
-	case "BuildTask.transportType":
-		if e.complexity.BuildTask.TransportType == nil {
+	case "BuildTask.transports":
+		if e.complexity.BuildTask.Transports == nil {
 			break
 		}
 
-		return e.complexity.BuildTask.TransportType(childComplexity), true
+		return e.complexity.BuildTask.Transports(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -1012,6 +995,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
+
+	case "BuildTaskTransport.extra":
+		if e.complexity.BuildTaskTransport.Extra == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Extra(childComplexity), true
+
+	case "BuildTaskTransport.interval":
+		if e.complexity.BuildTaskTransport.Interval == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Interval(childComplexity), true
+
+	case "BuildTaskTransport.type":
+		if e.complexity.BuildTaskTransport.Type == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Type(childComplexity), true
+
+	case "BuildTaskTransport.uri":
+		if e.complexity.BuildTaskTransport.URI == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.URI(childComplexity), true
 
 	case "Builder.buildTasks":
 		if e.complexity.Builder.BuildTasks == nil {
@@ -3207,6 +3218,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
+		ec.unmarshalInputBuildTaskTransportInput,
 		ec.unmarshalInputBuildTaskWhereInput,
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
@@ -3971,21 +3983,9 @@ type BuildTask implements Node {
   """
   buildScript: String!
   """
-  The callback URI for the IMIX agent to connect to.
+  List of transport configurations for the IMIX agent.
   """
-  callbackURI: String!
-  """
-  The callback interval in seconds for the IMIX agent.
-  """
-  interval: Int!
-  """
-  The transport type for the IMIX agent.
-  """
-  transportType: BeaconTransport_Type!
-  """
-  Extra transport configuration for the IMIX agent.
-  """
-  extra: String
+  transports: [BuildTaskTransport!]!
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -4184,58 +4184,6 @@ input BuildTaskWhereInput {
   buildScriptHasSuffix: String
   buildScriptEqualFold: String
   buildScriptContainsFold: String
-  """
-  callback_uri field predicates
-  """
-  callbackURI: String
-  callbackURINEQ: String
-  callbackURIIn: [String!]
-  callbackURINotIn: [String!]
-  callbackURIGT: String
-  callbackURIGTE: String
-  callbackURILT: String
-  callbackURILTE: String
-  callbackURIContains: String
-  callbackURIHasPrefix: String
-  callbackURIHasSuffix: String
-  callbackURIEqualFold: String
-  callbackURIContainsFold: String
-  """
-  interval field predicates
-  """
-  interval: Int
-  intervalNEQ: Int
-  intervalIn: [Int!]
-  intervalNotIn: [Int!]
-  intervalGT: Int
-  intervalGTE: Int
-  intervalLT: Int
-  intervalLTE: Int
-  """
-  transport_type field predicates
-  """
-  transportType: BeaconTransport_Type
-  transportTypeNEQ: BeaconTransport_Type
-  transportTypeIn: [BeaconTransport_Type!]
-  transportTypeNotIn: [BeaconTransport_Type!]
-  """
-  extra field predicates
-  """
-  extra: String
-  extraNEQ: String
-  extraIn: [String!]
-  extraNotIn: [String!]
-  extraGT: String
-  extraGTE: String
-  extraLT: String
-  extraLTE: String
-  extraContains: String
-  extraHasPrefix: String
-  extraHasSuffix: String
-  extraIsNil: Boolean
-  extraNotNil: Boolean
-  extraEqualFold: String
-  extraContainsFold: String
   """
   claimed_at field predicates
   """
@@ -4588,8 +4536,7 @@ input CreateBuilderInput {
   """
   The server address that the builder should connect to.
   """
-  upstream: String!
-  buildTaskIDs: [ID!]
+  upstream: String
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.
@@ -8905,6 +8852,36 @@ input ImportRepositoryInput {
   includeDirs: [String!]
 }
 
+"""A single transport configuration for a build task."""
+type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int!
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
+"""Input for a single transport configuration."""
+input BuildTaskTransportInput {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int! = 5
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -8916,17 +8893,8 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
-  callbackURI: String
-
-  """The callback interval in seconds for the IMIX agent."""
-  interval: Int = 5
-
-  """The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC."""
-  transportType: BeaconTransport_Type
-
-  """Extra transport configuration for the IMIX agent."""
-  extra: String
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildTaskTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

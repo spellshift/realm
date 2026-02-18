@@ -78,43 +78,9 @@ func (btc *BuildTaskCreate) SetBuildScript(s string) *BuildTaskCreate {
 	return btc
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (btc *BuildTaskCreate) SetCallbackURI(s string) *BuildTaskCreate {
-	btc.mutation.SetCallbackURI(s)
-	return btc
-}
-
-// SetInterval sets the "interval" field.
-func (btc *BuildTaskCreate) SetInterval(i int) *BuildTaskCreate {
-	btc.mutation.SetInterval(i)
-	return btc
-}
-
-// SetNillableInterval sets the "interval" field if the given value is not nil.
-func (btc *BuildTaskCreate) SetNillableInterval(i *int) *BuildTaskCreate {
-	if i != nil {
-		btc.SetInterval(*i)
-	}
-	return btc
-}
-
-// SetTransportType sets the "transport_type" field.
-func (btc *BuildTaskCreate) SetTransportType(ct c2pb.Transport_Type) *BuildTaskCreate {
-	btc.mutation.SetTransportType(ct)
-	return btc
-}
-
-// SetExtra sets the "extra" field.
-func (btc *BuildTaskCreate) SetExtra(s string) *BuildTaskCreate {
-	btc.mutation.SetExtra(s)
-	return btc
-}
-
-// SetNillableExtra sets the "extra" field if the given value is not nil.
-func (btc *BuildTaskCreate) SetNillableExtra(s *string) *BuildTaskCreate {
-	if s != nil {
-		btc.SetExtra(*s)
-	}
+// SetTransports sets the "transports" field.
+func (btc *BuildTaskCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskCreate {
+	btc.mutation.SetTransports(btt)
 	return btc
 }
 
@@ -325,10 +291,6 @@ func (btc *BuildTaskCreate) defaults() error {
 		v := buildtask.DefaultLastModifiedAt()
 		btc.mutation.SetLastModifiedAt(v)
 	}
-	if _, ok := btc.mutation.Interval(); !ok {
-		v := buildtask.DefaultInterval
-		btc.mutation.SetInterval(v)
-	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		v := buildtask.DefaultOutputSize
 		btc.mutation.SetOutputSize(v)
@@ -380,24 +342,8 @@ func (btc *BuildTaskCreate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
-	if _, ok := btc.mutation.CallbackURI(); !ok {
-		return &ValidationError{Name: "callback_uri", err: errors.New(`ent: missing required field "BuildTask.callback_uri"`)}
-	}
-	if v, ok := btc.mutation.CallbackURI(); ok {
-		if err := buildtask.CallbackURIValidator(v); err != nil {
-			return &ValidationError{Name: "callback_uri", err: fmt.Errorf(`ent: validator failed for field "BuildTask.callback_uri": %w`, err)}
-		}
-	}
-	if _, ok := btc.mutation.Interval(); !ok {
-		return &ValidationError{Name: "interval", err: errors.New(`ent: missing required field "BuildTask.interval"`)}
-	}
-	if _, ok := btc.mutation.TransportType(); !ok {
-		return &ValidationError{Name: "transport_type", err: errors.New(`ent: missing required field "BuildTask.transport_type"`)}
-	}
-	if v, ok := btc.mutation.TransportType(); ok {
-		if err := buildtask.TransportTypeValidator(v); err != nil {
-			return &ValidationError{Name: "transport_type", err: fmt.Errorf(`ent: validator failed for field "BuildTask.transport_type": %w`, err)}
-		}
+	if _, ok := btc.mutation.Transports(); !ok {
+		return &ValidationError{Name: "transports", err: errors.New(`ent: missing required field "BuildTask.transports"`)}
 	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		return &ValidationError{Name: "output_size", err: errors.New(`ent: missing required field "BuildTask.output_size"`)}
@@ -469,21 +415,9 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 		_node.BuildScript = value
 	}
-	if value, ok := btc.mutation.CallbackURI(); ok {
-		_spec.SetField(buildtask.FieldCallbackURI, field.TypeString, value)
-		_node.CallbackURI = value
-	}
-	if value, ok := btc.mutation.Interval(); ok {
-		_spec.SetField(buildtask.FieldInterval, field.TypeInt, value)
-		_node.Interval = value
-	}
-	if value, ok := btc.mutation.TransportType(); ok {
-		_spec.SetField(buildtask.FieldTransportType, field.TypeEnum, value)
-		_node.TransportType = value
-	}
-	if value, ok := btc.mutation.Extra(); ok {
-		_spec.SetField(buildtask.FieldExtra, field.TypeString, value)
-		_node.Extra = value
+	if value, ok := btc.mutation.Transports(); ok {
+		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
+		_node.Transports = value
 	}
 	if value, ok := btc.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -667,63 +601,15 @@ func (u *BuildTaskUpsert) UpdateBuildScript() *BuildTaskUpsert {
 	return u
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (u *BuildTaskUpsert) SetCallbackURI(v string) *BuildTaskUpsert {
-	u.Set(buildtask.FieldCallbackURI, v)
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsert {
+	u.Set(buildtask.FieldTransports, v)
 	return u
 }
 
-// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
-func (u *BuildTaskUpsert) UpdateCallbackURI() *BuildTaskUpsert {
-	u.SetExcluded(buildtask.FieldCallbackURI)
-	return u
-}
-
-// SetInterval sets the "interval" field.
-func (u *BuildTaskUpsert) SetInterval(v int) *BuildTaskUpsert {
-	u.Set(buildtask.FieldInterval, v)
-	return u
-}
-
-// UpdateInterval sets the "interval" field to the value that was provided on create.
-func (u *BuildTaskUpsert) UpdateInterval() *BuildTaskUpsert {
-	u.SetExcluded(buildtask.FieldInterval)
-	return u
-}
-
-// AddInterval adds v to the "interval" field.
-func (u *BuildTaskUpsert) AddInterval(v int) *BuildTaskUpsert {
-	u.Add(buildtask.FieldInterval, v)
-	return u
-}
-
-// SetTransportType sets the "transport_type" field.
-func (u *BuildTaskUpsert) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsert {
-	u.Set(buildtask.FieldTransportType, v)
-	return u
-}
-
-// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
-func (u *BuildTaskUpsert) UpdateTransportType() *BuildTaskUpsert {
-	u.SetExcluded(buildtask.FieldTransportType)
-	return u
-}
-
-// SetExtra sets the "extra" field.
-func (u *BuildTaskUpsert) SetExtra(v string) *BuildTaskUpsert {
-	u.Set(buildtask.FieldExtra, v)
-	return u
-}
-
-// UpdateExtra sets the "extra" field to the value that was provided on create.
-func (u *BuildTaskUpsert) UpdateExtra() *BuildTaskUpsert {
-	u.SetExcluded(buildtask.FieldExtra)
-	return u
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (u *BuildTaskUpsert) ClearExtra() *BuildTaskUpsert {
-	u.SetNull(buildtask.FieldExtra)
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateTransports() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldTransports)
 	return u
 }
 
@@ -1010,73 +896,17 @@ func (u *BuildTaskUpsertOne) UpdateBuildScript() *BuildTaskUpsertOne {
 	})
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (u *BuildTaskUpsertOne) SetCallbackURI(v string) *BuildTaskUpsertOne {
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetCallbackURI(v)
+		s.SetTransports(v)
 	})
 }
 
-// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
-func (u *BuildTaskUpsertOne) UpdateCallbackURI() *BuildTaskUpsertOne {
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateTransports() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateCallbackURI()
-	})
-}
-
-// SetInterval sets the "interval" field.
-func (u *BuildTaskUpsertOne) SetInterval(v int) *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetInterval(v)
-	})
-}
-
-// AddInterval adds v to the "interval" field.
-func (u *BuildTaskUpsertOne) AddInterval(v int) *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.AddInterval(v)
-	})
-}
-
-// UpdateInterval sets the "interval" field to the value that was provided on create.
-func (u *BuildTaskUpsertOne) UpdateInterval() *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateInterval()
-	})
-}
-
-// SetTransportType sets the "transport_type" field.
-func (u *BuildTaskUpsertOne) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetTransportType(v)
-	})
-}
-
-// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
-func (u *BuildTaskUpsertOne) UpdateTransportType() *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateTransportType()
-	})
-}
-
-// SetExtra sets the "extra" field.
-func (u *BuildTaskUpsertOne) SetExtra(v string) *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetExtra(v)
-	})
-}
-
-// UpdateExtra sets the "extra" field to the value that was provided on create.
-func (u *BuildTaskUpsertOne) UpdateExtra() *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateExtra()
-	})
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (u *BuildTaskUpsertOne) ClearExtra() *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.ClearExtra()
+		s.UpdateTransports()
 	})
 }
 
@@ -1557,73 +1387,17 @@ func (u *BuildTaskUpsertBulk) UpdateBuildScript() *BuildTaskUpsertBulk {
 	})
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (u *BuildTaskUpsertBulk) SetCallbackURI(v string) *BuildTaskUpsertBulk {
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetCallbackURI(v)
+		s.SetTransports(v)
 	})
 }
 
-// UpdateCallbackURI sets the "callback_uri" field to the value that was provided on create.
-func (u *BuildTaskUpsertBulk) UpdateCallbackURI() *BuildTaskUpsertBulk {
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateTransports() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateCallbackURI()
-	})
-}
-
-// SetInterval sets the "interval" field.
-func (u *BuildTaskUpsertBulk) SetInterval(v int) *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetInterval(v)
-	})
-}
-
-// AddInterval adds v to the "interval" field.
-func (u *BuildTaskUpsertBulk) AddInterval(v int) *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.AddInterval(v)
-	})
-}
-
-// UpdateInterval sets the "interval" field to the value that was provided on create.
-func (u *BuildTaskUpsertBulk) UpdateInterval() *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateInterval()
-	})
-}
-
-// SetTransportType sets the "transport_type" field.
-func (u *BuildTaskUpsertBulk) SetTransportType(v c2pb.Transport_Type) *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetTransportType(v)
-	})
-}
-
-// UpdateTransportType sets the "transport_type" field to the value that was provided on create.
-func (u *BuildTaskUpsertBulk) UpdateTransportType() *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateTransportType()
-	})
-}
-
-// SetExtra sets the "extra" field.
-func (u *BuildTaskUpsertBulk) SetExtra(v string) *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetExtra(v)
-	})
-}
-
-// UpdateExtra sets the "extra" field to the value that was provided on create.
-func (u *BuildTaskUpsertBulk) UpdateExtra() *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateExtra()
-	})
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (u *BuildTaskUpsertBulk) ClearExtra() *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.ClearExtra()
+		s.UpdateTransports()
 	})
 }
 

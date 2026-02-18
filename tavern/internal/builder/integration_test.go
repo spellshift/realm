@@ -172,9 +172,11 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
-			SetCallbackURI("https://callback.example.com").
-			SetInterval(10).
-			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
+			SetTransports([]builderpb.BuildTaskTransport{{
+				URI:   "https://callback.example.com",
+				Interval:      10,
+				Type: c2pb.Transport_TRANSPORT_GRPC,
+			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -230,8 +232,11 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
-			SetCallbackURI("https://callback.example.com").
-			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
+			SetTransports([]builderpb.BuildTaskTransport{{
+				URI:   "https://callback.example.com",
+				Interval:      5,
+				Type: c2pb.Transport_TRANSPORT_GRPC,
+			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -287,8 +292,11 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
-			SetCallbackURI("https://callback.example.com").
-			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
+			SetTransports([]builderpb.BuildTaskTransport{{
+				URI:   "https://callback.example.com",
+				Interval:      5,
+				Type: c2pb.Transport_TRANSPORT_GRPC,
+			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -366,8 +374,11 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
-			SetCallbackURI("https://callback.example.com").
-			SetTransportType(c2pb.Transport_TRANSPORT_GRPC).
+			SetTransports([]builderpb.BuildTaskTransport{{
+				URI:   "https://callback.example.com",
+				Interval:      5,
+				Type: c2pb.Transport_TRANSPORT_GRPC,
+			}}).
 			SetBuilderID(secondBuilder).
 			SaveX(ctx)
 

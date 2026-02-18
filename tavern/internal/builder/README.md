@@ -75,9 +75,6 @@ defaults resolved server-side:
 |-------|---------|-------|
 | `targetFormat` | `BIN` | Can also be `CDYLIB` or `WINDOWS_SERVICE` (Windows only) |
 | `buildImage` | `spellshift/devcontainer:main` | Docker image for the build container |
-| `callbackURI` | `http://127.0.0.1:8000` | IMIX agent callback address |
-| `interval` | `5` | Callback interval in seconds |
-| `transportType` | `TRANSPORT_GRPC` | IMIX agent transport |
 | `artifactPath` | Derived from `targetOS` | Path inside the container to extract the compiled binary |
 
 ## Artifact Extraction
@@ -92,9 +89,12 @@ then streams the artifact to Tavern via the `UploadBuildArtifact` RPC in 1 MB ch
 server creates an `Asset` entity. The artifact is downloadable via the existing CDN endpoint
 at `GET /assets/download/{name}`.
 
+## TODO
 
-### Fix
-- Debug why the second job in a parallel set of builds never finished
+- What is tavern/internal/graphql/inputs.resolvers.go doing?
+
+## Easy
+- Update builder query to check TS instead of querying all builders
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.
@@ -102,8 +102,8 @@ at `GET /assets/download/{name}`.
 - Instead of assuming  `/home/vscode` create a correctly permissioned build dir
 - Add support for mulitple transports in the builder
 
-
 ### future
+- Add terraform for build server
 - Register redirectors so bulider callback uri can be a drop down.
 - Modifying the agent IMIX_CONFIG currently requires changes to both imix and tavern code bases now. Is there a way to codegen a YAML spec from tavern to the agent?
 - De-dupe agent builds should the API stop builds that have the same params and point to the existing build? Or is this a UI thing?
