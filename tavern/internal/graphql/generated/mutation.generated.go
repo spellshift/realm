@@ -1712,14 +1712,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
-			case "callbackURI":
-				return ec.fieldContext_BuildTask_callbackURI(ctx, field)
-			case "interval":
-				return ec.fieldContext_BuildTask_interval(ctx, field)
-			case "transportType":
-				return ec.fieldContext_BuildTask_transportType(ctx, field)
-			case "extra":
-				return ec.fieldContext_BuildTask_extra(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuildTask_transports(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":

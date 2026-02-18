@@ -48,6 +48,36 @@ input ImportRepositoryInput {
   includeDirs: [String!]
 }
 
+"""A single transport configuration for a build task."""
+type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int!
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
+"""Input for a single transport configuration."""
+input BuildTaskTransportInput {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int! = 5
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -59,17 +89,8 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
-  callbackURI: String
-
-  """The callback interval in seconds for the IMIX agent."""
-  interval: Int = 5
-
-  """The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC."""
-  transportType: BeaconTransport_Type
-
-  """Extra transport configuration for the IMIX agent."""
-  extra: String
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildTaskTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

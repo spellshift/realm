@@ -78,6 +78,14 @@ func (bc *BuilderCreate) SetUpstream(s string) *BuilderCreate {
 	return bc
 }
 
+// SetNillableUpstream sets the "upstream" field if the given value is not nil.
+func (bc *BuilderCreate) SetNillableUpstream(s *string) *BuilderCreate {
+	if s != nil {
+		bc.SetUpstream(*s)
+	}
+	return bc
+}
+
 // SetLastSeenAt sets the "last_seen_at" field.
 func (bc *BuilderCreate) SetLastSeenAt(t time.Time) *BuilderCreate {
 	bc.mutation.SetLastSeenAt(t)
@@ -153,6 +161,10 @@ func (bc *BuilderCreate) defaults() {
 	if _, ok := bc.mutation.Identifier(); !ok {
 		v := builder.DefaultIdentifier()
 		bc.mutation.SetIdentifier(v)
+	}
+	if _, ok := bc.mutation.Upstream(); !ok {
+		v := builder.DefaultUpstream
+		bc.mutation.SetUpstream(v)
 	}
 }
 

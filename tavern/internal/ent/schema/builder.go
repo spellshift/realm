@@ -35,6 +35,7 @@ func (Builder) Fields() []ent.Field {
 			).
 			Comment("The platforms this builder can build agents for."),
 		field.String("upstream").
+			Default("http://127.0.0.1:8000").
 			Comment("The server address that the builder should connect to."),
 		field.Time("last_seen_at").
 			Optional().
@@ -53,6 +54,7 @@ func (Builder) Edges() []ent.Edge {
 		edge.From("build_tasks", BuildTask.Type).
 			Ref("builder").
 			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
 			).

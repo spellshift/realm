@@ -85,4 +85,12 @@ pub fn netstat() -> Result<Vec<NetstatEntry>> {
 
     #[cfg(target_os = "freebsd")]
     return freebsd::netstat();
+
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "macos",
+        target_os = "windows",
+        target_os = "freebsd"
+    )))]
+    return Ok(Vec::new());
 }
