@@ -34,6 +34,7 @@ async fn test_imix_agent_buffer_and_flush() {
             task_id: 1,
             jwt: "some jwt".to_string(),
         }),
+        shell_task_output: None,
     };
     agent.report_task_output(req).unwrap();
 
@@ -156,7 +157,7 @@ async fn test_imix_agent_claim_tasks() {
     transport
         .expect_claim_tasks()
         .times(1)
-        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
+        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![], shell_tasks: vec![] }));
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
