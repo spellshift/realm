@@ -16660,7 +16660,7 @@ func (ec *executionContext) unmarshalInputCreateShellInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"beaconID", "portalIDs"}
+	fieldsInOrder := [...]string{"beaconID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16674,13 +16674,6 @@ func (ec *executionContext) unmarshalInputCreateShellInput(ctx context.Context, 
 				return it, err
 			}
 			it.BeaconID = data
-		case "portalIDs":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("portalIDs"))
-			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PortalIDs = data
 		}
 	}
 
