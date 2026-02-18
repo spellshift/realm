@@ -78,6 +78,10 @@ const router = createBrowserRouter([
         element: <ShellV2 />,
       },
       {
+        path: "shellv2/:shellId",
+        element: <ShellV2 />,
+      },
+      {
         path: "admin",
         element: <AdminPortal />,
       },
