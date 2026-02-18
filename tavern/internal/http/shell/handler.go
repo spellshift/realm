@@ -33,8 +33,8 @@ const (
 	defaultPortalPollingInterval         = 5 * time.Second
 	defaultOutputPollingInterval         = 1 * time.Second
 	defaultKeepAliveInterval             = 1 * time.Second
-	defaultWriteWaitTimeout              = 5 * time.Second
-	defaultReadWaitTimeout               = 5 * time.Second
+	defaultWriteWaitTimeout              = 10 * time.Second
+	defaultReadWaitTimeout               = 10 * time.Second
 )
 
 // A Handler for browser to server shell communication using websockets.
@@ -197,7 +197,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(10 * time.Second) // TODO: Remove this, just for testing
+	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
@@ -238,7 +238,7 @@ func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalC
 			Where(portal.ClosedAtIsNil()).
 			Order(portal.ByCreatedAt(sql.OrderDesc())).
 			First(ctx)
-		if err != nil {
+		if err != nil && !ent.IsNotFound(err) {
 			errCh <- NewWebsocketErrorMessage(fmt.Errorf("%s: %w", ErrFailedToQueryPortals.Error(), err))
 		}
 		portalCh <- portal
@@ -309,9 +309,22 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 			return fmt.Errorf("%s %w", name, ErrChannelClosed)
 		}
 
+		// Marshal message
+		data, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+
 		// Send Output
-		if err := conn.WriteJSON(v); err != nil {
+		w, err := conn.NextWriter(websocket.TextMessage)
+		if err != nil {
+			return fmt.Errorf("failed to get writer for websocket: %w", err)
+		}
+		if _, err := w.Write(data); err != nil {
 			return fmt.Errorf("failed to write message: %w", err)
+		}
+		if err := w.Close(); err != nil {
+			return fmt.Errorf("failed to close writer for websocket: %w", err)
 		}
 
 		return nil
@@ -347,7 +360,7 @@ func (h *Handler) writeMessagesToWebsocket(ctx context.Context, conn *websocket.
 				slog.ErrorContext(ctx, "failed to write message to websocket", "error", err)
 			}
 		case <-keepAliveTimer.C:
-			conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(h.writeWaitTimeout))
+			conn.SetWriteDeadline(time.Now().Add(h.writeWaitTimeout))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				continue
 			}
@@ -415,7 +428,7 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 					// We don't error the task because it's already in DB, but maybe we should notify user?
 				}
 			} else {
-				slog.InfoContext(ctx, "no active portal, queuing task", "shell_id", sh.ID)
+				slog.InfoContext(ctx, "no active portal, queuing task", "shell_id", sh.ID, "shell_input", msg.Input)
 				// No Active Portal: Send Control Flow Message
 				beaconName := "Unknown"
 				if sh.Edges.Beacon != nil {

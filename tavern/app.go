@@ -373,7 +373,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
 		},
-		"/shellv2/ws/": tavernhttp.Endpoint{
+		"/shellv2/ws": tavernhttp.Endpoint{
 			Handler: tavernshell.NewHandler(client, portalMux),
 		},
 		"/shell/ping": tavernhttp.Endpoint{
