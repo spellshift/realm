@@ -11,8 +11,8 @@ use tokio::sync::RwLock;
 use transport::Transport;
 
 use crate::portal::run_create_portal;
-use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::shell::manager::{ShellManager, ShellManagerMessage};
+use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
@@ -237,13 +237,13 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
 
         if !resp.shell_tasks.is_empty() {
-             has_work = true;
-             let lock = self.shell_manager_tx.lock().unwrap();
-             if let Some(tx) = &*lock {
-                 for shell_task in resp.shell_tasks {
-                     let _ = tx.try_send(ShellManagerMessage::ProcessTask(shell_task));
-                 }
-             }
+            has_work = true;
+            let lock = self.shell_manager_tx.lock().unwrap();
+            if let Some(tx) = &*lock {
+                for shell_task in resp.shell_tasks {
+                    let _ = tx.try_send(ShellManagerMessage::ProcessTask(shell_task));
+                }
+            }
         }
 
         if !has_work {

@@ -154,10 +154,12 @@ async fn test_imix_agent_claim_tasks() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
     transport.expect_is_active().returning(|| true);
-    transport
-        .expect_claim_tasks()
-        .times(1)
-        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![], shell_tasks: vec![] }));
+    transport.expect_claim_tasks().times(1).returning(|_| {
+        Ok(c2::ClaimTasksResponse {
+            tasks: vec![],
+            shell_tasks: vec![],
+        })
+    });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());

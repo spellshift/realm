@@ -1,13 +1,13 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::fmt;
 use tokio::sync::mpsc;
 
-use eldritch::{Interpreter, Printer, Span};
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
-use pb::c2::{ReportTaskOutputRequest, ShellTask, ShellTaskOutput, TaskError, TaskContext};
+use eldritch::{Interpreter, Printer, Span};
+use pb::c2::{ReportTaskOutputRequest, ShellTask, ShellTaskOutput, TaskContext, TaskError};
 use pb::portal::{self, Mote, ShellPayload};
 use transport::Transport;
 
@@ -157,10 +157,7 @@ struct InterpreterState {
 }
 
 impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
-    pub fn new(
-        agent: Arc<ImixAgent<T>>,
-        rx: mpsc::Receiver<ShellManagerMessage>,
-    ) -> Self {
+    pub fn new(agent: Arc<ImixAgent<T>>, rx: mpsc::Receiver<ShellManagerMessage>) -> Self {
         Self {
             agent,
             interpreters: HashMap::new(),
@@ -225,38 +222,37 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 
     fn get_or_create_interpreter(&mut self, shell_id: i64) -> &mut InterpreterState {
         self.interpreters.entry(shell_id).or_insert_with(|| {
-             let context = SharedShellContext::new();
-             let printer = Arc::new(ShellPrinter {
-                 agent: self.agent.clone(),
-                 context: context.clone(),
-                 shell_id,
-             });
+            let context = SharedShellContext::new();
+            let printer = Arc::new(ShellPrinter {
+                agent: self.agent.clone(),
+                context: context.clone(),
+                shell_id,
+            });
 
-             // Create dummy TaskContext
-             let task_context = TaskContext {
-                 task_id: 0,
-                 jwt: String::new(),
-             };
+            // Create dummy TaskContext
+            let task_context = TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            };
 
-             let backend = Arc::new(EmptyAssets {});
+            let backend = Arc::new(EmptyAssets {});
 
-             let interpreter = Interpreter::new_with_printer(printer)
-                 .with_default_libs()
-                 .with_task_context(self.agent.clone(), task_context, Vec::new(), backend);
+            let interpreter = Interpreter::new_with_printer(printer)
+                .with_default_libs()
+                .with_task_context(self.agent.clone(), task_context, Vec::new(), backend);
 
-             InterpreterState {
-                 interpreter,
-                 context,
-                 last_activity: Instant::now(),
-             }
+            InterpreterState {
+                interpreter,
+                context,
+                last_activity: Instant::now(),
+            }
         })
     }
 
     fn cleanup_inactive_interpreters(&mut self) {
         let now = Instant::now();
         let timeout = Duration::from_secs(3600); // 1 hour
-        self.interpreters.retain(|_, state| {
-            now.duration_since(state.last_activity) < timeout
-        });
+        self.interpreters
+            .retain(|_, state| now.duration_since(state.last_activity) < timeout);
     }
 }

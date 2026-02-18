@@ -153,7 +153,10 @@ async fn handle_incoming_mote(
     if is_shell {
         let lock = shell_manager_tx.lock().unwrap();
         if let Some(tx) = &*lock {
-             let _ = tx.try_send(ShellManagerMessage::ProcessPortalPayload(mote, out_tx.clone()));
+            let _ = tx.try_send(ShellManagerMessage::ProcessPortalPayload(
+                mote,
+                out_tx.clone(),
+            ));
         }
         return Ok(());
     }
