@@ -24,15 +24,17 @@ import (
 )
 
 const (
-	defaultMaxTaskInputsBuffered   = 1024 * 1024
-	defaultMaxTaskOutputsBuffered  = 1024 * 1024
-	defaultMaxTaskErrorsBuffered   = 1024
-	defaultMaxErrorsBuffered       = 1024
-	defaultMaxControlFlowsBuffered = 1024
-	defaultPortalPollingInterval   = 5 * time.Second
-	defaultOutputPollingInterval   = 1 * time.Second
-	defaultKeepAliveInterval       = 1 * time.Second
-	defaultWriteWaitTimeout        = 5 * time.Second
+	defaultMaxTaskInputsBuffered         = 1024 * 1024
+	defaultMaxTaskOutputsBuffered        = 1024 * 1024
+	defaultMaxTaskErrorsBuffered         = 1024
+	defaultMaxErrorsBuffered             = 1024
+	defaultMaxControlFlowsBuffered       = 1024
+	defaultMaxMessageSize          int64 = 1024 * 1024
+	defaultPortalPollingInterval         = 5 * time.Second
+	defaultOutputPollingInterval         = 1 * time.Second
+	defaultKeepAliveInterval             = 1 * time.Second
+	defaultWriteWaitTimeout              = 5 * time.Second
+	defaultReadWaitTimeout               = 5 * time.Second
 )
 
 // A Handler for browser to server shell communication using websockets.
@@ -45,10 +47,12 @@ type Handler struct {
 	maxTaskErrorsBuffered   int
 	maxErrorsBuffered       int
 	maxControlFlowsBuffered int
+	maxMessageSize          int64
 	portalPollingInterval   time.Duration
 	outputPollingInterval   time.Duration
 	keepAliveInterval       time.Duration
 	writeWaitTimeout        time.Duration
+	readWaitTimeout         time.Duration
 }
 
 // NewHandler initializes and returns a new handler using the provided ent client and portal mux.
@@ -62,10 +66,12 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 		maxTaskErrorsBuffered:   defaultMaxTaskErrorsBuffered,
 		maxErrorsBuffered:       defaultMaxErrorsBuffered,
 		maxControlFlowsBuffered: defaultMaxControlFlowsBuffered,
+		maxMessageSize:          defaultMaxMessageSize,
 		portalPollingInterval:   defaultPortalPollingInterval,
 		outputPollingInterval:   defaultOutputPollingInterval,
 		keepAliveInterval:       defaultKeepAliveInterval,
 		writeWaitTimeout:        defaultWriteWaitTimeout,
+		readWaitTimeout:         defaultReadWaitTimeout,
 	}
 }
 
@@ -128,6 +134,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
 
+	// Configure Websocket Connection
+	wsConn.SetReadLimit(h.maxMessageSize)
+	wsConn.SetReadDeadline(time.Now().Add(h.readWaitTimeout))
+	wsConn.SetPongHandler(func(string) error {
+		wsConn.SetReadDeadline(time.Now().Add(h.readWaitTimeout))
+		return nil
+	})
+
 	// Initialize Synchronization
 	ctx, cancel := context.WithCancel(r.Context())
 	var wg sync.WaitGroup
@@ -183,6 +197,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
+	time.Sleep(10 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
