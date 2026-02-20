@@ -73,6 +73,11 @@ impl Parser {
         let mut params = Vec::new();
         if !self.check(&terminator) {
             loop {
+                // Check if **kwargs was already parsed; if so, no more arguments are allowed.
+                if let Some(Param::StarStar(..)) = params.last() {
+                    return self.error("Arguments cannot follow **kwargs.");
+                }
+
                 if self.match_token(&[TokenKind::Star]) {
                     let param_token = self.consume(
                         |t| matches!(t, TokenKind::Identifier(_)),
