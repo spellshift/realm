@@ -10,7 +10,7 @@ import (
 	"realm.pub/tavern/internal/errors"
 )
 
-// TestWrapHandler asserts that wrapped handlers exhibit expected behaviour.
+// TestWrapHandler asserts that wrapped handlers exhibit expected behavior.
 func TestWrapHandler(t *testing.T) {
 	t.Run("BasicError", newWrapHandlerTest(
 		errors.NewHTTP("some error", 101),

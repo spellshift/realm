@@ -174,7 +174,7 @@ func TestDockerExecutor_Build_ContextCancellation(t *testing.T) {
 
 	wg.Wait()
 
-	// The build should have been cancelled or errored due to timeout.
+	// The build should have been canceled or errored due to timeout.
 	require.Error(t, buildErr)
 }
 

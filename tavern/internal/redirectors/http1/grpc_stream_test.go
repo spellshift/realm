@@ -54,7 +54,7 @@ func TestCreateStreamWithContext(t *testing.T) {
 	// Verify context can be used for timeout checks
 	select {
 	case <-ctx.Done():
-		t.Error("Context should not be cancelled yet")
+		t.Error("Context should not be canceled yet")
 	default:
 		// Expected
 	}
