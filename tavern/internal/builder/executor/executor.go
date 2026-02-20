@@ -45,7 +45,7 @@ type BuildResult struct {
 type Executor interface {
 	// Build executes a build task described by spec. As the build runs,
 	// stdout lines are sent to outputCh and stderr lines to errorCh.
-	// Build blocks until the build completes (or the context is cancelled)
+	// Build blocks until the build completes (or the context is canceled)
 	// and returns a BuildResult (which may contain extracted artifacts) and
 	// any execution error. Build must close both channels before returning.
 	Build(ctx context.Context, spec BuildSpec, outputCh chan<- string, errorCh chan<- string) (*BuildResult, error)
