@@ -161,6 +161,13 @@ pub trait SysLibrary {
     fn is_windows(&self) -> Result<bool, String>;
 
     #[eldritch_method]
+    /// Lists all user accounts on the system.
+    ///
+    /// **Returns**
+    /// - `List<Dict>`: List of user accounts.
+    fn list_users(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
     /// Executes a command via the system shell (`/bin/sh` or `cmd.exe`).
     ///
     /// **Parameters**
