@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-spin = { version = "0.10.0", features = ["rwlock"] }
+spin = { workspace = true }
 reqwest = { version = "0.11", default-features = false, features = [
     "blocking",
     "rustls-tls",
