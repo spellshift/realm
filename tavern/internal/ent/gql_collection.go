@@ -3345,6 +3345,21 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, shelltask.FieldSequenceID)
 				fieldSeen[shelltask.FieldSequenceID] = struct{}{}
 			}
+		case "claimedAt":
+			if _, ok := fieldSeen[shelltask.FieldClaimedAt]; !ok {
+				selectedFields = append(selectedFields, shelltask.FieldClaimedAt)
+				fieldSeen[shelltask.FieldClaimedAt] = struct{}{}
+			}
+		case "execStartedAt":
+			if _, ok := fieldSeen[shelltask.FieldExecStartedAt]; !ok {
+				selectedFields = append(selectedFields, shelltask.FieldExecStartedAt)
+				fieldSeen[shelltask.FieldExecStartedAt] = struct{}{}
+			}
+		case "execFinishedAt":
+			if _, ok := fieldSeen[shelltask.FieldExecFinishedAt]; !ok {
+				selectedFields = append(selectedFields, shelltask.FieldExecFinishedAt)
+				fieldSeen[shelltask.FieldExecFinishedAt] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

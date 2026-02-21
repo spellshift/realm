@@ -5,9 +5,12 @@ use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
 use prost::Message;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
+
+use crate::shell::manager::ShellManagerMessage;
 
 use super::{bytes, tcp, udp};
 
@@ -20,12 +23,13 @@ struct StreamContext {
 pub async fn run<T: Transport + Send + Sync + 'static>(
     task_context: TaskContext,
     mut transport: T,
+    shell_manager_tx: Arc<Mutex<Option<mpsc::Sender<ShellManagerMessage>>>>,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
     let (resp_tx, mut resp_rx) = mpsc::channel::<CreatePortalResponse>(100);
 
     // Start transport loop
-    // Note: We use a separate task for transport since it might block or be long-running
+    // Note: We use a separate task for transport since it might be long-running
     let transport_handle = tokio::spawn(async move {
         if let Err(_e) = transport.create_portal(req_rx, resp_tx).await {
             #[cfg(debug_assertions)]
@@ -68,7 +72,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                     Some(resp) => {
                          #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
-                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
+                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx).await {
                                 #[cfg(debug_assertions)]
                                 log::error!("Error handling incoming mote: {}", _e);
                             }
@@ -121,6 +125,7 @@ async fn handle_incoming_mote(
     streams: &mut HashMap<String, StreamContext>,
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
+    shell_manager_tx: &Arc<Mutex<Option<mpsc::Sender<ShellManagerMessage>>>>,
 ) -> Result<()> {
     // Handle Trace Mote
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
@@ -140,6 +145,19 @@ async fn handle_incoming_mote(
             .send(mote)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
+        return Ok(());
+    }
+
+    // Handle Shell Mote
+    let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
+    if is_shell {
+        let lock = shell_manager_tx.lock().unwrap();
+        if let Some(tx) = &*lock {
+            let _ = tx.try_send(ShellManagerMessage::ProcessPortalPayload(
+                mote,
+                out_tx.clone(),
+            ));
+        }
         return Ok(());
     }
 
@@ -243,7 +261,7 @@ async fn stream_handler(
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
             Payload::Shell(_) => {
                 #[cfg(debug_assertions)]
-                log::warn!("Shell payloads are not supported in this portal implementation");
+                log::warn!("Shell payloads should have been intercepted before stream handler");
                 Ok(())
             }
         }

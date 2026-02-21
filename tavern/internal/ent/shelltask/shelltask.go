@@ -28,6 +28,12 @@ const (
 	FieldStreamID = "stream_id"
 	// FieldSequenceID holds the string denoting the sequence_id field in the database.
 	FieldSequenceID = "sequence_id"
+	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
+	FieldClaimedAt = "claimed_at"
+	// FieldExecStartedAt holds the string denoting the exec_started_at field in the database.
+	FieldExecStartedAt = "exec_started_at"
+	// FieldExecFinishedAt holds the string denoting the exec_finished_at field in the database.
+	FieldExecFinishedAt = "exec_finished_at"
 	// EdgeShell holds the string denoting the shell edge name in mutations.
 	EdgeShell = "shell"
 	// EdgeCreator holds the string denoting the creator edge name in mutations.
@@ -60,6 +66,9 @@ var Columns = []string{
 	FieldError,
 	FieldStreamID,
 	FieldSequenceID,
+	FieldClaimedAt,
+	FieldExecStartedAt,
+	FieldExecFinishedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "shell_tasks"
@@ -134,6 +143,21 @@ func ByStreamID(opts ...sql.OrderTermOption) OrderOption {
 // BySequenceID orders the results by the sequence_id field.
 func BySequenceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSequenceID, opts...).ToFunc()
+}
+
+// ByClaimedAt orders the results by the claimed_at field.
+func ByClaimedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClaimedAt, opts...).ToFunc()
+}
+
+// ByExecStartedAt orders the results by the exec_started_at field.
+func ByExecStartedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecStartedAt, opts...).ToFunc()
+}
+
+// ByExecFinishedAt orders the results by the exec_finished_at field.
+func ByExecFinishedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExecFinishedAt, opts...).ToFunc()
 }
 
 // ByShellField orders the results by shell field.

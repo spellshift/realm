@@ -98,6 +98,48 @@ func (stc *ShellTaskCreate) SetSequenceID(u uint64) *ShellTaskCreate {
 	return stc
 }
 
+// SetClaimedAt sets the "claimed_at" field.
+func (stc *ShellTaskCreate) SetClaimedAt(t time.Time) *ShellTaskCreate {
+	stc.mutation.SetClaimedAt(t)
+	return stc
+}
+
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
+func (stc *ShellTaskCreate) SetNillableClaimedAt(t *time.Time) *ShellTaskCreate {
+	if t != nil {
+		stc.SetClaimedAt(*t)
+	}
+	return stc
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (stc *ShellTaskCreate) SetExecStartedAt(t time.Time) *ShellTaskCreate {
+	stc.mutation.SetExecStartedAt(t)
+	return stc
+}
+
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
+func (stc *ShellTaskCreate) SetNillableExecStartedAt(t *time.Time) *ShellTaskCreate {
+	if t != nil {
+		stc.SetExecStartedAt(*t)
+	}
+	return stc
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (stc *ShellTaskCreate) SetExecFinishedAt(t time.Time) *ShellTaskCreate {
+	stc.mutation.SetExecFinishedAt(t)
+	return stc
+}
+
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
+func (stc *ShellTaskCreate) SetNillableExecFinishedAt(t *time.Time) *ShellTaskCreate {
+	if t != nil {
+		stc.SetExecFinishedAt(*t)
+	}
+	return stc
+}
+
 // SetShellID sets the "shell" edge to the Shell entity by ID.
 func (stc *ShellTaskCreate) SetShellID(id int) *ShellTaskCreate {
 	stc.mutation.SetShellID(id)
@@ -242,6 +284,18 @@ func (stc *ShellTaskCreate) createSpec() (*ShellTask, *sqlgraph.CreateSpec) {
 	if value, ok := stc.mutation.SequenceID(); ok {
 		_spec.SetField(shelltask.FieldSequenceID, field.TypeUint64, value)
 		_node.SequenceID = value
+	}
+	if value, ok := stc.mutation.ClaimedAt(); ok {
+		_spec.SetField(shelltask.FieldClaimedAt, field.TypeTime, value)
+		_node.ClaimedAt = value
+	}
+	if value, ok := stc.mutation.ExecStartedAt(); ok {
+		_spec.SetField(shelltask.FieldExecStartedAt, field.TypeTime, value)
+		_node.ExecStartedAt = value
+	}
+	if value, ok := stc.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(shelltask.FieldExecFinishedAt, field.TypeTime, value)
+		_node.ExecFinishedAt = value
 	}
 	if nodes := stc.mutation.ShellIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -419,6 +473,60 @@ func (u *ShellTaskUpsert) AddSequenceID(v uint64) *ShellTaskUpsert {
 	return u
 }
 
+// SetClaimedAt sets the "claimed_at" field.
+func (u *ShellTaskUpsert) SetClaimedAt(v time.Time) *ShellTaskUpsert {
+	u.Set(shelltask.FieldClaimedAt, v)
+	return u
+}
+
+// UpdateClaimedAt sets the "claimed_at" field to the value that was provided on create.
+func (u *ShellTaskUpsert) UpdateClaimedAt() *ShellTaskUpsert {
+	u.SetExcluded(shelltask.FieldClaimedAt)
+	return u
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (u *ShellTaskUpsert) ClearClaimedAt() *ShellTaskUpsert {
+	u.SetNull(shelltask.FieldClaimedAt)
+	return u
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (u *ShellTaskUpsert) SetExecStartedAt(v time.Time) *ShellTaskUpsert {
+	u.Set(shelltask.FieldExecStartedAt, v)
+	return u
+}
+
+// UpdateExecStartedAt sets the "exec_started_at" field to the value that was provided on create.
+func (u *ShellTaskUpsert) UpdateExecStartedAt() *ShellTaskUpsert {
+	u.SetExcluded(shelltask.FieldExecStartedAt)
+	return u
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (u *ShellTaskUpsert) ClearExecStartedAt() *ShellTaskUpsert {
+	u.SetNull(shelltask.FieldExecStartedAt)
+	return u
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (u *ShellTaskUpsert) SetExecFinishedAt(v time.Time) *ShellTaskUpsert {
+	u.Set(shelltask.FieldExecFinishedAt, v)
+	return u
+}
+
+// UpdateExecFinishedAt sets the "exec_finished_at" field to the value that was provided on create.
+func (u *ShellTaskUpsert) UpdateExecFinishedAt() *ShellTaskUpsert {
+	u.SetExcluded(shelltask.FieldExecFinishedAt)
+	return u
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (u *ShellTaskUpsert) ClearExecFinishedAt() *ShellTaskUpsert {
+	u.SetNull(shelltask.FieldExecFinishedAt)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -566,6 +674,69 @@ func (u *ShellTaskUpsertOne) AddSequenceID(v uint64) *ShellTaskUpsertOne {
 func (u *ShellTaskUpsertOne) UpdateSequenceID() *ShellTaskUpsertOne {
 	return u.Update(func(s *ShellTaskUpsert) {
 		s.UpdateSequenceID()
+	})
+}
+
+// SetClaimedAt sets the "claimed_at" field.
+func (u *ShellTaskUpsertOne) SetClaimedAt(v time.Time) *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetClaimedAt(v)
+	})
+}
+
+// UpdateClaimedAt sets the "claimed_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertOne) UpdateClaimedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateClaimedAt()
+	})
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (u *ShellTaskUpsertOne) ClearClaimedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearClaimedAt()
+	})
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (u *ShellTaskUpsertOne) SetExecStartedAt(v time.Time) *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetExecStartedAt(v)
+	})
+}
+
+// UpdateExecStartedAt sets the "exec_started_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertOne) UpdateExecStartedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateExecStartedAt()
+	})
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (u *ShellTaskUpsertOne) ClearExecStartedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearExecStartedAt()
+	})
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (u *ShellTaskUpsertOne) SetExecFinishedAt(v time.Time) *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetExecFinishedAt(v)
+	})
+}
+
+// UpdateExecFinishedAt sets the "exec_finished_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertOne) UpdateExecFinishedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateExecFinishedAt()
+	})
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (u *ShellTaskUpsertOne) ClearExecFinishedAt() *ShellTaskUpsertOne {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearExecFinishedAt()
 	})
 }
 
@@ -882,6 +1053,69 @@ func (u *ShellTaskUpsertBulk) AddSequenceID(v uint64) *ShellTaskUpsertBulk {
 func (u *ShellTaskUpsertBulk) UpdateSequenceID() *ShellTaskUpsertBulk {
 	return u.Update(func(s *ShellTaskUpsert) {
 		s.UpdateSequenceID()
+	})
+}
+
+// SetClaimedAt sets the "claimed_at" field.
+func (u *ShellTaskUpsertBulk) SetClaimedAt(v time.Time) *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetClaimedAt(v)
+	})
+}
+
+// UpdateClaimedAt sets the "claimed_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertBulk) UpdateClaimedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateClaimedAt()
+	})
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (u *ShellTaskUpsertBulk) ClearClaimedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearClaimedAt()
+	})
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (u *ShellTaskUpsertBulk) SetExecStartedAt(v time.Time) *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetExecStartedAt(v)
+	})
+}
+
+// UpdateExecStartedAt sets the "exec_started_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertBulk) UpdateExecStartedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateExecStartedAt()
+	})
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (u *ShellTaskUpsertBulk) ClearExecStartedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearExecStartedAt()
+	})
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (u *ShellTaskUpsertBulk) SetExecFinishedAt(v time.Time) *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.SetExecFinishedAt(v)
+	})
+}
+
+// UpdateExecFinishedAt sets the "exec_finished_at" field to the value that was provided on create.
+func (u *ShellTaskUpsertBulk) UpdateExecFinishedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.UpdateExecFinishedAt()
+	})
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (u *ShellTaskUpsertBulk) ClearExecFinishedAt() *ShellTaskUpsertBulk {
+	return u.Update(func(s *ShellTaskUpsert) {
+		s.ClearExecFinishedAt()
 	})
 }
 

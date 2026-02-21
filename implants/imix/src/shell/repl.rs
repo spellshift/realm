@@ -216,6 +216,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
             context: Some(self.task_context.clone()),
+            shell_task_output: None,
         };
         let _ = self.agent.report_task_output(req);
     }
@@ -240,6 +241,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
                 exec_finished_at: None,
             }),
             context: Some(self.task_context.clone()),
+            shell_task_output: None,
         };
         let _ = self.agent.report_task_output(req);
     }

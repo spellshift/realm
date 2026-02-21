@@ -417,9 +417,8 @@ func (h *Handler) writeMessagesFromWebsocket(ctx context.Context, session *Shell
 					SeqId:    sequenceID,
 					Payload: &portalpb.Mote_Shell{
 						Shell: &portalpb.ShellPayload{
-							Input:    msg.Input,
-							ShellId:  int64(sh.ID),
-							StreamId: streamID,
+							Input:   msg.Input,
+							ShellId: int64(sh.ID),
 						},
 					},
 				}
