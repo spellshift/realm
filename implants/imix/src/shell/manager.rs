@@ -88,7 +88,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
             let req = ReportTaskOutputRequest {
                 shell_task_output: Some(ShellTaskOutput {
                     id: task_id,
-                    output: s.to_string(),
+                    output: format!("{}\n", s),
                     error: None,
                     exec_started_at: None,
                     exec_finished_at: None,
@@ -106,7 +106,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
 
             let payload = ShellPayload {
                 shell_id: self.shell_id,
-                input: s.to_string(),
+                input: format!("{}\n", s.to_string()),
             };
             let mote = Mote {
                 stream_id,
