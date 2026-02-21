@@ -488,10 +488,14 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			}
 
 			if task.Output != "" {
-				taskOutputCh <- NewWebsocketTaskOutputMessage(task)
+				msg := NewWebsocketTaskOutputMessage(task)
+				msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
+				taskOutputCh <- msg
 			}
 			if task.Error != "" {
-				taskErrCh <- NewWebsocketTaskErrorMessage(task)
+				msg := NewWebsocketTaskErrorMessage(task)
+				msg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), msg.Error)
+				taskErrCh <- msg
 			}
 			sentTasks[task.ID] = struct{}{}
 		}
@@ -556,9 +560,13 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 				if mote.StreamId == streamID {
 					// Local stream output
 					outputMsg := NewWebsocketTaskOutputMessage(task)
-					outputMsg.Output = string(bytesPayload.Data) // Use real-time chunk
+					if _, sent := sentTasks[task.ID]; !sent {
+						outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), string(bytesPayload.Data))
+						sentTasks[task.ID] = struct{}{}
+					} else {
+						outputMsg.Output = string(bytesPayload.Data) // Use real-time chunk
+					}
 					taskOutputCh <- outputMsg
-					sentTasks[task.ID] = struct{}{}
 				} else {
 					// Other stream output
 					if _, sent := sentTasks[task.ID]; !sent {
@@ -644,4 +652,12 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 		}
 
 	}
+}
+
+func truncateInput(input string) string {
+	const maxLength = 64
+	if len(input) > maxLength {
+		return input[:maxLength] + "..."
+	}
+	return input
 }
