@@ -215,7 +215,9 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         let state = self.get_or_create_interpreter(shell_id);
 
         state.last_activity = Instant::now();
-        state.context.set_task(task.id, task.sequence_id, task.stream_id);
+        state
+            .context
+            .set_task(task.id, task.sequence_id, task.stream_id);
 
         let _ = state.interpreter.interpret(&task.input);
 
