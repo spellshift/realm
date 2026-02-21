@@ -258,3 +258,6 @@ mod bindings_test;
 
 #[cfg(all(test, feature = "fake_bindings"))]
 mod input_params_test;
+
+#[cfg(test)]
+mod process_report_test;
