@@ -1,4 +1,4 @@
-import { Steps, Input, InputGroup, InputLeftElement, Icon } from "@chakra-ui/react";
+import { Input, Group, InputElement, Icon } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
 import { LuSearch } from 'react-icons/lu';
@@ -31,12 +31,15 @@ const FreeTextSearch = (props: Props) => {
     return (
         <div className="flex flex-col gap-1">
             <label className="text-gray-700"> {placeholder}</label>
-            <InputGroup className=" border-gray-300">
-                <InputLeftElement pointerEvents='none'>
-                    <Icon color='gray.300' asChild><LuSearch /></Icon>
-                </InputLeftElement>
-                <Input type='text' defaultValue={String(defaultValue)} placeholder={placeholder} onValueChange={handleChange} disabled={isDisabled} />
-            </InputGroup>
+            <Group attached>
+                <InputElement pointerEvents='none'>
+                    <Icon color="gray.300" asChild>
+                        {/* @ts-ignore */}
+                        <LuSearch />
+                    </Icon>
+                </InputElement>
+                <Input type='text' defaultValue={String(defaultValue)} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
+            </Group>
         </div>
     );
 }

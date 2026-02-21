@@ -1,4 +1,4 @@
-import { Tab, TabList } from "@headlessui/react"
+import { Tabs } from "@chakra-ui/react"
 import { ArrowsUpDownIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/20/solid"
 import { useHost } from "../../../context/HostContext";
 import { KeyIcon } from "@heroicons/react/24/outline";
@@ -27,8 +27,8 @@ const HostTabs = () => {
     const { online } = getOfflineOnlineStatus(host?.beacons?.edges || []);
 
     return (
-        <TabList className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
-            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+        <Tabs.List className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
+            <Tabs.Trigger value="beacons" className="p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg data-[state=active]:border-t-purple-600 data-[state=active]:bg-white data-[state=active]:text-purple-800 hover:bg-gray-100 border-transparent hover:bg-white hover:border-t-purple-600">
                 <ArrowsUpDownIcon className="w-4 h-4" />
                 <div>
                     Beacons
@@ -36,8 +36,8 @@ const HostTabs = () => {
                 <div>
                     {(host?.beacons?.edges?.length !== undefined && host?.beacons?.edges?.length !== null) && `(${online}/${host?.beacons?.edges?.length})`}
                 </div>
-            </Tab>
-            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+            </Tabs.Trigger>
+            <Tabs.Trigger value="tasks" className="p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg data-[state=active]:border-t-purple-600 data-[state=active]:bg-white data-[state=active]:text-purple-800 hover:bg-gray-100 border-transparent hover:bg-white hover:border-t-purple-600">
                 <ClipboardDocumentCheckIcon className="w-4 h-4" />
                 <div>
                     Tasks
@@ -45,8 +45,8 @@ const HostTabs = () => {
                 <div>
                     {hostTaskData?.tasks?.totalCount && `(${hostTaskData.tasks.totalCount})`}
                 </div>
-            </Tab>
-            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+            </Tabs.Trigger>
+            <Tabs.Trigger value="credentials" className="p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg data-[state=active]:border-t-purple-600 data-[state=active]:bg-white data-[state=active]:text-purple-800 hover:bg-gray-100 border-transparent hover:bg-white hover:border-t-purple-600">
                 <KeyIcon className="w-4 h-4" />
                 <div>
                     Credentials
@@ -54,8 +54,8 @@ const HostTabs = () => {
                 <div>
                     {host?.credentials?.edges?.length && `(${host?.credentials?.edges?.length || 0})`}
                 </div>
-            </Tab>
-        </TabList>
+            </Tabs.Trigger>
+        </Tabs.List>
     )
 }
 export default HostTabs;

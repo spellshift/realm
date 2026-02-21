@@ -1,4 +1,4 @@
-import { Steps, Icon } from '@chakra-ui/react';
+import { Icon } from '@chakra-ui/react';
 import React, { Fragment } from 'react'
 
 import {
@@ -31,7 +31,7 @@ export const Table = ({
   renderSubComponent,
   getRowCanExpand,
   onRowClick,
-}: TableProps<any>): JSX.Element => {
+}: TableProps<any>) => {
   const table = useReactTable<any>({
     data,
     columns,
@@ -77,14 +77,18 @@ export const Table = ({
                           onClick: header.column.getToggleSortingHandler(),
                         }}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{
-                          asc: <Icon w={4} asChild><LuTriangle /></Icon>,
-                          desc: <Icon w={4} asChild><LuTriangle /></Icon>
-                        }[header.column.getIsSorted() as string] ?? null}
+                        <>
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {{
+                            // @ts-ignore
+                            asc: <Icon w={4} asChild><LuTriangle /></Icon>,
+                            // @ts-ignore
+                            desc: <Icon w={4} asChild><LuTriangle /></Icon>
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </>
                       </div>
                     )}
                   </th>
@@ -107,7 +111,7 @@ export const Table = ({
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
-                        )}
+                        ) as React.ReactNode}
                       </td>
                     )
                   })}
