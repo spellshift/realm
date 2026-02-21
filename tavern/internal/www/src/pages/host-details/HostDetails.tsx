@@ -1,4 +1,4 @@
-import { TabGroup, TabPanel, TabPanels } from "@headlessui/react";
+import { Tabs } from "@chakra-ui/react";
 import { HostContextProvider } from "../../context/HostContext";
 import HostDetailsSection from "./components/HostDetailsSection";
 import HostTabs from "./components/HostTabs";
@@ -13,20 +13,18 @@ const HostDetails = () => {
             <HostBreadcrumbs />
             <HostDetailsSection />
             <div className="flex flex-col mt-2">
-                <TabGroup>
+                <Tabs.Root defaultValue="beacons">
                     <HostTabs />
-                    <TabPanels>
-                        <TabPanel>
-                            <BeaconTab />
-                        </TabPanel>
-                        <TabPanel>
-                            <HostTaskTab />
-                        </TabPanel>
-                        <TabPanel>
-                            <CredentialTab />
-                        </TabPanel>
-                    </TabPanels>
-                </TabGroup>
+                    <Tabs.Content value="beacons">
+                        <BeaconTab />
+                    </Tabs.Content>
+                    <Tabs.Content value="tasks">
+                        <HostTaskTab />
+                    </Tabs.Content>
+                    <Tabs.Content value="credentials">
+                        <CredentialTab />
+                    </Tabs.Content>
+                </Tabs.Root>
             </div>
         </HostContextProvider>
     );

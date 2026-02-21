@@ -23,7 +23,18 @@ interface ButtonProps extends BaseButtonAttributes {
 
 const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
   // destructure necessary props
-  const { type, children, buttonStyle, buttonVariant, disabled, isLoading, leftIcon, rightIcon, className, ...rest } = props;
+  const {
+    type = "button",
+    children,
+    buttonStyle = { color: "purple", size: "md" },
+    buttonVariant = "solid",
+    disabled = false,
+    isLoading = false,
+    leftIcon,
+    rightIcon,
+    className,
+    ...rest
+  } = props;
 
   // determine icon placement
   const { newIcon: icon, iconPlacement } = useMemo(() => {
@@ -77,15 +88,5 @@ const Button = forwardRef<Ref, ButtonProps>((props, ref) => {
     </button>
   );
 });
-
-// set default props
-Button.defaultProps = {
-  buttonStyle: { color: "purple", size: "md" },
-  buttonVariant: "solid",
-  isLoading: false,
-  disabled: false,
-  leftIcon: undefined,
-  rightIcon: undefined,
-};
 
 export default Button;

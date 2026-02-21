@@ -8,7 +8,7 @@ import {
 
 export function Provider(props: ColorModeProviderProps) {
   return (
-    <ChakraProvider value={String(defaultSystem)}>
+    <ChakraProvider value={defaultSystem}>
       <ColorModeProvider {...props} />
     </ChakraProvider>
   );

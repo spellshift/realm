@@ -18,10 +18,9 @@ vi.mock('@tanstack/react-table', async () => {
   };
 });
 
-// Mock Chakra icons
-vi.mock('@chakra-ui/icons', () => ({
-  TriangleUpIcon: (props: any) => <span data-testid="icon-sort-asc" {...props}>▲</span>,
-  TriangleDownIcon: (props: any) => <span data-testid="icon-sort-desc" {...props}>▼</span>
+// Mock react-icons
+vi.mock('react-icons/lu', () => ({
+  LuTriangle: (props: any) => <span data-testid="icon-sort-asc" {...props}>▲</span>, // Simplified mock for both directions as rotation is usually CSS
 }));
 
 describe('Table', () => {

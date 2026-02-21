@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GET_USER_QUERY } from "../../../utils/queries";
 import { GET_USER_IDS_QUERY, GET_USER_DETAIL_QUERY } from "../queries";
-import { Steps, useToast } from "@chakra-ui/react";
+import { toaster } from "@/components/ui/toaster";
 
 interface UpdateUserMutationResponse {
     updateUser: {
@@ -35,7 +35,6 @@ interface UseUpdateUserReturn {
 export const useUpdateUser = (): UseUpdateUserReturn => {
     const [error, setError] = useState<boolean>(false);
     const navigate = useNavigate();
-    const toast = useToast();
 
     const ACTIVATE_USER_MUTATION = gql`
         mutation ActivateUser ($id: ID!, $input: UpdateUserInput!) {
@@ -78,31 +77,28 @@ export const useUpdateUser = (): UseUpdateUserReturn => {
                 }
             }
         };
-        const loadingToast = toast({
+        const loadingToast = toaster.create({
             title: "Modifying user",
-            status: "loading",
-            position: "bottom-right",
+            type: "info", // "loading" is not a standard type in createToaster usually, checking usage
         });
         const { errors } = await activateUserMutation(formatVariables);
-        toast.close(loadingToast);
+        toaster.dismiss(loadingToast);
         if(errors){
-            toast({
+            toaster.create({
                 title: "Error",
                 description: "There was an error modifying the user",
-                status: "error",
+                type: "error",
                 duration: 3000,
-                isClosable: true,
-                position: "bottom-right",
+                closable: true,
             });
             return;
         }
-        toast({
+        toaster.create({
             title: "Success",
             description: "User was modified successfully",
-            status: "success",
+            type: "success",
             duration: 3000,
-            isClosable: true,
-            position: "bottom-right",
+            closable: true,
         });
     }
 
