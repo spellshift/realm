@@ -82,8 +82,8 @@ export const Table = ({
                           header.getContext()
                         )}
                         {{
-                          asc: <Icon w={4} asChild><LuTriangle /></Icon>,
-                          desc: <Icon w={4} asChild><LuTriangle /></Icon>
+                          asc: <Icon w={4} as={LuTriangle as any} />,
+                          desc: <Icon w={4} as={LuTriangle as any} />
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     )}

@@ -1,8 +1,9 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { ArrowDownToLine, Share, BookOpen, Copy, FilePlus } from "lucide-react";
-import { Steps, useToast } from "@chakra-ui/react";
-import { Tooltip } from '@/components/ui/tooltip';
+import { Steps } from "@chakra-ui/react";
+import { toaster } from "../../components/ui/toaster";
+import { Tooltip } from '../../components/ui/tooltip';
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
@@ -23,18 +24,16 @@ interface AssetsTableProps {
 }
 
 export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLink, onAssetUpdate }: AssetsTableProps) => {
-    const toast = useToast();
 
     const handleCopy = useCallback((text: string, e: React.MouseEvent) => {
         e.stopPropagation();
         navigator.clipboard.writeText(text);
-        toast({
+        toaster.create({
             title: "Copied to clipboard",
-            status: "success",
+            type: "success",
             duration: 2000,
-            isClosable: true,
         });
-    }, [toast]);
+    }, []);
 
     const getVariables = useCallback((id: string) => ({ id }), []);
 

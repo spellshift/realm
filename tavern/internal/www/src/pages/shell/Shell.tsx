@@ -2,7 +2,8 @@ import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from "react-router-dom";
-import { Steps, useToast } from "@chakra-ui/react";
+import { Steps } from "@chakra-ui/react";
+import { toaster } from "../../components/ui/toaster";
 import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import Button from "../../components/tavern-base-ui/button/Button";
@@ -11,7 +12,6 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 
 const Shell = () => {
     const { shellId } = useParams();
-    const toast = useToast();
 
     const [wsIsOpen, setWsIsOpen] = useState(false);
     const [latency, setLatency] = useState<number | null>(null);
@@ -30,33 +30,30 @@ const Shell = () => {
 
             socket.onopen = (e) => {
                 setWsIsOpen(true);
-                toast({
+                toaster.create({
                     title: 'Shell Connected',
                     description: 'Only output after your connection is displayed, so you may need to enter a newline to see the prompt',
-                    status: 'success',
+                    type: 'success',
                     duration: 6000,
-                    isClosable: true,
                 })
                 const attachAddon = new AttachAddon(socket);
                 termRef.current?.loadAddon(attachAddon);
             };
             socket.onerror = (e) => {
-                toast({
+                toaster.create({
                     title: 'Shell Connection Error',
                     description: `Something went wrong with the underlying connection to the shell (${e.type})`,
-                    status: 'error',
+                    type: 'error',
                     duration: 6000,
-                    isClosable: true,
                 })
             }
             socket.onclose = (e) => {
                 setWsIsOpen(false);
-                toast({
+                toaster.create({
                     title: 'Shell Closed',
                     description: `Your shell connection has been closed, however the shell may still be available (${e.type})`,
-                    status: 'info',
+                    type: 'info',
                     duration: 6000,
-                    isClosable: true,
                 })
             }
 

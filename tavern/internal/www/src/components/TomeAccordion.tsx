@@ -75,14 +75,14 @@ const TomeAccordion = (props: Props) => {
 
     return (
         <Accordion.Root
-            value={String(accordionIndex)}
+            value={[String(accordionIndex)]}
             collapsible
             className="w-full"
             onValueChange={(
                 {
-                    value: value
-                }
-            ) => (onToggle ? (expandedIndex: number) => onToggle(expandedIndex) : undefined)(value)}
+                    value
+                }: any
+            ) => { if(onToggle) { onToggle(value) } }}
         >
             <Accordion.Item border="none" value='item-0'>
                 <h2>

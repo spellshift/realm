@@ -1,6 +1,6 @@
 "use client"
 
-import type { Steps, IconButtonProps, SpanProps } from "@chakra-ui/react";
+import type { IconButtonProps, SpanProps } from "@chakra-ui/react";
 import { Steps, ClientOnly, IconButton, Skeleton, Span } from "@chakra-ui/react";
 import { ThemeProvider, useTheme } from "next-themes"
 import type { ThemeProviderProps } from "next-themes"
@@ -14,6 +14,9 @@ export function ColorModeProvider(props: ColorModeProviderProps) {
     <ThemeProvider attribute="class" disableTransitionOnChange {...props} />
   )
 }
+
+const LuMoonIcon = LuMoon as any;
+const LuSunIcon = LuSun as any;
 
 export type ColorMode = "light" | "dark"
 
@@ -43,7 +46,7 @@ export function useColorModeValue<T>(light: T, dark: T) {
 
 export function ColorModeIcon() {
   const { colorMode } = useColorMode()
-  return colorMode === "dark" ? <LuMoon /> : <LuSun />
+  return (colorMode === "dark" ? <LuMoonIcon /> : <LuSunIcon />)
 }
 
 interface ColorModeButtonProps extends Omit<IconButtonProps, "aria-label"> {}

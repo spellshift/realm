@@ -1,9 +1,9 @@
 import * as React from "react"
 import { render, RenderOptions } from "@testing-library/react"
-import { Steps, ChakraProvider, theme } from "@chakra-ui/react";
+import { Provider } from "./components/ui/provider";
 
 const AllProviders = ({ children }: { children?: React.ReactNode }) => (
-  <ChakraProvider value={String(theme)}>{children}</ChakraProvider>
+  <Provider>{children}</Provider>
 )
 
 const customRender = (ui: React.ReactElement, options?: RenderOptions) =>
