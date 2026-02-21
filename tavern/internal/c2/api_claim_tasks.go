@@ -463,9 +463,11 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 
 		resp.ShellTasks = append(resp.ShellTasks, &c2pb.ShellTask{
-			Id:      int64(claimedShellTask.ID),
-			Input:   claimedShellTask.Input,
-			ShellId: int64(shellID),
+			Id:         int64(claimedShellTask.ID),
+			Input:      claimedShellTask.Input,
+			ShellId:    int64(shellID),
+			SequenceId: claimedShellTask.SequenceID,
+			StreamId:   claimedShellTask.StreamID,
 		})
 	}
 

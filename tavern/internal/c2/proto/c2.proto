@@ -77,6 +77,8 @@ message ShellTask {
     int64 id = 1;
     string input = 2;
     int64 shell_id = 3;
+    uint64 sequence_id = 4;
+    string stream_id = 5;
 }
 
 // TaskError provides information when task execution fails.

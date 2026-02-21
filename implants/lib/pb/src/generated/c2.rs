@@ -162,6 +162,10 @@ pub struct ShellTask {
     pub input: ::prost::alloc::string::String,
     #[prost(int64, tag = "3")]
     pub shell_id: i64,
+    #[prost(uint64, tag = "4")]
+    pub sequence_id: u64,
+    #[prost(string, tag = "5")]
+    pub stream_id: ::prost::alloc::string::String,
 }
 /// TaskError provides information when task execution fails.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]

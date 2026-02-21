@@ -565,6 +565,8 @@ type ShellTask struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Input         string                 `protobuf:"bytes,2,opt,name=input,proto3" json:"input,omitempty"`
 	ShellId       int64                  `protobuf:"varint,3,opt,name=shell_id,json=shellId,proto3" json:"shell_id,omitempty"`
+	SequenceId    uint64                 `protobuf:"varint,4,opt,name=sequence_id,json=sequenceId,proto3" json:"sequence_id,omitempty"`
+	StreamId      string                 `protobuf:"bytes,5,opt,name=stream_id,json=streamId,proto3" json:"stream_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -618,6 +620,20 @@ func (x *ShellTask) GetShellId() int64 {
 		return x.ShellId
 	}
 	return 0
+}
+
+func (x *ShellTask) GetSequenceId() uint64 {
+	if x != nil {
+		return x.SequenceId
+	}
+	return 0
+}
+
+func (x *ShellTask) GetStreamId() string {
+	if x != nil {
+		return x.StreamId
+	}
+	return ""
 }
 
 // TaskError provides information when task execution fails.
@@ -1687,11 +1703,14 @@ const file_c2_proto_rawDesc = "" +
 	"\x04tome\x18\x02 \x01(\v2\x0e.eldritch.TomeR\x04tome\x12\x1d\n" +
 	"\n" +
 	"quest_name\x18\x03 \x01(\tR\tquestName\x12\x10\n" +
-	"\x03jwt\x18\x04 \x01(\tR\x03jwt\"L\n" +
+	"\x03jwt\x18\x04 \x01(\tR\x03jwt\"\x8a\x01\n" +
 	"\tShellTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x14\n" +
 	"\x05input\x18\x02 \x01(\tR\x05input\x12\x19\n" +
-	"\bshell_id\x18\x03 \x01(\x03R\ashellId\"\x1d\n" +
+	"\bshell_id\x18\x03 \x01(\x03R\ashellId\x12\x1f\n" +
+	"\vsequence_id\x18\x04 \x01(\x04R\n" +
+	"sequenceId\x12\x1b\n" +
+	"\tstream_id\x18\x05 \x01(\tR\bstreamId\"\x1d\n" +
 	"\tTaskError\x12\x10\n" +
 	"\x03msg\x18\x01 \x01(\tR\x03msg\"\xe3\x01\n" +
 	"\n" +
