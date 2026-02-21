@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardBody, Checkbox } from "@chakra-ui/react";
+import { Steps, Card, Checkbox } from "@chakra-ui/react";
 import BeaconTile from "../BeaconTile";
 
 export function areEqual(prevProps: any, nextProps: any) {
@@ -24,13 +24,13 @@ export const BeaconOption = (props: Props) => {
 
     return (
         <div style={style} key={`beacon_option_${beacon.id}`}>
-            <Card>
-                <CardBody>
-                    <Checkbox colorScheme={"purple"} size="lg" isChecked={isChecked} onChange={() => toggleCheck(beacon.id)} aria-label={`beacon ${beacon.id}`}>
+            <Card.Root>
+                <Card.Body>
+                    <Checkbox.Root colorPalette={"purple"} size="lg" onCheckedChange={() => toggleCheck(beacon.id)} aria-label={`beacon ${beacon.id}`} checked={isChecked}><Checkbox.HiddenInput /><Checkbox.Control><Checkbox.Indicator /></Checkbox.Control><Checkbox.Label>
                         <div className="ml-2"><BeaconTile beacon={beacon} /></div>
-                    </Checkbox>
-                </CardBody>
-            </Card>
+                    </Checkbox.Label></Checkbox.Root>
+                </Card.Body>
+            </Card.Root>
         </div>
     );
 };

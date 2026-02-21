@@ -1,4 +1,4 @@
-import { Heading } from "@chakra-ui/react";
+import { Steps, Heading } from "@chakra-ui/react";
 import { FC } from "react";
 import CodeBlock from "../../../components/tavern-base-ui/CodeBlock";
 import AlertError from "../../../components/tavern-base-ui/AlertError";

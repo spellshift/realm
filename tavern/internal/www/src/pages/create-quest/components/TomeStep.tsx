@@ -1,4 +1,4 @@
-import { Heading } from "@chakra-ui/react";
+import { Steps, Heading } from "@chakra-ui/react";
 import { FormTextArea } from "../../../components/form-text-area";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
 import { safelyJsonParse } from "../../../utils/utils";

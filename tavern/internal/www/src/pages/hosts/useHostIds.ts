@@ -109,7 +109,7 @@ const getHostIdsQuery = (
   const query: GetHostIdsQueryVariables = {
     where: {
       ...hostFields,
-      ...(Object.keys(beaconFields).length > 0) && { "hasBeaconsWith": beaconFields }
+      ...((Object.keys(beaconFields).length > 0) && { "hasBeaconsWith": beaconFields })
     },
     ...(sort && { orderBy: [sort] }),
     first: defaultRowLimit,

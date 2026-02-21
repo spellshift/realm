@@ -150,7 +150,7 @@ const getHostTaskIdsQuery = (
                     "id": hostId
                 }
             },
-            ...filterQueryFields && filterQueryFields.hasTasksWith,
+            ...(filterQueryFields && filterQueryFields.hasTasksWith),
         },
         "first": beforeCursor ? null : defaultRowLimit,
         "last": beforeCursor ? defaultRowLimit : null,

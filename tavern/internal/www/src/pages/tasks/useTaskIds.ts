@@ -145,7 +145,7 @@ const getTaskIdsQuery = (
 
     const query = {
         "where": {
-            ...filterQueryFields && filterQueryFields.hasTasksWith,
+            ...(filterQueryFields && filterQueryFields.hasTasksWith),
         },
         "first": beforeCursor ? null : defaultRowLimit,
         "last": beforeCursor ? defaultRowLimit : null,

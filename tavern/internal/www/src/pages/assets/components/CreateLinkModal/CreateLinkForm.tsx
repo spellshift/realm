@@ -1,17 +1,17 @@
-import { Checkbox, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
+import { Steps, Checkbox, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
 import Button from "../../../../components/tavern-base-ui/button/Button";
 
 const CreateLinkForm = ({ formik, setOpen }: any) => (
     <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
         <div>
             <div className="flex items-center gap-2 mb-2">
-                <Checkbox
-                    isChecked={formik.values.hasDownloadLimit}
-                    onChange={(e) => formik.setFieldValue("hasDownloadLimit", e.target.checked)}
-                    colorScheme="purple"
-                >
+                <Checkbox.Root
+                    onCheckedChange={(e) => formik.setFieldValue("hasDownloadLimit", e.target.checked)}
+                    colorPalette="purple"
+                    checked={formik.values.hasDownloadLimit}
+                ><Checkbox.HiddenInput /><Checkbox.Control><Checkbox.Indicator /></Checkbox.Control><Checkbox.Label>
                     <span className="text-sm font-medium text-gray-700">Limit Downloads</span>
-                </Checkbox>
+                </Checkbox.Label></Checkbox.Root>
             </div>
 
             {formik.values.hasDownloadLimit && (
@@ -38,18 +38,18 @@ const CreateLinkForm = ({ formik, setOpen }: any) => (
             <label className="block text-sm font-medium text-gray-700 mb-2">
                 Expires In
             </label>
-            <Tabs
-                index={formik.values.expiryMode}
-                onChange={(index) => formik.setFieldValue("expiryMode", index)}
-                variant="soft-rounded"
-                colorScheme="purple"
+            <Tabs.Root
+                value={formik.values.expiryMode}
+                onValueChange={(index) => formik.setFieldValue("expiryMode", index)}
+                variant='subtle'
+                colorPalette="purple"
                 size="sm"
             >
-                <TabList>
+                <Tabs.List>
                     <Tab>10min</Tab>
                     <Tab>1hr</Tab>
                     <Tab>Custom</Tab>
-                </TabList>
+                </Tabs.List>
                 <TabPanels>
                     <TabPanel p={0} pt={2}>
                         <p className="text-sm text-gray-500">Link will expire in 10 minutes.</p>
@@ -73,7 +73,7 @@ const CreateLinkForm = ({ formik, setOpen }: any) => (
                         )}
                     </TabPanel>
                 </TabPanels>
-            </Tabs>
+            </Tabs.Root>
         </div>
 
         <div>

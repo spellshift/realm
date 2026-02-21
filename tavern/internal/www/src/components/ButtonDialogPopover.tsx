@@ -86,7 +86,6 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
             >
                 {label}
             </Button>
-
             <Transition.Root show={isOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={closeDialog}>
                     {/* Backdrop */}
@@ -104,7 +103,7 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
 
                     {isMobile ? (
                         /* Mobile: Full-screen modal */
-                        <div className="fixed inset-0 z-50 overflow-y-auto">
+                        (<div className="fixed inset-0 z-50 overflow-y-auto">
                             <Transition.Child
                                 as={Fragment}
                                 enter="ease-out duration-300"
@@ -134,10 +133,10 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                                     </div>
                                 </Dialog.Panel>
                             </Transition.Child>
-                        </div>
+                        </div>)
                     ) : (
                         /* Desktop: Positioned popover */
-                        <div className="fixed inset-0 z-50 overflow-y-auto">
+                        (<div className="fixed inset-0 z-50 overflow-y-auto">
                             <Transition.Child
                                 as={Fragment}
                                 enter="ease-out duration-200"
@@ -158,7 +157,7 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
                                     {children}
                                 </div>
                             </Transition.Child>
-                        </div>
+                        </div>)
                     )}
                 </Dialog>
             </Transition.Root>

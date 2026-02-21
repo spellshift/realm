@@ -1,6 +1,6 @@
 import React from "react";
 import { RadioGroup } from '@headlessui/react'
-import { Heading } from '@chakra-ui/react'
+import { Steps, Heading } from '@chakra-ui/react';
 import { EmptyState, EmptyStateType } from './EmptyState'
 
 function classNames(...classes: string[]) {

@@ -3,7 +3,7 @@ import { handleCopyLink, sortLinks } from "../utils";
 import { AssetNode } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
-import { useToast } from "@chakra-ui/react";
+import { Steps, useToast } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { DISABLE_LINK } from "../queries";
 import { useMutation } from "@apollo/client";

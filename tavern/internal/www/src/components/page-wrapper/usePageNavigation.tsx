@@ -32,7 +32,7 @@ export const usePageNavigation = () => {
         { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },
         { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
         { name: PageNavItem.assets, href: '/assets', icon: LibraryBigIcon, internal: true },
-        ...data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : [],
+        ...(data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : []),
         { name: PageNavItem.documentation, href: 'https://docs.realm.pub/', icon: DocumentDuplicateIcon, target: "__blank", internal: false },
         { name: PageNavItem.playground, href: '/playground', icon: WrenchScrewdriverIcon, target: "__blank", internal: false },
     ] as Array<NavigationItemType>, [data?.me?.isAdmin]);

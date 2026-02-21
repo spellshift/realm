@@ -26,9 +26,9 @@ export const constructTagFieldsQuery = function (
   }
 
   return [
-    ...(groups.length > 0) ? [constructTagQueryFormat('group', groups)] : [],
-    ...(services.length > 0) ? [constructTagQueryFormat('service', services)] : [],
-  ]
+    ...((groups.length > 0) ? [constructTagQueryFormat('group', groups)] : []),
+    ...((services.length > 0) ? [constructTagQueryFormat('service', services)] : []),
+  ];
 
 };
 
@@ -53,12 +53,12 @@ export function constructHostFieldQuery(
   return {
     "hasHostWith": {
       ...(tagQuery && { "and": constructTagFieldsQuery(groups, services) }),
-      ...(hosts.length > 0) && { "nameIn": hosts },
-      ...(platforms.length > 0) && { "platformIn": platforms },
-      ...(primaryIP.length > 0) && { "primaryIPIn": primaryIP },
+      ...((hosts.length > 0) && { "nameIn": hosts }),
+      ...((platforms.length > 0) && { "platformIn": platforms }),
+      ...((primaryIP.length > 0) && { "primaryIPIn": primaryIP }),
       ...(hostStatusFilter && hostStatusFilter)
     }
-  }
+  };
 };
 
 export function constructBeaconFilterQuery(
@@ -147,9 +147,9 @@ export function constructTaskFilterQuery(
       ...(beaconFilterQuery && beaconFilterQuery),
       ...((questId || tomeFieldsFilterQuery || questParamFilterQuery) && {
         "hasQuestWith": {
-          ...questId && { "id": questId },
-          ...tomeFieldsFilterQuery && tomeFieldsFilterQuery,
-          ...questParamFilterQuery && questParamFilterQuery
+          ...(questId && { "id": questId }),
+          ...(tomeFieldsFilterQuery && tomeFieldsFilterQuery),
+          ...(questParamFilterQuery && questParamFilterQuery)
         }
       })
 
@@ -208,8 +208,8 @@ export function constructBeaconStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{ nextSeenAtGTE: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(currentTimestamp)] : [],
+    ...(status.includes(OnlineOfflineFilterType.OnlineBeacons) ? [{ nextSeenAtGTE: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : []),
+    ...(status.includes(OnlineOfflineFilterType.RecentlyLostBeacons) ? [createRecentlyLostQuery(currentTimestamp)] : []),
   ]
 
   if (conditions.length === 0) return null;
@@ -224,8 +224,8 @@ export function constructHostStatusFilter(
   if (!currentTimestamp) return null;
 
   const conditions = [
-    ...status.includes(OnlineOfflineFilterType.OfflineHost) ? [{ nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : [],
-    ...status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(currentTimestamp)] : [],
+    ...(status.includes(OnlineOfflineFilterType.OfflineHost) ? [{ nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }] : []),
+    ...(status.includes(OnlineOfflineFilterType.RecentlyLostHost) ? [createRecentlyLostQuery(currentTimestamp)] : []),
   ]
 
   if (conditions.length === 0) return null;

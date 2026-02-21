@@ -1,8 +1,5 @@
 import * as React from "react"
-import {
-  ChakraProvider,
-  theme,
-} from "@chakra-ui/react";
+import { Steps, ChakraProvider, theme } from "@chakra-ui/react";
 import './style.css';
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -89,7 +86,7 @@ const router = createBrowserRouter([
 export const App = () => {
 
   return (
-    <ChakraProvider theme={theme}>
+    <ChakraProvider value={String(theme)}>
       <AuthorizationContextProvider>
           <TagContextProvider>
             <UserPreferencesContextProvider>
@@ -98,5 +95,5 @@ export const App = () => {
           </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
-  )
+  );
 }

@@ -1,4 +1,6 @@
-import { Tooltip as ChakraTooltip, TooltipProps as ChakraTooltipProps } from "@chakra-ui/react";
+import { Steps, TooltipProps as ChakraTooltipProps } from "@chakra-ui/react";
+
+import { Tooltip as ChakraTooltip } from '@/components/ui/tooltip';
 
 const Tooltip = ({ label, ...props }: ChakraTooltipProps) => {
     return <ChakraTooltip

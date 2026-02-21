@@ -1,5 +1,5 @@
 import { CommandLineIcon, } from "@heroicons/react/24/outline";
-import { Image } from "@chakra-ui/react";
+import { Steps, Image } from "@chakra-ui/react";
 
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import Button from "../../tavern-base-ui/button/Button";

@@ -1,4 +1,5 @@
-import { Heading, Text, Stack, StackItem, Box, FormLabel, Switch, Tooltip } from "@chakra-ui/react";
+import { Steps, Heading, Text, Stack, StackItem, Box, Switch } from "@chakra-ui/react";
+import { Tooltip } from '@/components/ui/tooltip';
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { FC, useCallback } from "react";
 import {
@@ -101,24 +102,26 @@ const BeaconStep = (props: Props) => {
                         </div>
                         <div className="flex-1 flex flex-col gap-2">
                             <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
-                                <FormLabel htmlFor='isSelected' className="mt-1">
+                                <Field.Label htmlFor='isSelected' className="mt-1">
                                     <Heading size="sm" >View only selected beacons</Heading>
-                                </FormLabel>
-                                <Switch id='isSelected' className="pt-1" colorScheme="purple" onChange={() => setViewOnlySelected((value) => !value)} />
+                                </Field.Label>
+                                <Switch id='isSelected' className="pt-1" colorPalette="purple" onValueChange={() => setViewOnlySelected((value) => !value)} />
                             </div>
                             <Tooltip 
-                                label="Show only one beacon per host, prioritizing admin privileges and more reliable transports" 
-                                placement="bottom"
+                                content="Show only one beacon per host, prioritizing admin privileges and more reliable transports" 
                                 bg="white"
                                 color="gray.600"
                                 borderWidth="1px"
                                 borderColor="gray.100"
+                                positioning={{
+                                    placement: "bottom"
+                                }}
                             >
                                 <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
-                                    <FormLabel htmlFor='isOnePerHost' className="mt-1">
+                                    <Field.Label htmlFor='isOnePerHost' className="mt-1">
                                         <Heading size="sm" >View one beacon per host</Heading>
-                                    </FormLabel>
-                                    <Switch id='isOnePerHost' className="pt-1" colorScheme="purple" onChange={() => setViewOnlyOnePerHost((value) => !value)} />
+                                    </Field.Label>
+                                    <Switch id='isOnePerHost' className="pt-1" colorPalette="purple" onValueChange={() => setViewOnlyOnePerHost((value) => !value)} />
                                 </div>
                             </Tooltip>
                         </div>
@@ -178,6 +181,6 @@ const BeaconStep = (props: Props) => {
                 </StackItem>
             </Stack>
         </div>
-    )
+    );
 }
 export default BeaconStep;

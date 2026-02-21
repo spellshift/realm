@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import { ArrowDownToLine, Share, BookOpen, Copy, FilePlus } from "lucide-react";
-import { Tooltip, useToast } from "@chakra-ui/react";
+import { Steps, useToast } from "@chakra-ui/react";
+import { Tooltip } from '@/components/ui/tooltip';
 import moment from "moment";
 import { VirtualizedTable } from "../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtualized-table/types";
@@ -52,19 +53,19 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                 return (
                     <div className="flex items-center gap-4">
                         {hasTomes ? (
-                            <Tooltip label={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
+                            <Tooltip content={`${asset.tomes.totalCount} associated tome(s)`} bg="white" color="black">
                                 <div className="shrink-0">
                                     <BookOpen className="w-4 h-4 text-gray-500" />
                                 </div>
                             </Tooltip>
                         ) : (
-                            <Tooltip label="Asset is not referenced by any tomes" bg="white" color="black">
+                            <Tooltip content="Asset is not referenced by any tomes" bg="white" color="black">
                                 <div className="shrink-0">
                                     <FilePlus className="w-4 h-4 text-gray-400" />
                                 </div>
                             </Tooltip>
                         )}
-                        <Tooltip label={asset.name} bg="white" color="black">
+                        <Tooltip content={asset.name} bg="white" color="black">
                             <div
                                 className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
                                 onClick={(e) => handleCopy(asset.name, e)}
@@ -115,7 +116,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             render: (asset) => {
                 const hash = asset.hash;
                 return (
-                    <Tooltip label={hash} bg="white" color="black">
+                    <Tooltip content={hash} bg="white" color="black">
                         <div
                             className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
                             onClick={(e) => handleCopy(hash, e)}
@@ -158,7 +159,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             width: 'minmax(100px,1fr)',
             render: (asset) => (
                 <div className="flex flex-row gap-2">
-                    <Tooltip label="Download" bg="white" color="black">
+                    <Tooltip content="Download" bg="white" color="black">
                         <a href={`/assets/download/${asset.name}`} download onClick={(e) => e.stopPropagation()}>
                             <Button
                                 buttonVariant="ghost"
@@ -168,7 +169,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             />
                         </a>
                     </Tooltip>
-                    <Tooltip label="Create Link" bg="white" color="black">
+                    <Tooltip content="Create Link" bg="white" color="black">
                         <Button
                             buttonVariant="ghost"
                             buttonStyle={{ color: "gray", size: "xs" }}

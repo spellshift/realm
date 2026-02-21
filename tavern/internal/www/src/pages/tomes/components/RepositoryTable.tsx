@@ -1,4 +1,5 @@
-import { Tooltip } from "@chakra-ui/react";
+import { Steps } from "@chakra-ui/react";
+import { Tooltip } from '@/components/ui/tooltip';
 import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
@@ -108,7 +109,7 @@ const RepositoryTable = ({ repositories }: {
                 }
                 return (
                     <div className="flex flex-row">
-                        <Tooltip label="Refetch tomes">
+                        <Tooltip content="Refetch tomes">
                             <Button
                                 id="ignoreRowClick"
                                 buttonVariant="ghost"
@@ -120,7 +121,7 @@ const RepositoryTable = ({ repositories }: {
                                 onClick={() => importRepositoryTomes(row?.original?.node?.id)}
                             />
                         </Tooltip>
-                        <Tooltip label="Copy public key">
+                        <Tooltip content="Copy public key">
                             <Button
                                 id="ignoreRowClick"
                                 buttonVariant="ghost"
@@ -138,7 +139,7 @@ const RepositoryTable = ({ repositories }: {
     ];
 
     return (
-        <Table
+        <Table.Root
             data={repositories}
             columns={columns}
             getRowCanExpand={() => true}

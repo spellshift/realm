@@ -2,7 +2,7 @@ import { Terminal } from "@xterm/xterm";
 import { AttachAddon } from 'xterm-addon-attach';
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from "react-router-dom";
-import { useToast } from "@chakra-ui/react";
+import { Steps, useToast } from "@chakra-ui/react";
 import '@xterm/xterm/css/xterm.css';
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import Button from "../../components/tavern-base-ui/button/Button";

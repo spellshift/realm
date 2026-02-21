@@ -1,4 +1,3 @@
-import { ColorModeScript } from "@chakra-ui/react"
 import * as React from "react"
 import * as ReactDOM from "react-dom/client"
 import { App } from "./App"
@@ -34,7 +33,7 @@ const client = new ApolloClient({
 root.render(
   <React.StrictMode>
     <ApolloProvider client={client}>
-      <ColorModeScript />
+
       <App />
     </ApolloProvider>
   </React.StrictMode>,

@@ -33,7 +33,7 @@ export const useCredsTable = (hostId: number) => {
             return {
                 ...cred,
                 kind: cred.kind.replace(/^KIND_/, "")
-            }
+            };
         });
 
         if (search) {

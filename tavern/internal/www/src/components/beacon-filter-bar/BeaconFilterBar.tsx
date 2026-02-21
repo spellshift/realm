@@ -25,10 +25,10 @@ export const BeaconFilterBar = (props: Props) => {
                 label: "Transport",
                 options: transports
             },
-            ...!hideStatusFilter ? [{
+            ...(!hideStatusFilter ? [{
                 label: "Status",
                 options: onlineOfflineStatus
-            }] : [],
+            }] : []),
             {
                 label: "Service",
                 options: serviceTags

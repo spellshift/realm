@@ -1,4 +1,4 @@
-import { Heading } from "@chakra-ui/react";
+import { Steps, Heading } from "@chakra-ui/react";
 
 import BeaconTile from "../../../components/BeaconTile";
 import FormTextField from "../../../components/tavern-base-ui/FormTextField";

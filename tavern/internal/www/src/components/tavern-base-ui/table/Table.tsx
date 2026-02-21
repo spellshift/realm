@@ -1,3 +1,4 @@
+import { Steps, Icon } from '@chakra-ui/react';
 import React, { Fragment } from 'react'
 
 import {
@@ -9,7 +10,7 @@ import {
   Row,
   getExpandedRowModel
 } from '@tanstack/react-table'
-import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons'
+import { LuTriangle } from 'react-icons/lu';
 
 export type TableSorting = {
   key: string,
@@ -81,13 +82,13 @@ export const Table = ({
                           header.getContext()
                         )}
                         {{
-                          asc: <TriangleUpIcon w={4} />,
-                          desc: <TriangleDownIcon w={4} />
+                          asc: <Icon w={4} asChild><LuTriangle /></Icon>,
+                          desc: <Icon w={4} asChild><LuTriangle /></Icon>
                         }[header.column.getIsSorted() as string] ?? null}
                       </div>
                     )}
                   </th>
-                )
+                );
               })}
             </tr>
           ))}
@@ -125,6 +126,6 @@ export const Table = ({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 export default Table;

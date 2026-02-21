@@ -1,4 +1,4 @@
-import { CreateToastFnReturn } from "@chakra-ui/react";
+import { Steps, CreateToastFnReturn } from "@chakra-ui/react";
 import { LinkEdge } from "../../utils/interfacesQuery";
 
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';

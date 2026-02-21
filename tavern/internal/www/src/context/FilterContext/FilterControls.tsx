@@ -6,7 +6,8 @@ import FreeTextSearch from "../../components/tavern-base-ui/FreeTextSearch";
 import Button from "../../components/tavern-base-ui/button/Button";
 import { LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { TomeFilterBar } from "../../components/TomeFilterBar";
-import { Tooltip } from "@chakra-ui/react";
+import { Steps } from "@chakra-ui/react";
+import { Tooltip } from '@/components/ui/tooltip';
 import { useLocation } from "react-router-dom";
 import UserFilterBar from "../../components/UserFilterBar";
 
@@ -137,7 +138,7 @@ export default function FilterControls() {
                 <div className="flex flex-row justify-between pb-2 border-gray-100 border-b-2 items-center">
                     <h3 className="font-medium text-lg text-gray-700">Filters</h3>
                     <Tooltip
-                        label={isLocked ? "Click to unlock filter state" : "Click to lock filter state"}
+                        content={isLocked ? "Click to unlock filter state" : "Click to lock filter state"}
                         bg="white"
                         color="gray.600"
                         borderWidth="1px"
@@ -158,5 +159,5 @@ export default function FilterControls() {
                 })}
             </div>
         </ButtonDialogPopover>
-    )
+    );
 }

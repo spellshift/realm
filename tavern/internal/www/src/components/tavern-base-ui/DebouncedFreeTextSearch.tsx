@@ -1,8 +1,8 @@
-import { SearchIcon } from "@chakra-ui/icons";
-import { Heading, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { Steps, Heading, Input, InputGroup, InputLeftElement, Icon } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
 import { useParams } from "react-router-dom";
+import { LuSearch } from 'react-icons/lu';
 
 type Props = {
     placeholder?: string
@@ -34,9 +34,9 @@ const FreeTextSearch = (props: Props) => {
             <Heading size="sm" mb={2}> {placeholderText}</Heading>
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
-                    <SearchIcon color='gray.300' />
+                    <Icon color='gray.300' asChild><LuSearch /></Icon>
                 </InputLeftElement>
-                <Input type='text' placeholder={placeholderText} onChange={handleChange} />
+                <Input type='text' placeholder={placeholderText} onValueChange={handleChange} />
             </InputGroup>
         </div>
     );

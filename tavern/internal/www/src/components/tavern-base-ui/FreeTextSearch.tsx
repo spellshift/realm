@@ -1,7 +1,7 @@
-import { SearchIcon } from "@chakra-ui/icons";
-import { Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
+import { Steps, Input, InputGroup, InputLeftElement, Icon } from "@chakra-ui/react";
 import React, { useEffect, useRef } from "react";
 import { debounce } from "lodash"
+import { LuSearch } from 'react-icons/lu';
 
 type Props = {
     placeholder: string;
@@ -33,9 +33,9 @@ const FreeTextSearch = (props: Props) => {
             <label className="text-gray-700"> {placeholder}</label>
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
-                    <SearchIcon color='gray.300' />
+                    <Icon color='gray.300' asChild><LuSearch /></Icon>
                 </InputLeftElement>
-                <Input type='text' defaultValue={defaultValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
+                <Input type='text' defaultValue={String(defaultValue)} placeholder={placeholder} onValueChange={handleChange} disabled={isDisabled} />
             </InputGroup>
         </div>
     );

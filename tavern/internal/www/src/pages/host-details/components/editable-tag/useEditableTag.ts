@@ -1,7 +1,7 @@
 import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
 import { GET_HOST_QUERY, GET_TAG_FILTERS } from "../../../../utils/queries";
-import { useToast } from "@chakra-ui/react";
+import { Steps, useToast } from "@chakra-ui/react";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 export const useEditableTag = (kind: KindOfTag) => {
@@ -84,8 +84,8 @@ export const useEditableTag = (kind: KindOfTag) => {
             "variables": {
                 "hostID": hostId,
                 "input": {
-                  ...previousTag ? {"removeTagIDs": [previousTag?.id]} : {},
-                  ...selectedTag ? {"addTagIDs": [selectedTag.id]} : {}
+                  ...(previousTag ? {"removeTagIDs": [previousTag?.id]} : {}),
+                  ...(selectedTag ? {"addTagIDs": [selectedTag.id]} : {})
                 }
             }
         };

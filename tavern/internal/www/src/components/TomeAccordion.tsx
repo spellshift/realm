@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel } from "@chakra-ui/react";
+import { Steps, Accordion } from "@chakra-ui/react";
 import CodeBlock from "./tavern-base-ui/CodeBlock";
 import { TomeNode } from "../utils/interfacesQuery";
 import { FieldInputParams } from "../utils/interfacesUI";
@@ -74,15 +74,19 @@ const TomeAccordion = (props: Props) => {
     const hasTactic = tome.tactic && tome.tactic !== "UNSPECIFIED";
 
     return (
-        <Accordion
-            index={accordionIndex}
-            allowToggle
+        <Accordion.Root
+            value={String(accordionIndex)}
+            collapsible
             className="w-full"
-            onChange={onToggle ? (expandedIndex: number) => onToggle(expandedIndex) : undefined}
+            onValueChange={(
+                {
+                    value: value
+                }
+            ) => (onToggle ? (expandedIndex: number) => onToggle(expandedIndex) : undefined)(value)}
         >
-            <AccordionItem border="none">
+            <Accordion.Item border="none" value='item-0'>
                 <h2>
-                    <AccordionButton>
+                    <Accordion.ItemTrigger>
                         <div className="flex flex-row gap-4 w-full justify-between items-center">
                             {leftContent}
                             <div className="flex-1 text-left flex flex-col w-full gap-1">
@@ -99,22 +103,22 @@ const TomeAccordion = (props: Props) => {
                             </div>
                             {showDetailsButton && (
                                 <div className="text-sm items-center px-2">
-                                    <AccordionIcon />
+                                    <Accordion.ItemIndicator />
                                 </div>
                             )}
                         </div>
-                    </AccordionButton>
+                    </Accordion.ItemTrigger>
                 </h2>
                 {tome.eldritch && (
-                    <AccordionPanel pb={2} pl={10} pr={4}>
-                        <>
-                            {showParamValues && hasParams && <ParamCodeBlock params={params} />}
-                            <CodeBlock code={tome.eldritch} language="python" />
-                        </>
-                    </AccordionPanel>
+                    <Accordion.ItemContent pb={2} pl={10} pr={4}><Accordion.ItemBody>
+                            <>
+                                {showParamValues && hasParams && <ParamCodeBlock params={params} />}
+                                <CodeBlock code={tome.eldritch} language="python" />
+                            </>
+                        </Accordion.ItemBody></Accordion.ItemContent>
                 )}
-            </AccordionItem>
-        </Accordion>
+            </Accordion.Item>
+        </Accordion.Root>
     );
 }
 export default TomeAccordion;

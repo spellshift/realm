@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Image } from "@chakra-ui/react";
+import { Steps, Image } from "@chakra-ui/react";
 
 import PlaceholderUser from "../assets/PlaceholderUser.png";
 import { UserNode } from "../utils/interfacesQuery";

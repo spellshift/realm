@@ -1,4 +1,4 @@
-import { FormLabel, Heading, Input, InputProps } from "@chakra-ui/react";
+import { Steps, Heading, Input, InputProps } from "@chakra-ui/react";
 
 type Props = {
     htmlFor: string;
@@ -8,16 +8,16 @@ const FormTextField = (props: Props) => {
     const {htmlFor, label, ...rest} = props;
     return (
         <div>
-            <FormLabel htmlFor={htmlFor}>
+            <Field.Label htmlFor={htmlFor}>
                 <Heading size="sm" >{label}</Heading>
-            </FormLabel>
+            </Field.Label>
             <Input
-                colorScheme="purple"
+                colorPalette="purple"
                 name={htmlFor}
                 {...rest}
                 size='sm'
             />
         </div>
-    )
+    );
 }
 export default FormTextField;

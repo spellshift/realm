@@ -1,6 +1,6 @@
 import { gql, useMutation } from "@apollo/client";
 import { ApolloError } from "@apollo/client/errors";
-import { useToast } from "@chakra-ui/react";
+import { Steps, useToast } from "@chakra-ui/react";
 import { useState } from "react";
 import { GET_REPOSITORY_DETAIL_QUERY } from "../queries";
 
