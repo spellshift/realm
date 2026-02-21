@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import FilterControls from '../FilterControls';
 import { FilterProvider, useFilters } from '../FilterContext';
 import { MemoryRouter } from 'react-router-dom';
+import { Provider } from '../../../components/ui/provider';
 
 // Mock the child components
 vi.mock('../../../components/beacon-filter-bar', () => ({
@@ -67,10 +68,12 @@ function FiltersDisplay() {
 function TestWrapper({ path, includeDisplay = false }: { path: string; includeDisplay?: boolean }) {
   return (
     <MemoryRouter initialEntries={[path]}>
-      <FilterProvider>
-        <FilterControls />
-        {includeDisplay && <FiltersDisplay />}
-      </FilterProvider>
+      <Provider>
+        <FilterProvider>
+          <FilterControls />
+          {includeDisplay && <FiltersDisplay />}
+        </FilterProvider>
+      </Provider>
     </MemoryRouter>
   );
 }

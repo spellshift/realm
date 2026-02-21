@@ -4,7 +4,7 @@ import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/E
 import { useCredsTable } from "../useCredsTable";
 import CredentialTable from "./CredentialTable";
 import FreeTextSearch from "../../../components/tavern-base-ui/FreeTextSearch";
-import { Steps, Heading, Switch } from "@chakra-ui/react";
+import { Steps, Heading, Switch, Field } from "@chakra-ui/react";
 import CredentialTableGrouped from "./CredentialTableGrouped";
 
 const CredentialTab = () => {
@@ -23,7 +23,12 @@ const CredentialTab = () => {
                     <Field.Label htmlFor='groupByPrincipal' className="mt-1">
                         <Heading size="sm" >Group by Principal/Kind</Heading>
                     </Field.Label>
-                    <Switch id='groupByPrincipal' className="pt-1" colorPalette="purple" onValueChange={() => setGroupByPrincipal((value: boolean) => !value)} />
+                    <Switch.Root id='groupByPrincipal' className="pt-1" colorPalette="purple" onCheckedChange={() => setGroupByPrincipal((value: boolean) => !value)}>
+                        <Switch.HiddenInput />
+                        <Switch.Control>
+                            <Switch.Thumb />
+                        </Switch.Control>
+                    </Switch.Root>
                 </div>
             </div>
             <div className="flex flex-col justify-center items-center gap-6">

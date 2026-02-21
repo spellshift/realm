@@ -1,5 +1,5 @@
 import { Steps } from "@chakra-ui/react";
-import { Tooltip } from '@/components/ui/tooltip';
+import { Tooltip } from '../../../components/ui/tooltip';
 import { ArrowPathIcon, ChevronDownIcon, ChevronRightIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { formatDistance } from "date-fns";
@@ -139,7 +139,7 @@ const RepositoryTable = ({ repositories }: {
     ];
 
     return (
-        <Table.Root
+        <Table
             data={repositories}
             columns={columns}
             getRowCanExpand={() => true}

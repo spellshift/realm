@@ -7,7 +7,7 @@ import Button from "../../components/tavern-base-ui/button/Button";
 import { LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { TomeFilterBar } from "../../components/TomeFilterBar";
 import { Steps } from "@chakra-ui/react";
-import { Tooltip } from '@/components/ui/tooltip';
+import { Tooltip } from '../../components/ui/tooltip';
 import { useLocation } from "react-router-dom";
 import UserFilterBar from "../../components/UserFilterBar";
 

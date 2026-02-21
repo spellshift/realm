@@ -3,7 +3,8 @@ import { handleCopyLink, sortLinks } from "../utils";
 import { AssetNode } from "../../../utils/interfacesQuery";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
-import { Steps, useToast } from "@chakra-ui/react";
+import { Steps } from "@chakra-ui/react";
+import { toaster } from "../../../components/ui/toaster";
 import { useMemo } from "react";
 import { DISABLE_LINK } from "../queries";
 import { useMutation } from "@apollo/client";
@@ -16,25 +17,22 @@ type AssetAccordionProps = {
 };
 
 const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
-    const toast = useToast();
     const [disableLink] = useMutation(DISABLE_LINK);
     const handleDisableLink = async (linkId: string) => {
         try {
             await disableLink({ variables: { linkID: linkId } });
-            toast({
+            toaster.create({
                 title: "Link disabled",
-                status: "success",
+                type: "success",
                 duration: 2000,
-                isClosable: true,
             });
             onUpdate();
         } catch (e: any) {
-            toast({
+            toaster.create({
                 title: "Error disabling link",
                 description: e.message,
-                status: "error",
+                type: "error",
                 duration: 4000,
-                isClosable: true,
             });
         }
     };
@@ -64,7 +62,7 @@ const AssetAccordion = ({ asset, onUpdate }: AssetAccordionProps) => {
                                         <div className="flex gap-1">
                                             <Tooltip label="Copy Link">
                                                 <Button
-                                                    onClick={() => handleCopyLink(edge.node.path, toast)}
+                                                    onClick={() => handleCopyLink(edge.node.path)}
                                                     buttonVariant="ghost"
                                                     buttonStyle={{ color: "gray", size: "xs" }}
                                                     leftIcon={<Copy className="w-3 h-3" />}

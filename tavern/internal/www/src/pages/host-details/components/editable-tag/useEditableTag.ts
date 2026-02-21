@@ -1,11 +1,11 @@
 import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
 import { GET_HOST_QUERY, GET_TAG_FILTERS } from "../../../../utils/queries";
-import { Steps, useToast } from "@chakra-ui/react";
+import { Steps } from "@chakra-ui/react";
+import { toaster } from "../../../../components/ui/toaster";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 
 export const useEditableTag = (kind: KindOfTag) => {
-    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [displayEditTag, setDisplayEditTag] = useState(false);
     const [tagValue, setTagValue] = useState<FilterBarOption | null>(null);
@@ -64,13 +64,11 @@ export const useEditableTag = (kind: KindOfTag) => {
             }
         }
         catch(error){
-            toast({
+            toaster.create({
                 title: "Error Creating Tag",
                 description: `${error}`,
-                status: "error",
+                type: "error",
                 duration: 3000,
-                isClosable: true,
-                position: "bottom-right",
             });
         }
 
@@ -92,26 +90,22 @@ export const useEditableTag = (kind: KindOfTag) => {
         try{
             const response = await updateHostMutation(formatVariables);
             if(response.data){
-                toast({
+                toaster.create({
                     title: "Success",
                     description: "Tag has been updated successfully.",
-                    status: "success",
+                    type: "success",
                     duration: 3000,
-                    isClosable: true,
-                    position: "bottom-right",
                 });
                 setTagValue(selectedTag);
                 setDisplayEditTag(false);
             }
         }
         catch(error){
-            toast({
+            toaster.create({
                 title: "Error Updating Tag",
                 description: `${error}`,
-                status: "error",
+                type: "error",
                 duration: 3000,
-                isClosable: true,
-                position: "bottom-right",
             });
         }
 

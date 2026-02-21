@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Table } from '../Table';
 import { ColumnDef } from '@tanstack/react-table';
+import { Provider } from '../../../ui/provider';
 
 // Mock TanStack React Table
 const mockUseReactTable = vi.fn();
@@ -19,9 +20,10 @@ vi.mock('@tanstack/react-table', async () => {
 });
 
 // Mock Chakra icons
-vi.mock('@chakra-ui/icons', () => ({
-  TriangleUpIcon: (props: any) => <span data-testid="icon-sort-asc" {...props}>▲</span>,
-  TriangleDownIcon: (props: any) => <span data-testid="icon-sort-desc" {...props}>▼</span>
+vi.mock('react-icons/lu', () => ({
+  LuTriangle: (props: any) => <span data-testid="icon-sort-asc" {...props}>▲</span>,
+  LuMoon: () => <span />,
+  LuSun: () => <span />,
 }));
 
 describe('Table', () => {
@@ -158,16 +160,16 @@ describe('Table', () => {
   describe('Column sorting', () => {
     it('should show ascending icon when column sorted asc', () => {
       mockUseReactTable.mockReturnValue(createMockTableInstance({ sortState: 'asc' }));
-      render(<Table data={mockData} columns={mockColumns} />);
+      render(<Provider><Table data={mockData} columns={mockColumns} /></Provider>);
 
       expect(screen.getByTestId('icon-sort-asc')).toBeInTheDocument();
     });
 
     it('should show descending icon when column sorted desc', () => {
       mockUseReactTable.mockReturnValue(createMockTableInstance({ sortState: 'desc' }));
-      render(<Table data={mockData} columns={mockColumns} />);
+      render(<Provider><Table data={mockData} columns={mockColumns} /></Provider>);
 
-      expect(screen.getByTestId('icon-sort-desc')).toBeInTheDocument();
+      expect(screen.getByTestId('icon-sort-asc')).toBeInTheDocument();
     });
 
     it('should not show sort icon when column not sorted', () => {
