@@ -119,20 +119,23 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             return;
         }
 
-        let mut merged_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
-        for output in outputs {
-            let task_id = output
-                .context
-                .as_ref()
-                .map(|c| c.task_id)
-                .unwrap_or_default();
+        let mut merged_task_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
+        let mut merged_shell_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
 
-            use std::collections::btree_map::Entry;
-            match merged_outputs.entry(task_id) {
-                Entry::Occupied(mut entry) => {
-                    let existing = entry.get_mut();
-                    if let Some(existing_out) = &mut existing.output {
-                        if let Some(new_out) = &output.output {
+        for output in outputs {
+            // Handle Task Output
+            if let Some(new_out) = &output.output {
+                let task_id = output
+                    .context
+                    .as_ref()
+                    .map(|c| c.task_id)
+                    .unwrap_or_default();
+
+                use std::collections::btree_map::Entry;
+                match merged_task_outputs.entry(task_id) {
+                    Entry::Occupied(mut entry) => {
+                        let existing = entry.get_mut();
+                        if let Some(existing_out) = &mut existing.output {
                             existing_out.output.push_str(&new_out.output);
                             match (&mut existing_out.error, &new_out.error) {
                                 (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
@@ -142,24 +145,75 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                             if new_out.exec_finished_at.is_some() {
                                 existing_out.exec_finished_at = new_out.exec_finished_at.clone();
                             }
+                        } else {
+                            existing.output = Some(new_out.clone());
+                        }
+                        existing.context = output.context.clone();
+                    }
+                    Entry::Vacant(entry) => {
+                        let req = c2::ReportTaskOutputRequest {
+                            output: Some(new_out.clone()),
+                            context: output.context.clone(),
+                            shell_task_output: None,
+                        };
+                        entry.insert(req);
+                    }
+                }
+            }
+
+            // Handle Shell Task Output
+            if let Some(new_shell_out) = &output.shell_task_output {
+                let shell_task_id = new_shell_out.id;
+
+                use std::collections::btree_map::Entry;
+                match merged_shell_outputs.entry(shell_task_id) {
+                    Entry::Occupied(mut entry) => {
+                        let existing = entry.get_mut();
+                        if let Some(existing_out) = &mut existing.shell_task_output {
+                            existing_out.output.push_str(&new_shell_out.output);
+                            match (&mut existing_out.error, &new_shell_out.error) {
+                                (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                _ => {}
+                            }
+                            if new_shell_out.exec_finished_at.is_some() {
+                                existing_out.exec_finished_at =
+                                    new_shell_out.exec_finished_at.clone();
+                            }
+                        } else {
+                            existing.shell_task_output = Some(new_shell_out.clone());
                         }
                     }
-                    existing.context = output.context.clone();
-                }
-                Entry::Vacant(entry) => {
-                    entry.insert(output);
+                    Entry::Vacant(entry) => {
+                        let req = c2::ReportTaskOutputRequest {
+                            output: None,
+                            context: None,
+                            shell_task_output: Some(new_shell_out.clone()),
+                        };
+                        entry.insert(req);
+                    }
                 }
             }
         }
 
         let mut transport = self.transport.write().await;
-        for (_, output) in merged_outputs {
+        for (_, output) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
 
             if let Err(_e) = transport.report_task_output(output).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report task output: {_e}");
+            }
+        }
+
+        for (_, output) in merged_shell_outputs {
+            #[cfg(debug_assertions)]
+            log::info!("Shell Task Output: {output:#?}");
+
+            if let Err(_e) = transport.report_task_output(output).await {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report shell task output: {_e}");
             }
         }
     }
