@@ -68,12 +68,6 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.Tome.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete tomes: %w", err))
 	}
-	if _, err := client.Asset.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete assets: %w", err))
-	}
-	if _, err := client.Repository.Delete().Exec(ctx); err != nil {
-		return false, rollback(tx, fmt.Errorf("failed to delete repositories: %w", err))
-	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
 	}
