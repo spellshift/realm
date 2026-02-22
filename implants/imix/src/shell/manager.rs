@@ -235,113 +235,92 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
     }
 
     async fn handle_task(&mut self, task: ShellTask) {
-        let agent = self.agent.clone();
         let shell_id = task.shell_id;
-        let state = self.get_or_create_interpreter(shell_id);
-
-        state.last_activity = Instant::now();
-        state
-            .context
-            .set_task(task.id, task.sequence_id, task.stream_id);
-
         let input = task.input.clone();
-        let interpreter = &mut state.interpreter;
 
-        let result = panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
-
-        match result {
-            Ok(interpret_result) => match interpret_result {
-                Ok(value) => {
-                    if !matches!(value, Value::None) {
-                        send_shell_output(
-                            &agent,
-                            &state.context,
-                            shell_id,
-                            format!("{:?}\n", value),
-                        );
-                    }
-                }
-                Err(e) => {
-                    send_shell_error(&agent, &state.context, shell_id, e);
-                }
-            },
-            Err(e) => {
-                let msg = if let Some(s) = e.downcast_ref::<&str>() {
-                    format!(
-                        "Critical Error: Panic occurred during shell execution: {}",
-                        s
-                    )
-                } else if let Some(s) = e.downcast_ref::<String>() {
-                    format!(
-                        "Critical Error: Panic occurred during shell execution: {}",
-                        s
-                    )
-                } else {
-                    "Critical Error: Panic occurred during shell execution".to_string()
-                };
-                send_shell_error(&agent, &state.context, shell_id, msg);
-            }
-        }
-
-        state.context.clear_task();
+        self.run_interpreter_task(shell_id, input, move |ctx| {
+            ctx.set_task(task.id, task.sequence_id, task.stream_id);
+        })
+        .await;
     }
 
     async fn handle_portal_payload(&mut self, mote: Mote, reply_tx: mpsc::Sender<Mote>) {
         if let Some(portal::mote::Payload::Shell(shell_payload)) = mote.payload {
-            let agent = self.agent.clone();
             let shell_id = shell_payload.shell_id;
-            let stream_id = mote.stream_id.clone();
+            let stream_id = mote.stream_id;
             let seq_id = mote.seq_id;
+            let input = shell_payload.input;
 
-            let state = self.get_or_create_interpreter(shell_id);
-
-            state.last_activity = Instant::now();
-            state.context.set_portal(reply_tx, stream_id, seq_id);
-
-            let input = shell_payload.input.clone();
-            let interpreter = &mut state.interpreter;
-
-            let result =
-                panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
-
-            match result {
-                Ok(interpret_result) => match interpret_result {
-                    Ok(value) => {
-                        if !matches!(value, Value::None) {
-                            send_shell_output(
-                                &agent,
-                                &state.context,
-                                shell_id,
-                                format!("{:?}\n", value),
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        send_shell_error(&agent, &state.context, shell_id, e);
-                    }
-                },
-                Err(e) => {
-                    let msg = if let Some(s) = e.downcast_ref::<&str>() {
-                        format!(
-                            "Critical Error: Panic occurred during shell execution: {}",
-                            s
-                        )
-                    } else if let Some(s) = e.downcast_ref::<String>() {
-                        format!(
-                            "Critical Error: Panic occurred during shell execution: {}",
-                            s
-                        )
-                    } else {
-                        "Critical Error: Panic occurred during shell execution".to_string()
-                    };
-                    send_shell_error(&agent, &state.context, shell_id, msg);
-                }
-            }
+            self.run_interpreter_task(shell_id, input, move |ctx| {
+                ctx.set_portal(reply_tx, stream_id, seq_id);
+            })
+            .await;
         }
     }
 
-    fn get_or_create_interpreter(&mut self, shell_id: i64) -> &mut InterpreterState {
-        self.interpreters.entry(shell_id).or_insert_with(|| {
+    async fn run_interpreter_task<F>(&mut self, shell_id: i64, input: String, setup_context: F)
+    where
+        F: FnOnce(&mut SharedShellContext),
+    {
+        self.ensure_interpreter(shell_id);
+
+        if let Some(mut state) = self.interpreters.remove(&shell_id) {
+            setup_context(&mut state.context);
+            state.last_activity = Instant::now();
+
+            let agent = self.agent.clone();
+
+            let state = tokio::task::spawn_blocking(move || {
+                let interpreter = &mut state.interpreter;
+                let result =
+                    panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
+
+                match result {
+                    Ok(interpret_result) => match interpret_result {
+                        Ok(value) => {
+                            if !matches!(value, Value::None) {
+                                send_shell_output(
+                                    &agent,
+                                    &state.context,
+                                    shell_id,
+                                    format!("{:?}\n", value),
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            send_shell_error(&agent, &state.context, shell_id, e);
+                        }
+                    },
+                    Err(e) => {
+                        let msg = if let Some(s) = e.downcast_ref::<&str>() {
+                            format!(
+                                "Critical Error: Panic occurred during shell execution: {}",
+                                s
+                            )
+                        } else if let Some(s) = e.downcast_ref::<String>() {
+                            format!(
+                                "Critical Error: Panic occurred during shell execution: {}",
+                                s
+                            )
+                        } else {
+                            "Critical Error: Panic occurred during shell execution".to_string()
+                        };
+                        send_shell_error(&agent, &state.context, shell_id, msg);
+                    }
+                }
+
+                state.context.clear_task();
+                state
+            })
+            .await
+            .unwrap();
+
+            self.interpreters.insert(shell_id, state);
+        }
+    }
+
+    fn ensure_interpreter(&mut self, shell_id: i64) {
+        if !self.interpreters.contains_key(&shell_id) {
             let context = SharedShellContext::new();
             let printer = Arc::new(ShellPrinter {
                 agent: self.agent.clone(),
@@ -361,12 +340,13 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 .with_default_libs()
                 .with_task_context(self.agent.clone(), task_context, Vec::new(), backend);
 
-            InterpreterState {
+            let state = InterpreterState {
                 interpreter,
                 context,
                 last_activity: Instant::now(),
-            }
-        })
+            };
+            self.interpreters.insert(shell_id, state);
+        }
     }
 
     fn cleanup_inactive_interpreters(&mut self) {
