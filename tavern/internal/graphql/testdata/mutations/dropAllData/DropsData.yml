@@ -15,6 +15,20 @@ state: |
     VALUES (2000, 3000);
   INSERT INTO `tome_assets` (tome_id, asset_id)
     VALUES (2000, 3001);
+  INSERT INTO `repositories` (id, url, repository_owner, public_key, private_key, created_at, last_modified_at)
+    VALUES (4000, "http://github.com/repo", 5, "pubkey", "privkey", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `links` (id, path, expires_at, link_asset, link_creator, created_at, last_modified_at)
+    VALUES (5000, "linkpath", "2024-01-23 14:51:13", 3000, 5, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `shells` (id, shell_beacon, shell_owner, data, created_at, last_modified_at)
+    VALUES (6000, 1337, 5, "", "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `shell_tasks` (id, shell_shell_tasks, shell_task_creator, input, stream_id, sequence_id, created_at, last_modified_at)
+    VALUES (7000, 6000, 5, "whoami", "stream1", 1, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `quests` (id, name, quest_tome, created_at, last_modified_at)
+    VALUES (9000, "quest1", 2000, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `tasks` (id, quest_tasks, task_beacon, created_at, last_modified_at)
+    VALUES (10000, 9000, 1337, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
+  INSERT INTO `portals` (id, portal_beacon, portal_task, portal_owner, created_at, last_modified_at)
+    VALUES (8000, 1337, 10000, 5, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
 requestor:
   session_token: secretToken
 query: |
