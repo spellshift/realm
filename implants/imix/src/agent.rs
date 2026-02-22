@@ -14,7 +14,7 @@ use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
-const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
+const MAX_BUF_OUTPUT_MESSAGES: usize = 1_048_576;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
