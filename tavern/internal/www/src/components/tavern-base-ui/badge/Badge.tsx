@@ -13,7 +13,14 @@ interface BadgeProps {
 }
 
 const Badge: FC<BadgeProps> = (
-    { children, leftIcon, rightIcon, badgeStyle, className, ...rest }
+    {
+        children,
+        leftIcon,
+        rightIcon,
+        badgeStyle = { color: "gray" },
+        className,
+        ...rest
+    }
 ) => {
 
     // determine icon placement
@@ -50,15 +57,6 @@ const Badge: FC<BadgeProps> = (
             </div>
         </div>
     );
-};
-
-// set default props
-Badge.defaultProps = {
-    leftIcon: undefined,
-    rightIcon: undefined,
-    badgeStyle: {
-        color: "gray"
-    }
 };
 
 export default Badge;

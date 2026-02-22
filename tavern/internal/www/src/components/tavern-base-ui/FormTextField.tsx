@@ -1,4 +1,4 @@
-import { Steps, Heading, Input, InputProps } from "@chakra-ui/react";
+import { Heading, Input, InputProps, Field } from "@chakra-ui/react";
 
 type Props = {
     htmlFor: string;

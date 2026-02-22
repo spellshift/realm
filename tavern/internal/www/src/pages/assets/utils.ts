@@ -1,5 +1,5 @@
-import { Steps, CreateToastFnReturn } from "@chakra-ui/react";
 import { LinkEdge } from "../../utils/interfacesQuery";
+import { toaster } from "@/components/ui/toaster";
 
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';
 
@@ -61,14 +61,14 @@ export const generateRandomLinkPath = (length: number = 8) => {
     return result;
 };
 
-export const handleCopyLink = (path: string, toast: CreateToastFnReturn) => {
+export const handleCopyLink = (path: string) => {
     const url = `${API_ENDPOINT}/cdn/${path}`;
     navigator.clipboard.writeText(url);
-    toast({
+    toaster.create({
         title: "Link copied to clipboard",
-        status: "success",
+        type: "success",
         duration: 2000,
-        isClosable: true,
+        closable: true,
     });
 };
 

@@ -1,12 +1,11 @@
 import { gql, useMutation } from "@apollo/client";
 import { ApolloError } from "@apollo/client/errors";
-import { Steps, useToast } from "@chakra-ui/react";
+import { toaster } from "@/components/ui/toaster";
 import { useState } from "react";
 import { GET_REPOSITORY_DETAIL_QUERY } from "../queries";
 
 export const useFetchRepositoryTome = (handleOnSuccess?:()=>void, showToast?: boolean) => {
     const [error, setError] = useState("");
-    const toast = useToast();
 
     const IMPORT_REPOSITORY_TOMES_MUTATION = gql`
         mutation ImportRepositoryTomes($repoId: ID!){
@@ -30,22 +29,22 @@ export const useFetchRepositoryTome = (handleOnSuccess?:()=>void, showToast?: bo
             setError(error?.message);
         }
         if(error && showToast){
-            toast({
+            toaster.create({
                 title: 'Error importing tomes',
                 description: error?.message,
-                status: 'error',
+                type: 'error',
                 duration: 6000,
-                isClosable: true,
+                closable: true,
             });
         }
     }
     const handleSuccess = () => {
         if(showToast){
-            toast({
+            toaster.create({
                 title: 'Successfully imported tomes',
-                status: 'success',
+                type: 'success',
                 duration: 3000,
-                isClosable: true,
+                closable: true,
             });
         }
         if(handleOnSuccess){
