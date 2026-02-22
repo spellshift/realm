@@ -101,7 +101,7 @@ const BeaconStep = (props: Props) => {
                             <BeaconFilterBar filtersSelected={typeFilters} setFiltersSelected={setTypeFilters} hideStatusFilter={true} />
                         </div>
                         <div className="flex-1 flex flex-col gap-2">
-                            <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                            <Field.Root orientation="horizontal" className="flex flex-row-reverse md:flex-row gap-1 justify-end">
                                 <Field.Label htmlFor='isSelected' className="mt-1">
                                     <Heading size="sm" >View only selected beacons</Heading>
                                 </Field.Label>
@@ -111,7 +111,7 @@ const BeaconStep = (props: Props) => {
                                         <Switch.Thumb />
                                     </Switch.Control>
                                 </Switch.Root>
-                            </div>
+                            </Field.Root>
                             <Tooltip
                                 content="Show only one beacon per host, prioritizing admin privileges and more reliable transports"
                                 bg="white"
@@ -122,7 +122,7 @@ const BeaconStep = (props: Props) => {
                                     placement: "bottom"
                                 }}
                             >
-                                <div className="flex flex-row-reverse md:flex-row gap-1 justify-end">
+                                <Field.Root orientation="horizontal" className="flex flex-row-reverse md:flex-row gap-1 justify-end">
                                     <Field.Label htmlFor='isOnePerHost' className="mt-1">
                                         <Heading size="sm" >View one beacon per host</Heading>
                                     </Field.Label>
@@ -132,7 +132,7 @@ const BeaconStep = (props: Props) => {
                                         <Switch.Thumb />
                                     </Switch.Control>
                                 </Switch.Root>
-                                </div>
+                                </Field.Root>
                             </Tooltip>
                         </div>
                     </div>

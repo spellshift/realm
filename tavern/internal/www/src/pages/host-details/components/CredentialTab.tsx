@@ -19,7 +19,7 @@ const CredentialTab = () => {
                 <div className="col-span-1 md:col-span-2">
                     <FreeTextSearch placeholder={searchPlaceholder} setSearch={setSearch} />
                 </div>
-                <div className="flex flex-row-reverse md:flex-row gap-1 justify-center">
+                <Field.Root orientation="horizontal" className="flex flex-row-reverse md:flex-row gap-1 justify-center">
                     <Field.Label htmlFor='groupByPrincipal' className="mt-1">
                         <Heading size="sm" >Group by Principal/Kind</Heading>
                     </Field.Label>
@@ -29,7 +29,7 @@ const CredentialTab = () => {
                             <Switch.Thumb />
                         </Switch.Control>
                     </Switch.Root>
-                </div>
+                </Field.Root>
             </div>
             <div className="flex flex-col justify-center items-center gap-6">
                 {(loading) ? (
