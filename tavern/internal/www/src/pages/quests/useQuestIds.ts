@@ -5,14 +5,12 @@ import { Filters, useFilters } from "../../context/FilterContext";
 import { constructQuestFilterQuery, constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
-import { useTags } from "../../context/TagContext";
 import { GET_QUEST_IDS_QUERY } from "./queries";
 import { QuestIdsQueryTopLevel, GetQuestIdsQueryVariables } from "./types";
 
 export const useQuestIds = () => {
   const { filters } = useFilters();
   const { sorts } = useSorts();
-  const { lastFetchedTimestamp } = useTags();
   const questSort = sorts[PageNavItem.quests];
 
   const [allQuestIds, setAllQuestIds] = useState<string[]>([]);
@@ -20,8 +18,8 @@ export const useQuestIds = () => {
   const [endCursor, setEndCursor] = useState<Cursor | undefined>(undefined);
 
   const queryVariables = useMemo(
-    () => getQuestIdsQuery(filters, undefined, questSort, lastFetchedTimestamp),
-    [filters, questSort, lastFetchedTimestamp]
+    () => getQuestIdsQuery(filters, undefined, questSort),
+    [filters, questSort]
   );
 
   const { data, previousData, error, fetchMore, networkStatus, loading } = useQuery<QuestIdsQueryTopLevel>(
@@ -56,7 +54,7 @@ export const useQuestIds = () => {
 
     try {
       await fetchMore({
-        variables: getQuestIdsQuery(filters, endCursor, questSort, lastFetchedTimestamp),
+        variables: getQuestIdsQuery(filters, endCursor, questSort),
         updateQuery: (previousResult, { fetchMoreResult }) => {
           if (!fetchMoreResult) return previousResult;
 
@@ -79,7 +77,7 @@ export const useQuestIds = () => {
     } catch (err) {
       console.error("Error loading more quests:", err);
     }
-  }, [hasMore, loading, fetchMore, filters, endCursor, questSort, lastFetchedTimestamp]);
+  }, [hasMore, loading, fetchMore, filters, endCursor, questSort]);
 
   const currentData = data ?? previousData;
 
@@ -97,8 +95,8 @@ const getQuestIdsQuery = (
   filters: Filters,
   afterCursor?: Cursor,
   sort?: OrderByField,
-  currentTimestamp?: Date
 ): GetQuestIdsQueryVariables => {
+  const currentTimestamp = new Date();
   const defaultRowLimit = TableRowLimit.QuestRowLimit;
   const filterQueryTaskFields = constructTaskFilterQuery(filters, currentTimestamp);
   const questFilterFields = constructQuestFilterQuery(filters);

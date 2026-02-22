@@ -22,6 +22,7 @@ export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTa
         handleCreateOption,
         setDisplayEditTag
     } = useEditableTag(kind);
+    
     const options = kind === "group" ? tagData.groupTags : tagData.serviceTags;
 
 
