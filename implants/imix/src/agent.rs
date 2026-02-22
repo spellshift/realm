@@ -425,7 +425,15 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
-        let shell_manager_tx = self.shell_manager_tx.clone();
+        let shell_manager_tx = {
+            let lock = self
+                .shell_manager_tx
+                .lock()
+                .map_err(|_| "Poisoned lock".to_string())?;
+            lock.clone()
+                .ok_or("Shell manager not initialized".to_string())?
+        };
+
         self.spawn_subtask(task_context.task_id, move |transport| async move {
             run_create_portal(task_context, transport, shell_manager_tx).await
         })
