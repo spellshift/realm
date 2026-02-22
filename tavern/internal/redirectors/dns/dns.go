@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -49,19 +49,15 @@ const (
 	benignARecordIP = "0.0.0.0"
 
 	// Async protocol configuration
-	MaxActiveConversations    = 200000
-	NormalConversationTimeout = 15 * time.Minute
-	ServedConversationTimeout = 2 * time.Minute
-	MaxAckRangesInResponse    = 20
-	MaxNacksInResponse        = 50
-	MaxDataSize               = 50 * 1024 * 1024 // 50MB max data size
+	MaxActiveConversations = 200000
+	ConversationTTL        = 5 * time.Minute
+	MaxAckRangesInResponse = 20
+	MaxNacksInResponse     = 50
+	MaxDataSize            = 50 * 1024 * 1024 // 50MB max data size
 )
 
 func init() {
-	cache, err := lru.New[string, *Conversation](MaxActiveConversations)
-	if err != nil {
-		slog.Error("dns redirector: failed to create conversation cache")
-	}
+	cache := expirable.NewLRU[string, *Conversation](MaxActiveConversations, nil, ConversationTTL)
 	redirectors.Register("dns", &Redirector{
 		conversations: cache,
 	})
@@ -69,10 +65,9 @@ func init() {
 
 // Redirector handles DNS-based C2 communication
 type Redirector struct {
-	conversationsMu     sync.Mutex
-	conversations       *lru.Cache[string, *Conversation]
-	baseDomains         []string
-	conversationTimeout time.Duration
+	conversationsMu sync.Mutex
+	conversations   *expirable.LRU[string, *Conversation]
+	baseDomains     []string
 }
 
 // Conversation tracks state for a request-response exchange
@@ -84,12 +79,10 @@ type Conversation struct {
 	ExpectedCRC      uint32
 	ExpectedDataSize uint32 // Data size provided by client
 	Chunks           map[uint32][]byte
-	LastActivity     time.Time
 	ResponseData     []byte
 	ResponseChunks   [][]byte // Split response for multi-fetch
 	ResponseCRC      uint32
 	Completed        bool // Set to true when all chunks received
-	ResponseServed   bool // Set after first successful FETCH
 }
 
 func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *grpc.ClientConn, _ *tls.Config) error {
@@ -103,7 +96,6 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	}
 
 	r.baseDomains = domains
-	r.conversationTimeout = NormalConversationTimeout
 
 	udpAddr, err := net.ResolveUDPAddr("udp", listenAddr)
 	if err != nil {
@@ -117,8 +109,6 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	defer conn.Close()
 
 	slog.Info("dns redirector: started", "listen_on", listenAddr, "base_domains", r.baseDomains)
-
-	go r.cleanupConversations(ctx)
 
 	buf := make([]byte, 4096)
 	for {
@@ -181,47 +171,6 @@ func ParseListenAddr(listenOn string) (string, []string, error) {
 	}
 
 	return addr, domains, nil
-}
-
-func (r *Redirector) cleanupConversations(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			now := time.Now()
-			var cleaned int
-
-			for _, key := range r.conversations.Keys() {
-				conv, ok := r.conversations.Peek(key)
-				if !ok {
-					continue
-				}
-				conv.mu.Lock()
-
-				shouldDelete := false
-				if conv.ResponseServed {
-					shouldDelete = now.Sub(conv.LastActivity) > ServedConversationTimeout
-				} else {
-					shouldDelete = now.Sub(conv.LastActivity) > r.conversationTimeout
-				}
-
-				if shouldDelete {
-					r.conversations.Remove(key)
-					cleaned++
-				}
-				conv.mu.Unlock()
-			}
-
-			slog.Info("dns redirector stats",
-				"active_conversations", r.conversations.Len(),
-				"cleaned", cleaned,
-				"timeout", r.conversationTimeout)
-		}
-	}
 }
 
 func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr *net.UDPAddr, query []byte, upstream *grpc.ClientConn) {
@@ -401,7 +350,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 		ExpectedCRC:      initPayload.DataCrc32,
 		ExpectedDataSize: initPayload.FileSize,
 		Chunks:           make(map[uint32][]byte),
-		LastActivity:     time.Now(),
 		Completed:        false,
 	}
 
@@ -415,7 +363,6 @@ func (r *Redirector) handleInitPacket(packet *dnspb.DNSPacket) ([]byte, error) {
 
 		existing.mu.Lock()
 		defer existing.mu.Unlock()
-		existing.LastActivity = time.Now()
 
 		slog.Debug("duplicate INIT for existing conversation", "conv_id", packet.ConversationId)
 
@@ -464,12 +411,14 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
 
+	// Re-Add to refresh TTL
+	r.conversations.Add(packet.ConversationId, conv)
+
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
 	// Once the conversation has been forwarded to upstream, return full ack range immediately.
 	if conv.Completed {
-		conv.LastActivity = time.Now()
 		statusPacket := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_STATUS,
 			ConversationId: packet.ConversationId,
@@ -488,7 +437,6 @@ func (r *Redirector) handleDataPacket(ctx context.Context, upstream *grpc.Client
 	}
 
 	conv.Chunks[packet.Sequence] = packet.Data
-	conv.LastActivity = time.Now()
 
 	slog.Debug("received chunk", "conv_id", conv.ID, "seq", packet.Sequence, "size", len(packet.Data), "total", len(conv.Chunks))
 
@@ -587,13 +535,10 @@ func (r *Redirector) processCompletedConversation(ctx context.Context, upstream 
 			conv.ResponseChunks = append(conv.ResponseChunks, responseData[i:end])
 		}
 
-		conv.LastActivity = time.Now()
-
 		slog.Debug("response chunked", "conv_id", conv.ID, "total_size", len(responseData),
 			"chunks", len(conv.ResponseChunks), "crc32", conv.ResponseCRC)
 	} else {
 		conv.ResponseData = responseData
-		conv.LastActivity = time.Now()
 
 		slog.Debug("stored response", "conv_id", conv.ID, "size", len(responseData))
 	}
@@ -663,17 +608,17 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
 
+	// Re-Add to refresh TTL
+	r.conversations.Add(packet.ConversationId, conv)
+
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
 
 	if conv.ResponseData == nil {
 		// Response not ready yet, the upstream gRPC call is still in progress.
 		slog.Debug("response not ready yet - upstream call in progress", "conv_id", conv.ID)
-		conv.LastActivity = time.Now()
 		return []byte{}, nil
 	}
-
-	conv.LastActivity = time.Now()
 
 	if len(conv.ResponseChunks) > 0 {
 		if len(packet.Data) == 0 {
@@ -707,17 +652,15 @@ func (r *Redirector) handleFetchPacket(packet *dnspb.DNSPacket) ([]byte, error) 
 		slog.Debug("returning response chunk", "conv_id", conv.ID, "chunk", fetchPayload.ChunkIndex,
 			"size", len(conv.ResponseChunks[chunkIndex]), "total_chunks", len(conv.ResponseChunks))
 
-		conv.ResponseServed = true
 		return conv.ResponseChunks[chunkIndex], nil
 	}
 
 	slog.Debug("returning response", "conv_id", conv.ID, "size", len(conv.ResponseData))
 
-	conv.ResponseServed = true
 	return conv.ResponseData, nil
 }
 
-// handleCompletePacket processes COMPLETE packet and cleans up conversation
+// handleCompletePacket processes COMPLETE packet
 func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, error) {
 	// Build success status
 	statusPacket := &dnspb.DNSPacket{
@@ -730,24 +673,6 @@ func (r *Redirector) handleCompletePacket(packet *dnspb.DNSPacket) ([]byte, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal complete status: %w", err)
 	}
-
-	// Atomically check-then-delete to avoid race with concurrent COMPLETEs
-	r.conversationsMu.Lock()
-	conv, loaded := r.conversations.Get(packet.ConversationId)
-	if loaded {
-		r.conversations.Remove(packet.ConversationId)
-	}
-	r.conversationsMu.Unlock()
-
-	if !loaded {
-		// Conversation already cleaned up by a prior COMPLETE - return success
-		slog.Debug("duplicate COMPLETE for already-completed conversation", "conv_id", packet.ConversationId)
-		return statusData, nil
-	}
-
-	conv.mu.Lock()
-	slog.Debug("C2 conversation completed and confirmed by client", "conv_id", conv.ID, "method", conv.MethodPath)
-	conv.mu.Unlock()
 
 	return statusData, nil
 }

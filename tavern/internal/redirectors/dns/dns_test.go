@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -19,10 +19,9 @@ import (
 )
 
 func newTestRedirector() *Redirector {
-	cache, _ := lru.New[string, *Conversation](MaxActiveConversations)
+	cache := expirable.NewLRU[string, *Conversation](MaxActiveConversations, nil, ConversationTTL)
 	return &Redirector{
-		conversations:       cache,
-		conversationTimeout: NormalConversationTimeout,
+		conversations: cache,
 	}
 }
 
@@ -402,10 +401,9 @@ func TestHandleInitPacket(t *testing.T) {
 
 	t.Run("max conversations triggers LRU eviction", func(t *testing.T) {
 		// Create a small LRU to test eviction
-		cache, _ := lru.New[string, *Conversation](2)
+		cache := expirable.NewLRU[string, *Conversation](2, nil, ConversationTTL)
 		r := &Redirector{
-			conversations:       cache,
-			conversationTimeout: NormalConversationTimeout,
+			conversations: cache,
 		}
 
 		initPayload := &dnspb.InitPayload{
@@ -547,7 +545,6 @@ func TestHandleFetchPacket(t *testing.T) {
 		conv := &Conversation{
 			ID:           "conv1234",
 			ResponseData: responseData,
-			LastActivity: time.Now(),
 		}
 		r.conversations.Add("conv1234", conv)
 
@@ -571,7 +568,6 @@ func TestHandleFetchPacket(t *testing.T) {
 			ResponseData:   responseData,
 			ResponseChunks: [][]byte{[]byte("chunk1"), []byte("chunk2")},
 			ResponseCRC:    responseCRC,
-			LastActivity:   time.Now(),
 		}
 		r.conversations.Add("conv1234", conv)
 
@@ -598,7 +594,6 @@ func TestHandleFetchPacket(t *testing.T) {
 			ID:             "conv1234",
 			ResponseData:   []byte("full"),
 			ResponseChunks: [][]byte{[]byte("chunk0"), []byte("chunk1"), []byte("chunk2")},
-			LastActivity:   time.Now(),
 		}
 		r.conversations.Add("conv1234", conv)
 
@@ -668,7 +663,6 @@ func TestHandleFetchPacket(t *testing.T) {
 		conv := &Conversation{
 			ID:           "conv1234",
 			ResponseData: nil, // upstream call still in progress
-			LastActivity: time.Now(),
 		}
 		r.conversations.Add("conv1234", conv)
 
@@ -690,7 +684,6 @@ func TestHandleFetchPacket(t *testing.T) {
 			ID:             "conv1234",
 			ResponseData:   []byte("full"),
 			ResponseChunks: [][]byte{[]byte("chunk0")},
-			LastActivity:   time.Now(),
 		}
 		r.conversations.Add("conv1234", conv)
 
@@ -712,14 +705,13 @@ func TestHandleFetchPacket(t *testing.T) {
 
 // TestHandleCompletePacket tests COMPLETE packet processing
 func TestHandleCompletePacket(t *testing.T) {
-	t.Run("successful complete cleans up conversation", func(t *testing.T) {
+	t.Run("complete returns status", func(t *testing.T) {
 		r := newTestRedirector()
 
 		conv := &Conversation{
 			ID:           "complete1234",
 			MethodPath:   "/c2.C2/ClaimTasks",
 			ResponseData: []byte("response"),
-			LastActivity: time.Now(),
 		}
 		r.conversations.Add("complete1234", conv)
 
@@ -738,43 +730,24 @@ func TestHandleCompletePacket(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, dnspb.PacketType_PACKET_TYPE_STATUS, statusPacket.Type)
 		assert.Equal(t, "complete1234", statusPacket.ConversationId)
-
-		// Verify conversation was removed
-		_, ok := r.conversations.Get("complete1234")
-		assert.False(t, ok, "conversation should be removed after COMPLETE")
 	})
 
 	t.Run("duplicate COMPLETE returns success idempotently", func(t *testing.T) {
 		r := newTestRedirector()
-
-		conv := &Conversation{
-			ID:           "dupcomp1234",
-			MethodPath:   "/c2.C2/ClaimTasks",
-			ResponseData: []byte("response"),
-			LastActivity: time.Now(),
-		}
-		r.conversations.Add("dupcomp1234", conv)
 
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
 			ConversationId: "dupcomp1234",
 		}
 
-		// First COMPLETE removes conversation
 		resp1, err := r.handleCompletePacket(packet)
 		require.NoError(t, err)
 		require.NotNil(t, resp1)
 
-		// Verify conversation removed
-		_, ok := r.conversations.Get("dupcomp1234")
-		assert.False(t, ok)
-
-		// Second COMPLETE (duplicate from resolver) should succeed, not error
 		resp2, err := r.handleCompletePacket(packet)
 		require.NoError(t, err, "duplicate COMPLETE should not error")
 		require.NotNil(t, resp2)
 
-		// Verify response is also STATUS
 		var status dnspb.DNSPacket
 		err = proto.Unmarshal(resp2, &status)
 		require.NoError(t, err)
@@ -789,7 +762,6 @@ func TestHandleCompletePacket(t *testing.T) {
 			ConversationId: "nonexistent",
 		}
 
-		// Should succeed (not error) for idempotency
 		responseData, err := r.handleCompletePacket(packet)
 		require.NoError(t, err)
 		require.NotNil(t, responseData)
@@ -803,20 +775,11 @@ func TestHandleCompletePacket(t *testing.T) {
 	t.Run("concurrent COMPLETEs from resolvers", func(t *testing.T) {
 		r := newTestRedirector()
 
-		conv := &Conversation{
-			ID:           "concurrent-complete",
-			MethodPath:   "/c2.C2/ClaimTasks",
-			ResponseData: []byte("response"),
-			LastActivity: time.Now(),
-		}
-		r.conversations.Add("concurrent-complete", conv)
-
 		packet := &dnspb.DNSPacket{
 			Type:           dnspb.PacketType_PACKET_TYPE_COMPLETE,
 			ConversationId: "concurrent-complete",
 		}
 
-		// Simulate 10 concurrent COMPLETEs from different resolver nodes
 		var wg sync.WaitGroup
 		for i := 0; i < 10; i++ {
 			wg.Add(1)
@@ -827,10 +790,6 @@ func TestHandleCompletePacket(t *testing.T) {
 			}()
 		}
 		wg.Wait()
-
-		// Conversation should be removed
-		_, ok := r.conversations.Get("concurrent-complete")
-		assert.False(t, ok)
 	})
 }
 
@@ -920,106 +879,6 @@ func TestParseDomainNameAndType(t *testing.T) {
 			assert.Equal(t, tt.expectType, queryType)
 		})
 	}
-}
-
-// TestConversationCleanup tests cleanup of stale conversations
-func TestConversationCleanup(t *testing.T) {
-	r := newTestRedirector()
-
-	// Create stale conversation
-	staleConv := &Conversation{
-		ID:           "stale",
-		LastActivity: time.Now().Add(-20 * time.Minute),
-	}
-	r.conversations.Add("stale", staleConv)
-
-	// Create fresh conversation
-	freshConv := &Conversation{
-		ID:           "fresh",
-		LastActivity: time.Now(),
-	}
-	r.conversations.Add("fresh", freshConv)
-
-	// Run cleanup (mirrors cleanupConversations logic)
-	now := time.Now()
-	for _, key := range r.conversations.Keys() {
-		conv, ok := r.conversations.Peek(key)
-		if !ok {
-			continue
-		}
-		conv.mu.Lock()
-		shouldDelete := false
-		if conv.ResponseServed {
-			shouldDelete = now.Sub(conv.LastActivity) > ServedConversationTimeout
-		} else {
-			shouldDelete = now.Sub(conv.LastActivity) > r.conversationTimeout
-		}
-		if shouldDelete {
-			r.conversations.Remove(key)
-		}
-		conv.mu.Unlock()
-	}
-
-	// Verify stale was removed
-	_, ok := r.conversations.Get("stale")
-	assert.False(t, ok, "stale conversation should be removed")
-
-	// Verify fresh remains
-	_, ok = r.conversations.Get("fresh")
-	assert.True(t, ok, "fresh conversation should remain")
-
-	assert.Equal(t, 1, r.conversations.Len())
-}
-
-// TestServedConversationCleanup tests that conversations with ResponseServed
-// flag are cleaned up with the shorter ServedConversationTimeout.
-func TestServedConversationCleanup(t *testing.T) {
-	r := newTestRedirector()
-
-	// Served conversation: response was delivered 3 minutes ago (> 2 min served timeout)
-	servedConv := &Conversation{
-		ID:             "served",
-		ResponseServed: true,
-		LastActivity:   time.Now().Add(-3 * time.Minute),
-	}
-	r.conversations.Add("served", servedConv)
-
-	// In-progress conversation: 3 minutes old but not served (< 15 min normal timeout)
-	activeConv := &Conversation{
-		ID:           "active",
-		LastActivity: time.Now().Add(-3 * time.Minute),
-	}
-	r.conversations.Add("active", activeConv)
-
-	// Run cleanup
-	now := time.Now()
-	for _, key := range r.conversations.Keys() {
-		conv, ok := r.conversations.Peek(key)
-		if !ok {
-			continue
-		}
-		conv.mu.Lock()
-		shouldDelete := false
-		if conv.ResponseServed {
-			shouldDelete = now.Sub(conv.LastActivity) > ServedConversationTimeout
-		} else {
-			shouldDelete = now.Sub(conv.LastActivity) > r.conversationTimeout
-		}
-		if shouldDelete {
-			r.conversations.Remove(key)
-		}
-		conv.mu.Unlock()
-	}
-
-	// Served conversation should be cleaned (3 min > 2 min served timeout)
-	_, ok := r.conversations.Get("served")
-	assert.False(t, ok, "served conversation should be cleaned up with shorter timeout")
-
-	// Active conversation should remain (3 min < 15 min normal timeout)
-	_, ok = r.conversations.Get("active")
-	assert.True(t, ok, "in-progress conversation should remain")
-
-	assert.Equal(t, 1, r.conversations.Len())
 }
 
 // TestConcurrentConversationAccess tests thread safety of conversation handling
@@ -1272,7 +1131,6 @@ func TestHandleDataPacket(t *testing.T) {
 				2: {0x02},
 				3: {0x03},
 			},
-			LastActivity: time.Now(),
 		}
 		r.conversations.Add("completed1", conv)
 
@@ -1416,25 +1274,22 @@ func TestConversationNotFoundError(t *testing.T) {
 // TestLRUEvictionBehavior verifies the LRU cache evicts oldest conversations when full
 func TestLRUEvictionBehavior(t *testing.T) {
 	t.Run("evicts oldest when at capacity", func(t *testing.T) {
-		cache, _ := lru.New[string, *Conversation](3)
+		cache := expirable.NewLRU[string, *Conversation](3, nil, ConversationTTL)
 		r := &Redirector{
-			conversations:       cache,
-			conversationTimeout: NormalConversationTimeout,
+			conversations: cache,
 		}
 
 		// Add 3 conversations to fill capacity
 		for i := 0; i < 3; i++ {
 			r.conversations.Add(fmt.Sprintf("conv%d", i), &Conversation{
-				ID:           fmt.Sprintf("conv%d", i),
-				LastActivity: time.Now(),
+				ID: fmt.Sprintf("conv%d", i),
 			})
 		}
 		assert.Equal(t, 3, r.conversations.Len())
 
 		// Adding a 4th should evict the oldest (conv0)
 		r.conversations.Add("conv3", &Conversation{
-			ID:           "conv3",
-			LastActivity: time.Now(),
+			ID: "conv3",
 		})
 		assert.Equal(t, 3, r.conversations.Len())
 
@@ -1446,17 +1301,15 @@ func TestLRUEvictionBehavior(t *testing.T) {
 	})
 
 	t.Run("Get refreshes recency", func(t *testing.T) {
-		cache, _ := lru.New[string, *Conversation](3)
+		cache := expirable.NewLRU[string, *Conversation](3, nil, ConversationTTL)
 		r := &Redirector{
-			conversations:       cache,
-			conversationTimeout: NormalConversationTimeout,
+			conversations: cache,
 		}
 
 		// Add 3 conversations
 		for i := 0; i < 3; i++ {
 			r.conversations.Add(fmt.Sprintf("conv%d", i), &Conversation{
-				ID:           fmt.Sprintf("conv%d", i),
-				LastActivity: time.Now(),
+				ID: fmt.Sprintf("conv%d", i),
 			})
 		}
 
@@ -1465,8 +1318,7 @@ func TestLRUEvictionBehavior(t *testing.T) {
 
 		// Adding conv3 should evict conv1 (now the oldest) instead of conv0
 		r.conversations.Add("conv3", &Conversation{
-			ID:           "conv3",
-			LastActivity: time.Now(),
+			ID: "conv3",
 		})
 
 		_, ok := r.conversations.Get("conv0")
