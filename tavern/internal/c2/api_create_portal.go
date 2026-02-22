@@ -25,7 +25,16 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
 	}
 
-	taskID := int(registerMsg.GetContext().GetTaskId())
+	var taskID int
+	switch c := registerMsg.Context.(type) {
+	case *c2pb.CreatePortalRequest_TaskContext:
+		taskID = int(c.TaskContext.TaskId)
+	case *c2pb.CreatePortalRequest_ShellContext:
+		return status.Errorf(codes.Unimplemented, "shell context not supported for CreatePortal")
+	default:
+		return status.Errorf(codes.InvalidArgument, "must provide context")
+	}
+
 	if taskID <= 0 {
 		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
 	}

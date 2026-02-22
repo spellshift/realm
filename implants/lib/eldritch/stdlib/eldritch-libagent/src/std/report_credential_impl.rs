@@ -15,7 +15,9 @@ pub fn report_credential(
     credential: CredentialWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportCredentialRequest {
-        context: Some(task_context.into()),
+        context: Some(c2::report_credential_request::Context::TaskContext(
+            task_context,
+        )),
         credential: Some(credential.0),
     };
     agent.report_credential(req).map(|_| ())

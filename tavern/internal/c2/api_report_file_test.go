@@ -99,7 +99,9 @@ func TestReportFile(t *testing.T) {
 			name: "MissingPath",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+					},
 				},
 			},
 			wantCode: codes.InvalidArgument,
@@ -108,7 +110,9 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_Single",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path:         "/new/file",
@@ -142,7 +146,9 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_MultiChunk",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -174,7 +180,9 @@ func TestReportFile(t *testing.T) {
 			name: "Replace_File",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -201,7 +209,9 @@ func TestReportFile(t *testing.T) {
 			name: "No_Prexisting_Files",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/no/other/files",

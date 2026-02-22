@@ -41,10 +41,20 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			continue
 		}
 		if taskID == 0 {
-			taskID = req.GetContext().GetTaskId()
+			switch c := req.Context.(type) {
+			case *c2pb.ReportFileRequest_TaskContext:
+				taskID = c.TaskContext.TaskId
+			case *c2pb.ReportFileRequest_ShellContext:
+				return status.Errorf(codes.Unimplemented, "shell context not supported for ReportFile")
+			}
 		}
 		if jwtToken == "" {
-			jwtToken = req.GetContext().GetJwt()
+			switch c := req.Context.(type) {
+			case *c2pb.ReportFileRequest_TaskContext:
+				jwtToken = c.TaskContext.Jwt
+			case *c2pb.ReportFileRequest_ShellContext:
+				jwtToken = c.ShellContext.Jwt
+			}
 		}
 		if path == "" && req.Chunk.Metadata != nil {
 			path = req.Chunk.Metadata.GetPath()

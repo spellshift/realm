@@ -20,8 +20,8 @@ pub trait Agent: Send + Sync {
     ) -> Result<c2::ReportProcessListResponse, String>;
     fn report_task_output(
         &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String>;
+        req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String>;
     fn start_reverse_shell(
         &self,
         task_context: TaskContext,

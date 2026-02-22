@@ -17,7 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-func TestReportTaskOutput(t *testing.T) {
+func TestReportOutput(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
 	client, graph, close, token := c2test.New(t)
@@ -35,8 +35,8 @@ func TestReportTaskOutput(t *testing.T) {
 	// Test Cases
 	tests := []struct {
 		name               string
-		req                *c2pb.ReportTaskOutputRequest
-		wantResp           *c2pb.ReportTaskOutputResponse
+		req                *c2pb.ReportOutputRequest
+		wantResp           *c2pb.ReportOutputResponse
 		wantCode           codes.Code
 		wantOutput         string
 		wantError          string
@@ -45,31 +45,35 @@ func TestReportTaskOutput(t *testing.T) {
 	}{
 		{
 			name: "First_Output",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{
-					Id:            int64(existingTasks[0].ID),
-					Output:        "TestOutput",
-					ExecStartedAt: now,
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{
+						Id:            int64(existingTasks[0].ID),
+						Output:        "TestOutput",
+						ExecStartedAt: now,
+					},
 				},
 			},
-			wantResp:          &c2pb.ReportTaskOutputResponse{},
+			wantResp:          &c2pb.ReportOutputResponse{},
 			wantCode:          codes.OK,
 			wantOutput:        "TestOutput",
 			wantExecStartedAt: now,
 		},
 		{
 			name: "First_error",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{
-					Id:     int64(existingTasks[0].ID),
-					Output: "",
-					Error: &c2pb.TaskError{
-						Msg: "hello error!",
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{
+						Id:     int64(existingTasks[0].ID),
+						Output: "",
+						Error: &c2pb.TaskError{
+							Msg: "hello error!",
+						},
+						ExecStartedAt: now,
 					},
-					ExecStartedAt: now,
 				},
 			},
-			wantResp:          &c2pb.ReportTaskOutputResponse{},
+			wantResp:          &c2pb.ReportOutputResponse{},
 			wantCode:          codes.OK,
 			wantOutput:        "TestOutput",
 			wantError:         "hello error!",
@@ -77,16 +81,18 @@ func TestReportTaskOutput(t *testing.T) {
 		},
 		{
 			name: "Append_Output",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{
-					Id:     int64(existingTasks[0].ID),
-					Output: "_AppendedOutput",
-					Error: &c2pb.TaskError{
-						Msg: "_AppendEror",
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{
+						Id:     int64(existingTasks[0].ID),
+						Output: "_AppendedOutput",
+						Error: &c2pb.TaskError{
+							Msg: "_AppendEror",
+						},
 					},
 				},
 			},
-			wantResp:          &c2pb.ReportTaskOutputResponse{},
+			wantResp:          &c2pb.ReportOutputResponse{},
 			wantCode:          codes.OK,
 			wantOutput:        "TestOutput_AppendedOutput",
 			wantError:         "hello error!_AppendEror",
@@ -94,13 +100,15 @@ func TestReportTaskOutput(t *testing.T) {
 		},
 		{
 			name: "Exec_Finished",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{
-					Id:             int64(existingTasks[0].ID),
-					ExecFinishedAt: finishedAt,
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{
+						Id:             int64(existingTasks[0].ID),
+						ExecFinishedAt: finishedAt,
+					},
 				},
 			},
-			wantResp:           &c2pb.ReportTaskOutputResponse{},
+			wantResp:           &c2pb.ReportOutputResponse{},
 			wantCode:           codes.OK,
 			wantOutput:         "TestOutput_AppendedOutput",
 			wantError:          "hello error!_AppendEror",
@@ -109,9 +117,11 @@ func TestReportTaskOutput(t *testing.T) {
 		},
 		{
 			name: "Not_Found",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{
-					Id: 999888777666,
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{
+						Id: 999888777666,
+					},
 				},
 			},
 			wantResp: nil,
@@ -119,8 +129,10 @@ func TestReportTaskOutput(t *testing.T) {
 		},
 		{
 			name: "Invalid_Argument",
-			req: &c2pb.ReportTaskOutputRequest{
-				Output: &c2pb.TaskOutput{},
+			req: &c2pb.ReportOutputRequest{
+				Output: &c2pb.ReportOutputRequest_TaskOutput{
+					TaskOutput: &c2pb.TaskOutput{},
+				},
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -133,12 +145,12 @@ func TestReportTaskOutput(t *testing.T) {
 			// Callback
 			// Ensure JWT present in request context
 			if tc.req.Context == nil {
-				tc.req.Context = &c2pb.TaskContext{Jwt: token}
-			} else {
-				tc.req.Context.Jwt = token
+				tc.req.Context = &c2pb.ReportOutputRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{Jwt: token},
+				}
 			}
 
-			resp, err := client.ReportTaskOutput(ctx, tc.req)
+			resp, err := client.ReportOutput(ctx, tc.req)
 
 			// Assert Response Code
 			require.Equal(t, tc.wantCode.String(), status.Code(err).String(), err)
@@ -153,8 +165,15 @@ func TestReportTaskOutput(t *testing.T) {
 			}
 
 			// Load Task
+			// Extract ID from TaskOutput
+			var id int
+			if to, ok := tc.req.Output.(*c2pb.ReportOutputRequest_TaskOutput); ok {
+				id = int(to.TaskOutput.Id)
+			} else {
+				t.Fatal("expected TaskOutput")
+			}
 
-			testTask, err := graph.Task.Get(ctx, int(tc.req.Output.Id))
+			testTask, err := graph.Task.Get(ctx, id)
 			require.NoError(t, err)
 
 			// Task Assertions

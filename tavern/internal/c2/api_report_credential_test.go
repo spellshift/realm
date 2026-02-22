@@ -51,7 +51,9 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
@@ -78,7 +80,9 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "changeme123",
@@ -125,7 +129,9 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -133,7 +139,9 @@ func TestReportCredential(t *testing.T) {
 		{
 			name: "NotFound",
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+					TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "oopsies",

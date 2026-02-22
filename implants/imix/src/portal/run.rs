@@ -1,6 +1,6 @@
 use anyhow::Result;
-use pb::c2::{CreatePortalRequest, CreatePortalResponse, TaskContext};
-use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
+use pb::c2::{create_portal_request, CreatePortalRequest, CreatePortalResponse, TaskContext};
+use pb::portal::{mote::Payload, BytesPayloadKind, Mote};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
 use prost::Message;
@@ -51,7 +51,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Send initial registration message
     if let Err(_e) = req_tx
         .send(CreatePortalRequest {
-            context: Some(task_context.clone()),
+            context: Some(create_portal_request::Context::TaskContext(
+                task_context.clone(),
+            )),
             mote: None,
         })
         .await
@@ -91,7 +93,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                 match msg {
                     Some(mote) => {
                         let req = CreatePortalRequest {
-                            context: Some(task_context.clone()),
+                            context: Some(create_portal_request::Context::TaskContext(
+                                task_context.clone(),
+                            )),
                             mote: Some(mote),
                         };
                         if let Err(_e) = req_tx.send(req).await {

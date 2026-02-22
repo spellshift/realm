@@ -15,7 +15,9 @@ pub fn report_process_list(
     list: ProcessListWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportProcessListRequest {
-        context: Some(task_context.into()),
+        context: Some(c2::report_process_list_request::Context::TaskContext(
+            task_context,
+        )),
         list: Some(list.0),
     };
     agent.report_process_list(req).map(|_| ())
