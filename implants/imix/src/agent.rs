@@ -24,8 +24,8 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
-    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
+    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
 }
 
@@ -113,23 +113,20 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             return;
         }
 
-        let mut merged_task_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
-        let mut merged_shell_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
+        let mut merged_task_outputs: BTreeMap<i64, c2::ReportOutputRequest> = BTreeMap::new();
+        let mut merged_shell_outputs: BTreeMap<i64, c2::ReportOutputRequest> = BTreeMap::new();
 
         for output in outputs {
-            // Handle Task Output
-            if let Some(new_out) = &output.output {
-                let task_id = output
-                    .context
-                    .as_ref()
-                    .map(|c| c.task_id)
-                    .unwrap_or_default();
+            if let Some(c2::report_output_request::Output::TaskOutput(new_out)) = &output.output {
+                let task_id = new_out.id;
 
                 use std::collections::btree_map::Entry;
                 match merged_task_outputs.entry(task_id) {
                     Entry::Occupied(mut entry) => {
                         let existing = entry.get_mut();
-                        if let Some(existing_out) = &mut existing.output {
+                        if let Some(c2::report_output_request::Output::TaskOutput(existing_out)) =
+                            &mut existing.output
+                        {
                             existing_out.output.push_str(&new_out.output);
                             match (&mut existing_out.error, &new_out.error) {
                                 (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
@@ -140,30 +137,35 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                                 existing_out.exec_finished_at = new_out.exec_finished_at.clone();
                             }
                         } else {
-                            existing.output = Some(new_out.clone());
+                            existing.output =
+                                Some(c2::report_output_request::Output::TaskOutput(new_out.clone()));
                         }
+                        // Always update context in case it changed (unlikely for same task ID)
                         existing.context = output.context.clone();
                     }
                     Entry::Vacant(entry) => {
-                        let req = c2::ReportTaskOutputRequest {
-                            output: Some(new_out.clone()),
+                        let req = c2::ReportOutputRequest {
+                            output: Some(c2::report_output_request::Output::TaskOutput(
+                                new_out.clone(),
+                            )),
                             context: output.context.clone(),
-                            shell_task_output: None,
                         };
                         entry.insert(req);
                     }
                 }
-            }
-
-            // Handle Shell Task Output
-            if let Some(new_shell_out) = &output.shell_task_output {
+            } else if let Some(c2::report_output_request::Output::ShellTaskOutput(new_shell_out)) =
+                &output.output
+            {
                 let shell_task_id = new_shell_out.id;
 
                 use std::collections::btree_map::Entry;
                 match merged_shell_outputs.entry(shell_task_id) {
                     Entry::Occupied(mut entry) => {
                         let existing = entry.get_mut();
-                        if let Some(existing_out) = &mut existing.shell_task_output {
+                        if let Some(c2::report_output_request::Output::ShellTaskOutput(
+                            existing_out,
+                        )) = &mut existing.output
+                        {
                             existing_out.output.push_str(&new_shell_out.output);
                             match (&mut existing_out.error, &new_shell_out.error) {
                                 (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
@@ -175,14 +177,19 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                                     new_shell_out.exec_finished_at.clone();
                             }
                         } else {
-                            existing.shell_task_output = Some(new_shell_out.clone());
+                            existing.output = Some(c2::report_output_request::Output::ShellTaskOutput(
+                                new_shell_out.clone(),
+                            ));
                         }
+                        // Always update context
+                        existing.context = output.context.clone();
                     }
                     Entry::Vacant(entry) => {
-                        let req = c2::ReportTaskOutputRequest {
-                            output: None,
-                            context: None,
-                            shell_task_output: Some(new_shell_out.clone()),
+                        let req = c2::ReportOutputRequest {
+                            output: Some(c2::report_output_request::Output::ShellTaskOutput(
+                                new_shell_out.clone(),
+                            )),
+                            context: output.context.clone(),
                         };
                         entry.insert(req);
                     }
@@ -398,13 +405,13 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn report_task_output(
         &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
+        req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String> {
         // Buffer output instead of sending immediately
         self.output_tx
             .try_send(req)
             .map_err(|_| "Output buffer full".to_string())?;
-        Ok(c2::ReportTaskOutputResponse {})
+        Ok(c2::ReportOutputResponse {})
     }
 
     fn start_reverse_shell(

@@ -62,7 +62,9 @@ pub fn process_list(
     }
 
     let req = c2::ReportProcessListRequest {
-        context: Some(task_context),
+        context: Some(c2::report_process_list_request::Context::TaskContext(
+            task_context,
+        )),
         list: Some(eldritch::ProcessList { list: processes }),
     };
     agent.report_process_list(req).map(|_| ())

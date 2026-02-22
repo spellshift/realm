@@ -33,7 +33,16 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	}
 
 	// Load Relevant Ents
-	taskID := registerMsg.GetContext().GetTaskId()
+	var taskID int64
+	switch c := registerMsg.Context.(type) {
+	case *c2pb.ReverseShellRequest_TaskContext:
+		taskID = c.TaskContext.TaskId
+	case *c2pb.ReverseShellRequest_ShellContext:
+		return status.Errorf(codes.Unimplemented, "shell context not supported for ReverseShell")
+	default:
+		return status.Errorf(codes.InvalidArgument, "must provide context")
+	}
+
 	task, err := srv.graph.Task.Get(ctx, int(taskID))
 	if err != nil {
 		if ent.IsNotFound(err) {

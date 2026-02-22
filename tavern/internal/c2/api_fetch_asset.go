@@ -15,7 +15,18 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	// Extract JWT
+	var jwtToken string
+	switch c := req.Context.(type) {
+	case *c2pb.FetchAssetRequest_TaskContext:
+		jwtToken = c.TaskContext.Jwt
+	case *c2pb.FetchAssetRequest_ShellContext:
+		jwtToken = c.ShellContext.Jwt
+	default:
+		return status.Errorf(codes.InvalidArgument, "must provide context")
+	}
+
+	err := srv.ValidateJWT(jwtToken)
 	if err != nil {
 		return err
 	}

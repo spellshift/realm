@@ -18,8 +18,9 @@ pub fn file(agent: Arc<dyn Agent>, task_context: TaskContext, path: String) -> R
 
     println!("reporting file chunk with JWT: {}", task_context.jwt);
     let req = c2::ReportFileRequest {
-        context: Some(task_context),
+        context: Some(c2::report_file_request::Context::TaskContext(task_context)),
         chunk: Some(file_msg),
+        kind: c2::ReportFileKind::Ondisk as i32,
     };
 
     agent.report_file(req).map(|_| ())

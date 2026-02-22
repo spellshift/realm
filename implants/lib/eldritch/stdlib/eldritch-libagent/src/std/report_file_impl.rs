@@ -15,8 +15,9 @@ pub fn report_file(
     file: FileWrapper,
 ) -> Result<(), String> {
     let req = c2::ReportFileRequest {
-        context: Some(task_context.into()),
+        context: Some(c2::report_file_request::Context::TaskContext(task_context)),
         chunk: Some(file.0),
+        kind: c2::ReportFileKind::Ondisk as i32,
     };
     agent.report_file(req).map(|_| ())
 }

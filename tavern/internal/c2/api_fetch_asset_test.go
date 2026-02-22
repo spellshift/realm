@@ -69,9 +69,9 @@ func TestFetchAsset(t *testing.T) {
 
 		// Ensure request contains JWT
 		if tc.req.Context == nil {
-			tc.req.Context = &c2pb.TaskContext{Jwt: token}
-		} else {
-			tc.req.Context.Jwt = token
+			tc.req.Context = &c2pb.FetchAssetRequest_TaskContext{
+				TaskContext: &c2pb.TaskContext{Jwt: token},
+			}
 		}
 
 		// Send Request

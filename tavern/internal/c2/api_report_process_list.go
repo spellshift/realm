@@ -11,20 +11,33 @@ import (
 )
 
 func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProcessListRequest) (*c2pb.ReportProcessListResponse, error) {
+	var taskID int64
+	var jwtToken string
+
+	switch c := req.Context.(type) {
+	case *c2pb.ReportProcessListRequest_TaskContext:
+		jwtToken = c.TaskContext.Jwt
+		taskID = c.TaskContext.TaskId
+	case *c2pb.ReportProcessListRequest_ShellContext:
+		return nil, status.Errorf(codes.Unimplemented, "shell context not supported for ReportProcessList")
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "must provide context")
+	}
+
 	// Validate Arguments
-	if req.GetContext().GetTaskId() == 0 {
+	if taskID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
 	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
-	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	err := srv.ValidateJWT(jwtToken)
 	if err != nil {
 		return nil, err
 	}
 
 	// Load Task
-	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
+	task, err := srv.graph.Task.Get(ctx, int(taskID))
 	if ent.IsNotFound(err) {
 		return nil, status.Errorf(codes.NotFound, "no task found")
 	}

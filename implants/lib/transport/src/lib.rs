@@ -170,8 +170,8 @@ impl Transport for ActiveTransport {
 
     async fn report_task_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
         match self {
             #[cfg(feature = "grpc")]
             Self::Grpc(t) => t.report_task_output(request).await,

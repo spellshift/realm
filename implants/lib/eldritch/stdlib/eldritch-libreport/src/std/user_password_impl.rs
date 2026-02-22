@@ -16,7 +16,9 @@ pub fn user_password(
         kind: eldritch::credential::Kind::Password as i32,
     };
     let req = c2::ReportCredentialRequest {
-        context: Some(task_context),
+        context: Some(c2::report_credential_request::Context::TaskContext(
+            task_context,
+        )),
         credential: Some(cred),
     };
     agent.report_credential(req).map(|_| ())

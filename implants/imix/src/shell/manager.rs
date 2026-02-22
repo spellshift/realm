@@ -8,7 +8,10 @@ use tokio::sync::mpsc;
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
 use eldritch::{Interpreter, Printer, Span, Value};
-use pb::c2::{ReportTaskOutputRequest, ShellTask, ShellTaskOutput, TaskContext, TaskError};
+use pb::c2::{
+    report_output_request, ReportOutputRequest, ShellTask, ShellTaskContext, ShellTaskOutput,
+    TaskContext,
+};
 use pb::portal::{self, Mote, ShellPayload};
 use transport::Transport;
 
@@ -24,7 +27,10 @@ pub enum ShellManagerMessage {
 
 #[derive(Clone)]
 pub enum ExecutionContext {
-    Task(i64), // We only need task_id here. stream_id and seq_id are unused for C2 reporting.
+    Task {
+        task_id: i64,
+        jwt: String,
+    },
     Portal {
         tx: mpsc::Sender<Mote>,
         stream_id: String,
@@ -41,24 +47,32 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
     is_error: bool,
 ) {
     match context {
-        ExecutionContext::Task(task_id) => {
-            let req = ReportTaskOutputRequest {
-                shell_task_output: Some(ShellTaskOutput {
-                    id: *task_id,
-                    output: if is_error {
-                        String::new()
-                    } else {
-                        output.clone()
+        ExecutionContext::Task { task_id, jwt } => {
+            let req = ReportOutputRequest {
+                output: Some(report_output_request::Output::ShellTaskOutput(
+                    ShellTaskOutput {
+                        id: *task_id,
+                        output: if is_error {
+                            String::new()
+                        } else {
+                            output.clone()
+                        },
+                        error: if is_error {
+                            Some(pb::c2::ShellTaskError { msg: output })
+                        } else {
+                            None
+                        },
+                        exec_started_at: None,
+                        exec_finished_at: None,
                     },
-                    error: if is_error {
-                        Some(TaskError { msg: output })
-                    } else {
-                        None
+                )),
+                context: Some(report_output_request::Context::ShellContext(
+                    ShellTaskContext {
+                        task_id: *task_id,
+                        shell_id,
+                        jwt: jwt.clone(),
                     },
-                    exec_started_at: None,
-                    exec_finished_at: None,
-                }),
-                ..Default::default()
+                )),
             };
             if let Err(e) = agent.report_task_output(req) {
                 #[cfg(debug_assertions)]
@@ -124,6 +138,7 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
 pub enum InterpreterCommand {
     ExecuteTask {
         task_id: i64,
+        jwt: String,
         input: String,
     },
     ExecutePortal {
@@ -180,6 +195,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 .tx
                 .send(InterpreterCommand::ExecuteTask {
                     task_id: task.id,
+                    jwt: task.jwt,
                     input: task.input,
                 })
                 .await;
@@ -246,8 +262,12 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
-                InterpreterCommand::ExecuteTask { task_id, input, .. } => {
-                    *context.lock().unwrap() = ExecutionContext::Task(task_id);
+                InterpreterCommand::ExecuteTask {
+                    task_id,
+                    jwt,
+                    input,
+                } => {
+                    *context.lock().unwrap() = ExecutionContext::Task { task_id, jwt };
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
                     *context.lock().unwrap() = ExecutionContext::None;
                 }
@@ -332,7 +352,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 mod tests {
     use super::*;
     use crate::task::TaskRegistry;
-    use pb::c2::{ReportTaskOutputResponse, ShellTask};
+    use pb::c2::{ReportOutputResponse, ShellTask};
     use pb::config::Config;
     use transport::MockTransport;
 
@@ -347,14 +367,14 @@ mod tests {
         transport
             .expect_report_task_output()
             .withf(|req| {
-                if let Some(out) = &req.shell_task_output {
+                if let Some(report_output_request::Output::ShellTaskOutput(out)) = &req.output {
                     out.output.contains("2")
                 } else {
                     false
                 }
             })
             .times(1)
-            .returning(|_| Ok(ReportTaskOutputResponse::default()));
+            .returning(|_| Ok(ReportOutputResponse::default()));
 
         let task_registry = Arc::new(TaskRegistry::new());
 

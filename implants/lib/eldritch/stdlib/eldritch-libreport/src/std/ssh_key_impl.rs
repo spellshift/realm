@@ -16,7 +16,9 @@ pub fn ssh_key(
         kind: eldritch::credential::Kind::SshKey as i32,
     };
     let req = c2::ReportCredentialRequest {
-        context: Some(task_context),
+        context: Some(c2::report_credential_request::Context::TaskContext(
+            task_context,
+        )),
         credential: Some(cred),
     };
     agent.report_credential(req).map(|_| ())

@@ -10,20 +10,33 @@ import (
 )
 
 func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredentialRequest) (*c2pb.ReportCredentialResponse, error) {
+	var taskID int64
+	var jwtToken string
+
+	switch c := req.Context.(type) {
+	case *c2pb.ReportCredentialRequest_TaskContext:
+		jwtToken = c.TaskContext.Jwt
+		taskID = c.TaskContext.TaskId
+	case *c2pb.ReportCredentialRequest_ShellContext:
+		return nil, status.Errorf(codes.Unimplemented, "shell context not supported for ReportCredential")
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "must provide context")
+	}
+
 	// Validate Arguments
-	if req.GetContext().GetTaskId() == 0 {
+	if taskID == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
 	}
 	if req.Credential == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide credential")
 	}
-	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	err := srv.ValidateJWT(jwtToken)
 	if err != nil {
 		return nil, err
 	}
 
 	// Load Task
-	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
+	task, err := srv.graph.Task.Get(ctx, int(taskID))
 	if ent.IsNotFound(err) {
 		return nil, status.Errorf(codes.NotFound, "no task found")
 	}

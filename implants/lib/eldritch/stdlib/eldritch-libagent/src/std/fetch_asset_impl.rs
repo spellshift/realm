@@ -16,7 +16,7 @@ pub fn fetch_asset(
 ) -> Result<Vec<u8>, String> {
     let req = c2::FetchAssetRequest {
         name,
-        context: Some(task_context),
+        context: Some(c2::fetch_asset_request::Context::TaskContext(task_context)),
     };
     agent.fetch_asset(req)
 }
