@@ -14,7 +14,8 @@ async fn test_imix_agent_get_callback_interval_error() {
     let transport = MockTransport::default();
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     let result = agent.get_callback_interval_u64();
     assert!(result.is_err());
@@ -40,7 +41,8 @@ async fn test_imix_agent_get_callback_interval_success() {
     let transport = MockTransport::default();
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     let result = agent.get_callback_interval_u64();
     assert!(result.is_ok());
@@ -74,7 +76,8 @@ async fn test_set_callback_uri_new_transport() {
     let transport = MockTransport::default();
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     // Run in thread for block_on
     let agent_clone = agent.clone();
@@ -152,7 +155,8 @@ async fn test_set_callback_uri_existing_transport() {
     let transport = MockTransport::default();
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     // Run in thread for block_on
     let agent_clone = agent.clone();

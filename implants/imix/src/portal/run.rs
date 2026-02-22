@@ -5,7 +5,6 @@ use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
 use prost::Message;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
@@ -23,7 +22,7 @@ struct StreamContext {
 pub async fn run<T: Transport + Send + Sync + 'static>(
     task_context: TaskContext,
     mut transport: T,
-    shell_manager_tx: Arc<Mutex<Option<mpsc::Sender<ShellManagerMessage>>>>,
+    shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
     let (resp_tx, mut resp_rx) = mpsc::channel::<CreatePortalResponse>(100);
@@ -125,7 +124,7 @@ async fn handle_incoming_mote(
     streams: &mut HashMap<String, StreamContext>,
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
-    shell_manager_tx: &Arc<Mutex<Option<mpsc::Sender<ShellManagerMessage>>>>,
+    shell_manager_tx: &mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     // Handle Trace Mote
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
@@ -151,13 +150,10 @@ async fn handle_incoming_mote(
     // Handle Shell Mote
     let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
     if is_shell {
-        let lock = shell_manager_tx.lock().unwrap();
-        if let Some(tx) = &*lock {
-            let _ = tx.try_send(ShellManagerMessage::ProcessPortalPayload(
-                mote,
-                out_tx.clone(),
-            ));
-        }
+        let _ = shell_manager_tx.try_send(ShellManagerMessage::ProcessPortalPayload(
+            mote,
+            out_tx.clone(),
+        ));
         return Ok(());
     }
 
