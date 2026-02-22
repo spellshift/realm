@@ -293,6 +293,7 @@ mod tests {
                         interval: 5,
                         r#type: transport_type,
                         extra: extra.to_string(),
+                        jitter: 0.0,
                     }],
                     active_index: 0,
                 }),
