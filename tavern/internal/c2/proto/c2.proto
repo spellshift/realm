@@ -157,7 +157,7 @@ message ReportCredentialRequest {
         TaskContext task_context = 1;
         ShellTaskContext shell_context = 2;
     }
-    eldritch.Credential credential = 2;
+    eldritch.Credential credential = 3;
 }
 message ReportCredentialResponse {}
 
@@ -172,7 +172,7 @@ message ReportFileRequest {
         TaskContext task_context = 1;
         ShellTaskContext shell_context = 2;
     }
-ReportFileKind kind = 3;
+    ReportFileKind kind = 3;
     eldritch.File chunk = 4;
 }
 message ReportFileResponse {}
@@ -206,9 +206,12 @@ enum ReverseShellMessageKind {
 }
 
 message ReverseShellRequest{
-    ReverseShellMessageKind kind = 1;
-    bytes data = 2;
-    TaskContext context = 3;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_context = 2;
+    }
+    ReverseShellMessageKind kind = 3;
+    bytes data = 4;
 }
 message ReverseShellResponse{
     ReverseShellMessageKind kind = 1;
@@ -216,8 +219,11 @@ message ReverseShellResponse{
 }
 
 message CreatePortalRequest {
-    TaskContext context = 1;
-    portal.Mote mote = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_context = 2;
+    }
+    portal.Mote mote = 3;
 }
 message CreatePortalResponse {
     portal.Mote mote = 2;
