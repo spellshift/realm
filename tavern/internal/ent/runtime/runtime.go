@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -374,6 +375,21 @@ func init() {
 	shell.DefaultLastModifiedAt = shellDescLastModifiedAt.Default.(func() time.Time)
 	// shell.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	shell.UpdateDefaultLastModifiedAt = shellDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	shelltaskMixin := schema.ShellTask{}.Mixin()
+	shelltaskMixinFields0 := shelltaskMixin[0].Fields()
+	_ = shelltaskMixinFields0
+	shelltaskFields := schema.ShellTask{}.Fields()
+	_ = shelltaskFields
+	// shelltaskDescCreatedAt is the schema descriptor for created_at field.
+	shelltaskDescCreatedAt := shelltaskMixinFields0[0].Descriptor()
+	// shelltask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shelltask.DefaultCreatedAt = shelltaskDescCreatedAt.Default.(func() time.Time)
+	// shelltaskDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	shelltaskDescLastModifiedAt := shelltaskMixinFields0[1].Descriptor()
+	// shelltask.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	shelltask.DefaultLastModifiedAt = shelltaskDescLastModifiedAt.Default.(func() time.Time)
+	// shelltask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	shelltask.UpdateDefaultLastModifiedAt = shelltaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

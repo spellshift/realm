@@ -1,8 +1,28 @@
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../lib/headless-adapter";
+import AlertError from "../../components/tavern-base-ui/AlertError";
+import { gql, useQuery } from "@apollo/client";
+import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "./websocket";
+
+// GraphQL query to fetch shell details
+const GET_SHELL = gql`
+  query GetShell($id: ID!) {
+    node(id: $id) {
+      ... on Shell {
+        id
+        closedAt
+        owner {
+          id
+          name
+        }
+      }
+    }
+  }
+`;
 
 interface ShellState {
     inputBuffer: string;
@@ -16,9 +36,18 @@ interface ShellState {
 }
 
 const ShellV2 = () => {
+    const { shellId } = useParams<{ shellId: string }>();
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
+    const [connectionError, setConnectionError] = useState<string | null>(null);
+
+    // Fetch shell details first
+    const { loading, error, data } = useQuery(GET_SHELL, {
+        variables: { id: shellId },
+        skip: !shellId,
+        fetchPolicy: "network-only"
+    });
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -48,7 +77,27 @@ const ShellV2 = () => {
     });
 
     useEffect(() => {
-        if (!termRef.current) return;
+        if (!termRef.current || loading) return;
+
+        if (!shellId) {
+            setConnectionError("No Shell ID provided in URL.");
+            return;
+        }
+
+        if (error) {
+            setConnectionError(`Failed to load shell: ${error.message}`);
+            return;
+        }
+
+        if (!data?.node) {
+            setConnectionError("Shell not found.");
+            return;
+        }
+
+        if (data.node.closedAt) {
+            setConnectionError("This shell session is closed.");
+            return;
+        }
 
         // Initialize terminal
         termInstance.current = new Terminal({
@@ -73,19 +122,7 @@ const ShellV2 = () => {
 
         termInstance.current.write("Initializing Headless REPL...\r\n");
 
-        const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const url = `${scheme}://${window.location.host}/shellv2/ws`;
-
-        adapter.current = new HeadlessWasmAdapter(url, (content) => {
-            const formatted = content.replace(/\n/g, "\r\n");
-            termInstance.current?.write(formatted);
-            termInstance.current?.write(shellState.current.prompt);
-        }, () => {
-            termInstance.current?.write("Connected to backend.\r\n>>> ");
-        });
-
-        adapter.current.init();
-
+        // Define redrawLine early so it can be used by adapter callback
         const redrawLine = () => {
             const term = termInstance.current;
             if (!term) return;
@@ -154,6 +191,71 @@ const ShellV2 = () => {
             }
         };
 
+        const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
+
+        adapter.current = new HeadlessWasmAdapter(url, (msg: WebsocketMessage) => {
+            const term = termInstance.current;
+            if (!term) return;
+
+            // Clear current input line(s) before printing output
+            const prevRows = lastBufferHeight.current;
+            if (prevRows > 0) {
+                term.write(`\x1b[${prevRows}A`);
+            }
+            term.write("\r\x1b[J");
+
+            // Process message content
+            let content = "";
+            let color = "";
+
+            switch (msg.kind) {
+                case WebsocketMessageKind.Output:
+                    content = msg.output;
+                    break;
+                case WebsocketMessageKind.TaskError:
+                    content = msg.error;
+                    color = "\x1b[31m"; // Red
+                    break;
+                case WebsocketMessageKind.Error:
+                    content = msg.error;
+                    color = "\x1b[31m"; // Red
+                    break;
+                case WebsocketMessageKind.ControlFlow:
+                    if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
+                        content = msg.message + "\n";
+                        color = "\x1b[33m"; // Yellow
+                    }
+                    // Handle other control signals if needed
+                    break;
+                case WebsocketMessageKind.OutputFromOtherStream:
+                    content = msg.output;
+                    break;
+            }
+
+            if (content) {
+                const formatted = content.replace(/\n/g, "\r\n");
+                if (color) {
+                    term.write(color + formatted + "\x1b[0m");
+                } else {
+                    term.write(formatted);
+                }
+
+                // Ensure there is a newline after output if not present, so prompt is on new line
+                if (!content.endsWith('\n')) {
+                    term.write("\r\n");
+                }
+            }
+
+            // Reset input line state and redraw it at the bottom
+            lastBufferHeight.current = 0;
+            redrawLine();
+        }, () => {
+            termInstance.current?.write("Connected to backend.\r\n>>> ");
+        });
+
+        adapter.current.init();
+
         const updateCompletionsUI = (list: string[], start: number, show: boolean, index: number) => {
             setCompletions(list);
             setCompletionStart(start);
@@ -163,18 +265,8 @@ const ShellV2 = () => {
 
             if (show && termInstance.current) {
                 // Calculate position
-                // This is tricky without access to DOM cursor.
-                // Approximation: lines from bottom?
-                // Or relative to cursor.
-                // xterm.js has `buffer.active.cursorX/Y`.
                 const cursorX = termInstance.current.buffer.active.cursorX;
                 const cursorY = termInstance.current.buffer.active.cursorY;
-                // Convert to pixels... requires knowing cell size.
-                // We can use a fixed approximation or helper.
-                // For now, let's just center it or put it at top left of cursor line?
-                // We can get element bounding rect.
-                // const charWidth = termInstance.current._core._renderService.dimensions.actualCellWidth; // private API
-                // Let's just use fixed pixel per char estimate for now: 9px width, 17px height
                 const charWidth = 9;
                 const charHeight = 17;
                 setCompletionPos({
@@ -245,12 +337,6 @@ const ShellV2 = () => {
             if (state.isSearching) {
                 if (data === "\x12") { // Ctrl+R (Next match)
                     // Logic to find next match (skipping current index?)
-                    // For simplicity, just redraw which finds the first match from end.
-                    // To implement "next match", we need to track search index.
-                    // But user requirement was just "provide history searching".
-                    // Basic reverse search is usually sufficient.
-                    // If we want to find next, we need state.searchIndex.
-                    // Let's keep it simple: Ctrl+R just redraws for now (noop effectively unless we track index).
                     return;
                 }
                 if (data === "\x03" || data === "\x07") { // Ctrl+C / Ctrl+G
@@ -496,7 +582,7 @@ const ShellV2 = () => {
             adapter.current?.close();
             termInstance.current?.dispose();
         };
-    }, []);
+    }, [shellId, loading, error, data]);
 
     // Scroll active completion into view
     useEffect(() => {
@@ -507,6 +593,18 @@ const ShellV2 = () => {
             }
         }
     }, [completionIndex, showCompletions]);
+
+    if (connectionError) {
+        return (
+            <div style={{ padding: "20px" }}>
+                <AlertError label="Shell Connection Failed" details={connectionError} />
+            </div>
+        );
+    }
+
+    if (loading) {
+        return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
+    }
 
     return (
         <div style={{ padding: "20px", height: "calc(100vh - 100px)", position: "relative" }}>

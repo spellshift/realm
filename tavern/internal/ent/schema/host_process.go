@@ -41,7 +41,7 @@ func (HostProcess) Fields() []ent.Field {
 		field.String("path").
 			Optional().
 			Comment("The path to the process executable."),
-		field.String("cmd").
+		field.Text("cmd").
 			Optional().
 			Comment("The command used to execute the process."),
 		field.String("env").

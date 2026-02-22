@@ -232,7 +232,7 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "principal", Type: field.TypeString},
 		{Name: "path", Type: field.TypeString, Nullable: true},
-		{Name: "cmd", Type: field.TypeString, Nullable: true},
+		{Name: "cmd", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "env", Type: field.TypeString, Nullable: true},
 		{Name: "cwd", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_DEAD", "STATUS_IDLE", "STATUS_LOCK_BLOCKED", "STATUS_PARKED", "STATUS_RUN", "STATUS_SLEEP", "STATUS_STOP", "STATUS_TRACING", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_UNSPECIFIED", "STATUS_WAKE_KILL", "STATUS_WAKING", "STATUS_ZOMBIE"}},
@@ -307,6 +307,7 @@ var (
 		{Name: "portal_task", Type: field.TypeInt},
 		{Name: "portal_beacon", Type: field.TypeInt},
 		{Name: "portal_owner", Type: field.TypeInt},
+		{Name: "shell_portals", Type: field.TypeInt, Nullable: true},
 	}
 	// PortalsTable holds the schema information for the "portals" table.
 	PortalsTable = &schema.Table{
@@ -331,6 +332,12 @@ var (
 				Columns:    []*schema.Column{PortalsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "portals_shells_portals",
+				Columns:    []*schema.Column{PortalsColumns[7]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -405,7 +412,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "data", Type: field.TypeBytes, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
-		{Name: "shell_task", Type: field.TypeInt},
+		{Name: "shell_task", Type: field.TypeInt, Nullable: true},
 		{Name: "shell_beacon", Type: field.TypeInt},
 		{Name: "shell_owner", Type: field.TypeInt},
 	}
@@ -419,7 +426,7 @@ var (
 				Symbol:     "shells_tasks_task",
 				Columns:    []*schema.Column{ShellsColumns[5]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "shells_beacons_beacon",
@@ -430,6 +437,39 @@ var (
 			{
 				Symbol:     "shells_users_owner",
 				Columns:    []*schema.Column{ShellsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ShellTasksColumns holds the columns for the "shell_tasks" table.
+	ShellTasksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "input", Type: field.TypeString},
+		{Name: "output", Type: field.TypeString, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "stream_id", Type: field.TypeString},
+		{Name: "sequence_id", Type: field.TypeUint64},
+		{Name: "shell_shell_tasks", Type: field.TypeInt},
+		{Name: "shell_task_creator", Type: field.TypeInt},
+	}
+	// ShellTasksTable holds the schema information for the "shell_tasks" table.
+	ShellTasksTable = &schema.Table{
+		Name:       "shell_tasks",
+		Columns:    ShellTasksColumns,
+		PrimaryKey: []*schema.Column{ShellTasksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shell_tasks_shells_shell_tasks",
+				Columns:    []*schema.Column{ShellTasksColumns[8]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "shell_tasks_users_creator",
+				Columns:    []*schema.Column{ShellTasksColumns[9]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -636,6 +676,7 @@ var (
 		QuestsTable,
 		RepositoriesTable,
 		ShellsTable,
+		ShellTasksTable,
 		TagsTable,
 		TasksTable,
 		TomesTable,
@@ -692,6 +733,7 @@ func init() {
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
 	PortalsTable.ForeignKeys[1].RefTable = BeaconsTable
 	PortalsTable.ForeignKeys[2].RefTable = UsersTable
+	PortalsTable.ForeignKeys[3].RefTable = ShellsTable
 	PortalsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -712,6 +754,8 @@ func init() {
 	ShellsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	ShellTasksTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellTasksTable.ForeignKeys[1].RefTable = UsersTable
 	TagsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

@@ -74,6 +74,7 @@ var ForeignKeys = []string{
 	"portal_task",
 	"portal_beacon",
 	"portal_owner",
+	"shell_portals",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

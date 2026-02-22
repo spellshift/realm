@@ -1,3 +1,5 @@
+import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
+
 export interface ExecutionResult {
     status: "complete" | "incomplete" | "error";
     prompt?: string;
@@ -7,12 +9,12 @@ export interface ExecutionResult {
 export class HeadlessWasmAdapter {
     private repl: any; // HeadlessRepl instance
     private ws: WebSocket;
-    private onOutputCallback: (content: string) => void;
+    private onMessageCallback: (msg: WebsocketMessage) => void;
     private onReadyCallback?: () => void;
     private isWsOpen: boolean = false;
 
-    constructor(url: string, onOutput: (content: string) => void, onReady?: () => void) {
-        this.onOutputCallback = onOutput;
+    constructor(url: string, onMessage: (msg: WebsocketMessage) => void, onReady?: () => void) {
+        this.onMessageCallback = onMessage;
         this.onReadyCallback = onReady;
         this.ws = new WebSocket(url);
 
@@ -23,10 +25,9 @@ export class HeadlessWasmAdapter {
 
         this.ws.onmessage = (event) => {
             try {
-                const msg = JSON.parse(event.data);
-                if (msg.type === "OUTPUT") {
-                    this.onOutputCallback(msg.content);
-                }
+                const msg = JSON.parse(event.data) as WebsocketMessage;
+                // Basic validation or filtering could happen here, but we pass it all
+                this.onMessageCallback(msg);
             } catch (e) {
                 console.error("Failed to parse WebSocket message", e);
             }
@@ -69,8 +70,8 @@ export class HeadlessWasmAdapter {
             if (result.status === "complete") {
                 if (this.isWsOpen) {
                     this.ws.send(JSON.stringify({
-                        type: "EXECUTE",
-                        command: result.payload
+                        kind: WebsocketMessageKind.Input,
+                        input: result.payload
                     }));
                 } else {
                     return { status: "error", message: "WebSocket not connected" };

@@ -154,6 +154,7 @@ async fn handle_incoming_mote(
                 Payload::Bytes(b) => b.data.len(),
                 Payload::Tcp(t) => t.data.len(),
                 Payload::Udp(u) => u.data.len(),
+                Payload::Shell(s) => s.input.len(),
             });
             log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
         }
@@ -240,6 +241,11 @@ async fn stream_handler(
             Payload::Tcp(_) => tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await,
             Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
+            Payload::Shell(_) => {
+                #[cfg(debug_assertions)]
+                log::warn!("Shell payloads are not supported in this portal implementation");
+                Ok(())
+            }
         }
     } else {
         #[cfg(debug_assertions)]
