@@ -42,4 +42,17 @@ func TestCreateTestData(t *testing.T) {
 		assert.NotEmpty(t, paramDefs[0].Name)
 
 	})
+
+	t.Run("ProcessListTest", func(t *testing.T) {
+		count := graph.HostProcess.Query().CountX(ctx)
+		// We expect 12 hosts (3 groups * 4 platforms) to have processes.
+		// Each platform has a specific number of processes.
+		// Windows: 11
+		// Linux: 10
+		// MacOS: 8
+		// BSD: 7
+		// Total per group: 11 + 10 + 8 + 7 = 36
+		// Total for 3 groups: 36 * 3 = 108
+		assert.Equal(t, 108, count)
+	})
 }

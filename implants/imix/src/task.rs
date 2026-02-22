@@ -13,11 +13,12 @@ use tokio::sync::mpsc::{self, UnboundedSender};
 #[derive(Debug)]
 struct StreamPrinter {
     tx: UnboundedSender<String>,
+    error_tx: UnboundedSender<String>,
 }
 
 impl StreamPrinter {
-    fn new(tx: UnboundedSender<String>) -> Self {
-        Self { tx }
+    fn new(tx: UnboundedSender<String>, error_tx: UnboundedSender<String>) -> Self {
+        Self { tx, error_tx }
     }
 }
 
@@ -29,7 +30,7 @@ impl Printer for StreamPrinter {
 
     fn print_err(&self, _span: &Span, s: &str) {
         // We format with newline to match BufferPrinter behavior
-        let _ = self.tx.send(format!("{}\n", s));
+        let _ = self.error_tx.send(format!("{}\n", s));
     }
 }
 
@@ -168,7 +169,8 @@ fn execute_task(
 ) {
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
-    let printer = Arc::new(StreamPrinter::new(tx));
+    let (error_tx, error_rx) = mpsc::unbounded_channel();
+    let printer = Arc::new(StreamPrinter::new(tx, error_tx));
     let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
 
     // Report Start
@@ -180,6 +182,7 @@ fn execute_task(
         agent.clone(),
         runtime_handle.clone(),
         rx,
+        error_rx,
     );
 
     // Run Interpreter with panic protection
@@ -267,27 +270,71 @@ fn spawn_output_consumer(
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
+    mut error_rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
         log::info!("task={} Started output stream", task_context.task_id);
         let task_id = task_context.task_id;
-        while let Some(msg) = rx.recv().await {
-            match agent.report_task_output(ReportTaskOutputRequest {
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output: msg,
-                    error: None,
-                    exec_started_at: None,
-                    exec_finished_at: None,
-                }),
-                context: Some(task_context.clone().into()),
-            }) {
-                Ok(_) => {}
-                Err(_e) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("task={task_id} failed to report output: {_e}");
+        let mut rx_open = true;
+        let mut error_rx_open = true;
+
+        loop {
+            tokio::select! {
+                val = rx.recv(), if rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: msg,
+                                    error: None,
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report output: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            rx_open = false;
+                        }
+                    }
                 }
+                val = error_rx.recv(), if error_rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: String::new(),
+                                    error: Some(TaskError { msg }),
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report error: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            error_rx_open = false;
+                        }
+                    }
+                }
+            }
+
+            if !rx_open && !error_rx_open {
+                break;
             }
         }
     })
