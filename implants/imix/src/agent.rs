@@ -5,6 +5,7 @@ use pb::c2::transport::Type;
 use pb::c2::{self, ClaimTasksRequest, TaskContext};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::RwLock;
@@ -14,7 +15,7 @@ use crate::portal::run_create_portal;
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
 
-const MAX_BUF_OUTPUT_MESSAGES: usize = 1_048_576;
+const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
@@ -23,8 +24,9 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
-    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    output_tx: std::sync::mpsc::Sender<c2::ReportTaskOutputRequest>,
+    output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    output_count: Arc<AtomicUsize>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -34,7 +36,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
     ) -> Self {
-        let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
+        let (output_tx, output_rx) = std::sync::mpsc::channel();
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
@@ -43,6 +45,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
+            output_count: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -95,6 +98,11 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         let mut outputs = Vec::new();
         while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
             outputs.push(msg);
+        }
+
+        if !outputs.is_empty() {
+            self.output_count
+                .fetch_sub(outputs.len(), Ordering::Relaxed);
         }
 
         #[cfg(debug_assertions)]
@@ -321,11 +329,49 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportTaskOutputRequest,
     ) -> Result<c2::ReportTaskOutputResponse, String> {
-        // Buffer output instead of sending immediately
-        self.output_tx
-            .try_send(req)
-            .map_err(|_| "Output buffer full".to_string())?;
-        Ok(c2::ReportTaskOutputResponse {})
+        // Reserve a slot atomically
+        let prev_count = self.output_count.fetch_add(1, Ordering::Relaxed);
+
+        if prev_count < MAX_BUF_OUTPUT_MESSAGES {
+            if let Err(e) = self.output_tx.send(req) {
+                // If send failed, release slot
+                self.output_count.fetch_sub(1, Ordering::Relaxed);
+                return Err(e.to_string());
+            }
+            return Ok(c2::ReportTaskOutputResponse {});
+        }
+
+        // We exceeded the limit.
+        // If we are exactly at MAX, we use the reserved slot for the error message.
+        if prev_count == MAX_BUF_OUTPUT_MESSAGES {
+            let task_id = req.output.as_ref().map(|o| o.id).unwrap_or_default();
+            let context = req.context;
+
+            let error_req = c2::ReportTaskOutputRequest {
+                output: Some(c2::TaskOutput {
+                    id: task_id,
+                    output: String::new(),
+                    error: Some(c2::TaskError {
+                        msg: "output truncated, message buffer full".to_string(),
+                    }),
+                    exec_started_at: None,
+                    exec_finished_at: None,
+                }),
+                context,
+            };
+
+            if let Err(e) = self.output_tx.send(error_req) {
+                // If send failed, release slot
+                self.output_count.fetch_sub(1, Ordering::Relaxed);
+                return Err(e.to_string());
+            }
+
+            return Err("Output buffer full".to_string());
+        }
+
+        // prev_count > MAX, so we must revert the reservation and fail.
+        self.output_count.fetch_sub(1, Ordering::Relaxed);
+        Err("Output buffer full".to_string())
     }
 
     fn start_reverse_shell(
