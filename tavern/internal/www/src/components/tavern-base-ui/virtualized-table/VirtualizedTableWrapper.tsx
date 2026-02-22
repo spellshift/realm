@@ -11,7 +11,7 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
     error,
     title = "Table",
     table,
-    showSorting = true,
+    sortType,
     showFiltering = true,
 }) => {
     const { filterCount, resetFilters } = useFilters();
@@ -75,7 +75,7 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
                     <p className='text-md text-gray-600'>{totalItems !== undefined && `(${totalItems})`}</p>
                 </div>
                 <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
-                    {showSorting && <SortingControls />}
+                    {sortType && <SortingControls sortType={sortType} />}
                     {showFiltering && <FilterControls />}
                 </div>
             </div>

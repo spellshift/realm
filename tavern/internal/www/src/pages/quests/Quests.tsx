@@ -2,6 +2,7 @@ import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtual
 import QuestHeader from "./QuestHeader";
 import { QuestsTable } from "./QuestsTable";
 import { useQuestIds } from "./useQuestIds";
+import { PageNavItem } from "../../utils/enums";
 
 const Quests = () => {
     const {
@@ -21,6 +22,7 @@ const Quests = () => {
                 totalItems={data?.quests?.totalCount}
                 loading={initialLoading}
                 error={error}
+                sortType={PageNavItem.quests}
                 table={
                     <QuestsTable
                         questIds={questIds}

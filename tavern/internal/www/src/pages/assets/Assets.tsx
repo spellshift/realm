@@ -5,6 +5,7 @@ import AssetsTable from "./AssetsTable";
 import CreateLinkModal from "./components/CreateLinkModal/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal/UploadAssetModal";
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
+import { PageNavItem } from "../../utils/enums";
 
 export const Assets = () => {
     const {
@@ -35,6 +36,7 @@ export const Assets = () => {
                     totalItems={data?.assets?.totalCount}
                     loading={initialLoading}
                     error={error}
+                    sortType={PageNavItem.assets}
                     table={
                         <AssetsTable
                             assetIds={assetIds}

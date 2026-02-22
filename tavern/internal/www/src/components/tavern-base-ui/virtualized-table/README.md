@@ -228,6 +228,7 @@ For complete table views with loading, error, and empty states:
 
 ```tsx
 import { VirtualizedTableWrapper, VirtualizedTable } from '@/components/virtualized-table';
+import { PageNavItem } from '@/utils/enums';
 
 const HostsPage = () => {
     const { data, hostIds, loading, error, hasMore, loadMore } = useHostsQuery();
@@ -238,7 +239,7 @@ const HostsPage = () => {
             totalItems={data?.hosts?.totalCount}
             loading={loading}
             error={error}
-            showSorting={true}
+            sortType={PageNavItem.hosts}
             showFiltering={true}
             table={
                 <HostsTable

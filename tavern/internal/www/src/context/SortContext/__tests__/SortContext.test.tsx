@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { SortsProvider, useSorts, Sorts } from '../SortContext';
-import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../../utils/enums';
+import { SortsProvider, useSorts } from '../SortContext';
+import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, TaskOrderField } from '../../../utils/enums';
 import { OrderByField } from '../../../utils/interfacesQuery';
+import { Sorts } from '../sortingUtils';
 
 const STORAGE_KEY = 'realm-sorting-v1.0';
 
@@ -35,6 +36,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Desc,
           field: AssetOrderField.CreatedAt,
         },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
+        },
       });
     });
 
@@ -55,6 +60,10 @@ describe('SortContext', () => {
         [PageNavItem.assets]: {
           direction: OrderDirection.Desc,
           field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
         },
       };
 
@@ -159,6 +168,10 @@ describe('SortContext', () => {
         [PageNavItem.assets]: {
           direction: OrderDirection.Desc,
           field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
         },
       };
 
@@ -281,6 +294,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Desc,
           field: AssetOrderField.CreatedAt,
         },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
+        },
       });
     });
 
@@ -323,6 +340,10 @@ describe('SortContext', () => {
             direction: OrderDirection.Desc,
             field: AssetOrderField.CreatedAt,
           },
+          [PageNavItem.processes]: {
+            direction: OrderDirection.Desc,
+            field: ProcessOrderField.LastModifiedAt,
+          },
         });
       });
     });
@@ -350,7 +371,11 @@ describe('SortContext', () => {
         [PageNavItem.assets]: {
           direction: OrderDirection.Desc,
           field: AssetOrderField.CreatedAt,
-        }
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
+        },
       };
 
       act(() => {

@@ -498,7 +498,10 @@ func createProcessList(ctx context.Context, client *ent.Client, host *ent.Host, 
 			SetHost(host).
 			SetTask(task)
 	}
-	client.HostProcess.CreateBulk(builders...).SaveX(ctx)
+	createdProcesses := client.HostProcess.CreateBulk(builders...).SaveX(ctx)
+
+	// Also add processes to the Host.processes edge (separate from HostProcess.host)
+	host.Update().AddProcesses(createdProcesses...).SaveX(ctx)
 }
 
 const loremIpsum = `

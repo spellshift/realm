@@ -8,9 +8,10 @@ type Props = {
     defaultValue?: string;
     setSearch: (args: string) => void;
     isDisabled?: boolean;
+    labelVisible?: boolean;
 }
 const FreeTextSearch = (props: Props) => {
-    const { placeholder, defaultValue, setSearch, isDisabled } = props;
+    const { placeholder, defaultValue, setSearch, isDisabled, labelVisible= true } = props;
 
     const debouncedSearch = useRef(
         debounce(async (criteria) => {
@@ -30,12 +31,12 @@ const FreeTextSearch = (props: Props) => {
 
     return (
         <div className="flex flex-col gap-1">
-            <label className="text-gray-700"> {placeholder}</label>
+            {labelVisible && <label className="text-gray-700"> {placeholder}</label>}
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
                     <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input type='text' defaultValue={defaultValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
+                <Input aria-label={placeholder} type='text' defaultValue={defaultValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
             </InputGroup>
         </div>
     );
