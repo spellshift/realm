@@ -35,6 +35,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 
 	// Delete relevant ents
 	// We must delete children before parents to avoid foreign key constraint violations
+	if _, err := client.ShellTask.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete shell tasks: %w", err))
+	}
+	if _, err := client.Portal.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete portals: %w", err))
+	}
 	if _, err := client.Shell.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shells: %w", err))
 	}
@@ -55,6 +61,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
+	}
+	if _, err := client.Link.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
 	}
 	if _, err := client.Host.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete hosts: %w", err))
