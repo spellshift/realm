@@ -212,6 +212,7 @@ async fn test_imix_agent_config_access() {
             transports: vec![pb::c2::Transport {
                 uri: "http://localhost:8080".to_string(),
                 interval: 5,
+                jitter: 0.0,
                 ..Default::default()
             }],
             active_index: 0,
@@ -246,6 +247,7 @@ fn test_agent_config_platform_as_enum_variant_name() {
                 transports: vec![pb::c2::Transport {
                     uri: "http://localhost:8080".to_string(),
                     interval: 5,
+                    jitter: 0.0,
                     ..Default::default()
                 }],
                 active_index: 0,
@@ -284,6 +286,7 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
                     uri: "http://localhost:8000".to_string(),
                     interval: 5,
                     extra: "".to_string(),
+                    jitter: 0.0,
                 }],
                 active_index: 0,
             }),
