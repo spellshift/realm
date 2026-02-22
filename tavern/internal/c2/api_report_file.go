@@ -15,6 +15,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 
 	var (
 		taskID      int64
+		shellTaskID int64
 		jwtToken    string
 		path        string
 		owner       string
@@ -40,14 +41,17 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		if req.Chunk == nil {
 			continue
 		}
-		if taskID == 0 {
+		if taskID == 0 && shellTaskID == 0 {
 			switch c := req.Context.(type) {
 			case *c2pb.ReportFileRequest_TaskContext:
 				taskID = c.TaskContext.TaskId
+				jwtToken = c.TaskContext.Jwt
 			case *c2pb.ReportFileRequest_ShellContext:
-				return status.Errorf(codes.Unimplemented, "shell context not supported for ReportFile")
+				shellTaskID = c.ShellContext.TaskId
+				jwtToken = c.ShellContext.Jwt
 			}
 		}
+		// Fallback if context was not provided in the first message or correctly parsed above
 		if jwtToken == "" {
 			switch c := req.Context.(type) {
 			case *c2pb.ReportFileRequest_TaskContext:
@@ -56,6 +60,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 				jwtToken = c.ShellContext.Jwt
 			}
 		}
+
 		if path == "" && req.Chunk.Metadata != nil {
 			path = req.Chunk.Metadata.GetPath()
 		}
@@ -78,8 +83,8 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	}
 
 	// Input Validation
-	if taskID == 0 {
-		return status.Errorf(codes.InvalidArgument, "must provide valid task id")
+	if taskID == 0 && shellTaskID == 0 {
+		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
 	}
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
@@ -90,19 +95,47 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return err
 	}
 
-	// Load Task
-	task, err := srv.graph.Task.Get(stream.Context(), int(taskID))
-	if ent.IsNotFound(err) {
-		return status.Errorf(codes.NotFound, "failed to find related task")
-	}
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load task: %v", err)
-	}
+	var host *ent.Host
+	var task *ent.Task
+	var shellTask *ent.ShellTask
+	var shell *ent.Shell
 
-	// Load Host
-	host, err := task.QueryBeacon().QueryHost().Only(stream.Context())
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load host")
+	if taskID != 0 {
+		// Load Task
+		task, err = srv.graph.Task.Get(stream.Context(), int(taskID))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "failed to find related task")
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load task: %v", err)
+		}
+
+		// Load Host
+		host, err = task.QueryBeacon().QueryHost().Only(stream.Context())
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load host")
+		}
+	} else {
+		// Load ShellTask
+		shellTask, err = srv.graph.ShellTask.Get(stream.Context(), int(shellTaskID))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "failed to find related shell task")
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
+		}
+
+		// Load Shell
+		shell, err = shellTask.QueryShell().Only(stream.Context())
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load shell")
+		}
+
+		// Load Host
+		host, err = shell.QueryBeacon().QueryHost().Only(stream.Context())
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load host")
+		}
 	}
 
 	// Load Existing Files
@@ -130,17 +163,27 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	}()
 
 	// Create File
-	f, err := client.HostFile.Create().
+	builder := client.HostFile.Create().
 		SetHostID(host.ID).
-		SetTaskID(task.ID).
 		SetPath(path).
 		SetOwner(owner).
 		SetGroup(group).
 		SetPermissions(permissions).
 		SetSize(size).
 		SetHash(hash).
-		SetContent(content).
-		Save(stream.Context())
+		SetContent(content)
+
+	if task != nil {
+		builder.SetTask(task)
+	}
+	if shell != nil {
+		builder.SetShell(shell)
+	}
+	if shellTask != nil {
+		builder.SetShellTask(shellTask)
+	}
+
+	f, err := builder.Save(stream.Context())
 	if err != nil {
 		return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
 	}

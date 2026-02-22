@@ -6,6 +6,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use pb::c2::{self, TaskContext};
 
+pub mod context;
+pub use context::{ContextProvider, ReportContext, StaticContextProvider};
+
 pub trait Agent: Send + Sync {
     // Interactivity
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String>;

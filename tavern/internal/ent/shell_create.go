@@ -12,6 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -159,6 +162,51 @@ func (sc *ShellCreate) AddShellTasks(s ...*ShellTask) *ShellCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddShellTaskIDs(ids...)
+}
+
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (sc *ShellCreate) AddReportedFileIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddReportedFileIDs(ids...)
+	return sc
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (sc *ShellCreate) AddReportedFiles(h ...*HostFile) *ShellCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return sc.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
+func (sc *ShellCreate) AddReportedProcessIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddReportedProcessIDs(ids...)
+	return sc
+}
+
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (sc *ShellCreate) AddReportedProcesses(h ...*HostProcess) *ShellCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return sc.AddReportedProcessIDs(ids...)
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (sc *ShellCreate) AddReportedCredentialIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddReportedCredentialIDs(ids...)
+	return sc
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (sc *ShellCreate) AddReportedCredentials(h ...*HostCredential) *ShellCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return sc.AddReportedCredentialIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -358,6 +406,54 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ReportedFilesTable,
+			Columns: []string{shell.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ReportedProcessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ReportedProcessesTable,
+			Columns: []string{shell.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ReportedCredentialsTable,
+			Columns: []string{shell.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

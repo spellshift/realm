@@ -74,13 +74,26 @@ func (HostFile) Edges() []ent.Edge {
 			).
 			Comment("Host the file was reported on."),
 		edge.From("task", Task.Type).
-			Required().
 			Unique().
 			Ref("reported_files").
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Task that reported this file."),
+		edge.From("shell", Shell.Type).
+			Unique().
+			Ref("reported_files").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("Shell that reported this file."),
+		edge.From("shell_task", ShellTask.Type).
+			Unique().
+			Ref("reported_files").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("ShellTask that reported this file."),
 	}
 }
 

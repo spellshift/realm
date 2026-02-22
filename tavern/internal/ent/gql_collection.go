@@ -1695,6 +1695,28 @@ func (hc *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, o
 				return err
 			}
 			hc.withTask = query
+
+		case "shell":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shellImplementors)...); err != nil {
+				return err
+			}
+			hc.withShell = query
+
+		case "shellTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellTaskClient{config: hc.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
+				return err
+			}
+			hc.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostcredential.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostcredential.FieldCreatedAt)
@@ -1832,6 +1854,28 @@ func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 				return err
 			}
 			hf.withTask = query
+
+		case "shell":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: hf.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shellImplementors)...); err != nil {
+				return err
+			}
+			hf.withShell = query
+
+		case "shellTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellTaskClient{config: hf.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
+				return err
+			}
+			hf.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostfile.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostfile.FieldCreatedAt)
@@ -1984,6 +2028,28 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 				return err
 			}
 			hp.withTask = query
+
+		case "shell":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: hp.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shellImplementors)...); err != nil {
+				return err
+			}
+			hp.withShell = query
+
+		case "shellTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellTaskClient{config: hp.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
+				return err
+			}
+			hp.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)
@@ -3183,6 +3249,273 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			s.WithNamedShellTasks(alias, func(wq *ShellTaskQuery) {
 				*wq = *query
 			})
+
+		case "reportedFiles":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostFileClient{config: s.config}).Query()
+			)
+			args := newHostFilePaginateArgs(fieldArgs(ctx, new(HostFileWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostFilePager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_reported_files"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shell.ReportedFilesColumn), ids...))
+						})
+						if err := query.GroupBy(shell.ReportedFilesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[6][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedFiles)
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[6][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostfileImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shell.ReportedFilesColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
+
+		case "reportedProcesses":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostProcessClient{config: s.config}).Query()
+			)
+			args := newHostProcessPaginateArgs(fieldArgs(ctx, new(HostProcessWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostProcessPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_reported_processes"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shell.ReportedProcessesColumn), ids...))
+						})
+						if err := query.GroupBy(shell.ReportedProcessesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedProcesses)
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostprocessImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shell.ReportedProcessesColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
+				*wq = *query
+			})
+
+		case "reportedCredentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: s.config}).Query()
+			)
+			args := newHostCredentialPaginateArgs(fieldArgs(ctx, new(HostCredentialWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostCredentialPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_reported_credentials"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shell.ReportedCredentialsColumn), ids...))
+						})
+						if err := query.GroupBy(shell.ReportedCredentialsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[8] == nil {
+								nodes[i].Edges.totalCount[8] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[8][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedCredentials)
+							if nodes[i].Edges.totalCount[8] == nil {
+								nodes[i].Edges.totalCount[8] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[8][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostcredentialImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shell.ReportedCredentialsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[shell.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, shell.FieldCreatedAt)
@@ -3310,6 +3643,273 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			st.withCreator = query
+
+		case "reportedFiles":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostFileClient{config: st.config}).Query()
+			)
+			args := newHostFilePaginateArgs(fieldArgs(ctx, new(HostFileWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostFilePager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					st.loadTotal = append(st.loadTotal, func(ctx context.Context, nodes []*ShellTask) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_task_reported_files"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shelltask.ReportedFilesColumn), ids...))
+						})
+						if err := query.GroupBy(shelltask.ReportedFilesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				} else {
+					st.loadTotal = append(st.loadTotal, func(_ context.Context, nodes []*ShellTask) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedFiles)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostfileImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shelltask.ReportedFilesColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			st.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
+				*wq = *query
+			})
+
+		case "reportedProcesses":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostProcessClient{config: st.config}).Query()
+			)
+			args := newHostProcessPaginateArgs(fieldArgs(ctx, new(HostProcessWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostProcessPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					st.loadTotal = append(st.loadTotal, func(ctx context.Context, nodes []*ShellTask) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_task_reported_processes"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shelltask.ReportedProcessesColumn), ids...))
+						})
+						if err := query.GroupBy(shelltask.ReportedProcessesColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[3][alias] = n
+						}
+						return nil
+					})
+				} else {
+					st.loadTotal = append(st.loadTotal, func(_ context.Context, nodes []*ShellTask) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedProcesses)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[3][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostprocessImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shelltask.ReportedProcessesColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			st.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
+				*wq = *query
+			})
+
+		case "reportedCredentials":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: st.config}).Query()
+			)
+			args := newHostCredentialPaginateArgs(fieldArgs(ctx, new(HostCredentialWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newHostCredentialPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					st.loadTotal = append(st.loadTotal, func(ctx context.Context, nodes []*ShellTask) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_task_reported_credentials"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shelltask.ReportedCredentialsColumn), ids...))
+						})
+						if err := query.GroupBy(shelltask.ReportedCredentialsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[4][alias] = n
+						}
+						return nil
+					})
+				} else {
+					st.loadTotal = append(st.loadTotal, func(_ context.Context, nodes []*ShellTask) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedCredentials)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[4][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, hostcredentialImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shelltask.ReportedCredentialsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			st.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[shelltask.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, shelltask.FieldCreatedAt)

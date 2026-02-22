@@ -54,6 +54,20 @@ func (HostCredential) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Task that reported this credential."),
+		edge.From("shell", Shell.Type).
+			Unique().
+			Ref("reported_credentials").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("Shell that reported this credential."),
+		edge.From("shell_task", ShellTask.Type).
+			Unique().
+			Ref("reported_credentials").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("ShellTask that reported this credential."),
 	}
 }
 

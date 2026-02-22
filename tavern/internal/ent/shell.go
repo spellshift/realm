@@ -51,15 +51,24 @@ type ShellEdges struct {
 	ActiveUsers []*User `json:"active_users,omitempty"`
 	// Tasks executed in this shell
 	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
+	// Files that have been reported by this shell.
+	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
+	// Processes that have been reported by this shell.
+	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
+	// Credentials that have been reported by this shell.
+	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [9]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [9]map[string]int
 
-	namedPortals     map[string][]*Portal
-	namedActiveUsers map[string][]*User
-	namedShellTasks  map[string][]*ShellTask
+	namedPortals             map[string][]*Portal
+	namedActiveUsers         map[string][]*User
+	namedShellTasks          map[string][]*ShellTask
+	namedReportedFiles       map[string][]*HostFile
+	namedReportedProcesses   map[string][]*HostProcess
+	namedReportedCredentials map[string][]*HostCredential
 }
 
 // TaskOrErr returns the Task value or an error if the edge
@@ -120,6 +129,33 @@ func (e ShellEdges) ShellTasksOrErr() ([]*ShellTask, error) {
 		return e.ShellTasks, nil
 	}
 	return nil, &NotLoadedError{edge: "shell_tasks"}
+}
+
+// ReportedFilesOrErr returns the ReportedFiles value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) ReportedFilesOrErr() ([]*HostFile, error) {
+	if e.loadedTypes[6] {
+		return e.ReportedFiles, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_files"}
+}
+
+// ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
+	if e.loadedTypes[7] {
+		return e.ReportedProcesses, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_processes"}
+}
+
+// ReportedCredentialsOrErr returns the ReportedCredentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
+	if e.loadedTypes[8] {
+		return e.ReportedCredentials, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_credentials"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -248,6 +284,21 @@ func (s *Shell) QueryShellTasks() *ShellTaskQuery {
 	return NewShellClient(s.config).QueryShellTasks(s)
 }
 
+// QueryReportedFiles queries the "reported_files" edge of the Shell entity.
+func (s *Shell) QueryReportedFiles() *HostFileQuery {
+	return NewShellClient(s.config).QueryReportedFiles(s)
+}
+
+// QueryReportedProcesses queries the "reported_processes" edge of the Shell entity.
+func (s *Shell) QueryReportedProcesses() *HostProcessQuery {
+	return NewShellClient(s.config).QueryReportedProcesses(s)
+}
+
+// QueryReportedCredentials queries the "reported_credentials" edge of the Shell entity.
+func (s *Shell) QueryReportedCredentials() *HostCredentialQuery {
+	return NewShellClient(s.config).QueryReportedCredentials(s)
+}
+
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -355,6 +406,78 @@ func (s *Shell) appendNamedShellTasks(name string, edges ...*ShellTask) {
 		s.Edges.namedShellTasks[name] = []*ShellTask{}
 	} else {
 		s.Edges.namedShellTasks[name] = append(s.Edges.namedShellTasks[name], edges...)
+	}
+}
+
+// NamedReportedFiles returns the ReportedFiles named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedReportedFiles(name string) ([]*HostFile, error) {
+	if s.Edges.namedReportedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedReportedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedReportedFiles(name string, edges ...*HostFile) {
+	if s.Edges.namedReportedFiles == nil {
+		s.Edges.namedReportedFiles = make(map[string][]*HostFile)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedReportedFiles[name] = []*HostFile{}
+	} else {
+		s.Edges.namedReportedFiles[name] = append(s.Edges.namedReportedFiles[name], edges...)
+	}
+}
+
+// NamedReportedProcesses returns the ReportedProcesses named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedReportedProcesses(name string) ([]*HostProcess, error) {
+	if s.Edges.namedReportedProcesses == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedReportedProcesses[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
+	if s.Edges.namedReportedProcesses == nil {
+		s.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedReportedProcesses[name] = []*HostProcess{}
+	} else {
+		s.Edges.namedReportedProcesses[name] = append(s.Edges.namedReportedProcesses[name], edges...)
+	}
+}
+
+// NamedReportedCredentials returns the ReportedCredentials named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedReportedCredentials(name string) ([]*HostCredential, error) {
+	if s.Edges.namedReportedCredentials == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedReportedCredentials[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedReportedCredentials(name string, edges ...*HostCredential) {
+	if s.Edges.namedReportedCredentials == nil {
+		s.Edges.namedReportedCredentials = make(map[string][]*HostCredential)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedReportedCredentials[name] = []*HostCredential{}
+	} else {
+		s.Edges.namedReportedCredentials[name] = append(s.Edges.namedReportedCredentials[name], edges...)
 	}
 }
 

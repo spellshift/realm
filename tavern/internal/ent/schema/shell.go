@@ -76,6 +76,24 @@ func (Shell) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Tasks executed in this shell"),
+		edge.To("reported_files", HostFile.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Files that have been reported by this shell."),
+		edge.To("reported_processes", HostProcess.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Processes that have been reported by this shell."),
+		edge.To("reported_credentials", HostCredential.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Credentials that have been reported by this shell."),
 	}
 }
 

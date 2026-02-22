@@ -27,6 +27,9 @@ use conversion::*;
 #[cfg(not(feature = "stdlib"))]
 use conversion_fake::*;
 
+#[cfg(feature = "stdlib")]
+pub use eldritch_agent::{Agent, ContextProvider, ReportContext, StaticContextProvider};
+
 #[cfg(test)]
 mod tests;
 

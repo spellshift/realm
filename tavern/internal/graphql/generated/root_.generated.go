@@ -191,6 +191,8 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
+		Shell          func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
 
@@ -220,6 +222,8 @@ type ComplexityRoot struct {
 		Owner          func(childComplexity int) int
 		Path           func(childComplexity int) int
 		Permissions    func(childComplexity int) int
+		Shell          func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -248,6 +252,8 @@ type ComplexityRoot struct {
 		Pid            func(childComplexity int) int
 		Ppid           func(childComplexity int) int
 		Principal      func(childComplexity int) int
+		Shell          func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -411,16 +417,19 @@ type ComplexityRoot struct {
 	}
 
 	Shell struct {
-		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
-		Beacon         func(childComplexity int) int
-		ClosedAt       func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Owner          func(childComplexity int) int
-		Portals        func(childComplexity int) int
-		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
-		Task           func(childComplexity int) int
+		ActiveUsers         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Beacon              func(childComplexity int) int
+		ClosedAt            func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Owner               func(childComplexity int) int
+		Portals             func(childComplexity int) int
+		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
+		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		ShellTasks          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
+		Task                func(childComplexity int) int
 	}
 
 	ShellConnection struct {
@@ -435,19 +444,22 @@ type ComplexityRoot struct {
 	}
 
 	ShellTask struct {
-		ClaimedAt      func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
-		Error          func(childComplexity int) int
-		ExecFinishedAt func(childComplexity int) int
-		ExecStartedAt  func(childComplexity int) int
-		ID             func(childComplexity int) int
-		Input          func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Output         func(childComplexity int) int
-		SequenceID     func(childComplexity int) int
-		Shell          func(childComplexity int) int
-		StreamID       func(childComplexity int) int
+		ClaimedAt           func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		Error               func(childComplexity int) int
+		ExecFinishedAt      func(childComplexity int) int
+		ExecStartedAt       func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		Input               func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Output              func(childComplexity int) int
+		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
+		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		SequenceID          func(childComplexity int) int
+		Shell               func(childComplexity int) int
+		StreamID            func(childComplexity int) int
 	}
 
 	ShellTaskConnection struct {
@@ -1323,6 +1335,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostCredential.Secret(childComplexity), true
 
+	case "HostCredential.shell":
+		if e.complexity.HostCredential.Shell == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.Shell(childComplexity), true
+
+	case "HostCredential.shellTask":
+		if e.complexity.HostCredential.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.ShellTask(childComplexity), true
+
 	case "HostCredential.task":
 		if e.complexity.HostCredential.Task == nil {
 			break
@@ -1441,6 +1467,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.shell":
+		if e.complexity.HostFile.Shell == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Shell(childComplexity), true
+
+	case "HostFile.shellTask":
+		if e.complexity.HostFile.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostFile.ShellTask(childComplexity), true
 
 	case "HostFile.size":
 		if e.complexity.HostFile.Size == nil {
@@ -1574,6 +1614,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostProcess.Principal(childComplexity), true
+
+	case "HostProcess.shell":
+		if e.complexity.HostProcess.Shell == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Shell(childComplexity), true
+
+	case "HostProcess.shellTask":
+		if e.complexity.HostProcess.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.ShellTask(childComplexity), true
 
 	case "HostProcess.status":
 		if e.complexity.HostProcess.Status == nil {
@@ -2563,6 +2617,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Shell.Portals(childComplexity), true
 
+	case "Shell.reportedCredentials":
+		if e.complexity.Shell.ReportedCredentials == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_reportedCredentials_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ReportedCredentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
+
+	case "Shell.reportedFiles":
+		if e.complexity.Shell.ReportedFiles == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_reportedFiles_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ReportedFiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
+
+	case "Shell.reportedProcesses":
+		if e.complexity.Shell.ReportedProcesses == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_reportedProcesses_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
+
 	case "Shell.shellTasks":
 		if e.complexity.Shell.ShellTasks == nil {
 			break
@@ -2686,6 +2776,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellTask.Output(childComplexity), true
+
+	case "ShellTask.reportedCredentials":
+		if e.complexity.ShellTask.ReportedCredentials == nil {
+			break
+		}
+
+		args, err := ec.field_ShellTask_reportedCredentials_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ShellTask.ReportedCredentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
+
+	case "ShellTask.reportedFiles":
+		if e.complexity.ShellTask.ReportedFiles == nil {
+			break
+		}
+
+		args, err := ec.field_ShellTask_reportedFiles_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ShellTask.ReportedFiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostFileOrder), args["where"].(*ent.HostFileWhereInput)), true
+
+	case "ShellTask.reportedProcesses":
+		if e.complexity.ShellTask.ReportedProcesses == nil {
+			break
+		}
+
+		args, err := ec.field_ShellTask_reportedProcesses_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ShellTask.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
 
 	case "ShellTask.sequenceID":
 		if e.complexity.ShellTask.SequenceID == nil {
@@ -4581,6 +4707,8 @@ input CreateHostCredentialInput {
   kind: HostCredentialKind!
   hostID: ID!
   taskID: ID
+  shellID: ID
+  shellTaskID: ID
 }
 """
 CreateLinkInput is used for create Link object.
@@ -4636,6 +4764,9 @@ Input was generated by ent.
 """
 input CreateShellInput {
   beaconID: ID!
+  reportedFileIDs: [ID!]
+  reportedProcessIDs: [ID!]
+  reportedCredentialIDs: [ID!]
 }
 """
 CreateTagInput is used for create Tag object.
@@ -4946,6 +5077,14 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+  """
+  Shell that reported this credential.
+  """
+  shell: Shell
+  """
+  ShellTask that reported this credential.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5097,6 +5236,16 @@ input HostCredentialWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 An edge in a connection.
@@ -5152,7 +5301,15 @@ type HostFile implements Node {
   """
   Task that reported this file.
   """
-  task: Task!
+  task: Task
+  """
+  Shell that reported this file.
+  """
+  shell: Shell
+  """
+  ShellTask that reported this file.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5356,6 +5513,16 @@ input HostFileWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 Ordering options for Host connections
@@ -5442,7 +5609,15 @@ type HostProcess implements Node {
   """
   Task that reported this process.
   """
-  task: Task!
+  task: Task
+  """
+  Shell that reported this process.
+  """
+  shell: Shell
+  """
+  ShellTask that reported this process.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5700,6 +5875,16 @@ input HostProcessWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -6863,6 +7048,99 @@ type Shell implements Node {
     """
     where: ShellTaskWhereInput
   ): ShellTaskConnection!
+  reportedFiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  reportedProcesses(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  reportedCredentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -6965,6 +7243,99 @@ type ShellTask implements Node {
   The user who created this ShellTask
   """
   creator: User!
+  reportedFiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostFiles returned from the connection.
+    """
+    orderBy: [HostFileOrder!]
+
+    """
+    Filtering options for HostFiles returned from the connection.
+    """
+    where: HostFileWhereInput
+  ): HostFileConnection!
+  reportedProcesses(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostProcesses returned from the connection.
+    """
+    orderBy: [HostProcessOrder!]
+
+    """
+    Filtering options for HostProcesses returned from the connection.
+    """
+    where: HostProcessWhereInput
+  ): HostProcessConnection!
+  reportedCredentials(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for HostCredentials returned from the connection.
+    """
+    orderBy: [HostCredentialOrder!]
+
+    """
+    Filtering options for HostCredentials returned from the connection.
+    """
+    where: HostCredentialWhereInput
+  ): HostCredentialConnection!
 }
 """
 A connection to a list of items.
@@ -7188,6 +7559,21 @@ input ShellTaskWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  reported_files edge predicates
+  """
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
+  """
+  reported_processes edge predicates
+  """
+  hasReportedProcesses: Boolean
+  hasReportedProcessesWith: [HostProcessWhereInput!]
+  """
+  reported_credentials edge predicates
+  """
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -7273,6 +7659,21 @@ input ShellWhereInput {
   """
   hasShellTasks: Boolean
   hasShellTasksWith: [ShellTaskWhereInput!]
+  """
+  reported_files edge predicates
+  """
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
+  """
+  reported_processes edge predicates
+  """
+  hasReportedProcesses: Boolean
+  hasReportedProcessesWith: [HostProcessWhereInput!]
+  """
+  reported_credentials edge predicates
+  """
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
 }
 type Tag implements Node {
   id: ID!

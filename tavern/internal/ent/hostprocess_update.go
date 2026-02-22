@@ -15,6 +15,8 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -218,9 +220,55 @@ func (hpu *HostProcessUpdate) SetTaskID(id int) *HostProcessUpdate {
 	return hpu
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableTaskID(id *int) *HostProcessUpdate {
+	if id != nil {
+		hpu = hpu.SetTaskID(*id)
+	}
+	return hpu
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hpu *HostProcessUpdate) SetTask(t *Task) *HostProcessUpdate {
 	return hpu.SetTaskID(t.ID)
+}
+
+// SetShellID sets the "shell" edge to the Shell entity by ID.
+func (hpu *HostProcessUpdate) SetShellID(id int) *HostProcessUpdate {
+	hpu.mutation.SetShellID(id)
+	return hpu
+}
+
+// SetNillableShellID sets the "shell" edge to the Shell entity by ID if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableShellID(id *int) *HostProcessUpdate {
+	if id != nil {
+		hpu = hpu.SetShellID(*id)
+	}
+	return hpu
+}
+
+// SetShell sets the "shell" edge to the Shell entity.
+func (hpu *HostProcessUpdate) SetShell(s *Shell) *HostProcessUpdate {
+	return hpu.SetShellID(s.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hpu *HostProcessUpdate) SetShellTaskID(id int) *HostProcessUpdate {
+	hpu.mutation.SetShellTaskID(id)
+	return hpu
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableShellTaskID(id *int) *HostProcessUpdate {
+	if id != nil {
+		hpu = hpu.SetShellTaskID(*id)
+	}
+	return hpu
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hpu *HostProcessUpdate) SetShellTask(s *ShellTask) *HostProcessUpdate {
+	return hpu.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -237,6 +285,18 @@ func (hpu *HostProcessUpdate) ClearHost() *HostProcessUpdate {
 // ClearTask clears the "task" edge to the Task entity.
 func (hpu *HostProcessUpdate) ClearTask() *HostProcessUpdate {
 	hpu.mutation.ClearTask()
+	return hpu
+}
+
+// ClearShell clears the "shell" edge to the Shell entity.
+func (hpu *HostProcessUpdate) ClearShell() *HostProcessUpdate {
+	hpu.mutation.ClearShell()
+	return hpu
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hpu *HostProcessUpdate) ClearShellTask() *HostProcessUpdate {
+	hpu.mutation.ClearShellTask()
 	return hpu
 }
 
@@ -290,9 +350,6 @@ func (hpu *HostProcessUpdate) check() error {
 	}
 	if hpu.mutation.HostCleared() && len(hpu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
-	}
-	if hpu.mutation.TaskCleared() && len(hpu.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
 }
@@ -408,6 +465,64 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpu.mutation.ShellCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTable,
+			Columns: []string{hostprocess.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpu.mutation.ShellIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTable,
+			Columns: []string{hostprocess.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpu.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTaskTable,
+			Columns: []string{hostprocess.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpu.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTaskTable,
+			Columns: []string{hostprocess.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -622,9 +737,55 @@ func (hpuo *HostProcessUpdateOne) SetTaskID(id int) *HostProcessUpdateOne {
 	return hpuo
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableTaskID(id *int) *HostProcessUpdateOne {
+	if id != nil {
+		hpuo = hpuo.SetTaskID(*id)
+	}
+	return hpuo
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hpuo *HostProcessUpdateOne) SetTask(t *Task) *HostProcessUpdateOne {
 	return hpuo.SetTaskID(t.ID)
+}
+
+// SetShellID sets the "shell" edge to the Shell entity by ID.
+func (hpuo *HostProcessUpdateOne) SetShellID(id int) *HostProcessUpdateOne {
+	hpuo.mutation.SetShellID(id)
+	return hpuo
+}
+
+// SetNillableShellID sets the "shell" edge to the Shell entity by ID if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableShellID(id *int) *HostProcessUpdateOne {
+	if id != nil {
+		hpuo = hpuo.SetShellID(*id)
+	}
+	return hpuo
+}
+
+// SetShell sets the "shell" edge to the Shell entity.
+func (hpuo *HostProcessUpdateOne) SetShell(s *Shell) *HostProcessUpdateOne {
+	return hpuo.SetShellID(s.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hpuo *HostProcessUpdateOne) SetShellTaskID(id int) *HostProcessUpdateOne {
+	hpuo.mutation.SetShellTaskID(id)
+	return hpuo
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableShellTaskID(id *int) *HostProcessUpdateOne {
+	if id != nil {
+		hpuo = hpuo.SetShellTaskID(*id)
+	}
+	return hpuo
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hpuo *HostProcessUpdateOne) SetShellTask(s *ShellTask) *HostProcessUpdateOne {
+	return hpuo.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -641,6 +802,18 @@ func (hpuo *HostProcessUpdateOne) ClearHost() *HostProcessUpdateOne {
 // ClearTask clears the "task" edge to the Task entity.
 func (hpuo *HostProcessUpdateOne) ClearTask() *HostProcessUpdateOne {
 	hpuo.mutation.ClearTask()
+	return hpuo
+}
+
+// ClearShell clears the "shell" edge to the Shell entity.
+func (hpuo *HostProcessUpdateOne) ClearShell() *HostProcessUpdateOne {
+	hpuo.mutation.ClearShell()
+	return hpuo
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hpuo *HostProcessUpdateOne) ClearShellTask() *HostProcessUpdateOne {
+	hpuo.mutation.ClearShellTask()
 	return hpuo
 }
 
@@ -707,9 +880,6 @@ func (hpuo *HostProcessUpdateOne) check() error {
 	}
 	if hpuo.mutation.HostCleared() && len(hpuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostProcess.host"`)
-	}
-	if hpuo.mutation.TaskCleared() && len(hpuo.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostProcess.task"`)
 	}
 	return nil
 }
@@ -842,6 +1012,64 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpuo.mutation.ShellCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTable,
+			Columns: []string{hostprocess.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpuo.mutation.ShellIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTable,
+			Columns: []string{hostprocess.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpuo.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTaskTable,
+			Columns: []string{hostprocess.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpuo.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostprocess.ShellTaskTable,
+			Columns: []string{hostprocess.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

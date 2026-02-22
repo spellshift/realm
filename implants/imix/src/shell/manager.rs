@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 
 use eldritch::agent::agent::Agent;
+use eldritch::agent::{ContextProvider, ReportContext};
 use eldritch::assets::std::EmptyAssets;
 use eldritch::{Interpreter, Printer, Span, Value};
 use pb::c2::{
@@ -135,6 +136,29 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     }
 }
 
+struct ShellContextProvider {
+    shell_id: i64,
+    context: Arc<Mutex<ExecutionContext>>,
+}
+
+impl ContextProvider for ShellContextProvider {
+    fn get_context(&self) -> ReportContext {
+        let ctx = self.context.lock().unwrap();
+        match &*ctx {
+            ExecutionContext::Task { task_id, jwt } => ReportContext::Shell(ShellTaskContext {
+                task_id: *task_id,
+                shell_id: self.shell_id,
+                jwt: jwt.clone(),
+            }),
+            // Fallback to dummy TaskContext for non-task execution contexts
+            _ => ReportContext::Task(TaskContext {
+                task_id: 0,
+                jwt: String::new(),
+            }),
+        }
+    }
+}
+
 pub enum InterpreterCommand {
     ExecuteTask {
         task_id: i64,
@@ -250,6 +274,11 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             context: context.clone(),
         });
 
+        let context_provider = Arc::new(ShellContextProvider {
+            shell_id,
+            context: context.clone(),
+        });
+
         let task_context = TaskContext {
             task_id: 0,
             jwt: String::new(),
@@ -258,7 +287,13 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_task_context(agent.clone(), task_context, Vec::new(), backend);
+            .with_context_provider(
+                agent.clone(),
+                context_provider,
+                task_context,
+                Vec::new(),
+                backend,
+            );
 
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
@@ -395,6 +430,7 @@ mod tests {
             input: "1+1".to_string(),
             sequence_id: 1,
             stream_id: "stream1".to_string(),
+            jwt: "jwt".to_string(),
         };
 
         // Send task

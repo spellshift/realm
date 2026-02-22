@@ -38,6 +38,12 @@ const (
 	EdgeShell = "shell"
 	// EdgeCreator holds the string denoting the creator edge name in mutations.
 	EdgeCreator = "creator"
+	// EdgeReportedFiles holds the string denoting the reported_files edge name in mutations.
+	EdgeReportedFiles = "reported_files"
+	// EdgeReportedProcesses holds the string denoting the reported_processes edge name in mutations.
+	EdgeReportedProcesses = "reported_processes"
+	// EdgeReportedCredentials holds the string denoting the reported_credentials edge name in mutations.
+	EdgeReportedCredentials = "reported_credentials"
 	// Table holds the table name of the shelltask in the database.
 	Table = "shell_tasks"
 	// ShellTable is the table that holds the shell relation/edge.
@@ -54,6 +60,27 @@ const (
 	CreatorInverseTable = "users"
 	// CreatorColumn is the table column denoting the creator relation/edge.
 	CreatorColumn = "shell_task_creator"
+	// ReportedFilesTable is the table that holds the reported_files relation/edge.
+	ReportedFilesTable = "host_files"
+	// ReportedFilesInverseTable is the table name for the HostFile entity.
+	// It exists in this package in order to avoid circular dependency with the "hostfile" package.
+	ReportedFilesInverseTable = "host_files"
+	// ReportedFilesColumn is the table column denoting the reported_files relation/edge.
+	ReportedFilesColumn = "shell_task_reported_files"
+	// ReportedProcessesTable is the table that holds the reported_processes relation/edge.
+	ReportedProcessesTable = "host_processes"
+	// ReportedProcessesInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ReportedProcessesInverseTable = "host_processes"
+	// ReportedProcessesColumn is the table column denoting the reported_processes relation/edge.
+	ReportedProcessesColumn = "shell_task_reported_processes"
+	// ReportedCredentialsTable is the table that holds the reported_credentials relation/edge.
+	ReportedCredentialsTable = "host_credentials"
+	// ReportedCredentialsInverseTable is the table name for the HostCredential entity.
+	// It exists in this package in order to avoid circular dependency with the "hostcredential" package.
+	ReportedCredentialsInverseTable = "host_credentials"
+	// ReportedCredentialsColumn is the table column denoting the reported_credentials relation/edge.
+	ReportedCredentialsColumn = "shell_task_reported_credentials"
 )
 
 // Columns holds all SQL columns for shelltask fields.
@@ -173,6 +200,48 @@ func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByReportedFilesCount orders the results by reported_files count.
+func ByReportedFilesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedFilesStep(), opts...)
+	}
+}
+
+// ByReportedFiles orders the results by reported_files terms.
+func ByReportedFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedFilesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReportedProcessesCount orders the results by reported_processes count.
+func ByReportedProcessesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedProcessesStep(), opts...)
+	}
+}
+
+// ByReportedProcesses orders the results by reported_processes terms.
+func ByReportedProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByReportedCredentialsCount orders the results by reported_credentials count.
+func ByReportedCredentialsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedCredentialsStep(), opts...)
+	}
+}
+
+// ByReportedCredentials orders the results by reported_credentials terms.
+func ByReportedCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedCredentialsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newShellStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -185,5 +254,26 @@ func newCreatorStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CreatorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
+	)
+}
+func newReportedFilesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedFilesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedFilesTable, ReportedFilesColumn),
+	)
+}
+func newReportedProcessesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedProcessesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedProcessesTable, ReportedProcessesColumn),
+	)
+}
+func newReportedCredentialsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedCredentialsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedCredentialsTable, ReportedCredentialsColumn),
 	)
 }

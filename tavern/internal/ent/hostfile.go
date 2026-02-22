@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -39,11 +41,13 @@ type HostFile struct {
 	Content []byte `json:"content,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostFileQuery when eager-loading is set.
-	Edges               HostFileEdges `json:"edges"`
-	host_files          *int
-	host_file_host      *int
-	task_reported_files *int
-	selectValues        sql.SelectValues
+	Edges                     HostFileEdges `json:"edges"`
+	host_files                *int
+	host_file_host            *int
+	shell_reported_files      *int
+	shell_task_reported_files *int
+	task_reported_files       *int
+	selectValues              sql.SelectValues
 }
 
 // HostFileEdges holds the relations/edges for other nodes in the graph.
@@ -52,11 +56,15 @@ type HostFileEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Task that reported this file.
 	Task *Task `json:"task,omitempty"`
+	// Shell that reported this file.
+	Shell *Shell `json:"shell,omitempty"`
+	// ShellTask that reported this file.
+	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [4]map[string]int
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -81,6 +89,28 @@ func (e HostFileEdges) TaskOrErr() (*Task, error) {
 	return nil, &NotLoadedError{edge: "task"}
 }
 
+// ShellOrErr returns the Shell value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e HostFileEdges) ShellOrErr() (*Shell, error) {
+	if e.Shell != nil {
+		return e.Shell, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: shell.Label}
+	}
+	return nil, &NotLoadedError{edge: "shell"}
+}
+
+// ShellTaskOrErr returns the ShellTask value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e HostFileEdges) ShellTaskOrErr() (*ShellTask, error) {
+	if e.ShellTask != nil {
+		return e.ShellTask, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: shelltask.Label}
+	}
+	return nil, &NotLoadedError{edge: "shell_task"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*HostFile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -98,7 +128,11 @@ func (*HostFile) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case hostfile.ForeignKeys[1]: // host_file_host
 			values[i] = new(sql.NullInt64)
-		case hostfile.ForeignKeys[2]: // task_reported_files
+		case hostfile.ForeignKeys[2]: // shell_reported_files
+			values[i] = new(sql.NullInt64)
+		case hostfile.ForeignKeys[3]: // shell_task_reported_files
+			values[i] = new(sql.NullInt64)
+		case hostfile.ForeignKeys[4]: // task_reported_files
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -191,6 +225,20 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 			}
 		case hostfile.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_reported_files", value)
+			} else if value.Valid {
+				hf.shell_reported_files = new(int)
+				*hf.shell_reported_files = int(value.Int64)
+			}
+		case hostfile.ForeignKeys[3]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_files", value)
+			} else if value.Valid {
+				hf.shell_task_reported_files = new(int)
+				*hf.shell_task_reported_files = int(value.Int64)
+			}
+		case hostfile.ForeignKeys[4]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_files", value)
 			} else if value.Valid {
 				hf.task_reported_files = new(int)
@@ -217,6 +265,16 @@ func (hf *HostFile) QueryHost() *HostQuery {
 // QueryTask queries the "task" edge of the HostFile entity.
 func (hf *HostFile) QueryTask() *TaskQuery {
 	return NewHostFileClient(hf.config).QueryTask(hf)
+}
+
+// QueryShell queries the "shell" edge of the HostFile entity.
+func (hf *HostFile) QueryShell() *ShellQuery {
+	return NewHostFileClient(hf.config).QueryShell(hf)
+}
+
+// QueryShellTask queries the "shell_task" edge of the HostFile entity.
+func (hf *HostFile) QueryShellTask() *ShellTaskQuery {
+	return NewHostFileClient(hf.config).QueryShellTask(hf)
 }
 
 // Update returns a builder for updating this HostFile.

@@ -13,6 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -24,22 +27,28 @@ import (
 // ShellQuery is the builder for querying Shell entities.
 type ShellQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []shell.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Shell
-	withTask             *TaskQuery
-	withBeacon           *BeaconQuery
-	withOwner            *UserQuery
-	withPortals          *PortalQuery
-	withActiveUsers      *UserQuery
-	withShellTasks       *ShellTaskQuery
-	withFKs              bool
-	modifiers            []func(*sql.Selector)
-	loadTotal            []func(context.Context, []*Shell) error
-	withNamedPortals     map[string]*PortalQuery
-	withNamedActiveUsers map[string]*UserQuery
-	withNamedShellTasks  map[string]*ShellTaskQuery
+	ctx                          *QueryContext
+	order                        []shell.OrderOption
+	inters                       []Interceptor
+	predicates                   []predicate.Shell
+	withTask                     *TaskQuery
+	withBeacon                   *BeaconQuery
+	withOwner                    *UserQuery
+	withPortals                  *PortalQuery
+	withActiveUsers              *UserQuery
+	withShellTasks               *ShellTaskQuery
+	withReportedFiles            *HostFileQuery
+	withReportedProcesses        *HostProcessQuery
+	withReportedCredentials      *HostCredentialQuery
+	withFKs                      bool
+	modifiers                    []func(*sql.Selector)
+	loadTotal                    []func(context.Context, []*Shell) error
+	withNamedPortals             map[string]*PortalQuery
+	withNamedActiveUsers         map[string]*UserQuery
+	withNamedShellTasks          map[string]*ShellTaskQuery
+	withNamedReportedFiles       map[string]*HostFileQuery
+	withNamedReportedProcesses   map[string]*HostProcessQuery
+	withNamedReportedCredentials map[string]*HostCredentialQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -201,6 +210,72 @@ func (sq *ShellQuery) QueryShellTasks() *ShellTaskQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(shelltask.Table, shelltask.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, shell.ShellTasksTable, shell.ShellTasksColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedFiles chains the current query on the "reported_files" edge.
+func (sq *ShellQuery) QueryReportedFiles() *HostFileQuery {
+	query := (&HostFileClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedFilesTable, shell.ReportedFilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedProcesses chains the current query on the "reported_processes" edge.
+func (sq *ShellQuery) QueryReportedProcesses() *HostProcessQuery {
+	query := (&HostProcessClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedProcessesTable, shell.ReportedProcessesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedCredentials chains the current query on the "reported_credentials" edge.
+func (sq *ShellQuery) QueryReportedCredentials() *HostCredentialQuery {
+	query := (&HostCredentialClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedCredentialsTable, shell.ReportedCredentialsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -395,17 +470,20 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		return nil
 	}
 	return &ShellQuery{
-		config:          sq.config,
-		ctx:             sq.ctx.Clone(),
-		order:           append([]shell.OrderOption{}, sq.order...),
-		inters:          append([]Interceptor{}, sq.inters...),
-		predicates:      append([]predicate.Shell{}, sq.predicates...),
-		withTask:        sq.withTask.Clone(),
-		withBeacon:      sq.withBeacon.Clone(),
-		withOwner:       sq.withOwner.Clone(),
-		withPortals:     sq.withPortals.Clone(),
-		withActiveUsers: sq.withActiveUsers.Clone(),
-		withShellTasks:  sq.withShellTasks.Clone(),
+		config:                  sq.config,
+		ctx:                     sq.ctx.Clone(),
+		order:                   append([]shell.OrderOption{}, sq.order...),
+		inters:                  append([]Interceptor{}, sq.inters...),
+		predicates:              append([]predicate.Shell{}, sq.predicates...),
+		withTask:                sq.withTask.Clone(),
+		withBeacon:              sq.withBeacon.Clone(),
+		withOwner:               sq.withOwner.Clone(),
+		withPortals:             sq.withPortals.Clone(),
+		withActiveUsers:         sq.withActiveUsers.Clone(),
+		withShellTasks:          sq.withShellTasks.Clone(),
+		withReportedFiles:       sq.withReportedFiles.Clone(),
+		withReportedProcesses:   sq.withReportedProcesses.Clone(),
+		withReportedCredentials: sq.withReportedCredentials.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -475,6 +553,39 @@ func (sq *ShellQuery) WithShellTasks(opts ...func(*ShellTaskQuery)) *ShellQuery 
 		opt(query)
 	}
 	sq.withShellTasks = query
+	return sq
+}
+
+// WithReportedFiles tells the query-builder to eager-load the nodes that are connected to
+// the "reported_files" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithReportedFiles(opts ...func(*HostFileQuery)) *ShellQuery {
+	query := (&HostFileClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withReportedFiles = query
+	return sq
+}
+
+// WithReportedProcesses tells the query-builder to eager-load the nodes that are connected to
+// the "reported_processes" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithReportedProcesses(opts ...func(*HostProcessQuery)) *ShellQuery {
+	query := (&HostProcessClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withReportedProcesses = query
+	return sq
+}
+
+// WithReportedCredentials tells the query-builder to eager-load the nodes that are connected to
+// the "reported_credentials" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithReportedCredentials(opts ...func(*HostCredentialQuery)) *ShellQuery {
+	query := (&HostCredentialClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withReportedCredentials = query
 	return sq
 }
 
@@ -557,13 +668,16 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [9]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
 			sq.withPortals != nil,
 			sq.withActiveUsers != nil,
 			sq.withShellTasks != nil,
+			sq.withReportedFiles != nil,
+			sq.withReportedProcesses != nil,
+			sq.withReportedCredentials != nil,
 		}
 	)
 	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
@@ -632,6 +746,29 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withReportedFiles; query != nil {
+		if err := sq.loadReportedFiles(ctx, query, nodes,
+			func(n *Shell) { n.Edges.ReportedFiles = []*HostFile{} },
+			func(n *Shell, e *HostFile) { n.Edges.ReportedFiles = append(n.Edges.ReportedFiles, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withReportedProcesses; query != nil {
+		if err := sq.loadReportedProcesses(ctx, query, nodes,
+			func(n *Shell) { n.Edges.ReportedProcesses = []*HostProcess{} },
+			func(n *Shell, e *HostProcess) { n.Edges.ReportedProcesses = append(n.Edges.ReportedProcesses, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withReportedCredentials; query != nil {
+		if err := sq.loadReportedCredentials(ctx, query, nodes,
+			func(n *Shell) { n.Edges.ReportedCredentials = []*HostCredential{} },
+			func(n *Shell, e *HostCredential) {
+				n.Edges.ReportedCredentials = append(n.Edges.ReportedCredentials, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range sq.withNamedPortals {
 		if err := sq.loadPortals(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPortals(name) },
@@ -650,6 +787,27 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		if err := sq.loadShellTasks(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedShellTasks(name) },
 			func(n *Shell, e *ShellTask) { n.appendNamedShellTasks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedReportedFiles {
+		if err := sq.loadReportedFiles(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedReportedFiles(name) },
+			func(n *Shell, e *HostFile) { n.appendNamedReportedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedReportedProcesses {
+		if err := sq.loadReportedProcesses(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedReportedProcesses(name) },
+			func(n *Shell, e *HostProcess) { n.appendNamedReportedProcesses(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedReportedCredentials {
+		if err := sq.loadReportedCredentials(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedReportedCredentials(name) },
+			func(n *Shell, e *HostCredential) { n.appendNamedReportedCredentials(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -880,6 +1038,99 @@ func (sq *ShellQuery) loadShellTasks(ctx context.Context, query *ShellTaskQuery,
 	}
 	return nil
 }
+func (sq *ShellQuery) loadReportedFiles(ctx context.Context, query *HostFileQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *HostFile)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostFile(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.ReportedFilesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_reported_files
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_reported_files" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_reported_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (sq *ShellQuery) loadReportedProcesses(ctx context.Context, query *HostProcessQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *HostProcess)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostProcess(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.ReportedProcessesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_reported_processes
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_reported_processes" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_reported_processes" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (sq *ShellQuery) loadReportedCredentials(ctx context.Context, query *HostCredentialQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *HostCredential)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostCredential(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.ReportedCredentialsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_reported_credentials
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_reported_credentials" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_reported_credentials" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -1004,6 +1255,48 @@ func (sq *ShellQuery) WithNamedShellTasks(name string, opts ...func(*ShellTaskQu
 		sq.withNamedShellTasks = make(map[string]*ShellTaskQuery)
 	}
 	sq.withNamedShellTasks[name] = query
+	return sq
+}
+
+// WithNamedReportedFiles tells the query-builder to eager-load the nodes that are connected to the "reported_files"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedReportedFiles(name string, opts ...func(*HostFileQuery)) *ShellQuery {
+	query := (&HostFileClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedReportedFiles == nil {
+		sq.withNamedReportedFiles = make(map[string]*HostFileQuery)
+	}
+	sq.withNamedReportedFiles[name] = query
+	return sq
+}
+
+// WithNamedReportedProcesses tells the query-builder to eager-load the nodes that are connected to the "reported_processes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedReportedProcesses(name string, opts ...func(*HostProcessQuery)) *ShellQuery {
+	query := (&HostProcessClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedReportedProcesses == nil {
+		sq.withNamedReportedProcesses = make(map[string]*HostProcessQuery)
+	}
+	sq.withNamedReportedProcesses[name] = query
+	return sq
+}
+
+// WithNamedReportedCredentials tells the query-builder to eager-load the nodes that are connected to the "reported_credentials"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedReportedCredentials(name string, opts ...func(*HostCredentialQuery)) *ShellQuery {
+	query := (&HostCredentialClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedReportedCredentials == nil {
+		sq.withNamedReportedCredentials = make(map[string]*HostCredentialQuery)
+	}
+	sq.withNamedReportedCredentials[name] = query
 	return sq
 }
 

@@ -155,11 +155,13 @@ func (c *HostUpdateOne) SetInput(i UpdateHostInput) *HostUpdateOne {
 
 // CreateHostCredentialInput represents a mutation input for creating hostcredentials.
 type CreateHostCredentialInput struct {
-	Principal string
-	Secret    string
-	Kind      epb.Credential_Kind
-	HostID    int
-	TaskID    *int
+	Principal   string
+	Secret      string
+	Kind        epb.Credential_Kind
+	HostID      int
+	TaskID      *int
+	ShellID     *int
+	ShellTaskID *int
 }
 
 // Mutate applies the CreateHostCredentialInput on the HostCredentialMutation builder.
@@ -170,6 +172,12 @@ func (i *CreateHostCredentialInput) Mutate(m *HostCredentialMutation) {
 	m.SetHostID(i.HostID)
 	if v := i.TaskID; v != nil {
 		m.SetTaskID(*v)
+	}
+	if v := i.ShellID; v != nil {
+		m.SetShellID(*v)
+	}
+	if v := i.ShellTaskID; v != nil {
+		m.SetShellTaskID(*v)
 	}
 }
 
@@ -303,12 +311,24 @@ func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
 
 // CreateShellInput represents a mutation input for creating shells.
 type CreateShellInput struct {
-	BeaconID int
+	BeaconID              int
+	ReportedFileIDs       []int
+	ReportedProcessIDs    []int
+	ReportedCredentialIDs []int
 }
 
 // Mutate applies the CreateShellInput on the ShellMutation builder.
 func (i *CreateShellInput) Mutate(m *ShellMutation) {
 	m.SetBeaconID(i.BeaconID)
+	if v := i.ReportedFileIDs; len(v) > 0 {
+		m.AddReportedFileIDs(v...)
+	}
+	if v := i.ReportedProcessIDs; len(v) > 0 {
+		m.AddReportedProcessIDs(v...)
+	}
+	if v := i.ReportedCredentialIDs; len(v) > 0 {
+		m.AddReportedCredentialIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.

@@ -1378,6 +1378,38 @@ func (c *HostCredentialClient) QueryTask(hc *HostCredential) *TaskQuery {
 	return query
 }
 
+// QueryShell queries the shell edge of a HostCredential.
+func (c *HostCredentialClient) QueryShell(hc *HostCredential) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.ShellTable, hostcredential.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(hc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShellTask queries the shell_task edge of a HostCredential.
+func (c *HostCredentialClient) QueryShellTask(hc *HostCredential) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.ShellTaskTable, hostcredential.ShellTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostCredentialClient) Hooks() []Hook {
 	return c.hooks.HostCredential
@@ -1536,6 +1568,38 @@ func (c *HostFileClient) QueryTask(hf *HostFile) *TaskQuery {
 			sqlgraph.From(hostfile.Table, hostfile.FieldID, id),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.TaskTable, hostfile.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hf.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShell queries the shell edge of a HostFile.
+func (c *HostFileClient) QueryShell(hf *HostFile) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hf.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.ShellTable, hostfile.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(hf.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShellTask queries the shell_task edge of a HostFile.
+func (c *HostFileClient) QueryShellTask(hf *HostFile) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hf.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.ShellTaskTable, hostfile.ShellTaskColumn),
 		)
 		fromV = sqlgraph.Neighbors(hf.driver.Dialect(), step)
 		return fromV, nil
@@ -1702,6 +1766,38 @@ func (c *HostProcessClient) QueryTask(hp *HostProcess) *TaskQuery {
 			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, id),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.TaskTable, hostprocess.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShell queries the shell edge of a HostProcess.
+func (c *HostProcessClient) QueryShell(hp *HostProcess) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.ShellTable, hostprocess.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(hp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShellTask queries the shell_task edge of a HostProcess.
+func (c *HostProcessClient) QueryShellTask(hp *HostProcess) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.ShellTaskTable, hostprocess.ShellTaskColumn),
 		)
 		fromV = sqlgraph.Neighbors(hp.driver.Dialect(), step)
 		return fromV, nil
@@ -2663,6 +2759,54 @@ func (c *ShellClient) QueryShellTasks(s *Shell) *ShellTaskQuery {
 	return query
 }
 
+// QueryReportedFiles queries the reported_files edge of a Shell.
+func (c *ShellClient) QueryReportedFiles(s *Shell) *HostFileQuery {
+	query := (&HostFileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedFilesTable, shell.ReportedFilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedProcesses queries the reported_processes edge of a Shell.
+func (c *ShellClient) QueryReportedProcesses(s *Shell) *HostProcessQuery {
+	query := (&HostProcessClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedProcessesTable, shell.ReportedProcessesColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedCredentials queries the reported_credentials edge of a Shell.
+func (c *ShellClient) QueryReportedCredentials(s *Shell) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.ReportedCredentialsTable, shell.ReportedCredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell
@@ -2821,6 +2965,54 @@ func (c *ShellTaskClient) QueryCreator(st *ShellTask) *UserQuery {
 			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, shelltask.CreatorTable, shelltask.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedFiles queries the reported_files edge of a ShellTask.
+func (c *ShellTaskClient) QueryReportedFiles(st *ShellTask) *HostFileQuery {
+	query := (&HostFileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedFilesTable, shelltask.ReportedFilesColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedProcesses queries the reported_processes edge of a ShellTask.
+func (c *ShellTaskClient) QueryReportedProcesses(st *ShellTask) *HostProcessQuery {
+	query := (&HostProcessClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedProcessesTable, shelltask.ReportedProcessesColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedCredentials queries the reported_credentials edge of a ShellTask.
+func (c *ShellTaskClient) QueryReportedCredentials(st *ShellTask) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedCredentialsTable, shelltask.ReportedCredentialsColumn),
 		)
 		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
 		return fromV, nil

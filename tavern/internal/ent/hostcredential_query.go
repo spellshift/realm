@@ -14,21 +14,25 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
 // HostCredentialQuery is the builder for querying HostCredential entities.
 type HostCredentialQuery struct {
 	config
-	ctx        *QueryContext
-	order      []hostcredential.OrderOption
-	inters     []Interceptor
-	predicates []predicate.HostCredential
-	withHost   *HostQuery
-	withTask   *TaskQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*HostCredential) error
+	ctx           *QueryContext
+	order         []hostcredential.OrderOption
+	inters        []Interceptor
+	predicates    []predicate.HostCredential
+	withHost      *HostQuery
+	withTask      *TaskQuery
+	withShell     *ShellQuery
+	withShellTask *ShellTaskQuery
+	withFKs       bool
+	modifiers     []func(*sql.Selector)
+	loadTotal     []func(context.Context, []*HostCredential) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +106,50 @@ func (hcq *HostCredentialQuery) QueryTask() *TaskQuery {
 			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.TaskTable, hostcredential.TaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShell chains the current query on the "shell" edge.
+func (hcq *HostCredentialQuery) QueryShell() *ShellQuery {
+	query := (&ShellClient{config: hcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.ShellTable, hostcredential.ShellColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShellTask chains the current query on the "shell_task" edge.
+func (hcq *HostCredentialQuery) QueryShellTask() *ShellTaskQuery {
+	query := (&ShellTaskClient{config: hcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostcredential.Table, hostcredential.FieldID, selector),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostcredential.ShellTaskTable, hostcredential.ShellTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hcq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +344,15 @@ func (hcq *HostCredentialQuery) Clone() *HostCredentialQuery {
 		return nil
 	}
 	return &HostCredentialQuery{
-		config:     hcq.config,
-		ctx:        hcq.ctx.Clone(),
-		order:      append([]hostcredential.OrderOption{}, hcq.order...),
-		inters:     append([]Interceptor{}, hcq.inters...),
-		predicates: append([]predicate.HostCredential{}, hcq.predicates...),
-		withHost:   hcq.withHost.Clone(),
-		withTask:   hcq.withTask.Clone(),
+		config:        hcq.config,
+		ctx:           hcq.ctx.Clone(),
+		order:         append([]hostcredential.OrderOption{}, hcq.order...),
+		inters:        append([]Interceptor{}, hcq.inters...),
+		predicates:    append([]predicate.HostCredential{}, hcq.predicates...),
+		withHost:      hcq.withHost.Clone(),
+		withTask:      hcq.withTask.Clone(),
+		withShell:     hcq.withShell.Clone(),
+		withShellTask: hcq.withShellTask.Clone(),
 		// clone intermediate query.
 		sql:  hcq.sql.Clone(),
 		path: hcq.path,
@@ -328,6 +378,28 @@ func (hcq *HostCredentialQuery) WithTask(opts ...func(*TaskQuery)) *HostCredenti
 		opt(query)
 	}
 	hcq.withTask = query
+	return hcq
+}
+
+// WithShell tells the query-builder to eager-load the nodes that are connected to
+// the "shell" edge. The optional arguments are used to configure the query builder of the edge.
+func (hcq *HostCredentialQuery) WithShell(opts ...func(*ShellQuery)) *HostCredentialQuery {
+	query := (&ShellClient{config: hcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hcq.withShell = query
+	return hcq
+}
+
+// WithShellTask tells the query-builder to eager-load the nodes that are connected to
+// the "shell_task" edge. The optional arguments are used to configure the query builder of the edge.
+func (hcq *HostCredentialQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *HostCredentialQuery {
+	query := (&ShellTaskClient{config: hcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hcq.withShellTask = query
 	return hcq
 }
 
@@ -410,12 +482,14 @@ func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		nodes       = []*HostCredential{}
 		withFKs     = hcq.withFKs
 		_spec       = hcq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			hcq.withHost != nil,
 			hcq.withTask != nil,
+			hcq.withShell != nil,
+			hcq.withShellTask != nil,
 		}
 	)
-	if hcq.withHost != nil || hcq.withTask != nil {
+	if hcq.withHost != nil || hcq.withTask != nil || hcq.withShell != nil || hcq.withShellTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -451,6 +525,18 @@ func (hcq *HostCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if query := hcq.withTask; query != nil {
 		if err := hcq.loadTask(ctx, query, nodes, nil,
 			func(n *HostCredential, e *Task) { n.Edges.Task = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hcq.withShell; query != nil {
+		if err := hcq.loadShell(ctx, query, nodes, nil,
+			func(n *HostCredential, e *Shell) { n.Edges.Shell = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hcq.withShellTask; query != nil {
+		if err := hcq.loadShellTask(ctx, query, nodes, nil,
+			func(n *HostCredential, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -519,6 +605,70 @@ func (hcq *HostCredentialQuery) loadTask(ctx context.Context, query *TaskQuery, 
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "task_reported_credentials" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hcq *HostCredentialQuery) loadShell(ctx context.Context, query *ShellQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *Shell)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostCredential)
+	for i := range nodes {
+		if nodes[i].shell_reported_credentials == nil {
+			continue
+		}
+		fk := *nodes[i].shell_reported_credentials
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shell.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_reported_credentials" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hcq *HostCredentialQuery) loadShellTask(ctx context.Context, query *ShellTaskQuery, nodes []*HostCredential, init func(*HostCredential), assign func(*HostCredential, *ShellTask)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostCredential)
+	for i := range nodes {
+		if nodes[i].shell_task_reported_credentials == nil {
+			continue
+		}
+		fk := *nodes[i].shell_task_reported_credentials
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shelltask.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_task_reported_credentials" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

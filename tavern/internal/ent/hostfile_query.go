@@ -14,21 +14,25 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
 // HostFileQuery is the builder for querying HostFile entities.
 type HostFileQuery struct {
 	config
-	ctx        *QueryContext
-	order      []hostfile.OrderOption
-	inters     []Interceptor
-	predicates []predicate.HostFile
-	withHost   *HostQuery
-	withTask   *TaskQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*HostFile) error
+	ctx           *QueryContext
+	order         []hostfile.OrderOption
+	inters        []Interceptor
+	predicates    []predicate.HostFile
+	withHost      *HostQuery
+	withTask      *TaskQuery
+	withShell     *ShellQuery
+	withShellTask *ShellTaskQuery
+	withFKs       bool
+	modifiers     []func(*sql.Selector)
+	loadTotal     []func(context.Context, []*HostFile) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +106,50 @@ func (hfq *HostFileQuery) QueryTask() *TaskQuery {
 			sqlgraph.From(hostfile.Table, hostfile.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.TaskTable, hostfile.TaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hfq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShell chains the current query on the "shell" edge.
+func (hfq *HostFileQuery) QueryShell() *ShellQuery {
+	query := (&ShellClient{config: hfq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hfq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hfq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.ShellTable, hostfile.ShellColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hfq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShellTask chains the current query on the "shell_task" edge.
+func (hfq *HostFileQuery) QueryShellTask() *ShellTaskQuery {
+	query := (&ShellTaskClient{config: hfq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hfq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hfq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostfile.Table, hostfile.FieldID, selector),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostfile.ShellTaskTable, hostfile.ShellTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hfq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +344,15 @@ func (hfq *HostFileQuery) Clone() *HostFileQuery {
 		return nil
 	}
 	return &HostFileQuery{
-		config:     hfq.config,
-		ctx:        hfq.ctx.Clone(),
-		order:      append([]hostfile.OrderOption{}, hfq.order...),
-		inters:     append([]Interceptor{}, hfq.inters...),
-		predicates: append([]predicate.HostFile{}, hfq.predicates...),
-		withHost:   hfq.withHost.Clone(),
-		withTask:   hfq.withTask.Clone(),
+		config:        hfq.config,
+		ctx:           hfq.ctx.Clone(),
+		order:         append([]hostfile.OrderOption{}, hfq.order...),
+		inters:        append([]Interceptor{}, hfq.inters...),
+		predicates:    append([]predicate.HostFile{}, hfq.predicates...),
+		withHost:      hfq.withHost.Clone(),
+		withTask:      hfq.withTask.Clone(),
+		withShell:     hfq.withShell.Clone(),
+		withShellTask: hfq.withShellTask.Clone(),
 		// clone intermediate query.
 		sql:  hfq.sql.Clone(),
 		path: hfq.path,
@@ -328,6 +378,28 @@ func (hfq *HostFileQuery) WithTask(opts ...func(*TaskQuery)) *HostFileQuery {
 		opt(query)
 	}
 	hfq.withTask = query
+	return hfq
+}
+
+// WithShell tells the query-builder to eager-load the nodes that are connected to
+// the "shell" edge. The optional arguments are used to configure the query builder of the edge.
+func (hfq *HostFileQuery) WithShell(opts ...func(*ShellQuery)) *HostFileQuery {
+	query := (&ShellClient{config: hfq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hfq.withShell = query
+	return hfq
+}
+
+// WithShellTask tells the query-builder to eager-load the nodes that are connected to
+// the "shell_task" edge. The optional arguments are used to configure the query builder of the edge.
+func (hfq *HostFileQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *HostFileQuery {
+	query := (&ShellTaskClient{config: hfq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hfq.withShellTask = query
 	return hfq
 }
 
@@ -410,12 +482,14 @@ func (hfq *HostFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ho
 		nodes       = []*HostFile{}
 		withFKs     = hfq.withFKs
 		_spec       = hfq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			hfq.withHost != nil,
 			hfq.withTask != nil,
+			hfq.withShell != nil,
+			hfq.withShellTask != nil,
 		}
 	)
-	if hfq.withHost != nil || hfq.withTask != nil {
+	if hfq.withHost != nil || hfq.withTask != nil || hfq.withShell != nil || hfq.withShellTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -451,6 +525,18 @@ func (hfq *HostFileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ho
 	if query := hfq.withTask; query != nil {
 		if err := hfq.loadTask(ctx, query, nodes, nil,
 			func(n *HostFile, e *Task) { n.Edges.Task = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hfq.withShell; query != nil {
+		if err := hfq.loadShell(ctx, query, nodes, nil,
+			func(n *HostFile, e *Shell) { n.Edges.Shell = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hfq.withShellTask; query != nil {
+		if err := hfq.loadShellTask(ctx, query, nodes, nil,
+			func(n *HostFile, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -519,6 +605,70 @@ func (hfq *HostFileQuery) loadTask(ctx context.Context, query *TaskQuery, nodes 
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "task_reported_files" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hfq *HostFileQuery) loadShell(ctx context.Context, query *ShellQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *Shell)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostFile)
+	for i := range nodes {
+		if nodes[i].shell_reported_files == nil {
+			continue
+		}
+		fk := *nodes[i].shell_reported_files
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shell.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_reported_files" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hfq *HostFileQuery) loadShellTask(ctx context.Context, query *ShellTaskQuery, nodes []*HostFile, init func(*HostFile), assign func(*HostFile, *ShellTask)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostFile)
+	for i := range nodes {
+		if nodes[i].shell_task_reported_files == nil {
+			continue
+		}
+		fk := *nodes[i].shell_task_reported_files
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shelltask.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_task_reported_files" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

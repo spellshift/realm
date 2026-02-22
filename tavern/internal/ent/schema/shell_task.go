@@ -61,6 +61,24 @@ func (ShellTask) Edges() []ent.Edge {
 			Unique().
 			Required().
 			Comment("The user who created this ShellTask"),
+		edge.To("reported_files", HostFile.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Files that have been reported by this shell task."),
+		edge.To("reported_processes", HostProcess.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Processes that have been reported by this shell task."),
+		edge.To("reported_credentials", HostCredential.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Credentials that have been reported by this shell task."),
 	}
 }
 

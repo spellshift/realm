@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -151,9 +153,55 @@ func (hfc *HostFileCreate) SetTaskID(id int) *HostFileCreate {
 	return hfc
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hfc *HostFileCreate) SetNillableTaskID(id *int) *HostFileCreate {
+	if id != nil {
+		hfc = hfc.SetTaskID(*id)
+	}
+	return hfc
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hfc *HostFileCreate) SetTask(t *Task) *HostFileCreate {
 	return hfc.SetTaskID(t.ID)
+}
+
+// SetShellID sets the "shell" edge to the Shell entity by ID.
+func (hfc *HostFileCreate) SetShellID(id int) *HostFileCreate {
+	hfc.mutation.SetShellID(id)
+	return hfc
+}
+
+// SetNillableShellID sets the "shell" edge to the Shell entity by ID if the given value is not nil.
+func (hfc *HostFileCreate) SetNillableShellID(id *int) *HostFileCreate {
+	if id != nil {
+		hfc = hfc.SetShellID(*id)
+	}
+	return hfc
+}
+
+// SetShell sets the "shell" edge to the Shell entity.
+func (hfc *HostFileCreate) SetShell(s *Shell) *HostFileCreate {
+	return hfc.SetShellID(s.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hfc *HostFileCreate) SetShellTaskID(id int) *HostFileCreate {
+	hfc.mutation.SetShellTaskID(id)
+	return hfc
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hfc *HostFileCreate) SetNillableShellTaskID(id *int) *HostFileCreate {
+	if id != nil {
+		hfc = hfc.SetShellTaskID(*id)
+	}
+	return hfc
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hfc *HostFileCreate) SetShellTask(s *ShellTask) *HostFileCreate {
+	return hfc.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostFileMutation object of the builder.
@@ -245,9 +293,6 @@ func (hfc *HostFileCreate) check() error {
 	}
 	if len(hfc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostFile.host"`)}
-	}
-	if len(hfc.mutation.TaskIDs()) == 0 {
-		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostFile.task"`)}
 	}
 	return nil
 }
@@ -344,6 +389,40 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_reported_files = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hfc.mutation.ShellIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTable,
+			Columns: []string{hostfile.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_reported_files = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hfc.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_task_reported_files = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

@@ -67,13 +67,26 @@ func (HostProcess) Edges() []ent.Edge {
 			).
 			Comment("Host the process was reported on."),
 		edge.From("task", Task.Type).
-			Required().
 			Unique().
 			Ref("reported_processes").
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Task that reported this process."),
+		edge.From("shell", Shell.Type).
+			Unique().
+			Ref("reported_processes").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("Shell that reported this process."),
+		edge.From("shell_task", ShellTask.Type).
+			Unique().
+			Ref("reported_processes").
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("ShellTask that reported this process."),
 	}
 }
 

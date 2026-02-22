@@ -11,6 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -207,6 +210,51 @@ func (stu *ShellTaskUpdate) SetCreator(u *User) *ShellTaskUpdate {
 	return stu.SetCreatorID(u.ID)
 }
 
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (stu *ShellTaskUpdate) AddReportedFileIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.AddReportedFileIDs(ids...)
+	return stu
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (stu *ShellTaskUpdate) AddReportedFiles(h ...*HostFile) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
+func (stu *ShellTaskUpdate) AddReportedProcessIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.AddReportedProcessIDs(ids...)
+	return stu
+}
+
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (stu *ShellTaskUpdate) AddReportedProcesses(h ...*HostProcess) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.AddReportedProcessIDs(ids...)
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (stu *ShellTaskUpdate) AddReportedCredentialIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.AddReportedCredentialIDs(ids...)
+	return stu
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (stu *ShellTaskUpdate) AddReportedCredentials(h ...*HostCredential) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.AddReportedCredentialIDs(ids...)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stu *ShellTaskUpdate) Mutation() *ShellTaskMutation {
 	return stu.mutation
@@ -222,6 +270,69 @@ func (stu *ShellTaskUpdate) ClearShell() *ShellTaskUpdate {
 func (stu *ShellTaskUpdate) ClearCreator() *ShellTaskUpdate {
 	stu.mutation.ClearCreator()
 	return stu
+}
+
+// ClearReportedFiles clears all "reported_files" edges to the HostFile entity.
+func (stu *ShellTaskUpdate) ClearReportedFiles() *ShellTaskUpdate {
+	stu.mutation.ClearReportedFiles()
+	return stu
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to HostFile entities by IDs.
+func (stu *ShellTaskUpdate) RemoveReportedFileIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.RemoveReportedFileIDs(ids...)
+	return stu
+}
+
+// RemoveReportedFiles removes "reported_files" edges to HostFile entities.
+func (stu *ShellTaskUpdate) RemoveReportedFiles(h ...*HostFile) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.RemoveReportedFileIDs(ids...)
+}
+
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
+func (stu *ShellTaskUpdate) ClearReportedProcesses() *ShellTaskUpdate {
+	stu.mutation.ClearReportedProcesses()
+	return stu
+}
+
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
+func (stu *ShellTaskUpdate) RemoveReportedProcessIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.RemoveReportedProcessIDs(ids...)
+	return stu
+}
+
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (stu *ShellTaskUpdate) RemoveReportedProcesses(h ...*HostProcess) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearReportedCredentials clears all "reported_credentials" edges to the HostCredential entity.
+func (stu *ShellTaskUpdate) ClearReportedCredentials() *ShellTaskUpdate {
+	stu.mutation.ClearReportedCredentials()
+	return stu
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to HostCredential entities by IDs.
+func (stu *ShellTaskUpdate) RemoveReportedCredentialIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.RemoveReportedCredentialIDs(ids...)
+	return stu
+}
+
+// RemoveReportedCredentials removes "reported_credentials" edges to HostCredential entities.
+func (stu *ShellTaskUpdate) RemoveReportedCredentials(h ...*HostCredential) *ShellTaskUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stu.RemoveReportedCredentialIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -379,6 +490,141 @@ func (stu *ShellTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stu.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.RemovedReportedFilesIDs(); len(nodes) > 0 && !stu.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stu.mutation.ReportedProcessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.RemovedReportedProcessesIDs(); len(nodes) > 0 && !stu.mutation.ReportedProcessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.ReportedProcessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stu.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.RemovedReportedCredentialsIDs(); len(nodes) > 0 && !stu.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -583,6 +829,51 @@ func (stuo *ShellTaskUpdateOne) SetCreator(u *User) *ShellTaskUpdateOne {
 	return stuo.SetCreatorID(u.ID)
 }
 
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (stuo *ShellTaskUpdateOne) AddReportedFileIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.AddReportedFileIDs(ids...)
+	return stuo
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (stuo *ShellTaskUpdateOne) AddReportedFiles(h ...*HostFile) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
+func (stuo *ShellTaskUpdateOne) AddReportedProcessIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.AddReportedProcessIDs(ids...)
+	return stuo
+}
+
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (stuo *ShellTaskUpdateOne) AddReportedProcesses(h ...*HostProcess) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.AddReportedProcessIDs(ids...)
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (stuo *ShellTaskUpdateOne) AddReportedCredentialIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.AddReportedCredentialIDs(ids...)
+	return stuo
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (stuo *ShellTaskUpdateOne) AddReportedCredentials(h ...*HostCredential) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.AddReportedCredentialIDs(ids...)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stuo *ShellTaskUpdateOne) Mutation() *ShellTaskMutation {
 	return stuo.mutation
@@ -598,6 +889,69 @@ func (stuo *ShellTaskUpdateOne) ClearShell() *ShellTaskUpdateOne {
 func (stuo *ShellTaskUpdateOne) ClearCreator() *ShellTaskUpdateOne {
 	stuo.mutation.ClearCreator()
 	return stuo
+}
+
+// ClearReportedFiles clears all "reported_files" edges to the HostFile entity.
+func (stuo *ShellTaskUpdateOne) ClearReportedFiles() *ShellTaskUpdateOne {
+	stuo.mutation.ClearReportedFiles()
+	return stuo
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to HostFile entities by IDs.
+func (stuo *ShellTaskUpdateOne) RemoveReportedFileIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.RemoveReportedFileIDs(ids...)
+	return stuo
+}
+
+// RemoveReportedFiles removes "reported_files" edges to HostFile entities.
+func (stuo *ShellTaskUpdateOne) RemoveReportedFiles(h ...*HostFile) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.RemoveReportedFileIDs(ids...)
+}
+
+// ClearReportedProcesses clears all "reported_processes" edges to the HostProcess entity.
+func (stuo *ShellTaskUpdateOne) ClearReportedProcesses() *ShellTaskUpdateOne {
+	stuo.mutation.ClearReportedProcesses()
+	return stuo
+}
+
+// RemoveReportedProcessIDs removes the "reported_processes" edge to HostProcess entities by IDs.
+func (stuo *ShellTaskUpdateOne) RemoveReportedProcessIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.RemoveReportedProcessIDs(ids...)
+	return stuo
+}
+
+// RemoveReportedProcesses removes "reported_processes" edges to HostProcess entities.
+func (stuo *ShellTaskUpdateOne) RemoveReportedProcesses(h ...*HostProcess) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearReportedCredentials clears all "reported_credentials" edges to the HostCredential entity.
+func (stuo *ShellTaskUpdateOne) ClearReportedCredentials() *ShellTaskUpdateOne {
+	stuo.mutation.ClearReportedCredentials()
+	return stuo
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to HostCredential entities by IDs.
+func (stuo *ShellTaskUpdateOne) RemoveReportedCredentialIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.RemoveReportedCredentialIDs(ids...)
+	return stuo
+}
+
+// RemoveReportedCredentials removes "reported_credentials" edges to HostCredential entities.
+func (stuo *ShellTaskUpdateOne) RemoveReportedCredentials(h ...*HostCredential) *ShellTaskUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stuo.RemoveReportedCredentialIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellTaskUpdate builder.
@@ -785,6 +1139,141 @@ func (stuo *ShellTaskUpdateOne) sqlSave(ctx context.Context) (_node *ShellTask, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.RemovedReportedFilesIDs(); len(nodes) > 0 && !stuo.mutation.ReportedFilesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.ReportedProcessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.RemovedReportedProcessesIDs(); len(nodes) > 0 && !stuo.mutation.ReportedProcessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.ReportedProcessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.RemovedReportedCredentialsIDs(); len(nodes) > 0 && !stuo.mutation.ReportedCredentialsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

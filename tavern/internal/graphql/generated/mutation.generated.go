@@ -583,6 +583,12 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
+			case "reportedFiles":
+				return ec.fieldContext_Shell_reportedFiles(ctx, field)
+			case "reportedProcesses":
+				return ec.fieldContext_Shell_reportedProcesses(ctx, field)
+			case "reportedCredentials":
+				return ec.fieldContext_Shell_reportedCredentials(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -1367,6 +1373,10 @@ func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.C
 				return ec.fieldContext_HostCredential_host(ctx, field)
 			case "task":
 				return ec.fieldContext_HostCredential_task(ctx, field)
+			case "shell":
+				return ec.fieldContext_HostCredential_shell(ctx, field)
+			case "shellTask":
+				return ec.fieldContext_HostCredential_shellTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},

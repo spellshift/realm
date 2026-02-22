@@ -266,6 +266,22 @@ func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
 	return result, MaskNotFound(err)
 }
 
+func (hc *HostCredential) Shell(ctx context.Context) (*Shell, error) {
+	result, err := hc.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = hc.QueryShell().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (hc *HostCredential) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hc.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hc.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
 	result, err := hf.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -279,7 +295,23 @@ func (hf *HostFile) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = hf.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (hf *HostFile) Shell(ctx context.Context) (*Shell, error) {
+	result, err := hf.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryShell().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (hf *HostFile) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hf.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (hp *HostProcess) Host(ctx context.Context) (*Host, error) {
@@ -295,7 +327,23 @@ func (hp *HostProcess) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = hp.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (hp *HostProcess) Shell(ctx context.Context) (*Shell, error) {
+	result, err := hp.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = hp.QueryShell().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (hp *HostProcess) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hp.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hp.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (l *Link) Asset(ctx context.Context) (*Asset, error) {
@@ -511,6 +559,69 @@ func (s *Shell) ShellTasks(
 	return s.QueryShellTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (s *Shell) ReportedFiles(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFileOrder, where *HostFileWhereInput,
+) (*HostFileConnection, error) {
+	opts := []HostFilePaginateOption{
+		WithHostFileOrder(orderBy),
+		WithHostFileFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[6][alias]
+	if nodes, err := s.NamedReportedFiles(alias); err == nil || hasTotalCount {
+		pager, err := newHostFilePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFileConnection{Edges: []*HostFileEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryReportedFiles().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Shell) ReportedProcesses(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostProcessOrder, where *HostProcessWhereInput,
+) (*HostProcessConnection, error) {
+	opts := []HostProcessPaginateOption{
+		WithHostProcessOrder(orderBy),
+		WithHostProcessFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[7][alias]
+	if nodes, err := s.NamedReportedProcesses(alias); err == nil || hasTotalCount {
+		pager, err := newHostProcessPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostProcessConnection{Edges: []*HostProcessEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryReportedProcesses().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (s *Shell) ReportedCredentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[8][alias]
+	if nodes, err := s.NamedReportedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryReportedCredentials().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (st *ShellTask) Shell(ctx context.Context) (*Shell, error) {
 	result, err := st.Edges.ShellOrErr()
 	if IsNotLoaded(err) {
@@ -525,6 +636,69 @@ func (st *ShellTask) Creator(ctx context.Context) (*User, error) {
 		result, err = st.QueryCreator().Only(ctx)
 	}
 	return result, err
+}
+
+func (st *ShellTask) ReportedFiles(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostFileOrder, where *HostFileWhereInput,
+) (*HostFileConnection, error) {
+	opts := []HostFilePaginateOption{
+		WithHostFileOrder(orderBy),
+		WithHostFileFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := st.Edges.totalCount[2][alias]
+	if nodes, err := st.NamedReportedFiles(alias); err == nil || hasTotalCount {
+		pager, err := newHostFilePager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostFileConnection{Edges: []*HostFileEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return st.QueryReportedFiles().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (st *ShellTask) ReportedProcesses(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostProcessOrder, where *HostProcessWhereInput,
+) (*HostProcessConnection, error) {
+	opts := []HostProcessPaginateOption{
+		WithHostProcessOrder(orderBy),
+		WithHostProcessFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := st.Edges.totalCount[3][alias]
+	if nodes, err := st.NamedReportedProcesses(alias); err == nil || hasTotalCount {
+		pager, err := newHostProcessPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostProcessConnection{Edges: []*HostProcessEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return st.QueryReportedProcesses().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (st *ShellTask) ReportedCredentials(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostCredentialOrder, where *HostCredentialWhereInput,
+) (*HostCredentialConnection, error) {
+	opts := []HostCredentialPaginateOption{
+		WithHostCredentialOrder(orderBy),
+		WithHostCredentialFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := st.Edges.totalCount[4][alias]
+	if nodes, err := st.NamedReportedCredentials(alias); err == nil || hasTotalCount {
+		pager, err := newHostCredentialPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostCredentialConnection{Edges: []*HostCredentialEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return st.QueryReportedCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (t *Tag) Hosts(

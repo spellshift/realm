@@ -15,6 +15,8 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -109,6 +111,44 @@ func (hcu *HostCredentialUpdate) SetTask(t *Task) *HostCredentialUpdate {
 	return hcu.SetTaskID(t.ID)
 }
 
+// SetShellID sets the "shell" edge to the Shell entity by ID.
+func (hcu *HostCredentialUpdate) SetShellID(id int) *HostCredentialUpdate {
+	hcu.mutation.SetShellID(id)
+	return hcu
+}
+
+// SetNillableShellID sets the "shell" edge to the Shell entity by ID if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableShellID(id *int) *HostCredentialUpdate {
+	if id != nil {
+		hcu = hcu.SetShellID(*id)
+	}
+	return hcu
+}
+
+// SetShell sets the "shell" edge to the Shell entity.
+func (hcu *HostCredentialUpdate) SetShell(s *Shell) *HostCredentialUpdate {
+	return hcu.SetShellID(s.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hcu *HostCredentialUpdate) SetShellTaskID(id int) *HostCredentialUpdate {
+	hcu.mutation.SetShellTaskID(id)
+	return hcu
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hcu *HostCredentialUpdate) SetNillableShellTaskID(id *int) *HostCredentialUpdate {
+	if id != nil {
+		hcu = hcu.SetShellTaskID(*id)
+	}
+	return hcu
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hcu *HostCredentialUpdate) SetShellTask(s *ShellTask) *HostCredentialUpdate {
+	return hcu.SetShellTaskID(s.ID)
+}
+
 // Mutation returns the HostCredentialMutation object of the builder.
 func (hcu *HostCredentialUpdate) Mutation() *HostCredentialMutation {
 	return hcu.mutation
@@ -123,6 +163,18 @@ func (hcu *HostCredentialUpdate) ClearHost() *HostCredentialUpdate {
 // ClearTask clears the "task" edge to the Task entity.
 func (hcu *HostCredentialUpdate) ClearTask() *HostCredentialUpdate {
 	hcu.mutation.ClearTask()
+	return hcu
+}
+
+// ClearShell clears the "shell" edge to the Shell entity.
+func (hcu *HostCredentialUpdate) ClearShell() *HostCredentialUpdate {
+	hcu.mutation.ClearShell()
+	return hcu
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hcu *HostCredentialUpdate) ClearShellTask() *HostCredentialUpdate {
+	hcu.mutation.ClearShellTask()
 	return hcu
 }
 
@@ -267,6 +319,64 @@ func (hcu *HostCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hcu.mutation.ShellCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTable,
+			Columns: []string{hostcredential.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcu.mutation.ShellIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTable,
+			Columns: []string{hostcredential.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hcu.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTaskTable,
+			Columns: []string{hostcredential.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcu.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTaskTable,
+			Columns: []string{hostcredential.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hcu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{hostcredential.Label}
@@ -365,6 +475,44 @@ func (hcuo *HostCredentialUpdateOne) SetTask(t *Task) *HostCredentialUpdateOne {
 	return hcuo.SetTaskID(t.ID)
 }
 
+// SetShellID sets the "shell" edge to the Shell entity by ID.
+func (hcuo *HostCredentialUpdateOne) SetShellID(id int) *HostCredentialUpdateOne {
+	hcuo.mutation.SetShellID(id)
+	return hcuo
+}
+
+// SetNillableShellID sets the "shell" edge to the Shell entity by ID if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableShellID(id *int) *HostCredentialUpdateOne {
+	if id != nil {
+		hcuo = hcuo.SetShellID(*id)
+	}
+	return hcuo
+}
+
+// SetShell sets the "shell" edge to the Shell entity.
+func (hcuo *HostCredentialUpdateOne) SetShell(s *Shell) *HostCredentialUpdateOne {
+	return hcuo.SetShellID(s.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hcuo *HostCredentialUpdateOne) SetShellTaskID(id int) *HostCredentialUpdateOne {
+	hcuo.mutation.SetShellTaskID(id)
+	return hcuo
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hcuo *HostCredentialUpdateOne) SetNillableShellTaskID(id *int) *HostCredentialUpdateOne {
+	if id != nil {
+		hcuo = hcuo.SetShellTaskID(*id)
+	}
+	return hcuo
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hcuo *HostCredentialUpdateOne) SetShellTask(s *ShellTask) *HostCredentialUpdateOne {
+	return hcuo.SetShellTaskID(s.ID)
+}
+
 // Mutation returns the HostCredentialMutation object of the builder.
 func (hcuo *HostCredentialUpdateOne) Mutation() *HostCredentialMutation {
 	return hcuo.mutation
@@ -379,6 +527,18 @@ func (hcuo *HostCredentialUpdateOne) ClearHost() *HostCredentialUpdateOne {
 // ClearTask clears the "task" edge to the Task entity.
 func (hcuo *HostCredentialUpdateOne) ClearTask() *HostCredentialUpdateOne {
 	hcuo.mutation.ClearTask()
+	return hcuo
+}
+
+// ClearShell clears the "shell" edge to the Shell entity.
+func (hcuo *HostCredentialUpdateOne) ClearShell() *HostCredentialUpdateOne {
+	hcuo.mutation.ClearShell()
+	return hcuo
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hcuo *HostCredentialUpdateOne) ClearShellTask() *HostCredentialUpdateOne {
+	hcuo.mutation.ClearShellTask()
 	return hcuo
 }
 
@@ -546,6 +706,64 @@ func (hcuo *HostCredentialUpdateOne) sqlSave(ctx context.Context) (_node *HostCr
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hcuo.mutation.ShellCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTable,
+			Columns: []string{hostcredential.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcuo.mutation.ShellIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTable,
+			Columns: []string{hostcredential.ShellColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hcuo.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTaskTable,
+			Columns: []string{hostcredential.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hcuo.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTaskTable,
+			Columns: []string{hostcredential.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
