@@ -10,6 +10,7 @@ use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+const MAX_BUF_SHELL_MESSAGES: usize = 65535;
 
 pub async fn run_agent() -> Result<()> {
     init_logger();
@@ -27,7 +28,7 @@ pub async fn run_agent() -> Result<()> {
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
 
-    let (shell_manager_tx, shell_manager_rx) = tokio::sync::mpsc::channel(100);
+    let (shell_manager_tx, shell_manager_rx) = tokio::sync::mpsc::channel(MAX_BUF_SHELL_MESSAGES);
 
     let agent = Arc::new(ImixAgent::new(
         config,

@@ -51,7 +51,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
-    pub fn start_shell_manager(self: Arc<Self>, mut manager: ShellManager<T>) {
+    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager<T>) {
         self.runtime_handle.spawn(manager.run());
     }
 
