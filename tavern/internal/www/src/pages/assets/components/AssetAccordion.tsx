@@ -5,7 +5,7 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import Tooltip from "../../../components/tavern-base-ui/Tooltip";
 import { useToast } from "@chakra-ui/react";
 import { useMemo } from "react";
-import { DISABLE_LINK } from "../useAssets";
+import { DISABLE_LINK } from "../queries";
 import { useMutation } from "@apollo/client";
 import UserImageAndName from "../../../components/UserImageAndName";
 import moment from "moment";

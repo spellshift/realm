@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
@@ -34,6 +35,28 @@ func (c *BeaconUpdate) SetInput(i UpdateBeaconInput) *BeaconUpdate {
 
 // SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdateOne builder.
 func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateBuilderInput represents a mutation input for creating builders.
+type CreateBuilderInput struct {
+	SupportedTargets []c2pb.Host_Platform
+	Upstream         *string
+}
+
+// Mutate applies the CreateBuilderInput on the BuilderMutation builder.
+func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
+	if v := i.SupportedTargets; v != nil {
+		m.SetSupportedTargets(v)
+	}
+	if v := i.Upstream; v != nil {
+		m.SetUpstream(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.
+func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -274,6 +297,22 @@ func (i *CreateRepositoryInput) Mutate(m *RepositoryMutation) {
 
 // SetInput applies the change-set in the CreateRepositoryInput on the RepositoryCreate builder.
 func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateShellInput represents a mutation input for creating shells.
+type CreateShellInput struct {
+	BeaconID int
+}
+
+// Mutate applies the CreateShellInput on the ShellMutation builder.
+func (i *CreateShellInput) Mutate(m *ShellMutation) {
+	m.SetBeaconID(i.BeaconID)
+}
+
+// SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
+func (c *ShellCreate) SetInput(i CreateShellInput) *ShellCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

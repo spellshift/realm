@@ -2,6 +2,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
 import { HostsTable } from "./HostsTable";
 import { useHostIds } from "./useHostIds";
+import { PageNavItem } from "../../utils/enums";
 
 const Hosts = () => {
     const {
@@ -26,6 +27,7 @@ const Hosts = () => {
                 totalItems={data?.hosts?.totalCount}
                 loading={initialLoading}
                 error={error}
+                sortType={PageNavItem.hosts}
                 table={
                     <HostsTable
                         hostIds={hostIds}

@@ -1,22 +1,23 @@
 import { useState } from "react";
-import { useAssets } from "./useAssets";
+import { useAssetIds } from "./useAssetIds";
 import AssetsHeader from "./components/AssetsHeader";
-import AssetsTable from "./components/AssetsTable";
+import AssetsTable from "./AssetsTable";
 import CreateLinkModal from "./components/CreateLinkModal/CreateLinkModal";
 import UploadAssetModal from "./components/UploadAssetModal/UploadAssetModal";
-import TableWrapper from "../../components/tavern-base-ui/table/TableWrapper";
-import TablePagination from "../../components/tavern-base-ui/table/TablePagination";
-import { useFilters } from "../../context/FilterContext";
+import { VirtualizedTableWrapper } from "../../components/tavern-base-ui/virtualized-table";
+import { PageNavItem } from "../../utils/enums";
 
 export const Assets = () => {
-    const rowLimit = 10;
-    const { filters } = useFilters();
-    const where: any = filters.assetName ? { nameContains: filters.assetName } : {};
-    if (filters.userId) {
-        where.hasCreatorWith = [{ id: filters.userId }];
-    }
+    const {
+        data,
+        assetIds,
+        initialLoading,
+        error,
+        hasMore,
+        loadMore,
+        refetch,
+    } = useAssetIds();
 
-    const { assets, loading, error, totalCount, pageInfo, refetch, updateAssets, page, setPage } = useAssets(rowLimit, where);
     const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
     const [uploadAssetModalOpen, setUploadAssetModalOpen] = useState(false);
     const [selectedAsset, setSelectedAsset] = useState<{ id: string; name: string } | null>(null);
@@ -30,21 +31,19 @@ export const Assets = () => {
         <>
             <div className="flex flex-col gap-6">
                 <AssetsHeader setOpen={setUploadAssetModalOpen} />
-                <TableWrapper
-                    totalItems={totalCount}
-                    loading={loading}
-                    error={error}
+                <VirtualizedTableWrapper
                     title="Assets"
-                    table={<AssetsTable assets={assets} onCreateLink={handleCreateLink} onAssetUpdate={refetch} />}
-                    pagination={
-                        <TablePagination
-                            totalCount={totalCount || 0}
-                            pageInfo={pageInfo || { hasNextPage: false, hasPreviousPage: false, startCursor: null, endCursor: null }}
-                            refetchTable={updateAssets}
-                            page={page}
-                            setPage={setPage}
-                            rowLimit={rowLimit}
-                            loading={loading}
+                    totalItems={data?.assets?.totalCount}
+                    loading={initialLoading}
+                    error={error}
+                    sortType={PageNavItem.assets}
+                    table={
+                        <AssetsTable
+                            assetIds={assetIds}
+                            hasMore={hasMore}
+                            onLoadMore={loadMore}
+                            onCreateLink={handleCreateLink}
+                            onAssetUpdate={refetch}
                         />
                     }
                 />

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { VirtualizedCardList, VirtualizedCardListWrapper } from "../../../components/tavern-base-ui/virtualized-card-list";
 import { useHostTaskIds } from "./useHostTaskIds";
 import { TaskCardVirtualized } from "../../tasks/TaskCardVirtualized";
+import { PageNavItem } from "../../../utils/enums";
 
 const HostTaskTab = () => {
     const { hostId } = useParams();
@@ -32,7 +33,7 @@ const HostTaskTab = () => {
             totalItems={totalCount}
             loading={initialLoading}
             error={error}
-            showSorting={true}
+            sortType={PageNavItem.tasks}
             showFiltering={true}
             cardList={
                 <VirtualizedCardList

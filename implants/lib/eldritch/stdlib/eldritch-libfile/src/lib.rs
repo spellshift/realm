@@ -159,6 +159,20 @@ pub trait FileLibrary {
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
+    /// Lists files in a directory recursively, sorted by most recent modification time.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The directory to scan. Defaults to "/".
+    /// - `limit` (`int`): The maximum number of files to return. Defaults to 10.
+    ///
+    /// **Returns**
+    /// - `List<str>`: A list of file paths sorted by modification time (descending).
+    ///
+    /// **Errors**
+    /// - Returns an error string if scanning fails.
+    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String>;
+
+    #[eldritch_method]
     /// Creates a new directory.
     ///
     /// **Parameters**

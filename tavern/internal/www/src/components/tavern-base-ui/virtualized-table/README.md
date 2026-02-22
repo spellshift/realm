@@ -1,45 +1,249 @@
 # Virtualized Table Components
 
-A collection of reusable components for building high-performance, virtualized tables with built-in state management and Apollo GraphQL integration.
+A high-performance virtualized table component with unified column definitions and built-in Apollo GraphQL integration.
 
-## Components
+## Overview
 
-### VirtualizedTableWrapper
+The `VirtualizedTable` component provides:
+- **Unified column definitions** - Define label, width, and render in one place
+- **Built-in data fetching** - Each row fetches its own data with visibility-based polling
+- **Expandable rows** - Optional expand/collapse functionality
+- **Infinite scrolling** - Automatic load-more detection
+- **Type-safe** - Full TypeScript generics support
 
-A complete table wrapper component that handles all common table states and provides a consistent UI.
+## Quick Start
 
-#### Features
+```tsx
+import { VirtualizedTable, VirtualizedTableColumn } from '@/components/virtualized-table';
+import { GET_HOST_QUERY } from './queries';
 
-- **Error state handling**: Displays error messages with icons
-- **Empty state handling**: Shows appropriate messages for no data vs. no matches
-- **Loading state**: Shows loading spinner during initial data fetch
-- **Filter integration**: Detects active filters and provides clear button
-- **Sorting controls**: Integrates with SortContext for sorting UI
-- **Responsive layout**: Mobile-friendly header and controls
+interface HostData {
+    id: string;
+    name: string;
+    status: string;
+}
 
-#### Usage
+const columns: VirtualizedTableColumn<HostData>[] = [
+    {
+        key: 'name',
+        label: 'Host Name',
+        width: 'minmax(250px, 3fr)',
+        render: (host) => <div className="font-medium">{host.name}</div>,
+        renderSkeleton: () => (
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+        ),
+    },
+    {
+        key: 'status',
+        label: 'Status',
+        width: 'minmax(120px, 1fr)',
+        render: (host) => <Badge>{host.status}</Badge>,
+    },
+];
+
+const HostsTable = ({ hostIds }) => (
+    <VirtualizedTable<HostData, HostQueryResponse>
+        items={hostIds}
+        columns={columns}
+        query={GET_HOST_QUERY}
+        getVariables={(id) => ({ id })}
+        extractData={(response) => response?.hosts?.edges?.[0]?.node}
+        onItemClick={(id) => navigate(`/hosts/${id}`)}
+    />
+);
+```
+
+## API Reference
+
+### VirtualizedTable Props
+
+| Prop | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `items` | `string[]` | Yes | - | Array of item IDs to display |
+| `columns` | `VirtualizedTableColumn<TData>[]` | Yes | - | Column definitions |
+| `query` | `DocumentNode \| (id: string) => DocumentNode` | Yes | - | GraphQL query (can be dynamic per row) |
+| `getVariables` | `(id: string) => OperationVariables` | Yes | - | Generate query variables from item ID |
+| `extractData` | `(response: TResponse, id: string) => TData \| null` | Yes | - | Extract data from query response |
+| `pollInterval` | `number` | No | `5000` | Poll interval (ms) when row is visible |
+| `onItemClick` | `(id: string) => void` | No | - | Callback when row is clicked |
+| `hasMore` | `boolean` | No | `false` | Whether more items can be loaded |
+| `onLoadMore` | `() => void` | No | - | Callback to load more items |
+| `expandable` | `ExpandableConfig<TData>` | No | - | Configuration for expandable rows |
+| `minWidth` | `string` | No | `"800px"` | Minimum table width |
+| `estimateRowSize` | `number` | No | `73` | Estimated row height (px) |
+| `overscan` | `number` | No | `5` | Extra rows to render outside viewport |
+| `height` | `string` | No | `"calc(100vh - 180px)"` | Container height |
+| `minHeight` | `string` | No | `"400px"` | Minimum container height |
+
+### VirtualizedTableColumn
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `key` | `string` | Yes | Unique identifier for the column |
+| `label` | `string` | Yes | Column header text |
+| `width` | `string` | Yes | CSS grid width (e.g., `"minmax(250px,3fr)"`) |
+| `render` | `(data: TData) => ReactNode` | Yes | Render function for cell content |
+| `renderSkeleton` | `() => ReactNode` | No | Render function for loading skeleton |
+
+### ExpandableConfig
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `render` | `(data: TData) => ReactNode` | Yes | Render expanded content |
+| `isExpandable` | `(data: TData) => boolean` | No | Determine if row can expand (default: true) |
+
+## Features
+
+### Dynamic Queries
+
+For tables where different rows need different queries:
+
+```tsx
+<VirtualizedTable
+    items={repositoryIds}
+    query={(itemId) =>
+        itemId === 'first-party'
+            ? GET_FIRST_PARTY_QUERY
+            : GET_REPOSITORY_QUERY
+    }
+    getVariables={(itemId) =>
+        itemId === 'first-party' ? {} : { id: itemId }
+    }
+    extractData={(response, itemId) => {
+        if (itemId === 'first-party') {
+            return extractFirstPartyData(response);
+        }
+        return extractRepositoryData(response);
+    }}
+    // ...
+/>
+```
+
+### Expandable Rows
+
+```tsx
+<VirtualizedTable
+    items={itemIds}
+    columns={columns}
+    expandable={{
+        render: (data) => (
+            <div className="p-4">
+                <DetailView data={data} />
+            </div>
+        ),
+        isExpandable: (data) => data.hasDetails,
+    }}
+    // ...
+/>
+```
+
+### Infinite Scrolling
+
+```tsx
+const { data, hasMore, loadMore } = useMyQuery();
+
+<VirtualizedTable
+    items={itemIds}
+    columns={columns}
+    hasMore={hasMore}
+    onLoadMore={loadMore}
+    // ...
+/>
+```
+
+## Complete Example
+
+```tsx
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { formatDistance } from "date-fns";
+import { VirtualizedTable, VirtualizedTableColumn } from "@/components/virtualized-table";
+import { GET_HOST_DETAIL_QUERY } from "./queries";
+import { HostDetailQueryResponse } from "./types";
+import { HostNode } from "@/utils/interfacesQuery";
+
+interface HostsTableProps {
+    hostIds: string[];
+    hasMore?: boolean;
+    onLoadMore?: () => void;
+}
+
+export const HostsTable = ({ hostIds, hasMore = false, onLoadMore }: HostsTableProps) => {
+    const navigate = useNavigate();
+    const currentDate = useMemo(() => new Date(), []);
+
+    const columns: VirtualizedTableColumn<HostNode>[] = useMemo(() => [
+        {
+            key: 'host-details',
+            label: 'Host details',
+            width: 'minmax(250px,3fr)',
+            render: (host) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{host.name}</span>
+                    <span className="text-sm text-gray-500">{host.primaryIP}</span>
+                </div>
+            ),
+            renderSkeleton: () => (
+                <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
+                </div>
+            ),
+        },
+        {
+            key: 'last-seen',
+            label: 'Last seen',
+            width: 'minmax(120px,1fr)',
+            render: (host) => (
+                <span className="text-gray-600">
+                    {host.lastSeenAt
+                        ? formatDistance(new Date(host.lastSeenAt), currentDate)
+                        : 'N/A'
+                    }
+                </span>
+            ),
+        },
+    ], [currentDate]);
+
+    return (
+        <VirtualizedTable<HostNode, HostDetailQueryResponse>
+            items={hostIds}
+            columns={columns}
+            query={GET_HOST_DETAIL_QUERY}
+            getVariables={useCallback((id) => ({ id }), [])}
+            extractData={useCallback((response) =>
+                response?.hosts?.edges?.[0]?.node || null
+            , [])}
+            onItemClick={useCallback((id) => navigate(`/hosts/${id}`), [navigate])}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
+        />
+    );
+};
+```
+
+## VirtualizedTableWrapper
+
+For complete table views with loading, error, and empty states:
 
 ```tsx
 import { VirtualizedTableWrapper, VirtualizedTable } from '@/components/virtualized-table';
-import { useMyData } from './hooks';
+import { PageNavItem } from '@/utils/enums';
 
-const MyPage = () => {
-    const { data, loading, error, itemIds, hasMore, loadMore } = useMyData();
+const HostsPage = () => {
+    const { data, hostIds, loading, error, hasMore, loadMore } = useHostsQuery();
 
     return (
         <VirtualizedTableWrapper
-            title="My Items"
-            totalItems={data?.items?.totalCount}
+            title="Hosts"
+            totalItems={data?.hosts?.totalCount}
             loading={loading}
             error={error}
-            showSorting={true}
+            sortType={PageNavItem.hosts}
             showFiltering={true}
             table={
-                <VirtualizedTable
-                    items={itemIds}
-                    renderRow={renderRow}
-                    renderHeader={renderHeader}
-                    onItemClick={handleRowClick}
+                <HostsTable
+                    hostIds={hostIds}
                     hasMore={hasMore}
                     onLoadMore={loadMore}
                 />
@@ -49,400 +253,10 @@ const MyPage = () => {
 };
 ```
 
-#### Props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `title` | `string` | No | `"Table"` | Table title displayed in header |
-| `totalItems` | `number` | No | - | Total number of items (for empty state detection) |
-| `loading` | `boolean` | Yes | - | Whether initial data is loading |
-| `error` | `ApolloError` | No | - | Apollo error object if query failed |
-| `table` | `ReactNode` | Yes | - | The table component to render |
-| `className` | `string` | No | `""` | Additional CSS classes |
-| `showSorting` | `boolean` | No | `true` | Show sorting controls in header |
-| `showFiltering` | `boolean` | No | `true` | Show filtering controls in header |
-
----
-
-### VirtualizedTableRow
-
-A reusable, generic virtualized table row component that abstracts common patterns for fetching and displaying row data with Apollo GraphQL.
-
-#### Features
-
-- **Lazy data fetching**: Each row fetches its own data using GraphQL queries
-- **Visibility-based polling**: Only polls for updates when the row is visible in the viewport
-- **Loading skeletons**: Customizable skeleton states that match your content structure
-- **Type-safe**: Full TypeScript generics support for data and variables
-- **Flexible columns**: Define custom render functions for each column
-- **Click handling**: Optional row click callbacks
-
-## Basic Usage
-
-```tsx
-import { VirtualizedTableRow, VirtualizedTableColumn } from '@/components/virtualized-table';
-import { GET_ITEM_QUERY } from './queries';
-
-const columns: VirtualizedTableColumn<ItemData>[] = [
-  {
-    key: 'name',
-    gridWidth: 'minmax(250px, 3fr)',
-    render: (item) => <div>{item.name}</div>,
-    renderSkeleton: () => (
-      <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-    ),
-  },
-  {
-    key: 'status',
-    gridWidth: 'minmax(120px, 1fr)',
-    render: (item) => <Badge>{item.status}</Badge>,
-    renderSkeleton: () => (
-      <div className="h-6 bg-gray-200 rounded animate-pulse w-12" />
-    ),
-  },
-];
-
-<VirtualizedTableRow
-  itemId="item-123"
-  query={GET_ITEM_QUERY}
-  getVariables={(id) => ({ id })}
-  columns={columns}
-  extractData={(response) => response.items?.edges?.[0]?.node}
-  onRowClick={(id) => navigate(`/items/${id}`)}
-  isVisible={true}
-/>
-```
-
-## API Reference
-
-### VirtualizedTableRow Props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `itemId` | `string` | Yes | - | Unique identifier for this row's item |
-| `query` | `DocumentNode` | Yes | - | GraphQL query to fetch data |
-| `getVariables` | `(itemId: string) => TVariables` | Yes | - | Function to generate query variables |
-| `columns` | `VirtualizedTableColumn<TData>[]` | Yes | - | Column definitions |
-| `extractData` | `(response: any) => TData \| null` | Yes | - | Extract data node from query response |
-| `onRowClick` | `(itemId: string) => void` | No | - | Callback when row is clicked |
-| `isVisible` | `boolean` | Yes | - | Whether row is visible in viewport |
-| `pollInterval` | `number` | No | `30000` | Poll interval in ms when visible |
-| `className` | `string` | No | `""` | Custom CSS class for the row |
-| `minWidth` | `string` | No | `"800px"` | Minimum width for the row |
-
-### VirtualizedTableColumn
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `key` | `string` | Unique identifier for the column |
-| `gridWidth` | `string` | CSS grid width (e.g., `"minmax(250px,3fr)"`) |
-| `render` | `(data: TData) => ReactNode` | Render function for column content |
-| `renderSkeleton` | `() => ReactNode` | Render function for loading skeleton |
-
----
-
-### VirtualizedTable
-
-The core virtualized table component using `@tanstack/react-virtual` for efficient rendering of large lists.
-
-#### Features
-
-- **Efficient virtualization**: Only renders visible rows plus overscan
-- **Infinite scrolling**: Automatic load-more detection
-- **Viewport tracking**: Tracks which items are actually visible
-- **Customizable rendering**: Flexible row and header rendering
-
-#### Usage
-
-```tsx
-import { VirtualizedTable, VirtualizedTableHeader } from '@/components/virtualized-table';
-
-const MyTable = ({ itemIds, hasMore, onLoadMore }) => {
-    const columns = ["Name", "Status", "Created At"];
-    const gridCols = "minmax(200px,2fr) minmax(100px,1fr) minmax(150px,1fr)";
-
-    const renderHeader = () => (
-        <VirtualizedTableHeader
-            columns={columns}
-            gridCols={gridCols}
-            minWidth="600px"
-        />
-    );
-
-    const renderRow = ({ itemId, isVisible, onItemClick }) => (
-        <MyRowComponent
-            itemId={itemId}
-            onRowClick={onItemClick}
-            isVisible={isVisible}
-        />
-    );
-
-    return (
-        <VirtualizedTable
-            items={itemIds}
-            renderRow={renderRow}
-            renderHeader={renderHeader}
-            onItemClick={(id) => navigate(`/items/${id}`)}
-            hasMore={hasMore}
-            onLoadMore={onLoadMore}
-            estimateRowSize={73}
-            overscan={5}
-        />
-    );
-};
-```
-
-#### Props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `items` | `string[]` | Yes | - | Array of item IDs to display |
-| `renderRow` | `function` | Yes | - | Function to render each row |
-| `renderHeader` | `function` | Yes | - | Function to render table header |
-| `onItemClick` | `function` | No | - | Callback when row is clicked |
-| `hasMore` | `boolean` | No | `false` | Whether more items can be loaded |
-| `onLoadMore` | `function` | No | - | Callback to load more items |
-| `estimateRowSize` | `number` | No | `73` | Estimated height of each row (px) |
-| `overscan` | `number` | No | `5` | Number of extra rows to render |
-| `emptyMessage` | `string` | No | `"No items found"` | Message when items array is empty |
-| `height` | `string` | No | `"calc(100vh - 180px)"` | Container height CSS value |
-| `minHeight` | `string` | No | `"400px"` | Minimum container height |
-
----
-
-### VirtualizedTableHeader
-
-A simple header component for grid-based table layouts with sticky positioning.
-
-#### Usage
-
-```tsx
-<VirtualizedTableHeader
-    columns={["Name", "Status", "Created At"]}
-    gridCols="minmax(200px,2fr) 1fr minmax(150px,1fr)"
-    minWidth="600px"
-/>
-```
-
-#### Props
-
-| Prop | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `columns` | `string[]` | Yes | - | Column labels to display |
-| `gridCols` | `string` | Yes | - | CSS grid template columns value |
-| `minWidth` | `string` | No | `"800px"` | Minimum width for horizontal scrolling |
-| `className` | `string` | No | `""` | Additional CSS classes |
-
----
-
-## Complete Example
-
-Here's a full implementation showing how all components work together:
-
-### 1. Page Component with VirtualizedTableWrapper
-
-```tsx
-// pages/quests/Quests.tsx
-import Breadcrumbs from "../../components/Breadcrumbs";
-import { VirtualizedTableWrapper } from "../../components/virtualized-table";
-import { QuestsTable } from "./QuestsTable";
-import { useQuestIds } from "./useQuestIds";
-
-const Quests = () => {
-    const {
-        data,
-        questIds,
-        loading,
-        error,
-        hasMore,
-        loadMore,
-    } = useQuestIds();
-
-    return (
-        <>
-            <Breadcrumbs
-                pages={[{
-                    label: "Quests",
-                    link: "/quests"
-                }]}
-            />
-            <VirtualizedTableWrapper
-                title="Quests"
-                totalItems={data?.quests?.totalCount}
-                loading={loading}
-                error={error}
-                showSorting={true}
-                showFiltering={true}
-                table={
-                    <QuestsTable
-                        questIds={questIds}
-                        hasMore={hasMore}
-                        onLoadMore={loadMore}
-                    />
-                }
-            />
-        </>
-    );
-}
-
-export default Quests;
-```
-
-### 2. Table Component
-
-```tsx
-// pages/quests/QuestsTable.tsx
-import { useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { VirtualizedTableHeader, VirtualizedTable } from "../../components/virtualized-table";
-import { QuestRowVirtualized } from "./QuestRowVirtualized";
-
-interface QuestsTableProps {
-    questIds: string[];
-    hasMore?: boolean;
-    onLoadMore?: () => void;
-}
-
-export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTableProps) => {
-    const navigate = useNavigate();
-
-    const handleRowClick = useCallback((questId: string) => {
-        navigate(`/quests/${questId}`);
-    }, [navigate]);
-
-    const columns = useMemo(() => [
-        "Quest Name",
-        "Status",
-        "Tasks",
-        "Created At"
-    ], []);
-
-    const gridCols = "minmax(250px,3fr) minmax(120px,1fr) minmax(100px,1fr) minmax(150px,1fr)";
-
-    const renderHeader = useCallback(() => (
-        <VirtualizedTableHeader
-            columns={columns}
-            gridCols={gridCols}
-            minWidth="800px"
-        />
-    ), [columns]);
-
-    const renderRow = useCallback(({ itemId, isVisible, onItemClick }: {
-        itemId: string;
-        isVisible: boolean;
-        onItemClick: (id: string) => void;
-    }) => (
-        <QuestRowVirtualized
-            questId={itemId}
-            onRowClick={onItemClick}
-            isVisible={isVisible}
-        />
-    ), []);
-
-    return (
-        <VirtualizedTable
-            items={questIds}
-            renderRow={renderRow}
-            renderHeader={renderHeader}
-            onItemClick={handleRowClick}
-            hasMore={hasMore}
-            onLoadMore={onLoadMore}
-            estimateRowSize={73}
-            overscan={5}
-            emptyMessage="No quests found"
-            height="calc(100vh - 180px)"
-            minHeight="400px"
-        />
-    );
-};
-```
-
-### 3. Custom Row Component
-
-```tsx
-// pages/quests/QuestRowVirtualized.tsx
-import { useQuery, gql } from "@apollo/client";
-import { formatDistanceToNow } from "date-fns";
-
-const GET_QUEST = gql`
-  query GetQuest($questId: ID!) {
-    quest(id: $questId) {
-      id
-      name
-      status
-      taskCount
-      createdAt
-    }
-  }
-`;
-
-interface QuestRowVirtualizedProps {
-    questId: string;
-    onRowClick: (questId: string) => void;
-    isVisible: boolean;
-}
-
-export const QuestRowVirtualized = ({
-    questId,
-    onRowClick,
-    isVisible
-}: QuestRowVirtualizedProps) => {
-    const { data, loading } = useQuery(GET_QUEST, {
-        variables: { questId },
-        pollInterval: isVisible ? 30000 : 0,
-    });
-
-    const quest = data?.quest;
-    const gridCols = "minmax(250px,3fr) minmax(120px,1fr) minmax(100px,1fr) minmax(150px,1fr)";
-
-    if (loading || !quest) {
-        return (
-            <div
-                className="grid gap-4 px-6 py-4 border-b border-gray-200"
-                style={{ gridTemplateColumns: gridCols, minWidth: '800px' }}
-            >
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="grid gap-4 px-6 py-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-            style={{ gridTemplateColumns: gridCols, minWidth: '800px' }}
-            onClick={() => onRowClick(questId)}
-        >
-            <div className="font-medium text-gray-900">{quest.name}</div>
-            <div className="text-sm text-gray-500">{quest.status}</div>
-            <div className="text-sm text-gray-500">{quest.taskCount}</div>
-            <div className="text-sm text-gray-500">
-                {formatDistanceToNow(new Date(quest.createdAt), { addSuffix: true })}
-            </div>
-        </div>
-    );
-};
-```
-
-### Key Features Demonstrated
-
-1. **VirtualizedTableWrapper** handles all states (loading, error, empty, no matches)
-2. **Sorting & Filtering** are integrated automatically via context
-3. **Infinite scrolling** with `hasMore` and `loadMore` props
-4. **Conditional polling** - rows only poll when visible in viewport
-5. **Loading skeletons** provide smooth UX during data fetch
-6. **Navigation** on row click for detailed views
-7. **Responsive grid layout** with consistent column widths
-
-For the real implementation reference, see [Hosts.tsx](/workspaces/realm/tavern/internal/www/src/pages/hosts/Hosts.tsx) and [HostsTable.tsx](/workspaces/realm/tavern/internal/www/src/pages/hosts/HostsTable.tsx).
-
 ## Design Principles
 
-1. **Single Responsibility**: Each component handles one concern
-2. **Performance**: Virtualization and conditional polling reduce overhead
-3. **Flexibility**: Fully customizable rendering for all components
-4. **Type Safety**: Generic types ensure compile-time correctness
-5. **Separation of Concerns**: Domain logic stays in parent components
-6. **Reusability**: Consistent patterns across all table implementations
+1. **Single Source of Truth** - Column definitions include label, width, and render in one place
+2. **Performance** - Virtualization and visibility-based polling minimize overhead
+3. **Type Safety** - Full TypeScript generics ensure compile-time correctness
+4. **Flexibility** - Support for dynamic queries, expandable rows, and custom rendering
+5. **Simplicity** - Clean API that handles common patterns automatically

@@ -431,6 +431,22 @@ Here is an example of the Dict layout:
 ]
 ```
 
+### file.list_recent
+
+`file.list_recent(path: str, limit: int) -> List<str>`
+
+The <b>file.list_recent</b> method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.
+
+- `path`: The directory to scan. Defaults to `/`.
+- `limit`: The maximum number of files to return. Defaults to `10`.
+
+```python
+# Get the 5 most recently modified files in /var/log
+recent_logs = file.list_recent("/var/log", 5)
+for log in recent_logs:
+    print(log)
+```
+
 ### file.mkdir
 
 `file.mkdir(path: str, parent: Option<bool>) -> None`
@@ -880,6 +896,12 @@ Reports a captured SSH Key credential to Tavern. It will automatically be associ
 `report.user_password(username: str, password: str) -> None`
 
 Reports a captured username & password combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
+
+### report.ntlm_hash
+
+`report.ntlm_hash(username: str, password_hash: str) -> None`
+
+Reports a captured username & ntlm hash combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
 
 ---
 

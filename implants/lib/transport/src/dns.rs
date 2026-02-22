@@ -555,7 +555,7 @@ impl DNS {
 
             let chunk = chunks[seq - 1].clone();
             let conv_id_clone = conv_id.to_string();
-            let mut transport_clone = self.clone();
+            let transport_clone = self.clone();
 
             // Spawn concurrent task for this packet
             let task = tokio::spawn(async move {
@@ -1280,6 +1280,7 @@ mod tests {
                         interval: 5,
                         r#type: TransportType::TransportDns as i32,
                         extra: extra.to_string(),
+                        jitter: 0.0,
                     }],
                     active_index: 0,
                 }),

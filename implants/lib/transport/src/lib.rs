@@ -3,6 +3,9 @@ use pb::c2::transport::Type as TransportType;
 use pb::{c2::*, config::Config};
 use std::sync::mpsc::{Receiver, Sender};
 
+#[cfg(any(feature = "grpc", feature = "http1"))]
+mod tls_utils;
+
 #[cfg(feature = "grpc")]
 mod grpc;
 
@@ -290,6 +293,7 @@ mod tests {
                         interval: 5,
                         r#type: transport_type,
                         extra: extra.to_string(),
+                        jitter: 0.0,
                     }],
                     active_index: 0,
                 }),

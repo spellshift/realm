@@ -5,33 +5,12 @@ use std::time::SystemTime;
 
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmbeddedAssets;
-use eldritch::{Interpreter, Printer, Span, Value, conversion::ToValue};
+use eldritch::{Interpreter, Value, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc;
 
-#[derive(Debug)]
-struct StreamPrinter {
-    tx: UnboundedSender<String>,
-}
-
-impl StreamPrinter {
-    fn new(tx: UnboundedSender<String>) -> Self {
-        Self { tx }
-    }
-}
-
-impl Printer for StreamPrinter {
-    fn print_out(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior which separates lines
-        let _ = self.tx.send(format!("{}\n", s));
-    }
-
-    fn print_err(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior
-        let _ = self.tx.send(format!("{}\n", s));
-    }
-}
+use crate::printer::StreamPrinter;
 
 struct SubtaskHandle {
     name: String,
@@ -68,7 +47,7 @@ impl TaskRegistry {
         };
 
         // 1. Register logic
-        // TODO: Should de-dupe Taks and TaskContext?
+        // TODO: Should de-dupe Tasks and TaskContext?
         if !self.register_task(&task) {
             return;
         }
@@ -168,7 +147,8 @@ fn execute_task(
 ) {
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
-    let printer = Arc::new(StreamPrinter::new(tx));
+    let (error_tx, error_rx) = mpsc::unbounded_channel();
+    let printer = Arc::new(StreamPrinter::new(tx, error_tx));
     let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
 
     // Report Start
@@ -180,6 +160,7 @@ fn execute_task(
         agent.clone(),
         runtime_handle.clone(),
         rx,
+        error_rx,
     );
 
     // Run Interpreter with panic protection
@@ -253,6 +234,7 @@ fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
             exec_finished_at: None,
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -267,27 +249,73 @@ fn spawn_output_consumer(
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
+    mut error_rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
         log::info!("task={} Started output stream", task_context.task_id);
         let task_id = task_context.task_id;
-        while let Some(msg) = rx.recv().await {
-            match agent.report_task_output(ReportTaskOutputRequest {
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output: msg,
-                    error: None,
-                    exec_started_at: None,
-                    exec_finished_at: None,
-                }),
-                context: Some(task_context.clone().into()),
-            }) {
-                Ok(_) => {}
-                Err(_e) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("task={task_id} failed to report output: {_e}");
+        let mut rx_open = true;
+        let mut error_rx_open = true;
+
+        loop {
+            tokio::select! {
+                val = rx.recv(), if rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: msg,
+                                    error: None,
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                                shell_task_output: None,
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report output: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            rx_open = false;
+                        }
+                    }
                 }
+                val = error_rx.recv(), if error_rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: String::new(),
+                                    error: Some(TaskError { msg }),
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                                shell_task_output: None,
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report error: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            error_rx_open = false;
+                        }
+                    }
+                }
+            }
+
+            if !rx_open && !error_rx_open {
+                break;
             }
         }
     })
@@ -304,6 +332,7 @@ fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) 
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -329,6 +358,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             });
         }
         Err(e) => {
@@ -344,6 +374,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             }) {
                 Ok(_) => {}
                 Err(_e) => {

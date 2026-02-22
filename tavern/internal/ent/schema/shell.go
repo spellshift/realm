@@ -31,6 +31,7 @@ func (Shell) Fields() []ent.Field {
 			}).
 			Annotations(
 				entgql.Skip(), // Don't return in GraphQL queries
+				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Shell data stream"),
 	}
@@ -41,7 +42,9 @@ func (Shell) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("task", Task.Type).
 			Unique().
-			Required().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
 			Comment("Task that created the shell"),
 		edge.To("beacon", Beacon.Type).
 			Unique().
@@ -50,13 +53,29 @@ func (Shell) Edges() []ent.Edge {
 		edge.To("owner", User.Type).
 			Unique().
 			Required().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
 			Comment("User that created the shell"),
+		edge.To("portals", Portal.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Portals associated with this shell"),
 		edge.To("active_users", User.Type).
 			Annotations(
 				entgql.RelayConnection(),
 				entgql.MultiOrder(),
+				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Users that are currently using the shell"),
+		edge.To("shell_tasks", ShellTask.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Tasks executed in this shell"),
 	}
 }
 
@@ -65,6 +84,9 @@ func (Shell) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
 		entgql.MultiOrder(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+		),
 		entsql.Annotation{
 			Collation: "utf8mb4_general_ci",
 		},

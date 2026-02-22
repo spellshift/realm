@@ -9,6 +9,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
 
+use crate::shell::manager::ShellManagerMessage;
+
 use super::{bytes, tcp, udp};
 
 /// Context for a single stream ID
@@ -20,12 +22,13 @@ struct StreamContext {
 pub async fn run<T: Transport + Send + Sync + 'static>(
     task_context: TaskContext,
     mut transport: T,
+    shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
     let (resp_tx, mut resp_rx) = mpsc::channel::<CreatePortalResponse>(100);
 
     // Start transport loop
-    // Note: We use a separate task for transport since it might block or be long-running
+    // Note: We use a separate task for transport since it might be long-running
     let transport_handle = tokio::spawn(async move {
         if let Err(_e) = transport.create_portal(req_rx, resp_tx).await {
             #[cfg(debug_assertions)]
@@ -68,7 +71,7 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                     Some(resp) => {
                          #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
-                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
+                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx).await {
                                 #[cfg(debug_assertions)]
                                 log::error!("Error handling incoming mote: {}", _e);
                             }
@@ -121,6 +124,7 @@ async fn handle_incoming_mote(
     streams: &mut HashMap<String, StreamContext>,
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
+    shell_manager_tx: &mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     // Handle Trace Mote
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
@@ -143,6 +147,16 @@ async fn handle_incoming_mote(
         return Ok(());
     }
 
+    // Handle Shell Mote
+    let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
+    if is_shell {
+        let _ = shell_manager_tx.try_send(ShellManagerMessage::ProcessPortalPayload(
+            mote,
+            out_tx.clone(),
+        ));
+        return Ok(());
+    }
+
     let stream_id = mote.stream_id.clone();
 
     // Get or create context
@@ -154,6 +168,7 @@ async fn handle_incoming_mote(
                 Payload::Bytes(b) => b.data.len(),
                 Payload::Tcp(t) => t.data.len(),
                 Payload::Udp(u) => u.data.len(),
+                Payload::Shell(s) => s.input.len(),
             });
             log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
         }
@@ -240,6 +255,11 @@ async fn stream_handler(
             Payload::Tcp(_) => tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await,
             Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
+            Payload::Shell(_) => {
+                #[cfg(debug_assertions)]
+                log::warn!("Shell payloads should have been intercepted before stream handler");
+                Ok(())
+            }
         }
     } else {
         #[cfg(debug_assertions)]

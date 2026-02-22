@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
@@ -13,6 +12,8 @@ struct TransportConfig {
     extra: String,
     #[serde(default)]
     interval: Option<u64>,
+    #[serde(default)]
+    jitter: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -119,6 +120,11 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
         // Add interval if present
         if let Some(interval) = transport.interval {
             params.push(format!("interval={}", interval));
+        }
+
+        // Add jitter if present
+        if let Some(jitter) = transport.jitter {
+            params.push(format!("jitter={}", jitter));
         }
 
         // Add extra as query parameter if not empty
@@ -313,12 +319,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build Eldritch Proto
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(
+        .compile_protos(
             &["eldritch.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -333,12 +339,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build Portal Protos
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(
+        .compile_protos(
             &["portal.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -351,12 +357,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Ok(_) => println!("generated portal protos"),
     };
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(&["trace.proto"], &["../../../tavern/portals/proto/"])
+        .compile_protos(&["trace.proto"], &["../../../tavern/portals/proto/"])
     {
         Err(err) => {
             println!("WARNING: Failed to compile portal protos: {}", err);
@@ -366,12 +372,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build C2 Protos
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
-        .compile(
+        .compile_protos(
             &["c2.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -386,11 +392,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build DNS Protos (no encryption codec - used for transport layer only)
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated")
         .build_server(false)
         .build_client(false)
-        .compile(
+        .compile_protos(
             &["dns.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",

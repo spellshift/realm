@@ -23,6 +23,7 @@ mod agent;
 mod assets;
 mod install;
 mod portal;
+mod printer;
 mod run;
 mod shell;
 mod task;
