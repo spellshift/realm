@@ -5,34 +5,12 @@ use std::time::SystemTime;
 
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmbeddedAssets;
-use eldritch::{Interpreter, Printer, Span, Value, conversion::ToValue};
+use eldritch::{Interpreter, Value, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc;
 
-#[derive(Debug)]
-struct StreamPrinter {
-    tx: UnboundedSender<String>,
-    error_tx: UnboundedSender<String>,
-}
-
-impl StreamPrinter {
-    fn new(tx: UnboundedSender<String>, error_tx: UnboundedSender<String>) -> Self {
-        Self { tx, error_tx }
-    }
-}
-
-impl Printer for StreamPrinter {
-    fn print_out(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior which separates lines
-        let _ = self.tx.send(format!("{}\n", s));
-    }
-
-    fn print_err(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior
-        let _ = self.error_tx.send(format!("{}\n", s));
-    }
-}
+use crate::printer::StreamPrinter;
 
 struct SubtaskHandle {
     name: String,
@@ -256,6 +234,7 @@ fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
             exec_finished_at: None,
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -293,6 +272,7 @@ fn spawn_output_consumer(
                                     exec_finished_at: None,
                                 }),
                                 context: Some(task_context.clone().into()),
+                                shell_task_output: None,
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
@@ -318,6 +298,7 @@ fn spawn_output_consumer(
                                     exec_finished_at: None,
                                 }),
                                 context: Some(task_context.clone().into()),
+                                shell_task_output: None,
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
@@ -351,6 +332,7 @@ fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) 
             exec_finished_at: Some(Timestamp::from(SystemTime::now())),
         }),
         context: Some(task_context.into()),
+        shell_task_output: None,
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -376,6 +358,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             });
         }
         Err(e) => {
@@ -391,6 +374,7 @@ fn report_result(task_context: TaskContext, result: Result<Value, String>, agent
                     exec_finished_at: Some(Timestamp::from(SystemTime::now())),
                 }),
                 context: Some(task_context.into()),
+                shell_task_output: None,
             }) {
                 Ok(_) => {}
                 Err(_e) => {

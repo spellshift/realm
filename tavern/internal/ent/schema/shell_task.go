@@ -28,6 +28,24 @@ func (ShellTask) Fields() []ent.Field {
 			Comment("Unique identifier for the stream that created this shell task (likely a websocket uuid)"),
 		field.Uint64("sequence_id").
 			Comment("Sequence number for ordering tasks within the same stream_id"),
+		field.Time("claimed_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("CLAIMED_AT"),
+			).
+			Comment("Timestamp of when the task was claimed, null if not yet claimed"),
+		field.Time("exec_started_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("EXEC_STARTED_AT"),
+			).
+			Comment("Timestamp of when execution of the task started, null if not yet started"),
+		field.Time("exec_finished_at").
+			Optional().
+			Annotations(
+				entgql.OrderField("EXEC_FINISHED_AT"),
+			).
+			Comment("Timestamp of when execution of the task finished, null if not yet finished"),
 	}
 }
 

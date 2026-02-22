@@ -125,6 +125,66 @@ func (stu *ShellTaskUpdate) AddSequenceID(u int64) *ShellTaskUpdate {
 	return stu
 }
 
+// SetClaimedAt sets the "claimed_at" field.
+func (stu *ShellTaskUpdate) SetClaimedAt(t time.Time) *ShellTaskUpdate {
+	stu.mutation.SetClaimedAt(t)
+	return stu
+}
+
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
+func (stu *ShellTaskUpdate) SetNillableClaimedAt(t *time.Time) *ShellTaskUpdate {
+	if t != nil {
+		stu.SetClaimedAt(*t)
+	}
+	return stu
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (stu *ShellTaskUpdate) ClearClaimedAt() *ShellTaskUpdate {
+	stu.mutation.ClearClaimedAt()
+	return stu
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (stu *ShellTaskUpdate) SetExecStartedAt(t time.Time) *ShellTaskUpdate {
+	stu.mutation.SetExecStartedAt(t)
+	return stu
+}
+
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
+func (stu *ShellTaskUpdate) SetNillableExecStartedAt(t *time.Time) *ShellTaskUpdate {
+	if t != nil {
+		stu.SetExecStartedAt(*t)
+	}
+	return stu
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (stu *ShellTaskUpdate) ClearExecStartedAt() *ShellTaskUpdate {
+	stu.mutation.ClearExecStartedAt()
+	return stu
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (stu *ShellTaskUpdate) SetExecFinishedAt(t time.Time) *ShellTaskUpdate {
+	stu.mutation.SetExecFinishedAt(t)
+	return stu
+}
+
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
+func (stu *ShellTaskUpdate) SetNillableExecFinishedAt(t *time.Time) *ShellTaskUpdate {
+	if t != nil {
+		stu.SetExecFinishedAt(*t)
+	}
+	return stu
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (stu *ShellTaskUpdate) ClearExecFinishedAt() *ShellTaskUpdate {
+	stu.mutation.ClearExecFinishedAt()
+	return stu
+}
+
 // SetShellID sets the "shell" edge to the Shell entity by ID.
 func (stu *ShellTaskUpdate) SetShellID(id int) *ShellTaskUpdate {
 	stu.mutation.SetShellID(id)
@@ -249,6 +309,24 @@ func (stu *ShellTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := stu.mutation.AddedSequenceID(); ok {
 		_spec.AddField(shelltask.FieldSequenceID, field.TypeUint64, value)
+	}
+	if value, ok := stu.mutation.ClaimedAt(); ok {
+		_spec.SetField(shelltask.FieldClaimedAt, field.TypeTime, value)
+	}
+	if stu.mutation.ClaimedAtCleared() {
+		_spec.ClearField(shelltask.FieldClaimedAt, field.TypeTime)
+	}
+	if value, ok := stu.mutation.ExecStartedAt(); ok {
+		_spec.SetField(shelltask.FieldExecStartedAt, field.TypeTime, value)
+	}
+	if stu.mutation.ExecStartedAtCleared() {
+		_spec.ClearField(shelltask.FieldExecStartedAt, field.TypeTime)
+	}
+	if value, ok := stu.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(shelltask.FieldExecFinishedAt, field.TypeTime, value)
+	}
+	if stu.mutation.ExecFinishedAtCleared() {
+		_spec.ClearField(shelltask.FieldExecFinishedAt, field.TypeTime)
 	}
 	if stu.mutation.ShellCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -423,6 +501,66 @@ func (stuo *ShellTaskUpdateOne) AddSequenceID(u int64) *ShellTaskUpdateOne {
 	return stuo
 }
 
+// SetClaimedAt sets the "claimed_at" field.
+func (stuo *ShellTaskUpdateOne) SetClaimedAt(t time.Time) *ShellTaskUpdateOne {
+	stuo.mutation.SetClaimedAt(t)
+	return stuo
+}
+
+// SetNillableClaimedAt sets the "claimed_at" field if the given value is not nil.
+func (stuo *ShellTaskUpdateOne) SetNillableClaimedAt(t *time.Time) *ShellTaskUpdateOne {
+	if t != nil {
+		stuo.SetClaimedAt(*t)
+	}
+	return stuo
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (stuo *ShellTaskUpdateOne) ClearClaimedAt() *ShellTaskUpdateOne {
+	stuo.mutation.ClearClaimedAt()
+	return stuo
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (stuo *ShellTaskUpdateOne) SetExecStartedAt(t time.Time) *ShellTaskUpdateOne {
+	stuo.mutation.SetExecStartedAt(t)
+	return stuo
+}
+
+// SetNillableExecStartedAt sets the "exec_started_at" field if the given value is not nil.
+func (stuo *ShellTaskUpdateOne) SetNillableExecStartedAt(t *time.Time) *ShellTaskUpdateOne {
+	if t != nil {
+		stuo.SetExecStartedAt(*t)
+	}
+	return stuo
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (stuo *ShellTaskUpdateOne) ClearExecStartedAt() *ShellTaskUpdateOne {
+	stuo.mutation.ClearExecStartedAt()
+	return stuo
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (stuo *ShellTaskUpdateOne) SetExecFinishedAt(t time.Time) *ShellTaskUpdateOne {
+	stuo.mutation.SetExecFinishedAt(t)
+	return stuo
+}
+
+// SetNillableExecFinishedAt sets the "exec_finished_at" field if the given value is not nil.
+func (stuo *ShellTaskUpdateOne) SetNillableExecFinishedAt(t *time.Time) *ShellTaskUpdateOne {
+	if t != nil {
+		stuo.SetExecFinishedAt(*t)
+	}
+	return stuo
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (stuo *ShellTaskUpdateOne) ClearExecFinishedAt() *ShellTaskUpdateOne {
+	stuo.mutation.ClearExecFinishedAt()
+	return stuo
+}
+
 // SetShellID sets the "shell" edge to the Shell entity by ID.
 func (stuo *ShellTaskUpdateOne) SetShellID(id int) *ShellTaskUpdateOne {
 	stuo.mutation.SetShellID(id)
@@ -577,6 +715,24 @@ func (stuo *ShellTaskUpdateOne) sqlSave(ctx context.Context) (_node *ShellTask, 
 	}
 	if value, ok := stuo.mutation.AddedSequenceID(); ok {
 		_spec.AddField(shelltask.FieldSequenceID, field.TypeUint64, value)
+	}
+	if value, ok := stuo.mutation.ClaimedAt(); ok {
+		_spec.SetField(shelltask.FieldClaimedAt, field.TypeTime, value)
+	}
+	if stuo.mutation.ClaimedAtCleared() {
+		_spec.ClearField(shelltask.FieldClaimedAt, field.TypeTime)
+	}
+	if value, ok := stuo.mutation.ExecStartedAt(); ok {
+		_spec.SetField(shelltask.FieldExecStartedAt, field.TypeTime, value)
+	}
+	if stuo.mutation.ExecStartedAtCleared() {
+		_spec.ClearField(shelltask.FieldExecStartedAt, field.TypeTime)
+	}
+	if value, ok := stuo.mutation.ExecFinishedAt(); ok {
+		_spec.SetField(shelltask.FieldExecFinishedAt, field.TypeTime, value)
+	}
+	if stuo.mutation.ExecFinishedAtCleared() {
+		_spec.ClearField(shelltask.FieldExecFinishedAt, field.TypeTime)
 	}
 	if stuo.mutation.ShellCleared() {
 		edge := &sqlgraph.EdgeSpec{
