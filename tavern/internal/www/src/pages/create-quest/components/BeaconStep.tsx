@@ -168,6 +168,7 @@ const BeaconStep = (props: Props) => {
                             )}
                             <Box className="md-scroll-container" >
                                 <AutoSizer disableHeight>
+                                    {/* @ts-ignore */}
                                     {({ width }) => {
                                         return (
                                             <Grid

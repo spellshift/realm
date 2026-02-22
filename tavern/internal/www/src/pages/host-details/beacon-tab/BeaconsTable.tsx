@@ -149,7 +149,7 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                             <Button
                                 buttonStyle={{ color: "gray", size: 'md' }}
                                 buttonVariant="ghost"
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     e.stopPropagation();
                                     navigate("/createQuest", {
                                         state: {

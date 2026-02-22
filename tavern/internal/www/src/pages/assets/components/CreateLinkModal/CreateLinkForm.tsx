@@ -9,7 +9,9 @@ const CreateLinkForm = ({ formik, setOpen }: any) => (
                     onCheckedChange={(e: any) => formik.setFieldValue("hasDownloadLimit", !!e.checked)}
                     colorPalette="purple"
                     checked={formik.values.hasDownloadLimit}
-                ><Checkbox.HiddenInput /><Checkbox.Control><Checkbox.Indicator /></Checkbox.Control><Checkbox.Label>
+                ><Checkbox.HiddenInput />
+                {/* @ts-ignore */}
+                <Checkbox.Control><Checkbox.Indicator /></Checkbox.Control><Checkbox.Label>
                     <span className="text-sm font-medium text-gray-700">Limit Downloads</span>
                 </Checkbox.Label></Checkbox.Root>
             </div>

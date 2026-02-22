@@ -28,6 +28,7 @@ export const CreateQuestDropdown = ({
 
     return (
         <Menu.Root>
+            {/* @ts-ignore */}
             <Menu.Trigger asChild>
                 <div>
                     {showLabel ?

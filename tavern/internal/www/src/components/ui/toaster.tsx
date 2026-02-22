@@ -15,10 +15,12 @@ export const toaster = createToaster({
   pauseOnPageIdle: true,
 })
 
+const ChakraToasterAny = ChakraToaster as any;
+
 export const Toaster = () => {
   return (
     <Portal>
-      <ChakraToaster toaster={toaster} insetInline={{ mdDown: "4" }}>
+      <ChakraToasterAny toaster={toaster} insetInline={{ mdDown: "4" }}>
         {(toast: any) => (
           <Toast.Root width={{ md: "sm" }}>
             {toast.type === "loading" ? (
@@ -38,7 +40,7 @@ export const Toaster = () => {
             {toast.closable && <Toast.CloseTrigger />}
           </Toast.Root>
         )}
-      </ChakraToaster>
+      </ChakraToasterAny>
     </Portal>
   )
 }

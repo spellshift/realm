@@ -67,7 +67,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                         <Tooltip content={asset.name} bg="white" color="black">
                             <div
                                 className="cursor-pointer hover:text-purple-600 flex items-center gap-1"
-                                onClick={(e) => handleCopy(asset.name, e)}
+                                onClick={(e: any) => handleCopy(asset.name, e)}
                             >
                                 <span>{truncatedName}</span>
                                 <Copy className="w-3 h-3 text-gray-400 hover:text-purple-600" />
@@ -118,7 +118,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                     <Tooltip content={hash} bg="white" color="black">
                         <div
                             className="font-mono text-sm cursor-pointer hover:text-purple-600 flex items-center gap-1"
-                            onClick={(e) => handleCopy(hash, e)}
+                            onClick={(e: any) => handleCopy(hash, e)}
                         >
                             <span>{hash.substring(0, 12)}...</span>
                             <Copy className="w-3 h-3" />
@@ -159,7 +159,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             render: (asset) => (
                 <div className="flex flex-row gap-2">
                     <Tooltip content="Download" bg="white" color="black">
-                        <a href={`/assets/download/${asset.name}`} download onClick={(e) => e.stopPropagation()}>
+                        <a href={`/assets/download/${asset.name}`} download onClick={(e: any) => e.stopPropagation()}>
                             <Button
                                 buttonVariant="ghost"
                                 buttonStyle={{ color: "gray", size: "xs" }}
@@ -173,7 +173,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
                             buttonVariant="ghost"
                             buttonStyle={{ color: "gray", size: "xs" }}
                             leftIcon={<Share className="w-4 h-4" />}
-                            onClick={(e) => {
+                            onClick={(e: any) => {
                                 e.stopPropagation();
                                 onCreateLink(asset.id, asset.name);
                             }}

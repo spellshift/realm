@@ -81,7 +81,7 @@ const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTa
                                 disabled={isDisabled}
                                 buttonVariant="outline"
                                 buttonStyle={{ color: "gray", size: "sm" }}
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     e.stopPropagation();
                                     submitUpdateUser({ id: parseInt(user.id), activated: true, admin: false });
                                 }}
@@ -94,7 +94,7 @@ const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTa
                                 disabled={isDisabled}
                                 buttonVariant="outline"
                                 buttonStyle={{ color: "red", size: "sm" }}
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     e.stopPropagation();
                                     submitUpdateUser({ id: parseInt(user.id), activated: false, admin: false });
                                 }}
@@ -107,7 +107,7 @@ const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTa
                                 disabled={isDisabled}
                                 buttonVariant="outline"
                                 buttonStyle={{ color: "purple", size: "sm" }}
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     e.stopPropagation();
                                     submitUpdateUser({ id: parseInt(user.id), activated: true, admin: true });
                                 }}
@@ -120,7 +120,7 @@ const UserTable = ({ userIds, currentUser, hasMore = false, onLoadMore }: UserTa
                                 disabled={isDisabled}
                                 buttonVariant="outline"
                                 buttonStyle={{ color: "red", size: "sm" }}
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     e.stopPropagation();
                                     submitUpdateUser({ id: parseInt(user.id), activated: true, admin: false });
                                 }}

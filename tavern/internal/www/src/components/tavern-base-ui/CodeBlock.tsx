@@ -91,7 +91,8 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
             )}
 
             <Highlight theme={themes.vsLight} code={code} language={language}>
-                {({ style, tokens, getLineProps, getTokenProps }) => (
+                {/* @ts-ignore */}
+                {({ style, tokens, getLineProps, getTokenProps }: any) => (
                     <pre
                         style={{
                             ...style,
@@ -104,9 +105,9 @@ const CodeBlock = ({ code, language = 'markdown', showCopyButton = false, inline
                             overflowX: "auto",
                         }}
                     >
-                        {tokens.map((line, i) => (
+                        {tokens.map((line: any, i: any) => (
                             <div key={i} {...getLineProps({ line })}>
-                                {line.map((token, key) => (
+                                {line.map((token: any, key: any) => (
                                     <span key={key} {...getTokenProps({ token })} />
                                 ))}
                             </div>

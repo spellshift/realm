@@ -14,7 +14,7 @@ const FreeTextSearch = (props: Props) => {
     const placeholderText = parentPlaceholder ? parentPlaceholder : placeholder ? placeholder : questId ? "Search by output" : "Search by tome name, quest name, or output";
 
     const debouncedSearch = useRef(
-        debounce(async (criteria) => {
+        debounce(async (criteria: string) => {
             setSearch(criteria);
         }, 300)
     ).current;

@@ -49,7 +49,7 @@ const StepAddDeploymentKey: FC<StepAddDeploymentKeyProps> = ({ setCurrStep, newR
                 </Button>
                 <Button
                     buttonStyle={{ color: "purple", size: "md" }}
-                    onClick={(event) => {
+                    onClick={(event: any) => {
                         event.preventDefault();
                         importRepositoryTomes(newRepository.id || "");
                     }}

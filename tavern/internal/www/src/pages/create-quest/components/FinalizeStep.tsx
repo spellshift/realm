@@ -59,7 +59,7 @@ const FinalizeStep = (props: Props) => {
                 label="Quest name"
                 placeholder={"Provide a recognizable name to this quest"}
                 value={formik.values.name}
-                onChange={(event) => handleNameQuest(event.target.value)}
+                onChange={(event: any) => handleNameQuest(event.target.value)}
             />
             {formik.errors.name && formik.touched.name && (
                 <p className="text-sm text-red-600 mt-1">{formik.errors.name}</p>
@@ -74,7 +74,7 @@ const FinalizeStep = (props: Props) => {
                     Back
                 </Button>
                 <Button
-                    onClick={(event) => {
+                    onClick={(event: any) => {
                         event.preventDefault();
                         formik.handleSubmit();
                     }}

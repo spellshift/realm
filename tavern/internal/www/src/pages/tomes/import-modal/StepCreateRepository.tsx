@@ -37,11 +37,11 @@ const StepCreateRepository: FC<StepCreateRepositoryProps> = ({ setCurrStep, setN
                 label="Repository ssh path"
                 placeholder="git@github.com:org_name/repo_name.git"
                 value={formik?.values?.url || ""}
-                onChange={(event) => formik.setFieldValue('url', event?.target?.value)}
+                onChange={(event: any) => formik.setFieldValue('url', event?.target?.value)}
             />
             <div>
                 <Button
-                    onClick={(event) => {
+                    onClick={(event: any) => {
                         event.preventDefault();
                         formik.handleSubmit();
                     }}

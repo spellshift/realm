@@ -84,9 +84,9 @@ export const Table = ({
                           )}
                           {{
                             // @ts-ignore
-                            asc: <Icon w={4} asChild><LuTriangle /></Icon>,
+                            asc: <Icon w={4} asChild data-testid="icon-sort-asc"><LuTriangle /></Icon>,
                             // @ts-ignore
-                            desc: <Icon w={4} asChild><LuTriangle /></Icon>
+                            desc: <Icon w={4} asChild data-testid="icon-sort-desc" className="transform rotate-180"><LuTriangle /></Icon>
                           }[header.column.getIsSorted() as string] ?? null}
                         </>
                       </div>

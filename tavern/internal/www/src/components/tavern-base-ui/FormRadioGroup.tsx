@@ -28,7 +28,7 @@ export const FormRadioGroup = (props: Props) => {
             <RadioGroup.Option
                 key={item.name}
                 value={item}
-                className={({ checked }) =>
+                className={({ checked }: { checked: boolean }) =>
                 classNames(
                     tomeIdx === 0 ? 'rounded-tl-md rounded-tr-md' : '',
                     tomeIdx === data.length - 1 ? 'rounded-bl-md rounded-br-md' : '',
@@ -37,7 +37,8 @@ export const FormRadioGroup = (props: Props) => {
                 )
                 }
             >
-                {({ active, checked }) => (
+                {/* @ts-ignore */}
+                {({ active, checked }: { active: boolean, checked: boolean }) => (
                 <>
                     <span
                     className={classNames(

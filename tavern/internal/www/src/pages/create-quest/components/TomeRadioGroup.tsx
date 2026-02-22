@@ -87,9 +87,10 @@ const TomeRadioGroup = ({ label, data, selected, setSelected }: TomeRadioGroupPr
                                 <RadioGroup.Option
                                     key={tome.name}
                                     value={tome}
-                                    className={({ checked }) => getOptionClassName(checked)}
+                                    className={({ checked }: { checked: boolean }) => getOptionClassName(checked)}
                                 >
-                                    {({ checked }) => {
+                                    {/* @ts-ignore */}
+                                    {({ checked }: { checked: boolean }) => {
                                         const isSelected = checked || selected?.id === tome?.id;
                                         return (
                                             <TomeAccordion

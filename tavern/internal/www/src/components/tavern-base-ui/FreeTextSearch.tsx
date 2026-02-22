@@ -13,7 +13,7 @@ const FreeTextSearch = (props: Props) => {
     const { placeholder, defaultValue, setSearch, isDisabled } = props;
 
     const debouncedSearch = useRef(
-        debounce(async (criteria) => {
+        debounce(async (criteria: string) => {
             setSearch(criteria);
         }, 400)
     ).current;

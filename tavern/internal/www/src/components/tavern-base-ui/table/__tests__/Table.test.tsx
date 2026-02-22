@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import { Table } from '../Table';
 import { ColumnDef } from '@tanstack/react-table';
 
@@ -157,21 +158,33 @@ describe('Table', () => {
   describe('Column sorting', () => {
     it('should show ascending icon when column sorted asc', () => {
       mockUseReactTable.mockReturnValue(createMockTableInstance({ sortState: 'asc' }));
-      render(<Table data={mockData} columns={mockColumns} />);
+      render(
+        <ChakraProvider value={defaultSystem}>
+          <Table data={mockData} columns={mockColumns} />
+        </ChakraProvider>
+      );
 
       expect(screen.getByTestId('icon-sort-asc')).toBeInTheDocument();
     });
 
     it('should show descending icon when column sorted desc', () => {
       mockUseReactTable.mockReturnValue(createMockTableInstance({ sortState: 'desc' }));
-      render(<Table data={mockData} columns={mockColumns} />);
+      render(
+        <ChakraProvider value={defaultSystem}>
+          <Table data={mockData} columns={mockColumns} />
+        </ChakraProvider>
+      );
 
       expect(screen.getByTestId('icon-sort-desc')).toBeInTheDocument();
     });
 
     it('should not show sort icon when column not sorted', () => {
       mockUseReactTable.mockReturnValue(createMockTableInstance({ sortState: false }));
-      render(<Table data={mockData} columns={mockColumns} />);
+      render(
+        <ChakraProvider value={defaultSystem}>
+          <Table data={mockData} columns={mockColumns} />
+        </ChakraProvider>
+      );
 
       expect(screen.queryByTestId('icon-sort-asc')).not.toBeInTheDocument();
       expect(screen.queryByTestId('icon-sort-desc')).not.toBeInTheDocument();

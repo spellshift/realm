@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, vi, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
 import FilterControls from '../FilterControls';
 import { FilterProvider, useFilters } from '../FilterContext';
 import { MemoryRouter } from 'react-router-dom';
@@ -66,12 +67,14 @@ function FiltersDisplay() {
 
 function TestWrapper({ path, includeDisplay = false }: { path: string; includeDisplay?: boolean }) {
   return (
-    <MemoryRouter initialEntries={[path]}>
-      <FilterProvider>
-        <FilterControls />
-        {includeDisplay && <FiltersDisplay />}
-      </FilterProvider>
-    </MemoryRouter>
+    <ChakraProvider value={defaultSystem}>
+      <MemoryRouter initialEntries={[path]}>
+        <FilterProvider>
+          <FilterControls />
+          {includeDisplay && <FiltersDisplay />}
+        </FilterProvider>
+      </MemoryRouter>
+    </ChakraProvider>
   );
 }
 
