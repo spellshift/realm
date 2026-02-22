@@ -22,185 +22,112 @@ pub enum ShellManagerMessage {
     ProcessPortalPayload(Mote, mpsc::Sender<Mote>),
 }
 
-struct ShellContext {
-    task_id: Option<i64>,
-    portal_tx: Option<mpsc::Sender<Mote>>,
-    stream_id: Option<String>,
-    seq_id: Option<u64>,
-}
-
+// 1. Replace the struct with an Enum representing mutually exclusive states.
 #[derive(Clone)]
-// Responsible for sending shell output and errors, either using a portal or regular
-// callbacks.
-struct MultiOutputShellContext(Arc<Mutex<ShellContext>>);
-
-impl MultiOutputShellContext {
-    fn new() -> Self {
-        Self(Arc::new(Mutex::new(ShellContext {
-            task_id: None,
-            portal_tx: None,
-            stream_id: None,
-            seq_id: None,
-        })))
-    }
-
-    fn set_task(&self, task_id: i64, seq_id: u64, stream_id: String) {
-        let mut ctx = self.0.lock().unwrap();
-        ctx.task_id = Some(task_id);
-        ctx.seq_id = Some(seq_id);
-        ctx.stream_id = Some(stream_id);
-    }
-
-    fn set_portal(&self, tx: mpsc::Sender<Mote>, stream_id: String, seq_id: u64) {
-        let mut ctx = self.0.lock().unwrap();
-        ctx.portal_tx = Some(tx);
-        ctx.stream_id = Some(stream_id);
-        ctx.seq_id = Some(seq_id);
-    }
-
-    fn clear_task(&self) {
-        let mut ctx = self.0.lock().unwrap();
-        ctx.task_id = None;
-        ctx.seq_id = None;
-        ctx.stream_id = None;
-    }
+pub enum ExecutionContext {
+    Task(i64), // We only need task_id here. stream_id and seq_id are unused for C2 reporting.
+    Portal {
+        tx: mpsc::Sender<Mote>,
+        stream_id: String,
+        seq_id: u64,
+    },
+    None,
 }
 
-fn send_shell_output<T: Transport + Send + Sync + 'static>(
+// 2. Consolidate output and error handling into a single dispatcher.
+fn dispatch_output<T: Transport + Send + Sync + 'static>(
     agent: &Arc<ImixAgent<T>>,
-    context: &MultiOutputShellContext,
     shell_id: i64,
+    context: &ExecutionContext,
     output: String,
+    is_error: bool,
 ) {
-    let ctx = context.0.lock().unwrap();
-
-    // 1. Report to C2 if task_id is present
-    if let Some(task_id) = ctx.task_id {
-        let req = ReportTaskOutputRequest {
-            shell_task_output: Some(ShellTaskOutput {
-                id: task_id,
-                output: output.clone(),
-                error: None,
-                exec_started_at: None,
-                exec_finished_at: None,
-            }),
-            ..Default::default()
-        };
-        match agent.report_task_output(req) {
-            Ok(_) => {}
-            Err(e) => {
+    match context {
+        ExecutionContext::Task(task_id) => {
+            let req = ReportTaskOutputRequest {
+                shell_task_output: Some(ShellTaskOutput {
+                    id: *task_id,
+                    output: if is_error {
+                        String::new()
+                    } else {
+                        output.clone()
+                    },
+                    error: if is_error {
+                        Some(TaskError { msg: output })
+                    } else {
+                        None
+                    },
+                    exec_started_at: None,
+                    exec_finished_at: None,
+                }),
+                ..Default::default()
+            };
+            if let Err(e) = agent.report_task_output(req) {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report shell task output {}: {}", task_id, e);
             }
         }
-    }
-
-    // 2. Report to Portal if active
-    if let Some(tx) = &ctx.portal_tx {
-        let stream_id = ctx.stream_id.clone().unwrap_or_default();
-        let seq_id = ctx.seq_id.unwrap_or(0);
-
-        let payload = ShellPayload {
-            shell_id,
-            input: output,
-        };
-        let mote = Mote {
+        ExecutionContext::Portal {
+            tx,
             stream_id,
             seq_id,
-            payload: Some(portal::mote::Payload::Shell(payload)),
-        };
-
-        let tx = tx.clone();
-        tokio::spawn(async move {
-            match tx.send(mote).await {
-                Ok(_) => {}
-                Err(e) => {
+        } => {
+            let payload = ShellPayload {
+                shell_id,
+                input: if is_error {
+                    format!("Error: {}", output)
+                } else {
+                    output
+                },
+            };
+            let mote = Mote {
+                stream_id: stream_id.clone(),
+                seq_id: *seq_id,
+                payload: Some(portal::mote::Payload::Shell(payload)),
+            };
+            let tx = tx.clone();
+            tokio::spawn(async move {
+                if let Err(e) = tx.send(mote).await {
                     #[cfg(debug_assertions)]
                     log::error!("Failed to send shell output to portal: {}", e);
                 }
-            };
-        });
+            });
+        }
+        ExecutionContext::None => {}
     }
 }
 
-fn send_shell_error<T: Transport + Send + Sync + 'static>(
-    agent: &Arc<ImixAgent<T>>,
-    context: &MultiOutputShellContext,
-    shell_id: i64,
-    error: String,
-) {
-    let ctx = context.0.lock().unwrap();
-
-    if let Some(task_id) = ctx.task_id {
-        let req = ReportTaskOutputRequest {
-            shell_task_output: Some(ShellTaskOutput {
-                id: task_id,
-                output: String::new(),
-                error: Some(TaskError { msg: error.clone() }),
-                exec_started_at: None,
-                exec_finished_at: None,
-            }),
-            ..Default::default()
-        };
-        let _ = agent.report_task_output(req);
-    }
-
-    if let Some(tx) = &ctx.portal_tx {
-        let stream_id = ctx.stream_id.clone().unwrap_or_default();
-        let seq_id = ctx.seq_id.unwrap_or(0);
-
-        let payload = ShellPayload {
-            shell_id,
-            input: format!("Error: {}", error),
-        };
-        let mote = Mote {
-            stream_id,
-            seq_id,
-            payload: Some(portal::mote::Payload::Shell(payload)),
-        };
-        let tx = tx.clone();
-        tokio::spawn(async move {
-            let _ = tx.send(mote).await;
-        });
-    }
-}
-
-struct MultiOutputShellPrinter<T: Transport> {
+// 3. Simplify the Printer to just hold a lock to the new ExecutionContext Enum
+struct ShellPrinter<T: Transport> {
     agent: Arc<ImixAgent<T>>,
-    context: MultiOutputShellContext,
     shell_id: i64,
+    context: Arc<Mutex<ExecutionContext>>,
 }
 
-impl<T: Transport> fmt::Debug for MultiOutputShellPrinter<T> {
+impl<T: Transport> fmt::Debug for ShellPrinter<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MultiOutputShellPrinter")
+        f.debug_struct("ShellPrinter")
             .field("shell_id", &self.shell_id)
             .finish()
     }
 }
 
-impl<T: Transport + Send + Sync + 'static> Printer for MultiOutputShellPrinter<T> {
+impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     fn print_out(&self, _span: &Span, s: &str) {
-        send_shell_output(
-            &self.agent,
-            &self.context,
-            self.shell_id,
-            format!("{}\n", s),
-        );
+        let ctx = self.context.lock().unwrap().clone();
+        dispatch_output(&self.agent, self.shell_id, &ctx, format!("{}\n", s), false);
     }
 
     fn print_err(&self, _span: &Span, s: &str) {
-        send_shell_error(&self.agent, &self.context, self.shell_id, s.to_string());
+        let ctx = self.context.lock().unwrap().clone();
+        dispatch_output(&self.agent, self.shell_id, &ctx, s.to_string(), true);
     }
 }
 
-// Commands sent to the dedicated interpreter thread
 pub enum InterpreterCommand {
     ExecuteTask {
         task_id: i64,
         input: String,
-        sequence_id: u64,
-        stream_id: String,
     },
     ExecutePortal {
         input: String,
@@ -238,27 +165,18 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             tokio::select! {
                 msg = self.rx.recv() => {
                     match msg {
-                        Some(ShellManagerMessage::ProcessTask(task)) => {
-                            self.handle_task(task).await;
-                        }
-                        Some(ShellManagerMessage::ProcessPortalPayload(mote, reply_tx)) => {
-                            self.handle_portal_payload(mote, reply_tx).await;
-                        }
-                        None => {
-                            break;
-                        }
+                        Some(ShellManagerMessage::ProcessTask(task)) => self.handle_task(task).await,
+                        Some(ShellManagerMessage::ProcessPortalPayload(mote, reply_tx)) => self.handle_portal_payload(mote, reply_tx).await,
+                        None => break,
                     }
                 }
-                _ = cleanup_timer.tick() => {
-                    self.cleanup_inactive_interpreters().await;
-                }
+                _ = cleanup_timer.tick() => self.cleanup_inactive_interpreters().await,
             }
         }
     }
 
     async fn handle_task(&mut self, task: ShellTask) {
         self.ensure_interpreter(task.shell_id);
-
         if let Some(handle) = self.interpreters.get_mut(&task.shell_id) {
             handle.last_activity = Instant::now();
             let _ = handle
@@ -266,8 +184,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 .send(InterpreterCommand::ExecuteTask {
                     task_id: task.id,
                     input: task.input,
-                    sequence_id: task.sequence_id,
-                    stream_id: task.stream_id,
                 })
                 .await;
         }
@@ -277,7 +193,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         if let Some(portal::mote::Payload::Shell(shell_payload)) = mote.payload {
             let shell_id = shell_payload.shell_id;
             self.ensure_interpreter(shell_id);
-
             if let Some(handle) = self.interpreters.get_mut(&shell_id) {
                 handle.last_activity = Instant::now();
                 let _ = handle
@@ -297,12 +212,9 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         if !self.interpreters.contains_key(&shell_id) {
             let (tx, rx) = mpsc::channel(32);
             let agent = self.agent.clone();
-
-            // Spawn the long-running blocking task
             tokio::task::spawn_blocking(move || {
                 Self::run_interpreter_loop(agent, shell_id, rx);
             });
-
             self.interpreters.insert(
                 shell_id,
                 InterpreterHandle {
@@ -313,43 +225,35 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         }
     }
 
-    // This runs in a dedicated blocking thread
     fn run_interpreter_loop(
         agent: Arc<ImixAgent<T>>,
         shell_id: i64,
         mut rx: mpsc::Receiver<InterpreterCommand>,
     ) {
-        let context = MultiOutputShellContext::new();
-        let printer = Arc::new(MultiOutputShellPrinter {
+        let context = Arc::new(Mutex::new(ExecutionContext::None));
+        let printer = Arc::new(ShellPrinter {
             agent: agent.clone(),
-            context: context.clone(),
             shell_id,
+            context: context.clone(),
         });
 
-        // Create dummy TaskContext
         let task_context = TaskContext {
             task_id: 0,
             jwt: String::new(),
         };
-
         let backend = Arc::new(EmptyAssets {});
 
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
             .with_task_context(agent.clone(), task_context, Vec::new(), backend);
 
-        // Process commands
+        // 4. Update the locked context via Enum reassignment
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
-                InterpreterCommand::ExecuteTask {
-                    task_id,
-                    input,
-                    sequence_id,
-                    stream_id,
-                } => {
-                    context.set_task(task_id, sequence_id, stream_id);
+                InterpreterCommand::ExecuteTask { task_id, input, .. } => {
+                    *context.lock().unwrap() = ExecutionContext::Task(task_id);
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
-                    context.clear_task();
+                    *context.lock().unwrap() = ExecutionContext::None;
                 }
                 InterpreterCommand::ExecutePortal {
                     input,
@@ -357,12 +261,15 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                     seq_id,
                     reply_tx,
                 } => {
-                    context.set_portal(reply_tx, stream_id, seq_id);
+                    *context.lock().unwrap() = ExecutionContext::Portal {
+                        tx: reply_tx,
+                        stream_id,
+                        seq_id,
+                    };
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
+                    *context.lock().unwrap() = ExecutionContext::None;
                 }
-                InterpreterCommand::Shutdown => {
-                    break;
-                }
+                InterpreterCommand::Shutdown => break,
             }
         }
     }
@@ -371,22 +278,22 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         interpreter: &mut Interpreter,
         input: &str,
         agent: &Arc<ImixAgent<T>>,
-        context: &MultiOutputShellContext,
+        context: &Arc<Mutex<ExecutionContext>>,
         shell_id: i64,
     ) {
         let result = panic::catch_unwind(AssertUnwindSafe(|| interpreter.interpret(input)));
 
         match result {
-            Ok(interpret_result) => match interpret_result {
-                Ok(value) => {
-                    if !matches!(value, Value::None) {
-                        send_shell_output(agent, context, shell_id, format!("{:?}\n", value));
-                    }
+            Ok(Ok(value)) => {
+                if !matches!(value, Value::None) {
+                    let ctx = context.lock().unwrap().clone();
+                    dispatch_output(agent, shell_id, &ctx, format!("{:?}\n", value), false);
                 }
-                Err(e) => {
-                    send_shell_error(agent, context, shell_id, e);
-                }
-            },
+            }
+            Ok(Err(e)) => {
+                let ctx = context.lock().unwrap().clone();
+                dispatch_output(agent, shell_id, &ctx, e, true);
+            }
             Err(e) => {
                 let msg = if let Some(s) = e.downcast_ref::<&str>() {
                     format!(
@@ -401,7 +308,8 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 } else {
                     "Critical Error: Panic occurred during shell execution".to_string()
                 };
-                send_shell_error(agent, context, shell_id, msg);
+                let ctx = context.lock().unwrap().clone();
+                dispatch_output(agent, shell_id, &ctx, msg, true);
             }
         }
     }
@@ -409,7 +317,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
     async fn cleanup_inactive_interpreters(&mut self) {
         let now = Instant::now();
         let timeout = INTERPRETER_INACTIVITY_TIMEOUT;
-
         let mut to_remove = Vec::new();
 
         for (id, handle) in self.interpreters.iter() {
@@ -420,13 +327,11 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 
         for id in to_remove {
             if let Some(handle) = self.interpreters.remove(&id) {
-                // Send explicit shutdown (optional since dropping tx also works)
                 let _ = handle.tx.send(InterpreterCommand::Shutdown).await;
             }
         }
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
