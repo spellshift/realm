@@ -10,7 +10,7 @@ use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
 use tokio::sync::mpsc;
 
-use crate::printer::{OutputKind, StreamPrinter};
+use crate::printer::StreamPrinter;
 
 struct SubtaskHandle {
     name: String,
@@ -248,33 +248,43 @@ fn spawn_output_consumer(
     task_context: TaskContext,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
-    mut rx: mpsc::UnboundedReceiver<(OutputKind, String)>,
+    mut rx: mpsc::UnboundedReceiver<String>,
+    mut error_rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
         log::info!("task={} Started output stream", task_context.task_id);
         let task_id = task_context.task_id;
-        while let Some((kind, msg)) = rx.recv().await {
-            let (output, error) = match kind {
-                OutputKind::Stdout => (msg, None),
-                OutputKind::Stderr => (String::new(), Some(TaskError { msg })),
-            };
+        let mut rx_open = true;
+        let mut error_rx_open = true;
 
-            match agent.report_task_output(ReportTaskOutputRequest {
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output,
-                    error,
-                    exec_started_at: None,
-                    exec_finished_at: None,
-                }),
-                context: Some(task_context.clone().into()),
-                shell_task_output: None,
-            }) {
-                Ok(_) => {}
-                Err(_e) => {
-                    #[cfg(debug_assertions)]
-                    log::error!("task={task_id} failed to report output: {_e}");
+        loop {
+            tokio::select! {
+                val = rx.recv(), if rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: msg,
+                                    error: None,
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                                shell_task_output: None,
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report output: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            rx_open = false;
+                        }
+                    }
                 }
                 val = error_rx.recv(), if error_rx_open => {
                     match val {
@@ -288,6 +298,7 @@ fn spawn_output_consumer(
                                     exec_finished_at: None,
                                 }),
                                 context: Some(task_context.clone().into()),
+                                shell_task_output: None,
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
