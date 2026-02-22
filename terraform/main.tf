@@ -427,25 +427,19 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
 
 
 # === Redirectors ===
-
 variable "redirector_upstream" {
   type = string
   description = "Upstream that redirectors should point to."
   default = ""
 }
 
-variable "redirector_domain" {
-  type = string
-  description = "Domain that points to the redirector."
-  default = ""
+variable "redirectors" {
+  type = list(object({
+    domain    = string
+    transport = string
+  }))
+  description = "List of redirectors domains and transpoarts to configure."
 }
-
-variable "redirector_transport" {
-  type = string
-  description = "Redirector transport protocol."
-  default = "grpc"
-}
-
 
 resource "google_service_account" "svctavern_redirector" {
   account_id = "svctavern-redirector"
@@ -465,6 +459,7 @@ resource "google_project_iam_member" "redirector-logwriter-binding" {
 }
 
 resource "google_cloud_run_service" "redirector" {
+  count    = length(var.redirectors)
   name     = "tavern-redirector"
   location = var.gcp_region
 
@@ -482,7 +477,7 @@ resource "google_cloud_run_service" "redirector" {
       containers {
         name = local.tavern_container_name
         image = var.tavern_container_image
-        command = ["/app/tavern", "redirector", "--transport", var.redirector_transport, var.redirector_upstream]
+        command = ["/app/tavern", "redirector", "--transport", var.redirectors[count.index].transport, var.redirector_upstream]
         env {
           name = "ENABLE_DEBUG_LOGGING"
           value = "true"
@@ -514,41 +509,39 @@ resource "google_cloud_run_service" "redirector" {
 }
 
 resource "google_cloud_run_service_iam_binding" "no-auth-required-redirector" {
-  location = google_cloud_run_service.redirector.location
-  service  = google_cloud_run_service.redirector.name
+  count    = length(var.redirectors)
+  location = google_cloud_run_service.redirector[count.index].location
+  service  = google_cloud_run_service.redirector[count.index].name
   role     = "roles/run.invoker"
   members = [
     "allUsers"
   ]
 }
 
-resource "google_cloud_run_domain_mapping" "redirector-domain" {
-  count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
-  location = google_cloud_run_service.redirector.location
-  name     = var.oauth_domain
+# resource "google_cloud_run_domain_mapping" "redirector-domain" {
+#   count    = length(var.redirectors)
+#   location = google_cloud_run_service.redirector[count.index].location
+#   name     = var.redirectors[count.index].domain
 
-  metadata {
-    namespace = google_cloud_run_service.redirector.project
-  }
+#   metadata {
+#     namespace = google_cloud_run_service.redirector[count.index].project
+#   }
 
-  spec {
-    route_name = google_cloud_run_service.redirector.name
-  }
-}
+#   spec {
+#     route_name = google_cloud_run_service.redirector[count.index].name
+#   }
+# }
 
+# resource "google_cloud_run_domain_mapping" "tavern-domain" {
+#   count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
+#   location = google_cloud_run_service.tavern.location
+#   name     = var.oauth_domain
 
+#   metadata {
+#     namespace = google_cloud_run_service.tavern.project
+#   }
 
-
-resource "google_cloud_run_domain_mapping" "tavern-domain" {
-  count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
-  location = google_cloud_run_service.tavern.location
-  name     = var.oauth_domain
-
-  metadata {
-    namespace = google_cloud_run_service.tavern.project
-  }
-
-  spec {
-    route_name = google_cloud_run_service.tavern.name
-  }
-}
+#   spec {
+#     route_name = google_cloud_run_service.tavern.name
+#   }
+# }
