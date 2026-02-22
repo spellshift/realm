@@ -27,7 +27,6 @@ pub struct ImixAgent<T: Transport> {
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
-    shell_manager_rx: Arc<Mutex<Option<tokio::sync::mpsc::Receiver<ShellManagerMessage>>>>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -36,9 +35,9 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         transport: T,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
+        shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
     ) -> Self {
         let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
-        let (shell_tx, shell_rx) = tokio::sync::mpsc::channel(100);
 
         Self {
             config: Arc::new(RwLock::new(config)),
@@ -48,20 +47,11 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
-            shell_manager_tx: shell_tx,
-            shell_manager_rx: Arc::new(Mutex::new(Some(shell_rx))),
+            shell_manager_tx,
         }
     }
 
-    pub fn start_shell_manager(self: Arc<Self>) {
-        let rx = self
-            .shell_manager_rx
-            .lock()
-            .unwrap()
-            .take()
-            .expect("Shell manager already started or receiver missing");
-
-        let manager = ShellManager::new(self.clone(), rx);
+    pub fn start_shell_manager(self: Arc<Self>, mut manager: ShellManager<T>) {
         self.runtime_handle.spawn(manager.run());
     }
 

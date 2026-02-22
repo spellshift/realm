@@ -26,15 +26,20 @@ pub async fn run_agent() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
+
+    let (shell_manager_tx, shell_manager_rx) = tokio::sync::mpsc::channel(100);
+
     let agent = Arc::new(ImixAgent::new(
         config,
         transport,
         handle,
         task_registry.clone(),
+        shell_manager_tx,
     ));
 
     // Start Shell Manager
-    agent.clone().start_shell_manager();
+    let shell_manager = crate::shell::manager::ShellManager::new(agent.clone(), shell_manager_rx);
+    agent.clone().start_shell_manager(shell_manager);
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);

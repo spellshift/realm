@@ -21,7 +21,8 @@ async fn test_imix_agent_buffer_and_flush() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     // 1. Report output (should buffer)
     let req = c2::ReportTaskOutputRequest {
@@ -66,7 +67,8 @@ async fn test_imix_agent_fetch_asset() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     let req = c2::FetchAssetRequest {
         name: "test_file".to_string(),
@@ -101,7 +103,8 @@ async fn test_imix_agent_report_credential() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
@@ -133,7 +136,8 @@ async fn test_imix_agent_report_process_list() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
@@ -166,7 +170,8 @@ async fn test_imix_agent_claim_tasks() {
 
     // Provide config with beacon info
     let config = Config::default();
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     // let agent_clone = agent.clone();
     let _ = agent.claim_tasks().await.unwrap();
@@ -188,7 +193,8 @@ async fn test_imix_agent_report_file() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
@@ -227,7 +233,8 @@ async fn test_imix_agent_config_access() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, transport, handle, registry, tx);
 
     // Run in thread for block_on
     let agent_clone = agent.clone();
@@ -266,11 +273,13 @@ fn test_agent_config_platform_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = ImixAgent::new(
         config,
         transport,
         runtime.handle().clone(),
         Arc::new(TaskRegistry::new()),
+        tx,
     );
 
     let map = agent.get_config().unwrap();
@@ -299,11 +308,13 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = ImixAgent::new(
         config,
         transport,
         runtime.handle().clone(),
         Arc::new(TaskRegistry::new()),
+        tx,
     );
 
     let map = agent.get_config().unwrap();
