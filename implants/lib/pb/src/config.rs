@@ -101,8 +101,9 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  * Supports DSN format with query parameters:
  * - interval: callback interval in seconds (overrides default)
  * - extra: extra configuration JSON (overrides default)
+ * - jitter: callback jitter float [0.0, 1.0] (overrides default 0.0)
  *
- * Example: https://example.com?interval=10&extra={"key":"value"}
+ * Example: https://example.com?interval=10&extra={"key":"value"}&jitter=0.5
  */
 fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
@@ -125,6 +126,7 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
 
     let mut interval = parse_callback_interval()?;
     let mut extra = DEFAULT_EXTRA_CONFIG.to_lowercase();
+    let mut jitter = 0.0;
 
     // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
@@ -136,6 +138,11 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
             }
             "extra" => {
                 extra = value.to_lowercase();
+            }
+            "jitter" => {
+                jitter = value
+                    .parse::<f32>()
+                    .with_context(|| format!("Failed to parse jitter parameter '{}'", value))?;
             }
             _ => {
                 #[cfg(debug_assertions)]
@@ -153,6 +160,7 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
         interval,
         r#type: get_transport_type(uri) as i32,
         extra,
+        jitter,
     })
 }
 
@@ -474,5 +482,15 @@ mod tests {
             transports[0].extra,
             r#"{"key":"value","nested":{"foo":"bar"}}"#
         );
+    }
+
+    #[test]
+    fn test_dsn_with_jitter() {
+        let uris = "https://example.com?jitter=0.5";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].jitter, 0.5);
     }
 }

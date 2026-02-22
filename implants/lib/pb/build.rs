@@ -12,6 +12,8 @@ struct TransportConfig {
     extra: String,
     #[serde(default)]
     interval: Option<u64>,
+    #[serde(default)]
+    jitter: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +120,11 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
         // Add interval if present
         if let Some(interval) = transport.interval {
             params.push(format!("interval={}", interval));
+        }
+
+        // Add jitter if present
+        if let Some(jitter) = transport.jitter {
+            params.push(format!("jitter={}", jitter));
         }
 
         // Add extra as query parameter if not empty

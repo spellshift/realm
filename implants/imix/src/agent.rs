@@ -82,6 +82,33 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Ok(interval)
     }
 
+    pub fn get_callback_jitter(&self) -> Result<f32> {
+        // Blocks on read, but it's fast
+        let cfg = self
+            .config
+            .try_read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
+        let info = cfg
+            .info
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
+
+        let available_transports = info
+            .available_transports
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
+
+        let active_idx = available_transports.active_index as usize;
+        let jitter = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
+            .jitter;
+
+        Ok(jitter)
+    }
+
     // Triggers config.refresh_primary_ip() in a write lock
     pub async fn refresh_ip(&self) {
         let mut cfg = self.config.write().await;
@@ -545,6 +572,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                         interval: current_transport.interval,
                         r#type: current_transport.r#type,
                         extra: current_transport.extra.clone(),
+                        jitter: current_transport.jitter,
                     };
 
                     // Append the new transport and update active_index
@@ -614,6 +642,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                             interval: tmpl.interval,
                             r#type: tmpl.r#type,
                             extra: tmpl.extra,
+                            jitter: tmpl.jitter,
                         };
                         available_transports.transports.push(new_transport);
                         available_transports.active_index =
@@ -692,6 +721,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                             interval: 5,
                             r#type: 0,
                             extra: String::new(),
+                            jitter: 0.0,
                         });
 
                     let new_transport = pb::c2::Transport {
@@ -699,6 +729,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                         interval: template.interval,
                         r#type: template.r#type,
                         extra: template.extra,
+                        jitter: template.jitter,
                     };
                     available_transports.transports.push(new_transport);
                 }

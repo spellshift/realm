@@ -5,7 +5,7 @@ pub struct Agent {
     #[prost(string, tag = "1")]
     pub identifier: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transport {
     #[prost(string, tag = "1")]
     pub uri: ::prost::alloc::string::String,
@@ -15,6 +15,8 @@ pub struct Transport {
     pub r#type: i32,
     #[prost(string, tag = "4")]
     pub extra: ::prost::alloc::string::String,
+    #[prost(float, tag = "5")]
+    pub jitter: f32,
 }
 /// Nested message and enum types in `Transport`.
 pub mod transport {
