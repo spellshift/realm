@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::panic::{self, AssertUnwindSafe};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
@@ -243,14 +244,42 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             .context
             .set_task(task.id, task.sequence_id, task.stream_id);
 
-        match state.interpreter.interpret(&task.input) {
-            Ok(value) => {
-                if !matches!(value, Value::None) {
-                    send_shell_output(&agent, &state.context, shell_id, format!("{:?}\n", value));
+        let input = task.input.clone();
+        let interpreter = &mut state.interpreter;
+
+        let result = panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
+
+        match result {
+            Ok(interpret_result) => match interpret_result {
+                Ok(value) => {
+                    if !matches!(value, Value::None) {
+                        send_shell_output(
+                            &agent,
+                            &state.context,
+                            shell_id,
+                            format!("{:?}\n", value),
+                        );
+                    }
                 }
-            }
+                Err(e) => {
+                    send_shell_error(&agent, &state.context, shell_id, e);
+                }
+            },
             Err(e) => {
-                send_shell_error(&agent, &state.context, shell_id, e);
+                let msg = if let Some(s) = e.downcast_ref::<&str>() {
+                    format!(
+                        "Critical Error: Panic occurred during shell execution: {}",
+                        s
+                    )
+                } else if let Some(s) = e.downcast_ref::<String>() {
+                    format!(
+                        "Critical Error: Panic occurred during shell execution: {}",
+                        s
+                    )
+                } else {
+                    "Critical Error: Panic occurred during shell execution".to_string()
+                };
+                send_shell_error(&agent, &state.context, shell_id, msg);
             }
         }
 
@@ -269,19 +298,43 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             state.last_activity = Instant::now();
             state.context.set_portal(reply_tx, stream_id, seq_id);
 
-            match state.interpreter.interpret(&shell_payload.input) {
-                Ok(value) => {
-                    if !matches!(value, Value::None) {
-                        send_shell_output(
-                            &agent,
-                            &state.context,
-                            shell_id,
-                            format!("{:?}\n", value),
-                        );
+            let input = shell_payload.input.clone();
+            let interpreter = &mut state.interpreter;
+
+            let result =
+                panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
+
+            match result {
+                Ok(interpret_result) => match interpret_result {
+                    Ok(value) => {
+                        if !matches!(value, Value::None) {
+                            send_shell_output(
+                                &agent,
+                                &state.context,
+                                shell_id,
+                                format!("{:?}\n", value),
+                            );
+                        }
                     }
-                }
+                    Err(e) => {
+                        send_shell_error(&agent, &state.context, shell_id, e);
+                    }
+                },
                 Err(e) => {
-                    send_shell_error(&agent, &state.context, shell_id, e);
+                    let msg = if let Some(s) = e.downcast_ref::<&str>() {
+                        format!(
+                            "Critical Error: Panic occurred during shell execution: {}",
+                            s
+                        )
+                    } else if let Some(s) = e.downcast_ref::<String>() {
+                        format!(
+                            "Critical Error: Panic occurred during shell execution: {}",
+                            s
+                        )
+                    } else {
+                        "Critical Error: Panic occurred during shell execution".to_string()
+                    };
+                    send_shell_error(&agent, &state.context, shell_id, msg);
                 }
             }
         }
@@ -321,5 +374,70 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         let timeout = Duration::from_secs(3600); // 1 hour
         self.interpreters
             .retain(|_, state| now.duration_since(state.last_activity) < timeout);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::task::TaskRegistry;
+    use pb::c2::{ReportTaskOutputResponse, ShellTask};
+    use pb::config::Config;
+    use transport::MockTransport;
+
+    #[tokio::test]
+    async fn test_shell_manager_normal_execution() {
+        let (tx, rx) = mpsc::channel(1);
+        let runtime_handle = tokio::runtime::Handle::current();
+
+        let config = Config::default();
+        let mut transport = MockTransport::default();
+        // We expect report_task_output to be called with the result "2\n" for input "1+1"
+        // Note: The interpreter formats output with {:?}\n, so 2 becomes "2\n"
+        transport
+            .expect_report_task_output()
+            .withf(|req| {
+                if let Some(out) = &req.shell_task_output {
+                    out.output.contains("2")
+                } else {
+                    false
+                }
+            })
+            .times(1)
+            .returning(|_| Ok(ReportTaskOutputResponse::default()));
+
+        let task_registry = Arc::new(TaskRegistry::new());
+
+        let agent = Arc::new(ImixAgent::new(
+            config,
+            transport,
+            runtime_handle,
+            task_registry,
+        ));
+
+        let manager = ShellManager::new(agent.clone(), rx);
+
+        let task = ShellTask {
+            id: 1,
+            shell_id: 1,
+            input: "1+1".to_string(),
+            sequence_id: 1,
+            stream_id: "stream1".to_string(),
+            ..Default::default()
+        };
+
+        // Send task
+        tx.send(ShellManagerMessage::ProcessTask(task))
+            .await
+            .unwrap();
+
+        // Run manager for a bit
+        tokio::select! {
+            _ = manager.run() => {},
+            _ = tokio::time::sleep(Duration::from_millis(500)) => {},
+        }
+
+        // Flush outputs to ensure transport mock is called
+        agent.flush_outputs().await;
     }
 }
