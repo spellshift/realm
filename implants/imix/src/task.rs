@@ -147,7 +147,8 @@ fn execute_task(
 ) {
     // Setup StreamPrinter and Interpreter
     let (tx, rx) = mpsc::unbounded_channel();
-    let printer = Arc::new(StreamPrinter::new(tx));
+    let (error_tx, error_rx) = mpsc::unbounded_channel();
+    let printer = Arc::new(StreamPrinter::new(tx, error_tx));
     let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
 
     // Report Start
@@ -159,6 +160,7 @@ fn execute_task(
         agent.clone(),
         runtime_handle.clone(),
         rx,
+        error_rx,
     );
 
     // Run Interpreter with panic protection
@@ -274,6 +276,35 @@ fn spawn_output_consumer(
                     #[cfg(debug_assertions)]
                     log::error!("task={task_id} failed to report output: {_e}");
                 }
+                val = error_rx.recv(), if error_rx_open => {
+                    match val {
+                        Some(msg) => {
+                            match agent.report_task_output(ReportTaskOutputRequest {
+                                output: Some(TaskOutput {
+                                    id: task_id,
+                                    output: String::new(),
+                                    error: Some(TaskError { msg }),
+                                    exec_started_at: None,
+                                    exec_finished_at: None,
+                                }),
+                                context: Some(task_context.clone().into()),
+                            }) {
+                                Ok(_) => {}
+                                Err(_e) => {
+                                    #[cfg(debug_assertions)]
+                                    log::error!("task={task_id} failed to report error: {_e}");
+                                }
+                            }
+                        }
+                        None => {
+                            error_rx_open = false;
+                        }
+                    }
+                }
+            }
+
+            if !rx_open && !error_rx_open {
+                break;
             }
         }
     })

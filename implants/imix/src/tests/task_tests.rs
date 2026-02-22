@@ -277,3 +277,61 @@ async fn test_task_registry_list_and_stop() {
         "Task should be removed from list"
     );
 }
+
+#[tokio::test]
+async fn test_task_eprint_behavior() {
+    let agent = Arc::new(MockAgent::new());
+    let task_id = 111;
+    let code = "eprint(\"This is an error\")\nprint(\"This is output\")";
+
+    let task = c2::Task {
+        id: task_id,
+        tome: Some(Tome {
+            eldritch: code.to_string(),
+            ..Default::default()
+        }),
+        quest_name: "eprint_test".to_string(),
+        ..Default::default()
+    };
+
+    let registry = TaskRegistry::new();
+    registry.spawn(task, agent.clone());
+
+    tokio::time::sleep(Duration::from_secs(3)).await;
+
+    let reports = agent.output_reports.lock().unwrap();
+
+    // Check if "This is an error" appears in output or error field
+    let error_in_output = reports.iter().any(|r| {
+        r.output
+            .as_ref()
+            .map(|o| o.output.contains("This is an error"))
+            .unwrap_or(false)
+    });
+
+    let error_in_error = reports.iter().any(|r| {
+        r.output
+            .as_ref()
+            .map(|o| {
+                if let Some(err) = &o.error {
+                    err.msg.contains("This is an error")
+                } else {
+                    false
+                }
+            })
+            .unwrap_or(false)
+    });
+
+    println!("Error in output: {}", error_in_output);
+    println!("Error in error field: {}", error_in_error);
+
+    // Current behavior (before fix): eprint goes to output
+    // Desired behavior: eprint goes to error field
+
+    // So if I assert what I want:
+    assert!(error_in_error, "eprint should be reported as TaskError");
+    assert!(
+        !error_in_output,
+        "eprint should NOT be reported as regular output"
+    );
+}
