@@ -14,17 +14,36 @@ import (
 	"realm.pub/tavern/internal/builder/executor"
 )
 
-// skipIfNoDocker skips the test if Docker is not available.
+// skipIfNoDocker skips the test if Docker is not available or functional.
 func skipIfNoDocker(t *testing.T) client.APIClient {
 	t.Helper()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		t.Skipf("skipping docker test: %v", err)
 	}
-	_, err = cli.Ping(context.Background())
+	ctx := context.Background()
+	_, err = cli.Ping(ctx)
 	if err != nil {
 		t.Skipf("skipping docker test: docker not reachable: %v", err)
 	}
+
+	// Verify we can actually start a container (handles dind/mount issues)
+	exec := executor.NewDockerExecutor(cli)
+	spec := executor.BuildSpec{
+		TaskID:      999,
+		TargetOS:    "linux",
+		BuildImage:  "alpine:latest",
+		BuildScript: "true",
+	}
+	outputCh := make(chan string, 10)
+	errorCh := make(chan string, 10)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if _, err := exec.Build(ctx, spec, outputCh, errorCh); err != nil {
+		t.Skipf("skipping docker test: docker functional check failed: %v", err)
+	}
+
 	return cli
 }
 
