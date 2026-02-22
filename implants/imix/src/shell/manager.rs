@@ -22,7 +22,6 @@ pub enum ShellManagerMessage {
     ProcessPortalPayload(Mote, mpsc::Sender<Mote>),
 }
 
-// 1. Replace the struct with an Enum representing mutually exclusive states.
 #[derive(Clone)]
 pub enum ExecutionContext {
     Task(i64), // We only need task_id here. stream_id and seq_id are unused for C2 reporting.
@@ -34,7 +33,6 @@ pub enum ExecutionContext {
     None,
 }
 
-// 2. Consolidate output and error handling into a single dispatcher.
 fn dispatch_output<T: Transport + Send + Sync + 'static>(
     agent: &Arc<ImixAgent<T>>,
     shell_id: i64,
@@ -97,7 +95,6 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
     }
 }
 
-// 3. Simplify the Printer to just hold a lock to the new ExecutionContext Enum
 struct ShellPrinter<T: Transport> {
     agent: Arc<ImixAgent<T>>,
     shell_id: i64,
@@ -247,7 +244,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             .with_default_libs()
             .with_task_context(agent.clone(), task_context, Vec::new(), backend);
 
-        // 4. Update the locked context via Enum reassignment
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
                 InterpreterCommand::ExecuteTask { task_id, input, .. } => {
