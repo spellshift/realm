@@ -7,7 +7,7 @@ type Props = {
 const FormTextField = (props: Props) => {
     const {htmlFor, label, ...rest} = props;
     return (
-        <div>
+        <Field.Root>
             <Field.Label htmlFor={htmlFor}>
                 <Heading size="sm" >{label}</Heading>
             </Field.Label>
@@ -17,7 +17,7 @@ const FormTextField = (props: Props) => {
                 {...rest}
                 size='sm'
             />
-        </div>
+        </Field.Root>
     );
 }
 export default FormTextField;
