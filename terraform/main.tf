@@ -424,6 +424,121 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
   ]
 }
 
+
+
+# === Redirectors ===
+
+variable "redirector_upstream" {
+  type = string
+  description = "Upstream that redirectors should point to."
+  default = ""
+}
+
+variable "redirector_domain" {
+  type = string
+  description = "Domain that points to the redirector."
+  default = ""
+}
+
+variable "redirector_transport" {
+  type = string
+  description = "Redirector transport protocol."
+  default = "grpc"
+}
+
+
+resource "google_service_account" "svctavern_redirector" {
+  account_id = "svctavern-redirector"
+  description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_project_iam_member" "redirector-metricwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+resource "google_project_iam_member" "redirector-logwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+resource "google_cloud_run_service" "redirector" {
+  name     = "tavern-redirector"
+  location = var.gcp_region
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  template {
+    spec {
+      service_account_name = google_service_account.svctavern_redirector.email
+      // Controls request timeout, must be long-lived to enable reverse shell support
+      timeout_seconds = var.tavern_request_timeout_seconds
+
+      containers {
+        name = local.tavern_container_name
+        image = var.tavern_container_image
+        command = ["/app/tavern", "redirector", "--transport", var.redirector_transport, var.redirector_upstream]
+        env {
+          name = "ENABLE_DEBUG_LOGGING"
+          value = "true"
+        }
+        ports {
+          container_port = 8080
+        }
+      }
+    }
+
+    metadata {
+      annotations = {
+        for k, v in {
+        "autoscaling.knative.dev/minScale"      = var.min_scale
+        "autoscaling.knative.dev/maxScale"      = var.max_scale
+        "run.googleapis.com/client-name"        = "terraform"
+        "run.googleapis.com/sessionAffinity"    = true
+      }: k => v if v != ""
+      }
+    }
+  }
+  autogenerate_revision_name = true
+
+  depends_on = [
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_service.cloud_run_api
+  ]
+}
+
+resource "google_cloud_run_service_iam_binding" "no-auth-required-redirector" {
+  location = google_cloud_run_service.redirector.location
+  service  = google_cloud_run_service.redirector.name
+  role     = "roles/run.invoker"
+  members = [
+    "allUsers"
+  ]
+}
+
+resource "google_cloud_run_domain_mapping" "redirector-domain" {
+  count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
+  location = google_cloud_run_service.redirector.location
+  name     = var.oauth_domain
+
+  metadata {
+    namespace = google_cloud_run_service.redirector.project
+  }
+
+  spec {
+    route_name = google_cloud_run_service.redirector.name
+  }
+}
+
+
+
+
 resource "google_cloud_run_domain_mapping" "tavern-domain" {
   count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
   location = google_cloud_run_service.tavern.location
@@ -436,9 +551,4 @@ resource "google_cloud_run_domain_mapping" "tavern-domain" {
   spec {
     route_name = google_cloud_run_service.tavern.name
   }
-}
-
-
-output "pubkey" {
-  value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "bash ${path.module}/../bin/getpubkey.sh https://${google_cloud_run_domain_mapping.tavern-domain[0].name}"
 }
