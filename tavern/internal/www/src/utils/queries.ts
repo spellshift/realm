@@ -103,6 +103,7 @@ export const GET_HOST_QUERY = gql`
                     }
                 }
                 beacons {
+                    totalCount
                     edges {
                         node {
                             id
@@ -115,11 +116,15 @@ export const GET_HOST_QUERY = gql`
                     }
                 }
                 credentials {
+                    totalCount
                     edges {
                         node {
                             id
                         }
                     }
+                }
+                processes {
+                    totalCount
                 }
             }
             }
@@ -315,6 +320,9 @@ export const GET_TASK_QUERY = gql`
                                 }
                             }
                         }
+                    }
+                    reportedProcesses{
+                        totalCount
                     }
                     quest {
                         id

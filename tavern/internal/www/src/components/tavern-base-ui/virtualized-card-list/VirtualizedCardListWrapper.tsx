@@ -22,7 +22,7 @@ import { VirtualizedCardListWrapperProps } from './types';
  *   totalItems={data?.tasks?.totalCount}
  *   loading={initialLoading}
  *   error={error}
- *   showSorting={true}
+ *   sortType={PageNavItem.tasks}
  *   showFiltering={true}
  *   cardList={
  *     <VirtualizedCardList
@@ -42,7 +42,7 @@ export const VirtualizedCardListWrapper: React.FC<VirtualizedCardListWrapperProp
     title = "Cards",
     cardList,
     className = '',
-    showSorting = true,
+    sortType,
     showFiltering = true,
 }) => {
     const { filterCount, resetFilters } = useFilters();
@@ -106,7 +106,7 @@ export const VirtualizedCardListWrapper: React.FC<VirtualizedCardListWrapperProp
                     <p className='text-md text-gray-600'>{totalItems !== undefined && `(${totalItems})`}</p>
                 </div>
                 <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
-                    {showSorting && <SortingControls />}
+                    {sortType && <SortingControls sortType={sortType} />}
                     {showFiltering && <FilterControls />}
                 </div>
             </div>

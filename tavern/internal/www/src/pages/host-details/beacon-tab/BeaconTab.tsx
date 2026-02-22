@@ -24,7 +24,6 @@ const BeaconTab = () => {
                 error={error}
                 // Filters / Sorting must be expanded to support sorting on this page
                 showFiltering={false}
-                showSorting={false}
                 table={
                     <BeaconsTable
                         beaconIds={beaconIds}
