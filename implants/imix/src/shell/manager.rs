@@ -14,10 +14,12 @@ use transport::Transport;
 
 use crate::agent::ImixAgent;
 
+const INTERPRETER_INACTIVITY_TIMEOUT: Duration = Duration::from_secs(3600);
+const INTERPRETER_INACTIVITY_POLLING_INTERVAL: Duration = Duration::from_secs(60);
+
 pub enum ShellManagerMessage {
     ProcessTask(ShellTask),
     ProcessPortalPayload(Mote, mpsc::Sender<Mote>),
-    Shutdown,
 }
 
 struct ShellContext {
@@ -28,9 +30,11 @@ struct ShellContext {
 }
 
 #[derive(Clone)]
-struct SharedShellContext(Arc<Mutex<ShellContext>>);
+// Responsible for sending shell output and errors, either using a portal or regular
+// callbacks.
+struct MultiOutputShellContext(Arc<Mutex<ShellContext>>);
 
-impl SharedShellContext {
+impl MultiOutputShellContext {
     fn new() -> Self {
         Self(Arc::new(Mutex::new(ShellContext {
             task_id: None,
@@ -64,7 +68,7 @@ impl SharedShellContext {
 
 fn send_shell_output<T: Transport + Send + Sync + 'static>(
     agent: &Arc<ImixAgent<T>>,
-    context: &SharedShellContext,
+    context: &MultiOutputShellContext,
     shell_id: i64,
     output: String,
 ) {
@@ -82,7 +86,13 @@ fn send_shell_output<T: Transport + Send + Sync + 'static>(
             }),
             ..Default::default()
         };
-        let _ = agent.report_task_output(req);
+        match agent.report_task_output(req) {
+            Ok(_) => {}
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report shell task output {}: {}", task_id, e);
+            }
+        }
     }
 
     // 2. Report to Portal if active
@@ -102,14 +112,20 @@ fn send_shell_output<T: Transport + Send + Sync + 'static>(
 
         let tx = tx.clone();
         tokio::spawn(async move {
-            let _ = tx.send(mote).await;
+            match tx.send(mote).await {
+                Ok(_) => {}
+                Err(e) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send shell output to portal: {}", e);
+                }
+            };
         });
     }
 }
 
 fn send_shell_error<T: Transport + Send + Sync + 'static>(
     agent: &Arc<ImixAgent<T>>,
-    context: &SharedShellContext,
+    context: &MultiOutputShellContext,
     shell_id: i64,
     error: String,
 ) {
@@ -149,21 +165,21 @@ fn send_shell_error<T: Transport + Send + Sync + 'static>(
     }
 }
 
-struct ShellPrinter<T: Transport> {
+struct MultiOutputShellPrinter<T: Transport> {
     agent: Arc<ImixAgent<T>>,
-    context: SharedShellContext,
+    context: MultiOutputShellContext,
     shell_id: i64,
 }
 
-impl<T: Transport> fmt::Debug for ShellPrinter<T> {
+impl<T: Transport> fmt::Debug for MultiOutputShellPrinter<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("ShellPrinter")
+        f.debug_struct("MultiOutputShellPrinter")
             .field("shell_id", &self.shell_id)
             .finish()
     }
 }
 
-impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
+impl<T: Transport + Send + Sync + 'static> Printer for MultiOutputShellPrinter<T> {
     fn print_out(&self, _span: &Span, s: &str) {
         send_shell_output(
             &self.agent,
@@ -216,8 +232,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
     }
 
     pub async fn run(mut self) {
-        let cleanup_interval = Duration::from_secs(60);
-        let mut cleanup_timer = tokio::time::interval(cleanup_interval);
+        let mut cleanup_timer = tokio::time::interval(INTERPRETER_INACTIVITY_POLLING_INTERVAL);
 
         loop {
             tokio::select! {
@@ -228,9 +243,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                         }
                         Some(ShellManagerMessage::ProcessPortalPayload(mote, reply_tx)) => {
                             self.handle_portal_payload(mote, reply_tx).await;
-                        }
-                        Some(ShellManagerMessage::Shutdown) => {
-                            break;
                         }
                         None => {
                             break;
@@ -307,8 +319,8 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         shell_id: i64,
         mut rx: mpsc::Receiver<InterpreterCommand>,
     ) {
-        let context = SharedShellContext::new();
-        let printer = Arc::new(ShellPrinter {
+        let context = MultiOutputShellContext::new();
+        let printer = Arc::new(MultiOutputShellPrinter {
             agent: agent.clone(),
             context: context.clone(),
             shell_id,
@@ -359,7 +371,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
         interpreter: &mut Interpreter,
         input: &str,
         agent: &Arc<ImixAgent<T>>,
-        context: &SharedShellContext,
+        context: &MultiOutputShellContext,
         shell_id: i64,
     ) {
         let result = panic::catch_unwind(AssertUnwindSafe(|| interpreter.interpret(input)));
@@ -396,7 +408,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 
     async fn cleanup_inactive_interpreters(&mut self) {
         let now = Instant::now();
-        let timeout = Duration::from_secs(3600); // 1 hour
+        let timeout = INTERPRETER_INACTIVITY_TIMEOUT;
 
         let mut to_remove = Vec::new();
 
@@ -460,7 +472,6 @@ mod tests {
             input: "1+1".to_string(),
             sequence_id: 1,
             stream_id: "stream1".to_string(),
-            ..Default::default()
         };
 
         // Send task
