@@ -5,33 +5,12 @@ use std::time::SystemTime;
 
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmbeddedAssets;
-use eldritch::{Interpreter, Printer, Span, Value, conversion::ToValue};
+use eldritch::{Interpreter, Value, conversion::ToValue};
 use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
 use prost_types::Timestamp;
-use tokio::sync::mpsc::{self, UnboundedSender};
+use tokio::sync::mpsc;
 
-#[derive(Debug)]
-struct StreamPrinter {
-    tx: UnboundedSender<String>,
-}
-
-impl StreamPrinter {
-    fn new(tx: UnboundedSender<String>) -> Self {
-        Self { tx }
-    }
-}
-
-impl Printer for StreamPrinter {
-    fn print_out(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior which separates lines
-        let _ = self.tx.send(format!("{}\n", s));
-    }
-
-    fn print_err(&self, _span: &Span, s: &str) {
-        // We format with newline to match BufferPrinter behavior
-        let _ = self.tx.send(format!("{}\n", s));
-    }
-}
+use crate::printer::{OutputKind, StreamPrinter};
 
 struct SubtaskHandle {
     name: String,
@@ -267,18 +246,23 @@ fn spawn_output_consumer(
     task_context: TaskContext,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
-    mut rx: mpsc::UnboundedReceiver<String>,
+    mut rx: mpsc::UnboundedReceiver<(OutputKind, String)>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
         #[cfg(debug_assertions)]
         log::info!("task={} Started output stream", task_context.task_id);
         let task_id = task_context.task_id;
-        while let Some(msg) = rx.recv().await {
+        while let Some((kind, msg)) = rx.recv().await {
+            let (output, error) = match kind {
+                OutputKind::Stdout => (msg, None),
+                OutputKind::Stderr => (String::new(), Some(TaskError { msg })),
+            };
+
             match agent.report_task_output(ReportTaskOutputRequest {
                 output: Some(TaskOutput {
                     id: task_id,
-                    output: msg,
-                    error: None,
+                    output,
+                    error,
                     exec_started_at: None,
                     exec_finished_at: None,
                 }),
