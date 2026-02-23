@@ -39,6 +39,11 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y protobuf-compiler libssl-dev
+    - name: 📦 Build Frontend
+      working-directory: tavern/internal/www
+      run: |
+        npm ci
+        npm run build
     - name: 🔨 Build Tavern
       run: |
         go mod download
