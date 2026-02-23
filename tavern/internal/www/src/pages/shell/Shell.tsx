@@ -70,7 +70,7 @@ const Shell = () => {
                 ws.current = null;
             }
         }
-    }, [shellId]);
+    }, [shellId, toast]);
 
     // Setup Ping WebSocket and Loop
     useEffect(() => {

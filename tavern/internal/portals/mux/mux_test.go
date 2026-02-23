@@ -91,7 +91,7 @@ func TestMux_CreatePortal(t *testing.T) {
 	task := client.Task.Create().SetQuest(quest).SetBeacon(b).SaveX(ctx)
 
 	// Updated call
-	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID, 0)
+	portalID, teardown, err := m.CreatePortal(ctx, client, task.ID)
 	require.NoError(t, err)
 	assert.NotZero(t, portalID)
 	defer teardown()
@@ -196,42 +196,4 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 	expected := 12345
 	m := New(WithSubscriberBufferSize(expected))
 	assert.Equal(t, expected, m.subs.bufferSize)
-}
-
-func TestMux_CreatePortal_ShellTask(t *testing.T) {
-	// Setup DB
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
-	defer client.Close()
-
-	// Setup Mux
-	m := New()
-	ctx := context.Background()
-
-	// Create User, Host, Beacon
-	u := client.User.Create().SetName("testuser").SetOauthID("oauth").SetPhotoURL("photo").SaveX(ctx)
-	h := client.Host.Create().SetName("host").SetIdentifier("ident").SetPlatform(c2pb.Host_PLATFORM_LINUX).SaveX(ctx)
-	b := client.Beacon.Create().SetName("beacon").SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SetHost(h).SaveX(ctx)
-
-	// Create Shell and ShellTask
-	shell := client.Shell.Create().SetBeacon(b).SetOwner(u).SetData([]byte("")).SaveX(ctx)
-	st := client.ShellTask.Create().SetShell(shell).SetCreator(u).SetInput("test").SetStreamID("stream").SetSequenceID(1).SaveX(ctx)
-
-	// Updated call
-	portalID, teardown, err := m.CreatePortal(ctx, client, 0, st.ID)
-	require.NoError(t, err)
-	assert.NotZero(t, portalID)
-	defer teardown()
-
-	// Check DB
-	portals := client.Portal.Query().AllX(ctx)
-	require.Len(t, portals, 1)
-	p := portals[0]
-	if !p.ClosedAt.IsZero() {
-		assert.True(t, p.ClosedAt.IsZero(), "ClosedAt should be zero/nil")
-	}
-
-	// Verify Relations
-	require.Equal(t, st.ID, p.QueryShellTask().OnlyIDX(ctx))
-	require.Equal(t, b.ID, p.QueryBeacon().OnlyIDX(ctx))
-	require.Equal(t, u.ID, p.QueryOwner().OnlyIDX(ctx))
 }

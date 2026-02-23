@@ -24,7 +24,6 @@ import (
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
-    "github.com/golang-jwt/jwt/v5"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -111,23 +110,9 @@ func TestReverseShell_E2E(t *testing.T) {
 	gRPCStream, err := c2Client.ReverseShell(ctx)
 	require.NoError(t, err)
 
-    // Generate JWT
-    claims := jwt.MapClaims{
-		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(1 * time.Hour).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
-	signedToken, err := token.SignedString(testPrivKey)
-    require.NoError(t, err)
-
 	// Register gRPC stream with task ID
 	err = gRPCStream.Send(&c2pb.ReverseShellRequest{
-		Context: &c2pb.ReverseShellRequest_TaskContext{
-			TaskContext: &c2pb.TaskContext{
-                TaskId: int64(task.ID),
-                Jwt: signedToken,
-            },
-		},
+		Context: &c2pb.TaskContext{TaskId: int64(task.ID)},
 	})
 	require.NoError(t, err)
 

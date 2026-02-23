@@ -1,2 +1,2 @@
 #[cfg(feature = "stdlib")]
-pub use eldritch_agent::{Agent, Context};
+pub use eldritch_agent::Agent;

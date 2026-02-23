@@ -5641,24 +5641,22 @@ func (m *HostMutation) ResetEdge(name string) error {
 // HostCredentialMutation represents an operation that mutates the HostCredential nodes in the graph.
 type HostCredentialMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	principal         *string
-	secret            *string
-	kind              *epb.Credential_Kind
-	clearedFields     map[string]struct{}
-	host              *int
-	clearedhost       bool
-	task              *int
-	clearedtask       bool
-	shell_task        *int
-	clearedshell_task bool
-	done              bool
-	oldValue          func(context.Context) (*HostCredential, error)
-	predicates        []predicate.HostCredential
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	principal        *string
+	secret           *string
+	kind             *epb.Credential_Kind
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostCredential, error)
+	predicates       []predicate.HostCredential
 }
 
 var _ ent.Mutation = (*HostCredentialMutation)(nil)
@@ -6017,45 +6015,6 @@ func (m *HostCredentialMutation) ResetTask() {
 	m.clearedtask = false
 }
 
-// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
-func (m *HostCredentialMutation) SetShellTaskID(id int) {
-	m.shell_task = &id
-}
-
-// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
-func (m *HostCredentialMutation) ClearShellTask() {
-	m.clearedshell_task = true
-}
-
-// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
-func (m *HostCredentialMutation) ShellTaskCleared() bool {
-	return m.clearedshell_task
-}
-
-// ShellTaskID returns the "shell_task" edge ID in the mutation.
-func (m *HostCredentialMutation) ShellTaskID() (id int, exists bool) {
-	if m.shell_task != nil {
-		return *m.shell_task, true
-	}
-	return
-}
-
-// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ShellTaskID instead. It exists only for internal usage by the builders.
-func (m *HostCredentialMutation) ShellTaskIDs() (ids []int) {
-	if id := m.shell_task; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetShellTask resets all changes to the "shell_task" edge.
-func (m *HostCredentialMutation) ResetShellTask() {
-	m.shell_task = nil
-	m.clearedshell_task = false
-}
-
 // Where appends a list predicates to the HostCredentialMutation builder.
 func (m *HostCredentialMutation) Where(ps ...predicate.HostCredential) {
 	m.predicates = append(m.predicates, ps...)
@@ -6257,15 +6216,12 @@ func (m *HostCredentialMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostCredentialMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.host != nil {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostcredential.EdgeTask)
-	}
-	if m.shell_task != nil {
-		edges = append(edges, hostcredential.EdgeShellTask)
 	}
 	return edges
 }
@@ -6282,17 +6238,13 @@ func (m *HostCredentialMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
-	case hostcredential.EdgeShellTask:
-		if id := m.shell_task; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostCredentialMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -6304,15 +6256,12 @@ func (m *HostCredentialMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostCredentialMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedhost {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostcredential.EdgeTask)
-	}
-	if m.clearedshell_task {
-		edges = append(edges, hostcredential.EdgeShellTask)
 	}
 	return edges
 }
@@ -6325,8 +6274,6 @@ func (m *HostCredentialMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostcredential.EdgeTask:
 		return m.clearedtask
-	case hostcredential.EdgeShellTask:
-		return m.clearedshell_task
 	}
 	return false
 }
@@ -6340,9 +6287,6 @@ func (m *HostCredentialMutation) ClearEdge(name string) error {
 		return nil
 	case hostcredential.EdgeTask:
 		m.ClearTask()
-		return nil
-	case hostcredential.EdgeShellTask:
-		m.ClearShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential unique edge %s", name)
@@ -6358,9 +6302,6 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 	case hostcredential.EdgeTask:
 		m.ResetTask()
 		return nil
-	case hostcredential.EdgeShellTask:
-		m.ResetShellTask()
-		return nil
 	}
 	return fmt.Errorf("unknown HostCredential edge %s", name)
 }
@@ -6368,29 +6309,27 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 // HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
 type HostFileMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	_path             *string
-	owner             *string
-	group             *string
-	permissions       *string
-	size              *uint64
-	addsize           *int64
-	hash              *string
-	content           *[]byte
-	clearedFields     map[string]struct{}
-	host              *int
-	clearedhost       bool
-	task              *int
-	clearedtask       bool
-	shell_task        *int
-	clearedshell_task bool
-	done              bool
-	oldValue          func(context.Context) (*HostFile, error)
-	predicates        []predicate.HostFile
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	_path            *string
+	owner            *string
+	group            *string
+	permissions      *string
+	size             *uint64
+	addsize          *int64
+	hash             *string
+	content          *[]byte
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostFile, error)
+	predicates       []predicate.HostFile
 }
 
 var _ ent.Mutation = (*HostFileMutation)(nil)
@@ -6978,45 +6917,6 @@ func (m *HostFileMutation) ResetTask() {
 	m.clearedtask = false
 }
 
-// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
-func (m *HostFileMutation) SetShellTaskID(id int) {
-	m.shell_task = &id
-}
-
-// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
-func (m *HostFileMutation) ClearShellTask() {
-	m.clearedshell_task = true
-}
-
-// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
-func (m *HostFileMutation) ShellTaskCleared() bool {
-	return m.clearedshell_task
-}
-
-// ShellTaskID returns the "shell_task" edge ID in the mutation.
-func (m *HostFileMutation) ShellTaskID() (id int, exists bool) {
-	if m.shell_task != nil {
-		return *m.shell_task, true
-	}
-	return
-}
-
-// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ShellTaskID instead. It exists only for internal usage by the builders.
-func (m *HostFileMutation) ShellTaskIDs() (ids []int) {
-	if id := m.shell_task; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetShellTask resets all changes to the "shell_task" edge.
-func (m *HostFileMutation) ResetShellTask() {
-	m.shell_task = nil
-	m.clearedshell_task = false
-}
-
 // Where appends a list predicates to the HostFileMutation builder.
 func (m *HostFileMutation) Where(ps ...predicate.HostFile) {
 	m.predicates = append(m.predicates, ps...)
@@ -7334,15 +7234,12 @@ func (m *HostFileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostFileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.host != nil {
 		edges = append(edges, hostfile.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostfile.EdgeTask)
-	}
-	if m.shell_task != nil {
-		edges = append(edges, hostfile.EdgeShellTask)
 	}
 	return edges
 }
@@ -7359,17 +7256,13 @@ func (m *HostFileMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
-	case hostfile.EdgeShellTask:
-		if id := m.shell_task; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostFileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -7381,15 +7274,12 @@ func (m *HostFileMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostFileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedhost {
 		edges = append(edges, hostfile.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostfile.EdgeTask)
-	}
-	if m.clearedshell_task {
-		edges = append(edges, hostfile.EdgeShellTask)
 	}
 	return edges
 }
@@ -7402,8 +7292,6 @@ func (m *HostFileMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostfile.EdgeTask:
 		return m.clearedtask
-	case hostfile.EdgeShellTask:
-		return m.clearedshell_task
 	}
 	return false
 }
@@ -7417,9 +7305,6 @@ func (m *HostFileMutation) ClearEdge(name string) error {
 		return nil
 	case hostfile.EdgeTask:
 		m.ClearTask()
-		return nil
-	case hostfile.EdgeShellTask:
-		m.ClearShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostFile unique edge %s", name)
@@ -7435,9 +7320,6 @@ func (m *HostFileMutation) ResetEdge(name string) error {
 	case hostfile.EdgeTask:
 		m.ResetTask()
 		return nil
-	case hostfile.EdgeShellTask:
-		m.ResetShellTask()
-		return nil
 	}
 	return fmt.Errorf("unknown HostFile edge %s", name)
 }
@@ -7445,32 +7327,30 @@ func (m *HostFileMutation) ResetEdge(name string) error {
 // HostProcessMutation represents an operation that mutates the HostProcess nodes in the graph.
 type HostProcessMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	last_modified_at  *time.Time
-	pid               *uint64
-	addpid            *int64
-	ppid              *uint64
-	addppid           *int64
-	name              *string
-	principal         *string
-	_path             *string
-	cmd               *string
-	env               *string
-	cwd               *string
-	status            *epb.Process_Status
-	clearedFields     map[string]struct{}
-	host              *int
-	clearedhost       bool
-	task              *int
-	clearedtask       bool
-	shell_task        *int
-	clearedshell_task bool
-	done              bool
-	oldValue          func(context.Context) (*HostProcess, error)
-	predicates        []predicate.HostProcess
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	pid              *uint64
+	addpid           *int64
+	ppid             *uint64
+	addppid          *int64
+	name             *string
+	principal        *string
+	_path            *string
+	cmd              *string
+	env              *string
+	cwd              *string
+	status           *epb.Process_Status
+	clearedFields    map[string]struct{}
+	host             *int
+	clearedhost      bool
+	task             *int
+	clearedtask      bool
+	done             bool
+	oldValue         func(context.Context) (*HostProcess, error)
+	predicates       []predicate.HostProcess
 }
 
 var _ ent.Mutation = (*HostProcessMutation)(nil)
@@ -8137,45 +8017,6 @@ func (m *HostProcessMutation) ResetTask() {
 	m.clearedtask = false
 }
 
-// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
-func (m *HostProcessMutation) SetShellTaskID(id int) {
-	m.shell_task = &id
-}
-
-// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
-func (m *HostProcessMutation) ClearShellTask() {
-	m.clearedshell_task = true
-}
-
-// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
-func (m *HostProcessMutation) ShellTaskCleared() bool {
-	return m.clearedshell_task
-}
-
-// ShellTaskID returns the "shell_task" edge ID in the mutation.
-func (m *HostProcessMutation) ShellTaskID() (id int, exists bool) {
-	if m.shell_task != nil {
-		return *m.shell_task, true
-	}
-	return
-}
-
-// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ShellTaskID instead. It exists only for internal usage by the builders.
-func (m *HostProcessMutation) ShellTaskIDs() (ids []int) {
-	if id := m.shell_task; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetShellTask resets all changes to the "shell_task" edge.
-func (m *HostProcessMutation) ResetShellTask() {
-	m.shell_task = nil
-	m.clearedshell_task = false
-}
-
 // Where appends a list predicates to the HostProcessMutation builder.
 func (m *HostProcessMutation) Where(ps ...predicate.HostProcess) {
 	m.predicates = append(m.predicates, ps...)
@@ -8533,15 +8374,12 @@ func (m *HostProcessMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostProcessMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.host != nil {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostprocess.EdgeTask)
-	}
-	if m.shell_task != nil {
-		edges = append(edges, hostprocess.EdgeShellTask)
 	}
 	return edges
 }
@@ -8558,17 +8396,13 @@ func (m *HostProcessMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
-	case hostprocess.EdgeShellTask:
-		if id := m.shell_task; id != nil {
-			return []ent.Value{*id}
-		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostProcessMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -8580,15 +8414,12 @@ func (m *HostProcessMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostProcessMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedhost {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostprocess.EdgeTask)
-	}
-	if m.clearedshell_task {
-		edges = append(edges, hostprocess.EdgeShellTask)
 	}
 	return edges
 }
@@ -8601,8 +8432,6 @@ func (m *HostProcessMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostprocess.EdgeTask:
 		return m.clearedtask
-	case hostprocess.EdgeShellTask:
-		return m.clearedshell_task
 	}
 	return false
 }
@@ -8617,9 +8446,6 @@ func (m *HostProcessMutation) ClearEdge(name string) error {
 	case hostprocess.EdgeTask:
 		m.ClearTask()
 		return nil
-	case hostprocess.EdgeShellTask:
-		m.ClearShellTask()
-		return nil
 	}
 	return fmt.Errorf("unknown HostProcess unique edge %s", name)
 }
@@ -8633,9 +8459,6 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 		return nil
 	case hostprocess.EdgeTask:
 		m.ResetTask()
-		return nil
-	case hostprocess.EdgeShellTask:
-		m.ResetShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostProcess edge %s", name)
@@ -9467,8 +9290,6 @@ type PortalMutation struct {
 	clearedFields       map[string]struct{}
 	task                *int
 	clearedtask         bool
-	shell_task          *int
-	clearedshell_task   bool
 	beacon              *int
 	clearedbeacon       bool
 	owner               *int
@@ -9737,45 +9558,6 @@ func (m *PortalMutation) TaskIDs() (ids []int) {
 func (m *PortalMutation) ResetTask() {
 	m.task = nil
 	m.clearedtask = false
-}
-
-// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
-func (m *PortalMutation) SetShellTaskID(id int) {
-	m.shell_task = &id
-}
-
-// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
-func (m *PortalMutation) ClearShellTask() {
-	m.clearedshell_task = true
-}
-
-// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
-func (m *PortalMutation) ShellTaskCleared() bool {
-	return m.clearedshell_task
-}
-
-// ShellTaskID returns the "shell_task" edge ID in the mutation.
-func (m *PortalMutation) ShellTaskID() (id int, exists bool) {
-	if m.shell_task != nil {
-		return *m.shell_task, true
-	}
-	return
-}
-
-// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// ShellTaskID instead. It exists only for internal usage by the builders.
-func (m *PortalMutation) ShellTaskIDs() (ids []int) {
-	if id := m.shell_task; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetShellTask resets all changes to the "shell_task" edge.
-func (m *PortalMutation) ResetShellTask() {
-	m.shell_task = nil
-	m.clearedshell_task = false
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by id.
@@ -10086,12 +9868,9 @@ func (m *PortalMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PortalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.task != nil {
 		edges = append(edges, portal.EdgeTask)
-	}
-	if m.shell_task != nil {
-		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.beacon != nil {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10111,10 +9890,6 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case portal.EdgeTask:
 		if id := m.task; id != nil {
-			return []ent.Value{*id}
-		}
-	case portal.EdgeShellTask:
-		if id := m.shell_task; id != nil {
 			return []ent.Value{*id}
 		}
 	case portal.EdgeBeacon:
@@ -10137,7 +9912,7 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PortalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.removedactive_users != nil {
 		edges = append(edges, portal.EdgeActiveUsers)
 	}
@@ -10160,12 +9935,9 @@ func (m *PortalMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PortalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 4)
 	if m.clearedtask {
 		edges = append(edges, portal.EdgeTask)
-	}
-	if m.clearedshell_task {
-		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10185,8 +9957,6 @@ func (m *PortalMutation) EdgeCleared(name string) bool {
 	switch name {
 	case portal.EdgeTask:
 		return m.clearedtask
-	case portal.EdgeShellTask:
-		return m.clearedshell_task
 	case portal.EdgeBeacon:
 		return m.clearedbeacon
 	case portal.EdgeOwner:
@@ -10204,9 +9974,6 @@ func (m *PortalMutation) ClearEdge(name string) error {
 	case portal.EdgeTask:
 		m.ClearTask()
 		return nil
-	case portal.EdgeShellTask:
-		m.ClearShellTask()
-		return nil
 	case portal.EdgeBeacon:
 		m.ClearBeacon()
 		return nil
@@ -10223,9 +9990,6 @@ func (m *PortalMutation) ResetEdge(name string) error {
 	switch name {
 	case portal.EdgeTask:
 		m.ResetTask()
-		return nil
-	case portal.EdgeShellTask:
-		m.ResetShellTask()
 		return nil
 	case portal.EdgeBeacon:
 		m.ResetBeacon()
@@ -12885,37 +12649,28 @@ func (m *ShellMutation) ResetEdge(name string) error {
 // ShellTaskMutation represents an operation that mutates the ShellTask nodes in the graph.
 type ShellTaskMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *int
-	created_at                  *time.Time
-	last_modified_at            *time.Time
-	input                       *string
-	output                      *string
-	error                       *string
-	stream_id                   *string
-	sequence_id                 *uint64
-	addsequence_id              *int64
-	claimed_at                  *time.Time
-	exec_started_at             *time.Time
-	exec_finished_at            *time.Time
-	clearedFields               map[string]struct{}
-	shell                       *int
-	clearedshell                bool
-	creator                     *int
-	clearedcreator              bool
-	reported_credentials        map[int]struct{}
-	removedreported_credentials map[int]struct{}
-	clearedreported_credentials bool
-	reported_files              map[int]struct{}
-	removedreported_files       map[int]struct{}
-	clearedreported_files       bool
-	reported_processes          map[int]struct{}
-	removedreported_processes   map[int]struct{}
-	clearedreported_processes   bool
-	done                        bool
-	oldValue                    func(context.Context) (*ShellTask, error)
-	predicates                  []predicate.ShellTask
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	input            *string
+	output           *string
+	error            *string
+	stream_id        *string
+	sequence_id      *uint64
+	addsequence_id   *int64
+	claimed_at       *time.Time
+	exec_started_at  *time.Time
+	exec_finished_at *time.Time
+	clearedFields    map[string]struct{}
+	shell            *int
+	clearedshell     bool
+	creator          *int
+	clearedcreator   bool
+	done             bool
+	oldValue         func(context.Context) (*ShellTask, error)
+	predicates       []predicate.ShellTask
 }
 
 var _ ent.Mutation = (*ShellTaskMutation)(nil)
@@ -13539,168 +13294,6 @@ func (m *ShellTaskMutation) ResetCreator() {
 	m.clearedcreator = false
 }
 
-// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by ids.
-func (m *ShellTaskMutation) AddReportedCredentialIDs(ids ...int) {
-	if m.reported_credentials == nil {
-		m.reported_credentials = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.reported_credentials[ids[i]] = struct{}{}
-	}
-}
-
-// ClearReportedCredentials clears the "reported_credentials" edge to the HostCredential entity.
-func (m *ShellTaskMutation) ClearReportedCredentials() {
-	m.clearedreported_credentials = true
-}
-
-// ReportedCredentialsCleared reports if the "reported_credentials" edge to the HostCredential entity was cleared.
-func (m *ShellTaskMutation) ReportedCredentialsCleared() bool {
-	return m.clearedreported_credentials
-}
-
-// RemoveReportedCredentialIDs removes the "reported_credentials" edge to the HostCredential entity by IDs.
-func (m *ShellTaskMutation) RemoveReportedCredentialIDs(ids ...int) {
-	if m.removedreported_credentials == nil {
-		m.removedreported_credentials = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.reported_credentials, ids[i])
-		m.removedreported_credentials[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedReportedCredentials returns the removed IDs of the "reported_credentials" edge to the HostCredential entity.
-func (m *ShellTaskMutation) RemovedReportedCredentialsIDs() (ids []int) {
-	for id := range m.removedreported_credentials {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ReportedCredentialsIDs returns the "reported_credentials" edge IDs in the mutation.
-func (m *ShellTaskMutation) ReportedCredentialsIDs() (ids []int) {
-	for id := range m.reported_credentials {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetReportedCredentials resets all changes to the "reported_credentials" edge.
-func (m *ShellTaskMutation) ResetReportedCredentials() {
-	m.reported_credentials = nil
-	m.clearedreported_credentials = false
-	m.removedreported_credentials = nil
-}
-
-// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by ids.
-func (m *ShellTaskMutation) AddReportedFileIDs(ids ...int) {
-	if m.reported_files == nil {
-		m.reported_files = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.reported_files[ids[i]] = struct{}{}
-	}
-}
-
-// ClearReportedFiles clears the "reported_files" edge to the HostFile entity.
-func (m *ShellTaskMutation) ClearReportedFiles() {
-	m.clearedreported_files = true
-}
-
-// ReportedFilesCleared reports if the "reported_files" edge to the HostFile entity was cleared.
-func (m *ShellTaskMutation) ReportedFilesCleared() bool {
-	return m.clearedreported_files
-}
-
-// RemoveReportedFileIDs removes the "reported_files" edge to the HostFile entity by IDs.
-func (m *ShellTaskMutation) RemoveReportedFileIDs(ids ...int) {
-	if m.removedreported_files == nil {
-		m.removedreported_files = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.reported_files, ids[i])
-		m.removedreported_files[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedReportedFiles returns the removed IDs of the "reported_files" edge to the HostFile entity.
-func (m *ShellTaskMutation) RemovedReportedFilesIDs() (ids []int) {
-	for id := range m.removedreported_files {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ReportedFilesIDs returns the "reported_files" edge IDs in the mutation.
-func (m *ShellTaskMutation) ReportedFilesIDs() (ids []int) {
-	for id := range m.reported_files {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetReportedFiles resets all changes to the "reported_files" edge.
-func (m *ShellTaskMutation) ResetReportedFiles() {
-	m.reported_files = nil
-	m.clearedreported_files = false
-	m.removedreported_files = nil
-}
-
-// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by ids.
-func (m *ShellTaskMutation) AddReportedProcessIDs(ids ...int) {
-	if m.reported_processes == nil {
-		m.reported_processes = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.reported_processes[ids[i]] = struct{}{}
-	}
-}
-
-// ClearReportedProcesses clears the "reported_processes" edge to the HostProcess entity.
-func (m *ShellTaskMutation) ClearReportedProcesses() {
-	m.clearedreported_processes = true
-}
-
-// ReportedProcessesCleared reports if the "reported_processes" edge to the HostProcess entity was cleared.
-func (m *ShellTaskMutation) ReportedProcessesCleared() bool {
-	return m.clearedreported_processes
-}
-
-// RemoveReportedProcessIDs removes the "reported_processes" edge to the HostProcess entity by IDs.
-func (m *ShellTaskMutation) RemoveReportedProcessIDs(ids ...int) {
-	if m.removedreported_processes == nil {
-		m.removedreported_processes = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.reported_processes, ids[i])
-		m.removedreported_processes[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedReportedProcesses returns the removed IDs of the "reported_processes" edge to the HostProcess entity.
-func (m *ShellTaskMutation) RemovedReportedProcessesIDs() (ids []int) {
-	for id := range m.removedreported_processes {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ReportedProcessesIDs returns the "reported_processes" edge IDs in the mutation.
-func (m *ShellTaskMutation) ReportedProcessesIDs() (ids []int) {
-	for id := range m.reported_processes {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetReportedProcesses resets all changes to the "reported_processes" edge.
-func (m *ShellTaskMutation) ResetReportedProcesses() {
-	m.reported_processes = nil
-	m.clearedreported_processes = false
-	m.removedreported_processes = nil
-}
-
 // Where appends a list predicates to the ShellTaskMutation builder.
 func (m *ShellTaskMutation) Where(ps ...predicate.ShellTask) {
 	m.predicates = append(m.predicates, ps...)
@@ -14035,21 +13628,12 @@ func (m *ShellTaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 2)
 	if m.shell != nil {
 		edges = append(edges, shelltask.EdgeShell)
 	}
 	if m.creator != nil {
 		edges = append(edges, shelltask.EdgeCreator)
-	}
-	if m.reported_credentials != nil {
-		edges = append(edges, shelltask.EdgeReportedCredentials)
-	}
-	if m.reported_files != nil {
-		edges = append(edges, shelltask.EdgeReportedFiles)
-	}
-	if m.reported_processes != nil {
-		edges = append(edges, shelltask.EdgeReportedProcesses)
 	}
 	return edges
 }
@@ -14066,86 +13650,30 @@ func (m *ShellTaskMutation) AddedIDs(name string) []ent.Value {
 		if id := m.creator; id != nil {
 			return []ent.Value{*id}
 		}
-	case shelltask.EdgeReportedCredentials:
-		ids := make([]ent.Value, 0, len(m.reported_credentials))
-		for id := range m.reported_credentials {
-			ids = append(ids, id)
-		}
-		return ids
-	case shelltask.EdgeReportedFiles:
-		ids := make([]ent.Value, 0, len(m.reported_files))
-		for id := range m.reported_files {
-			ids = append(ids, id)
-		}
-		return ids
-	case shelltask.EdgeReportedProcesses:
-		ids := make([]ent.Value, 0, len(m.reported_processes))
-		for id := range m.reported_processes {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
-	if m.removedreported_credentials != nil {
-		edges = append(edges, shelltask.EdgeReportedCredentials)
-	}
-	if m.removedreported_files != nil {
-		edges = append(edges, shelltask.EdgeReportedFiles)
-	}
-	if m.removedreported_processes != nil {
-		edges = append(edges, shelltask.EdgeReportedProcesses)
-	}
+	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *ShellTaskMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case shelltask.EdgeReportedCredentials:
-		ids := make([]ent.Value, 0, len(m.removedreported_credentials))
-		for id := range m.removedreported_credentials {
-			ids = append(ids, id)
-		}
-		return ids
-	case shelltask.EdgeReportedFiles:
-		ids := make([]ent.Value, 0, len(m.removedreported_files))
-		for id := range m.removedreported_files {
-			ids = append(ids, id)
-		}
-		return ids
-	case shelltask.EdgeReportedProcesses:
-		ids := make([]ent.Value, 0, len(m.removedreported_processes))
-		for id := range m.removedreported_processes {
-			ids = append(ids, id)
-		}
-		return ids
-	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 2)
 	if m.clearedshell {
 		edges = append(edges, shelltask.EdgeShell)
 	}
 	if m.clearedcreator {
 		edges = append(edges, shelltask.EdgeCreator)
-	}
-	if m.clearedreported_credentials {
-		edges = append(edges, shelltask.EdgeReportedCredentials)
-	}
-	if m.clearedreported_files {
-		edges = append(edges, shelltask.EdgeReportedFiles)
-	}
-	if m.clearedreported_processes {
-		edges = append(edges, shelltask.EdgeReportedProcesses)
 	}
 	return edges
 }
@@ -14158,12 +13686,6 @@ func (m *ShellTaskMutation) EdgeCleared(name string) bool {
 		return m.clearedshell
 	case shelltask.EdgeCreator:
 		return m.clearedcreator
-	case shelltask.EdgeReportedCredentials:
-		return m.clearedreported_credentials
-	case shelltask.EdgeReportedFiles:
-		return m.clearedreported_files
-	case shelltask.EdgeReportedProcesses:
-		return m.clearedreported_processes
 	}
 	return false
 }
@@ -14191,15 +13713,6 @@ func (m *ShellTaskMutation) ResetEdge(name string) error {
 		return nil
 	case shelltask.EdgeCreator:
 		m.ResetCreator()
-		return nil
-	case shelltask.EdgeReportedCredentials:
-		m.ResetReportedCredentials()
-		return nil
-	case shelltask.EdgeReportedFiles:
-		m.ResetReportedFiles()
-		return nil
-	case shelltask.EdgeReportedProcesses:
-		m.ResetReportedProcesses()
 		return nil
 	}
 	return fmt.Errorf("unknown ShellTask edge %s", name)

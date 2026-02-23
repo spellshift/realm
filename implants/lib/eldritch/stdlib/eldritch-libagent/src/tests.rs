@@ -4,6 +4,7 @@ use crate::std::StdAgentLibrary;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::sync::Arc;
 use eldritch_core::Value;
+use pb::c2::TaskContext;
 use std::sync::RwLock;
 use std::thread;
 
@@ -56,23 +57,23 @@ impl Agent for MockAgent {
     ) -> Result<pb::c2::ReportProcessListResponse, String> {
         Err("".into())
     }
-    fn report_output(
+    fn report_task_output(
         &self,
-        _: pb::c2::ReportOutputRequest,
-    ) -> Result<pb::c2::ReportOutputResponse, String> {
+        _: pb::c2::ReportTaskOutputRequest,
+    ) -> Result<pb::c2::ReportTaskOutputResponse, String> {
         Err("".into())
     }
-    fn create_portal(&self, _context: eldritch_agent::Context) -> Result<(), String> {
+    fn create_portal(&self, _task_context: TaskContext) -> Result<(), String> {
         Err("".into())
     }
     fn start_reverse_shell(
         &self,
-        _context: eldritch_agent::Context,
+        _task_context: TaskContext,
         _: Option<String>,
     ) -> Result<(), String> {
         Err("".into())
     }
-    fn start_repl_reverse_shell(&self, _context: eldritch_agent::Context) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
         Err("".into())
     }
     fn claim_tasks(
@@ -124,10 +125,10 @@ fn test_get_config() {
     let agent = Arc::new(MockAgent::new());
     let lib = StdAgentLibrary::new(
         agent,
-        eldritch_agent::Context::Task(pb::c2::TaskContext {
+        pb::c2::TaskContext {
             task_id: 1,
             jwt: "testjwt".to_string(),
-        }),
+        },
     );
 
     let config = lib.get_config().unwrap();
@@ -140,10 +141,10 @@ fn test_concurrent_access() {
     let agent = Arc::new(MockAgent::new());
     let lib = StdAgentLibrary::new(
         agent.clone(),
-        eldritch_agent::Context::Task(pb::c2::TaskContext {
+        pb::c2::TaskContext {
             task_id: 1,
             jwt: "testjwt".to_string(),
-        }),
+        },
     );
     let lib = Arc::new(lib);
 

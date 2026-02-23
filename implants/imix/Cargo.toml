@@ -35,7 +35,6 @@ crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
 eldritch = { workspace = true, features = ["std", "stdlib"] }
-eldritch-agent = { workspace = true }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }

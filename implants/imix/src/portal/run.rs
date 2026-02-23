@@ -1,6 +1,5 @@
 use anyhow::Result;
-use eldritch_agent::Context;
-use pb::c2::{CreatePortalRequest, CreatePortalResponse, create_portal_request};
+use pb::c2::{CreatePortalRequest, CreatePortalResponse, TaskContext};
 use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
@@ -21,7 +20,7 @@ struct StreamContext {
 }
 
 pub async fn run<T: Transport + Send + Sync + 'static>(
-    context: Context,
+    task_context: TaskContext,
     mut transport: T,
     shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
@@ -49,17 +48,10 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Channel for handler tasks to send outgoing motes back to main loop
     let (out_tx, mut out_rx) = mpsc::channel::<Mote>(100);
 
-    let context_val = match &context {
-        Context::Task(tc) => Some(create_portal_request::Context::TaskContext(tc.clone())),
-        Context::ShellTask(stc) => Some(create_portal_request::Context::ShellTaskContext(
-            stc.clone(),
-        )),
-    };
-
     // Send initial registration message
     if let Err(_e) = req_tx
         .send(CreatePortalRequest {
-            context: context_val.clone(),
+            context: Some(task_context.clone()),
             mote: None,
         })
         .await
@@ -98,14 +90,8 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
             msg = out_rx.recv() => {
                 match msg {
                     Some(mote) => {
-                        let context_val = match &context {
-                            Context::Task(tc) => Some(create_portal_request::Context::TaskContext(tc.clone())),
-                            Context::ShellTask(stc) => {
-                                Some(create_portal_request::Context::ShellTaskContext(stc.clone()))
-                            }
-                        };
                         let req = CreatePortalRequest {
-                            context: context_val,
+                            context: Some(task_context.clone()),
                             mote: Some(mote),
                         };
                         if let Err(_e) = req_tx.send(req).await {

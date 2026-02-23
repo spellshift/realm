@@ -152,7 +152,7 @@ func TestInteractiveShell(t *testing.T) {
 	// 1. Create Portal (Agent side) using mux.CreatePortal
 	// This will create the Portal entity AND setup the topics.
 	// It returns portalID, teardown, err
-	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
+	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID)
 	require.NoError(t, err)
 	defer agentCleanup()
 
@@ -344,7 +344,7 @@ func TestOtherStreamOutput(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Create Portal
-	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
+	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID)
 	require.NoError(t, err)
 	defer agentCleanup()
 

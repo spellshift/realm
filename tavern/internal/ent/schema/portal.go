@@ -32,10 +32,8 @@ func (Portal) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("task", Task.Type).
 			Unique().
+			Required().
 			Comment("Task that created the portal"),
-		edge.To("shell_task", ShellTask.Type).
-			Unique().
-			Comment("ShellTask that created the portal"),
 		edge.To("beacon", Beacon.Type).
 			Unique().
 			Required().

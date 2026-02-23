@@ -25,11 +25,22 @@ jobs:
       with:
         go-version-file: go.mod
         cache: true
+    - name: ⚡ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: tavern/internal/www/package-lock.json
     - name: 🔨 Install Tools
       run: |
         # Pin gotestsum to v1.12.0 to support Go 1.23.4 (v1.13.0 requires Go 1.24)
         go install gotest.tools/gotestsum@v1.12.0
         go install github.com/ctrf-io/go-ctrf-json-reporter/cmd/go-ctrf-json-reporter@latest
+    - name: 🔨 Build Frontend
+      working-directory: tavern/internal/www
+      run: |
+        npm ci
+        npm run build
     - name: 🔨 Build
       run: go build -v -o ./build/tavern ./tavern
     - name: 🔎 Test

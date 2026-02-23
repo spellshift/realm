@@ -1367,8 +1367,6 @@ func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.C
 				return ec.fieldContext_HostCredential_host(ctx, field)
 			case "task":
 				return ec.fieldContext_HostCredential_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostCredential_shellTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},

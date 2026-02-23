@@ -1,9 +1,8 @@
 use super::super::task::TaskRegistry;
 use alloc::collections::{BTreeMap, BTreeSet};
 use eldritch::agent::agent::Agent;
-use eldritch_agent::Context;
 use pb::c2;
-use pb::c2::{ReportOutputRequest, report_output_request};
+use pb::c2::TaskContext;
 use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -11,7 +10,7 @@ use std::time::Duration;
 
 // Mock Agent specifically for TaskRegistry
 struct MockAgent {
-    output_reports: Arc<Mutex<Vec<c2::ReportOutputRequest>>>,
+    output_reports: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
 }
 
 impl MockAgent {
@@ -41,20 +40,24 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportProcessListResponse, String> {
         Ok(c2::ReportProcessListResponse {})
     }
-    fn report_output(
+    fn report_task_output(
         &self,
-        req: c2::ReportOutputRequest,
-    ) -> Result<c2::ReportOutputResponse, String> {
+        req: c2::ReportTaskOutputRequest,
+    ) -> Result<c2::ReportTaskOutputResponse, String> {
         self.output_reports.lock().unwrap().push(req);
-        Ok(c2::ReportOutputResponse {})
+        Ok(c2::ReportTaskOutputResponse {})
     }
-    fn create_portal(&self, _context: Context) -> Result<(), String> {
+    fn create_portal(&self, _task_context: TaskContext) -> Result<(), String> {
         Ok(())
     }
-    fn start_reverse_shell(&self, _context: Context, _cmd: Option<String>) -> Result<(), String> {
+    fn start_reverse_shell(
+        &self,
+        _task_context: TaskContext,
+        _cmd: Option<String>,
+    ) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, _context: Context) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
@@ -132,12 +135,10 @@ async fn test_task_registry_spawn() {
 
     // Check for Hello World
     let has_output = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.output.contains("Hello World");
-            }
-        }
-        false
+        r.output
+            .as_ref()
+            .map(|o| o.output.contains("Hello World"))
+            .unwrap_or(false)
     });
     assert!(
         has_output,
@@ -146,12 +147,10 @@ async fn test_task_registry_spawn() {
 
     // Check completion
     let has_finished = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.exec_finished_at.is_some();
-            }
-        }
-        false
+        r.output
+            .as_ref()
+            .map(|o| o.exec_finished_at.is_some())
+            .unwrap_or(false)
     });
     assert!(has_finished, "Should have marked task as finished");
 }
@@ -189,13 +188,7 @@ async fn test_task_streaming_output() {
 
     let outputs: Vec<String> = reports
         .iter()
-        .filter_map(|r| {
-            if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-                m.output.as_ref().map(|o| o.output.clone())
-            } else {
-                None
-            }
-        })
+        .filter_map(|r| r.output.as_ref().map(|o| o.output.clone()))
         .filter(|s| !s.is_empty())
         .collect();
 
@@ -238,13 +231,7 @@ async fn test_task_streaming_error() {
 
     let outputs: Vec<String> = reports
         .iter()
-        .filter_map(|r| {
-            if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-                m.output.as_ref().map(|o| o.output.clone())
-            } else {
-                None
-            }
-        })
+        .filter_map(|r| r.output.as_ref().map(|o| o.output.clone()))
         .filter(|s| !s.is_empty())
         .collect();
 
@@ -255,12 +242,10 @@ async fn test_task_streaming_error() {
 
     // Check for error report
     let error_report = reports.iter().find(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.error.is_some();
-            }
-        }
-        false
+        r.output
+            .as_ref()
+            .map(|o| o.error.is_some())
+            .unwrap_or(false)
     });
     assert!(error_report.is_some(), "Should report error");
 }
@@ -318,23 +303,23 @@ async fn test_task_eprint_behavior() {
 
     // Check if "This is an error" appears in output or error field
     let error_in_output = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
-                return o.output.contains("This is an error");
-            }
-        }
-        false
+        r.output
+            .as_ref()
+            .map(|o| o.output.contains("This is an error"))
+            .unwrap_or(false)
     });
 
     let error_in_error = reports.iter().any(|r| {
-        if let Some(report_output_request::Message::TaskOutput(m)) = &r.message {
-            if let Some(o) = &m.output {
+        r.output
+            .as_ref()
+            .map(|o| {
                 if let Some(err) = &o.error {
-                    return err.msg.contains("This is an error");
+                    err.msg.contains("This is an error")
+                } else {
+                    false
                 }
-            }
-        }
-        false
+            })
+            .unwrap_or(false)
     });
 
     println!("Error in output: {}", error_in_output);

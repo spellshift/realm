@@ -8,7 +8,6 @@ spin = "0.10"
 
 eldritch-core = { workspace = true, default-features = false }
 eldritch-macros = { workspace = true }
-eldritch-agent = { workspace = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }

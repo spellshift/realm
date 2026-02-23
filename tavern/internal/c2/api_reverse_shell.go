@@ -22,48 +22,6 @@ const (
 	keepAlivePingInterval = 5 * time.Second
 )
 
-func (srv *Server) resolveTaskFromReverseShell(ctx context.Context, msg *c2pb.ReverseShellRequest) (*ent.Task, error) {
-	if tc := msg.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
-			return nil, err
-		}
-		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
-		if err != nil {
-			if ent.IsNotFound(err) {
-				slog.ErrorContext(ctx, "reverse shell failed: associated task does not exist", "task_id", tc.GetTaskId(), "error", err)
-				return nil, status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", tc.GetTaskId())
-			}
-			slog.ErrorContext(ctx, "reverse shell failed: could not load associated task", "task_id", tc.GetTaskId(), "error", err)
-			return nil, status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", tc.GetTaskId(), err)
-		}
-		return t, nil
-	}
-
-	if stc := msg.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
-			return nil, err
-		}
-		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
-		if err != nil {
-			slog.ErrorContext(ctx, "reverse shell failed: could not load associated shell task", "shell_task_id", stc.GetShellTaskId(), "error", err)
-			return nil, status.Errorf(codes.Internal, "failed to load shell task ent (shell_task_id=%d): %v", stc.GetShellTaskId(), err)
-		}
-		s, err := st.QueryShell().Only(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "reverse shell failed: could not load associated shell", "shell_task_id", stc.GetShellTaskId(), "error", err)
-			return nil, status.Errorf(codes.Internal, "failed to load shell ent (shell_task_id=%d): %v", stc.GetShellTaskId(), err)
-		}
-		t, err := s.QueryTask().Only(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "reverse shell failed: could not load associated task from shell", "shell_id", s.ID, "error", err)
-			return nil, status.Errorf(codes.Internal, "failed to load task ent from shell (shell_id=%d): %v", s.ID, err)
-		}
-		return t, nil
-	}
-
-	return nil, status.Errorf(codes.InvalidArgument, "missing context")
-}
-
 func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	// Setup Context
 	ctx := gstream.Context()
@@ -75,12 +33,16 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	}
 
 	// Load Relevant Ents
-	task, err := srv.resolveTaskFromReverseShell(ctx, registerMsg)
+	taskID := registerMsg.GetContext().GetTaskId()
+	task, err := srv.graph.Task.Get(ctx, int(taskID))
 	if err != nil {
-		return err
+		if ent.IsNotFound(err) {
+			slog.ErrorContext(ctx, "reverse shell failed: associated task does not exist", "task_id", taskID, "error", err)
+			return status.Errorf(codes.NotFound, "task does not exist (task_id=%d)", taskID)
+		}
+		slog.ErrorContext(ctx, "reverse shell failed: could not load associated task", "task_id", taskID, "error", err)
+		return status.Errorf(codes.Internal, "failed to load task ent (task_id=%d): %v", taskID, err)
 	}
-
-	taskID := int64(task.ID)
 	beacon, err := task.Beacon(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "reverse shell failed: could not load associated beacon", "task_id", taskID, "error", err)

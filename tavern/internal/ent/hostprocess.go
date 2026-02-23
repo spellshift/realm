@@ -12,7 +12,6 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
-	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -45,12 +44,11 @@ type HostProcess struct {
 	Status epb.Process_Status `json:"status,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostProcessQuery when eager-loading is set.
-	Edges                         HostProcessEdges `json:"edges"`
-	host_processes                *int
-	host_process_host             *int
-	shell_task_reported_processes *int
-	task_reported_processes       *int
-	selectValues                  sql.SelectValues
+	Edges                   HostProcessEdges `json:"edges"`
+	host_processes          *int
+	host_process_host       *int
+	task_reported_processes *int
+	selectValues            sql.SelectValues
 }
 
 // HostProcessEdges holds the relations/edges for other nodes in the graph.
@@ -59,13 +57,11 @@ type HostProcessEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Task that reported this process.
 	Task *Task `json:"task,omitempty"`
-	// Shell Task that reported this process.
-	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [2]map[string]int
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -90,17 +86,6 @@ func (e HostProcessEdges) TaskOrErr() (*Task, error) {
 	return nil, &NotLoadedError{edge: "task"}
 }
 
-// ShellTaskOrErr returns the ShellTask value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e HostProcessEdges) ShellTaskOrErr() (*ShellTask, error) {
-	if e.ShellTask != nil {
-		return e.ShellTask, nil
-	} else if e.loadedTypes[2] {
-		return nil, &NotFoundError{label: shelltask.Label}
-	}
-	return nil, &NotLoadedError{edge: "shell_task"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
 func (*HostProcess) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -118,9 +103,7 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case hostprocess.ForeignKeys[1]: // host_process_host
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[2]: // shell_task_reported_processes
-			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[3]: // task_reported_processes
+		case hostprocess.ForeignKeys[2]: // task_reported_processes
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -225,13 +208,6 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 			}
 		case hostprocess.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_processes", value)
-			} else if value.Valid {
-				hp.shell_task_reported_processes = new(int)
-				*hp.shell_task_reported_processes = int(value.Int64)
-			}
-		case hostprocess.ForeignKeys[3]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_processes", value)
 			} else if value.Valid {
 				hp.task_reported_processes = new(int)
@@ -258,11 +234,6 @@ func (hp *HostProcess) QueryHost() *HostQuery {
 // QueryTask queries the "task" edge of the HostProcess entity.
 func (hp *HostProcess) QueryTask() *TaskQuery {
 	return NewHostProcessClient(hp.config).QueryTask(hp)
-}
-
-// QueryShellTask queries the "shell_task" edge of the HostProcess entity.
-func (hp *HostProcess) QueryShellTask() *ShellTaskQuery {
-	return NewHostProcessClient(hp.config).QueryShellTask(hp)
 }
 
 // Update returns a builder for updating this HostProcess.

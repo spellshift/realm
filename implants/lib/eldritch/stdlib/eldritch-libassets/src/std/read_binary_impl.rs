@@ -10,7 +10,7 @@ impl StdAssetsLibrary {
         };
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
-            if let Ok(file) = backend.get(name) {
+            if let Ok(file) = backend.get(&name) {
                 // Return immediately upon the first match
                 return Ok(file);
             }
@@ -95,23 +95,20 @@ pub mod tests {
         ) -> Result<c2::ReportProcessListResponse, String> {
             Ok(c2::ReportProcessListResponse::default())
         }
-        fn report_output(
+        fn report_task_output(
             &self,
-            _req: c2::ReportOutputRequest,
-        ) -> Result<c2::ReportOutputResponse, String> {
-            Ok(c2::ReportOutputResponse::default())
+            _req: c2::ReportTaskOutputRequest,
+        ) -> Result<c2::ReportTaskOutputResponse, String> {
+            Ok(c2::ReportTaskOutputResponse::default())
         }
         fn start_reverse_shell(
             &self,
-            _context: eldritch_agent::Context,
+            _task_context: TaskContext,
             _cmd: Option<String>,
         ) -> Result<(), String> {
             Ok(())
         }
-        fn start_repl_reverse_shell(
-            &self,
-            _context: eldritch_agent::Context,
-        ) -> Result<(), String> {
+        fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
             Ok(())
         }
         fn claim_tasks(
@@ -165,10 +162,7 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(
-            &self,
-            __context: eldritch_agent::Context,
-        ) -> std::result::Result<(), String> {
+        fn create_portal(&self, _task_context: TaskContext) -> std::result::Result<(), String> {
             Ok(())
         }
     }
@@ -202,10 +196,10 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            eldritch_agent::Context::Task(TaskContext {
+            TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            }),
+            },
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
@@ -220,10 +214,10 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            eldritch_agent::Context::Task(TaskContext {
+            TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            }),
+            },
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

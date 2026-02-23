@@ -168,8 +168,6 @@ pub struct ShellTask {
     pub sequence_id: u64,
     #[prost(string, tag = "5")]
     pub stream_id: ::prost::alloc::string::String,
-    #[prost(string, tag = "6")]
-    pub jwt: ::prost::alloc::string::String,
 }
 /// TaskError provides information when task execution fails.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
@@ -194,11 +192,6 @@ pub struct TaskOutput {
     pub exec_finished_at: ::core::option::Option<::prost_types::Timestamp>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ShellTaskError {
-    #[prost(string, tag = "1")]
-    pub msg: ::prost::alloc::string::String,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ShellTaskOutput {
     #[prost(int64, tag = "1")]
     pub id: i64,
@@ -221,13 +214,6 @@ pub struct TaskContext {
     #[prost(string, tag = "2")]
     pub jwt: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ShellTaskContext {
-    #[prost(int64, tag = "1")]
-    pub shell_task_id: i64,
-    #[prost(string, tag = "2")]
-    pub jwt: ::prost::alloc::string::String,
-}
 /// RPC Messages
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClaimTasksRequest {
@@ -243,20 +229,10 @@ pub struct ClaimTasksResponse {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FetchAssetRequest {
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
-    #[prost(oneof = "fetch_asset_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<fetch_asset_request::Context>,
-}
-/// Nested message and enum types in `FetchAssetRequest`.
-pub mod fetch_asset_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
+    #[prost(message, optional, tag = "2")]
+    pub context: ::core::option::Option<TaskContext>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FetchAssetResponse {
@@ -265,112 +241,50 @@ pub struct FetchAssetResponse {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportCredentialRequest {
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "2")]
     pub credential: ::core::option::Option<crate::eldritch::Credential>,
-    #[prost(oneof = "report_credential_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<report_credential_request::Context>,
-}
-/// Nested message and enum types in `ReportCredentialRequest`.
-pub mod report_credential_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportCredentialResponse {}
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportFileRequest {
-    #[prost(enumeration = "ReportFileKind", tag = "3")]
-    pub kind: i32,
-    #[prost(message, optional, tag = "4")]
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "2")]
     pub chunk: ::core::option::Option<crate::eldritch::File>,
-    #[prost(oneof = "report_file_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<report_file_request::Context>,
-}
-/// Nested message and enum types in `ReportFileRequest`.
-pub mod report_file_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportFileResponse {}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReportProcessListRequest {
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "2")]
     pub list: ::core::option::Option<crate::eldritch::ProcessList>,
-    #[prost(oneof = "report_process_list_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<report_process_list_request::Context>,
-}
-/// Nested message and enum types in `ReportProcessListRequest`.
-pub mod report_process_list_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportProcessListResponse {}
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReportTaskOutputMessage {
+pub struct ReportTaskOutputRequest {
     #[prost(message, optional, tag = "1")]
-    pub context: ::core::option::Option<TaskContext>,
-    #[prost(message, optional, tag = "2")]
     pub output: ::core::option::Option<TaskOutput>,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReportShellTaskOutputMessage {
-    #[prost(message, optional, tag = "1")]
-    pub context: ::core::option::Option<ShellTaskContext>,
     #[prost(message, optional, tag = "2")]
-    pub output: ::core::option::Option<ShellTaskOutput>,
-}
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReportOutputRequest {
-    #[prost(oneof = "report_output_request::Message", tags = "1, 2")]
-    pub message: ::core::option::Option<report_output_request::Message>,
-}
-/// Nested message and enum types in `ReportOutputRequest`.
-pub mod report_output_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Message {
-        #[prost(message, tag = "1")]
-        TaskOutput(super::ReportTaskOutputMessage),
-        #[prost(message, tag = "2")]
-        ShellTaskOutput(super::ReportShellTaskOutputMessage),
-    }
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "3")]
+    pub shell_task_output: ::core::option::Option<ShellTaskOutput>,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
-pub struct ReportOutputResponse {}
+pub struct ReportTaskOutputResponse {}
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReverseShellRequest {
-    #[prost(enumeration = "ReverseShellMessageKind", tag = "3")]
+    #[prost(enumeration = "ReverseShellMessageKind", tag = "1")]
     pub kind: i32,
-    #[prost(bytes = "vec", tag = "4")]
+    #[prost(bytes = "vec", tag = "2")]
     pub data: ::prost::alloc::vec::Vec<u8>,
-    #[prost(oneof = "reverse_shell_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<reverse_shell_request::Context>,
-}
-/// Nested message and enum types in `ReverseShellRequest`.
-pub mod reverse_shell_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
+    #[prost(message, optional, tag = "3")]
+    pub context: ::core::option::Option<TaskContext>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReverseShellResponse {
@@ -381,54 +295,15 @@ pub struct ReverseShellResponse {
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CreatePortalRequest {
-    #[prost(message, optional, tag = "3")]
+    #[prost(message, optional, tag = "1")]
+    pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "2")]
     pub mote: ::core::option::Option<super::portal::Mote>,
-    #[prost(oneof = "create_portal_request::Context", tags = "1, 2")]
-    pub context: ::core::option::Option<create_portal_request::Context>,
-}
-/// Nested message and enum types in `CreatePortalRequest`.
-pub mod create_portal_request {
-    #[derive(Clone, PartialEq, Eq, Hash, ::prost::Oneof)]
-    pub enum Context {
-        #[prost(message, tag = "1")]
-        TaskContext(super::TaskContext),
-        #[prost(message, tag = "2")]
-        ShellTaskContext(super::ShellTaskContext),
-    }
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct CreatePortalResponse {
-    #[prost(message, optional, tag = "1")]
+    #[prost(message, optional, tag = "2")]
     pub mote: ::core::option::Option<super::portal::Mote>,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
-#[repr(i32)]
-pub enum ReportFileKind {
-    Unspecified = 0,
-    Ondisk = 1,
-    Screenshot = 2,
-}
-impl ReportFileKind {
-    /// String value of the enum field names used in the ProtoBuf definition.
-    ///
-    /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
-    pub fn as_str_name(&self) -> &'static str {
-        match self {
-            Self::Unspecified => "REPORT_FILE_KIND_UNSPECIFIED",
-            Self::Ondisk => "REPORT_FILE_KIND_ONDISK",
-            Self::Screenshot => "REPORT_FILE_KIND_SCREENSHOT",
-        }
-    }
-    /// Creates an enum from field names used in the ProtoBuf definition.
-    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
-        match value {
-            "REPORT_FILE_KIND_UNSPECIFIED" => Some(Self::Unspecified),
-            "REPORT_FILE_KIND_ONDISK" => Some(Self::Ondisk),
-            "REPORT_FILE_KIND_SCREENSHOT" => Some(Self::Screenshot),
-            _ => None,
-        }
-    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -675,12 +550,12 @@ pub mod c2_client {
             req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportProcessList"));
             self.inner.unary(req, path, codec).await
         }
-        /// Report execution output.
-        pub async fn report_output(
+        /// Report execution output for a task.
+        pub async fn report_task_output(
             &mut self,
-            request: impl tonic::IntoRequest<super::ReportOutputRequest>,
+            request: impl tonic::IntoRequest<super::ReportTaskOutputRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::ReportOutputResponse>,
+            tonic::Response<super::ReportTaskOutputResponse>,
             tonic::Status,
         > {
             self.inner
@@ -692,9 +567,9 @@ pub mod c2_client {
                     )
                 })?;
             let codec = crate::xchacha::ChachaCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportOutput");
+            let path = http::uri::PathAndQuery::from_static("/c2.C2/ReportTaskOutput");
             let mut req = request.into_request();
-            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportOutput"));
+            req.extensions_mut().insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
             self.inner.unary(req, path, codec).await
         }
         /// Open a reverse shell bi-directional stream.

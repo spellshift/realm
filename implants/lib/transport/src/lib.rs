@@ -168,19 +168,19 @@ impl Transport for ActiveTransport {
         }
     }
 
-    async fn report_output(
+    async fn report_task_output(
         &mut self,
-        request: ReportOutputRequest,
-    ) -> Result<ReportOutputResponse> {
+        request: ReportTaskOutputRequest,
+    ) -> Result<ReportTaskOutputResponse> {
         match self {
             #[cfg(feature = "grpc")]
-            Self::Grpc(t) => t.report_output(request).await,
+            Self::Grpc(t) => t.report_task_output(request).await,
             #[cfg(feature = "http1")]
-            Self::Http(t) => t.report_output(request).await,
+            Self::Http(t) => t.report_task_output(request).await,
             #[cfg(feature = "dns")]
-            Self::Dns(t) => t.report_output(request).await,
+            Self::Dns(t) => t.report_task_output(request).await,
             #[cfg(feature = "mock")]
-            Self::Mock(t) => t.report_output(request).await,
+            Self::Mock(t) => t.report_task_output(request).await,
             Self::Empty => Err(anyhow!("Transport not initialized")),
         }
     }

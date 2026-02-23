@@ -37,10 +37,10 @@ mock! {
             request: ReportProcessListRequest,
         ) -> Result<ReportProcessListResponse>;
 
-        async fn report_output(
+        async fn report_task_output(
             &mut self,
-            request: ReportOutputRequest,
-        ) -> Result<ReportOutputResponse>;
+            request: ReportTaskOutputRequest,
+        ) -> Result<ReportTaskOutputResponse>;
 
         async fn reverse_shell(
             &mut self,

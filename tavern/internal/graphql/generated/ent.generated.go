@@ -4765,69 +4765,6 @@ func (ec *executionContext) fieldContext_HostCredential_task(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _HostCredential_shellTask(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredential) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_HostCredential_shellTask,
-		func(ctx context.Context) (any, error) {
-			return obj.ShellTask(ctx)
-		},
-		nil,
-		ec.marshalOShellTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTask,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_HostCredential_shellTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HostCredential",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ShellTask_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_ShellTask_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_ShellTask_lastModifiedAt(ctx, field)
-			case "input":
-				return ec.fieldContext_ShellTask_input(ctx, field)
-			case "output":
-				return ec.fieldContext_ShellTask_output(ctx, field)
-			case "error":
-				return ec.fieldContext_ShellTask_error(ctx, field)
-			case "streamID":
-				return ec.fieldContext_ShellTask_streamID(ctx, field)
-			case "sequenceID":
-				return ec.fieldContext_ShellTask_sequenceID(ctx, field)
-			case "claimedAt":
-				return ec.fieldContext_ShellTask_claimedAt(ctx, field)
-			case "execStartedAt":
-				return ec.fieldContext_ShellTask_execStartedAt(ctx, field)
-			case "execFinishedAt":
-				return ec.fieldContext_ShellTask_execFinishedAt(ctx, field)
-			case "shell":
-				return ec.fieldContext_ShellTask_shell(ctx, field)
-			case "creator":
-				return ec.fieldContext_ShellTask_creator(ctx, field)
-			case "reportedCredentials":
-				return ec.fieldContext_ShellTask_reportedCredentials(ctx, field)
-			case "reportedFiles":
-				return ec.fieldContext_ShellTask_reportedFiles(ctx, field)
-			case "reportedProcesses":
-				return ec.fieldContext_ShellTask_reportedProcesses(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ShellTask", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _HostCredentialConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostCredentialConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4971,8 +4908,6 @@ func (ec *executionContext) fieldContext_HostCredentialEdge_node(_ context.Conte
 				return ec.fieldContext_HostCredential_host(ctx, field)
 			case "task":
 				return ec.fieldContext_HostCredential_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostCredential_shellTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
 		},
@@ -5431,9 +5366,9 @@ func (ec *executionContext) _HostFile_task(ctx context.Context, field graphql.Co
 			return obj.Task(ctx)
 		},
 		nil,
-		ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
 		true,
-		false,
+		true,
 	)
 }
 
@@ -5477,69 +5412,6 @@ func (ec *executionContext) fieldContext_HostFile_task(_ context.Context, field 
 				return ec.fieldContext_Task_shells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HostFile_shellTask(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_HostFile_shellTask,
-		func(ctx context.Context) (any, error) {
-			return obj.ShellTask(ctx)
-		},
-		nil,
-		ec.marshalOShellTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTask,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_HostFile_shellTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HostFile",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ShellTask_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_ShellTask_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_ShellTask_lastModifiedAt(ctx, field)
-			case "input":
-				return ec.fieldContext_ShellTask_input(ctx, field)
-			case "output":
-				return ec.fieldContext_ShellTask_output(ctx, field)
-			case "error":
-				return ec.fieldContext_ShellTask_error(ctx, field)
-			case "streamID":
-				return ec.fieldContext_ShellTask_streamID(ctx, field)
-			case "sequenceID":
-				return ec.fieldContext_ShellTask_sequenceID(ctx, field)
-			case "claimedAt":
-				return ec.fieldContext_ShellTask_claimedAt(ctx, field)
-			case "execStartedAt":
-				return ec.fieldContext_ShellTask_execStartedAt(ctx, field)
-			case "execFinishedAt":
-				return ec.fieldContext_ShellTask_execFinishedAt(ctx, field)
-			case "shell":
-				return ec.fieldContext_ShellTask_shell(ctx, field)
-			case "creator":
-				return ec.fieldContext_ShellTask_creator(ctx, field)
-			case "reportedCredentials":
-				return ec.fieldContext_ShellTask_reportedCredentials(ctx, field)
-			case "reportedFiles":
-				return ec.fieldContext_ShellTask_reportedFiles(ctx, field)
-			case "reportedProcesses":
-				return ec.fieldContext_ShellTask_reportedProcesses(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ShellTask", field.Name)
 		},
 	}
 	return fc, nil
@@ -5694,8 +5566,6 @@ func (ec *executionContext) fieldContext_HostFileEdge_node(_ context.Context, fi
 				return ec.fieldContext_HostFile_host(ctx, field)
 			case "task":
 				return ec.fieldContext_HostFile_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostFile_shellTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostFile", field.Name)
 		},
@@ -6151,9 +6021,9 @@ func (ec *executionContext) _HostProcess_task(ctx context.Context, field graphql
 			return obj.Task(ctx)
 		},
 		nil,
-		ec.marshalOTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
+		ec.marshalNTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTask,
 		true,
-		false,
+		true,
 	)
 }
 
@@ -6197,69 +6067,6 @@ func (ec *executionContext) fieldContext_HostProcess_task(_ context.Context, fie
 				return ec.fieldContext_Task_shells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Task", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _HostProcess_shellTask(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_HostProcess_shellTask,
-		func(ctx context.Context) (any, error) {
-			return obj.ShellTask(ctx)
-		},
-		nil,
-		ec.marshalOShellTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTask,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_HostProcess_shellTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "HostProcess",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ShellTask_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_ShellTask_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_ShellTask_lastModifiedAt(ctx, field)
-			case "input":
-				return ec.fieldContext_ShellTask_input(ctx, field)
-			case "output":
-				return ec.fieldContext_ShellTask_output(ctx, field)
-			case "error":
-				return ec.fieldContext_ShellTask_error(ctx, field)
-			case "streamID":
-				return ec.fieldContext_ShellTask_streamID(ctx, field)
-			case "sequenceID":
-				return ec.fieldContext_ShellTask_sequenceID(ctx, field)
-			case "claimedAt":
-				return ec.fieldContext_ShellTask_claimedAt(ctx, field)
-			case "execStartedAt":
-				return ec.fieldContext_ShellTask_execStartedAt(ctx, field)
-			case "execFinishedAt":
-				return ec.fieldContext_ShellTask_execFinishedAt(ctx, field)
-			case "shell":
-				return ec.fieldContext_ShellTask_shell(ctx, field)
-			case "creator":
-				return ec.fieldContext_ShellTask_creator(ctx, field)
-			case "reportedCredentials":
-				return ec.fieldContext_ShellTask_reportedCredentials(ctx, field)
-			case "reportedFiles":
-				return ec.fieldContext_ShellTask_reportedFiles(ctx, field)
-			case "reportedProcesses":
-				return ec.fieldContext_ShellTask_reportedProcesses(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ShellTask", field.Name)
 		},
 	}
 	return fc, nil
@@ -6420,8 +6227,6 @@ func (ec *executionContext) fieldContext_HostProcessEdge_node(_ context.Context,
 				return ec.fieldContext_HostProcess_host(ctx, field)
 			case "task":
 				return ec.fieldContext_HostProcess_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostProcess_shellTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostProcess", field.Name)
 		},
@@ -10734,171 +10539,6 @@ func (ec *executionContext) fieldContext_ShellTask_creator(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _ShellTask_reportedCredentials(ctx context.Context, field graphql.CollectedField, obj *ent.ShellTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ShellTask_reportedCredentials,
-		func(ctx context.Context) (any, error) {
-			return obj.ReportedCredentials(ctx)
-		},
-		nil,
-		ec.marshalOHostCredential2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ShellTask_reportedCredentials(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShellTask",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_HostCredential_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_HostCredential_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_HostCredential_lastModifiedAt(ctx, field)
-			case "principal":
-				return ec.fieldContext_HostCredential_principal(ctx, field)
-			case "secret":
-				return ec.fieldContext_HostCredential_secret(ctx, field)
-			case "kind":
-				return ec.fieldContext_HostCredential_kind(ctx, field)
-			case "host":
-				return ec.fieldContext_HostCredential_host(ctx, field)
-			case "task":
-				return ec.fieldContext_HostCredential_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostCredential_shellTask(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type HostCredential", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ShellTask_reportedFiles(ctx context.Context, field graphql.CollectedField, obj *ent.ShellTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ShellTask_reportedFiles,
-		func(ctx context.Context) (any, error) {
-			return obj.ReportedFiles(ctx)
-		},
-		nil,
-		ec.marshalOHostFile2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ShellTask_reportedFiles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShellTask",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_HostFile_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_HostFile_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_HostFile_lastModifiedAt(ctx, field)
-			case "path":
-				return ec.fieldContext_HostFile_path(ctx, field)
-			case "owner":
-				return ec.fieldContext_HostFile_owner(ctx, field)
-			case "group":
-				return ec.fieldContext_HostFile_group(ctx, field)
-			case "permissions":
-				return ec.fieldContext_HostFile_permissions(ctx, field)
-			case "size":
-				return ec.fieldContext_HostFile_size(ctx, field)
-			case "hash":
-				return ec.fieldContext_HostFile_hash(ctx, field)
-			case "host":
-				return ec.fieldContext_HostFile_host(ctx, field)
-			case "task":
-				return ec.fieldContext_HostFile_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostFile_shellTask(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type HostFile", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ShellTask_reportedProcesses(ctx context.Context, field graphql.CollectedField, obj *ent.ShellTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ShellTask_reportedProcesses,
-		func(ctx context.Context) (any, error) {
-			return obj.ReportedProcesses(ctx)
-		},
-		nil,
-		ec.marshalOHostProcess2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ShellTask_reportedProcesses(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ShellTask",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_HostProcess_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_HostProcess_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_HostProcess_lastModifiedAt(ctx, field)
-			case "pid":
-				return ec.fieldContext_HostProcess_pid(ctx, field)
-			case "ppid":
-				return ec.fieldContext_HostProcess_ppid(ctx, field)
-			case "name":
-				return ec.fieldContext_HostProcess_name(ctx, field)
-			case "principal":
-				return ec.fieldContext_HostProcess_principal(ctx, field)
-			case "path":
-				return ec.fieldContext_HostProcess_path(ctx, field)
-			case "cmd":
-				return ec.fieldContext_HostProcess_cmd(ctx, field)
-			case "env":
-				return ec.fieldContext_HostProcess_env(ctx, field)
-			case "cwd":
-				return ec.fieldContext_HostProcess_cwd(ctx, field)
-			case "status":
-				return ec.fieldContext_HostProcess_status(ctx, field)
-			case "host":
-				return ec.fieldContext_HostProcess_host(ctx, field)
-			case "task":
-				return ec.fieldContext_HostProcess_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_HostProcess_shellTask(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type HostProcess", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _ShellTaskConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.ShellTaskConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11052,12 +10692,6 @@ func (ec *executionContext) fieldContext_ShellTaskEdge_node(_ context.Context, f
 				return ec.fieldContext_ShellTask_shell(ctx, field)
 			case "creator":
 				return ec.fieldContext_ShellTask_creator(ctx, field)
-			case "reportedCredentials":
-				return ec.fieldContext_ShellTask_reportedCredentials(ctx, field)
-			case "reportedFiles":
-				return ec.fieldContext_ShellTask_reportedFiles(ctx, field)
-			case "reportedProcesses":
-				return ec.fieldContext_ShellTask_reportedProcesses(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ShellTask", field.Name)
 		},
@@ -16571,7 +16205,7 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"principal", "secret", "kind", "hostID", "taskID", "shellTaskID"}
+	fieldsInOrder := [...]string{"principal", "secret", "kind", "hostID", "taskID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -16613,13 +16247,6 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 				return it, err
 			}
 			it.TaskID = data
-		case "shellTaskID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("shellTaskID"))
-			data, err := ec.unmarshalOID2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.ShellTaskID = data
 		}
 	}
 
@@ -16966,7 +16593,7 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "secret", "secretNEQ", "secretIn", "secretNotIn", "secretGT", "secretGTE", "secretLT", "secretLTE", "secretContains", "secretHasPrefix", "secretHasSuffix", "secretEqualFold", "secretContainsFold", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -17400,20 +17027,6 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 				return it, err
 			}
 			it.HasTaskWith = data
-		case "hasShellTask":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTask"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTask = data
-		case "hasShellTaskWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTaskWith"))
-			data, err := ec.unmarshalOShellTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTaskWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTaskWith = data
 		}
 	}
 
@@ -17465,7 +17078,7 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18256,20 +17869,6 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 				return it, err
 			}
 			it.HasTaskWith = data
-		case "hasShellTask":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTask"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTask = data
-		case "hasShellTaskWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTaskWith"))
-			data, err := ec.unmarshalOShellTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTaskWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTaskWith = data
 		}
 	}
 
@@ -18359,7 +17958,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -19325,20 +18924,6 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasTaskWith = data
-		case "hasShellTask":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTask"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTask = data
-		case "hasShellTaskWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellTaskWith"))
-			data, err := ec.unmarshalOShellTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTaskWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasShellTaskWith = data
 		}
 	}
 
@@ -22438,7 +22023,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "input", "inputNEQ", "inputIn", "inputNotIn", "inputGT", "inputGTE", "inputLT", "inputLTE", "inputContains", "inputHasPrefix", "inputHasSuffix", "inputEqualFold", "inputContainsFold", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "sequenceID", "sequenceIDNEQ", "sequenceIDIn", "sequenceIDNotIn", "sequenceIDGT", "sequenceIDGTE", "sequenceIDLT", "sequenceIDLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "hasShell", "hasShellWith", "hasCreator", "hasCreatorWith", "hasReportedCredentials", "hasReportedCredentialsWith", "hasReportedFiles", "hasReportedFilesWith", "hasReportedProcesses", "hasReportedProcessesWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "input", "inputNEQ", "inputIn", "inputNotIn", "inputGT", "inputGTE", "inputLT", "inputLTE", "inputContains", "inputHasPrefix", "inputHasSuffix", "inputEqualFold", "inputContainsFold", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "streamID", "streamIDNEQ", "streamIDIn", "streamIDNotIn", "streamIDGT", "streamIDGTE", "streamIDLT", "streamIDLTE", "streamIDContains", "streamIDHasPrefix", "streamIDHasSuffix", "streamIDEqualFold", "streamIDContainsFold", "sequenceID", "sequenceIDNEQ", "sequenceIDIn", "sequenceIDNotIn", "sequenceIDGT", "sequenceIDGTE", "sequenceIDLT", "sequenceIDLTE", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "execStartedAt", "execStartedAtNEQ", "execStartedAtIn", "execStartedAtNotIn", "execStartedAtGT", "execStartedAtGTE", "execStartedAtLT", "execStartedAtLTE", "execStartedAtIsNil", "execStartedAtNotNil", "execFinishedAt", "execFinishedAtNEQ", "execFinishedAtIn", "execFinishedAtNotIn", "execFinishedAtGT", "execFinishedAtGTE", "execFinishedAtLT", "execFinishedAtLTE", "execFinishedAtIsNil", "execFinishedAtNotNil", "hasShell", "hasShellWith", "hasCreator", "hasCreatorWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -23336,48 +22921,6 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.HasCreatorWith = data
-		case "hasReportedCredentials":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedCredentials"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedCredentials = data
-		case "hasReportedCredentialsWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedCredentialsWith"))
-			data, err := ec.unmarshalOHostCredentialWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedCredentialsWith = data
-		case "hasReportedFiles":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedFiles"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedFiles = data
-		case "hasReportedFilesWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedFilesWith"))
-			data, err := ec.unmarshalOHostFileWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedFilesWith = data
-		case "hasReportedProcesses":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedProcesses"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedProcesses = data
-		case "hasReportedProcessesWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasReportedProcessesWith"))
-			data, err := ec.unmarshalOHostProcessWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasReportedProcessesWith = data
 		}
 	}
 
@@ -28173,39 +27716,6 @@ func (ec *executionContext) _HostCredential(ctx context.Context, sel ast.Selecti
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "shellTask":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._HostCredential_shellTask(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28440,46 +27950,16 @@ func (ec *executionContext) _HostFile(ctx context.Context, sel ast.SelectionSet,
 		case "task":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._HostFile_task(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "shellTask":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._HostFile_shellTask(ctx, field, obj)
 				return res
 			}
 
@@ -28711,46 +28191,16 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 		case "task":
 			field := field
 
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._HostProcess_task(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "shellTask":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._HostProcess_shellTask(ctx, field, obj)
 				return res
 			}
 
@@ -30839,105 +30289,6 @@ func (ec *executionContext) _ShellTask(ctx context.Context, sel ast.SelectionSet
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "reportedCredentials":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ShellTask_reportedCredentials(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "reportedFiles":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ShellTask_reportedFiles(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "reportedProcesses":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ShellTask_reportedProcesses(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -32496,16 +31847,6 @@ func (ec *executionContext) unmarshalNHostCredentialWhereInput2ᚖrealmᚗpubᚋ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx context.Context, sel ast.SelectionSet, v *ent.HostFile) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._HostFile(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNHostFileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostFileConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -32630,16 +31971,6 @@ func (ec *executionContext) marshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinter
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalNHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcess) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._HostProcess(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNHostProcessConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessConnection(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcessConnection) graphql.Marshaler {
@@ -33892,53 +33223,6 @@ func (ec *executionContext) marshalOHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋen
 	return ec._Host(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOHostCredential2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.HostCredential) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalOHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx context.Context, sel ast.SelectionSet, v *ent.HostCredential) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -34167,53 +33451,6 @@ func (ec *executionContext) marshalOHostEdge2ᚖrealmᚗpubᚋtavernᚋinternal�
 	return ec._HostEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOHostFile2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.HostFile) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalOHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx context.Context, sel ast.SelectionSet, v *ent.HostFile) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -34410,53 +33647,6 @@ func (ec *executionContext) marshalOHostPlatform2ᚖrealmᚗpubᚋtavernᚋinter
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOHostProcess2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.HostProcess) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalOHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx context.Context, sel ast.SelectionSet, v *ent.HostProcess) graphql.Marshaler {

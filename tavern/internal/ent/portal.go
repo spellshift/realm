@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
-	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -29,21 +28,18 @@ type Portal struct {
 	ClosedAt time.Time `json:"closed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PortalQuery when eager-loading is set.
-	Edges             PortalEdges `json:"edges"`
-	portal_task       *int
-	portal_shell_task *int
-	portal_beacon     *int
-	portal_owner      *int
-	shell_portals     *int
-	selectValues      sql.SelectValues
+	Edges         PortalEdges `json:"edges"`
+	portal_task   *int
+	portal_beacon *int
+	portal_owner  *int
+	shell_portals *int
+	selectValues  sql.SelectValues
 }
 
 // PortalEdges holds the relations/edges for other nodes in the graph.
 type PortalEdges struct {
 	// Task that created the portal
 	Task *Task `json:"task,omitempty"`
-	// ShellTask that created the portal
-	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// Beacon that created the portal
 	Beacon *Beacon `json:"beacon,omitempty"`
 	// User that created the portal
@@ -52,9 +48,9 @@ type PortalEdges struct {
 	ActiveUsers []*User `json:"active_users,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [4]map[string]int
 
 	namedActiveUsers map[string][]*User
 }
@@ -70,23 +66,12 @@ func (e PortalEdges) TaskOrErr() (*Task, error) {
 	return nil, &NotLoadedError{edge: "task"}
 }
 
-// ShellTaskOrErr returns the ShellTask value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e PortalEdges) ShellTaskOrErr() (*ShellTask, error) {
-	if e.ShellTask != nil {
-		return e.ShellTask, nil
-	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: shelltask.Label}
-	}
-	return nil, &NotLoadedError{edge: "shell_task"}
-}
-
 // BeaconOrErr returns the Beacon value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e PortalEdges) BeaconOrErr() (*Beacon, error) {
 	if e.Beacon != nil {
 		return e.Beacon, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: beacon.Label}
 	}
 	return nil, &NotLoadedError{edge: "beacon"}
@@ -97,7 +82,7 @@ func (e PortalEdges) BeaconOrErr() (*Beacon, error) {
 func (e PortalEdges) OwnerOrErr() (*User, error) {
 	if e.Owner != nil {
 		return e.Owner, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "owner"}
@@ -106,7 +91,7 @@ func (e PortalEdges) OwnerOrErr() (*User, error) {
 // ActiveUsersOrErr returns the ActiveUsers value or an error if the edge
 // was not loaded in eager-loading.
 func (e PortalEdges) ActiveUsersOrErr() ([]*User, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		return e.ActiveUsers, nil
 	}
 	return nil, &NotLoadedError{edge: "active_users"}
@@ -123,13 +108,11 @@ func (*Portal) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case portal.ForeignKeys[0]: // portal_task
 			values[i] = new(sql.NullInt64)
-		case portal.ForeignKeys[1]: // portal_shell_task
+		case portal.ForeignKeys[1]: // portal_beacon
 			values[i] = new(sql.NullInt64)
-		case portal.ForeignKeys[2]: // portal_beacon
+		case portal.ForeignKeys[2]: // portal_owner
 			values[i] = new(sql.NullInt64)
-		case portal.ForeignKeys[3]: // portal_owner
-			values[i] = new(sql.NullInt64)
-		case portal.ForeignKeys[4]: // shell_portals
+		case portal.ForeignKeys[3]: // shell_portals
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -179,26 +162,19 @@ func (po *Portal) assignValues(columns []string, values []any) error {
 			}
 		case portal.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field portal_shell_task", value)
-			} else if value.Valid {
-				po.portal_shell_task = new(int)
-				*po.portal_shell_task = int(value.Int64)
-			}
-		case portal.ForeignKeys[2]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field portal_beacon", value)
 			} else if value.Valid {
 				po.portal_beacon = new(int)
 				*po.portal_beacon = int(value.Int64)
 			}
-		case portal.ForeignKeys[3]:
+		case portal.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field portal_owner", value)
 			} else if value.Valid {
 				po.portal_owner = new(int)
 				*po.portal_owner = int(value.Int64)
 			}
-		case portal.ForeignKeys[4]:
+		case portal.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_portals", value)
 			} else if value.Valid {
@@ -221,11 +197,6 @@ func (po *Portal) Value(name string) (ent.Value, error) {
 // QueryTask queries the "task" edge of the Portal entity.
 func (po *Portal) QueryTask() *TaskQuery {
 	return NewPortalClient(po.config).QueryTask(po)
-}
-
-// QueryShellTask queries the "shell_task" edge of the Portal entity.
-func (po *Portal) QueryShellTask() *ShellTaskQuery {
-	return NewPortalClient(po.config).QueryShellTask(po)
 }
 
 // QueryBeacon queries the "beacon" edge of the Portal entity.

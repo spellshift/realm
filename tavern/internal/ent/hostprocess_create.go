@@ -14,7 +14,6 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
-	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -157,36 +156,9 @@ func (hpc *HostProcessCreate) SetTaskID(id int) *HostProcessCreate {
 	return hpc
 }
 
-// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableTaskID(id *int) *HostProcessCreate {
-	if id != nil {
-		hpc = hpc.SetTaskID(*id)
-	}
-	return hpc
-}
-
 // SetTask sets the "task" edge to the Task entity.
 func (hpc *HostProcessCreate) SetTask(t *Task) *HostProcessCreate {
 	return hpc.SetTaskID(t.ID)
-}
-
-// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
-func (hpc *HostProcessCreate) SetShellTaskID(id int) *HostProcessCreate {
-	hpc.mutation.SetShellTaskID(id)
-	return hpc
-}
-
-// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableShellTaskID(id *int) *HostProcessCreate {
-	if id != nil {
-		hpc = hpc.SetShellTaskID(*id)
-	}
-	return hpc
-}
-
-// SetShellTask sets the "shell_task" edge to the ShellTask entity.
-func (hpc *HostProcessCreate) SetShellTask(s *ShellTask) *HostProcessCreate {
-	return hpc.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -269,6 +241,9 @@ func (hpc *HostProcessCreate) check() error {
 	}
 	if len(hpc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostProcess.host"`)}
+	}
+	if len(hpc.mutation.TaskIDs()) == 0 {
+		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostProcess.task"`)}
 	}
 	return nil
 }
@@ -373,23 +348,6 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_reported_processes = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := hpc.mutation.ShellTaskIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   hostprocess.ShellTaskTable,
-			Columns: []string{hostprocess.ShellTaskColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.shell_task_reported_processes = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

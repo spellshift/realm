@@ -1,6 +1,6 @@
 use crate::shell::manager::ShellManagerMessage;
 use anyhow::Result;
-use eldritch_agent::Context;
+use pb::c2::TaskContext;
 use tokio::sync::mpsc;
 use transport::Transport;
 
@@ -10,9 +10,9 @@ pub mod tcp;
 pub mod udp;
 
 pub async fn run_create_portal<T: Transport + Send + Sync + 'static>(
-    context: Context,
+    task_context: TaskContext,
     transport: T,
     shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
-    run::run(context, transport, shell_manager_tx).await
+    run::run(task_context, transport, shell_manager_tx).await
 }

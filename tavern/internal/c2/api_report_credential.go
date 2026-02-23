@@ -10,62 +10,42 @@ import (
 )
 
 func (srv *Server) ReportCredential(ctx context.Context, req *c2pb.ReportCredentialRequest) (*c2pb.ReportCredentialResponse, error) {
+	// Validate Arguments
+	if req.GetContext().GetTaskId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+	}
 	if req.Credential == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide credential")
 	}
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	if err != nil {
+		return nil, err
+	}
 
-	var host *ent.Host
-	var task *ent.Task
-	var shellTask *ent.ShellTask
+	// Load Task
+	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
+	if ent.IsNotFound(err) {
+		return nil, status.Errorf(codes.NotFound, "no task found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load task")
+	}
 
-	if tc := req.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
-			return nil, err
-		}
-		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
-		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "task not found: %v", err)
-		}
-		task = t
-		h, err := t.QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to load host from task: %v", err)
-		}
-		host = h
-	} else if stc := req.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
-			return nil, err
-		}
-		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
-		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "shell task not found: %v", err)
-		}
-		shellTask = st
-		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to load host from shell task: %v", err)
-		}
-		host = h
-	} else {
-		return nil, status.Errorf(codes.InvalidArgument, "missing context")
+	// Load Host
+	host, err := task.QueryBeacon().QueryHost().Only(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load host")
 	}
 
 	// Create Credential
-	builder := srv.graph.HostCredential.Create().
+	if _, err := srv.graph.HostCredential.Create().
 		SetHost(host).
+		SetTask(task).
 		SetPrincipal(req.Credential.Principal).
 		SetSecret(req.Credential.Secret).
-		SetKind(req.Credential.Kind)
-
-	if task != nil {
-		builder.SetTask(task)
-	}
-	if shellTask != nil {
-		builder.SetShellTask(shellTask)
-	}
-
-	if _, err := builder.Save(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to save credential: %v", err)
+		SetKind(req.Credential.Kind).
+		Save(ctx); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to save credential")
 	}
 
 	return &c2pb.ReportCredentialResponse{}, nil

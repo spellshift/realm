@@ -32,7 +32,7 @@ func BenchmarkMuxThroughput(b *testing.B) {
 
 	// Setup Portals
 	// Host Side
-	portalID, teardownCreate, err := m.CreatePortal(ctx, client, task.ID, 0)
+	portalID, teardownCreate, err := m.CreatePortal(ctx, client, task.ID)
 	require.NoError(b, err)
 	defer teardownCreate()
 

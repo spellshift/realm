@@ -1695,17 +1695,6 @@ func (hc *HostCredentialQuery) collectField(ctx context.Context, oneNode bool, o
 				return err
 			}
 			hc.withTask = query
-
-		case "shellTask":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&ShellTaskClient{config: hc.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
-				return err
-			}
-			hc.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostcredential.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostcredential.FieldCreatedAt)
@@ -1843,17 +1832,6 @@ func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 				return err
 			}
 			hf.withTask = query
-
-		case "shellTask":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&ShellTaskClient{config: hf.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
-				return err
-			}
-			hf.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostfile.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostfile.FieldCreatedAt)
@@ -2006,17 +1984,6 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 				return err
 			}
 			hp.withTask = query
-
-		case "shellTask":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&ShellTaskClient{config: hp.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
-				return err
-			}
-			hp.withShellTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)
@@ -2316,17 +2283,6 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			}
 			po.withTask = query
 
-		case "shellTask":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&ShellTaskClient{config: po.config}).Query()
-			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
-				return err
-			}
-			po.withShellTask = query
-
 		case "beacon":
 			var (
 				alias = field.Alias
@@ -2392,10 +2348,10 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[4] == nil {
-								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[4][alias] = n
+							nodes[i].Edges.totalCount[3][alias] = n
 						}
 						return nil
 					})
@@ -2403,10 +2359,10 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 					po.loadTotal = append(po.loadTotal, func(_ context.Context, nodes []*Portal) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ActiveUsers)
-							if nodes[i].Edges.totalCount[4] == nil {
-								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[4][alias] = n
+							nodes[i].Edges.totalCount[3][alias] = n
 						}
 						return nil
 					})
@@ -3354,45 +3310,6 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			st.withCreator = query
-
-		case "reportedCredentials":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&HostCredentialClient{config: st.config}).Query()
-			)
-			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, hostcredentialImplementors)...); err != nil {
-				return err
-			}
-			st.WithNamedReportedCredentials(alias, func(wq *HostCredentialQuery) {
-				*wq = *query
-			})
-
-		case "reportedFiles":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&HostFileClient{config: st.config}).Query()
-			)
-			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, hostfileImplementors)...); err != nil {
-				return err
-			}
-			st.WithNamedReportedFiles(alias, func(wq *HostFileQuery) {
-				*wq = *query
-			})
-
-		case "reportedProcesses":
-			var (
-				alias = field.Alias
-				path  = append(path, alias)
-				query = (&HostProcessClient{config: st.config}).Query()
-			)
-			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, hostprocessImplementors)...); err != nil {
-				return err
-			}
-			st.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
-				*wq = *query
-			})
 		case "createdAt":
 			if _, ok := fieldSeen[shelltask.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, shelltask.FieldCreatedAt)

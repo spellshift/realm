@@ -15,7 +15,6 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
-	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -28,7 +27,6 @@ type PortalQuery struct {
 	inters               []Interceptor
 	predicates           []predicate.Portal
 	withTask             *TaskQuery
-	withShellTask        *ShellTaskQuery
 	withBeacon           *BeaconQuery
 	withOwner            *UserQuery
 	withActiveUsers      *UserQuery
@@ -87,28 +85,6 @@ func (pq *PortalQuery) QueryTask() *TaskQuery {
 			sqlgraph.From(portal.Table, portal.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, portal.TaskTable, portal.TaskColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryShellTask chains the current query on the "shell_task" edge.
-func (pq *PortalQuery) QueryShellTask() *ShellTaskQuery {
-	query := (&ShellTaskClient{config: pq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := pq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := pq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(portal.Table, portal.FieldID, selector),
-			sqlgraph.To(shelltask.Table, shelltask.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, portal.ShellTaskTable, portal.ShellTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -375,7 +351,6 @@ func (pq *PortalQuery) Clone() *PortalQuery {
 		inters:          append([]Interceptor{}, pq.inters...),
 		predicates:      append([]predicate.Portal{}, pq.predicates...),
 		withTask:        pq.withTask.Clone(),
-		withShellTask:   pq.withShellTask.Clone(),
 		withBeacon:      pq.withBeacon.Clone(),
 		withOwner:       pq.withOwner.Clone(),
 		withActiveUsers: pq.withActiveUsers.Clone(),
@@ -393,17 +368,6 @@ func (pq *PortalQuery) WithTask(opts ...func(*TaskQuery)) *PortalQuery {
 		opt(query)
 	}
 	pq.withTask = query
-	return pq
-}
-
-// WithShellTask tells the query-builder to eager-load the nodes that are connected to
-// the "shell_task" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PortalQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *PortalQuery {
-	query := (&ShellTaskClient{config: pq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	pq.withShellTask = query
 	return pq
 }
 
@@ -519,15 +483,14 @@ func (pq *PortalQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Porta
 		nodes       = []*Portal{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
 			pq.withTask != nil,
-			pq.withShellTask != nil,
 			pq.withBeacon != nil,
 			pq.withOwner != nil,
 			pq.withActiveUsers != nil,
 		}
 	)
-	if pq.withTask != nil || pq.withShellTask != nil || pq.withBeacon != nil || pq.withOwner != nil {
+	if pq.withTask != nil || pq.withBeacon != nil || pq.withOwner != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -557,12 +520,6 @@ func (pq *PortalQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Porta
 	if query := pq.withTask; query != nil {
 		if err := pq.loadTask(ctx, query, nodes, nil,
 			func(n *Portal, e *Task) { n.Edges.Task = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := pq.withShellTask; query != nil {
-		if err := pq.loadShellTask(ctx, query, nodes, nil,
-			func(n *Portal, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -625,38 +582,6 @@ func (pq *PortalQuery) loadTask(ctx context.Context, query *TaskQuery, nodes []*
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "portal_task" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (pq *PortalQuery) loadShellTask(ctx context.Context, query *ShellTaskQuery, nodes []*Portal, init func(*Portal), assign func(*Portal, *ShellTask)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Portal)
-	for i := range nodes {
-		if nodes[i].portal_shell_task == nil {
-			continue
-		}
-		fk := *nodes[i].portal_shell_task
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(shelltask.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "portal_shell_task" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

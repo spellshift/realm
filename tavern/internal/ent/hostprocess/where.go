@@ -762,29 +762,6 @@ func HasTaskWith(preds ...predicate.Task) predicate.HostProcess {
 	})
 }
 
-// HasShellTask applies the HasEdge predicate on the "shell_task" edge.
-func HasShellTask() predicate.HostProcess {
-	return predicate.HostProcess(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasShellTaskWith applies the HasEdge predicate on the "shell_task" edge with a given conditions (other predicates).
-func HasShellTaskWith(preds ...predicate.ShellTask) predicate.HostProcess {
-	return predicate.HostProcess(func(s *sql.Selector) {
-		step := newShellTaskStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.HostProcess) predicate.HostProcess {
 	return predicate.HostProcess(sql.AndPredicates(predicates...))

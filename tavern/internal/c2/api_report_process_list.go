@@ -11,44 +11,31 @@ import (
 )
 
 func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProcessListRequest) (*c2pb.ReportProcessListResponse, error) {
+	// Validate Arguments
+	if req.GetContext().GetTaskId() == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "must provide task id")
+	}
 	if req.List == nil || len(req.List.List) < 1 {
 		return nil, status.Errorf(codes.InvalidArgument, "must provide process list")
 	}
+	err := srv.ValidateJWT(req.GetContext().GetJwt())
+	if err != nil {
+		return nil, err
+	}
 
-	var host *ent.Host
-	var task *ent.Task
-	var shellTask *ent.ShellTask
+	// Load Task
+	task, err := srv.graph.Task.Get(ctx, int(req.GetContext().GetTaskId()))
+	if ent.IsNotFound(err) {
+		return nil, status.Errorf(codes.NotFound, "no task found")
+	}
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load task")
+	}
 
-	if tc := req.GetTaskContext(); tc != nil {
-		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
-			return nil, err
-		}
-		t, err := srv.graph.Task.Get(ctx, int(tc.GetTaskId()))
-		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "task not found: %v", err)
-		}
-		task = t
-		h, err := t.QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to load host from task: %v", err)
-		}
-		host = h
-	} else if stc := req.GetShellTaskContext(); stc != nil {
-		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
-			return nil, err
-		}
-		st, err := srv.graph.ShellTask.Get(ctx, int(stc.GetShellTaskId()))
-		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "shell task not found: %v", err)
-		}
-		shellTask = st
-		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to load host from shell task: %v", err)
-		}
-		host = h
-	} else {
-		return nil, status.Errorf(codes.InvalidArgument, "missing context")
+	// Load Host
+	host, err := task.QueryBeacon().QueryHost().Only(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to load host")
 	}
 
 	// 	Prepare Transaction
@@ -69,25 +56,20 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 	// Create Processes
 	builders := make([]*ent.HostProcessCreate, 0, len(req.List.List))
 	for _, proc := range req.List.List {
-		builder := txGraph.HostProcess.Create().
-			SetHostID(host.ID).
-			SetPid(proc.Pid).
-			SetPpid(proc.Ppid).
-			SetName(proc.Name).
-			SetPrincipal(proc.Principal).
-			SetPath(proc.Path).
-			SetCmd(proc.Cmd).
-			SetEnv(proc.Env).
-			SetCwd(proc.Cwd).
-			SetStatus(proc.Status)
-
-		if task != nil {
-			builder.SetTaskID(task.ID)
-		}
-		if shellTask != nil {
-			builder.SetShellTaskID(shellTask.ID)
-		}
-		builders = append(builders, builder)
+		builders = append(builders,
+			txGraph.HostProcess.Create().
+				SetHostID(host.ID).
+				SetTaskID(task.ID).
+				SetPid(proc.Pid).
+				SetPpid(proc.Ppid).
+				SetName(proc.Name).
+				SetPrincipal(proc.Principal).
+				SetPath(proc.Path).
+				SetCmd(proc.Cmd).
+				SetEnv(proc.Env).
+				SetCwd(proc.Cwd).
+				SetStatus(proc.Status),
+		)
 	}
 	processList, err := txGraph.HostProcess.CreateBulk(builders...).Save(ctx)
 	if err != nil {

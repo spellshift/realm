@@ -3,7 +3,6 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -62,21 +61,6 @@ func (ShellTask) Edges() []ent.Edge {
 			Unique().
 			Required().
 			Comment("The user who created this ShellTask"),
-		edge.To("reported_credentials", HostCredential.Type).
-			Annotations(
-				entsql.OnDelete(entsql.Cascade),
-			).
-			Comment("Credentials reported by this shell task"),
-		edge.To("reported_files", HostFile.Type).
-			Annotations(
-				entsql.OnDelete(entsql.Cascade),
-			).
-			Comment("Files reported by this shell task"),
-		edge.To("reported_processes", HostProcess.Type).
-			Annotations(
-				entsql.OnDelete(entsql.Cascade),
-			).
-			Comment("Processes reported by this shell task"),
 	}
 }
 

@@ -12,7 +12,6 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
-	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -33,11 +32,10 @@ type HostCredential struct {
 	Kind epb.Credential_Kind `json:"kind,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostCredentialQuery when eager-loading is set.
-	Edges                           HostCredentialEdges `json:"edges"`
-	host_credential_host            *int
-	shell_task_reported_credentials *int
-	task_reported_credentials       *int
-	selectValues                    sql.SelectValues
+	Edges                     HostCredentialEdges `json:"edges"`
+	host_credential_host      *int
+	task_reported_credentials *int
+	selectValues              sql.SelectValues
 }
 
 // HostCredentialEdges holds the relations/edges for other nodes in the graph.
@@ -46,13 +44,11 @@ type HostCredentialEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Task that reported this credential.
 	Task *Task `json:"task,omitempty"`
-	// Shell Task that reported this credential.
-	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [2]map[string]int
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -77,17 +73,6 @@ func (e HostCredentialEdges) TaskOrErr() (*Task, error) {
 	return nil, &NotLoadedError{edge: "task"}
 }
 
-// ShellTaskOrErr returns the ShellTask value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e HostCredentialEdges) ShellTaskOrErr() (*ShellTask, error) {
-	if e.ShellTask != nil {
-		return e.ShellTask, nil
-	} else if e.loadedTypes[2] {
-		return nil, &NotFoundError{label: shelltask.Label}
-	}
-	return nil, &NotLoadedError{edge: "shell_task"}
-}
-
 // scanValues returns the types for scanning values from sql.Rows.
 func (*HostCredential) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -103,9 +88,7 @@ func (*HostCredential) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case hostcredential.ForeignKeys[0]: // host_credential_host
 			values[i] = new(sql.NullInt64)
-		case hostcredential.ForeignKeys[1]: // shell_task_reported_credentials
-			values[i] = new(sql.NullInt64)
-		case hostcredential.ForeignKeys[2]: // task_reported_credentials
+		case hostcredential.ForeignKeys[1]: // task_reported_credentials
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -167,13 +150,6 @@ func (hc *HostCredential) assignValues(columns []string, values []any) error {
 			}
 		case hostcredential.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_credentials", value)
-			} else if value.Valid {
-				hc.shell_task_reported_credentials = new(int)
-				*hc.shell_task_reported_credentials = int(value.Int64)
-			}
-		case hostcredential.ForeignKeys[2]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_credentials", value)
 			} else if value.Valid {
 				hc.task_reported_credentials = new(int)
@@ -200,11 +176,6 @@ func (hc *HostCredential) QueryHost() *HostQuery {
 // QueryTask queries the "task" edge of the HostCredential entity.
 func (hc *HostCredential) QueryTask() *TaskQuery {
 	return NewHostCredentialClient(hc.config).QueryTask(hc)
-}
-
-// QueryShellTask queries the "shell_task" edge of the HostCredential entity.
-func (hc *HostCredential) QueryShellTask() *ShellTaskQuery {
-	return NewHostCredentialClient(hc.config).QueryShellTask(hc)
 }
 
 // Update returns a builder for updating this HostCredential.
