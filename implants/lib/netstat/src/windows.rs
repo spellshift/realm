@@ -7,12 +7,12 @@ use std::ptr;
 use super::{ConnectionState, InterfaceEntry, NetstatEntry, SocketType};
 
 use windows_sys::Win32::Foundation::{
-    CloseHandle, ERROR_INSUFFICIENT_BUFFER, INVALID_HANDLE_VALUE, NO_ERROR,
+    CloseHandle, INVALID_HANDLE_VALUE, NO_ERROR,
 };
 use windows_sys::Win32::NetworkManagement::IpHelper::{
-    GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCP6TABLE_OWNER_PID,
-    MIB_TCPROW_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6ROW_OWNER_PID, MIB_UDP6TABLE_OWNER_PID,
-    MIB_UDPROW_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
+    GetExtendedTcpTable, GetExtendedUdpTable, GetAdaptersAddresses, IP_ADAPTER_ADDRESSES_LH,
+    MIB_TCP6TABLE_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6TABLE_OWNER_PID,
+    MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
 use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6, AF_UNSPEC};
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
@@ -372,10 +372,6 @@ fn get_process_name(pid: u32, process_map: &HashMap<u32, String>) -> Option<Stri
 }
 
 pub fn list_interfaces() -> Result<Vec<InterfaceEntry>> {
-    use windows_sys::Win32::NetworkManagement::IpHelper::{
-        GetAdaptersAddresses, IP_ADAPTER_ADDRESSES_LH, IP_ADAPTER_UNICAST_ADDRESS_LH,
-    };
-
     unsafe {
         let mut size: u32 = 0;
         let flags: u32 = 0;
@@ -573,5 +569,11 @@ mod tests {
 
         let interfaces = result.unwrap();
         assert!(!interfaces.is_empty(), "Should have at least one interface");
+    }
+
+    #[test]
+    fn print_interfaces() {
+        let result = list_interfaces();
+        println!("debug {:?}", result)
     }
 }
