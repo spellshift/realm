@@ -80,6 +80,7 @@ message ShellTask {
     int64 shell_id = 3;
     uint64 sequence_id = 4;
     string stream_id = 5;
+    string jwt = 6;
 }
 
 // TaskError provides information when task execution fails.
@@ -100,6 +101,10 @@ message TaskOutput {
     google.protobuf.Timestamp exec_finished_at = 5;
 }
 
+message ShellTaskError {
+    string msg = 1;
+}
+
 message ShellTaskOutput {
     int64 id = 1;
     string output = 2;
@@ -118,6 +123,10 @@ message TaskContext {
     string jwt = 2;
 }
 
+message ShellTaskContext {
+    int64 shell_task_id = 1;
+    string jwt = 2;
+}
 
 /*
  * RPC Messages
@@ -131,38 +140,69 @@ message ClaimTasksResponse {
 }
 
 message FetchAssetRequest {
-    string name = 1;
-    TaskContext context = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+
+    string name = 3;
 }
 message FetchAssetResponse {
     bytes chunk = 1;
 }
 
 message ReportCredentialRequest {
-    TaskContext context = 1;
-    eldritch.Credential credential = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+    eldritch.Credential credential = 3;
 }
 message ReportCredentialResponse {}
 
+enum ReportFileKind {
+    REPORT_FILE_KIND_UNSPECIFIED = 0;
+    REPORT_FILE_KIND_ONDISK = 1;
+    REPORT_FILE_KIND_SCREENSHOT = 2;
+}
+
 message ReportFileRequest {
-    TaskContext context = 1;
-    eldritch.File chunk = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+    ReportFileKind kind = 3;
+    eldritch.File chunk = 4;
 }
 message ReportFileResponse {}
 
 message ReportProcessListRequest {
-    TaskContext context = 1;
-    eldritch.ProcessList list = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+    eldritch.ProcessList list = 3;
 }
 message ReportProcessListResponse {}
 
-message ReportTaskOutputRequest {
-    TaskOutput output = 1;
-    TaskContext context = 2;
-    ShellTaskOutput shell_task_output = 3;
+message ReportTaskOutputMessage {
+    TaskContext context = 1;
+    TaskOutput output = 2;
 }
 
-message ReportTaskOutputResponse {}
+message ReportShellTaskOutputMessage {
+     ShellTaskContext context = 1;
+     ShellTaskOutput output = 2;
+}
+
+message ReportOutputRequest {
+    oneof message {
+        ReportTaskOutputMessage task_output = 1;
+        ReportShellTaskOutputMessage shell_task_output = 2;
+    }
+}
+
+message ReportOutputResponse {}
 
 enum ReverseShellMessageKind {
     REVERSE_SHELL_MESSAGE_KIND_UNSPECIFIED = 0;
@@ -171,9 +211,12 @@ enum ReverseShellMessageKind {
 }
 
 message ReverseShellRequest{
-    ReverseShellMessageKind kind = 1;
-    bytes data = 2;
-    TaskContext context = 3;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+    ReverseShellMessageKind kind = 3;
+    bytes data = 4;
 }
 message ReverseShellResponse{
     ReverseShellMessageKind kind = 1;
@@ -181,11 +224,14 @@ message ReverseShellResponse{
 }
 
 message CreatePortalRequest {
-    TaskContext context = 1;
-    portal.Mote mote = 2;
+    oneof context {
+        TaskContext task_context = 1;
+        ShellTaskContext shell_task_context = 2;
+    }
+    portal.Mote mote = 3;
 }
 message CreatePortalResponse {
-    portal.Mote mote = 2;
+    portal.Mote mote = 1;
 }
 
 /*
@@ -232,9 +278,9 @@ service C2 {
     rpc ReportProcessList(ReportProcessListRequest) returns (ReportProcessListResponse);
 
     /*
-     * Report execution output for a task.
+     * Report execution output.
      */
-    rpc ReportTaskOutput(ReportTaskOutputRequest) returns (ReportTaskOutputResponse) {}
+    rpc ReportOutput(ReportOutputRequest) returns (ReportOutputResponse) {}
 
     /*
      * Open a reverse shell bi-directional stream.

@@ -58,7 +58,7 @@ static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
-static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
+static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
 static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
@@ -238,11 +238,11 @@ impl Transport for GRPC {
         Ok(resp.into_inner())
     }
 
-    async fn report_task_output(
+    async fn report_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
-        let resp = self.report_task_output_impl(request).await?;
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
+        let resp = self.report_output_impl(request).await?;
         Ok(resp.into_inner())
     }
 
@@ -496,10 +496,10 @@ impl GRPC {
 
     ///
     /// Report execution output for a task.
-    pub async fn report_task_output_impl(
+    pub async fn report_output_impl(
         &mut self,
-        request: impl tonic::IntoRequest<ReportTaskOutputRequest>,
-    ) -> std::result::Result<tonic::Response<ReportTaskOutputResponse>, tonic::Status> {
+        request: impl tonic::IntoRequest<ReportOutputRequest>,
+    ) -> std::result::Result<tonic::Response<ReportOutputResponse>, tonic::Status> {
         if self.grpc.is_none() {
             return Err(tonic::Status::new(
                 tonic::Code::FailedPrecondition,
@@ -513,10 +513,10 @@ impl GRPC {
             )
         })?;
         let codec = pb::xchacha::ChachaCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_OUTPUT_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            .insert(GrpcMethod::new("c2.C2", "ReportOutput"));
         self.grpc.as_mut().unwrap().unary(req, path, codec).await
     }
 

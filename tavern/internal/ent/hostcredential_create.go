@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -99,6 +100,25 @@ func (hcc *HostCredentialCreate) SetNillableTaskID(id *int) *HostCredentialCreat
 // SetTask sets the "task" edge to the Task entity.
 func (hcc *HostCredentialCreate) SetTask(t *Task) *HostCredentialCreate {
 	return hcc.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hcc *HostCredentialCreate) SetShellTaskID(id int) *HostCredentialCreate {
+	hcc.mutation.SetShellTaskID(id)
+	return hcc
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hcc *HostCredentialCreate) SetNillableShellTaskID(id *int) *HostCredentialCreate {
+	if id != nil {
+		hcc = hcc.SetShellTaskID(*id)
+	}
+	return hcc
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hcc *HostCredentialCreate) SetShellTask(s *ShellTask) *HostCredentialCreate {
+	return hcc.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostCredentialMutation object of the builder.
@@ -260,6 +280,23 @@ func (hcc *HostCredentialCreate) createSpec() (*HostCredential, *sqlgraph.Create
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_reported_credentials = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hcc.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostcredential.ShellTaskTable,
+			Columns: []string{hostcredential.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_task_reported_credentials = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

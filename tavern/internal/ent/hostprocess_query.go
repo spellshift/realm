@@ -14,21 +14,23 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
 // HostProcessQuery is the builder for querying HostProcess entities.
 type HostProcessQuery struct {
 	config
-	ctx        *QueryContext
-	order      []hostprocess.OrderOption
-	inters     []Interceptor
-	predicates []predicate.HostProcess
-	withHost   *HostQuery
-	withTask   *TaskQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*HostProcess) error
+	ctx           *QueryContext
+	order         []hostprocess.OrderOption
+	inters        []Interceptor
+	predicates    []predicate.HostProcess
+	withHost      *HostQuery
+	withTask      *TaskQuery
+	withShellTask *ShellTaskQuery
+	withFKs       bool
+	modifiers     []func(*sql.Selector)
+	loadTotal     []func(context.Context, []*HostProcess) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +104,28 @@ func (hpq *HostProcessQuery) QueryTask() *TaskQuery {
 			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
 			sqlgraph.To(task.Table, task.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.TaskTable, hostprocess.TaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShellTask chains the current query on the "shell_task" edge.
+func (hpq *HostProcessQuery) QueryShellTask() *ShellTaskQuery {
+	query := (&ShellTaskClient{config: hpq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hpq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hpq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.ShellTaskTable, hostprocess.ShellTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +320,14 @@ func (hpq *HostProcessQuery) Clone() *HostProcessQuery {
 		return nil
 	}
 	return &HostProcessQuery{
-		config:     hpq.config,
-		ctx:        hpq.ctx.Clone(),
-		order:      append([]hostprocess.OrderOption{}, hpq.order...),
-		inters:     append([]Interceptor{}, hpq.inters...),
-		predicates: append([]predicate.HostProcess{}, hpq.predicates...),
-		withHost:   hpq.withHost.Clone(),
-		withTask:   hpq.withTask.Clone(),
+		config:        hpq.config,
+		ctx:           hpq.ctx.Clone(),
+		order:         append([]hostprocess.OrderOption{}, hpq.order...),
+		inters:        append([]Interceptor{}, hpq.inters...),
+		predicates:    append([]predicate.HostProcess{}, hpq.predicates...),
+		withHost:      hpq.withHost.Clone(),
+		withTask:      hpq.withTask.Clone(),
+		withShellTask: hpq.withShellTask.Clone(),
 		// clone intermediate query.
 		sql:  hpq.sql.Clone(),
 		path: hpq.path,
@@ -328,6 +353,17 @@ func (hpq *HostProcessQuery) WithTask(opts ...func(*TaskQuery)) *HostProcessQuer
 		opt(query)
 	}
 	hpq.withTask = query
+	return hpq
+}
+
+// WithShellTask tells the query-builder to eager-load the nodes that are connected to
+// the "shell_task" edge. The optional arguments are used to configure the query builder of the edge.
+func (hpq *HostProcessQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *HostProcessQuery {
+	query := (&ShellTaskClient{config: hpq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hpq.withShellTask = query
 	return hpq
 }
 
@@ -410,12 +446,13 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*HostProcess{}
 		withFKs     = hpq.withFKs
 		_spec       = hpq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			hpq.withHost != nil,
 			hpq.withTask != nil,
+			hpq.withShellTask != nil,
 		}
 	)
-	if hpq.withHost != nil || hpq.withTask != nil {
+	if hpq.withHost != nil || hpq.withTask != nil || hpq.withShellTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -451,6 +488,12 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := hpq.withTask; query != nil {
 		if err := hpq.loadTask(ctx, query, nodes, nil,
 			func(n *HostProcess, e *Task) { n.Edges.Task = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hpq.withShellTask; query != nil {
+		if err := hpq.loadShellTask(ctx, query, nodes, nil,
+			func(n *HostProcess, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -519,6 +562,38 @@ func (hpq *HostProcessQuery) loadTask(ctx context.Context, query *TaskQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "task_reported_processes" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hpq *HostProcessQuery) loadShellTask(ctx context.Context, query *ShellTaskQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *ShellTask)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostProcess)
+	for i := range nodes {
+		if nodes[i].shell_task_reported_processes == nil {
+			continue
+		}
+		fk := *nodes[i].shell_task_reported_processes
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shelltask.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_task_reported_processes" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
