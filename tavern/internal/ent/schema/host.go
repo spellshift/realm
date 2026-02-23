@@ -99,6 +99,12 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Credentials reported from this host system."),
+		edge.To("screenshots", Screenshot.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Screenshots reported from this host system."),
 	}
 }
 

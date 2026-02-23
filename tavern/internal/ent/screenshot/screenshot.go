@@ -81,6 +81,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "screenshots"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"host_screenshots",
 	"screenshot_host",
 	"shell_task_reported_screenshots",
 	"task_reported_screenshots",

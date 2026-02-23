@@ -2384,6 +2384,10 @@ type HostWhereInput struct {
 	// "credentials" edge predicates.
 	HasCredentials     *bool                       `json:"hasCredentials,omitempty"`
 	HasCredentialsWith []*HostCredentialWhereInput `json:"hasCredentialsWith,omitempty"`
+
+	// "screenshots" edge predicates.
+	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
+	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -2865,6 +2869,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasCredentialsWith(with...))
+	}
+	if i.HasScreenshots != nil {
+		p := host.HasScreenshots()
+		if !*i.HasScreenshots {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScreenshotsWith) > 0 {
+		with := make([]predicate.Screenshot, 0, len(i.HasScreenshotsWith))
+		for _, w := range i.HasScreenshotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScreenshotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasScreenshotsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

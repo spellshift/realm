@@ -1221,6 +1221,22 @@ func (c *HostClient) QueryCredentials(h *Host) *HostCredentialQuery {
 	return query
 }
 
+// QueryScreenshots queries the screenshots edge of a Host.
+func (c *HostClient) QueryScreenshots(h *Host) *ScreenshotQuery {
+	query := (&ScreenshotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.ScreenshotsTable, host.ScreenshotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host

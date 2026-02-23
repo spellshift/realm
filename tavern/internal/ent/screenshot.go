@@ -41,6 +41,7 @@ type Screenshot struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScreenshotQuery when eager-loading is set.
 	Edges                           ScreenshotEdges `json:"edges"`
+	host_screenshots                *int
 	screenshot_host                 *int
 	shell_task_reported_screenshots *int
 	task_reported_screenshots       *int
@@ -108,11 +109,13 @@ func (*Screenshot) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case screenshot.FieldCreatedAt, screenshot.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case screenshot.ForeignKeys[0]: // screenshot_host
+		case screenshot.ForeignKeys[0]: // host_screenshots
 			values[i] = new(sql.NullInt64)
-		case screenshot.ForeignKeys[1]: // shell_task_reported_screenshots
+		case screenshot.ForeignKeys[1]: // screenshot_host
 			values[i] = new(sql.NullInt64)
-		case screenshot.ForeignKeys[2]: // task_reported_screenshots
+		case screenshot.ForeignKeys[2]: // shell_task_reported_screenshots
+			values[i] = new(sql.NullInt64)
+		case screenshot.ForeignKeys[3]: // task_reported_screenshots
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -191,19 +194,26 @@ func (s *Screenshot) assignValues(columns []string, values []any) error {
 			}
 		case screenshot.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field host_screenshots", value)
+			} else if value.Valid {
+				s.host_screenshots = new(int)
+				*s.host_screenshots = int(value.Int64)
+			}
+		case screenshot.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field screenshot_host", value)
 			} else if value.Valid {
 				s.screenshot_host = new(int)
 				*s.screenshot_host = int(value.Int64)
 			}
-		case screenshot.ForeignKeys[1]:
+		case screenshot.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_screenshots", value)
 			} else if value.Valid {
 				s.shell_task_reported_screenshots = new(int)
 				*s.shell_task_reported_screenshots = int(value.Int64)
 			}
-		case screenshot.ForeignKeys[2]:
+		case screenshot.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_screenshots", value)
 			} else if value.Valid {

@@ -250,6 +250,27 @@ func (h *Host) Credentials(
 	return h.QueryCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (h *Host) Screenshots(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ScreenshotOrder, where *ScreenshotWhereInput,
+) (*ScreenshotConnection, error) {
+	opts := []ScreenshotPaginateOption{
+		WithScreenshotOrder(orderBy),
+		WithScreenshotFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[5][alias]
+	if nodes, err := h.NamedScreenshots(alias); err == nil || hasTotalCount {
+		pager, err := newScreenshotPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ScreenshotConnection{Edges: []*ScreenshotEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryScreenshots().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	result, err := hc.Edges.HostOrErr()
 	if IsNotLoaded(err) {

@@ -445,6 +445,7 @@ var (
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "host_screenshots", Type: field.TypeInt, Nullable: true},
 		{Name: "screenshot_host", Type: field.TypeInt},
 		{Name: "shell_task_reported_screenshots", Type: field.TypeInt, Nullable: true},
 		{Name: "task_reported_screenshots", Type: field.TypeInt, Nullable: true},
@@ -456,20 +457,26 @@ var (
 		PrimaryKey: []*schema.Column{ScreenshotsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "screenshots_hosts_host",
+				Symbol:     "screenshots_hosts_screenshots",
 				Columns:    []*schema.Column{ScreenshotsColumns[10]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "screenshots_hosts_host",
+				Columns:    []*schema.Column{ScreenshotsColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_shell_tasks_reported_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[11]},
+				Columns:    []*schema.Column{ScreenshotsColumns[12]},
 				RefColumns: []*schema.Column{ShellTasksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "screenshots_tasks_reported_screenshots",
-				Columns:    []*schema.Column{ScreenshotsColumns[12]},
+				Columns:    []*schema.Column{ScreenshotsColumns[13]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -827,8 +834,9 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	ScreenshotsTable.ForeignKeys[0].RefTable = HostsTable
-	ScreenshotsTable.ForeignKeys[1].RefTable = ShellTasksTable
-	ScreenshotsTable.ForeignKeys[2].RefTable = TasksTable
+	ScreenshotsTable.ForeignKeys[1].RefTable = HostsTable
+	ScreenshotsTable.ForeignKeys[2].RefTable = ShellTasksTable
+	ScreenshotsTable.ForeignKeys[3].RefTable = TasksTable
 	ScreenshotsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

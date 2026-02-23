@@ -4390,6 +4390,9 @@ type HostMutation struct {
 	credentials        map[int]struct{}
 	removedcredentials map[int]struct{}
 	clearedcredentials bool
+	screenshots        map[int]struct{}
+	removedscreenshots map[int]struct{}
+	clearedscreenshots bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -5152,6 +5155,60 @@ func (m *HostMutation) ResetCredentials() {
 	m.removedcredentials = nil
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by ids.
+func (m *HostMutation) AddScreenshotIDs(ids ...int) {
+	if m.screenshots == nil {
+		m.screenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.screenshots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScreenshots clears the "screenshots" edge to the Screenshot entity.
+func (m *HostMutation) ClearScreenshots() {
+	m.clearedscreenshots = true
+}
+
+// ScreenshotsCleared reports if the "screenshots" edge to the Screenshot entity was cleared.
+func (m *HostMutation) ScreenshotsCleared() bool {
+	return m.clearedscreenshots
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to the Screenshot entity by IDs.
+func (m *HostMutation) RemoveScreenshotIDs(ids ...int) {
+	if m.removedscreenshots == nil {
+		m.removedscreenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.screenshots, ids[i])
+		m.removedscreenshots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScreenshots returns the removed IDs of the "screenshots" edge to the Screenshot entity.
+func (m *HostMutation) RemovedScreenshotsIDs() (ids []int) {
+	for id := range m.removedscreenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScreenshotsIDs returns the "screenshots" edge IDs in the mutation.
+func (m *HostMutation) ScreenshotsIDs() (ids []int) {
+	for id := range m.screenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScreenshots resets all changes to the "screenshots" edge.
+func (m *HostMutation) ResetScreenshots() {
+	m.screenshots = nil
+	m.clearedscreenshots = false
+	m.removedscreenshots = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -5454,7 +5511,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5469,6 +5526,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.credentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.screenshots != nil {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5507,13 +5567,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.screenshots))
+		for id := range m.screenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5528,6 +5594,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedcredentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.removedscreenshots != nil {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5566,13 +5635,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.removedscreenshots))
+		for id := range m.removedscreenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5587,6 +5662,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedcredentials {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.clearedscreenshots {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5605,6 +5683,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedprocesses
 	case host.EdgeCredentials:
 		return m.clearedcredentials
+	case host.EdgeScreenshots:
+		return m.clearedscreenshots
 	}
 	return false
 }
@@ -5635,6 +5715,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeCredentials:
 		m.ResetCredentials()
+		return nil
+	case host.EdgeScreenshots:
+		m.ResetScreenshots()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)

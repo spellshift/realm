@@ -174,6 +174,7 @@ type ComplexityRoot struct {
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		Screenshots    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
 		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
 
@@ -1275,6 +1276,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Host.Processes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
+
+	case "Host.screenshots":
+		if e.complexity.Host.Screenshots == nil {
+			break
+		}
+
+		args, err := ec.field_Host_screenshots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.Screenshots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScreenshotOrder), args["where"].(*ent.ScreenshotWhereInput)), true
 
 	case "Host.tags":
 		if e.complexity.Host.Tags == nil {
@@ -5123,6 +5136,37 @@ type Host implements Node {
     """
     where: HostCredentialWhereInput
   ): HostCredentialConnection!
+  screenshots(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Screenshots returned from the connection.
+    """
+    orderBy: [ScreenshotOrder!]
+
+    """
+    Filtering options for Screenshots returned from the connection.
+    """
+    where: ScreenshotWhereInput
+  ): ScreenshotConnection!
 }
 """
 A connection to a list of items.
@@ -6122,6 +6166,11 @@ input HostWhereInput {
   """
   hasCredentials: Boolean
   hasCredentialsWith: [HostCredentialWhereInput!]
+  """
+  screenshots edge predicates
+  """
+  hasScreenshots: Boolean
+  hasScreenshotsWith: [ScreenshotWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -8805,6 +8854,9 @@ input UpdateHostInput {
   addCredentialIDs: [ID!]
   removeCredentialIDs: [ID!]
   clearCredentials: Boolean
+  addScreenshotIDs: [ID!]
+  removeScreenshotIDs: [ID!]
+  clearScreenshots: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
