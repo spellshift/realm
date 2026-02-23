@@ -15,7 +15,9 @@ type Handler struct {
 
 // Content embedded from the application's build directory, includes the latest build of the UI.
 //
-//go:embed build
+//go:embed build/*.png build/*.html build/*.json build/*.txt build/*.ico
+//go:embed build/static/*
+//go:embed build/wasm/*
 var Content embed.FS
 
 // ServeHTTP provides the Tavern UI, if the requested file does not exist it will serve index.html

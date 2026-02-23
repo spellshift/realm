@@ -76,8 +76,7 @@ pub fn capture_screen() -> Result<Vec<u8>, String> {
         let x_default_screen: unsafe extern "C" fn(*mut c_void) -> c_int =
             mem::transmute(sym("XDefaultScreen"));
         let x_destroy_image: unsafe extern "C" fn(*mut XImage) -> c_int =
-             mem::transmute(sym("XDestroyImage"));
-
+            mem::transmute(sym("XDestroyImage"));
 
         if x_open_display as usize == 0 {
             return Err("Missing symbols".to_string());
@@ -94,16 +93,7 @@ pub fn capture_screen() -> Result<Vec<u8>, String> {
         let height = x_display_height(display, screen);
 
         // ZPixmap = 2, AllPlanes = !0
-        let image = x_get_image(
-            display,
-            root,
-            0,
-            0,
-            width as c_int,
-            height as c_int,
-            !0,
-            2,
-        );
+        let image = x_get_image(display, root, 0, 0, width as c_int, height as c_int, !0, 2);
         if image.is_null() {
             x_close_display(display);
             return Err("Failed to get image".to_string());
@@ -112,9 +102,9 @@ pub fn capture_screen() -> Result<Vec<u8>, String> {
         let img = &*image;
         if img.bits_per_pixel != 32 {
             // Need to implement other depths or fail
-             x_destroy_image(image);
-             x_close_display(display);
-             return Err(format!("Unsupported depth: {}", img.bits_per_pixel));
+            x_destroy_image(image);
+            x_close_display(display);
+            return Err(format!("Unsupported depth: {}", img.bits_per_pixel));
         }
 
         let len = (img.bytes_per_line * img.height) as usize;

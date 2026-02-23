@@ -10,9 +10,9 @@ use eldritch_macros::eldritch_library_impl;
 pub mod file_impl;
 pub mod ntlm_hash_impl;
 pub mod process_list_impl;
+pub mod screenshot_impl;
 pub mod ssh_key_impl;
 pub mod user_password_impl;
-pub mod screenshot_impl;
 
 #[eldritch_library_impl(ReportLibrary)]
 pub struct StdReportLibrary {

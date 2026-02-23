@@ -1,4 +1,4 @@
-use std::os::raw::{c_void};
+use std::os::raw::c_void;
 use std::slice;
 
 #[link(name = "CoreGraphics", kind = "framework")]
@@ -29,8 +29,8 @@ pub fn capture_screen() -> Result<Vec<u8>, String> {
 
         let provider = CGImageGetDataProvider(image);
         if provider.is_null() {
-             CGImageRelease(image);
-             return Err("Failed to get provider".to_string());
+            CGImageRelease(image);
+            return Err("Failed to get provider".to_string());
         }
 
         let data = CGDataProviderCopyData(provider);

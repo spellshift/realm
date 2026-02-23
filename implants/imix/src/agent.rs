@@ -411,11 +411,47 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_credential(req).await })
     }
 
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(&self, mut req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
+
+            // Chunk size: 1MB
+            const CHUNK_SIZE: usize = 1024 * 1024;
+
+            if let Some(file) = &req.chunk {
+                if file.chunk.len() > CHUNK_SIZE {
+                    let full_chunk = std::mem::take(&mut req.chunk.as_mut().unwrap().chunk);
+                    let chunks = full_chunk.chunks(CHUNK_SIZE);
+
+                    for (i, chunk_data) in chunks.enumerate() {
+                        let chunk_req = if i == 0 {
+                            // First request contains context, kind, metadata, and first chunk
+                            let mut r = req.clone();
+                            if let Some(f) = r.chunk.as_mut() {
+                                f.chunk = chunk_data.to_vec();
+                            }
+                            r
+                        } else {
+                            // Subsequent requests only contain the chunk data
+                            c2::ReportFileRequest {
+                                context: None, // Server caches context from first message
+                                kind: 0,       // Server caches kind from first message
+                                chunk: Some(pb::eldritch::File {
+                                    metadata: None, // Metadata only needed in first message
+                                    chunk: chunk_data.to_vec(),
+                                }),
+                            }
+                        };
+                        tx.send(chunk_req)?;
+                    }
+                } else {
+                    tx.send(req)?;
+                }
+            } else {
+                tx.send(req)?;
+            }
+
             drop(tx);
             t.report_file(rx).await
         })
