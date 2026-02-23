@@ -19,7 +19,10 @@ pub trait Agent: Send + Sync {
         &self,
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String>;
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
+    fn report_file(
+        &self,
+        req: alloc::boxed::Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + 'static>,
+    ) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(
         &self,
         req: c2::ReportProcessListRequest,

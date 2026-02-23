@@ -25,5 +25,7 @@ pub fn report_file(
         chunk: Some(file.0),
         kind: c2::ReportFileKind::Ondisk as i32,
     };
-    agent.report_file(req).map(|_| ())
+    agent
+        .report_file(alloc::boxed::Box::new(core::iter::once(req)))
+        .map(|_| ())
 }
