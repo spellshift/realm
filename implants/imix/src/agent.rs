@@ -411,12 +411,23 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_credential(req).await })
     }
 
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(
+        &self,
+        req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + Sync>,
+    ) -> Result<c2::ReportFileResponse, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
-            drop(tx);
+            let req_iter = req;
+
+            tokio::task::spawn_blocking(move || {
+                for item in req_iter {
+                    if tx.send(item).is_err() {
+                        break;
+                    }
+                }
+            });
+
             t.report_file(rx).await
         })
     }

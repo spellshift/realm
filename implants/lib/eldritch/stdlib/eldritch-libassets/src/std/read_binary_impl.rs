@@ -85,8 +85,9 @@ pub mod tests {
         }
         fn report_file(
             &self,
-            _req: c2::ReportFileRequest,
+            req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + Sync>,
         ) -> Result<c2::ReportFileResponse, String> {
+            for _ in req {}
             Ok(c2::ReportFileResponse::default())
         }
         fn report_process_list(
