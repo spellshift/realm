@@ -9467,6 +9467,8 @@ type PortalMutation struct {
 	clearedFields       map[string]struct{}
 	task                *int
 	clearedtask         bool
+	shell_task          *int
+	clearedshell_task   bool
 	beacon              *int
 	clearedbeacon       bool
 	owner               *int
@@ -9735,6 +9737,45 @@ func (m *PortalMutation) TaskIDs() (ids []int) {
 func (m *PortalMutation) ResetTask() {
 	m.task = nil
 	m.clearedtask = false
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *PortalMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *PortalMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *PortalMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *PortalMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *PortalMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *PortalMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by id.
@@ -10045,9 +10086,12 @@ func (m *PortalMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PortalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.task != nil {
 		edges = append(edges, portal.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.beacon != nil {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10067,6 +10111,10 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case portal.EdgeTask:
 		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	case portal.EdgeShellTask:
+		if id := m.shell_task; id != nil {
 			return []ent.Value{*id}
 		}
 	case portal.EdgeBeacon:
@@ -10089,7 +10137,7 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PortalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedactive_users != nil {
 		edges = append(edges, portal.EdgeActiveUsers)
 	}
@@ -10112,9 +10160,12 @@ func (m *PortalMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PortalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtask {
 		edges = append(edges, portal.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10134,6 +10185,8 @@ func (m *PortalMutation) EdgeCleared(name string) bool {
 	switch name {
 	case portal.EdgeTask:
 		return m.clearedtask
+	case portal.EdgeShellTask:
+		return m.clearedshell_task
 	case portal.EdgeBeacon:
 		return m.clearedbeacon
 	case portal.EdgeOwner:
@@ -10151,6 +10204,9 @@ func (m *PortalMutation) ClearEdge(name string) error {
 	case portal.EdgeTask:
 		m.ClearTask()
 		return nil
+	case portal.EdgeShellTask:
+		m.ClearShellTask()
+		return nil
 	case portal.EdgeBeacon:
 		m.ClearBeacon()
 		return nil
@@ -10167,6 +10223,9 @@ func (m *PortalMutation) ResetEdge(name string) error {
 	switch name {
 	case portal.EdgeTask:
 		m.ResetTask()
+		return nil
+	case portal.EdgeShellTask:
+		m.ResetShellTask()
 		return nil
 	case portal.EdgeBeacon:
 		m.ResetBeacon()

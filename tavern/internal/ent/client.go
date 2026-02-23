@@ -2071,6 +2071,22 @@ func (c *PortalClient) QueryTask(po *Portal) *TaskQuery {
 	return query
 }
 
+// QueryShellTask queries the shell_task edge of a Portal.
+func (c *PortalClient) QueryShellTask(po *Portal) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(portal.Table, portal.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, portal.ShellTaskTable, portal.ShellTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBeacon queries the beacon edge of a Portal.
 func (c *PortalClient) QueryBeacon(po *Portal) *BeaconQuery {
 	query := (&BeaconClient{config: c.config}).Query()

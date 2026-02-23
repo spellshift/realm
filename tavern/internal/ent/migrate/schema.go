@@ -325,7 +325,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "portal_task", Type: field.TypeInt},
+		{Name: "portal_task", Type: field.TypeInt, Nullable: true},
+		{Name: "portal_shell_task", Type: field.TypeInt, Nullable: true},
 		{Name: "portal_beacon", Type: field.TypeInt},
 		{Name: "portal_owner", Type: field.TypeInt},
 		{Name: "shell_portals", Type: field.TypeInt, Nullable: true},
@@ -340,23 +341,29 @@ var (
 				Symbol:     "portals_tasks_task",
 				Columns:    []*schema.Column{PortalsColumns[4]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "portals_shell_tasks_shell_task",
+				Columns:    []*schema.Column{PortalsColumns[5]},
+				RefColumns: []*schema.Column{ShellTasksColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "portals_beacons_beacon",
-				Columns:    []*schema.Column{PortalsColumns[5]},
+				Columns:    []*schema.Column{PortalsColumns[6]},
 				RefColumns: []*schema.Column{BeaconsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "portals_users_owner",
-				Columns:    []*schema.Column{PortalsColumns[6]},
+				Columns:    []*schema.Column{PortalsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "portals_shells_portals",
-				Columns:    []*schema.Column{PortalsColumns[7]},
+				Columns:    []*schema.Column{PortalsColumns[8]},
 				RefColumns: []*schema.Column{ShellsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -758,9 +765,10 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
-	PortalsTable.ForeignKeys[1].RefTable = BeaconsTable
-	PortalsTable.ForeignKeys[2].RefTable = UsersTable
-	PortalsTable.ForeignKeys[3].RefTable = ShellsTable
+	PortalsTable.ForeignKeys[1].RefTable = ShellTasksTable
+	PortalsTable.ForeignKeys[2].RefTable = BeaconsTable
+	PortalsTable.ForeignKeys[3].RefTable = UsersTable
+	PortalsTable.ForeignKeys[4].RefTable = ShellsTable
 	PortalsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

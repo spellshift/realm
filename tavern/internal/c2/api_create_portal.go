@@ -26,6 +26,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	}
 
 	var taskID int
+	var shellTaskID int
 	if tc := registerMsg.GetTaskContext(); tc != nil {
 		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
 			return err
@@ -35,33 +36,18 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
 			return err
 		}
-		shellTaskID := int(stc.GetShellTaskId())
-		st, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
-		if err != nil {
-			slog.ErrorContext(ctx, "create portal failed: could not load associated shell task", "shell_task_id", shellTaskID, "error", err)
-			return status.Errorf(codes.Internal, "failed to get shell task: %v", err)
-		}
-		s, err := st.QueryShell().Only(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "create portal failed: could not load associated shell", "shell_task_id", shellTaskID, "error", err)
-			return status.Errorf(codes.Internal, "failed to get shell: %v", err)
-		}
-		taskID, err = s.QueryTask().OnlyID(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "create portal failed: could not load associated task from shell", "shell_id", s.ID, "error", err)
-			return status.Errorf(codes.Internal, "failed to get task ID: %v", err)
-		}
+		shellTaskID = int(stc.GetShellTaskId())
 	} else {
 		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	if taskID <= 0 {
-		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
+	if taskID <= 0 && shellTaskID <= 0 {
+		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
 	}
 
-	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID)
+	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "error", err)
+		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create portal: %v", err)
 	}
 	defer cleanup()
