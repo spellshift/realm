@@ -1,7 +1,7 @@
 use crate::agent::ImixAgent;
 use anyhow::Result;
-use eldritch::report::std::StdReportLibrary;
 use eldritch::report::ReportLibrary;
+use eldritch::report::std::StdReportLibrary;
 use eldritch_agent::{Agent, Context};
 use pb::c2::{ReportFileRequest, ReportFileResponse};
 use pb::config::Config;
@@ -52,10 +52,7 @@ impl Transport for TestTransport {
         Ok(pb::c2::ReportCredentialResponse::default())
     }
 
-    async fn report_file(
-        &mut self,
-        rx: Receiver<ReportFileRequest>,
-    ) -> Result<ReportFileResponse> {
+    async fn report_file(&mut self, rx: Receiver<ReportFileRequest>) -> Result<ReportFileResponse> {
         while let Ok(req) = rx.recv() {
             let mut bytes = self.received_bytes.lock().unwrap();
             let mut chunks = self.received_chunks.lock().unwrap();
