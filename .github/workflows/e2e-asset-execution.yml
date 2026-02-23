@@ -24,8 +24,6 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: '1.81.0'
-        default: true
-        profile: minimal
         components: rustfmt, clippy
 
     - name: ⚡ Setup Node.js
