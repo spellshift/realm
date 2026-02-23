@@ -94,3 +94,14 @@ pub fn netstat() -> Result<Vec<NetstatEntry>> {
     )))]
     return Ok(Vec::new());
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct InterfaceEntry {
+    pub iface_name: String,
+    pub mac_address: [u8; 6],
+    pub ip_address: Option<IpAddr>
+}
+
+pub fn list_interfaces() -> Result<Vec<InterfaceEntry>> {
+    unimplemented!("todo")
+}

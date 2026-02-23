@@ -1,4 +1,3 @@
-use pnet::datalink;
 use uuid::Uuid;
 
 use crate::HostIDSelector;
