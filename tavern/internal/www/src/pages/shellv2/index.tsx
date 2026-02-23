@@ -12,6 +12,7 @@ import Breadcrumbs from "../../components/Breadcrumbs";
 import { Info } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import moment from "moment";
+import { AccessGate } from "../../components/access-gate";
 
 // GraphQL query to fetch shell details
 const GET_SHELL = gql`
@@ -26,6 +27,7 @@ const GET_SHELL = gql`
         }
         beacon {
           id
+          name
         }
         portals {
           id
@@ -144,7 +146,7 @@ const ShellV2 = () => {
         const updateTimer = () => {
             // @ts-ignore
             if (!beaconData?.node?.nextSeenAt) return;
-             // @ts-ignore
+            // @ts-ignore
             const next = moment(beaconData.node.nextSeenAt);
             const now = moment();
             const diff = next.diff(now, 'seconds');
@@ -215,7 +217,7 @@ const ShellV2 = () => {
         };
         window.addEventListener("resize", handleResize);
 
-        termInstance.current.write("Initializing Headless REPL...\r\n");
+        termInstance.current.write("Eldritch v0.3.0\r\n");
 
         // Define redrawLine early so it can be used by adapter callback
         const redrawLine = () => {
@@ -348,7 +350,7 @@ const ShellV2 = () => {
             lastBufferHeight.current = 0;
             redrawLine();
         }, () => {
-            termInstance.current?.write("Connected to backend.\r\n>>> ");
+            termInstance.current?.write("Connected to Tavern.\r\n>>> ");
         });
 
         adapter.current.init();
@@ -704,67 +706,69 @@ const ShellV2 = () => {
     }
 
     return (
-        <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-            <Breadcrumbs pages={[{ label: "Shell", link: "/shell" }]} />
-            <div className="flex items-center gap-4 mb-4">
-                <h1 className="text-xl font-bold">Shell V2 (Headless REPL)</h1>
-                <Badge badgeStyle={{ color: "purple" }}>Pre-alpha release</Badge>
-            </div>
+        <AccessGate>
+            <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
+                <div className="flex items-center gap-4 mb-4">
+                    <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
+                    <Badge badgeStyle={{ color: "purple" }}>Pre-alpha release</Badge>
+                    <h1 className="text-xl font-bold">Eldritch Shell for {data?.node?.beacon?.name}</h1>
+                </div>
 
-            <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
-                <div ref={termRef} style={{ height: "100%", width: "100%" }} />
+                <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
+                    <div ref={termRef} style={{ height: "100%", width: "100%" }} />
 
-                {showCompletions && (
-                    <div style={{
-                        position: "absolute",
-                        top: completionPos.y,
-                        left: completionPos.x,
-                        background: "#252526",
-                        border: "1px solid #454545",
-                        zIndex: 1000,
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-                        color: "#cccccc",
-                        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                        fontSize: "14px"
-                    }}>
-                        <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                            {completions.map((c, i) => (
-                                <li key={i} style={{
-                                    padding: "4px 8px",
-                                    background: i === completionIndex ? "#094771" : "transparent",
-                                    cursor: "pointer"
-                                }}>
-                                    {c}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex justify-between items-center mt-2 text-sm text-gray-400 h-6">
-                <div className="flex items-center gap-2">
-                    {portalId ? (
-                        <span className="text-green-500 font-semibold">Portal Active (ID: {portalId})</span>
-                    ) : (
-                        <div className="flex items-center gap-1 group relative cursor-help">
-                            <span>non-interactive</span>
-                            <Tooltip label="This shell is currently in non-interactive mode. Input will be asynchronously queued for the beacon and output will be submitted through beacon callbacks. To upgrade to an interactive low-latency shell, you may open a 'Portal' on the beacon, which leverages an established connection to provide low-latency interactivity.">
-                                <span><Info size={14} /></span>
-                            </Tooltip>
+                    {showCompletions && (
+                        <div style={{
+                            position: "absolute",
+                            top: completionPos.y,
+                            left: completionPos.x,
+                            background: "#252526",
+                            border: "1px solid #454545",
+                            zIndex: 1000,
+                            maxHeight: "200px",
+                            overflowY: "auto",
+                            boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                            color: "#cccccc",
+                            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                            fontSize: "14px"
+                        }}>
+                            <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                                {completions.map((c, i) => (
+                                    <li key={i} style={{
+                                        padding: "4px 8px",
+                                        background: i === completionIndex ? "#094771" : "transparent",
+                                        cursor: "pointer"
+                                    }}>
+                                        {c}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
                 </div>
 
-                {timeUntilCallback && (
-                    <div className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-400"}>
-                        {timeUntilCallback}
+                <div className="flex justify-between items-center mt-2 text-sm text-gray-400 h-6">
+                    <div className="flex items-center gap-2">
+                        {portalId ? (
+                            <span className="text-green-500 font-semibold">Portal Active (ID: {portalId})</span>
+                        ) : (
+                            <div className="flex items-center gap-1 group relative cursor-help">
+                                <span>non-interactive</span>
+                                <Tooltip label="This shell is currently in non-interactive mode. Input will be asynchronously queued for the beacon and output will be submitted through beacon callbacks. To upgrade to an interactive low-latency shell, you may open a 'Portal' on the beacon, which leverages an established connection to provide low-latency interactivity.">
+                                    <span><Info size={14} /></span>
+                                </Tooltip>
+                            </div>
+                        )}
                     </div>
-                )}
+
+                    {timeUntilCallback && (
+                        <div className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-400"}>
+                            {timeUntilCallback}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </AccessGate>
     );
 };
 
