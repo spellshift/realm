@@ -22,6 +22,7 @@ def process_list(cmd_substring):
         cmd_substring = ''
 
     procs = process.list()
+    report.process_list(procs)
 
     rows = [["PID", "PPID", "USER", "COMMAND"]]
     for proc in procs:
