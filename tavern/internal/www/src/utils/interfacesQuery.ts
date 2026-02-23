@@ -57,11 +57,16 @@ export interface HostNode {
         edges: TagEdge[];
     };
     beacons?: {
+        totalCount: number;
         edges: BeaconEdge[];
     };
     credentials?: {
+        totalCount: number;
         edges: CredentialEdge[];
     };
+    processes?: {
+        totalCount: number;
+    }
 }
 
 export interface HostEdge {
@@ -183,6 +188,9 @@ export interface TaskNode {
     output: string | null;
     shells: {
         edges: ShellEdge[];
+    };
+    reportedProcesses: {
+        totalCount: number;
     };
     quest: QuestNode;
     beacon: BeaconNode;
@@ -358,4 +366,21 @@ export interface AssetQueryResponse {
 
 export interface AssetQueryTopLevel {
     assets: AssetQueryResponse;
+}
+
+export interface ProcessNode {
+    id: string;
+    lastModifiedAt: string;
+    principal: string;
+    pid: number;
+    ppid: number;
+    name: string;
+    path: string | null;
+    status: string;
+    env: string | null;
+    cwd: string | null;
+}
+
+export interface ProcessEdge {
+    node: ProcessNode;
 }

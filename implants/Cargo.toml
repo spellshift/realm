@@ -23,6 +23,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
+    "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream",
 ]
 exclude = [
@@ -80,6 +81,7 @@ glob = "0.3.1"
 graphql_client = "0.12.0"
 hex = "0.4.2"
 hex-literal = "0.4.1"
+http = "1.4.0"
 httptest = "0.15.4"
 hyper = { version = "1", features = ["full"] }
 ipnetwork = "0.20.0"
@@ -108,6 +110,7 @@ reqwest = { version = "0.12.15", default-features = false }
 russh = "0.37.1"
 russh-sftp = "=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
+rustls = "0.23"
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"
@@ -128,8 +131,9 @@ tokio = "1.49.0"
 tokio-stream = { version = "0.1.9", default-features = false }
 tokio-test = "*"
 tokio-util = { version = "0.7.10", features = ["io"] }
-tonic = { git = "https://github.com/hyperium/tonic.git", rev = "07e4ee1" }
-tonic-build = { git = "https://github.com/hyperium/tonic.git", rev = "c783652" } # Needed git for `.codec_path` in build.rs - previous version of codec setting is really gross. https://github.com/hyperium/tonic/blob/ea8cd3f384e953e177f20a62aa156a75676853f4/examples/build.rs#L44
+tonic = { version = "0.14.3" }
+tonic-prost-build = { version = "0.14.3" }
+tower = "0.5.3"
 trait-variant = "0.1.1"
 uuid = "1.5.0"
 urlencoding = "2.1.3"

@@ -15,6 +15,11 @@ type Mutation {
     updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
+    # Shell
+    ###
+    createShell(input: CreateShellInput!): Shell! @requireRole(role: USER)
+
+    ###
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
@@ -54,4 +59,15 @@ type Mutation {
     createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)
     updateLink(linkID: ID!, input: UpdateLinkInput!): Link! @requireRole(role: USER)
     disableLink(linkID: ID!): Link! @requireRole(role: USER)
+
+    ###
+    # Builder
+    ###
+    registerBuilder(input: CreateBuilderInput!): RegisterBuilderOutput! @requireRole(role: ADMIN)
+    deleteBuilder(builderID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
+    # BuildTask
+    ###
+    createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
 }

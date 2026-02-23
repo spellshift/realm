@@ -1,10 +1,8 @@
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
-use alloc::vec;
-use alloc::vec::Vec;
-use eldritch_agent::Agent;
-use pb::c2::TaskContext;
+use eldritch_agent::{Agent, Context};
+use pb::c2::report_file_request;
 use pb::{c2, eldritch};
 use std::fs::File;
 use std::io::{BufReader, Read};

