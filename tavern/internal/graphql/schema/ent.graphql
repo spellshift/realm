@@ -2756,7 +2756,11 @@ type Portal implements Node {
   """
   Task that created the portal
   """
-  task: Task!
+  task: Task
+  """
+  ShellTask that created the portal
+  """
+  shellTask: ShellTask
   """
   Beacon that created the portal
   """
@@ -2907,6 +2911,11 @@ input PortalWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
   """
   beacon edge predicates
   """

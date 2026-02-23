@@ -343,7 +343,15 @@ func (po *Portal) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = po.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (po *Portal) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := po.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (po *Portal) Beacon(ctx context.Context) (*Beacon, error) {
@@ -370,7 +378,7 @@ func (po *Portal) ActiveUsers(
 		WithUserFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := po.Edges.totalCount[3][alias]
+	totalCount, hasTotalCount := po.Edges.totalCount[4][alias]
 	if nodes, err := po.NamedActiveUsers(alias); err == nil || hasTotalCount {
 		pager, err := newUserPager(opts, last != nil)
 		if err != nil {

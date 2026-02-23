@@ -5006,6 +5006,10 @@ type PortalWhereInput struct {
 	HasTask     *bool             `json:"hasTask,omitempty"`
 	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
 
+	// "shell_task" edge predicates.
+	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
+	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
+
 	// "beacon" edge predicates.
 	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
 	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
@@ -5210,6 +5214,24 @@ func (i *PortalWhereInput) P() (predicate.Portal, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, portal.HasTaskWith(with...))
+	}
+	if i.HasShellTask != nil {
+		p := portal.HasShellTask()
+		if !*i.HasShellTask {
+			p = portal.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTaskWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTaskWith))
+		for _, w := range i.HasShellTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, portal.HasShellTaskWith(with...))
 	}
 	if i.HasBeacon != nil {
 		p := portal.HasBeacon()

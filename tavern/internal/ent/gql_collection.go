@@ -2316,6 +2316,17 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 			}
 			po.withTask = query
 
+		case "shellTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellTaskClient{config: po.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
+				return err
+			}
+			po.withShellTask = query
+
 		case "beacon":
 			var (
 				alias = field.Alias
@@ -2381,10 +2392,10 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[4][alias] = n
 						}
 						return nil
 					})
@@ -2392,10 +2403,10 @@ func (po *PortalQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 					po.loadTotal = append(po.loadTotal, func(_ context.Context, nodes []*Portal) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.ActiveUsers)
-							if nodes[i].Edges.totalCount[3] == nil {
-								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[3][alias] = n
+							nodes[i].Edges.totalCount[4][alias] = n
 						}
 						return nil
 					})
