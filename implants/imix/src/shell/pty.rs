@@ -1,13 +1,18 @@
 use anyhow::Result;
 use eldritch_agent::Context;
+#[cfg(not(target_os = "solaris"))]
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
+#[cfg(not(target_os = "solaris"))]
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+#[cfg(not(target_os = "solaris"))]
 use std::io::{Read, Write};
 use transport::Transport;
 
 #[cfg(not(target_os = "windows"))]
+#[cfg(not(target_os = "solaris"))]
 use std::path::Path;
 
+#[cfg(not(target_os = "solaris"))]
 pub async fn run_reverse_shell_pty<T: Transport>(
     context: Context,
     cmd: Option<String>,
@@ -204,4 +209,14 @@ pub async fn run_reverse_shell_pty<T: Transport>(
     #[cfg(debug_assertions)]
     log::info!("stopping reverse_shell_pty");
     Ok(())
+}
+
+#[cfg(target_os = "solaris")]
+pub async fn run_reverse_shell_pty<T: Transport>(
+    _context: Context,
+    _cmd: Option<String>,
+    _transport: T,
+) -> Result<()> {
+    use anyhow::anyhow;
+    Err(anyhow!("Reverse shell (PTY) is not supported on Solaris"))
 }

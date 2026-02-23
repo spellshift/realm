@@ -38,13 +38,15 @@ eldritch = { workspace = true, features = ["std", "stdlib"] }
 eldritch-agent = { workspace = true }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
-portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
+
+[target.'cfg(not(target_os = "solaris"))'.dependencies]
+portable-pty = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
