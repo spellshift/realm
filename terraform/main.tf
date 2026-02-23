@@ -552,7 +552,7 @@ locals {
       "domain": redir.domain,
       "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
-    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && (redir.transport == "http" || redir.transport == "dns")
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "dns"
   ]
   redirector_zones_missing = [
     for redir in var.redirectors: redir.domain
