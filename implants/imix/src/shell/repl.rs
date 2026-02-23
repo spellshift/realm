@@ -87,7 +87,7 @@ fn render<W: Write>(
     }
 
     let state = repl.get_render_state();
-    let prompt = "> ";
+    let prompt = ">>> ";
     writer.write_all(prompt.as_bytes())?;
     writer.write_all(state.buffer.as_bytes())?;
 
