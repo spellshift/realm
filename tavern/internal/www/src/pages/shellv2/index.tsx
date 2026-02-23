@@ -7,6 +7,11 @@ import { HeadlessWasmAdapter } from "../../lib/headless-adapter";
 import AlertError from "../../components/tavern-base-ui/AlertError";
 import { gql, useQuery } from "@apollo/client";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "./websocket";
+import Badge from "../../components/tavern-base-ui/badge/Badge";
+import Breadcrumbs from "../../components/Breadcrumbs";
+import { Info } from "lucide-react";
+import { Tooltip } from "@chakra-ui/react";
+import moment from "moment";
 
 // GraphQL query to fetch shell details
 const GET_SHELL = gql`
@@ -19,6 +24,35 @@ const GET_SHELL = gql`
           id
           name
         }
+        beacon {
+          id
+        }
+        portals {
+          id
+          closedAt
+        }
+      }
+    }
+  }
+`;
+
+const GET_BEACON_STATUS = gql`
+  query GetBeaconStatus($id: ID!) {
+    node(id: $id) {
+      ... on Beacon {
+        lastSeenAt
+        nextSeenAt
+        interval
+      }
+    }
+  }
+`;
+
+const GET_PORTAL_STATUS = gql`
+  query GetPortalStatus($id: ID!) {
+    node(id: $id) {
+      ... on Portal {
+        closedAt
       }
     }
   }
@@ -68,6 +102,67 @@ const ShellV2 = () => {
     const [completionIndex, setCompletionIndex] = useState(0);
     const [completionPos, setCompletionPos] = useState({ x: 0, y: 0 });
     const completionsListRef = useRef<HTMLUListElement>(null);
+
+    const [portalId, setPortalId] = useState<number | null>(null);
+    const [timeUntilCallback, setTimeUntilCallback] = useState<string>("");
+    const [isMissedCallback, setIsMissedCallback] = useState(false);
+
+    // Fetch beacon status
+    const beaconId = data?.node?.beacon?.id;
+    const { data: beaconData } = useQuery(GET_BEACON_STATUS, {
+        variables: { id: beaconId },
+        skip: !beaconId,
+        pollInterval: 2000
+    });
+
+    // Fetch portal status
+    const { data: portalData } = useQuery(GET_PORTAL_STATUS, {
+        variables: { id: portalId },
+        skip: !portalId,
+        pollInterval: 2000
+    });
+
+    // Initialize portalId from shell data
+    useEffect(() => {
+        if (data?.node?.portals) {
+            const activePortal = data.node.portals.find((p: any) => !p.closedAt);
+            if (activePortal) {
+                setPortalId(parseInt(activePortal.id));
+            }
+        }
+    }, [data]);
+
+    // Check if portal closed
+    useEffect(() => {
+        if (portalData?.node?.closedAt) {
+            setPortalId(null);
+        }
+    }, [portalData]);
+
+    // Update callback timer
+    useEffect(() => {
+        const updateTimer = () => {
+            // @ts-ignore
+            if (!beaconData?.node?.nextSeenAt) return;
+             // @ts-ignore
+            const next = moment(beaconData.node.nextSeenAt);
+            const now = moment();
+            const diff = next.diff(now, 'seconds');
+
+            if (diff > 0) {
+                setTimeUntilCallback(`in ${diff} seconds`);
+                setIsMissedCallback(false);
+            } else {
+                const missedSeconds = Math.abs(diff);
+                setTimeUntilCallback(`expected ${missedSeconds} seconds ago`);
+                setIsMissedCallback(true);
+            }
+        };
+
+        updateTimer(); // Initial call
+        const intervalId = setInterval(updateTimer, 1000);
+        return () => clearInterval(intervalId);
+    }, [beaconData]);
 
     const lastBufferHeight = useRef(0);
 
@@ -225,6 +320,8 @@ const ShellV2 = () => {
                     if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
                         content = msg.message + "\n";
                         color = "\x1b[33m"; // Yellow
+                    } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                        setPortalId(msg.portal_id);
                     }
                     // Handle other control signals if needed
                     break;
@@ -607,38 +704,66 @@ const ShellV2 = () => {
     }
 
     return (
-        <div style={{ padding: "20px", height: "calc(100vh - 100px)", position: "relative" }}>
-            <h1 className="text-xl font-bold mb-4">Shell V2 (Headless REPL)</h1>
-            <div ref={termRef} style={{ height: "100%", width: "100%" }} />
+        <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
+            <Breadcrumbs pages={[{ label: "Shell", link: "/shell" }]} />
+            <div className="flex items-center gap-4 mb-4">
+                <h1 className="text-xl font-bold">Shell V2 (Headless REPL)</h1>
+                <Badge badgeStyle={{ color: "purple" }}>Pre-alpha release</Badge>
+            </div>
 
-            {showCompletions && (
-                <div style={{
-                    position: "absolute",
-                    top: completionPos.y,
-                    left: completionPos.x,
-                    background: "#252526",
-                    border: "1px solid #454545",
-                    zIndex: 1000,
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-                    color: "#cccccc",
-                    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                    fontSize: "14px"
-                }}>
-                    <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                        {completions.map((c, i) => (
-                            <li key={i} style={{
-                                padding: "4px 8px",
-                                background: i === completionIndex ? "#094771" : "transparent",
-                                cursor: "pointer"
-                            }}>
-                                {c}
-                            </li>
-                        ))}
-                    </ul>
+            <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
+                <div ref={termRef} style={{ height: "100%", width: "100%" }} />
+
+                {showCompletions && (
+                    <div style={{
+                        position: "absolute",
+                        top: completionPos.y,
+                        left: completionPos.x,
+                        background: "#252526",
+                        border: "1px solid #454545",
+                        zIndex: 1000,
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+                        color: "#cccccc",
+                        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                        fontSize: "14px"
+                    }}>
+                        <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                            {completions.map((c, i) => (
+                                <li key={i} style={{
+                                    padding: "4px 8px",
+                                    background: i === completionIndex ? "#094771" : "transparent",
+                                    cursor: "pointer"
+                                }}>
+                                    {c}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+
+            <div className="flex justify-between items-center mt-2 text-sm text-gray-400 h-6">
+                <div className="flex items-center gap-2">
+                    {portalId ? (
+                        <span className="text-green-500 font-semibold">Portal Active (ID: {portalId})</span>
+                    ) : (
+                        <div className="flex items-center gap-1 group relative cursor-help">
+                            <span>non-interactive</span>
+                            <Tooltip label="This shell is currently in non-interactive mode. Input will be asynchronously queued for the beacon and output will be submitted through beacon callbacks. To upgrade to an interactive low-latency shell, you may open a 'Portal' on the beacon, which leverages an established connection to provide low-latency interactivity.">
+                                <span><Info size={14} /></span>
+                            </Tooltip>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {timeUntilCallback && (
+                    <div className={isMissedCallback ? "text-red-500 font-bold" : "text-gray-400"}>
+                        {timeUntilCallback}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
