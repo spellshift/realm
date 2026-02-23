@@ -215,7 +215,7 @@ async fn test_imix_agent_report_file() {
             })),
             kind: c2::ReportFileKind::Ondisk as i32,
         };
-        let _ = agent_clone.report_file(Box::new(std::iter::once(req)));
+        let _ = agent_clone.report_file(Box::new(std::iter::once(Ok(req))));
     })
     .join()
     .unwrap();

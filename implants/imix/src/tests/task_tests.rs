@@ -34,9 +34,13 @@ impl Agent for MockAgent {
     }
     fn report_file(
         &self,
-        req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + Sync>,
+        req: Box<dyn Iterator<Item = Result<c2::ReportFileRequest, String>> + Send + Sync>,
     ) -> Result<c2::ReportFileResponse, String> {
-        for _ in req {}
+        for item in req {
+            if let Err(e) = item {
+                return Err(e);
+            }
+        }
         Ok(c2::ReportFileResponse {})
     }
     fn report_process_list(

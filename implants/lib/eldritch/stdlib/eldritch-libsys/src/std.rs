@@ -19,7 +19,6 @@ mod is_bsd_impl;
 mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
-mod list_users_impl;
 mod shell_impl;
 mod write_reg_hex_impl;
 mod write_reg_int_impl;
@@ -103,10 +102,6 @@ impl SysLibrary for StdSysLibrary {
 
     fn is_windows(&self) -> Result<bool, String> {
         is_windows_impl::is_windows().map_err(|e| e.to_string())
-    }
-
-    fn list_users(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        list_users_impl::list_users().map_err(|e| e.to_string())
     }
 
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {

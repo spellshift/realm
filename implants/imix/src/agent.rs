@@ -413,22 +413,64 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn report_file(
         &self,
-        req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + Sync>,
+        req: Box<dyn Iterator<Item = Result<c2::ReportFileRequest, String>> + Send + Sync>,
     ) -> Result<c2::ReportFileResponse, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Receiver for report_file
             let (tx, rx) = std::sync::mpsc::channel();
             let req_iter = req;
 
-            tokio::task::spawn_blocking(move || {
+            let mut producer = tokio::task::spawn_blocking(move || {
                 for item in req_iter {
-                    if tx.send(item).is_err() {
-                        break;
+                    match item {
+                        Ok(r) => {
+                            if tx.send(r).is_err() {
+                                break;
+                            }
+                        }
+                        Err(e) => return Err(e),
                     }
                 }
+                Ok(())
             });
 
-            t.report_file(rx).await
+            let transport_fut = t.report_file(rx);
+            tokio::pin!(transport_fut);
+
+            tokio::select! {
+                res = &mut producer => {
+                    match res {
+                        Ok(Ok(_)) => {
+                            // Producer succeeded
+                            transport_fut.await
+                        }
+                        Ok(Err(e)) => {
+                            // Producer failed (read error)
+                            Err(anyhow::anyhow!("File read error: {}", e))
+                        }
+                        Err(e) => {
+                            // Producer panic
+                            Err(anyhow::anyhow!("Producer panic: {}", e))
+                        }
+                    }
+                }
+                res = &mut transport_fut => {
+                    // Transport finished.
+                    match res {
+                        Ok(resp) => {
+                            // Transport succeeded. Check if producer also succeeded.
+                            // Since transport consumes the stream, producer must be done (or stuck?).
+                            // If transport finished reading, it means the channel is closed, so producer is done.
+                            match producer.await {
+                                Ok(Ok(_)) => Ok(resp),
+                                Ok(Err(e)) => Err(anyhow::anyhow!("File read error: {}", e)),
+                                Err(e) => Err(anyhow::anyhow!("Producer panic: {}", e)),
+                            }
+                        }
+                        Err(e) => Err(e),
+                    }
+                }
+            }
         })
     }
 

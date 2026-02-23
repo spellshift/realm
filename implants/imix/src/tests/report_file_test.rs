@@ -2,12 +2,12 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use pb::c2::{ReportFileRequest, ReportFileResponse};
 use pb::config::Config;
-use std::sync::Arc;
 use std::sync::mpsc::Receiver;
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use transport::Transport;
 
-// Simple TestTransport to avoid mockall issues with cloning and expectations
+// Simple TestTransport
 #[derive(Clone)]
 struct TestTransport {
     pub received_chunks: Arc<RwLock<Vec<usize>>>,
@@ -173,4 +173,65 @@ async fn test_report_large_file_via_eldritch() {
     for &chunk_size in chunks.iter() {
         assert_eq!(chunk_size, 1024 * 1024, "Each chunk should be 1MB");
     }
+}
+
+// Mock iterator that fails after some items
+struct FailingIterator {
+    count: usize,
+    fail_at: usize,
+}
+
+impl Iterator for FailingIterator {
+    type Item = Result<ReportFileRequest, String>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.count >= self.fail_at {
+            return Some(Err("Simulated read error".to_string()));
+        }
+        self.count += 1;
+        Some(Ok(ReportFileRequest::default()))
+    }
+}
+
+#[tokio::test]
+async fn test_report_file_failure_propagation() {
+    // 1. Setup Transport
+    let transport = TestTransport::new();
+
+    // 2. Setup ImixAgent
+    let runtime_handle = tokio::runtime::Handle::current();
+    let task_registry = Arc::new(TaskRegistry::new());
+    let (shell_manager_tx, _) = tokio::sync::mpsc::channel(100);
+    let config = Config::default();
+
+    let agent = Arc::new(ImixAgent::new(
+        config,
+        transport,
+        runtime_handle,
+        task_registry,
+        shell_manager_tx,
+    ));
+
+    // 3. Call report_file with a failing iterator
+    use eldritch::agent::agent::Agent;
+    let failing_iter = FailingIterator {
+        count: 0,
+        fail_at: 2,
+    }; // Yields 2 OKs then 1 Err
+
+    let agent_clone = agent.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        agent_clone.report_file(Box::new(failing_iter))
+    })
+    .await
+    .unwrap();
+
+    // 4. Verify failure
+    assert!(result.is_err());
+    let err_msg = result.unwrap_err();
+    assert!(
+        err_msg.contains("Simulated read error"),
+        "Error message mismatch: {}",
+        err_msg
+    );
 }

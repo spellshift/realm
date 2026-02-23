@@ -31,7 +31,7 @@ impl FileChunkIterator {
 }
 
 impl Iterator for FileChunkIterator {
-    type Item = c2::ReportFileRequest;
+    type Item = Result<c2::ReportFileRequest, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.file.read(&mut self.buffer) {
@@ -58,13 +58,13 @@ impl Iterator for FileChunkIterator {
                     }
                 };
 
-                Some(c2::ReportFileRequest {
+                Some(Ok(c2::ReportFileRequest {
                     context: context_val,
                     chunk: Some(file_msg),
                     kind: c2::ReportFileKind::Ondisk as i32,
-                })
+                }))
             }
-            Err(_) => None, // Error reading file, stop iteration
+            Err(e) => Some(Err(e.to_string())),
         }
     }
 }

@@ -27,6 +27,6 @@ pub fn report_file(
         kind: c2::ReportFileKind::Ondisk as i32,
     };
     agent
-        .report_file(Box::new(alloc::vec![req].into_iter()))
+        .report_file(Box::new(alloc::vec![Ok(req)].into_iter()))
         .map(|_| ())
 }
