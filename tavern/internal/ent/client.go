@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -64,6 +65,8 @@ type Client struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// Screenshot is the client for interacting with the Screenshot builders.
+	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
 	// ShellTask is the client for interacting with the ShellTask builders.
@@ -101,6 +104,7 @@ func (c *Client) init() {
 	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
+	c.Screenshot = NewScreenshotClient(c.config)
 	c.Shell = NewShellClient(c.config)
 	c.ShellTask = NewShellTaskClient(c.config)
 	c.Tag = NewTagClient(c.config)
@@ -211,6 +215,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
@@ -248,6 +253,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
@@ -284,8 +290,8 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.ShellTask,
-		c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Screenshot, c.Shell,
+		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -296,8 +302,8 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Shell, c.ShellTask,
-		c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Screenshot, c.Shell,
+		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -330,6 +336,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Quest.mutate(ctx, m)
 	case *RepositoryMutation:
 		return c.Repository.mutate(ctx, m)
+	case *ScreenshotMutation:
+		return c.Screenshot.mutate(ctx, m)
 	case *ShellMutation:
 		return c.Shell.mutate(ctx, m)
 	case *ShellTaskMutation:
@@ -2523,6 +2531,188 @@ func (c *RepositoryClient) mutate(ctx context.Context, m *RepositoryMutation) (V
 	}
 }
 
+// ScreenshotClient is a client for the Screenshot schema.
+type ScreenshotClient struct {
+	config
+}
+
+// NewScreenshotClient returns a client for the Screenshot from the given config.
+func NewScreenshotClient(c config) *ScreenshotClient {
+	return &ScreenshotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `screenshot.Hooks(f(g(h())))`.
+func (c *ScreenshotClient) Use(hooks ...Hook) {
+	c.hooks.Screenshot = append(c.hooks.Screenshot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `screenshot.Intercept(f(g(h())))`.
+func (c *ScreenshotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Screenshot = append(c.inters.Screenshot, interceptors...)
+}
+
+// Create returns a builder for creating a Screenshot entity.
+func (c *ScreenshotClient) Create() *ScreenshotCreate {
+	mutation := newScreenshotMutation(c.config, OpCreate)
+	return &ScreenshotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Screenshot entities.
+func (c *ScreenshotClient) CreateBulk(builders ...*ScreenshotCreate) *ScreenshotCreateBulk {
+	return &ScreenshotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScreenshotClient) MapCreateBulk(slice any, setFunc func(*ScreenshotCreate, int)) *ScreenshotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScreenshotCreateBulk{err: fmt.Errorf("calling to ScreenshotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScreenshotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScreenshotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Screenshot.
+func (c *ScreenshotClient) Update() *ScreenshotUpdate {
+	mutation := newScreenshotMutation(c.config, OpUpdate)
+	return &ScreenshotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScreenshotClient) UpdateOne(s *Screenshot) *ScreenshotUpdateOne {
+	mutation := newScreenshotMutation(c.config, OpUpdateOne, withScreenshot(s))
+	return &ScreenshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScreenshotClient) UpdateOneID(id int) *ScreenshotUpdateOne {
+	mutation := newScreenshotMutation(c.config, OpUpdateOne, withScreenshotID(id))
+	return &ScreenshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Screenshot.
+func (c *ScreenshotClient) Delete() *ScreenshotDelete {
+	mutation := newScreenshotMutation(c.config, OpDelete)
+	return &ScreenshotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScreenshotClient) DeleteOne(s *Screenshot) *ScreenshotDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScreenshotClient) DeleteOneID(id int) *ScreenshotDeleteOne {
+	builder := c.Delete().Where(screenshot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScreenshotDeleteOne{builder}
+}
+
+// Query returns a query builder for Screenshot.
+func (c *ScreenshotClient) Query() *ScreenshotQuery {
+	return &ScreenshotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScreenshot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Screenshot entity by its id.
+func (c *ScreenshotClient) Get(ctx context.Context, id int) (*Screenshot, error) {
+	return c.Query().Where(screenshot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScreenshotClient) GetX(ctx context.Context, id int) *Screenshot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryHost queries the host edge of a Screenshot.
+func (c *ScreenshotClient) QueryHost(s *Screenshot) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(screenshot.Table, screenshot.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, screenshot.HostTable, screenshot.HostColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTask queries the task edge of a Screenshot.
+func (c *ScreenshotClient) QueryTask(s *Screenshot) *TaskQuery {
+	query := (&TaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(screenshot.Table, screenshot.FieldID, id),
+			sqlgraph.To(task.Table, task.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, screenshot.TaskTable, screenshot.TaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryShellTask queries the shell_task edge of a Screenshot.
+func (c *ScreenshotClient) QueryShellTask(s *Screenshot) *ShellTaskQuery {
+	query := (&ShellTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(screenshot.Table, screenshot.FieldID, id),
+			sqlgraph.To(shelltask.Table, shelltask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, screenshot.ShellTaskTable, screenshot.ShellTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ScreenshotClient) Hooks() []Hook {
+	hooks := c.hooks.Screenshot
+	return append(hooks[:len(hooks):len(hooks)], screenshot.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScreenshotClient) Interceptors() []Interceptor {
+	return c.inters.Screenshot
+}
+
+func (c *ScreenshotClient) mutate(ctx context.Context, m *ScreenshotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScreenshotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScreenshotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScreenshotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScreenshotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Screenshot mutation op: %q", m.Op())
+	}
+}
+
 // ShellClient is a client for the Shell schema.
 type ShellClient struct {
 	config
@@ -2940,6 +3130,22 @@ func (c *ShellTaskClient) QueryReportedProcesses(st *ShellTask) *HostProcessQuer
 	return query
 }
 
+// QueryReportedScreenshots queries the reported_screenshots edge of a ShellTask.
+func (c *ShellTaskClient) QueryReportedScreenshots(st *ShellTask) *ScreenshotQuery {
+	query := (&ScreenshotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, id),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedScreenshotsTable, shelltask.ReportedScreenshotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellTaskClient) Hooks() []Hook {
 	return c.hooks.ShellTask
@@ -3295,6 +3501,22 @@ func (c *TaskClient) QueryReportedCredentials(t *Task) *HostCredentialQuery {
 			sqlgraph.From(task.Table, task.FieldID, id),
 			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedCredentialsTable, task.ReportedCredentialsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReportedScreenshots queries the reported_screenshots edge of a Task.
+func (c *TaskClient) QueryReportedScreenshots(t *Task) *ScreenshotQuery {
+	query := (&ScreenshotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, id),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedScreenshotsTable, task.ReportedScreenshotsColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -3711,12 +3933,12 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Shell, ShellTask, Tag, Task, Tome,
+		Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask, Tag, Task, Tome,
 		User []ent.Hook
 	}
 	inters struct {
 		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Shell, ShellTask, Tag, Task, Tome,
+		Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask, Tag, Task, Tome,
 		User []ent.Interceptor
 	}
 )

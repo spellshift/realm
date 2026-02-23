@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/user"
@@ -208,6 +209,21 @@ func (stc *ShellTaskCreate) AddReportedProcesses(h ...*HostProcess) *ShellTaskCr
 		ids[i] = h[i].ID
 	}
 	return stc.AddReportedProcessIDs(ids...)
+}
+
+// AddReportedScreenshotIDs adds the "reported_screenshots" edge to the Screenshot entity by IDs.
+func (stc *ShellTaskCreate) AddReportedScreenshotIDs(ids ...int) *ShellTaskCreate {
+	stc.mutation.AddReportedScreenshotIDs(ids...)
+	return stc
+}
+
+// AddReportedScreenshots adds the "reported_screenshots" edges to the Screenshot entity.
+func (stc *ShellTaskCreate) AddReportedScreenshots(s ...*Screenshot) *ShellTaskCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return stc.AddReportedScreenshotIDs(ids...)
 }
 
 // Mutation returns the ShellTaskMutation object of the builder.
@@ -420,6 +436,22 @@ func (stc *ShellTaskCreate) createSpec() (*ShellTask, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.ReportedScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedScreenshotsTable,
+			Columns: []string{shelltask.ReportedScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

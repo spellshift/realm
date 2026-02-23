@@ -327,6 +327,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
 
@@ -413,6 +414,32 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Screenshot struct {
+		CreatedAt      func(childComplexity int) int
+		Group          func(childComplexity int) int
+		Hash           func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Owner          func(childComplexity int) int
+		Path           func(childComplexity int) int
+		Permissions    func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
+		Size           func(childComplexity int) int
+		Task           func(childComplexity int) int
+	}
+
+	ScreenshotConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ScreenshotEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Shell struct {
 		ActiveUsers    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Beacon         func(childComplexity int) int
@@ -451,6 +478,7 @@ type ComplexityRoot struct {
 		ReportedCredentials func(childComplexity int) int
 		ReportedFiles       func(childComplexity int) int
 		ReportedProcesses   func(childComplexity int) int
+		ReportedScreenshots func(childComplexity int) int
 		SequenceID          func(childComplexity int) int
 		Shell               func(childComplexity int) int
 		StreamID            func(childComplexity int) int
@@ -500,6 +528,7 @@ type ComplexityRoot struct {
 		ReportedCredentials func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ReportedFiles       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ReportedProcesses   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		ReportedScreenshots func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
 		Shells              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 	}
 
@@ -2066,6 +2095,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Portal.Owner(childComplexity), true
 
+	case "Portal.shellTask":
+		if e.complexity.Portal.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.Portal.ShellTask(childComplexity), true
+
 	case "Portal.task":
 		if e.complexity.Portal.Task == nil {
 			break
@@ -2529,6 +2565,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
+	case "Screenshot.createdAt":
+		if e.complexity.Screenshot.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.CreatedAt(childComplexity), true
+
+	case "Screenshot.group":
+		if e.complexity.Screenshot.Group == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Group(childComplexity), true
+
+	case "Screenshot.hash":
+		if e.complexity.Screenshot.Hash == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Hash(childComplexity), true
+
+	case "Screenshot.host":
+		if e.complexity.Screenshot.Host == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Host(childComplexity), true
+
+	case "Screenshot.id":
+		if e.complexity.Screenshot.ID == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.ID(childComplexity), true
+
+	case "Screenshot.lastModifiedAt":
+		if e.complexity.Screenshot.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.LastModifiedAt(childComplexity), true
+
+	case "Screenshot.owner":
+		if e.complexity.Screenshot.Owner == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Owner(childComplexity), true
+
+	case "Screenshot.path":
+		if e.complexity.Screenshot.Path == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Path(childComplexity), true
+
+	case "Screenshot.permissions":
+		if e.complexity.Screenshot.Permissions == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Permissions(childComplexity), true
+
+	case "Screenshot.shellTask":
+		if e.complexity.Screenshot.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.ShellTask(childComplexity), true
+
+	case "Screenshot.size":
+		if e.complexity.Screenshot.Size == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Size(childComplexity), true
+
+	case "Screenshot.task":
+		if e.complexity.Screenshot.Task == nil {
+			break
+		}
+
+		return e.complexity.Screenshot.Task(childComplexity), true
+
+	case "ScreenshotConnection.edges":
+		if e.complexity.ScreenshotConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ScreenshotConnection.Edges(childComplexity), true
+
+	case "ScreenshotConnection.pageInfo":
+		if e.complexity.ScreenshotConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ScreenshotConnection.PageInfo(childComplexity), true
+
+	case "ScreenshotConnection.totalCount":
+		if e.complexity.ScreenshotConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ScreenshotConnection.TotalCount(childComplexity), true
+
+	case "ScreenshotEdge.cursor":
+		if e.complexity.ScreenshotEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ScreenshotEdge.Cursor(childComplexity), true
+
+	case "ScreenshotEdge.node":
+		if e.complexity.ScreenshotEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ScreenshotEdge.Node(childComplexity), true
+
 	case "Shell.activeUsers":
 		if e.complexity.Shell.ActiveUsers == nil {
 			break
@@ -2734,6 +2889,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellTask.ReportedProcesses(childComplexity), true
+
+	case "ShellTask.reportedScreenshots":
+		if e.complexity.ShellTask.ReportedScreenshots == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedScreenshots(childComplexity), true
 
 	case "ShellTask.sequenceID":
 		if e.complexity.ShellTask.SequenceID == nil {
@@ -2971,6 +3133,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Task.ReportedProcesses(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
+
+	case "Task.reportedScreenshots":
+		if e.complexity.Task.ReportedScreenshots == nil {
+			break
+		}
+
+		args, err := ec.field_Task_reportedScreenshots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Task.ReportedScreenshots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScreenshotOrder), args["where"].(*ent.ScreenshotWhereInput)), true
 
 	case "Task.shells":
 		if e.complexity.Task.Shells == nil {
@@ -3321,6 +3495,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
+		ec.unmarshalInputScreenshotOrder,
+		ec.unmarshalInputScreenshotWhereInput,
 		ec.unmarshalInputShellOrder,
 		ec.unmarshalInputShellTaskOrder,
 		ec.unmarshalInputShellTaskWhereInput,
@@ -6201,7 +6377,11 @@ type Portal implements Node {
   """
   Task that created the portal
   """
-  task: Task!
+  task: Task
+  """
+  ShellTask that created the portal
+  """
+  shellTask: ShellTask
   """
   Beacon that created the portal
   """
@@ -6352,6 +6532,11 @@ input PortalWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
   """
   beacon edge predicates
   """
@@ -6847,6 +7032,261 @@ input RepositoryWhereInput {
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
 }
+type Screenshot implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Path to the file on the host system.
+  """
+  path: String!
+  """
+  User who owns the file on the host system.
+  """
+  owner: String
+  """
+  Group who owns the file on the host system.
+  """
+  group: String
+  """
+  Permissions for the file on the host system.
+  """
+  permissions: String
+  """
+  The size of the file in bytes
+  """
+  size: Uint64!
+  """
+  A SHA3-256 digest of the content field
+  """
+  hash: String
+  """
+  Host the screenshot was reported on.
+  """
+  host: Host!
+  """
+  Task that reported this screenshot.
+  """
+  task: Task
+  """
+  Shell Task that reported this screenshot.
+  """
+  shellTask: ShellTask
+}
+"""
+A connection to a list of items.
+"""
+type ScreenshotConnection {
+  """
+  A list of edges.
+  """
+  edges: [ScreenshotEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ScreenshotEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Screenshot
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Screenshot connections
+"""
+input ScreenshotOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Screenshots.
+  """
+  field: ScreenshotOrderField!
+}
+"""
+Properties by which Screenshot connections can be ordered.
+"""
+enum ScreenshotOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+  SIZE
+}
+"""
+ScreenshotWhereInput is used for filtering Screenshot objects.
+Input was generated by ent.
+"""
+input ScreenshotWhereInput {
+  not: ScreenshotWhereInput
+  and: [ScreenshotWhereInput!]
+  or: [ScreenshotWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  path field predicates
+  """
+  path: String
+  pathNEQ: String
+  pathIn: [String!]
+  pathNotIn: [String!]
+  pathGT: String
+  pathGTE: String
+  pathLT: String
+  pathLTE: String
+  pathContains: String
+  pathHasPrefix: String
+  pathHasSuffix: String
+  pathEqualFold: String
+  pathContainsFold: String
+  """
+  owner field predicates
+  """
+  owner: String
+  ownerNEQ: String
+  ownerIn: [String!]
+  ownerNotIn: [String!]
+  ownerGT: String
+  ownerGTE: String
+  ownerLT: String
+  ownerLTE: String
+  ownerContains: String
+  ownerHasPrefix: String
+  ownerHasSuffix: String
+  ownerIsNil: Boolean
+  ownerNotNil: Boolean
+  ownerEqualFold: String
+  ownerContainsFold: String
+  """
+  group field predicates
+  """
+  group: String
+  groupNEQ: String
+  groupIn: [String!]
+  groupNotIn: [String!]
+  groupGT: String
+  groupGTE: String
+  groupLT: String
+  groupLTE: String
+  groupContains: String
+  groupHasPrefix: String
+  groupHasSuffix: String
+  groupIsNil: Boolean
+  groupNotNil: Boolean
+  groupEqualFold: String
+  groupContainsFold: String
+  """
+  permissions field predicates
+  """
+  permissions: String
+  permissionsNEQ: String
+  permissionsIn: [String!]
+  permissionsNotIn: [String!]
+  permissionsGT: String
+  permissionsGTE: String
+  permissionsLT: String
+  permissionsLTE: String
+  permissionsContains: String
+  permissionsHasPrefix: String
+  permissionsHasSuffix: String
+  permissionsIsNil: Boolean
+  permissionsNotNil: Boolean
+  permissionsEqualFold: String
+  permissionsContainsFold: String
+  """
+  size field predicates
+  """
+  size: Uint64
+  sizeNEQ: Uint64
+  sizeIn: [Uint64!]
+  sizeNotIn: [Uint64!]
+  sizeGT: Uint64
+  sizeGTE: Uint64
+  sizeLT: Uint64
+  sizeLTE: Uint64
+  """
+  hash field predicates
+  """
+  hash: String
+  hashNEQ: String
+  hashIn: [String!]
+  hashNotIn: [String!]
+  hashGT: String
+  hashGTE: String
+  hashLT: String
+  hashLTE: String
+  hashContains: String
+  hashHasPrefix: String
+  hashHasSuffix: String
+  hashIsNil: Boolean
+  hashNotNil: Boolean
+  hashEqualFold: String
+  hashContainsFold: String
+  """
+  host edge predicates
+  """
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """
+  task edge predicates
+  """
+  hasTask: Boolean
+  hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
+}
 type Shell implements Node {
   id: ID!
   """
@@ -7053,6 +7493,10 @@ type ShellTask implements Node {
   Processes reported by this shell task
   """
   reportedProcesses: [HostProcess!]
+  """
+  Screenshots reported by this shell task execution.
+  """
+  reportedScreenshots: [Screenshot!]
 }
 """
 A connection to a list of items.
@@ -7291,6 +7735,11 @@ input ShellTaskWhereInput {
   """
   hasReportedProcesses: Boolean
   hasReportedProcessesWith: [HostProcessWhereInput!]
+  """
+  reported_screenshots edge predicates
+  """
+  hasReportedScreenshots: Boolean
+  hasReportedScreenshotsWith: [ScreenshotWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -7652,6 +8101,37 @@ type Task implements Node {
     """
     where: HostCredentialWhereInput
   ): HostCredentialConnection!
+  reportedScreenshots(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Screenshots returned from the connection.
+    """
+    orderBy: [ScreenshotOrder!]
+
+    """
+    Filtering options for Screenshots returned from the connection.
+    """
+    where: ScreenshotWhereInput
+  ): ScreenshotConnection!
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -7890,6 +8370,11 @@ input TaskWhereInput {
   """
   hasReportedCredentials: Boolean
   hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """
+  reported_screenshots edge predicates
+  """
+  hasReportedScreenshots: Boolean
+  hasReportedScreenshotsWith: [ScreenshotWhereInput!]
   """
   shells edge predicates
   """

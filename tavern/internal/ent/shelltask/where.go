@@ -770,6 +770,29 @@ func HasReportedProcessesWith(preds ...predicate.HostProcess) predicate.ShellTas
 	})
 }
 
+// HasReportedScreenshots applies the HasEdge predicate on the "reported_screenshots" edge.
+func HasReportedScreenshots() predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ReportedScreenshotsTable, ReportedScreenshotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReportedScreenshotsWith applies the HasEdge predicate on the "reported_screenshots" edge with a given conditions (other predicates).
+func HasReportedScreenshotsWith(preds ...predicate.Screenshot) predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := newReportedScreenshotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.ShellTask) predicate.ShellTask {
 	return predicate.ShellTask(sql.AndPredicates(predicates...))

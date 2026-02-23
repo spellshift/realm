@@ -23,6 +23,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		permissions string
 		size        uint64
 		hash        string
+		kind        c2pb.ReportFileKind
 
 		content []byte
 	)
@@ -37,6 +38,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed to receive report_file request: %v", err)
+		}
+
+		if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_UNSPECIFIED {
+			kind = req.Kind
 		}
 
 		// Collect args
@@ -110,15 +115,6 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		host = h
 	}
 
-	// Load Existing Files
-	existingFiles, err := host.QueryFiles().
-		Where(
-			hostfile.Path(path),
-		).All(ctx)
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
-	}
-
 	// Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -134,36 +130,70 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}()
 
-	// Create File
-	builder := client.HostFile.Create().
-		SetHostID(host.ID).
-		SetPath(path).
-		SetOwner(owner).
-		SetGroup(group).
-		SetPermissions(permissions).
-		SetSize(size).
-		SetHash(hash).
-		SetContent(content)
+	if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT {
+		// Create Screenshot
+		builder := client.Screenshot.Create().
+			SetHostID(host.ID).
+			SetPath(path).
+			SetOwner(owner).
+			SetGroup(group).
+			SetPermissions(permissions).
+			SetSize(size).
+			SetHash(hash).
+			SetContent(content)
 
-	if task != nil {
-		builder.SetTaskID(task.ID)
-	}
-	if shellTask != nil {
-		builder.SetShellTaskID(shellTask.ID)
-	}
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
 
-	f, err := builder.Save(ctx)
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
-	}
+		_, err := builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create screenshot: %w", err))
+		}
+	} else {
+		// Load Existing Files
+		existingFiles, err := host.QueryFiles().
+			Where(
+				hostfile.Path(path),
+			).All(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
+		}
 
-	// Clear Previous Files, Set New File
-	_, err = client.Host.UpdateOneID(host.ID).
-		AddFiles(f).
-		RemoveFiles(existingFiles...).
-		Save(ctx)
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+		// Create File
+		builder := client.HostFile.Create().
+			SetHostID(host.ID).
+			SetPath(path).
+			SetOwner(owner).
+			SetGroup(group).
+			SetPermissions(permissions).
+			SetSize(size).
+			SetHash(hash).
+			SetContent(content)
+
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
+
+		f, err := builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
+		}
+
+		// Clear Previous Files, Set New File
+		_, err = client.Host.UpdateOneID(host.ID).
+			AddFiles(f).
+			RemoveFiles(existingFiles...).
+			Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+		}
 	}
 
 	// Commit Transaction

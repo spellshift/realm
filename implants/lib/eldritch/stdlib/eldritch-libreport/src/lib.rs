@@ -78,4 +78,13 @@ pub trait ReportLibrary {
     /// **Returns**
     /// - `None`
     fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Captures screenshots of all monitors and reports them to the C2 server.
+    ///
+    /// The filenames will be in the format `screenshot_<hostname>_<timestamp>_<index>.png`.
+    ///
+    /// **Returns**
+    /// - `None`
+    fn screenshot(&self) -> Result<(), String>;
 }

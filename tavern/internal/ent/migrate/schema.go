@@ -433,6 +433,48 @@ var (
 			},
 		},
 	}
+	// ScreenshotsColumns holds the columns for the "screenshots" table.
+	ScreenshotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "path", Type: field.TypeString},
+		{Name: "owner", Type: field.TypeString, Nullable: true},
+		{Name: "group", Type: field.TypeString, Nullable: true},
+		{Name: "permissions", Type: field.TypeString, Nullable: true},
+		{Name: "size", Type: field.TypeUint64, Default: 0},
+		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "screenshot_host", Type: field.TypeInt},
+		{Name: "shell_task_reported_screenshots", Type: field.TypeInt, Nullable: true},
+		{Name: "task_reported_screenshots", Type: field.TypeInt, Nullable: true},
+	}
+	// ScreenshotsTable holds the schema information for the "screenshots" table.
+	ScreenshotsTable = &schema.Table{
+		Name:       "screenshots",
+		Columns:    ScreenshotsColumns,
+		PrimaryKey: []*schema.Column{ScreenshotsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "screenshots_hosts_host",
+				Columns:    []*schema.Column{ScreenshotsColumns[10]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "screenshots_shell_tasks_reported_screenshots",
+				Columns:    []*schema.Column{ScreenshotsColumns[11]},
+				RefColumns: []*schema.Column{ShellTasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "screenshots_tasks_reported_screenshots",
+				Columns:    []*schema.Column{ScreenshotsColumns[12]},
+				RefColumns: []*schema.Column{TasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// ShellsColumns holds the columns for the "shells" table.
 	ShellsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -706,6 +748,7 @@ var (
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
+		ScreenshotsTable,
 		ShellsTable,
 		ShellTasksTable,
 		TagsTable,
@@ -781,6 +824,12 @@ func init() {
 	RepositoriesTable.ForeignKeys[0].RefTable = UsersTable
 	RepositoriesTable.Annotation = &entsql.Annotation{
 		Table:     "repositories",
+		Collation: "utf8mb4_general_ci",
+	}
+	ScreenshotsTable.ForeignKeys[0].RefTable = HostsTable
+	ScreenshotsTable.ForeignKeys[1].RefTable = ShellTasksTable
+	ScreenshotsTable.ForeignKeys[2].RefTable = TasksTable
+	ScreenshotsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	ShellsTable.ForeignKeys[0].RefTable = TasksTable

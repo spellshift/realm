@@ -59,15 +59,18 @@ type ShellTaskEdges struct {
 	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
 	// Processes reported by this shell task
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
+	// Screenshots reported by this shell task execution.
+	ReportedScreenshots []*Screenshot `json:"reported_screenshots,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
 	namedReportedCredentials map[string][]*HostCredential
 	namedReportedFiles       map[string][]*HostFile
 	namedReportedProcesses   map[string][]*HostProcess
+	namedReportedScreenshots map[string][]*Screenshot
 }
 
 // ShellOrErr returns the Shell value or an error if the edge
@@ -117,6 +120,15 @@ func (e ShellTaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
 		return e.ReportedProcesses, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_processes"}
+}
+
+// ReportedScreenshotsOrErr returns the ReportedScreenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellTaskEdges) ReportedScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[5] {
+		return e.ReportedScreenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_screenshots"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -267,6 +279,11 @@ func (st *ShellTask) QueryReportedProcesses() *HostProcessQuery {
 	return NewShellTaskClient(st.config).QueryReportedProcesses(st)
 }
 
+// QueryReportedScreenshots queries the "reported_screenshots" edge of the ShellTask entity.
+func (st *ShellTask) QueryReportedScreenshots() *ScreenshotQuery {
+	return NewShellTaskClient(st.config).QueryReportedScreenshots(st)
+}
+
 // Update returns a builder for updating this ShellTask.
 // Note that you need to call ShellTask.Unwrap() before calling this method if this ShellTask
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -392,6 +409,30 @@ func (st *ShellTask) appendNamedReportedProcesses(name string, edges ...*HostPro
 		st.Edges.namedReportedProcesses[name] = []*HostProcess{}
 	} else {
 		st.Edges.namedReportedProcesses[name] = append(st.Edges.namedReportedProcesses[name], edges...)
+	}
+}
+
+// NamedReportedScreenshots returns the ReportedScreenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ShellTask) NamedReportedScreenshots(name string) ([]*Screenshot, error) {
+	if st.Edges.namedReportedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedReportedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ShellTask) appendNamedReportedScreenshots(name string, edges ...*Screenshot) {
+	if st.Edges.namedReportedScreenshots == nil {
+		st.Edges.namedReportedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedReportedScreenshots[name] = []*Screenshot{}
+	} else {
+		st.Edges.namedReportedScreenshots[name] = append(st.Edges.namedReportedScreenshots[name], edges...)
 	}
 }
 

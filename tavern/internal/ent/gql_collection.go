@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -2979,6 +2980,169 @@ func newRepositoryPaginateArgs(rv map[string]any) *repositoryPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (s *ScreenshotQuery) CollectFields(ctx context.Context, satisfies ...string) (*ScreenshotQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return s, nil
+	}
+	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (s *ScreenshotQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(screenshot.Columns))
+		selectedFields = []string{screenshot.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
+				return err
+			}
+			s.withHost = query
+
+		case "task":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&TaskClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, taskImplementors)...); err != nil {
+				return err
+			}
+			s.withTask = query
+
+		case "shellTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellTaskClient{config: s.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shelltaskImplementors)...); err != nil {
+				return err
+			}
+			s.withShellTask = query
+		case "createdAt":
+			if _, ok := fieldSeen[screenshot.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldCreatedAt)
+				fieldSeen[screenshot.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[screenshot.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldLastModifiedAt)
+				fieldSeen[screenshot.FieldLastModifiedAt] = struct{}{}
+			}
+		case "path":
+			if _, ok := fieldSeen[screenshot.FieldPath]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldPath)
+				fieldSeen[screenshot.FieldPath] = struct{}{}
+			}
+		case "owner":
+			if _, ok := fieldSeen[screenshot.FieldOwner]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldOwner)
+				fieldSeen[screenshot.FieldOwner] = struct{}{}
+			}
+		case "group":
+			if _, ok := fieldSeen[screenshot.FieldGroup]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldGroup)
+				fieldSeen[screenshot.FieldGroup] = struct{}{}
+			}
+		case "permissions":
+			if _, ok := fieldSeen[screenshot.FieldPermissions]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldPermissions)
+				fieldSeen[screenshot.FieldPermissions] = struct{}{}
+			}
+		case "size":
+			if _, ok := fieldSeen[screenshot.FieldSize]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldSize)
+				fieldSeen[screenshot.FieldSize] = struct{}{}
+			}
+		case "hash":
+			if _, ok := fieldSeen[screenshot.FieldHash]; !ok {
+				selectedFields = append(selectedFields, screenshot.FieldHash)
+				fieldSeen[screenshot.FieldHash] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		s.Select(selectedFields...)
+	}
+	return nil
+}
+
+type screenshotPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ScreenshotPaginateOption
+}
+
+func newScreenshotPaginateArgs(rv map[string]any) *screenshotPaginateArgs {
+	args := &screenshotPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*ScreenshotOrder:
+			args.opts = append(args.opts, WithScreenshotOrder(v))
+		case []any:
+			var orders []*ScreenshotOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &ScreenshotOrder{Field: &ScreenshotOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithScreenshotOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*ScreenshotWhereInput); ok {
+		args.opts = append(args.opts, WithScreenshotFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (s *ShellQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -3391,6 +3555,19 @@ func (st *ShellTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			st.WithNamedReportedProcesses(alias, func(wq *HostProcessQuery) {
+				*wq = *query
+			})
+
+		case "reportedScreenshots":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ScreenshotClient{config: st.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, screenshotImplementors)...); err != nil {
+				return err
+			}
+			st.WithNamedReportedScreenshots(alias, func(wq *ScreenshotQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -4016,6 +4193,95 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				*wq = *query
 			})
 
+		case "reportedScreenshots":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ScreenshotClient{config: t.config}).Query()
+			)
+			args := newScreenshotPaginateArgs(fieldArgs(ctx, new(ScreenshotWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newScreenshotPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					t.loadTotal = append(t.loadTotal, func(ctx context.Context, nodes []*Task) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"task_reported_screenshots"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(task.ReportedScreenshotsColumn), ids...))
+						})
+						if err := query.GroupBy(task.ReportedScreenshotsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[5] == nil {
+								nodes[i].Edges.totalCount[5] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[5][alias] = n
+						}
+						return nil
+					})
+				} else {
+					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.ReportedScreenshots)
+							if nodes[i].Edges.totalCount[5] == nil {
+								nodes[i].Edges.totalCount[5] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[5][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, screenshotImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(task.ReportedScreenshotsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			t.WithNamedReportedScreenshots(alias, func(wq *ScreenshotQuery) {
+				*wq = *query
+			})
+
 		case "shells":
 			var (
 				alias = field.Alias
@@ -4059,10 +4325,10 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[5] == nil {
-								nodes[i].Edges.totalCount[5] = make(map[string]int)
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[5][alias] = n
+							nodes[i].Edges.totalCount[6][alias] = n
 						}
 						return nil
 					})
@@ -4070,10 +4336,10 @@ func (t *TaskQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 					t.loadTotal = append(t.loadTotal, func(_ context.Context, nodes []*Task) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Shells)
-							if nodes[i].Edges.totalCount[5] == nil {
-								nodes[i].Edges.totalCount[5] = make(map[string]int)
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[5][alias] = n
+							nodes[i].Edges.totalCount[6][alias] = n
 						}
 						return nil
 					})

@@ -465,6 +465,30 @@ func (r *Repository) Owner(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
+func (s *Screenshot) Host(ctx context.Context) (*Host, error) {
+	result, err := s.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryHost().Only(ctx)
+	}
+	return result, err
+}
+
+func (s *Screenshot) Task(ctx context.Context) (*Task, error) {
+	result, err := s.Edges.TaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (s *Screenshot) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := s.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = s.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (s *Shell) Task(ctx context.Context) (*Task, error) {
 	result, err := s.Edges.TaskOrErr()
 	if IsNotLoaded(err) {
@@ -595,6 +619,18 @@ func (st *ShellTask) ReportedProcesses(ctx context.Context) (result []*HostProce
 	return result, err
 }
 
+func (st *ShellTask) ReportedScreenshots(ctx context.Context) (result []*Screenshot, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = st.NamedReportedScreenshots(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = st.Edges.ReportedScreenshotsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = st.QueryReportedScreenshots().All(ctx)
+	}
+	return result, err
+}
+
 func (t *Tag) Hosts(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
 ) (*HostConnection, error) {
@@ -695,6 +731,27 @@ func (t *Task) ReportedCredentials(
 	return t.QueryReportedCredentials().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (t *Task) ReportedScreenshots(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ScreenshotOrder, where *ScreenshotWhereInput,
+) (*ScreenshotConnection, error) {
+	opts := []ScreenshotPaginateOption{
+		WithScreenshotOrder(orderBy),
+		WithScreenshotFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := t.Edges.totalCount[5][alias]
+	if nodes, err := t.NamedReportedScreenshots(alias); err == nil || hasTotalCount {
+		pager, err := newScreenshotPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ScreenshotConnection{Edges: []*ScreenshotEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return t.QueryReportedScreenshots().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (t *Task) Shells(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
 ) (*ShellConnection, error) {
@@ -703,7 +760,7 @@ func (t *Task) Shells(
 		WithShellFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := t.Edges.totalCount[5][alias]
+	totalCount, hasTotalCount := t.Edges.totalCount[6][alias]
 	if nodes, err := t.NamedShells(alias); err == nil || hasTotalCount {
 		pager, err := newShellPager(opts, last != nil)
 		if err != nil {
