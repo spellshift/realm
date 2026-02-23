@@ -1,0 +1,839 @@
+{
+  "reportFormat": "CTRF",
+  "specVersion": "0.0.0",
+  "generatedBy": "junit-to-ctrf",
+  "timestamp": "2026-02-23T01:58:42.237Z",
+  "results": {
+    "tool": {
+      "name": "junit-to-ctrf"
+    },
+    "summary": {
+      "tests": 102,
+      "passed": 102,
+      "failed": 0,
+      "skipped": 0,
+      "pending": 0,
+      "other": 0,
+      "start": 0,
+      "stop": 0
+    },
+    "tests": [
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should provide default filters on initial load",
+        "status": "passed",
+        "duration": 27,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should load locked filters from sessionStorage",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > FilterProvider initialization > should NOT load unlocked filters from sessionStorage",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should return default filters if sessionStorage contains invalid JSON",
+        "status": "passed",
+        "duration": 1,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should reject data with invalid field types",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > Filter validation > should reject beaconFields with missing required fields",
+        "status": "passed",
+        "duration": 1,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should update filters with partial updates",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should persist updated filters to sessionStorage",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > updateFilters > should update array fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > resetFilters > should reset all filters to default values",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > storage event listener > should update filters when storage event is triggered with locked filters",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > storage event listener > should reset to defaults when storage event contains unlocked filters",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > storage event listener > should ignore storage events with different keys",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > calculateFilterCount > should count string fields correctly",
+        "status": "passed",
+        "duration": 0,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > calculateFilterCount > should count array fields by length",
+        "status": "passed",
+        "duration": 1,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > calculateTotalFilterCount > should return 0 when all filters are empty",
+        "status": "passed",
+        "duration": 0,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > calculateTotalFilterCount > should sum counts for specified fields only",
+        "status": "passed",
+        "duration": 0,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterContext.test.tsx: FilterContext > calculateTotalFilterCount > should return total count for all fields",
+        "status": "passed",
+        "duration": 0,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render all filters for QUEST page",
+        "status": "passed",
+        "duration": 83,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render only beacon filter for HOST page",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render beacon and task output filters for TASKS page",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should render host task filters for host detail page",
+        "status": "passed",
+        "duration": 22,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter configuration by page type > should not render filters on non-filterable pages",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should display \"Filters (0)\" when no filters are active",
+        "status": "passed",
+        "duration": 13,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should count text search filters correctly",
+        "status": "passed",
+        "duration": 339,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter label calculation > should count multiple active filters correctly",
+        "status": "passed",
+        "duration": 340,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter lock/unlock toggle > should toggle isLocked when lock button is clicked",
+        "status": "passed",
+        "duration": 789,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter lock/unlock toggle > should disable filter components when isLocked is true",
+        "status": "passed",
+        "duration": 477,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter component interactions > should update filter state when inputs change",
+        "status": "passed",
+        "duration": 250,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/FilterContext/__tests__/FilterControls.test.tsx: FilterControls > Filter component interactions > should preserve filter values when toggling lock state",
+        "status": "passed",
+        "duration": 529,
+        "suite": [
+          "src/context/FilterContext/__tests__/FilterControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingContext.test.tsx: PollingContext > PollingProvider initialization > should provide default seconds until next poll",
+        "status": "passed",
+        "duration": 17,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingContext.test.tsx: PollingContext > PollingProvider initialization > should throw error when usePolling is used outside PollingProvider",
+        "status": "passed",
+        "duration": 15,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingContext.test.tsx: PollingContext > Provider setup > should set up intervals on mount",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingContext.test.tsx: PollingContext > Provider setup > should clean up intervals on unmount",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingCountdown.test.tsx: PollingCountdown > Rendering variants > should render minimal variant with icon and countdown",
+        "status": "passed",
+        "duration": 73,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingCountdown.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingCountdown.test.tsx: PollingCountdown > Rendering variants > should render full variant with icon, label, and countdown",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingCountdown.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingCountdown.test.tsx: PollingCountdown > Countdown display > should display countdown value in minimal variant",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingCountdown.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/PollingContext/__tests__/PollingCountdown.test.tsx: PollingCountdown > Countdown display > should display countdown value in full variant",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/PollingContext/__tests__/PollingCountdown.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should provide default sorts on initial load",
+        "status": "passed",
+        "duration": 28,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should load sorts from sessionStorage if available",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > SortsProvider initialization > should throw error when useSorts is used outside SortsProvider",
+        "status": "passed",
+        "duration": 26,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should return default sorts if sessionStorage contains invalid JSON",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should reject data with missing required fields",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should reject data with invalid direction value",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > Sort validation > should accept valid OrderByField structure",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should update sorts with partial updates",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should update multiple sort fields at once",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > updateSorts > should persist updated sorts to sessionStorage",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > resetSorts > should reset all sorts to default values",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > resetSorts > should persist default sorts to sessionStorage after reset",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > storage event listener > should update sorts when storage event is triggered",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortContext.test.tsx: SortContext > storage event listener > should ignore storage events with different keys",
+        "status": "passed",
+        "duration": 2,
+        "suite": [
+          "src/context/SortContext/__tests__/SortContext.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default host sort settings",
+        "status": "passed",
+        "duration": 52,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default quest sort settings",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default task sort settings",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Rendering for different page types > should render with default process sort settings",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for hosts page",
+        "status": "passed",
+        "duration": 12,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for quests page",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort field dropdown > should display correct field options for tasks page",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort direction dropdown > should display ascending and descending options",
+        "status": "passed",
+        "duration": 11,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Sort direction dropdown > should default to descending direction",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update sort field when field dropdown changes",
+        "status": "passed",
+        "duration": 283,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update sort direction when direction dropdown changes",
+        "status": "passed",
+        "duration": 99,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update label when field changes",
+        "status": "passed",
+        "duration": 67,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should update icon when direction changes to ascending",
+        "status": "passed",
+        "duration": 58,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/context/SortContext/__tests__/SortingControls.test.tsx: SortingControls > Updating sort settings > should only update sorts for the current page type",
+        "status": "passed",
+        "duration": 59,
+        "suite": [
+          "src/context/SortContext/__tests__/SortingControls.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Table structure rendering > should render table with basic structure",
+        "status": "passed",
+        "duration": 57,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Header rendering > should render all column headers with text",
+        "status": "passed",
+        "duration": 17,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Column sorting > should show ascending icon when column sorted asc",
+        "status": "passed",
+        "duration": 9,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Column sorting > should show descending icon when column sorted desc",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Column sorting > should not show sort icon when column not sorted",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Column sorting > should call toggle sorting handler on header click",
+        "status": "passed",
+        "duration": 14,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Column sorting > should set column width from getSize()",
+        "status": "passed",
+        "duration": 265,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Data row rendering > should render rows with cell data",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row click handling > should call onRowClick when row is clicked",
+        "status": "passed",
+        "duration": 148,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row click handling > should call onRowClick on Enter key press",
+        "status": "passed",
+        "duration": 17,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row click handling > should not call onRowClick on other key press",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row expansion > should render sub-component when row is expanded",
+        "status": "passed",
+        "duration": 9,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row expansion > should render sub-component in full-width cell",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Row expansion > should not render sub-component when row not expanded",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/Table.test.tsx: Table > Empty data handling > should render empty tbody when no data",
+        "status": "passed",
+        "duration": 3,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/Table.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Pagination info display > should display current page number",
+        "status": "passed",
+        "duration": 61,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Pagination info display > should display total page count",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Pagination info display > should display total results count",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Button states > should set button states based on page position (page: 1)",
+        "status": "passed",
+        "duration": 7,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Button states > should set button states based on page position (page: 10)",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Navigation callbacks > should call refetchTable with startCursor on Previous click",
+        "status": "passed",
+        "duration": 290,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Navigation callbacks > should call refetchTable with endCursor on Next click",
+        "status": "passed",
+        "duration": 44,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Navigation callbacks > should decrement page on Previous click",
+        "status": "passed",
+        "duration": 50,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Navigation callbacks > should increment page on Next click",
+        "status": "passed",
+        "duration": 44,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx: TablePagination > Page count calculation > should calculate page count correctly and round up with remainder",
+        "status": "passed",
+        "duration": 10,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Error state rendering > should render error EmptyState and hide table/pagination",
+        "status": "passed",
+        "duration": 62,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Loading state rendering > should render loading EmptyState when loading is true and hide table/pagination",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Loading state rendering > should render loading EmptyState when totalItems is undefined",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Empty state rendering > should render noData EmptyState when totalItems is 0 and hide table/pagination",
+        "status": "passed",
+        "duration": 4,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Success state with data > should render table and pagination when data exists",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Controls section rendering > should render filter controls and sorting controls when sortType is provided",
+        "status": "passed",
+        "duration": 6,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Controls section rendering > should not render sorting controls when sortType is not provided",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Controls section rendering > should render custom title",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > Controls section rendering > should render default title when not provided",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > State priority > should prioritize error over loading",
+        "status": "passed",
+        "duration": 5,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      },
+      {
+        "name": "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx: TableWrapper > State priority > should prioritize loading over empty",
+        "status": "passed",
+        "duration": 8,
+        "suite": [
+          "src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx"
+        ]
+      }
+    ]
+  }
+}
