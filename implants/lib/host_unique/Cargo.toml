@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
+uuid = { workspace = true, features = ["v4", "v5", "fast-rng"] }
 log = { workspace = true }
+pnet = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = { workspace = true }
