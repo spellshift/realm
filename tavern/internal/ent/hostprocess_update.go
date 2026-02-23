@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -251,6 +252,25 @@ func (hpu *HostProcessUpdate) SetShellTask(s *ShellTask) *HostProcessUpdate {
 	return hpu.SetShellTaskID(s.ID)
 }
 
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (hpu *HostProcessUpdate) SetBeaconID(id int) *HostProcessUpdate {
+	hpu.mutation.SetBeaconID(id)
+	return hpu
+}
+
+// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
+func (hpu *HostProcessUpdate) SetNillableBeaconID(id *int) *HostProcessUpdate {
+	if id != nil {
+		hpu = hpu.SetBeaconID(*id)
+	}
+	return hpu
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (hpu *HostProcessUpdate) SetBeacon(b *Beacon) *HostProcessUpdate {
+	return hpu.SetBeaconID(b.ID)
+}
+
 // Mutation returns the HostProcessMutation object of the builder.
 func (hpu *HostProcessUpdate) Mutation() *HostProcessMutation {
 	return hpu.mutation
@@ -271,6 +291,12 @@ func (hpu *HostProcessUpdate) ClearTask() *HostProcessUpdate {
 // ClearShellTask clears the "shell_task" edge to the ShellTask entity.
 func (hpu *HostProcessUpdate) ClearShellTask() *HostProcessUpdate {
 	hpu.mutation.ClearShellTask()
+	return hpu
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (hpu *HostProcessUpdate) ClearBeacon() *HostProcessUpdate {
+	hpu.mutation.ClearBeacon()
 	return hpu
 }
 
@@ -468,6 +494,35 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpu.mutation.BeaconCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpu.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -714,6 +769,25 @@ func (hpuo *HostProcessUpdateOne) SetShellTask(s *ShellTask) *HostProcessUpdateO
 	return hpuo.SetShellTaskID(s.ID)
 }
 
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (hpuo *HostProcessUpdateOne) SetBeaconID(id int) *HostProcessUpdateOne {
+	hpuo.mutation.SetBeaconID(id)
+	return hpuo
+}
+
+// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
+func (hpuo *HostProcessUpdateOne) SetNillableBeaconID(id *int) *HostProcessUpdateOne {
+	if id != nil {
+		hpuo = hpuo.SetBeaconID(*id)
+	}
+	return hpuo
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (hpuo *HostProcessUpdateOne) SetBeacon(b *Beacon) *HostProcessUpdateOne {
+	return hpuo.SetBeaconID(b.ID)
+}
+
 // Mutation returns the HostProcessMutation object of the builder.
 func (hpuo *HostProcessUpdateOne) Mutation() *HostProcessMutation {
 	return hpuo.mutation
@@ -734,6 +808,12 @@ func (hpuo *HostProcessUpdateOne) ClearTask() *HostProcessUpdateOne {
 // ClearShellTask clears the "shell_task" edge to the ShellTask entity.
 func (hpuo *HostProcessUpdateOne) ClearShellTask() *HostProcessUpdateOne {
 	hpuo.mutation.ClearShellTask()
+	return hpuo
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (hpuo *HostProcessUpdateOne) ClearBeacon() *HostProcessUpdateOne {
+	hpuo.mutation.ClearBeacon()
 	return hpuo
 }
 
@@ -961,6 +1041,35 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hpuo.mutation.BeaconCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpuo.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

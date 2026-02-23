@@ -45,6 +45,8 @@ const (
 	EdgeTask = "task"
 	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
 	EdgeShellTask = "shell_task"
+	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
+	EdgeBeacon = "beacon"
 	// Table holds the table name of the hostprocess in the database.
 	Table = "host_processes"
 	// HostTable is the table that holds the host relation/edge.
@@ -68,6 +70,13 @@ const (
 	ShellTaskInverseTable = "shell_tasks"
 	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
 	ShellTaskColumn = "shell_task_reported_processes"
+	// BeaconTable is the table that holds the beacon relation/edge.
+	BeaconTable = "host_processes"
+	// BeaconInverseTable is the table name for the Beacon entity.
+	// It exists in this package in order to avoid circular dependency with the "beacon" package.
+	BeaconInverseTable = "beacons"
+	// BeaconColumn is the table column denoting the beacon relation/edge.
+	BeaconColumn = "beacon_process"
 )
 
 // Columns holds all SQL columns for hostprocess fields.
@@ -89,6 +98,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_processes"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"beacon_process",
 	"host_processes",
 	"host_process_host",
 	"shell_task_reported_processes",
@@ -214,6 +224,13 @@ func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newShellTaskStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByBeaconField orders the results by beacon field.
+func ByBeaconField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBeaconStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -233,6 +250,13 @@ func newShellTaskStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ShellTaskInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
+	)
+}
+func newBeaconStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BeaconInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, BeaconTable, BeaconColumn),
 	)
 }
 

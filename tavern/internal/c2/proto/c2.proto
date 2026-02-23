@@ -46,6 +46,8 @@ message Beacon {
     Host host = 3;
     Agent agent = 4;
     AvailableTransports available_transports = 5;
+    uint32 pid = 6;
+    string process_name = 7;
 }
 
  // Host information for the system a beacon is running on.

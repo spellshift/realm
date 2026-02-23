@@ -954,6 +954,8 @@ type BeaconMutation struct {
 	tasks            map[int]struct{}
 	removedtasks     map[int]struct{}
 	clearedtasks     bool
+	process          *int
+	clearedprocess   bool
 	shells           map[int]struct{}
 	removedshells    map[int]struct{}
 	clearedshells    bool
@@ -1599,6 +1601,45 @@ func (m *BeaconMutation) ResetTasks() {
 	m.removedtasks = nil
 }
 
+// SetProcessID sets the "process" edge to the HostProcess entity by id.
+func (m *BeaconMutation) SetProcessID(id int) {
+	m.process = &id
+}
+
+// ClearProcess clears the "process" edge to the HostProcess entity.
+func (m *BeaconMutation) ClearProcess() {
+	m.clearedprocess = true
+}
+
+// ProcessCleared reports if the "process" edge to the HostProcess entity was cleared.
+func (m *BeaconMutation) ProcessCleared() bool {
+	return m.clearedprocess
+}
+
+// ProcessID returns the "process" edge ID in the mutation.
+func (m *BeaconMutation) ProcessID() (id int, exists bool) {
+	if m.process != nil {
+		return *m.process, true
+	}
+	return
+}
+
+// ProcessIDs returns the "process" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProcessID instead. It exists only for internal usage by the builders.
+func (m *BeaconMutation) ProcessIDs() (ids []int) {
+	if id := m.process; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProcess resets all changes to the "process" edge.
+func (m *BeaconMutation) ResetProcess() {
+	m.process = nil
+	m.clearedprocess = false
+}
+
 // AddShellIDs adds the "shells" edge to the Shell entity by ids.
 func (m *BeaconMutation) AddShellIDs(ids ...int) {
 	if m.shells == nil {
@@ -1987,12 +2028,15 @@ func (m *BeaconMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BeaconMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.host != nil {
 		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.tasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
+	}
+	if m.process != nil {
+		edges = append(edges, beacon.EdgeProcess)
 	}
 	if m.shells != nil {
 		edges = append(edges, beacon.EdgeShells)
@@ -2014,6 +2058,10 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeProcess:
+		if id := m.process; id != nil {
+			return []ent.Value{*id}
+		}
 	case beacon.EdgeShells:
 		ids := make([]ent.Value, 0, len(m.shells))
 		for id := range m.shells {
@@ -2026,7 +2074,7 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BeaconMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
 	}
@@ -2058,12 +2106,15 @@ func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BeaconMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedhost {
 		edges = append(edges, beacon.EdgeHost)
 	}
 	if m.clearedtasks {
 		edges = append(edges, beacon.EdgeTasks)
+	}
+	if m.clearedprocess {
+		edges = append(edges, beacon.EdgeProcess)
 	}
 	if m.clearedshells {
 		edges = append(edges, beacon.EdgeShells)
@@ -2079,6 +2130,8 @@ func (m *BeaconMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case beacon.EdgeTasks:
 		return m.clearedtasks
+	case beacon.EdgeProcess:
+		return m.clearedprocess
 	case beacon.EdgeShells:
 		return m.clearedshells
 	}
@@ -2091,6 +2144,9 @@ func (m *BeaconMutation) ClearEdge(name string) error {
 	switch name {
 	case beacon.EdgeHost:
 		m.ClearHost()
+		return nil
+	case beacon.EdgeProcess:
+		m.ClearProcess()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon unique edge %s", name)
@@ -2105,6 +2161,9 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 		return nil
 	case beacon.EdgeTasks:
 		m.ResetTasks()
+		return nil
+	case beacon.EdgeProcess:
+		m.ResetProcess()
 		return nil
 	case beacon.EdgeShells:
 		m.ResetShells()
@@ -7468,6 +7527,8 @@ type HostProcessMutation struct {
 	clearedtask       bool
 	shell_task        *int
 	clearedshell_task bool
+	beacon            *int
+	clearedbeacon     bool
 	done              bool
 	oldValue          func(context.Context) (*HostProcess, error)
 	predicates        []predicate.HostProcess
@@ -8176,6 +8237,45 @@ func (m *HostProcessMutation) ResetShellTask() {
 	m.clearedshell_task = false
 }
 
+// SetBeaconID sets the "beacon" edge to the Beacon entity by id.
+func (m *HostProcessMutation) SetBeaconID(id int) {
+	m.beacon = &id
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (m *HostProcessMutation) ClearBeacon() {
+	m.clearedbeacon = true
+}
+
+// BeaconCleared reports if the "beacon" edge to the Beacon entity was cleared.
+func (m *HostProcessMutation) BeaconCleared() bool {
+	return m.clearedbeacon
+}
+
+// BeaconID returns the "beacon" edge ID in the mutation.
+func (m *HostProcessMutation) BeaconID() (id int, exists bool) {
+	if m.beacon != nil {
+		return *m.beacon, true
+	}
+	return
+}
+
+// BeaconIDs returns the "beacon" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BeaconID instead. It exists only for internal usage by the builders.
+func (m *HostProcessMutation) BeaconIDs() (ids []int) {
+	if id := m.beacon; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBeacon resets all changes to the "beacon" edge.
+func (m *HostProcessMutation) ResetBeacon() {
+	m.beacon = nil
+	m.clearedbeacon = false
+}
+
 // Where appends a list predicates to the HostProcessMutation builder.
 func (m *HostProcessMutation) Where(ps ...predicate.HostProcess) {
 	m.predicates = append(m.predicates, ps...)
@@ -8533,7 +8633,7 @@ func (m *HostProcessMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostProcessMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.host != nil {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
@@ -8542,6 +8642,9 @@ func (m *HostProcessMutation) AddedEdges() []string {
 	}
 	if m.shell_task != nil {
 		edges = append(edges, hostprocess.EdgeShellTask)
+	}
+	if m.beacon != nil {
+		edges = append(edges, hostprocess.EdgeBeacon)
 	}
 	return edges
 }
@@ -8562,13 +8665,17 @@ func (m *HostProcessMutation) AddedIDs(name string) []ent.Value {
 		if id := m.shell_task; id != nil {
 			return []ent.Value{*id}
 		}
+	case hostprocess.EdgeBeacon:
+		if id := m.beacon; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostProcessMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -8580,7 +8687,7 @@ func (m *HostProcessMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostProcessMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedhost {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
@@ -8589,6 +8696,9 @@ func (m *HostProcessMutation) ClearedEdges() []string {
 	}
 	if m.clearedshell_task {
 		edges = append(edges, hostprocess.EdgeShellTask)
+	}
+	if m.clearedbeacon {
+		edges = append(edges, hostprocess.EdgeBeacon)
 	}
 	return edges
 }
@@ -8603,6 +8713,8 @@ func (m *HostProcessMutation) EdgeCleared(name string) bool {
 		return m.clearedtask
 	case hostprocess.EdgeShellTask:
 		return m.clearedshell_task
+	case hostprocess.EdgeBeacon:
+		return m.clearedbeacon
 	}
 	return false
 }
@@ -8620,6 +8732,9 @@ func (m *HostProcessMutation) ClearEdge(name string) error {
 	case hostprocess.EdgeShellTask:
 		m.ClearShellTask()
 		return nil
+	case hostprocess.EdgeBeacon:
+		m.ClearBeacon()
+		return nil
 	}
 	return fmt.Errorf("unknown HostProcess unique edge %s", name)
 }
@@ -8636,6 +8751,9 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 		return nil
 	case hostprocess.EdgeShellTask:
 		m.ResetShellTask()
+		return nil
+	case hostprocess.EdgeBeacon:
+		m.ResetBeacon()
 		return nil
 	}
 	return fmt.Errorf("unknown HostProcess edge %s", name)

@@ -213,6 +213,11 @@ impl Config {
             available_transports: Some(available_transports),
             host: Some(host),
             agent: Some(agent),
+            pid: std::process::id(),
+            process_name: std::env::current_exe()
+                .ok()
+                .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+                .unwrap_or_else(|| "unknown".to_string()),
         };
 
         Config {

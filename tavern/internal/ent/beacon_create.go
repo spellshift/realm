@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -182,6 +183,25 @@ func (bc *BeaconCreate) AddTasks(t ...*Task) *BeaconCreate {
 		ids[i] = t[i].ID
 	}
 	return bc.AddTaskIDs(ids...)
+}
+
+// SetProcessID sets the "process" edge to the HostProcess entity by ID.
+func (bc *BeaconCreate) SetProcessID(id int) *BeaconCreate {
+	bc.mutation.SetProcessID(id)
+	return bc
+}
+
+// SetNillableProcessID sets the "process" edge to the HostProcess entity by ID if the given value is not nil.
+func (bc *BeaconCreate) SetNillableProcessID(id *int) *BeaconCreate {
+	if id != nil {
+		bc = bc.SetProcessID(*id)
+	}
+	return bc
+}
+
+// SetProcess sets the "process" edge to the HostProcess entity.
+func (bc *BeaconCreate) SetProcess(h *HostProcess) *BeaconCreate {
+	return bc.SetProcessID(h.ID)
 }
 
 // AddShellIDs adds the "shells" edge to the Shell entity by IDs.
@@ -390,6 +410,22 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.ProcessIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   beacon.ProcessTable,
+			Columns: []string{beacon.ProcessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

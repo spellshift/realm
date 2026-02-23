@@ -318,6 +318,10 @@ type Beacon implements Node {
     """
     where: TaskWhereInput
   ): TaskConnection!
+  """
+  Process the beacon is running in.
+  """
+  process: HostProcess
   shells(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -577,6 +581,11 @@ input BeaconWhereInput {
   """
   hasTasks: Boolean
   hasTasksWith: [TaskWhereInput!]
+  """
+  process edge predicates
+  """
+  hasProcess: Boolean
+  hasProcessWith: [HostProcessWhereInput!]
   """
   shells edge predicates
   """
@@ -2069,6 +2078,10 @@ type HostProcess implements Node {
   Shell Task that reported this process.
   """
   shellTask: ShellTask
+  """
+  The beacon running in this process.
+  """
+  beacon: Beacon
 }
 """
 A connection to a list of items.
@@ -2331,6 +2344,11 @@ input HostProcessWhereInput {
   """
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -4854,6 +4872,8 @@ input UpdateBeaconInput {
   """
   lastModifiedAt: Time
   hostID: ID
+  processID: ID
+  clearProcess: Boolean
 }
 """
 UpdateHostInput is used for update Host object.

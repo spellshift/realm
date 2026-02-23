@@ -41,6 +41,8 @@ const (
 	EdgeHost = "host"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
+	// EdgeProcess holds the string denoting the process edge name in mutations.
+	EdgeProcess = "process"
 	// EdgeShells holds the string denoting the shells edge name in mutations.
 	EdgeShells = "shells"
 	// Table holds the table name of the beacon in the database.
@@ -59,6 +61,13 @@ const (
 	TasksInverseTable = "tasks"
 	// TasksColumn is the table column denoting the tasks relation/edge.
 	TasksColumn = "task_beacon"
+	// ProcessTable is the table that holds the process relation/edge.
+	ProcessTable = "host_processes"
+	// ProcessInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ProcessInverseTable = "host_processes"
+	// ProcessColumn is the table column denoting the process relation/edge.
+	ProcessColumn = "beacon_process"
 	// ShellsTable is the table that holds the shells relation/edge.
 	ShellsTable = "shells"
 	// ShellsInverseTable is the table name for the Shell entity.
@@ -214,6 +223,13 @@ func ByTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByProcessField orders the results by process field.
+func ByProcessField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProcessStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByShellsCount orders the results by shells count.
 func ByShellsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -239,6 +255,13 @@ func newTasksStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TasksInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, TasksTable, TasksColumn),
+	)
+}
+func newProcessStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProcessInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProcessTable, ProcessColumn),
 	)
 }
 func newShellsStep() *sqlgraph.Step {

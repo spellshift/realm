@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -234,6 +235,36 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
 	}
 
+	var processID int
+	if req.Beacon.Pid != 0 {
+		// Try to find existing process
+		proc, err := srv.graph.HostProcess.Query().
+			Where(
+				hostprocess.HasHostWith(host.ID(hostID)),
+				hostprocess.Pid(uint64(req.Beacon.Pid)),
+				hostprocess.Name(req.Beacon.ProcessName),
+			).
+			Only(ctx)
+
+		if ent.IsNotFound(err) {
+			// Create new process
+			proc, err = srv.graph.HostProcess.Create().
+				SetHostID(hostID).
+				SetPid(uint64(req.Beacon.Pid)).
+				SetName(req.Beacon.ProcessName).
+				SetPrincipal(req.Beacon.Principal).
+				SetPpid(0). // We don't know PPID
+				SetStatus(epb.Process_STATUS_RUN).
+				Save(ctx)
+		}
+
+		if err == nil {
+			processID = proc.ID
+		} else {
+			slog.ErrorContext(ctx, "failed to query/create host process for beacon", "err", err, "pid", req.Beacon.Pid)
+		}
+	}
+
 	// Metrics
 	defer func() {
 		var hostGroupTags []string
@@ -314,7 +345,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Upsert the beacon
-	beaconID, err := srv.graph.Beacon.Create().
+	beaconCreate := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
@@ -323,7 +354,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
 		SetInterval(activeTransport.Interval).
-		SetTransport(activeTransport.Type).
+		SetTransport(activeTransport.Type)
+
+	if processID != 0 {
+		beaconCreate.SetProcessID(processID)
+	}
+
+	beaconID, err := beaconCreate.
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

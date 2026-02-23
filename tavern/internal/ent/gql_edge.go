@@ -87,6 +87,14 @@ func (b *Beacon) Tasks(
 	return b.QueryTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (b *Beacon) Process(ctx context.Context) (*HostProcess, error) {
+	result, err := b.Edges.ProcessOrErr()
+	if IsNotLoaded(err) {
+		result, err = b.QueryProcess().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (b *Beacon) Shells(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellOrder, where *ShellWhereInput,
 ) (*ShellConnection, error) {
@@ -95,7 +103,7 @@ func (b *Beacon) Shells(
 		WithShellFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := b.Edges.totalCount[2][alias]
+	totalCount, hasTotalCount := b.Edges.totalCount[3][alias]
 	if nodes, err := b.NamedShells(alias); err == nil || hasTotalCount {
 		pager, err := newShellPager(opts, last != nil)
 		if err != nil {
@@ -318,6 +326,14 @@ func (hp *HostProcess) ShellTask(ctx context.Context) (*ShellTask, error) {
 	result, err := hp.Edges.ShellTaskOrErr()
 	if IsNotLoaded(err) {
 		result, err = hp.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (hp *HostProcess) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := hp.Edges.BeaconOrErr()
+	if IsNotLoaded(err) {
+		result, err = hp.QueryBeacon().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

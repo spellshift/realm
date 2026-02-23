@@ -15,6 +15,8 @@ import (
 type UpdateBeaconInput struct {
 	LastModifiedAt *time.Time
 	HostID         *int
+	ClearProcess   bool
+	ProcessID      *int
 }
 
 // Mutate applies the UpdateBeaconInput on the BeaconMutation builder.
@@ -24,6 +26,12 @@ func (i *UpdateBeaconInput) Mutate(m *BeaconMutation) {
 	}
 	if v := i.HostID; v != nil {
 		m.SetHostID(*v)
+	}
+	if i.ClearProcess {
+		m.ClearProcess()
+	}
+	if v := i.ProcessID; v != nil {
+		m.SetProcessID(*v)
 	}
 }
 

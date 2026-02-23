@@ -677,6 +677,29 @@ func HasTasksWith(preds ...predicate.Task) predicate.Beacon {
 	})
 }
 
+// HasProcess applies the HasEdge predicate on the "process" edge.
+func HasProcess() predicate.Beacon {
+	return predicate.Beacon(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ProcessTable, ProcessColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProcessWith applies the HasEdge predicate on the "process" edge with a given conditions (other predicates).
+func HasProcessWith(preds ...predicate.HostProcess) predicate.Beacon {
+	return predicate.Beacon(func(s *sql.Selector) {
+		step := newProcessStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasShells applies the HasEdge predicate on the "shells" edge.
 func HasShells() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {

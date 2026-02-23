@@ -101,6 +101,9 @@ func (Beacon) Edges() []ent.Edge {
 			).
 			Ref("beacon").
 			Comment("Tasks that have been assigned to the beacon."),
+		edge.To("process", HostProcess.Type).
+			Unique().
+			Comment("Process the beacon is running in."),
 		edge.From("shells", Shell.Type).
 			Ref("beacon").
 			Annotations(

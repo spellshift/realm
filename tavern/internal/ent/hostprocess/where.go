@@ -785,6 +785,29 @@ func HasShellTaskWith(preds ...predicate.ShellTask) predicate.HostProcess {
 	})
 }
 
+// HasBeacon applies the HasEdge predicate on the "beacon" edge.
+func HasBeacon() predicate.HostProcess {
+	return predicate.HostProcess(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, BeaconTable, BeaconColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBeaconWith applies the HasEdge predicate on the "beacon" edge with a given conditions (other predicates).
+func HasBeaconWith(preds ...predicate.Beacon) predicate.HostProcess {
+	return predicate.HostProcess(func(s *sql.Selector) {
+		step := newBeaconStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.HostProcess) predicate.HostProcess {
 	return predicate.HostProcess(sql.AndPredicates(predicates...))

@@ -669,6 +669,22 @@ func (c *BeaconClient) QueryTasks(b *Beacon) *TaskQuery {
 	return query
 }
 
+// QueryProcess queries the process edge of a Beacon.
+func (c *BeaconClient) QueryProcess(b *Beacon) *HostProcessQuery {
+	query := (&HostProcessClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, beacon.ProcessTable, beacon.ProcessColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryShells queries the shells edge of a Beacon.
 func (c *BeaconClient) QueryShells(b *Beacon) *ShellQuery {
 	query := (&ShellClient{config: c.config}).Query()
@@ -1750,6 +1766,22 @@ func (c *HostProcessClient) QueryShellTask(hp *HostProcess) *ShellTaskQuery {
 			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, id),
 			sqlgraph.To(shelltask.Table, shelltask.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.ShellTaskTable, hostprocess.ShellTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(hp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBeacon queries the beacon edge of a HostProcess.
+func (c *HostProcessClient) QueryBeacon(hp *HostProcess) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := hp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, id),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, hostprocess.BeaconTable, hostprocess.BeaconColumn),
 		)
 		fromV = sqlgraph.Neighbors(hp.driver.Dialect(), step)
 		return fromV, nil

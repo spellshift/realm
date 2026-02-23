@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -187,6 +188,25 @@ func (hpc *HostProcessCreate) SetNillableShellTaskID(id *int) *HostProcessCreate
 // SetShellTask sets the "shell_task" edge to the ShellTask entity.
 func (hpc *HostProcessCreate) SetShellTask(s *ShellTask) *HostProcessCreate {
 	return hpc.SetShellTaskID(s.ID)
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (hpc *HostProcessCreate) SetBeaconID(id int) *HostProcessCreate {
+	hpc.mutation.SetBeaconID(id)
+	return hpc
+}
+
+// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
+func (hpc *HostProcessCreate) SetNillableBeaconID(id *int) *HostProcessCreate {
+	if id != nil {
+		hpc = hpc.SetBeaconID(*id)
+	}
+	return hpc
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (hpc *HostProcessCreate) SetBeacon(b *Beacon) *HostProcessCreate {
+	return hpc.SetBeaconID(b.ID)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -390,6 +410,23 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.shell_task_reported_processes = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hpc.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.beacon_process = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

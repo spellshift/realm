@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 )
 
 // Beacon is the model entity for the Beacon schema.
@@ -52,13 +53,15 @@ type BeaconEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
+	// Process the beacon is running in.
+	Process *HostProcess `json:"process,omitempty"`
 	// Shells that have been created by the beacon.
 	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTasks  map[string][]*Task
 	namedShells map[string][]*Shell
@@ -84,10 +87,21 @@ func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
 	return nil, &NotLoadedError{edge: "tasks"}
 }
 
+// ProcessOrErr returns the Process value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BeaconEdges) ProcessOrErr() (*HostProcess, error) {
+	if e.Process != nil {
+		return e.Process, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: hostprocess.Label}
+	}
+	return nil, &NotLoadedError{edge: "process"}
+}
+
 // ShellsOrErr returns the Shells value or an error if the edge
 // was not loaded in eager-loading.
 func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
@@ -217,6 +231,11 @@ func (b *Beacon) QueryHost() *HostQuery {
 // QueryTasks queries the "tasks" edge of the Beacon entity.
 func (b *Beacon) QueryTasks() *TaskQuery {
 	return NewBeaconClient(b.config).QueryTasks(b)
+}
+
+// QueryProcess queries the "process" edge of the Beacon entity.
+func (b *Beacon) QueryProcess() *HostProcessQuery {
+	return NewBeaconClient(b.config).QueryProcess(b)
 }
 
 // QueryShells queries the "shells" edge of the Beacon entity.
