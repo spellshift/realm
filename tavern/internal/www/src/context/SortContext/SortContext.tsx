@@ -1,31 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from '../../utils/enums'
+import { OrderDirection } from '../../utils/enums'
 import { OrderByField } from '../../utils/interfacesQuery'
+import { defaultSorts, sortablePageNavItems, Sorts } from './sortingUtils'
 
 const STORAGE_KEY = 'realm-sorting-v1.0'
-
-type SortablePageNavItem = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks | PageNavItem.assets;
-
-export type Sorts = Record<SortablePageNavItem, OrderByField>
-
-const defaultSorts: Sorts = {
-    [PageNavItem.hosts]: {
-        direction: OrderDirection.Desc,
-        field: HostOrderField.CreatedAt
-    },
-    [PageNavItem.quests]: {
-        direction: OrderDirection.Desc,
-        field: QuestOrderField.CreatedAt
-    },
-    [PageNavItem.tasks]: {
-        direction: OrderDirection.Desc,
-        field: TaskOrderField.LastModifiedAt
-    },
-    [PageNavItem.assets]: {
-        direction: OrderDirection.Desc,
-        field: AssetOrderField.CreatedAt
-    }
-}
 
 function isValidOrderByField(item: any): item is OrderByField {
     return (
@@ -44,9 +22,7 @@ function validateStoredSorts(data: any): Sorts {
         return defaultSorts
     }
 
-    const requiredKeys = [PageNavItem.hosts, PageNavItem.quests, PageNavItem.tasks, PageNavItem.assets]
-
-    for (const key of requiredKeys) {
+    for (const key of sortablePageNavItems) {
         if (!(key in data) || !isValidOrderByField(data[key])) {
             return defaultSorts
         }
@@ -93,7 +69,6 @@ export function SortsProvider({ children }: { children: React.ReactNode }) {
 
     const resetSorts = () => {
         setSorts(defaultSorts)
-        sessionStorage.removeItem(STORAGE_KEY)
     };
 
     useEffect(() => {

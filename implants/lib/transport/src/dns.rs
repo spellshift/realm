@@ -1280,6 +1280,7 @@ mod tests {
                         interval: 5,
                         r#type: TransportType::TransportDns as i32,
                         extra: extra.to_string(),
+                        jitter: 0.0,
                     }],
                     active_index: 0,
                 }),

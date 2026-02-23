@@ -12660,6 +12660,9 @@ type ShellTaskMutation struct {
 	stream_id        *string
 	sequence_id      *uint64
 	addsequence_id   *int64
+	claimed_at       *time.Time
+	exec_started_at  *time.Time
+	exec_finished_at *time.Time
 	clearedFields    map[string]struct{}
 	shell            *int
 	clearedshell     bool
@@ -13066,6 +13069,153 @@ func (m *ShellTaskMutation) ResetSequenceID() {
 	m.addsequence_id = nil
 }
 
+// SetClaimedAt sets the "claimed_at" field.
+func (m *ShellTaskMutation) SetClaimedAt(t time.Time) {
+	m.claimed_at = &t
+}
+
+// ClaimedAt returns the value of the "claimed_at" field in the mutation.
+func (m *ShellTaskMutation) ClaimedAt() (r time.Time, exists bool) {
+	v := m.claimed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaimedAt returns the old "claimed_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaimedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaimedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaimedAt: %w", err)
+	}
+	return oldValue.ClaimedAt, nil
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (m *ShellTaskMutation) ClearClaimedAt() {
+	m.claimed_at = nil
+	m.clearedFields[shelltask.FieldClaimedAt] = struct{}{}
+}
+
+// ClaimedAtCleared returns if the "claimed_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ClaimedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldClaimedAt]
+	return ok
+}
+
+// ResetClaimedAt resets all changes to the "claimed_at" field.
+func (m *ShellTaskMutation) ResetClaimedAt() {
+	m.claimed_at = nil
+	delete(m.clearedFields, shelltask.FieldClaimedAt)
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (m *ShellTaskMutation) SetExecStartedAt(t time.Time) {
+	m.exec_started_at = &t
+}
+
+// ExecStartedAt returns the value of the "exec_started_at" field in the mutation.
+func (m *ShellTaskMutation) ExecStartedAt() (r time.Time, exists bool) {
+	v := m.exec_started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecStartedAt returns the old "exec_started_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldExecStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecStartedAt: %w", err)
+	}
+	return oldValue.ExecStartedAt, nil
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (m *ShellTaskMutation) ClearExecStartedAt() {
+	m.exec_started_at = nil
+	m.clearedFields[shelltask.FieldExecStartedAt] = struct{}{}
+}
+
+// ExecStartedAtCleared returns if the "exec_started_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ExecStartedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldExecStartedAt]
+	return ok
+}
+
+// ResetExecStartedAt resets all changes to the "exec_started_at" field.
+func (m *ShellTaskMutation) ResetExecStartedAt() {
+	m.exec_started_at = nil
+	delete(m.clearedFields, shelltask.FieldExecStartedAt)
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (m *ShellTaskMutation) SetExecFinishedAt(t time.Time) {
+	m.exec_finished_at = &t
+}
+
+// ExecFinishedAt returns the value of the "exec_finished_at" field in the mutation.
+func (m *ShellTaskMutation) ExecFinishedAt() (r time.Time, exists bool) {
+	v := m.exec_finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecFinishedAt returns the old "exec_finished_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldExecFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecFinishedAt: %w", err)
+	}
+	return oldValue.ExecFinishedAt, nil
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (m *ShellTaskMutation) ClearExecFinishedAt() {
+	m.exec_finished_at = nil
+	m.clearedFields[shelltask.FieldExecFinishedAt] = struct{}{}
+}
+
+// ExecFinishedAtCleared returns if the "exec_finished_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ExecFinishedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldExecFinishedAt]
+	return ok
+}
+
+// ResetExecFinishedAt resets all changes to the "exec_finished_at" field.
+func (m *ShellTaskMutation) ResetExecFinishedAt() {
+	m.exec_finished_at = nil
+	delete(m.clearedFields, shelltask.FieldExecFinishedAt)
+}
+
 // SetShellID sets the "shell" edge to the Shell entity by id.
 func (m *ShellTaskMutation) SetShellID(id int) {
 	m.shell = &id
@@ -13178,7 +13328,7 @@ func (m *ShellTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ShellTaskMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, shelltask.FieldCreatedAt)
 	}
@@ -13199,6 +13349,15 @@ func (m *ShellTaskMutation) Fields() []string {
 	}
 	if m.sequence_id != nil {
 		fields = append(fields, shelltask.FieldSequenceID)
+	}
+	if m.claimed_at != nil {
+		fields = append(fields, shelltask.FieldClaimedAt)
+	}
+	if m.exec_started_at != nil {
+		fields = append(fields, shelltask.FieldExecStartedAt)
+	}
+	if m.exec_finished_at != nil {
+		fields = append(fields, shelltask.FieldExecFinishedAt)
 	}
 	return fields
 }
@@ -13222,6 +13381,12 @@ func (m *ShellTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.StreamID()
 	case shelltask.FieldSequenceID:
 		return m.SequenceID()
+	case shelltask.FieldClaimedAt:
+		return m.ClaimedAt()
+	case shelltask.FieldExecStartedAt:
+		return m.ExecStartedAt()
+	case shelltask.FieldExecFinishedAt:
+		return m.ExecFinishedAt()
 	}
 	return nil, false
 }
@@ -13245,6 +13410,12 @@ func (m *ShellTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldStreamID(ctx)
 	case shelltask.FieldSequenceID:
 		return m.OldSequenceID(ctx)
+	case shelltask.FieldClaimedAt:
+		return m.OldClaimedAt(ctx)
+	case shelltask.FieldExecStartedAt:
+		return m.OldExecStartedAt(ctx)
+	case shelltask.FieldExecFinishedAt:
+		return m.OldExecFinishedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown ShellTask field %s", name)
 }
@@ -13303,6 +13474,27 @@ func (m *ShellTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSequenceID(v)
 		return nil
+	case shelltask.FieldClaimedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaimedAt(v)
+		return nil
+	case shelltask.FieldExecStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecStartedAt(v)
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecFinishedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ShellTask field %s", name)
 }
@@ -13354,6 +13546,15 @@ func (m *ShellTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(shelltask.FieldError) {
 		fields = append(fields, shelltask.FieldError)
 	}
+	if m.FieldCleared(shelltask.FieldClaimedAt) {
+		fields = append(fields, shelltask.FieldClaimedAt)
+	}
+	if m.FieldCleared(shelltask.FieldExecStartedAt) {
+		fields = append(fields, shelltask.FieldExecStartedAt)
+	}
+	if m.FieldCleared(shelltask.FieldExecFinishedAt) {
+		fields = append(fields, shelltask.FieldExecFinishedAt)
+	}
 	return fields
 }
 
@@ -13373,6 +13574,15 @@ func (m *ShellTaskMutation) ClearField(name string) error {
 		return nil
 	case shelltask.FieldError:
 		m.ClearError()
+		return nil
+	case shelltask.FieldClaimedAt:
+		m.ClearClaimedAt()
+		return nil
+	case shelltask.FieldExecStartedAt:
+		m.ClearExecStartedAt()
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		m.ClearExecFinishedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown ShellTask nullable field %s", name)
@@ -13402,6 +13612,15 @@ func (m *ShellTaskMutation) ResetField(name string) error {
 		return nil
 	case shelltask.FieldSequenceID:
 		m.ResetSequenceID()
+		return nil
+	case shelltask.FieldClaimedAt:
+		m.ResetClaimedAt()
+		return nil
+	case shelltask.FieldExecStartedAt:
+		m.ResetExecStartedAt()
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		m.ResetExecFinishedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown ShellTask field %s", name)

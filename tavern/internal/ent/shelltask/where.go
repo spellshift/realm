@@ -90,6 +90,21 @@ func SequenceID(v uint64) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldEQ(FieldSequenceID, v))
 }
 
+// ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
+func ClaimedAt(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldClaimedAt, v))
+}
+
+// ExecStartedAt applies equality check predicate on the "exec_started_at" field. It's identical to ExecStartedAtEQ.
+func ExecStartedAt(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldExecStartedAt, v))
+}
+
+// ExecFinishedAt applies equality check predicate on the "exec_finished_at" field. It's identical to ExecFinishedAtEQ.
+func ExecFinishedAt(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldExecFinishedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldEQ(FieldCreatedAt, v))
@@ -488,6 +503,156 @@ func SequenceIDLT(v uint64) predicate.ShellTask {
 // SequenceIDLTE applies the LTE predicate on the "sequence_id" field.
 func SequenceIDLTE(v uint64) predicate.ShellTask {
 	return predicate.ShellTask(sql.FieldLTE(FieldSequenceID, v))
+}
+
+// ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.
+func ClaimedAtEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldClaimedAt, v))
+}
+
+// ClaimedAtNEQ applies the NEQ predicate on the "claimed_at" field.
+func ClaimedAtNEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNEQ(FieldClaimedAt, v))
+}
+
+// ClaimedAtIn applies the In predicate on the "claimed_at" field.
+func ClaimedAtIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIn(FieldClaimedAt, vs...))
+}
+
+// ClaimedAtNotIn applies the NotIn predicate on the "claimed_at" field.
+func ClaimedAtNotIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotIn(FieldClaimedAt, vs...))
+}
+
+// ClaimedAtGT applies the GT predicate on the "claimed_at" field.
+func ClaimedAtGT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGT(FieldClaimedAt, v))
+}
+
+// ClaimedAtGTE applies the GTE predicate on the "claimed_at" field.
+func ClaimedAtGTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGTE(FieldClaimedAt, v))
+}
+
+// ClaimedAtLT applies the LT predicate on the "claimed_at" field.
+func ClaimedAtLT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLT(FieldClaimedAt, v))
+}
+
+// ClaimedAtLTE applies the LTE predicate on the "claimed_at" field.
+func ClaimedAtLTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLTE(FieldClaimedAt, v))
+}
+
+// ClaimedAtIsNil applies the IsNil predicate on the "claimed_at" field.
+func ClaimedAtIsNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIsNull(FieldClaimedAt))
+}
+
+// ClaimedAtNotNil applies the NotNil predicate on the "claimed_at" field.
+func ClaimedAtNotNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotNull(FieldClaimedAt))
+}
+
+// ExecStartedAtEQ applies the EQ predicate on the "exec_started_at" field.
+func ExecStartedAtEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtNEQ applies the NEQ predicate on the "exec_started_at" field.
+func ExecStartedAtNEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNEQ(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtIn applies the In predicate on the "exec_started_at" field.
+func ExecStartedAtIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIn(FieldExecStartedAt, vs...))
+}
+
+// ExecStartedAtNotIn applies the NotIn predicate on the "exec_started_at" field.
+func ExecStartedAtNotIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotIn(FieldExecStartedAt, vs...))
+}
+
+// ExecStartedAtGT applies the GT predicate on the "exec_started_at" field.
+func ExecStartedAtGT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGT(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtGTE applies the GTE predicate on the "exec_started_at" field.
+func ExecStartedAtGTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGTE(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtLT applies the LT predicate on the "exec_started_at" field.
+func ExecStartedAtLT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLT(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtLTE applies the LTE predicate on the "exec_started_at" field.
+func ExecStartedAtLTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLTE(FieldExecStartedAt, v))
+}
+
+// ExecStartedAtIsNil applies the IsNil predicate on the "exec_started_at" field.
+func ExecStartedAtIsNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIsNull(FieldExecStartedAt))
+}
+
+// ExecStartedAtNotNil applies the NotNil predicate on the "exec_started_at" field.
+func ExecStartedAtNotNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotNull(FieldExecStartedAt))
+}
+
+// ExecFinishedAtEQ applies the EQ predicate on the "exec_finished_at" field.
+func ExecFinishedAtEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldEQ(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtNEQ applies the NEQ predicate on the "exec_finished_at" field.
+func ExecFinishedAtNEQ(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNEQ(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtIn applies the In predicate on the "exec_finished_at" field.
+func ExecFinishedAtIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIn(FieldExecFinishedAt, vs...))
+}
+
+// ExecFinishedAtNotIn applies the NotIn predicate on the "exec_finished_at" field.
+func ExecFinishedAtNotIn(vs ...time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotIn(FieldExecFinishedAt, vs...))
+}
+
+// ExecFinishedAtGT applies the GT predicate on the "exec_finished_at" field.
+func ExecFinishedAtGT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGT(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtGTE applies the GTE predicate on the "exec_finished_at" field.
+func ExecFinishedAtGTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldGTE(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtLT applies the LT predicate on the "exec_finished_at" field.
+func ExecFinishedAtLT(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLT(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtLTE applies the LTE predicate on the "exec_finished_at" field.
+func ExecFinishedAtLTE(v time.Time) predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldLTE(FieldExecFinishedAt, v))
+}
+
+// ExecFinishedAtIsNil applies the IsNil predicate on the "exec_finished_at" field.
+func ExecFinishedAtIsNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldIsNull(FieldExecFinishedAt))
+}
+
+// ExecFinishedAtNotNil applies the NotNil predicate on the "exec_finished_at" field.
+func ExecFinishedAtNotNil() predicate.ShellTask {
+	return predicate.ShellTask(sql.FieldNotNull(FieldExecFinishedAt))
 }
 
 // HasShell applies the HasEdge predicate on the "shell" edge.

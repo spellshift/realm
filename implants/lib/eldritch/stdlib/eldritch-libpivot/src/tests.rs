@@ -58,7 +58,10 @@ impl Agent for MockAgent {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        Ok(c2::ClaimTasksResponse { tasks: vec![] })
+        Ok(c2::ClaimTasksResponse {
+            tasks: vec![],
+            shell_tasks: vec![],
+        })
     }
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         Ok(BTreeMap::new())

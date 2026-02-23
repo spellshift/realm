@@ -452,6 +452,9 @@ var (
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "stream_id", Type: field.TypeString},
 		{Name: "sequence_id", Type: field.TypeUint64},
+		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "exec_started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "exec_finished_at", Type: field.TypeTime, Nullable: true},
 		{Name: "shell_shell_tasks", Type: field.TypeInt},
 		{Name: "shell_task_creator", Type: field.TypeInt},
 	}
@@ -463,13 +466,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "shell_tasks_shells_shell_tasks",
-				Columns:    []*schema.Column{ShellTasksColumns[8]},
+				Columns:    []*schema.Column{ShellTasksColumns[11]},
 				RefColumns: []*schema.Column{ShellsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "shell_tasks_users_creator",
-				Columns:    []*schema.Column{ShellTasksColumns[9]},
+				Columns:    []*schema.Column{ShellTasksColumns[12]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

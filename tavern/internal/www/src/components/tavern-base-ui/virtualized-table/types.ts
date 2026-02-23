@@ -1,5 +1,6 @@
 import { ApolloError, DocumentNode, OperationVariables } from "@apollo/client";
 import { ReactNode } from "react";
+import { SortablePageNavItem } from "../../../context/SortContext";
 
 export interface VirtualizedTableWrapperProps {
     /** Total number of items (used to determine empty states) */
@@ -20,8 +21,8 @@ export interface VirtualizedTableWrapperProps {
     /** Optional className for custom styling */
     className?: string;
 
-    /** Whether to show sorting controls */
-    showSorting?: boolean;
+    /** Sort type for the sorting controls. If provided, sorting controls are shown. */
+    sortType?: SortablePageNavItem;
 
     /** Whether to show filtering controls */
     showFiltering?: boolean;

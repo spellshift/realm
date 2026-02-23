@@ -5460,6 +5460,48 @@ var (
 			}
 		},
 	}
+	// ShellTaskOrderFieldClaimedAt orders ShellTask by claimed_at.
+	ShellTaskOrderFieldClaimedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ClaimedAt, nil
+		},
+		column: shelltask.FieldClaimedAt,
+		toTerm: shelltask.ByClaimedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ClaimedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldExecStartedAt orders ShellTask by exec_started_at.
+	ShellTaskOrderFieldExecStartedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ExecStartedAt, nil
+		},
+		column: shelltask.FieldExecStartedAt,
+		toTerm: shelltask.ByExecStartedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ExecStartedAt,
+			}
+		},
+	}
+	// ShellTaskOrderFieldExecFinishedAt orders ShellTask by exec_finished_at.
+	ShellTaskOrderFieldExecFinishedAt = &ShellTaskOrderField{
+		Value: func(st *ShellTask) (ent.Value, error) {
+			return st.ExecFinishedAt, nil
+		},
+		column: shelltask.FieldExecFinishedAt,
+		toTerm: shelltask.ByExecFinishedAt,
+		toCursor: func(st *ShellTask) Cursor {
+			return Cursor{
+				ID:    st.ID,
+				Value: st.ExecFinishedAt,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -5470,6 +5512,12 @@ func (f ShellTaskOrderField) String() string {
 		str = "CREATED_AT"
 	case ShellTaskOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
+	case ShellTaskOrderFieldClaimedAt.column:
+		str = "CLAIMED_AT"
+	case ShellTaskOrderFieldExecStartedAt.column:
+		str = "EXEC_STARTED_AT"
+	case ShellTaskOrderFieldExecFinishedAt.column:
+		str = "EXEC_FINISHED_AT"
 	}
 	return str
 }
@@ -5490,6 +5538,12 @@ func (f *ShellTaskOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *ShellTaskOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *ShellTaskOrderFieldLastModifiedAt
+	case "CLAIMED_AT":
+		*f = *ShellTaskOrderFieldClaimedAt
+	case "EXEC_STARTED_AT":
+		*f = *ShellTaskOrderFieldExecStartedAt
+	case "EXEC_FINISHED_AT":
+		*f = *ShellTaskOrderFieldExecFinishedAt
 	default:
 		return fmt.Errorf("%s is not a valid ShellTaskOrderField", str)
 	}

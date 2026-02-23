@@ -4,6 +4,7 @@ import { VirtualizedCardList, VirtualizedCardListWrapper } from "../../component
 import { useTaskIds } from "./useTaskIds";
 import { TaskCardVirtualized } from "./TaskCardVirtualized";
 import { EditablePageHeader } from "./EditablePageHeader";
+import { PageNavItem } from "../../utils/enums";
 
 const Tasks = () => {
     const { questId } = useParams();
@@ -34,7 +35,7 @@ const Tasks = () => {
                 totalItems={totalCount}
                 loading={initialLoading}
                 error={error}
-                showSorting={true}
+                sortType={PageNavItem.tasks}
                 showFiltering={true}
                 cardList={
                     <VirtualizedCardList

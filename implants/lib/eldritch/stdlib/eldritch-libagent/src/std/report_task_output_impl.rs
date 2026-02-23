@@ -24,6 +24,7 @@ pub fn report_task_output(
     let req = c2::ReportTaskOutputRequest {
         output: Some(output_msg),
         context: Some(task_context.into()),
+        shell_task_output: None,
     };
     agent.report_task_output(req).map(|_| ())
 }

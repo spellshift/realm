@@ -5,7 +5,7 @@ pub struct Agent {
     #[prost(string, tag = "1")]
     pub identifier: ::prost::alloc::string::String,
 }
-#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Transport {
     #[prost(string, tag = "1")]
     pub uri: ::prost::alloc::string::String,
@@ -15,6 +15,8 @@ pub struct Transport {
     pub r#type: i32,
     #[prost(string, tag = "4")]
     pub extra: ::prost::alloc::string::String,
+    #[prost(float, tag = "5")]
+    pub jitter: f32,
 }
 /// Nested message and enum types in `Transport`.
 pub mod transport {
@@ -154,6 +156,19 @@ pub struct Task {
     #[prost(string, tag = "4")]
     pub jwt: ::prost::alloc::string::String,
 }
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ShellTask {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+    #[prost(string, tag = "2")]
+    pub input: ::prost::alloc::string::String,
+    #[prost(int64, tag = "3")]
+    pub shell_id: i64,
+    #[prost(uint64, tag = "4")]
+    pub sequence_id: u64,
+    #[prost(string, tag = "5")]
+    pub stream_id: ::prost::alloc::string::String,
+}
 /// TaskError provides information when task execution fails.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct TaskError {
@@ -163,6 +178,21 @@ pub struct TaskError {
 /// TaskOutput provides information about a running task.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct TaskOutput {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+    #[prost(string, tag = "2")]
+    pub output: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub error: ::core::option::Option<TaskError>,
+    /// Indicates the UTC timestamp task execution began, set only in the first message for reporting.
+    #[prost(message, optional, tag = "4")]
+    pub exec_started_at: ::core::option::Option<::prost_types::Timestamp>,
+    /// Indicates the UTC timestamp task execution completed, set only in last message for reporting.
+    #[prost(message, optional, tag = "5")]
+    pub exec_finished_at: ::core::option::Option<::prost_types::Timestamp>,
+}
+#[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct ShellTaskOutput {
     #[prost(int64, tag = "1")]
     pub id: i64,
     #[prost(string, tag = "2")]
@@ -194,6 +224,8 @@ pub struct ClaimTasksRequest {
 pub struct ClaimTasksResponse {
     #[prost(message, repeated, tag = "1")]
     pub tasks: ::prost::alloc::vec::Vec<Task>,
+    #[prost(message, repeated, tag = "2")]
+    pub shell_tasks: ::prost::alloc::vec::Vec<ShellTask>,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct FetchAssetRequest {
@@ -240,6 +272,8 @@ pub struct ReportTaskOutputRequest {
     pub output: ::core::option::Option<TaskOutput>,
     #[prost(message, optional, tag = "2")]
     pub context: ::core::option::Option<TaskContext>,
+    #[prost(message, optional, tag = "3")]
+    pub shell_task_output: ::core::option::Option<ShellTaskOutput>,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct ReportTaskOutputResponse {}
