@@ -2,7 +2,7 @@ use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch::agent::agent::Agent;
 use pb::c2::host::Platform;
-use pb::c2::{self, Host};
+use pb::c2::{self, report_file_request, report_output_request, Host};
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
@@ -11,11 +11,11 @@ use transport::MockTransport;
 async fn test_imix_agent_buffer_and_flush() {
     let mut transport = MockTransport::default();
 
-    // We expect report_task_output to be called exactly once
+    // We expect report_output to be called exactly once
     transport
-        .expect_report_task_output()
+        .expect_report_output()
         .times(1)
-        .returning(|_| Ok(c2::ReportTaskOutputResponse {}));
+        .returning(|_| Ok(c2::ReportOutputResponse {}));
 
     transport.expect_is_active().returning(|| true);
 
@@ -25,19 +25,22 @@ async fn test_imix_agent_buffer_and_flush() {
     let agent = ImixAgent::new(Config::default(), transport, handle, registry, tx);
 
     // 1. Report output (should buffer)
-    let req = c2::ReportTaskOutputRequest {
-        output: Some(c2::TaskOutput {
-            id: 1,
-            output: "test".to_string(),
-            ..Default::default()
-        }),
-        context: Some(c2::TaskContext {
-            task_id: 1,
-            jwt: "some jwt".to_string(),
-        }),
-        shell_task_output: None,
+    let req = c2::ReportOutputRequest {
+        message: Some(report_output_request::Message::TaskOutput(
+            c2::ReportTaskOutputMessage {
+                output: Some(c2::TaskOutput {
+                    id: 1,
+                    output: "test".to_string(),
+                    ..Default::default()
+                }),
+                context: Some(c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                }),
+            },
+        )),
     };
-    agent.report_task_output(req).unwrap();
+    agent.report_output(req).unwrap();
 
     // 2. Flush outputs (should drain buffer and call transport)
     agent.flush_outputs().await;
@@ -72,10 +75,12 @@ async fn test_imix_agent_fetch_asset() {
 
     let req = c2::FetchAssetRequest {
         name: "test_file".to_string(),
-        context: Some(c2::TaskContext {
-            task_id: 0,
-            jwt: "a jwt".to_string(),
-        }),
+        context: Some(c2::fetch_asset_request::Context::TaskContext(
+            c2::TaskContext {
+                task_id: 0,
+                jwt: "a jwt".to_string(),
+            },
+        )),
     };
 
     let agent_clone = agent.clone();
@@ -110,10 +115,12 @@ async fn test_imix_agent_report_credential() {
     std::thread::spawn(move || {
         let _ = agent_clone.report_credential(c2::ReportCredentialRequest {
             credential: None,
-            context: Some(c2::TaskContext {
-                task_id: 1,
-                jwt: "some jwt".to_string(),
-            }),
+            context: Some(c2::report_credential_request::Context::TaskContext(
+                c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                },
+            )),
         });
     })
     .join()
@@ -143,10 +150,12 @@ async fn test_imix_agent_report_process_list() {
     std::thread::spawn(move || {
         let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
             list: None,
-            context: Some(c2::TaskContext {
-                task_id: 1,
-                jwt: "some jwt".to_string(),
-            }),
+            context: Some(c2::report_process_list_request::Context::TaskContext(
+                c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                },
+            )),
         });
     })
     .join()
@@ -200,10 +209,11 @@ async fn test_imix_agent_report_file() {
     std::thread::spawn(move || {
         let _ = agent_clone.report_file(c2::ReportFileRequest {
             chunk: None,
-            context: Some(c2::TaskContext {
+            context: Some(report_file_request::Context::TaskContext(c2::TaskContext {
                 task_id: 1,
                 jwt: "test jwt".to_string(),
-            }),
+            })),
+            kind: c2::ReportFileKind::Ondisk as i32,
         });
     })
     .join()

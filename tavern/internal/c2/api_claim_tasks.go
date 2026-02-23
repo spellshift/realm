@@ -462,12 +462,19 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			return nil, rollback(tx, fmt.Errorf("failed to load shell for claimed shell task (id=%d): %w", shellTaskID, err))
 		}
 
+		// Generate JWT for ShellTask
+		shellJwtToken, err := srv.generateTaskJWT()
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for shell task (id=%d): %w", shellTaskID, err))
+		}
+
 		resp.ShellTasks = append(resp.ShellTasks, &c2pb.ShellTask{
 			Id:         int64(claimedShellTask.ID),
 			Input:      claimedShellTask.Input,
 			ShellId:    int64(shellID),
 			SequenceId: claimedShellTask.SequenceID,
 			StreamId:   claimedShellTask.StreamID,
+			Jwt:        shellJwtToken,
 		})
 	}
 

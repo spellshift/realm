@@ -1,14 +1,13 @@
 use super::AssetsLibrary;
 use alloc::borrow::Cow;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
 use core::marker::PhantomData;
-use eldritch_agent::Agent;
+use eldritch_agent::{Agent, Context};
 use eldritch_macros::eldritch_library_impl;
 use pb::c2::FetchAssetRequest;
-use pb::c2::TaskContext;
 use rust_embed;
 use std::collections::HashSet;
 
@@ -66,19 +65,15 @@ impl<T: rust_embed::Embed + Send + Sync + 'static> AssetBackend for EmbeddedAsse
 // An AssetBackend that gets assets from an agent
 pub struct AgentAssets {
     pub agent: Arc<dyn Agent>,
-    pub task_context: TaskContext,
+    pub context: Context,
     pub remote_assets: Vec<String>,
 }
 
 impl AgentAssets {
-    pub fn new(
-        agent: Arc<dyn Agent>,
-        task_context: TaskContext,
-        remote_assets: Vec<String>,
-    ) -> Self {
+    pub fn new(agent: Arc<dyn Agent>, context: Context, remote_assets: Vec<String>) -> Self {
         Self {
             agent,
-            task_context,
+            context,
             remote_assets,
         }
     }
@@ -87,9 +82,18 @@ impl AgentAssets {
 impl AssetBackend for AgentAssets {
     fn get(&self, name: &str) -> Result<Vec<u8>> {
         if self.remote_assets.iter().any(|s| s == name) {
+            let context_val = match &self.context {
+                Context::Task(tc) => {
+                    Some(pb::c2::fetch_asset_request::Context::TaskContext(tc.clone()))
+                }
+                Context::ShellTask(stc) => Some(
+                    pb::c2::fetch_asset_request::Context::ShellTaskContext(stc.clone()),
+                ),
+            };
+
             let req = FetchAssetRequest {
                 name: name.to_string(),
-                context: Some(self.task_context.clone().into()),
+                context: context_val,
             };
             return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
         }

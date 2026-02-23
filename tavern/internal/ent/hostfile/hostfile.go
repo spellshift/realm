@@ -37,6 +37,8 @@ const (
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
 	EdgeTask = "task"
+	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
+	EdgeShellTask = "shell_task"
 	// Table holds the table name of the hostfile in the database.
 	Table = "host_files"
 	// HostTable is the table that holds the host relation/edge.
@@ -53,6 +55,13 @@ const (
 	TaskInverseTable = "tasks"
 	// TaskColumn is the table column denoting the task relation/edge.
 	TaskColumn = "task_reported_files"
+	// ShellTaskTable is the table that holds the shell_task relation/edge.
+	ShellTaskTable = "host_files"
+	// ShellTaskInverseTable is the table name for the ShellTask entity.
+	// It exists in this package in order to avoid circular dependency with the "shelltask" package.
+	ShellTaskInverseTable = "shell_tasks"
+	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
+	ShellTaskColumn = "shell_task_reported_files"
 )
 
 // Columns holds all SQL columns for hostfile fields.
@@ -74,6 +83,7 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"host_files",
 	"host_file_host",
+	"shell_task_reported_files",
 	"task_reported_files",
 }
 
@@ -176,6 +186,13 @@ func ByTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newTaskStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByShellTaskField orders the results by shell_task field.
+func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -188,5 +205,12 @@ func newTaskStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TaskInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
+	)
+}
+func newShellTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellTaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
 	)
 }

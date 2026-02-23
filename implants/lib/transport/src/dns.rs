@@ -1143,11 +1143,11 @@ impl Transport for DNS {
         self.dns_exchange(request, "/c2.C2/ReportProcessList").await
     }
 
-    async fn report_task_output(
+    async fn report_output(
         &mut self,
-        request: ReportTaskOutputRequest,
-    ) -> Result<ReportTaskOutputResponse> {
-        self.dns_exchange(request, "/c2.C2/ReportTaskOutput").await
+        request: ReportOutputRequest,
+    ) -> Result<ReportOutputResponse> {
+        self.dns_exchange(request, "/c2.C2/ReportOutput").await
     }
 
     async fn reverse_shell(
