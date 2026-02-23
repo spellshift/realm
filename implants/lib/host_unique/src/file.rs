@@ -10,8 +10,9 @@ use crate::HostIDSelector;
 
 const UUID_SIZE: usize = 36;
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct File {
+    #[serde(default)]
     path_override: Option<String>,
 }
 

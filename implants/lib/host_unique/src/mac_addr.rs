@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use crate::HostIDSelector;
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct MacAddr {}
 
 impl MacAddr {
