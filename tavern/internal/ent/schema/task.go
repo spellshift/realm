@@ -96,6 +96,12 @@ func (Task) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Credentials that have been reported by this task."),
+		edge.To("screenshots", Screenshot.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Screenshots that have been reported by this task."),
 		edge.From("shells", Shell.Type).
 			Ref("task").
 			Annotations(

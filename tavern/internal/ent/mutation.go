@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -56,6 +57,7 @@ const (
 	TypePortal         = "Portal"
 	TypeQuest          = "Quest"
 	TypeRepository     = "Repository"
+	TypeScreenshot     = "Screenshot"
 	TypeShell          = "Shell"
 	TypeShellTask      = "ShellTask"
 	TypeTag            = "Tag"
@@ -4388,6 +4390,9 @@ type HostMutation struct {
 	credentials        map[int]struct{}
 	removedcredentials map[int]struct{}
 	clearedcredentials bool
+	screenshots        map[int]struct{}
+	removedscreenshots map[int]struct{}
+	clearedscreenshots bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -5150,6 +5155,60 @@ func (m *HostMutation) ResetCredentials() {
 	m.removedcredentials = nil
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by ids.
+func (m *HostMutation) AddScreenshotIDs(ids ...int) {
+	if m.screenshots == nil {
+		m.screenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.screenshots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScreenshots clears the "screenshots" edge to the Screenshot entity.
+func (m *HostMutation) ClearScreenshots() {
+	m.clearedscreenshots = true
+}
+
+// ScreenshotsCleared reports if the "screenshots" edge to the Screenshot entity was cleared.
+func (m *HostMutation) ScreenshotsCleared() bool {
+	return m.clearedscreenshots
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to the Screenshot entity by IDs.
+func (m *HostMutation) RemoveScreenshotIDs(ids ...int) {
+	if m.removedscreenshots == nil {
+		m.removedscreenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.screenshots, ids[i])
+		m.removedscreenshots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScreenshots returns the removed IDs of the "screenshots" edge to the Screenshot entity.
+func (m *HostMutation) RemovedScreenshotsIDs() (ids []int) {
+	for id := range m.removedscreenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScreenshotsIDs returns the "screenshots" edge IDs in the mutation.
+func (m *HostMutation) ScreenshotsIDs() (ids []int) {
+	for id := range m.screenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScreenshots resets all changes to the "screenshots" edge.
+func (m *HostMutation) ResetScreenshots() {
+	m.screenshots = nil
+	m.clearedscreenshots = false
+	m.removedscreenshots = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -5452,7 +5511,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5467,6 +5526,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.credentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.screenshots != nil {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5505,13 +5567,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.screenshots))
+		for id := range m.screenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5526,6 +5594,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedcredentials != nil {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.removedscreenshots != nil {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5564,13 +5635,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.removedscreenshots))
+		for id := range m.removedscreenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -5585,6 +5662,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedcredentials {
 		edges = append(edges, host.EdgeCredentials)
+	}
+	if m.clearedscreenshots {
+		edges = append(edges, host.EdgeScreenshots)
 	}
 	return edges
 }
@@ -5603,6 +5683,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedprocesses
 	case host.EdgeCredentials:
 		return m.clearedcredentials
+	case host.EdgeScreenshots:
+		return m.clearedscreenshots
 	}
 	return false
 }
@@ -5633,6 +5715,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeCredentials:
 		m.ResetCredentials()
+		return nil
+	case host.EdgeScreenshots:
+		m.ResetScreenshots()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
@@ -11936,6 +12021,810 @@ func (m *RepositoryMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Repository edge %s", name)
 }
 
+// ScreenshotMutation represents an operation that mutates the Screenshot nodes in the graph.
+type ScreenshotMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	size              *uint64
+	addsize           *int64
+	hash              *string
+	content           *[]byte
+	clearedFields     map[string]struct{}
+	host              *int
+	clearedhost       bool
+	task              *int
+	clearedtask       bool
+	shell_task        *int
+	clearedshell_task bool
+	done              bool
+	oldValue          func(context.Context) (*Screenshot, error)
+	predicates        []predicate.Screenshot
+}
+
+var _ ent.Mutation = (*ScreenshotMutation)(nil)
+
+// screenshotOption allows management of the mutation configuration using functional options.
+type screenshotOption func(*ScreenshotMutation)
+
+// newScreenshotMutation creates new mutation for the Screenshot entity.
+func newScreenshotMutation(c config, op Op, opts ...screenshotOption) *ScreenshotMutation {
+	m := &ScreenshotMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeScreenshot,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withScreenshotID sets the ID field of the mutation.
+func withScreenshotID(id int) screenshotOption {
+	return func(m *ScreenshotMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Screenshot
+		)
+		m.oldValue = func(ctx context.Context) (*Screenshot, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Screenshot.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withScreenshot sets the old Screenshot of the mutation.
+func withScreenshot(node *Screenshot) screenshotOption {
+	return func(m *ScreenshotMutation) {
+		m.oldValue = func(context.Context) (*Screenshot, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ScreenshotMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ScreenshotMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ScreenshotMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ScreenshotMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Screenshot.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ScreenshotMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ScreenshotMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ScreenshotMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *ScreenshotMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *ScreenshotMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *ScreenshotMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetSize sets the "size" field.
+func (m *ScreenshotMutation) SetSize(u uint64) {
+	m.size = &u
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *ScreenshotMutation) Size() (r uint64, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldSize(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds u to the "size" field.
+func (m *ScreenshotMutation) AddSize(u int64) {
+	if m.addsize != nil {
+		*m.addsize += u
+	} else {
+		m.addsize = &u
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *ScreenshotMutation) AddedSize() (r int64, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *ScreenshotMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *ScreenshotMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *ScreenshotMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ClearHash clears the value of the "hash" field.
+func (m *ScreenshotMutation) ClearHash() {
+	m.hash = nil
+	m.clearedFields[screenshot.FieldHash] = struct{}{}
+}
+
+// HashCleared returns if the "hash" field was cleared in this mutation.
+func (m *ScreenshotMutation) HashCleared() bool {
+	_, ok := m.clearedFields[screenshot.FieldHash]
+	return ok
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *ScreenshotMutation) ResetHash() {
+	m.hash = nil
+	delete(m.clearedFields, screenshot.FieldHash)
+}
+
+// SetContent sets the "content" field.
+func (m *ScreenshotMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *ScreenshotMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the Screenshot entity.
+// If the Screenshot object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScreenshotMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *ScreenshotMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[screenshot.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *ScreenshotMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[screenshot.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *ScreenshotMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, screenshot.FieldContent)
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *ScreenshotMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *ScreenshotMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *ScreenshotMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *ScreenshotMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *ScreenshotMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *ScreenshotMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetTaskID sets the "task" edge to the Task entity by id.
+func (m *ScreenshotMutation) SetTaskID(id int) {
+	m.task = &id
+}
+
+// ClearTask clears the "task" edge to the Task entity.
+func (m *ScreenshotMutation) ClearTask() {
+	m.clearedtask = true
+}
+
+// TaskCleared reports if the "task" edge to the Task entity was cleared.
+func (m *ScreenshotMutation) TaskCleared() bool {
+	return m.clearedtask
+}
+
+// TaskID returns the "task" edge ID in the mutation.
+func (m *ScreenshotMutation) TaskID() (id int, exists bool) {
+	if m.task != nil {
+		return *m.task, true
+	}
+	return
+}
+
+// TaskIDs returns the "task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TaskID instead. It exists only for internal usage by the builders.
+func (m *ScreenshotMutation) TaskIDs() (ids []int) {
+	if id := m.task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTask resets all changes to the "task" edge.
+func (m *ScreenshotMutation) ResetTask() {
+	m.task = nil
+	m.clearedtask = false
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *ScreenshotMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *ScreenshotMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *ScreenshotMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *ScreenshotMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *ScreenshotMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *ScreenshotMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
+}
+
+// Where appends a list predicates to the ScreenshotMutation builder.
+func (m *ScreenshotMutation) Where(ps ...predicate.Screenshot) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ScreenshotMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ScreenshotMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Screenshot, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ScreenshotMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ScreenshotMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Screenshot).
+func (m *ScreenshotMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ScreenshotMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, screenshot.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, screenshot.FieldLastModifiedAt)
+	}
+	if m.size != nil {
+		fields = append(fields, screenshot.FieldSize)
+	}
+	if m.hash != nil {
+		fields = append(fields, screenshot.FieldHash)
+	}
+	if m.content != nil {
+		fields = append(fields, screenshot.FieldContent)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ScreenshotMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case screenshot.FieldCreatedAt:
+		return m.CreatedAt()
+	case screenshot.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case screenshot.FieldSize:
+		return m.Size()
+	case screenshot.FieldHash:
+		return m.Hash()
+	case screenshot.FieldContent:
+		return m.Content()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ScreenshotMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case screenshot.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case screenshot.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case screenshot.FieldSize:
+		return m.OldSize(ctx)
+	case screenshot.FieldHash:
+		return m.OldHash(ctx)
+	case screenshot.FieldContent:
+		return m.OldContent(ctx)
+	}
+	return nil, fmt.Errorf("unknown Screenshot field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ScreenshotMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case screenshot.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case screenshot.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case screenshot.FieldSize:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case screenshot.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case screenshot.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ScreenshotMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, screenshot.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ScreenshotMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case screenshot.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ScreenshotMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case screenshot.FieldSize:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ScreenshotMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(screenshot.FieldHash) {
+		fields = append(fields, screenshot.FieldHash)
+	}
+	if m.FieldCleared(screenshot.FieldContent) {
+		fields = append(fields, screenshot.FieldContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ScreenshotMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ScreenshotMutation) ClearField(name string) error {
+	switch name {
+	case screenshot.FieldHash:
+		m.ClearHash()
+		return nil
+	case screenshot.FieldContent:
+		m.ClearContent()
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ScreenshotMutation) ResetField(name string) error {
+	switch name {
+	case screenshot.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case screenshot.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case screenshot.FieldSize:
+		m.ResetSize()
+		return nil
+	case screenshot.FieldHash:
+		m.ResetHash()
+		return nil
+	case screenshot.FieldContent:
+		m.ResetContent()
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ScreenshotMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.host != nil {
+		edges = append(edges, screenshot.EdgeHost)
+	}
+	if m.task != nil {
+		edges = append(edges, screenshot.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, screenshot.EdgeShellTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ScreenshotMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case screenshot.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case screenshot.EdgeTask:
+		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	case screenshot.EdgeShellTask:
+		if id := m.shell_task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ScreenshotMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ScreenshotMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ScreenshotMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedhost {
+		edges = append(edges, screenshot.EdgeHost)
+	}
+	if m.clearedtask {
+		edges = append(edges, screenshot.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, screenshot.EdgeShellTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ScreenshotMutation) EdgeCleared(name string) bool {
+	switch name {
+	case screenshot.EdgeHost:
+		return m.clearedhost
+	case screenshot.EdgeTask:
+		return m.clearedtask
+	case screenshot.EdgeShellTask:
+		return m.clearedshell_task
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ScreenshotMutation) ClearEdge(name string) error {
+	switch name {
+	case screenshot.EdgeHost:
+		m.ClearHost()
+		return nil
+	case screenshot.EdgeTask:
+		m.ClearTask()
+		return nil
+	case screenshot.EdgeShellTask:
+		m.ClearShellTask()
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ScreenshotMutation) ResetEdge(name string) error {
+	switch name {
+	case screenshot.EdgeHost:
+		m.ResetHost()
+		return nil
+	case screenshot.EdgeTask:
+		m.ResetTask()
+		return nil
+	case screenshot.EdgeShellTask:
+		m.ResetShellTask()
+		return nil
+	}
+	return fmt.Errorf("unknown Screenshot edge %s", name)
+}
+
 // ShellMutation represents an operation that mutates the Shell nodes in the graph.
 type ShellMutation struct {
 	config
@@ -12913,6 +13802,9 @@ type ShellTaskMutation struct {
 	reported_processes          map[int]struct{}
 	removedreported_processes   map[int]struct{}
 	clearedreported_processes   bool
+	screenshots                 map[int]struct{}
+	removedscreenshots          map[int]struct{}
+	clearedscreenshots          bool
 	done                        bool
 	oldValue                    func(context.Context) (*ShellTask, error)
 	predicates                  []predicate.ShellTask
@@ -13701,6 +14593,60 @@ func (m *ShellTaskMutation) ResetReportedProcesses() {
 	m.removedreported_processes = nil
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by ids.
+func (m *ShellTaskMutation) AddScreenshotIDs(ids ...int) {
+	if m.screenshots == nil {
+		m.screenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.screenshots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScreenshots clears the "screenshots" edge to the Screenshot entity.
+func (m *ShellTaskMutation) ClearScreenshots() {
+	m.clearedscreenshots = true
+}
+
+// ScreenshotsCleared reports if the "screenshots" edge to the Screenshot entity was cleared.
+func (m *ShellTaskMutation) ScreenshotsCleared() bool {
+	return m.clearedscreenshots
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to the Screenshot entity by IDs.
+func (m *ShellTaskMutation) RemoveScreenshotIDs(ids ...int) {
+	if m.removedscreenshots == nil {
+		m.removedscreenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.screenshots, ids[i])
+		m.removedscreenshots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScreenshots returns the removed IDs of the "screenshots" edge to the Screenshot entity.
+func (m *ShellTaskMutation) RemovedScreenshotsIDs() (ids []int) {
+	for id := range m.removedscreenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScreenshotsIDs returns the "screenshots" edge IDs in the mutation.
+func (m *ShellTaskMutation) ScreenshotsIDs() (ids []int) {
+	for id := range m.screenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScreenshots resets all changes to the "screenshots" edge.
+func (m *ShellTaskMutation) ResetScreenshots() {
+	m.screenshots = nil
+	m.clearedscreenshots = false
+	m.removedscreenshots = nil
+}
+
 // Where appends a list predicates to the ShellTaskMutation builder.
 func (m *ShellTaskMutation) Where(ps ...predicate.ShellTask) {
 	m.predicates = append(m.predicates, ps...)
@@ -14035,7 +14981,7 @@ func (m *ShellTaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.shell != nil {
 		edges = append(edges, shelltask.EdgeShell)
 	}
@@ -14050,6 +14996,9 @@ func (m *ShellTaskMutation) AddedEdges() []string {
 	}
 	if m.reported_processes != nil {
 		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	if m.screenshots != nil {
+		edges = append(edges, shelltask.EdgeScreenshots)
 	}
 	return edges
 }
@@ -14084,13 +15033,19 @@ func (m *ShellTaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shelltask.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.screenshots))
+		for id := range m.screenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedreported_credentials != nil {
 		edges = append(edges, shelltask.EdgeReportedCredentials)
 	}
@@ -14099,6 +15054,9 @@ func (m *ShellTaskMutation) RemovedEdges() []string {
 	}
 	if m.removedreported_processes != nil {
 		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	if m.removedscreenshots != nil {
+		edges = append(edges, shelltask.EdgeScreenshots)
 	}
 	return edges
 }
@@ -14125,13 +15083,19 @@ func (m *ShellTaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shelltask.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.removedscreenshots))
+		for id := range m.removedscreenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedshell {
 		edges = append(edges, shelltask.EdgeShell)
 	}
@@ -14146,6 +15110,9 @@ func (m *ShellTaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedreported_processes {
 		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	if m.clearedscreenshots {
+		edges = append(edges, shelltask.EdgeScreenshots)
 	}
 	return edges
 }
@@ -14164,6 +15131,8 @@ func (m *ShellTaskMutation) EdgeCleared(name string) bool {
 		return m.clearedreported_files
 	case shelltask.EdgeReportedProcesses:
 		return m.clearedreported_processes
+	case shelltask.EdgeScreenshots:
+		return m.clearedscreenshots
 	}
 	return false
 }
@@ -14200,6 +15169,9 @@ func (m *ShellTaskMutation) ResetEdge(name string) error {
 		return nil
 	case shelltask.EdgeReportedProcesses:
 		m.ResetReportedProcesses()
+		return nil
+	case shelltask.EdgeScreenshots:
+		m.ResetScreenshots()
 		return nil
 	}
 	return fmt.Errorf("unknown ShellTask edge %s", name)
@@ -14707,6 +15679,9 @@ type TaskMutation struct {
 	reported_credentials        map[int]struct{}
 	removedreported_credentials map[int]struct{}
 	clearedreported_credentials bool
+	screenshots                 map[int]struct{}
+	removedscreenshots          map[int]struct{}
+	clearedscreenshots          bool
 	shells                      map[int]struct{}
 	removedshells               map[int]struct{}
 	clearedshells               bool
@@ -15426,6 +16401,60 @@ func (m *TaskMutation) ResetReportedCredentials() {
 	m.removedreported_credentials = nil
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by ids.
+func (m *TaskMutation) AddScreenshotIDs(ids ...int) {
+	if m.screenshots == nil {
+		m.screenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.screenshots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScreenshots clears the "screenshots" edge to the Screenshot entity.
+func (m *TaskMutation) ClearScreenshots() {
+	m.clearedscreenshots = true
+}
+
+// ScreenshotsCleared reports if the "screenshots" edge to the Screenshot entity was cleared.
+func (m *TaskMutation) ScreenshotsCleared() bool {
+	return m.clearedscreenshots
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to the Screenshot entity by IDs.
+func (m *TaskMutation) RemoveScreenshotIDs(ids ...int) {
+	if m.removedscreenshots == nil {
+		m.removedscreenshots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.screenshots, ids[i])
+		m.removedscreenshots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScreenshots returns the removed IDs of the "screenshots" edge to the Screenshot entity.
+func (m *TaskMutation) RemovedScreenshotsIDs() (ids []int) {
+	for id := range m.removedscreenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScreenshotsIDs returns the "screenshots" edge IDs in the mutation.
+func (m *TaskMutation) ScreenshotsIDs() (ids []int) {
+	for id := range m.screenshots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScreenshots resets all changes to the "screenshots" edge.
+func (m *TaskMutation) ResetScreenshots() {
+	m.screenshots = nil
+	m.clearedscreenshots = false
+	m.removedscreenshots = nil
+}
+
 // AddShellIDs adds the "shells" edge to the Shell entity by ids.
 func (m *TaskMutation) AddShellIDs(ids ...int) {
 	if m.shells == nil {
@@ -15780,7 +16809,7 @@ func (m *TaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.quest != nil {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -15795,6 +16824,9 @@ func (m *TaskMutation) AddedEdges() []string {
 	}
 	if m.reported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.screenshots != nil {
+		edges = append(edges, task.EdgeScreenshots)
 	}
 	if m.shells != nil {
 		edges = append(edges, task.EdgeShells)
@@ -15832,6 +16864,12 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.screenshots))
+		for id := range m.screenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeShells:
 		ids := make([]ent.Value, 0, len(m.shells))
 		for id := range m.shells {
@@ -15844,7 +16882,7 @@ func (m *TaskMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedreported_files != nil {
 		edges = append(edges, task.EdgeReportedFiles)
 	}
@@ -15853,6 +16891,9 @@ func (m *TaskMutation) RemovedEdges() []string {
 	}
 	if m.removedreported_credentials != nil {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.removedscreenshots != nil {
+		edges = append(edges, task.EdgeScreenshots)
 	}
 	if m.removedshells != nil {
 		edges = append(edges, task.EdgeShells)
@@ -15882,6 +16923,12 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case task.EdgeScreenshots:
+		ids := make([]ent.Value, 0, len(m.removedscreenshots))
+		for id := range m.removedscreenshots {
+			ids = append(ids, id)
+		}
+		return ids
 	case task.EdgeShells:
 		ids := make([]ent.Value, 0, len(m.removedshells))
 		for id := range m.removedshells {
@@ -15894,7 +16941,7 @@ func (m *TaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedquest {
 		edges = append(edges, task.EdgeQuest)
 	}
@@ -15909,6 +16956,9 @@ func (m *TaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedreported_credentials {
 		edges = append(edges, task.EdgeReportedCredentials)
+	}
+	if m.clearedscreenshots {
+		edges = append(edges, task.EdgeScreenshots)
 	}
 	if m.clearedshells {
 		edges = append(edges, task.EdgeShells)
@@ -15930,6 +16980,8 @@ func (m *TaskMutation) EdgeCleared(name string) bool {
 		return m.clearedreported_processes
 	case task.EdgeReportedCredentials:
 		return m.clearedreported_credentials
+	case task.EdgeScreenshots:
+		return m.clearedscreenshots
 	case task.EdgeShells:
 		return m.clearedshells
 	}
@@ -15968,6 +17020,9 @@ func (m *TaskMutation) ResetEdge(name string) error {
 		return nil
 	case task.EdgeReportedCredentials:
 		m.ResetReportedCredentials()
+		return nil
+	case task.EdgeScreenshots:
+		m.ResetScreenshots()
 		return nil
 	case task.EdgeShells:
 		m.ResetShells()

@@ -283,5 +283,46 @@ func TestReportFile(t *testing.T) {
             }
 		})
 	}
+}
 
+func TestReportScreenshot(t *testing.T) {
+	// Setup Dependencies
+	client, graph, close, token := c2test.New(t)
+	defer close()
+    ctx := context.Background()
+
+	// Test Data
+	beacon := c2test.NewRandomBeacon(ctx, graph)
+	host := beacon.QueryHost().OnlyX(ctx)
+	task := c2test.NewRandomAssignedTask(ctx, graph, beacon.Identifier)
+
+    // Send Screenshot Request
+    req := &c2pb.ReportFileRequest{
+        Context: &c2pb.ReportFileRequest_TaskContext{
+            TaskContext: &c2pb.TaskContext{TaskId: int64(task.ID), Jwt: token},
+        },
+        Kind: c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT,
+        Chunk: &epb.File{
+            Chunk: []byte("screenshot_pixels"),
+        },
+    }
+
+    rClient, err := client.ReportFile(ctx)
+    require.NoError(t, err)
+    err = rClient.Send(req)
+    require.NoError(t, err)
+    _, err = rClient.CloseAndRecv()
+    require.NoError(t, err)
+
+    // Verify Screenshot Entity
+    screenshots := host.QueryScreenshots().AllX(ctx)
+    require.Len(t, screenshots, 1)
+    s := screenshots[0]
+
+    assert.Equal(t, uint64(len("screenshot_pixels")), s.Size)
+    assert.Equal(t, []byte("screenshot_pixels"), s.Content)
+    assert.NotEmpty(t, s.Hash)
+
+    // Check Task Edge
+    require.True(t, s.QueryTask().ExistX(ctx))
 }

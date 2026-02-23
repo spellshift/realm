@@ -25,6 +25,7 @@ members = [
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream",
+    "lib/screenshot",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -55,6 +56,7 @@ eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-feat
 eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
+screenshot = { path = "lib/screenshot" }
 portal-stream = { path = "lib/portals/portal-stream" }
 
 aes = "0.8.3"

@@ -12,6 +12,7 @@ pub mod ntlm_hash_impl;
 pub mod process_list_impl;
 pub mod ssh_key_impl;
 pub mod user_password_impl;
+pub mod screenshot_impl;
 
 #[eldritch_library_impl(ReportLibrary)]
 pub struct StdReportLibrary {
@@ -57,5 +58,9 @@ impl ReportLibrary for StdReportLibrary {
 
     fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String> {
         ntlm_hash_impl::ntlm_hash(self.agent.clone(), self.context.clone(), username, hash)
+    }
+
+    fn screenshot(&self) -> Result<(), String> {
+        screenshot_impl::screenshot(self.agent.clone(), self.context.clone())
     }
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -23,6 +24,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		permissions string
 		size        uint64
 		hash        string
+		kind        c2pb.ReportFileKind
 
 		content []byte
 	)
@@ -37,6 +39,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed to receive report_file request: %v", err)
+		}
+
+		if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_UNSPECIFIED && req.Kind != c2pb.ReportFileKind_REPORT_FILE_KIND_UNSPECIFIED {
+			kind = req.Kind
 		}
 
 		// Collect args
@@ -67,7 +73,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 	if taskID == 0 && shellTaskID == 0 {
 		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
 	}
-	if path == "" {
+	if kind != c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT && path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
 	}
 
@@ -110,15 +116,6 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		host = h
 	}
 
-	// Load Existing Files
-	existingFiles, err := host.QueryFiles().
-		Where(
-			hostfile.Path(path),
-		).All(ctx)
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
-	}
-
 	// Prepare Transaction
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -134,36 +131,70 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}()
 
-	// Create File
-	builder := client.HostFile.Create().
-		SetHostID(host.ID).
-		SetPath(path).
-		SetOwner(owner).
-		SetGroup(group).
-		SetPermissions(permissions).
-		SetSize(size).
-		SetHash(hash).
-		SetContent(content)
+	if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT {
+		// Create Screenshot
+		builder := client.Screenshot.Create().
+			SetHostID(host.ID).
+			SetContent(content).
+			SetSize(uint64(len(content)))
 
-	if task != nil {
-		builder.SetTaskID(task.ID)
-	}
-	if shellTask != nil {
-		builder.SetShellTaskID(shellTask.ID)
-	}
+		// Calculate hash
+		h := sha3.Sum256(content)
+		hashStr := fmt.Sprintf("%x", h)
+		builder.SetHash(hashStr)
 
-	f, err := builder.Save(ctx)
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
-	}
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
 
-	// Clear Previous Files, Set New File
-	_, err = client.Host.UpdateOneID(host.ID).
-		AddFiles(f).
-		RemoveFiles(existingFiles...).
-		Save(ctx)
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+		_, err := builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create screenshot: %w", err))
+		}
+	} else {
+		// Load Existing Files
+		existingFiles, err := host.QueryFiles().
+			Where(
+				hostfile.Path(path),
+			).All(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to load existing host files: %w", err))
+		}
+
+		// Create File
+		builder := client.HostFile.Create().
+			SetHostID(host.ID).
+			SetPath(path).
+			SetOwner(owner).
+			SetGroup(group).
+			SetPermissions(permissions).
+			SetSize(size).
+			SetHash(hash).
+			SetContent(content)
+
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
+
+		f, err := builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
+		}
+
+		// Clear Previous Files, Set New File
+		_, err = client.Host.UpdateOneID(host.ID).
+			AddFiles(f).
+			RemoveFiles(existingFiles...).
+			Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+		}
 	}
 
 	// Commit Transaction

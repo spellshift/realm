@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -360,6 +361,31 @@ func init() {
 	repositoryDescPrivateKey := repositoryFields[2].Descriptor()
 	// repository.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
 	repository.PrivateKeyValidator = repositoryDescPrivateKey.Validators[0].(func(string) error)
+	screenshotMixin := schema.Screenshot{}.Mixin()
+	screenshotMixinFields0 := screenshotMixin[0].Fields()
+	_ = screenshotMixinFields0
+	screenshotFields := schema.Screenshot{}.Fields()
+	_ = screenshotFields
+	// screenshotDescCreatedAt is the schema descriptor for created_at field.
+	screenshotDescCreatedAt := screenshotMixinFields0[0].Descriptor()
+	// screenshot.DefaultCreatedAt holds the default value on creation for the created_at field.
+	screenshot.DefaultCreatedAt = screenshotDescCreatedAt.Default.(func() time.Time)
+	// screenshotDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	screenshotDescLastModifiedAt := screenshotMixinFields0[1].Descriptor()
+	// screenshot.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	screenshot.DefaultLastModifiedAt = screenshotDescLastModifiedAt.Default.(func() time.Time)
+	// screenshot.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	screenshot.UpdateDefaultLastModifiedAt = screenshotDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// screenshotDescSize is the schema descriptor for size field.
+	screenshotDescSize := screenshotFields[0].Descriptor()
+	// screenshot.DefaultSize holds the default value on creation for the size field.
+	screenshot.DefaultSize = screenshotDescSize.Default.(uint64)
+	// screenshot.SizeValidator is a validator for the "size" field. It is called by the builders before save.
+	screenshot.SizeValidator = screenshotDescSize.Validators[0].(func(uint64) error)
+	// screenshotDescHash is the schema descriptor for hash field.
+	screenshotDescHash := screenshotFields[1].Descriptor()
+	// screenshot.HashValidator is a validator for the "hash" field. It is called by the builders before save.
+	screenshot.HashValidator = screenshotDescHash.Validators[0].(func(string) error)
 	shellMixin := schema.Shell{}.Mixin()
 	shellMixinFields0 := shellMixin[0].Fields()
 	_ = shellMixinFields0

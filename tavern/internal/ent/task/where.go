@@ -630,6 +630,29 @@ func HasReportedCredentialsWith(preds ...predicate.HostCredential) predicate.Tas
 	})
 }
 
+// HasScreenshots applies the HasEdge predicate on the "screenshots" edge.
+func HasScreenshots() predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ScreenshotsTable, ScreenshotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasScreenshotsWith applies the HasEdge predicate on the "screenshots" edge with a given conditions (other predicates).
+func HasScreenshotsWith(preds ...predicate.Screenshot) predicate.Task {
+	return predicate.Task(func(s *sql.Selector) {
+		step := newScreenshotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasShells applies the HasEdge predicate on the "shells" edge.
 func HasShells() predicate.Task {
 	return predicate.Task(func(s *sql.Selector) {

@@ -41,6 +41,8 @@ const (
 	EdgeReportedProcesses = "reported_processes"
 	// EdgeReportedCredentials holds the string denoting the reported_credentials edge name in mutations.
 	EdgeReportedCredentials = "reported_credentials"
+	// EdgeScreenshots holds the string denoting the screenshots edge name in mutations.
+	EdgeScreenshots = "screenshots"
 	// EdgeShells holds the string denoting the shells edge name in mutations.
 	EdgeShells = "shells"
 	// Table holds the table name of the task in the database.
@@ -80,6 +82,13 @@ const (
 	ReportedCredentialsInverseTable = "host_credentials"
 	// ReportedCredentialsColumn is the table column denoting the reported_credentials relation/edge.
 	ReportedCredentialsColumn = "task_reported_credentials"
+	// ScreenshotsTable is the table that holds the screenshots relation/edge.
+	ScreenshotsTable = "screenshots"
+	// ScreenshotsInverseTable is the table name for the Screenshot entity.
+	// It exists in this package in order to avoid circular dependency with the "screenshot" package.
+	ScreenshotsInverseTable = "screenshots"
+	// ScreenshotsColumn is the table column denoting the screenshots relation/edge.
+	ScreenshotsColumn = "task_screenshots"
 	// ShellsTable is the table that holds the shells relation/edge.
 	ShellsTable = "shells"
 	// ShellsInverseTable is the table name for the Shell entity.
@@ -247,6 +256,20 @@ func ByReportedCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 	}
 }
 
+// ByScreenshotsCount orders the results by screenshots count.
+func ByScreenshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScreenshotsStep(), opts...)
+	}
+}
+
+// ByScreenshots orders the results by screenshots terms.
+func ByScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByShellsCount orders the results by shells count.
 func ByShellsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -293,6 +316,13 @@ func newReportedCredentialsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReportedCredentialsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportedCredentialsTable, ReportedCredentialsColumn),
+	)
+}
+func newScreenshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScreenshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScreenshotsTable, ScreenshotsColumn),
 	)
 }
 func newShellsStep() *sqlgraph.Step {

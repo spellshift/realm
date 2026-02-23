@@ -55,17 +55,20 @@ type HostEdges struct {
 	Processes []*HostProcess `json:"processes,omitempty"`
 	// Credentials reported from this host system.
 	Credentials []*HostCredential `json:"credentials,omitempty"`
+	// Screenshots reported on this host system.
+	Screenshots []*Screenshot `json:"screenshots,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
 	namedTags        map[string][]*Tag
 	namedBeacons     map[string][]*Beacon
 	namedFiles       map[string][]*HostFile
 	namedProcesses   map[string][]*HostProcess
 	namedCredentials map[string][]*HostCredential
+	namedScreenshots map[string][]*Screenshot
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -111,6 +114,15 @@ func (e HostEdges) CredentialsOrErr() ([]*HostCredential, error) {
 		return e.Credentials, nil
 	}
 	return nil, &NotLoadedError{edge: "credentials"}
+}
+
+// ScreenshotsOrErr returns the Screenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) ScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[5] {
+		return e.Screenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "screenshots"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -246,6 +258,11 @@ func (h *Host) QueryProcesses() *HostProcessQuery {
 // QueryCredentials queries the "credentials" edge of the Host entity.
 func (h *Host) QueryCredentials() *HostCredentialQuery {
 	return NewHostClient(h.config).QueryCredentials(h)
+}
+
+// QueryScreenshots queries the "screenshots" edge of the Host entity.
+func (h *Host) QueryScreenshots() *ScreenshotQuery {
+	return NewHostClient(h.config).QueryScreenshots(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -418,6 +435,30 @@ func (h *Host) appendNamedCredentials(name string, edges ...*HostCredential) {
 		h.Edges.namedCredentials[name] = []*HostCredential{}
 	} else {
 		h.Edges.namedCredentials[name] = append(h.Edges.namedCredentials[name], edges...)
+	}
+}
+
+// NamedScreenshots returns the Screenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedScreenshots(name string) ([]*Screenshot, error) {
+	if h.Edges.namedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedScreenshots(name string, edges ...*Screenshot) {
+	if h.Edges.namedScreenshots == nil {
+		h.Edges.namedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedScreenshots[name] = []*Screenshot{}
+	} else {
+		h.Edges.namedScreenshots[name] = append(h.Edges.namedScreenshots[name], edges...)
 	}
 }
 
