@@ -37,6 +37,8 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	ShellTask() ShellTaskResolver
+	ShellTaskWhereInput() ShellTaskWhereInputResolver
 }
 
 type DirectiveRoot struct {
@@ -101,23 +103,20 @@ type ComplexityRoot struct {
 		BuildImage     func(childComplexity int) int
 		BuildScript    func(childComplexity int) int
 		Builder        func(childComplexity int) int
-		CallbackURI    func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
 		ErrorSize      func(childComplexity int) int
 		ExitCode       func(childComplexity int) int
-		Extra          func(childComplexity int) int
 		FinishedAt     func(childComplexity int) int
 		ID             func(childComplexity int) int
-		Interval       func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
-		TransportType  func(childComplexity int) int
+		Transports     func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -129,6 +128,13 @@ type ComplexityRoot struct {
 	BuildTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	BuildTaskTransport struct {
+		Extra    func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Type     func(childComplexity int) int
+		URI      func(childComplexity int) int
 	}
 
 	Builder struct {
@@ -185,6 +191,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
 
@@ -214,6 +221,7 @@ type ComplexityRoot struct {
 		Owner          func(childComplexity int) int
 		Path           func(childComplexity int) int
 		Permissions    func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -242,6 +250,7 @@ type ComplexityRoot struct {
 		Pid            func(childComplexity int) int
 		Ppid           func(childComplexity int) int
 		Principal      func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -286,6 +295,7 @@ type ComplexityRoot struct {
 		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
 		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
 		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateShell      func(childComplexity int, input ent.CreateShellInput) int
 		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteBuilder    func(childComplexity int, builderID int) int
@@ -411,6 +421,8 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		Portals        func(childComplexity int) int
+		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
 		Task           func(childComplexity int) int
 	}
 
@@ -421,6 +433,36 @@ type ComplexityRoot struct {
 	}
 
 	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ShellTask struct {
+		ClaimedAt           func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		Error               func(childComplexity int) int
+		ExecFinishedAt      func(childComplexity int) int
+		ExecStartedAt       func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		Input               func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Output              func(childComplexity int) int
+		ReportedCredentials func(childComplexity int) int
+		ReportedFiles       func(childComplexity int) int
+		ReportedProcesses   func(childComplexity int) int
+		SequenceID          func(childComplexity int) int
+		Shell               func(childComplexity int) int
+		StreamID            func(childComplexity int) int
+	}
+
+	ShellTaskConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -830,13 +872,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.Builder(childComplexity), true
 
-	case "BuildTask.callbackURI":
-		if e.complexity.BuildTask.CallbackURI == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.CallbackURI(childComplexity), true
-
 	case "BuildTask.claimedAt":
 		if e.complexity.BuildTask.ClaimedAt == nil {
 			break
@@ -872,13 +907,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.ExitCode(childComplexity), true
 
-	case "BuildTask.extra":
-		if e.complexity.BuildTask.Extra == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Extra(childComplexity), true
-
 	case "BuildTask.finishedAt":
 		if e.complexity.BuildTask.FinishedAt == nil {
 			break
@@ -892,13 +920,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.ID(childComplexity), true
-
-	case "BuildTask.interval":
-		if e.complexity.BuildTask.Interval == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Interval(childComplexity), true
 
 	case "BuildTask.lastModifiedAt":
 		if e.complexity.BuildTask.LastModifiedAt == nil {
@@ -942,12 +963,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
 
-	case "BuildTask.transportType":
-		if e.complexity.BuildTask.TransportType == nil {
+	case "BuildTask.transports":
+		if e.complexity.BuildTask.Transports == nil {
 			break
 		}
 
-		return e.complexity.BuildTask.TransportType(childComplexity), true
+		return e.complexity.BuildTask.Transports(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -983,6 +1004,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
+
+	case "BuildTaskTransport.extra":
+		if e.complexity.BuildTaskTransport.Extra == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Extra(childComplexity), true
+
+	case "BuildTaskTransport.interval":
+		if e.complexity.BuildTaskTransport.Interval == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Interval(childComplexity), true
+
+	case "BuildTaskTransport.type":
+		if e.complexity.BuildTaskTransport.Type == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.Type(childComplexity), true
+
+	case "BuildTaskTransport.uri":
+		if e.complexity.BuildTaskTransport.URI == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTransport.URI(childComplexity), true
 
 	case "Builder.buildTasks":
 		if e.complexity.Builder.BuildTasks == nil {
@@ -1280,6 +1329,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostCredential.Secret(childComplexity), true
 
+	case "HostCredential.shellTask":
+		if e.complexity.HostCredential.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.ShellTask(childComplexity), true
+
 	case "HostCredential.task":
 		if e.complexity.HostCredential.Task == nil {
 			break
@@ -1398,6 +1454,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.shellTask":
+		if e.complexity.HostFile.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostFile.ShellTask(childComplexity), true
 
 	case "HostFile.size":
 		if e.complexity.HostFile.Size == nil {
@@ -1531,6 +1594,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostProcess.Principal(childComplexity), true
+
+	case "HostProcess.shellTask":
+		if e.complexity.HostProcess.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.ShellTask(childComplexity), true
 
 	case "HostProcess.status":
 		if e.complexity.HostProcess.Status == nil {
@@ -1738,6 +1808,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateRepository(childComplexity, args["input"].(ent.CreateRepositoryInput)), true
+
+	case "Mutation.createShell":
+		if e.complexity.Mutation.CreateShell == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createShell_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateShell(childComplexity, args["input"].(ent.CreateShellInput)), true
 
 	case "Mutation.createTag":
 		if e.complexity.Mutation.CreateTag == nil {
@@ -2501,6 +2583,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Shell.Owner(childComplexity), true
 
+	case "Shell.portals":
+		if e.complexity.Shell.Portals == nil {
+			break
+		}
+
+		return e.complexity.Shell.Portals(childComplexity), true
+
+	case "Shell.shellTasks":
+		if e.complexity.Shell.ShellTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_shellTasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Shell.ShellTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellTaskOrder), args["where"].(*ent.ShellTaskWhereInput)), true
+
 	case "Shell.task":
 		if e.complexity.Shell.Task == nil {
 			break
@@ -2542,6 +2643,153 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellEdge.Node(childComplexity), true
+
+	case "ShellTask.claimedAt":
+		if e.complexity.ShellTask.ClaimedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ClaimedAt(childComplexity), true
+
+	case "ShellTask.createdAt":
+		if e.complexity.ShellTask.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.CreatedAt(childComplexity), true
+
+	case "ShellTask.creator":
+		if e.complexity.ShellTask.Creator == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Creator(childComplexity), true
+
+	case "ShellTask.error":
+		if e.complexity.ShellTask.Error == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Error(childComplexity), true
+
+	case "ShellTask.execFinishedAt":
+		if e.complexity.ShellTask.ExecFinishedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ExecFinishedAt(childComplexity), true
+
+	case "ShellTask.execStartedAt":
+		if e.complexity.ShellTask.ExecStartedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ExecStartedAt(childComplexity), true
+
+	case "ShellTask.id":
+		if e.complexity.ShellTask.ID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ID(childComplexity), true
+
+	case "ShellTask.input":
+		if e.complexity.ShellTask.Input == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Input(childComplexity), true
+
+	case "ShellTask.lastModifiedAt":
+		if e.complexity.ShellTask.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.LastModifiedAt(childComplexity), true
+
+	case "ShellTask.output":
+		if e.complexity.ShellTask.Output == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Output(childComplexity), true
+
+	case "ShellTask.reportedCredentials":
+		if e.complexity.ShellTask.ReportedCredentials == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedCredentials(childComplexity), true
+
+	case "ShellTask.reportedFiles":
+		if e.complexity.ShellTask.ReportedFiles == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedFiles(childComplexity), true
+
+	case "ShellTask.reportedProcesses":
+		if e.complexity.ShellTask.ReportedProcesses == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedProcesses(childComplexity), true
+
+	case "ShellTask.sequenceID":
+		if e.complexity.ShellTask.SequenceID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.SequenceID(childComplexity), true
+
+	case "ShellTask.shell":
+		if e.complexity.ShellTask.Shell == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.Shell(childComplexity), true
+
+	case "ShellTask.streamID":
+		if e.complexity.ShellTask.StreamID == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.StreamID(childComplexity), true
+
+	case "ShellTaskConnection.edges":
+		if e.complexity.ShellTaskConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.Edges(childComplexity), true
+
+	case "ShellTaskConnection.pageInfo":
+		if e.complexity.ShellTaskConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.PageInfo(childComplexity), true
+
+	case "ShellTaskConnection.totalCount":
+		if e.complexity.ShellTaskConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskConnection.TotalCount(childComplexity), true
+
+	case "ShellTaskEdge.cursor":
+		if e.complexity.ShellTaskEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskEdge.Cursor(childComplexity), true
+
+	case "ShellTaskEdge.node":
+		if e.complexity.ShellTaskEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ShellTaskEdge.Node(childComplexity), true
 
 	case "Tag.hosts":
 		if e.complexity.Tag.Hosts == nil {
@@ -3042,6 +3290,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
+		ec.unmarshalInputBuildTaskTransportInput,
 		ec.unmarshalInputBuildTaskWhereInput,
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
@@ -3052,6 +3301,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
+		ec.unmarshalInputCreateShellInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputHostCredentialOrder,
@@ -3072,6 +3322,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
 		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellTaskOrder,
+		ec.unmarshalInputShellTaskWhereInput,
 		ec.unmarshalInputShellWhereInput,
 		ec.unmarshalInputSubmitTaskResultInput,
 		ec.unmarshalInputTagOrder,
@@ -3803,21 +4055,9 @@ type BuildTask implements Node {
   """
   buildScript: String!
   """
-  The callback URI for the IMIX agent to connect to.
+  List of transport configurations for the IMIX agent.
   """
-  callbackURI: String!
-  """
-  The callback interval in seconds for the IMIX agent.
-  """
-  interval: Int!
-  """
-  The transport type for the IMIX agent.
-  """
-  transportType: BeaconTransport_Type!
-  """
-  Extra transport configuration for the IMIX agent.
-  """
-  extra: String
+  transports: [BuildTaskTransport!]!
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -4016,58 +4256,6 @@ input BuildTaskWhereInput {
   buildScriptHasSuffix: String
   buildScriptEqualFold: String
   buildScriptContainsFold: String
-  """
-  callback_uri field predicates
-  """
-  callbackURI: String
-  callbackURINEQ: String
-  callbackURIIn: [String!]
-  callbackURINotIn: [String!]
-  callbackURIGT: String
-  callbackURIGTE: String
-  callbackURILT: String
-  callbackURILTE: String
-  callbackURIContains: String
-  callbackURIHasPrefix: String
-  callbackURIHasSuffix: String
-  callbackURIEqualFold: String
-  callbackURIContainsFold: String
-  """
-  interval field predicates
-  """
-  interval: Int
-  intervalNEQ: Int
-  intervalIn: [Int!]
-  intervalNotIn: [Int!]
-  intervalGT: Int
-  intervalGTE: Int
-  intervalLT: Int
-  intervalLTE: Int
-  """
-  transport_type field predicates
-  """
-  transportType: BeaconTransport_Type
-  transportTypeNEQ: BeaconTransport_Type
-  transportTypeIn: [BeaconTransport_Type!]
-  transportTypeNotIn: [BeaconTransport_Type!]
-  """
-  extra field predicates
-  """
-  extra: String
-  extraNEQ: String
-  extraIn: [String!]
-  extraNotIn: [String!]
-  extraGT: String
-  extraGTE: String
-  extraLT: String
-  extraLTE: String
-  extraContains: String
-  extraHasPrefix: String
-  extraHasSuffix: String
-  extraIsNil: Boolean
-  extraNotNil: Boolean
-  extraEqualFold: String
-  extraContainsFold: String
   """
   claimed_at field predicates
   """
@@ -4420,8 +4608,7 @@ input CreateBuilderInput {
   """
   The server address that the builder should connect to.
   """
-  upstream: String!
-  buildTaskIDs: [ID!]
+  upstream: String
 }
 """
 CreateHostCredentialInput is used for create HostCredential object.
@@ -4442,6 +4629,7 @@ input CreateHostCredentialInput {
   kind: HostCredentialKind!
   hostID: ID!
   taskID: ID
+  shellTaskID: ID
 }
 """
 CreateLinkInput is used for create Link object.
@@ -4490,6 +4678,13 @@ input CreateRepositoryInput {
   URL of the repository
   """
   url: String!
+}
+"""
+CreateShellInput is used for create Shell object.
+Input was generated by ent.
+"""
+input CreateShellInput {
+  beaconID: ID!
 }
 """
 CreateTagInput is used for create Tag object.
@@ -4800,6 +4995,10 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+  """
+  Shell Task that reported this credential.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -4951,6 +5150,11 @@ input HostCredentialWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 An edge in a connection.
@@ -5006,7 +5210,11 @@ type HostFile implements Node {
   """
   Task that reported this file.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this file.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5210,6 +5418,11 @@ input HostFileWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 Ordering options for Host connections
@@ -5296,7 +5509,11 @@ type HostProcess implements Node {
   """
   Task that reported this process.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this process.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5554,6 +5771,11 @@ input HostProcessWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -6642,7 +6864,7 @@ type Shell implements Node {
   """
   Task that created the shell
   """
-  task: Task!
+  task: Task
   """
   Beacon that created the shell
   """
@@ -6651,6 +6873,10 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
+  """
+  Portals associated with this shell
+  """
+  portals: [Portal!]
   activeUsers(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -6682,6 +6908,37 @@ type Shell implements Node {
     """
     where: UserWhereInput
   ): UserConnection!
+  shellTasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ShellTasks returned from the connection.
+    """
+    orderBy: [ShellTaskOrder!]
+
+    """
+    Filtering options for ShellTasks returned from the connection.
+    """
+    where: ShellTaskWhereInput
+  ): ShellTaskConnection!
 }
 """
 A connection to a list of items.
@@ -6733,6 +6990,307 @@ enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   CLOSED_AT
+}
+type ShellTask implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  The command input sent to the shell
+  """
+  input: String!
+  """
+  Any output received from the shell
+  """
+  output: String
+  """
+  Any error received from the shell
+  """
+  error: String
+  """
+  Unique identifier for the stream that created this shell task (likely a websocket uuid)
+  """
+  streamID: String!
+  """
+  Sequence number for ordering tasks within the same stream_id
+  """
+  sequenceID: Int!
+  """
+  Timestamp of when the task was claimed, null if not yet claimed
+  """
+  claimedAt: Time
+  """
+  Timestamp of when execution of the task started, null if not yet started
+  """
+  execStartedAt: Time
+  """
+  Timestamp of when execution of the task finished, null if not yet finished
+  """
+  execFinishedAt: Time
+  """
+  The shell this task belongs to
+  """
+  shell: Shell!
+  """
+  The user who created this ShellTask
+  """
+  creator: User!
+  """
+  Credentials reported by this shell task
+  """
+  reportedCredentials: [HostCredential!]
+  """
+  Files reported by this shell task
+  """
+  reportedFiles: [HostFile!]
+  """
+  Processes reported by this shell task
+  """
+  reportedProcesses: [HostProcess!]
+}
+"""
+A connection to a list of items.
+"""
+type ShellTaskConnection {
+  """
+  A list of edges.
+  """
+  edges: [ShellTaskEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ShellTaskEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ShellTask
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for ShellTask connections
+"""
+input ShellTaskOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ShellTasks.
+  """
+  field: ShellTaskOrderField!
+}
+"""
+Properties by which ShellTask connections can be ordered.
+"""
+enum ShellTaskOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLAIMED_AT
+  EXEC_STARTED_AT
+  EXEC_FINISHED_AT
+}
+"""
+ShellTaskWhereInput is used for filtering ShellTask objects.
+Input was generated by ent.
+"""
+input ShellTaskWhereInput {
+  not: ShellTaskWhereInput
+  and: [ShellTaskWhereInput!]
+  or: [ShellTaskWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  input field predicates
+  """
+  input: String
+  inputNEQ: String
+  inputIn: [String!]
+  inputNotIn: [String!]
+  inputGT: String
+  inputGTE: String
+  inputLT: String
+  inputLTE: String
+  inputContains: String
+  inputHasPrefix: String
+  inputHasSuffix: String
+  inputEqualFold: String
+  inputContainsFold: String
+  """
+  output field predicates
+  """
+  output: String
+  outputNEQ: String
+  outputIn: [String!]
+  outputNotIn: [String!]
+  outputGT: String
+  outputGTE: String
+  outputLT: String
+  outputLTE: String
+  outputContains: String
+  outputHasPrefix: String
+  outputHasSuffix: String
+  outputIsNil: Boolean
+  outputNotNil: Boolean
+  outputEqualFold: String
+  outputContainsFold: String
+  """
+  error field predicates
+  """
+  error: String
+  errorNEQ: String
+  errorIn: [String!]
+  errorNotIn: [String!]
+  errorGT: String
+  errorGTE: String
+  errorLT: String
+  errorLTE: String
+  errorContains: String
+  errorHasPrefix: String
+  errorHasSuffix: String
+  errorIsNil: Boolean
+  errorNotNil: Boolean
+  errorEqualFold: String
+  errorContainsFold: String
+  """
+  stream_id field predicates
+  """
+  streamID: String
+  streamIDNEQ: String
+  streamIDIn: [String!]
+  streamIDNotIn: [String!]
+  streamIDGT: String
+  streamIDGTE: String
+  streamIDLT: String
+  streamIDLTE: String
+  streamIDContains: String
+  streamIDHasPrefix: String
+  streamIDHasSuffix: String
+  streamIDEqualFold: String
+  streamIDContainsFold: String
+  """
+  sequence_id field predicates
+  """
+  sequenceID: Int
+  sequenceIDNEQ: Int
+  sequenceIDIn: [Int!]
+  sequenceIDNotIn: [Int!]
+  sequenceIDGT: Int
+  sequenceIDGTE: Int
+  sequenceIDLT: Int
+  sequenceIDLTE: Int
+  """
+  claimed_at field predicates
+  """
+  claimedAt: Time
+  claimedAtNEQ: Time
+  claimedAtIn: [Time!]
+  claimedAtNotIn: [Time!]
+  claimedAtGT: Time
+  claimedAtGTE: Time
+  claimedAtLT: Time
+  claimedAtLTE: Time
+  claimedAtIsNil: Boolean
+  claimedAtNotNil: Boolean
+  """
+  exec_started_at field predicates
+  """
+  execStartedAt: Time
+  execStartedAtNEQ: Time
+  execStartedAtIn: [Time!]
+  execStartedAtNotIn: [Time!]
+  execStartedAtGT: Time
+  execStartedAtGTE: Time
+  execStartedAtLT: Time
+  execStartedAtLTE: Time
+  execStartedAtIsNil: Boolean
+  execStartedAtNotNil: Boolean
+  """
+  exec_finished_at field predicates
+  """
+  execFinishedAt: Time
+  execFinishedAtNEQ: Time
+  execFinishedAtIn: [Time!]
+  execFinishedAtNotIn: [Time!]
+  execFinishedAtGT: Time
+  execFinishedAtGTE: Time
+  execFinishedAtLT: Time
+  execFinishedAtLTE: Time
+  execFinishedAtIsNil: Boolean
+  execFinishedAtNotNil: Boolean
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
+  """
+  reported_credentials edge predicates
+  """
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """
+  reported_files edge predicates
+  """
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
+  """
+  reported_processes edge predicates
+  """
+  hasReportedProcesses: Boolean
+  hasReportedProcessesWith: [HostProcessWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.
@@ -6804,10 +7362,20 @@ input ShellWhereInput {
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
   """
+  portals edge predicates
+  """
+  hasPortals: Boolean
+  hasPortalsWith: [PortalWhereInput!]
+  """
   active_users edge predicates
   """
   hasActiveUsers: Boolean
   hasActiveUsersWith: [UserWhereInput!]
+  """
+  shell_tasks edge predicates
+  """
+  hasShellTasks: Boolean
+  hasShellTasksWith: [ShellTaskWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -8358,6 +8926,11 @@ scalar Uint64
     updateBeacon(beaconID: ID!, input: UpdateBeaconInput!): Beacon! @requireRole(role: USER)
 
     ###
+    # Shell
+    ###
+    createShell(input: CreateShellInput!): Shell! @requireRole(role: USER)
+
+    ###
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
@@ -8460,6 +9033,36 @@ input ImportRepositoryInput {
   includeDirs: [String!]
 }
 
+"""A single transport configuration for a build task."""
+type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int!
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
+"""Input for a single transport configuration."""
+input BuildTaskTransportInput {
+  """The URI for the IMIX agent."""
+  uri: String!
+
+  """The callback interval in seconds."""
+  interval: Int! = 5
+
+  """The transport type."""
+  type: BeaconTransport_Type!
+
+  """Extra transport configuration."""
+  extra: String
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -8471,17 +9074,8 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """The callback URI for the IMIX agent to connect to. Defaults to http://127.0.0.1:8000."""
-  callbackURI: String
-
-  """The callback interval in seconds for the IMIX agent."""
-  interval: Int = 5
-
-  """The transport type for the IMIX agent. Defaults to TRANSPORT_GRPC."""
-  transportType: BeaconTransport_Type
-
-  """Extra transport configuration for the IMIX agent."""
-  extra: String
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildTaskTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -120,22 +121,14 @@ func init() {
 	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
-	// buildtaskDescCallbackURI is the schema descriptor for callback_uri field.
-	buildtaskDescCallbackURI := buildtaskFields[4].Descriptor()
-	// buildtask.CallbackURIValidator is a validator for the "callback_uri" field. It is called by the builders before save.
-	buildtask.CallbackURIValidator = buildtaskDescCallbackURI.Validators[0].(func(string) error)
-	// buildtaskDescInterval is the schema descriptor for interval field.
-	buildtaskDescInterval := buildtaskFields[5].Descriptor()
-	// buildtask.DefaultInterval holds the default value on creation for the interval field.
-	buildtask.DefaultInterval = buildtaskDescInterval.Default.(int)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[12].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[9].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[14].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[11].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
@@ -161,6 +154,10 @@ func init() {
 	builder.DefaultIdentifier = builderDescIdentifier.Default.(func() string)
 	// builder.IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	builder.IdentifierValidator = builderDescIdentifier.Validators[0].(func(string) error)
+	// builderDescUpstream is the schema descriptor for upstream field.
+	builderDescUpstream := builderFields[2].Descriptor()
+	// builder.DefaultUpstream holds the default value on creation for the upstream field.
+	builder.DefaultUpstream = builderDescUpstream.Default.(string)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0
@@ -378,6 +375,21 @@ func init() {
 	shell.DefaultLastModifiedAt = shellDescLastModifiedAt.Default.(func() time.Time)
 	// shell.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	shell.UpdateDefaultLastModifiedAt = shellDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	shelltaskMixin := schema.ShellTask{}.Mixin()
+	shelltaskMixinFields0 := shelltaskMixin[0].Fields()
+	_ = shelltaskMixinFields0
+	shelltaskFields := schema.ShellTask{}.Fields()
+	_ = shelltaskFields
+	// shelltaskDescCreatedAt is the schema descriptor for created_at field.
+	shelltaskDescCreatedAt := shelltaskMixinFields0[0].Descriptor()
+	// shelltask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shelltask.DefaultCreatedAt = shelltaskDescCreatedAt.Default.(func() time.Time)
+	// shelltaskDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	shelltaskDescLastModifiedAt := shelltaskMixinFields0[1].Descriptor()
+	// shelltask.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	shelltask.DefaultLastModifiedAt = shelltaskDescLastModifiedAt.Default.(func() time.Time)
+	// shelltask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	shelltask.UpdateDefaultLastModifiedAt = shelltaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	tagFields := schema.Tag{}.Fields()
 	_ = tagFields
 	// tagDescName is the schema descriptor for name field.

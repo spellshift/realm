@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
@@ -37,6 +38,20 @@ type TestEnv struct {
 	PortalClient portalpb.PortalClient
 	Close        func()
 	EntClient    *ent.Client
+	PrivKey      ed25519.PrivateKey
+}
+
+func generateJWT(t testing.TB, privKey ed25519.PrivateKey) string {
+	claims := jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(), // Token expires in 1 hour
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	signedToken, err := token.SignedString(privKey)
+	require.NoError(t, err)
+
+	return signedToken
 }
 
 func SetupTestEnv(t *testing.T) *TestEnv {
@@ -97,6 +112,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 		C2Client:     c2Client,
 		PortalClient: portalClient,
 		EntClient:    entClient,
+		PrivKey:      testPrivKey,
 		Close: func() {
 			err := conn.Close()
 			if err != nil {
@@ -194,7 +210,12 @@ func TestPortalIntegration(t *testing.T) {
 
 	// Send initial registration message
 	err = c2Stream.Send(&c2pb.CreatePortalRequest{
-		Context: &c2pb.TaskContext{TaskId: int64(taskID)},
+		Context: &c2pb.CreatePortalRequest_TaskContext{
+			TaskContext: &c2pb.TaskContext{
+				TaskId: int64(taskID),
+				Jwt:    generateJWT(t, env.PrivKey),
+			},
+		},
 	})
 	require.NoError(t, err)
 

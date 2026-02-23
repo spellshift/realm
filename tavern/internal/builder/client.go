@@ -3,10 +3,12 @@ package builder
 import (
 	"context"
 	"crypto/ed25519"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"golang.org/x/sync/semaphore"
@@ -120,8 +122,31 @@ func Run(ctx context.Context, cfg *Config, exec executor.Executor) error {
 		return fmt.Errorf("failed to parse mTLS credentials: %w", err)
 	}
 
-	conn, err := grpc.NewClient(cfg.Upstream,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	url, err := url.Parse(cfg.Upstream)
+	if err != nil {
+		return fmt.Errorf("failed to parse upstream address: %v", err)
+	}
+
+	// Default to TLS on 443
+	var (
+		tc   = credentials.NewTLS(&tls.Config{})
+		port = "443"
+	)
+
+	if url.Scheme == "http" {
+		port = "80"
+		tc = insecure.NewCredentials()
+	}
+
+	// If port is specified, use it
+	if url.Port() != "" {
+		port = url.Port()
+	}
+
+	parsedUpstream := fmt.Sprintf("%s:%s", url.Hostname(), port)
+
+	conn, err := grpc.NewClient(parsedUpstream,
+		grpc.WithTransportCredentials(tc),
 		grpc.WithPerRPCCredentials(creds),
 	)
 	if err != nil {

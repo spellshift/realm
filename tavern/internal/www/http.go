@@ -17,6 +17,7 @@ type Handler struct {
 //
 //go:embed build/*.png build/*.html build/*.json build/*.txt build/*.ico
 //go:embed build/static/*
+//go:embed build/wasm/*
 var Content embed.FS
 
 // ServeHTTP provides the Tavern UI, if the requested file does not exist it will serve index.html
@@ -28,6 +29,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		if strings.HasSuffix(path, ".css") {
 			w.Header().Add("Content-Type", "text/css")
+		} else if strings.HasSuffix(path, ".js") {
+			w.Header().Add("Content-Type", "application/javascript")
+		} else if strings.HasSuffix(path, ".wasm") {
+			w.Header().Add("Content-Type", "application/wasm")
 		}
 		w.Write(content)
 		return

@@ -37,6 +37,7 @@ import (
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
@@ -371,6 +372,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
+		"/shellv2/ws": tavernhttp.Endpoint{
+			Handler: tavernshell.NewHandler(client, portalMux),
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),

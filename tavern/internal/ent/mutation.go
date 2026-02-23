@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -56,6 +57,7 @@ const (
 	TypeQuest          = "Quest"
 	TypeRepository     = "Repository"
 	TypeShell          = "Shell"
+	TypeShellTask      = "ShellTask"
 	TypeTag            = "Tag"
 	TypeTask           = "Task"
 	TypeTome           = "Tome"
@@ -2123,11 +2125,8 @@ type BuildTaskMutation struct {
 	target_format    *builderpb.TargetFormat
 	build_image      *string
 	build_script     *string
-	callback_uri     *string
-	interval         *int
-	addinterval      *int
-	transport_type   *c2pb.Transport_Type
-	extra            *string
+	transports       *[]builderpb.BuildTaskTransport
+	appendtransports []builderpb.BuildTaskTransport
 	claimed_at       *time.Time
 	started_at       *time.Time
 	finished_at      *time.Time
@@ -2464,181 +2463,55 @@ func (m *BuildTaskMutation) ResetBuildScript() {
 	m.build_script = nil
 }
 
-// SetCallbackURI sets the "callback_uri" field.
-func (m *BuildTaskMutation) SetCallbackURI(s string) {
-	m.callback_uri = &s
+// SetTransports sets the "transports" field.
+func (m *BuildTaskMutation) SetTransports(btt []builderpb.BuildTaskTransport) {
+	m.transports = &btt
+	m.appendtransports = nil
 }
 
-// CallbackURI returns the value of the "callback_uri" field in the mutation.
-func (m *BuildTaskMutation) CallbackURI() (r string, exists bool) {
-	v := m.callback_uri
+// Transports returns the value of the "transports" field in the mutation.
+func (m *BuildTaskMutation) Transports() (r []builderpb.BuildTaskTransport, exists bool) {
+	v := m.transports
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCallbackURI returns the old "callback_uri" field's value of the BuildTask entity.
+// OldTransports returns the old "transports" field's value of the BuildTask entity.
 // If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldCallbackURI(ctx context.Context) (v string, err error) {
+func (m *BuildTaskMutation) OldTransports(ctx context.Context) (v []builderpb.BuildTaskTransport, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCallbackURI is only allowed on UpdateOne operations")
+		return v, errors.New("OldTransports is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCallbackURI requires an ID field in the mutation")
+		return v, errors.New("OldTransports requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCallbackURI: %w", err)
+		return v, fmt.Errorf("querying old value for OldTransports: %w", err)
 	}
-	return oldValue.CallbackURI, nil
+	return oldValue.Transports, nil
 }
 
-// ResetCallbackURI resets all changes to the "callback_uri" field.
-func (m *BuildTaskMutation) ResetCallbackURI() {
-	m.callback_uri = nil
+// AppendTransports adds btt to the "transports" field.
+func (m *BuildTaskMutation) AppendTransports(btt []builderpb.BuildTaskTransport) {
+	m.appendtransports = append(m.appendtransports, btt...)
 }
 
-// SetInterval sets the "interval" field.
-func (m *BuildTaskMutation) SetInterval(i int) {
-	m.interval = &i
-	m.addinterval = nil
-}
-
-// Interval returns the value of the "interval" field in the mutation.
-func (m *BuildTaskMutation) Interval() (r int, exists bool) {
-	v := m.interval
-	if v == nil {
-		return
+// AppendedTransports returns the list of values that were appended to the "transports" field in this mutation.
+func (m *BuildTaskMutation) AppendedTransports() ([]builderpb.BuildTaskTransport, bool) {
+	if len(m.appendtransports) == 0 {
+		return nil, false
 	}
-	return *v, true
+	return m.appendtransports, true
 }
 
-// OldInterval returns the old "interval" field's value of the BuildTask entity.
-// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldInterval(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldInterval is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldInterval requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldInterval: %w", err)
-	}
-	return oldValue.Interval, nil
-}
-
-// AddInterval adds i to the "interval" field.
-func (m *BuildTaskMutation) AddInterval(i int) {
-	if m.addinterval != nil {
-		*m.addinterval += i
-	} else {
-		m.addinterval = &i
-	}
-}
-
-// AddedInterval returns the value that was added to the "interval" field in this mutation.
-func (m *BuildTaskMutation) AddedInterval() (r int, exists bool) {
-	v := m.addinterval
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetInterval resets all changes to the "interval" field.
-func (m *BuildTaskMutation) ResetInterval() {
-	m.interval = nil
-	m.addinterval = nil
-}
-
-// SetTransportType sets the "transport_type" field.
-func (m *BuildTaskMutation) SetTransportType(ct c2pb.Transport_Type) {
-	m.transport_type = &ct
-}
-
-// TransportType returns the value of the "transport_type" field in the mutation.
-func (m *BuildTaskMutation) TransportType() (r c2pb.Transport_Type, exists bool) {
-	v := m.transport_type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTransportType returns the old "transport_type" field's value of the BuildTask entity.
-// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldTransportType(ctx context.Context) (v c2pb.Transport_Type, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTransportType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTransportType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTransportType: %w", err)
-	}
-	return oldValue.TransportType, nil
-}
-
-// ResetTransportType resets all changes to the "transport_type" field.
-func (m *BuildTaskMutation) ResetTransportType() {
-	m.transport_type = nil
-}
-
-// SetExtra sets the "extra" field.
-func (m *BuildTaskMutation) SetExtra(s string) {
-	m.extra = &s
-}
-
-// Extra returns the value of the "extra" field in the mutation.
-func (m *BuildTaskMutation) Extra() (r string, exists bool) {
-	v := m.extra
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldExtra returns the old "extra" field's value of the BuildTask entity.
-// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldExtra(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExtra is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExtra requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExtra: %w", err)
-	}
-	return oldValue.Extra, nil
-}
-
-// ClearExtra clears the value of the "extra" field.
-func (m *BuildTaskMutation) ClearExtra() {
-	m.extra = nil
-	m.clearedFields[buildtask.FieldExtra] = struct{}{}
-}
-
-// ExtraCleared returns if the "extra" field was cleared in this mutation.
-func (m *BuildTaskMutation) ExtraCleared() bool {
-	_, ok := m.clearedFields[buildtask.FieldExtra]
-	return ok
-}
-
-// ResetExtra resets all changes to the "extra" field.
-func (m *BuildTaskMutation) ResetExtra() {
-	m.extra = nil
-	delete(m.clearedFields, buildtask.FieldExtra)
+// ResetTransports resets all changes to the "transports" field.
+func (m *BuildTaskMutation) ResetTransports() {
+	m.transports = nil
+	m.appendtransports = nil
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -3229,7 +3102,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -3248,17 +3121,8 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.build_script != nil {
 		fields = append(fields, buildtask.FieldBuildScript)
 	}
-	if m.callback_uri != nil {
-		fields = append(fields, buildtask.FieldCallbackURI)
-	}
-	if m.interval != nil {
-		fields = append(fields, buildtask.FieldInterval)
-	}
-	if m.transport_type != nil {
-		fields = append(fields, buildtask.FieldTransportType)
-	}
-	if m.extra != nil {
-		fields = append(fields, buildtask.FieldExtra)
+	if m.transports != nil {
+		fields = append(fields, buildtask.FieldTransports)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, buildtask.FieldClaimedAt)
@@ -3307,14 +3171,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildImage()
 	case buildtask.FieldBuildScript:
 		return m.BuildScript()
-	case buildtask.FieldCallbackURI:
-		return m.CallbackURI()
-	case buildtask.FieldInterval:
-		return m.Interval()
-	case buildtask.FieldTransportType:
-		return m.TransportType()
-	case buildtask.FieldExtra:
-		return m.Extra()
+	case buildtask.FieldTransports:
+		return m.Transports()
 	case buildtask.FieldClaimedAt:
 		return m.ClaimedAt()
 	case buildtask.FieldStartedAt:
@@ -3354,14 +3212,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldBuildImage(ctx)
 	case buildtask.FieldBuildScript:
 		return m.OldBuildScript(ctx)
-	case buildtask.FieldCallbackURI:
-		return m.OldCallbackURI(ctx)
-	case buildtask.FieldInterval:
-		return m.OldInterval(ctx)
-	case buildtask.FieldTransportType:
-		return m.OldTransportType(ctx)
-	case buildtask.FieldExtra:
-		return m.OldExtra(ctx)
+	case buildtask.FieldTransports:
+		return m.OldTransports(ctx)
 	case buildtask.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case buildtask.FieldStartedAt:
@@ -3431,33 +3283,12 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetBuildScript(v)
 		return nil
-	case buildtask.FieldCallbackURI:
-		v, ok := value.(string)
+	case buildtask.FieldTransports:
+		v, ok := value.([]builderpb.BuildTaskTransport)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCallbackURI(v)
-		return nil
-	case buildtask.FieldInterval:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetInterval(v)
-		return nil
-	case buildtask.FieldTransportType:
-		v, ok := value.(c2pb.Transport_Type)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTransportType(v)
-		return nil
-	case buildtask.FieldExtra:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExtra(v)
+		m.SetTransports(v)
 		return nil
 	case buildtask.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -3530,9 +3361,6 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *BuildTaskMutation) AddedFields() []string {
 	var fields []string
-	if m.addinterval != nil {
-		fields = append(fields, buildtask.FieldInterval)
-	}
 	if m.addoutput_size != nil {
 		fields = append(fields, buildtask.FieldOutputSize)
 	}
@@ -3550,8 +3378,6 @@ func (m *BuildTaskMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case buildtask.FieldInterval:
-		return m.AddedInterval()
 	case buildtask.FieldOutputSize:
 		return m.AddedOutputSize()
 	case buildtask.FieldErrorSize:
@@ -3567,13 +3393,6 @@ func (m *BuildTaskMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case buildtask.FieldInterval:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddInterval(v)
-		return nil
 	case buildtask.FieldOutputSize:
 		v, ok := value.(int)
 		if !ok {
@@ -3603,9 +3422,6 @@ func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuildTaskMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(buildtask.FieldExtra) {
-		fields = append(fields, buildtask.FieldExtra)
-	}
 	if m.FieldCleared(buildtask.FieldClaimedAt) {
 		fields = append(fields, buildtask.FieldClaimedAt)
 	}
@@ -3641,9 +3457,6 @@ func (m *BuildTaskMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuildTaskMutation) ClearField(name string) error {
 	switch name {
-	case buildtask.FieldExtra:
-		m.ClearExtra()
-		return nil
 	case buildtask.FieldClaimedAt:
 		m.ClearClaimedAt()
 		return nil
@@ -3691,17 +3504,8 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 	case buildtask.FieldBuildScript:
 		m.ResetBuildScript()
 		return nil
-	case buildtask.FieldCallbackURI:
-		m.ResetCallbackURI()
-		return nil
-	case buildtask.FieldInterval:
-		m.ResetInterval()
-		return nil
-	case buildtask.FieldTransportType:
-		m.ResetTransportType()
-		return nil
-	case buildtask.FieldExtra:
-		m.ResetExtra()
+	case buildtask.FieldTransports:
+		m.ResetTransports()
 		return nil
 	case buildtask.FieldClaimedAt:
 		m.ResetClaimedAt()
@@ -5837,22 +5641,24 @@ func (m *HostMutation) ResetEdge(name string) error {
 // HostCredentialMutation represents an operation that mutates the HostCredential nodes in the graph.
 type HostCredentialMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	principal        *string
-	secret           *string
-	kind             *epb.Credential_Kind
-	clearedFields    map[string]struct{}
-	host             *int
-	clearedhost      bool
-	task             *int
-	clearedtask      bool
-	done             bool
-	oldValue         func(context.Context) (*HostCredential, error)
-	predicates       []predicate.HostCredential
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	principal         *string
+	secret            *string
+	kind              *epb.Credential_Kind
+	clearedFields     map[string]struct{}
+	host              *int
+	clearedhost       bool
+	task              *int
+	clearedtask       bool
+	shell_task        *int
+	clearedshell_task bool
+	done              bool
+	oldValue          func(context.Context) (*HostCredential, error)
+	predicates        []predicate.HostCredential
 }
 
 var _ ent.Mutation = (*HostCredentialMutation)(nil)
@@ -6211,6 +6017,45 @@ func (m *HostCredentialMutation) ResetTask() {
 	m.clearedtask = false
 }
 
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *HostCredentialMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *HostCredentialMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *HostCredentialMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *HostCredentialMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *HostCredentialMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *HostCredentialMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
+}
+
 // Where appends a list predicates to the HostCredentialMutation builder.
 func (m *HostCredentialMutation) Where(ps ...predicate.HostCredential) {
 	m.predicates = append(m.predicates, ps...)
@@ -6412,12 +6257,15 @@ func (m *HostCredentialMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostCredentialMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.host != nil {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostcredential.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, hostcredential.EdgeShellTask)
 	}
 	return edges
 }
@@ -6434,13 +6282,17 @@ func (m *HostCredentialMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
+	case hostcredential.EdgeShellTask:
+		if id := m.shell_task; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostCredentialMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -6452,12 +6304,15 @@ func (m *HostCredentialMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostCredentialMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedhost {
 		edges = append(edges, hostcredential.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostcredential.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, hostcredential.EdgeShellTask)
 	}
 	return edges
 }
@@ -6470,6 +6325,8 @@ func (m *HostCredentialMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostcredential.EdgeTask:
 		return m.clearedtask
+	case hostcredential.EdgeShellTask:
+		return m.clearedshell_task
 	}
 	return false
 }
@@ -6483,6 +6340,9 @@ func (m *HostCredentialMutation) ClearEdge(name string) error {
 		return nil
 	case hostcredential.EdgeTask:
 		m.ClearTask()
+		return nil
+	case hostcredential.EdgeShellTask:
+		m.ClearShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostCredential unique edge %s", name)
@@ -6498,6 +6358,9 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 	case hostcredential.EdgeTask:
 		m.ResetTask()
 		return nil
+	case hostcredential.EdgeShellTask:
+		m.ResetShellTask()
+		return nil
 	}
 	return fmt.Errorf("unknown HostCredential edge %s", name)
 }
@@ -6505,27 +6368,29 @@ func (m *HostCredentialMutation) ResetEdge(name string) error {
 // HostFileMutation represents an operation that mutates the HostFile nodes in the graph.
 type HostFileMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	_path            *string
-	owner            *string
-	group            *string
-	permissions      *string
-	size             *uint64
-	addsize          *int64
-	hash             *string
-	content          *[]byte
-	clearedFields    map[string]struct{}
-	host             *int
-	clearedhost      bool
-	task             *int
-	clearedtask      bool
-	done             bool
-	oldValue         func(context.Context) (*HostFile, error)
-	predicates       []predicate.HostFile
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	_path             *string
+	owner             *string
+	group             *string
+	permissions       *string
+	size              *uint64
+	addsize           *int64
+	hash              *string
+	content           *[]byte
+	clearedFields     map[string]struct{}
+	host              *int
+	clearedhost       bool
+	task              *int
+	clearedtask       bool
+	shell_task        *int
+	clearedshell_task bool
+	done              bool
+	oldValue          func(context.Context) (*HostFile, error)
+	predicates        []predicate.HostFile
 }
 
 var _ ent.Mutation = (*HostFileMutation)(nil)
@@ -7113,6 +6978,45 @@ func (m *HostFileMutation) ResetTask() {
 	m.clearedtask = false
 }
 
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *HostFileMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *HostFileMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *HostFileMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *HostFileMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *HostFileMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *HostFileMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
+}
+
 // Where appends a list predicates to the HostFileMutation builder.
 func (m *HostFileMutation) Where(ps ...predicate.HostFile) {
 	m.predicates = append(m.predicates, ps...)
@@ -7430,12 +7334,15 @@ func (m *HostFileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostFileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.host != nil {
 		edges = append(edges, hostfile.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostfile.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, hostfile.EdgeShellTask)
 	}
 	return edges
 }
@@ -7452,13 +7359,17 @@ func (m *HostFileMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
+	case hostfile.EdgeShellTask:
+		if id := m.shell_task; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostFileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -7470,12 +7381,15 @@ func (m *HostFileMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostFileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedhost {
 		edges = append(edges, hostfile.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostfile.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, hostfile.EdgeShellTask)
 	}
 	return edges
 }
@@ -7488,6 +7402,8 @@ func (m *HostFileMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostfile.EdgeTask:
 		return m.clearedtask
+	case hostfile.EdgeShellTask:
+		return m.clearedshell_task
 	}
 	return false
 }
@@ -7501,6 +7417,9 @@ func (m *HostFileMutation) ClearEdge(name string) error {
 		return nil
 	case hostfile.EdgeTask:
 		m.ClearTask()
+		return nil
+	case hostfile.EdgeShellTask:
+		m.ClearShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostFile unique edge %s", name)
@@ -7516,6 +7435,9 @@ func (m *HostFileMutation) ResetEdge(name string) error {
 	case hostfile.EdgeTask:
 		m.ResetTask()
 		return nil
+	case hostfile.EdgeShellTask:
+		m.ResetShellTask()
+		return nil
 	}
 	return fmt.Errorf("unknown HostFile edge %s", name)
 }
@@ -7523,30 +7445,32 @@ func (m *HostFileMutation) ResetEdge(name string) error {
 // HostProcessMutation represents an operation that mutates the HostProcess nodes in the graph.
 type HostProcessMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	pid              *uint64
-	addpid           *int64
-	ppid             *uint64
-	addppid          *int64
-	name             *string
-	principal        *string
-	_path            *string
-	cmd              *string
-	env              *string
-	cwd              *string
-	status           *epb.Process_Status
-	clearedFields    map[string]struct{}
-	host             *int
-	clearedhost      bool
-	task             *int
-	clearedtask      bool
-	done             bool
-	oldValue         func(context.Context) (*HostProcess, error)
-	predicates       []predicate.HostProcess
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	pid               *uint64
+	addpid            *int64
+	ppid              *uint64
+	addppid           *int64
+	name              *string
+	principal         *string
+	_path             *string
+	cmd               *string
+	env               *string
+	cwd               *string
+	status            *epb.Process_Status
+	clearedFields     map[string]struct{}
+	host              *int
+	clearedhost       bool
+	task              *int
+	clearedtask       bool
+	shell_task        *int
+	clearedshell_task bool
+	done              bool
+	oldValue          func(context.Context) (*HostProcess, error)
+	predicates        []predicate.HostProcess
 }
 
 var _ ent.Mutation = (*HostProcessMutation)(nil)
@@ -8213,6 +8137,45 @@ func (m *HostProcessMutation) ResetTask() {
 	m.clearedtask = false
 }
 
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *HostProcessMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *HostProcessMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *HostProcessMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *HostProcessMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *HostProcessMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *HostProcessMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
+}
+
 // Where appends a list predicates to the HostProcessMutation builder.
 func (m *HostProcessMutation) Where(ps ...predicate.HostProcess) {
 	m.predicates = append(m.predicates, ps...)
@@ -8570,12 +8533,15 @@ func (m *HostProcessMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostProcessMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.host != nil {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.task != nil {
 		edges = append(edges, hostprocess.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, hostprocess.EdgeShellTask)
 	}
 	return edges
 }
@@ -8592,13 +8558,17 @@ func (m *HostProcessMutation) AddedIDs(name string) []ent.Value {
 		if id := m.task; id != nil {
 			return []ent.Value{*id}
 		}
+	case hostprocess.EdgeShellTask:
+		if id := m.shell_task; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostProcessMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -8610,12 +8580,15 @@ func (m *HostProcessMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostProcessMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedhost {
 		edges = append(edges, hostprocess.EdgeHost)
 	}
 	if m.clearedtask {
 		edges = append(edges, hostprocess.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, hostprocess.EdgeShellTask)
 	}
 	return edges
 }
@@ -8628,6 +8601,8 @@ func (m *HostProcessMutation) EdgeCleared(name string) bool {
 		return m.clearedhost
 	case hostprocess.EdgeTask:
 		return m.clearedtask
+	case hostprocess.EdgeShellTask:
+		return m.clearedshell_task
 	}
 	return false
 }
@@ -8642,6 +8617,9 @@ func (m *HostProcessMutation) ClearEdge(name string) error {
 	case hostprocess.EdgeTask:
 		m.ClearTask()
 		return nil
+	case hostprocess.EdgeShellTask:
+		m.ClearShellTask()
+		return nil
 	}
 	return fmt.Errorf("unknown HostProcess unique edge %s", name)
 }
@@ -8655,6 +8633,9 @@ func (m *HostProcessMutation) ResetEdge(name string) error {
 		return nil
 	case hostprocess.EdgeTask:
 		m.ResetTask()
+		return nil
+	case hostprocess.EdgeShellTask:
+		m.ResetShellTask()
 		return nil
 	}
 	return fmt.Errorf("unknown HostProcess edge %s", name)
@@ -9486,6 +9467,8 @@ type PortalMutation struct {
 	clearedFields       map[string]struct{}
 	task                *int
 	clearedtask         bool
+	shell_task          *int
+	clearedshell_task   bool
 	beacon              *int
 	clearedbeacon       bool
 	owner               *int
@@ -9754,6 +9737,45 @@ func (m *PortalMutation) TaskIDs() (ids []int) {
 func (m *PortalMutation) ResetTask() {
 	m.task = nil
 	m.clearedtask = false
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by id.
+func (m *PortalMutation) SetShellTaskID(id int) {
+	m.shell_task = &id
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (m *PortalMutation) ClearShellTask() {
+	m.clearedshell_task = true
+}
+
+// ShellTaskCleared reports if the "shell_task" edge to the ShellTask entity was cleared.
+func (m *PortalMutation) ShellTaskCleared() bool {
+	return m.clearedshell_task
+}
+
+// ShellTaskID returns the "shell_task" edge ID in the mutation.
+func (m *PortalMutation) ShellTaskID() (id int, exists bool) {
+	if m.shell_task != nil {
+		return *m.shell_task, true
+	}
+	return
+}
+
+// ShellTaskIDs returns the "shell_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellTaskID instead. It exists only for internal usage by the builders.
+func (m *PortalMutation) ShellTaskIDs() (ids []int) {
+	if id := m.shell_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShellTask resets all changes to the "shell_task" edge.
+func (m *PortalMutation) ResetShellTask() {
+	m.shell_task = nil
+	m.clearedshell_task = false
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by id.
@@ -10064,9 +10086,12 @@ func (m *PortalMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PortalMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.task != nil {
 		edges = append(edges, portal.EdgeTask)
+	}
+	if m.shell_task != nil {
+		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.beacon != nil {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10086,6 +10111,10 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case portal.EdgeTask:
 		if id := m.task; id != nil {
+			return []ent.Value{*id}
+		}
+	case portal.EdgeShellTask:
+		if id := m.shell_task; id != nil {
 			return []ent.Value{*id}
 		}
 	case portal.EdgeBeacon:
@@ -10108,7 +10137,7 @@ func (m *PortalMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PortalMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedactive_users != nil {
 		edges = append(edges, portal.EdgeActiveUsers)
 	}
@@ -10131,9 +10160,12 @@ func (m *PortalMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PortalMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtask {
 		edges = append(edges, portal.EdgeTask)
+	}
+	if m.clearedshell_task {
+		edges = append(edges, portal.EdgeShellTask)
 	}
 	if m.clearedbeacon {
 		edges = append(edges, portal.EdgeBeacon)
@@ -10153,6 +10185,8 @@ func (m *PortalMutation) EdgeCleared(name string) bool {
 	switch name {
 	case portal.EdgeTask:
 		return m.clearedtask
+	case portal.EdgeShellTask:
+		return m.clearedshell_task
 	case portal.EdgeBeacon:
 		return m.clearedbeacon
 	case portal.EdgeOwner:
@@ -10170,6 +10204,9 @@ func (m *PortalMutation) ClearEdge(name string) error {
 	case portal.EdgeTask:
 		m.ClearTask()
 		return nil
+	case portal.EdgeShellTask:
+		m.ClearShellTask()
+		return nil
 	case portal.EdgeBeacon:
 		m.ClearBeacon()
 		return nil
@@ -10186,6 +10223,9 @@ func (m *PortalMutation) ResetEdge(name string) error {
 	switch name {
 	case portal.EdgeTask:
 		m.ResetTask()
+		return nil
+	case portal.EdgeShellTask:
+		m.ResetShellTask()
 		return nil
 	case portal.EdgeBeacon:
 		m.ResetBeacon()
@@ -11913,9 +11953,15 @@ type ShellMutation struct {
 	clearedbeacon       bool
 	owner               *int
 	clearedowner        bool
+	portals             map[int]struct{}
+	removedportals      map[int]struct{}
+	clearedportals      bool
 	active_users        map[int]struct{}
 	removedactive_users map[int]struct{}
 	clearedactive_users bool
+	shell_tasks         map[int]struct{}
+	removedshell_tasks  map[int]struct{}
+	clearedshell_tasks  bool
 	done                bool
 	oldValue            func(context.Context) (*Shell, error)
 	predicates          []predicate.Shell
@@ -12293,6 +12339,60 @@ func (m *ShellMutation) ResetOwner() {
 	m.clearedowner = false
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by ids.
+func (m *ShellMutation) AddPortalIDs(ids ...int) {
+	if m.portals == nil {
+		m.portals = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.portals[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPortals clears the "portals" edge to the Portal entity.
+func (m *ShellMutation) ClearPortals() {
+	m.clearedportals = true
+}
+
+// PortalsCleared reports if the "portals" edge to the Portal entity was cleared.
+func (m *ShellMutation) PortalsCleared() bool {
+	return m.clearedportals
+}
+
+// RemovePortalIDs removes the "portals" edge to the Portal entity by IDs.
+func (m *ShellMutation) RemovePortalIDs(ids ...int) {
+	if m.removedportals == nil {
+		m.removedportals = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.portals, ids[i])
+		m.removedportals[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPortals returns the removed IDs of the "portals" edge to the Portal entity.
+func (m *ShellMutation) RemovedPortalsIDs() (ids []int) {
+	for id := range m.removedportals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PortalsIDs returns the "portals" edge IDs in the mutation.
+func (m *ShellMutation) PortalsIDs() (ids []int) {
+	for id := range m.portals {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPortals resets all changes to the "portals" edge.
+func (m *ShellMutation) ResetPortals() {
+	m.portals = nil
+	m.clearedportals = false
+	m.removedportals = nil
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by ids.
 func (m *ShellMutation) AddActiveUserIDs(ids ...int) {
 	if m.active_users == nil {
@@ -12345,6 +12445,60 @@ func (m *ShellMutation) ResetActiveUsers() {
 	m.active_users = nil
 	m.clearedactive_users = false
 	m.removedactive_users = nil
+}
+
+// AddShellTaskIDs adds the "shell_tasks" edge to the ShellTask entity by ids.
+func (m *ShellMutation) AddShellTaskIDs(ids ...int) {
+	if m.shell_tasks == nil {
+		m.shell_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.shell_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearShellTasks clears the "shell_tasks" edge to the ShellTask entity.
+func (m *ShellMutation) ClearShellTasks() {
+	m.clearedshell_tasks = true
+}
+
+// ShellTasksCleared reports if the "shell_tasks" edge to the ShellTask entity was cleared.
+func (m *ShellMutation) ShellTasksCleared() bool {
+	return m.clearedshell_tasks
+}
+
+// RemoveShellTaskIDs removes the "shell_tasks" edge to the ShellTask entity by IDs.
+func (m *ShellMutation) RemoveShellTaskIDs(ids ...int) {
+	if m.removedshell_tasks == nil {
+		m.removedshell_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.shell_tasks, ids[i])
+		m.removedshell_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedShellTasks returns the removed IDs of the "shell_tasks" edge to the ShellTask entity.
+func (m *ShellMutation) RemovedShellTasksIDs() (ids []int) {
+	for id := range m.removedshell_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ShellTasksIDs returns the "shell_tasks" edge IDs in the mutation.
+func (m *ShellMutation) ShellTasksIDs() (ids []int) {
+	for id := range m.shell_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetShellTasks resets all changes to the "shell_tasks" edge.
+func (m *ShellMutation) ResetShellTasks() {
+	m.shell_tasks = nil
+	m.clearedshell_tasks = false
+	m.removedshell_tasks = nil
 }
 
 // Where appends a list predicates to the ShellMutation builder.
@@ -12540,7 +12694,7 @@ func (m *ShellMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.task != nil {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -12550,8 +12704,14 @@ func (m *ShellMutation) AddedEdges() []string {
 	if m.owner != nil {
 		edges = append(edges, shell.EdgeOwner)
 	}
+	if m.portals != nil {
+		edges = append(edges, shell.EdgePortals)
+	}
 	if m.active_users != nil {
 		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	if m.shell_tasks != nil {
+		edges = append(edges, shell.EdgeShellTasks)
 	}
 	return edges
 }
@@ -12572,9 +12732,21 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
 		}
+	case shell.EdgePortals:
+		ids := make([]ent.Value, 0, len(m.portals))
+		for id := range m.portals {
+			ids = append(ids, id)
+		}
+		return ids
 	case shell.EdgeActiveUsers:
 		ids := make([]ent.Value, 0, len(m.active_users))
 		for id := range m.active_users {
+			ids = append(ids, id)
+		}
+		return ids
+	case shell.EdgeShellTasks:
+		ids := make([]ent.Value, 0, len(m.shell_tasks))
+		for id := range m.shell_tasks {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12584,9 +12756,15 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
+	if m.removedportals != nil {
+		edges = append(edges, shell.EdgePortals)
+	}
 	if m.removedactive_users != nil {
 		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	if m.removedshell_tasks != nil {
+		edges = append(edges, shell.EdgeShellTasks)
 	}
 	return edges
 }
@@ -12595,9 +12773,21 @@ func (m *ShellMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case shell.EdgePortals:
+		ids := make([]ent.Value, 0, len(m.removedportals))
+		for id := range m.removedportals {
+			ids = append(ids, id)
+		}
+		return ids
 	case shell.EdgeActiveUsers:
 		ids := make([]ent.Value, 0, len(m.removedactive_users))
 		for id := range m.removedactive_users {
+			ids = append(ids, id)
+		}
+		return ids
+	case shell.EdgeShellTasks:
+		ids := make([]ent.Value, 0, len(m.removedshell_tasks))
+		for id := range m.removedshell_tasks {
 			ids = append(ids, id)
 		}
 		return ids
@@ -12607,7 +12797,7 @@ func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
 	if m.clearedtask {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -12617,8 +12807,14 @@ func (m *ShellMutation) ClearedEdges() []string {
 	if m.clearedowner {
 		edges = append(edges, shell.EdgeOwner)
 	}
+	if m.clearedportals {
+		edges = append(edges, shell.EdgePortals)
+	}
 	if m.clearedactive_users {
 		edges = append(edges, shell.EdgeActiveUsers)
+	}
+	if m.clearedshell_tasks {
+		edges = append(edges, shell.EdgeShellTasks)
 	}
 	return edges
 }
@@ -12633,8 +12829,12 @@ func (m *ShellMutation) EdgeCleared(name string) bool {
 		return m.clearedbeacon
 	case shell.EdgeOwner:
 		return m.clearedowner
+	case shell.EdgePortals:
+		return m.clearedportals
 	case shell.EdgeActiveUsers:
 		return m.clearedactive_users
+	case shell.EdgeShellTasks:
+		return m.clearedshell_tasks
 	}
 	return false
 }
@@ -12669,11 +12869,1340 @@ func (m *ShellMutation) ResetEdge(name string) error {
 	case shell.EdgeOwner:
 		m.ResetOwner()
 		return nil
+	case shell.EdgePortals:
+		m.ResetPortals()
+		return nil
 	case shell.EdgeActiveUsers:
 		m.ResetActiveUsers()
 		return nil
+	case shell.EdgeShellTasks:
+		m.ResetShellTasks()
+		return nil
 	}
 	return fmt.Errorf("unknown Shell edge %s", name)
+}
+
+// ShellTaskMutation represents an operation that mutates the ShellTask nodes in the graph.
+type ShellTaskMutation struct {
+	config
+	op                          Op
+	typ                         string
+	id                          *int
+	created_at                  *time.Time
+	last_modified_at            *time.Time
+	input                       *string
+	output                      *string
+	error                       *string
+	stream_id                   *string
+	sequence_id                 *uint64
+	addsequence_id              *int64
+	claimed_at                  *time.Time
+	exec_started_at             *time.Time
+	exec_finished_at            *time.Time
+	clearedFields               map[string]struct{}
+	shell                       *int
+	clearedshell                bool
+	creator                     *int
+	clearedcreator              bool
+	reported_credentials        map[int]struct{}
+	removedreported_credentials map[int]struct{}
+	clearedreported_credentials bool
+	reported_files              map[int]struct{}
+	removedreported_files       map[int]struct{}
+	clearedreported_files       bool
+	reported_processes          map[int]struct{}
+	removedreported_processes   map[int]struct{}
+	clearedreported_processes   bool
+	done                        bool
+	oldValue                    func(context.Context) (*ShellTask, error)
+	predicates                  []predicate.ShellTask
+}
+
+var _ ent.Mutation = (*ShellTaskMutation)(nil)
+
+// shelltaskOption allows management of the mutation configuration using functional options.
+type shelltaskOption func(*ShellTaskMutation)
+
+// newShellTaskMutation creates new mutation for the ShellTask entity.
+func newShellTaskMutation(c config, op Op, opts ...shelltaskOption) *ShellTaskMutation {
+	m := &ShellTaskMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeShellTask,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withShellTaskID sets the ID field of the mutation.
+func withShellTaskID(id int) shelltaskOption {
+	return func(m *ShellTaskMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ShellTask
+		)
+		m.oldValue = func(ctx context.Context) (*ShellTask, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ShellTask.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withShellTask sets the old ShellTask of the mutation.
+func withShellTask(node *ShellTask) shelltaskOption {
+	return func(m *ShellTaskMutation) {
+		m.oldValue = func(context.Context) (*ShellTask, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ShellTaskMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ShellTaskMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ShellTaskMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ShellTaskMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ShellTask.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ShellTaskMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ShellTaskMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ShellTaskMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *ShellTaskMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *ShellTaskMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *ShellTaskMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetInput sets the "input" field.
+func (m *ShellTaskMutation) SetInput(s string) {
+	m.input = &s
+}
+
+// Input returns the value of the "input" field in the mutation.
+func (m *ShellTaskMutation) Input() (r string, exists bool) {
+	v := m.input
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInput returns the old "input" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldInput(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInput: %w", err)
+	}
+	return oldValue.Input, nil
+}
+
+// ResetInput resets all changes to the "input" field.
+func (m *ShellTaskMutation) ResetInput() {
+	m.input = nil
+}
+
+// SetOutput sets the "output" field.
+func (m *ShellTaskMutation) SetOutput(s string) {
+	m.output = &s
+}
+
+// Output returns the value of the "output" field in the mutation.
+func (m *ShellTaskMutation) Output() (r string, exists bool) {
+	v := m.output
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutput returns the old "output" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldOutput(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutput is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutput requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutput: %w", err)
+	}
+	return oldValue.Output, nil
+}
+
+// ClearOutput clears the value of the "output" field.
+func (m *ShellTaskMutation) ClearOutput() {
+	m.output = nil
+	m.clearedFields[shelltask.FieldOutput] = struct{}{}
+}
+
+// OutputCleared returns if the "output" field was cleared in this mutation.
+func (m *ShellTaskMutation) OutputCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldOutput]
+	return ok
+}
+
+// ResetOutput resets all changes to the "output" field.
+func (m *ShellTaskMutation) ResetOutput() {
+	m.output = nil
+	delete(m.clearedFields, shelltask.FieldOutput)
+}
+
+// SetError sets the "error" field.
+func (m *ShellTaskMutation) SetError(s string) {
+	m.error = &s
+}
+
+// Error returns the value of the "error" field in the mutation.
+func (m *ShellTaskMutation) Error() (r string, exists bool) {
+	v := m.error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldError returns the old "error" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldError: %w", err)
+	}
+	return oldValue.Error, nil
+}
+
+// ClearError clears the value of the "error" field.
+func (m *ShellTaskMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[shelltask.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the "error" field was cleared in this mutation.
+func (m *ShellTaskMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldError]
+	return ok
+}
+
+// ResetError resets all changes to the "error" field.
+func (m *ShellTaskMutation) ResetError() {
+	m.error = nil
+	delete(m.clearedFields, shelltask.FieldError)
+}
+
+// SetStreamID sets the "stream_id" field.
+func (m *ShellTaskMutation) SetStreamID(s string) {
+	m.stream_id = &s
+}
+
+// StreamID returns the value of the "stream_id" field in the mutation.
+func (m *ShellTaskMutation) StreamID() (r string, exists bool) {
+	v := m.stream_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStreamID returns the old "stream_id" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldStreamID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStreamID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStreamID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStreamID: %w", err)
+	}
+	return oldValue.StreamID, nil
+}
+
+// ResetStreamID resets all changes to the "stream_id" field.
+func (m *ShellTaskMutation) ResetStreamID() {
+	m.stream_id = nil
+}
+
+// SetSequenceID sets the "sequence_id" field.
+func (m *ShellTaskMutation) SetSequenceID(u uint64) {
+	m.sequence_id = &u
+	m.addsequence_id = nil
+}
+
+// SequenceID returns the value of the "sequence_id" field in the mutation.
+func (m *ShellTaskMutation) SequenceID() (r uint64, exists bool) {
+	v := m.sequence_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSequenceID returns the old "sequence_id" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldSequenceID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSequenceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSequenceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSequenceID: %w", err)
+	}
+	return oldValue.SequenceID, nil
+}
+
+// AddSequenceID adds u to the "sequence_id" field.
+func (m *ShellTaskMutation) AddSequenceID(u int64) {
+	if m.addsequence_id != nil {
+		*m.addsequence_id += u
+	} else {
+		m.addsequence_id = &u
+	}
+}
+
+// AddedSequenceID returns the value that was added to the "sequence_id" field in this mutation.
+func (m *ShellTaskMutation) AddedSequenceID() (r int64, exists bool) {
+	v := m.addsequence_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSequenceID resets all changes to the "sequence_id" field.
+func (m *ShellTaskMutation) ResetSequenceID() {
+	m.sequence_id = nil
+	m.addsequence_id = nil
+}
+
+// SetClaimedAt sets the "claimed_at" field.
+func (m *ShellTaskMutation) SetClaimedAt(t time.Time) {
+	m.claimed_at = &t
+}
+
+// ClaimedAt returns the value of the "claimed_at" field in the mutation.
+func (m *ShellTaskMutation) ClaimedAt() (r time.Time, exists bool) {
+	v := m.claimed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClaimedAt returns the old "claimed_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldClaimedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClaimedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClaimedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClaimedAt: %w", err)
+	}
+	return oldValue.ClaimedAt, nil
+}
+
+// ClearClaimedAt clears the value of the "claimed_at" field.
+func (m *ShellTaskMutation) ClearClaimedAt() {
+	m.claimed_at = nil
+	m.clearedFields[shelltask.FieldClaimedAt] = struct{}{}
+}
+
+// ClaimedAtCleared returns if the "claimed_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ClaimedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldClaimedAt]
+	return ok
+}
+
+// ResetClaimedAt resets all changes to the "claimed_at" field.
+func (m *ShellTaskMutation) ResetClaimedAt() {
+	m.claimed_at = nil
+	delete(m.clearedFields, shelltask.FieldClaimedAt)
+}
+
+// SetExecStartedAt sets the "exec_started_at" field.
+func (m *ShellTaskMutation) SetExecStartedAt(t time.Time) {
+	m.exec_started_at = &t
+}
+
+// ExecStartedAt returns the value of the "exec_started_at" field in the mutation.
+func (m *ShellTaskMutation) ExecStartedAt() (r time.Time, exists bool) {
+	v := m.exec_started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecStartedAt returns the old "exec_started_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldExecStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecStartedAt: %w", err)
+	}
+	return oldValue.ExecStartedAt, nil
+}
+
+// ClearExecStartedAt clears the value of the "exec_started_at" field.
+func (m *ShellTaskMutation) ClearExecStartedAt() {
+	m.exec_started_at = nil
+	m.clearedFields[shelltask.FieldExecStartedAt] = struct{}{}
+}
+
+// ExecStartedAtCleared returns if the "exec_started_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ExecStartedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldExecStartedAt]
+	return ok
+}
+
+// ResetExecStartedAt resets all changes to the "exec_started_at" field.
+func (m *ShellTaskMutation) ResetExecStartedAt() {
+	m.exec_started_at = nil
+	delete(m.clearedFields, shelltask.FieldExecStartedAt)
+}
+
+// SetExecFinishedAt sets the "exec_finished_at" field.
+func (m *ShellTaskMutation) SetExecFinishedAt(t time.Time) {
+	m.exec_finished_at = &t
+}
+
+// ExecFinishedAt returns the value of the "exec_finished_at" field in the mutation.
+func (m *ShellTaskMutation) ExecFinishedAt() (r time.Time, exists bool) {
+	v := m.exec_finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExecFinishedAt returns the old "exec_finished_at" field's value of the ShellTask entity.
+// If the ShellTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ShellTaskMutation) OldExecFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExecFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExecFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExecFinishedAt: %w", err)
+	}
+	return oldValue.ExecFinishedAt, nil
+}
+
+// ClearExecFinishedAt clears the value of the "exec_finished_at" field.
+func (m *ShellTaskMutation) ClearExecFinishedAt() {
+	m.exec_finished_at = nil
+	m.clearedFields[shelltask.FieldExecFinishedAt] = struct{}{}
+}
+
+// ExecFinishedAtCleared returns if the "exec_finished_at" field was cleared in this mutation.
+func (m *ShellTaskMutation) ExecFinishedAtCleared() bool {
+	_, ok := m.clearedFields[shelltask.FieldExecFinishedAt]
+	return ok
+}
+
+// ResetExecFinishedAt resets all changes to the "exec_finished_at" field.
+func (m *ShellTaskMutation) ResetExecFinishedAt() {
+	m.exec_finished_at = nil
+	delete(m.clearedFields, shelltask.FieldExecFinishedAt)
+}
+
+// SetShellID sets the "shell" edge to the Shell entity by id.
+func (m *ShellTaskMutation) SetShellID(id int) {
+	m.shell = &id
+}
+
+// ClearShell clears the "shell" edge to the Shell entity.
+func (m *ShellTaskMutation) ClearShell() {
+	m.clearedshell = true
+}
+
+// ShellCleared reports if the "shell" edge to the Shell entity was cleared.
+func (m *ShellTaskMutation) ShellCleared() bool {
+	return m.clearedshell
+}
+
+// ShellID returns the "shell" edge ID in the mutation.
+func (m *ShellTaskMutation) ShellID() (id int, exists bool) {
+	if m.shell != nil {
+		return *m.shell, true
+	}
+	return
+}
+
+// ShellIDs returns the "shell" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ShellID instead. It exists only for internal usage by the builders.
+func (m *ShellTaskMutation) ShellIDs() (ids []int) {
+	if id := m.shell; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetShell resets all changes to the "shell" edge.
+func (m *ShellTaskMutation) ResetShell() {
+	m.shell = nil
+	m.clearedshell = false
+}
+
+// SetCreatorID sets the "creator" edge to the User entity by id.
+func (m *ShellTaskMutation) SetCreatorID(id int) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (m *ShellTaskMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared reports if the "creator" edge to the User entity was cleared.
+func (m *ShellTaskMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *ShellTaskMutation) CreatorID() (id int, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *ShellTaskMutation) CreatorIDs() (ids []int) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *ShellTaskMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by ids.
+func (m *ShellTaskMutation) AddReportedCredentialIDs(ids ...int) {
+	if m.reported_credentials == nil {
+		m.reported_credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_credentials[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedCredentials clears the "reported_credentials" edge to the HostCredential entity.
+func (m *ShellTaskMutation) ClearReportedCredentials() {
+	m.clearedreported_credentials = true
+}
+
+// ReportedCredentialsCleared reports if the "reported_credentials" edge to the HostCredential entity was cleared.
+func (m *ShellTaskMutation) ReportedCredentialsCleared() bool {
+	return m.clearedreported_credentials
+}
+
+// RemoveReportedCredentialIDs removes the "reported_credentials" edge to the HostCredential entity by IDs.
+func (m *ShellTaskMutation) RemoveReportedCredentialIDs(ids ...int) {
+	if m.removedreported_credentials == nil {
+		m.removedreported_credentials = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_credentials, ids[i])
+		m.removedreported_credentials[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedCredentials returns the removed IDs of the "reported_credentials" edge to the HostCredential entity.
+func (m *ShellTaskMutation) RemovedReportedCredentialsIDs() (ids []int) {
+	for id := range m.removedreported_credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedCredentialsIDs returns the "reported_credentials" edge IDs in the mutation.
+func (m *ShellTaskMutation) ReportedCredentialsIDs() (ids []int) {
+	for id := range m.reported_credentials {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedCredentials resets all changes to the "reported_credentials" edge.
+func (m *ShellTaskMutation) ResetReportedCredentials() {
+	m.reported_credentials = nil
+	m.clearedreported_credentials = false
+	m.removedreported_credentials = nil
+}
+
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by ids.
+func (m *ShellTaskMutation) AddReportedFileIDs(ids ...int) {
+	if m.reported_files == nil {
+		m.reported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_files[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedFiles clears the "reported_files" edge to the HostFile entity.
+func (m *ShellTaskMutation) ClearReportedFiles() {
+	m.clearedreported_files = true
+}
+
+// ReportedFilesCleared reports if the "reported_files" edge to the HostFile entity was cleared.
+func (m *ShellTaskMutation) ReportedFilesCleared() bool {
+	return m.clearedreported_files
+}
+
+// RemoveReportedFileIDs removes the "reported_files" edge to the HostFile entity by IDs.
+func (m *ShellTaskMutation) RemoveReportedFileIDs(ids ...int) {
+	if m.removedreported_files == nil {
+		m.removedreported_files = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_files, ids[i])
+		m.removedreported_files[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedFiles returns the removed IDs of the "reported_files" edge to the HostFile entity.
+func (m *ShellTaskMutation) RemovedReportedFilesIDs() (ids []int) {
+	for id := range m.removedreported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedFilesIDs returns the "reported_files" edge IDs in the mutation.
+func (m *ShellTaskMutation) ReportedFilesIDs() (ids []int) {
+	for id := range m.reported_files {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedFiles resets all changes to the "reported_files" edge.
+func (m *ShellTaskMutation) ResetReportedFiles() {
+	m.reported_files = nil
+	m.clearedreported_files = false
+	m.removedreported_files = nil
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by ids.
+func (m *ShellTaskMutation) AddReportedProcessIDs(ids ...int) {
+	if m.reported_processes == nil {
+		m.reported_processes = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.reported_processes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearReportedProcesses clears the "reported_processes" edge to the HostProcess entity.
+func (m *ShellTaskMutation) ClearReportedProcesses() {
+	m.clearedreported_processes = true
+}
+
+// ReportedProcessesCleared reports if the "reported_processes" edge to the HostProcess entity was cleared.
+func (m *ShellTaskMutation) ReportedProcessesCleared() bool {
+	return m.clearedreported_processes
+}
+
+// RemoveReportedProcessIDs removes the "reported_processes" edge to the HostProcess entity by IDs.
+func (m *ShellTaskMutation) RemoveReportedProcessIDs(ids ...int) {
+	if m.removedreported_processes == nil {
+		m.removedreported_processes = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.reported_processes, ids[i])
+		m.removedreported_processes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedReportedProcesses returns the removed IDs of the "reported_processes" edge to the HostProcess entity.
+func (m *ShellTaskMutation) RemovedReportedProcessesIDs() (ids []int) {
+	for id := range m.removedreported_processes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ReportedProcessesIDs returns the "reported_processes" edge IDs in the mutation.
+func (m *ShellTaskMutation) ReportedProcessesIDs() (ids []int) {
+	for id := range m.reported_processes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetReportedProcesses resets all changes to the "reported_processes" edge.
+func (m *ShellTaskMutation) ResetReportedProcesses() {
+	m.reported_processes = nil
+	m.clearedreported_processes = false
+	m.removedreported_processes = nil
+}
+
+// Where appends a list predicates to the ShellTaskMutation builder.
+func (m *ShellTaskMutation) Where(ps ...predicate.ShellTask) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ShellTaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ShellTaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ShellTask, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ShellTaskMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ShellTaskMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ShellTask).
+func (m *ShellTaskMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ShellTaskMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, shelltask.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, shelltask.FieldLastModifiedAt)
+	}
+	if m.input != nil {
+		fields = append(fields, shelltask.FieldInput)
+	}
+	if m.output != nil {
+		fields = append(fields, shelltask.FieldOutput)
+	}
+	if m.error != nil {
+		fields = append(fields, shelltask.FieldError)
+	}
+	if m.stream_id != nil {
+		fields = append(fields, shelltask.FieldStreamID)
+	}
+	if m.sequence_id != nil {
+		fields = append(fields, shelltask.FieldSequenceID)
+	}
+	if m.claimed_at != nil {
+		fields = append(fields, shelltask.FieldClaimedAt)
+	}
+	if m.exec_started_at != nil {
+		fields = append(fields, shelltask.FieldExecStartedAt)
+	}
+	if m.exec_finished_at != nil {
+		fields = append(fields, shelltask.FieldExecFinishedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ShellTaskMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case shelltask.FieldCreatedAt:
+		return m.CreatedAt()
+	case shelltask.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case shelltask.FieldInput:
+		return m.Input()
+	case shelltask.FieldOutput:
+		return m.Output()
+	case shelltask.FieldError:
+		return m.Error()
+	case shelltask.FieldStreamID:
+		return m.StreamID()
+	case shelltask.FieldSequenceID:
+		return m.SequenceID()
+	case shelltask.FieldClaimedAt:
+		return m.ClaimedAt()
+	case shelltask.FieldExecStartedAt:
+		return m.ExecStartedAt()
+	case shelltask.FieldExecFinishedAt:
+		return m.ExecFinishedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ShellTaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case shelltask.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case shelltask.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case shelltask.FieldInput:
+		return m.OldInput(ctx)
+	case shelltask.FieldOutput:
+		return m.OldOutput(ctx)
+	case shelltask.FieldError:
+		return m.OldError(ctx)
+	case shelltask.FieldStreamID:
+		return m.OldStreamID(ctx)
+	case shelltask.FieldSequenceID:
+		return m.OldSequenceID(ctx)
+	case shelltask.FieldClaimedAt:
+		return m.OldClaimedAt(ctx)
+	case shelltask.FieldExecStartedAt:
+		return m.OldExecStartedAt(ctx)
+	case shelltask.FieldExecFinishedAt:
+		return m.OldExecFinishedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ShellTask field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShellTaskMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case shelltask.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case shelltask.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case shelltask.FieldInput:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInput(v)
+		return nil
+	case shelltask.FieldOutput:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutput(v)
+		return nil
+	case shelltask.FieldError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetError(v)
+		return nil
+	case shelltask.FieldStreamID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStreamID(v)
+		return nil
+	case shelltask.FieldSequenceID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSequenceID(v)
+		return nil
+	case shelltask.FieldClaimedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClaimedAt(v)
+		return nil
+	case shelltask.FieldExecStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecStartedAt(v)
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExecFinishedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ShellTaskMutation) AddedFields() []string {
+	var fields []string
+	if m.addsequence_id != nil {
+		fields = append(fields, shelltask.FieldSequenceID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ShellTaskMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case shelltask.FieldSequenceID:
+		return m.AddedSequenceID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ShellTaskMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case shelltask.FieldSequenceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSequenceID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ShellTaskMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(shelltask.FieldOutput) {
+		fields = append(fields, shelltask.FieldOutput)
+	}
+	if m.FieldCleared(shelltask.FieldError) {
+		fields = append(fields, shelltask.FieldError)
+	}
+	if m.FieldCleared(shelltask.FieldClaimedAt) {
+		fields = append(fields, shelltask.FieldClaimedAt)
+	}
+	if m.FieldCleared(shelltask.FieldExecStartedAt) {
+		fields = append(fields, shelltask.FieldExecStartedAt)
+	}
+	if m.FieldCleared(shelltask.FieldExecFinishedAt) {
+		fields = append(fields, shelltask.FieldExecFinishedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ShellTaskMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ShellTaskMutation) ClearField(name string) error {
+	switch name {
+	case shelltask.FieldOutput:
+		m.ClearOutput()
+		return nil
+	case shelltask.FieldError:
+		m.ClearError()
+		return nil
+	case shelltask.FieldClaimedAt:
+		m.ClearClaimedAt()
+		return nil
+	case shelltask.FieldExecStartedAt:
+		m.ClearExecStartedAt()
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		m.ClearExecFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ShellTaskMutation) ResetField(name string) error {
+	switch name {
+	case shelltask.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case shelltask.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case shelltask.FieldInput:
+		m.ResetInput()
+		return nil
+	case shelltask.FieldOutput:
+		m.ResetOutput()
+		return nil
+	case shelltask.FieldError:
+		m.ResetError()
+		return nil
+	case shelltask.FieldStreamID:
+		m.ResetStreamID()
+		return nil
+	case shelltask.FieldSequenceID:
+		m.ResetSequenceID()
+		return nil
+	case shelltask.FieldClaimedAt:
+		m.ResetClaimedAt()
+		return nil
+	case shelltask.FieldExecStartedAt:
+		m.ResetExecStartedAt()
+		return nil
+	case shelltask.FieldExecFinishedAt:
+		m.ResetExecFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ShellTaskMutation) AddedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.shell != nil {
+		edges = append(edges, shelltask.EdgeShell)
+	}
+	if m.creator != nil {
+		edges = append(edges, shelltask.EdgeCreator)
+	}
+	if m.reported_credentials != nil {
+		edges = append(edges, shelltask.EdgeReportedCredentials)
+	}
+	if m.reported_files != nil {
+		edges = append(edges, shelltask.EdgeReportedFiles)
+	}
+	if m.reported_processes != nil {
+		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ShellTaskMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case shelltask.EdgeShell:
+		if id := m.shell; id != nil {
+			return []ent.Value{*id}
+		}
+	case shelltask.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
+	case shelltask.EdgeReportedCredentials:
+		ids := make([]ent.Value, 0, len(m.reported_credentials))
+		for id := range m.reported_credentials {
+			ids = append(ids, id)
+		}
+		return ids
+	case shelltask.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.reported_files))
+		for id := range m.reported_files {
+			ids = append(ids, id)
+		}
+		return ids
+	case shelltask.EdgeReportedProcesses:
+		ids := make([]ent.Value, 0, len(m.reported_processes))
+		for id := range m.reported_processes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ShellTaskMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.removedreported_credentials != nil {
+		edges = append(edges, shelltask.EdgeReportedCredentials)
+	}
+	if m.removedreported_files != nil {
+		edges = append(edges, shelltask.EdgeReportedFiles)
+	}
+	if m.removedreported_processes != nil {
+		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ShellTaskMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case shelltask.EdgeReportedCredentials:
+		ids := make([]ent.Value, 0, len(m.removedreported_credentials))
+		for id := range m.removedreported_credentials {
+			ids = append(ids, id)
+		}
+		return ids
+	case shelltask.EdgeReportedFiles:
+		ids := make([]ent.Value, 0, len(m.removedreported_files))
+		for id := range m.removedreported_files {
+			ids = append(ids, id)
+		}
+		return ids
+	case shelltask.EdgeReportedProcesses:
+		ids := make([]ent.Value, 0, len(m.removedreported_processes))
+		for id := range m.removedreported_processes {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ShellTaskMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.clearedshell {
+		edges = append(edges, shelltask.EdgeShell)
+	}
+	if m.clearedcreator {
+		edges = append(edges, shelltask.EdgeCreator)
+	}
+	if m.clearedreported_credentials {
+		edges = append(edges, shelltask.EdgeReportedCredentials)
+	}
+	if m.clearedreported_files {
+		edges = append(edges, shelltask.EdgeReportedFiles)
+	}
+	if m.clearedreported_processes {
+		edges = append(edges, shelltask.EdgeReportedProcesses)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ShellTaskMutation) EdgeCleared(name string) bool {
+	switch name {
+	case shelltask.EdgeShell:
+		return m.clearedshell
+	case shelltask.EdgeCreator:
+		return m.clearedcreator
+	case shelltask.EdgeReportedCredentials:
+		return m.clearedreported_credentials
+	case shelltask.EdgeReportedFiles:
+		return m.clearedreported_files
+	case shelltask.EdgeReportedProcesses:
+		return m.clearedreported_processes
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ShellTaskMutation) ClearEdge(name string) error {
+	switch name {
+	case shelltask.EdgeShell:
+		m.ClearShell()
+		return nil
+	case shelltask.EdgeCreator:
+		m.ClearCreator()
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ShellTaskMutation) ResetEdge(name string) error {
+	switch name {
+	case shelltask.EdgeShell:
+		m.ResetShell()
+		return nil
+	case shelltask.EdgeCreator:
+		m.ResetCreator()
+		return nil
+	case shelltask.EdgeReportedCredentials:
+		m.ResetReportedCredentials()
+		return nil
+	case shelltask.EdgeReportedFiles:
+		m.ResetReportedFiles()
+		return nil
+	case shelltask.EdgeReportedProcesses:
+		m.ResetReportedProcesses()
+		return nil
+	}
+	return fmt.Errorf("unknown ShellTask edge %s", name)
 }
 
 // TagMutation represents an operation that mutates the Tag nodes in the graph.

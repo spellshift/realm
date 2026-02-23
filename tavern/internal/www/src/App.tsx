@@ -12,6 +12,7 @@ import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import Shell from "./pages/shell/Shell";
+import ShellV2 from "./pages/shellv2";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
@@ -76,8 +77,12 @@ const router = createBrowserRouter([
         path: "admin",
         element: <AdminPortal />,
       },
-      
+
     ]
+  },
+  {
+    path: "shellv2/:shellId",
+    element: <ShellV2 />,
   },
 ]);
 
@@ -86,11 +91,11 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-          <TagContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
-          </TagContextProvider>
+        <TagContextProvider>
+          <UserPreferencesContextProvider>
+            <RouterProvider router={router} />
+          </UserPreferencesContextProvider>
+        </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

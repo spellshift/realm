@@ -6,30 +6,51 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
 // CreatePortal sets up a new portal for a task.
-func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int) (int, func(), error) {
+func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, shellTaskID int) (int, func(), error) {
 	// 1. DB: Create ent.Portal record (State: Open)
-	// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
-	t, err := client.Task.Query().
-		Where(task.ID(taskID)).
-		WithBeacon().
-		WithQuest(func(q *ent.QuestQuery) {
-			q.WithCreator()
-		}).
-		Only(ctx)
-	if err != nil {
-		return 0, nil, fmt.Errorf("failed to query task %d: %w", taskID, err)
+	var creator *ent.User
+	var beacon *ent.Beacon
+
+	pCreate := client.Portal.Create()
+
+	if taskID > 0 {
+		// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
+		t, err := client.Task.Query().
+			Where(task.ID(taskID)).
+			WithBeacon().
+			WithQuest(func(q *ent.QuestQuery) {
+				q.WithCreator()
+			}).
+			Only(ctx)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to query task %d: %w", taskID, err)
+		}
+
+		creator = t.Edges.Quest.Edges.Creator
+		beacon = t.Edges.Beacon
+		pCreate.SetTaskID(taskID)
+	} else if shellTaskID > 0 {
+		st, err := client.ShellTask.Query().
+			Where(shelltask.ID(shellTaskID)).
+			WithCreator().
+			WithShell(func(s *ent.ShellQuery) {
+				s.WithBeacon()
+			}).
+			Only(ctx)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to query shell task %d: %w", shellTaskID, err)
+		}
+		creator = st.Edges.Creator
+		beacon = st.Edges.Shell.Edges.Beacon
+		pCreate.SetShellTaskID(shellTaskID)
+	} else {
+		return 0, nil, fmt.Errorf("either taskID or shellTaskID must be provided")
 	}
-
-	creator := t.Edges.Quest.Edges.Creator
-	beacon := t.Edges.Beacon
-
-	// Create Portal
-	pCreate := client.Portal.Create().
-		SetTaskID(taskID)
 
 	if beacon != nil {
 		pCreate.SetBeacon(beacon)

@@ -42,7 +42,6 @@ export const AdminPortal = () => {
                 totalItems={data?.users?.totalCount}
                 loading={initialLoading}
                 error={error}
-                showSorting={false}
                 showFiltering={false}
                 table={
                     <UserTable

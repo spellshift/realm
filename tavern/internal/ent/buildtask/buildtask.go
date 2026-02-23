@@ -31,14 +31,8 @@ const (
 	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
-	// FieldCallbackURI holds the string denoting the callback_uri field in the database.
-	FieldCallbackURI = "callback_uri"
-	// FieldInterval holds the string denoting the interval field in the database.
-	FieldInterval = "interval"
-	// FieldTransportType holds the string denoting the transport_type field in the database.
-	FieldTransportType = "transport_type"
-	// FieldExtra holds the string denoting the extra field in the database.
-	FieldExtra = "extra"
+	// FieldTransports holds the string denoting the transports field in the database.
+	FieldTransports = "transports"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -88,10 +82,7 @@ var Columns = []string{
 	FieldTargetFormat,
 	FieldBuildImage,
 	FieldBuildScript,
-	FieldCallbackURI,
-	FieldInterval,
-	FieldTransportType,
-	FieldExtra,
+	FieldTransports,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,
@@ -142,10 +133,6 @@ var (
 	BuildImageValidator func(string) error
 	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	BuildScriptValidator func(string) error
-	// CallbackURIValidator is a validator for the "callback_uri" field. It is called by the builders before save.
-	CallbackURIValidator func(string) error
-	// DefaultInterval holds the default value on creation for the "interval" field.
-	DefaultInterval int
 	// DefaultOutputSize holds the default value on creation for the "output_size" field.
 	DefaultOutputSize int
 	// OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
@@ -173,16 +160,6 @@ func TargetFormatValidator(tf builderpb.TargetFormat) error {
 		return nil
 	default:
 		return fmt.Errorf("buildtask: invalid enum value for target_format field: %q", tf)
-	}
-}
-
-// TransportTypeValidator is a validator for the "transport_type" field enum values. It is called by the builders before save.
-func TransportTypeValidator(tt c2pb.Transport_Type) error {
-	switch tt.String() {
-	case "TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED":
-		return nil
-	default:
-		return fmt.Errorf("buildtask: invalid enum value for transport_type field: %q", tt)
 	}
 }
 
@@ -222,26 +199,6 @@ func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
 // ByBuildScript orders the results by the build_script field.
 func ByBuildScript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildScript, opts...).ToFunc()
-}
-
-// ByCallbackURI orders the results by the callback_uri field.
-func ByCallbackURI(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCallbackURI, opts...).ToFunc()
-}
-
-// ByInterval orders the results by the interval field.
-func ByInterval(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldInterval, opts...).ToFunc()
-}
-
-// ByTransportType orders the results by the transport_type field.
-func ByTransportType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTransportType, opts...).ToFunc()
-}
-
-// ByExtra orders the results by the extra field.
-func ByExtra(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldExtra, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.
@@ -329,11 +286,4 @@ var (
 	_ graphql.Marshaler = (*builderpb.TargetFormat)(nil)
 	// builderpb.TargetFormat must implement graphql.Unmarshaler.
 	_ graphql.Unmarshaler = (*builderpb.TargetFormat)(nil)
-)
-
-var (
-	// c2pb.Transport_Type must implement graphql.Marshaler.
-	_ graphql.Marshaler = (*c2pb.Transport_Type)(nil)
-	// c2pb.Transport_Type must implement graphql.Unmarshaler.
-	_ graphql.Unmarshaler = (*c2pb.Transport_Type)(nil)
 )

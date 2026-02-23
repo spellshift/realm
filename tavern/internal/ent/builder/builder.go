@@ -71,6 +71,8 @@ var (
 	DefaultIdentifier func() string
 	// IdentifierValidator is a validator for the "identifier" field. It is called by the builders before save.
 	IdentifierValidator func(string) error
+	// DefaultUpstream holds the default value on creation for the "upstream" field.
+	DefaultUpstream string
 )
 
 // OrderOption defines the ordering options for the Builder queries.
