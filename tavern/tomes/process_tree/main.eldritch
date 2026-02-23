@@ -50,6 +50,7 @@ def process_tree(cmd_substring):
         cmd_substring = ''
 
     procs = process.list()
+    report.process_list(procs)
 
     print(pad_pid("PID") + pad_pid("PPID") + pad_username("USER") + "COMMAND")
 
