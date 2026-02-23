@@ -24,8 +24,6 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: '1.81.0'
-        default: true
-        profile: minimal
         components: rustfmt, clippy
 
     - name: ⚡ Setup Node.js
@@ -39,6 +37,13 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y protobuf-compiler libssl-dev
+
+    - name: 🔨 Build Frontend
+      working-directory: tavern/internal/www
+      run: |
+        npm ci
+        npm run build
+
     - name: 🔨 Build Tavern
       run: |
         go mod download
