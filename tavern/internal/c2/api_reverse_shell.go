@@ -67,6 +67,8 @@ func (srv *Server) resolveTaskFromReverseShell(ctx context.Context, msg *c2pb.Re
 func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 	// Setup Context
 	ctx := gstream.Context()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// Get initial message for registration
 	registerMsg, err := gstream.Recv()
@@ -193,6 +195,7 @@ func (srv *Server) ReverseShell(gstream c2pb.C2_ReverseShellServer) error {
 
 	// Send Output (to pubsub)
 	err = sendShellOutput(ctx, shellID, gstream, pubsubStream, srv.mux)
+	cancel()
 
 	wg.Wait()
 

@@ -168,4 +168,17 @@ func TestReverseShell_E2E(t *testing.T) {
 	grpcResp, err := gRPCStream.Recv()
 	require.NoError(t, err)
 	assert.Equal(t, wsMsgToSend, grpcResp.Data)
+
+	// Close the stream
+	err = gRPCStream.CloseSend()
+	require.NoError(t, err)
+
+	// Wait for the websocket to close
+	ws.SetReadDeadline(time.Now().Add(5 * time.Second))
+	for {
+		_, _, err := ws.ReadMessage()
+		if err != nil {
+			break
+		}
+	}
 }
