@@ -190,23 +190,19 @@ func (hpc *HostProcessCreate) SetShellTask(s *ShellTask) *HostProcessCreate {
 	return hpc.SetShellTaskID(s.ID)
 }
 
-// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (hpc *HostProcessCreate) SetBeaconID(id int) *HostProcessCreate {
-	hpc.mutation.SetBeaconID(id)
+// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
+func (hpc *HostProcessCreate) AddBeaconIDs(ids ...int) *HostProcessCreate {
+	hpc.mutation.AddBeaconIDs(ids...)
 	return hpc
 }
 
-// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
-func (hpc *HostProcessCreate) SetNillableBeaconID(id *int) *HostProcessCreate {
-	if id != nil {
-		hpc = hpc.SetBeaconID(*id)
+// AddBeacons adds the "beacons" edges to the Beacon entity.
+func (hpc *HostProcessCreate) AddBeacons(b ...*Beacon) *HostProcessCreate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return hpc
-}
-
-// SetBeacon sets the "beacon" edge to the Beacon entity.
-func (hpc *HostProcessCreate) SetBeacon(b *Beacon) *HostProcessCreate {
-	return hpc.SetBeaconID(b.ID)
+	return hpc.AddBeaconIDs(ids...)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -412,12 +408,12 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 		_node.shell_task_reported_processes = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := hpc.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := hpc.mutation.BeaconsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   hostprocess.BeaconTable,
-			Columns: []string{hostprocess.BeaconColumn},
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
@@ -426,7 +422,6 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.beacon_process = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

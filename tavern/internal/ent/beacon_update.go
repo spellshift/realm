@@ -487,7 +487,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if bu.mutation.ProcessCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   beacon.ProcessTable,
 			Columns: []string{beacon.ProcessColumn},
@@ -500,7 +500,7 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := bu.mutation.ProcessIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   beacon.ProcessTable,
 			Columns: []string{beacon.ProcessColumn},
@@ -1063,7 +1063,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	}
 	if buo.mutation.ProcessCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   beacon.ProcessTable,
 			Columns: []string{beacon.ProcessColumn},
@@ -1076,7 +1076,7 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 	}
 	if nodes := buo.mutation.ProcessIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   beacon.ProcessTable,
 			Columns: []string{beacon.ProcessColumn},

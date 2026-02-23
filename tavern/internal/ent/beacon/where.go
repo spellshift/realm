@@ -682,7 +682,7 @@ func HasProcess() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, ProcessTable, ProcessColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProcessTable, ProcessColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

@@ -239,7 +239,7 @@ type ComplexityRoot struct {
 	}
 
 	HostProcess struct {
-		Beacon         func(childComplexity int) int
+		Beacons        func(childComplexity int) int
 		Cmd            func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Cwd            func(childComplexity int) int
@@ -1521,12 +1521,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostFileEdge.Node(childComplexity), true
 
-	case "HostProcess.beacon":
-		if e.complexity.HostProcess.Beacon == nil {
+	case "HostProcess.beacons":
+		if e.complexity.HostProcess.Beacons == nil {
 			break
 		}
 
-		return e.complexity.HostProcess.Beacon(childComplexity), true
+		return e.complexity.HostProcess.Beacons(childComplexity), true
 
 	case "HostProcess.cmd":
 		if e.complexity.HostProcess.Cmd == nil {
@@ -5548,9 +5548,9 @@ type HostProcess implements Node {
   """
   shellTask: ShellTask
   """
-  The beacon running in this process.
+  The beacons running in this process.
   """
-  beacon: Beacon
+  beacons: [Beacon!]
 }
 """
 A connection to a list of items.
@@ -5814,10 +5814,10 @@ input HostProcessWhereInput {
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
   """
-  beacon edge predicates
+  beacons edge predicates
   """
-  hasBeacon: Boolean
-  hasBeaconWith: [BeaconWhereInput!]
+  hasBeacons: Boolean
+  hasBeaconsWith: [BeaconWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.

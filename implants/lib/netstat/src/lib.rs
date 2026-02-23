@@ -94,32 +94,3 @@ pub fn netstat() -> Result<Vec<NetstatEntry>> {
     )))]
     return Ok(Vec::new());
 }
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct InterfaceEntry {
-    pub iface_name: String,
-    pub mac_address: [u8; 6],
-    pub ip_address: Option<IpAddr>,
-}
-
-pub fn list_interfaces() -> Result<Vec<InterfaceEntry>> {
-    #[cfg(target_os = "linux")]
-    return linux::list_interfaces();
-
-    #[cfg(target_os = "macos")]
-    return macos::list_interfaces();
-
-    #[cfg(target_os = "windows")]
-    return windows::list_interfaces();
-
-    #[cfg(target_os = "freebsd")]
-    return freebsd::list_interfaces();
-
-    #[cfg(not(any(
-        target_os = "linux",
-        target_os = "macos",
-        target_os = "windows",
-        target_os = "freebsd"
-    )))]
-    return Ok(Vec::new());
-}

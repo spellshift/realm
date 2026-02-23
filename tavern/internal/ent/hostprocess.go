@@ -10,7 +10,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/c2/epb"
-	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -47,7 +46,6 @@ type HostProcess struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostProcessQuery when eager-loading is set.
 	Edges                         HostProcessEdges `json:"edges"`
-	beacon_process                *int
 	host_processes                *int
 	host_process_host             *int
 	shell_task_reported_processes *int
@@ -63,13 +61,15 @@ type HostProcessEdges struct {
 	Task *Task `json:"task,omitempty"`
 	// Shell Task that reported this process.
 	ShellTask *ShellTask `json:"shell_task,omitempty"`
-	// The beacon running in this process.
-	Beacon *Beacon `json:"beacon,omitempty"`
+	// The beacons running in this process.
+	Beacons []*Beacon `json:"beacons,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
 	totalCount [4]map[string]int
+
+	namedBeacons map[string][]*Beacon
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -105,15 +105,13 @@ func (e HostProcessEdges) ShellTaskOrErr() (*ShellTask, error) {
 	return nil, &NotLoadedError{edge: "shell_task"}
 }
 
-// BeaconOrErr returns the Beacon value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e HostProcessEdges) BeaconOrErr() (*Beacon, error) {
-	if e.Beacon != nil {
-		return e.Beacon, nil
-	} else if e.loadedTypes[3] {
-		return nil, &NotFoundError{label: beacon.Label}
+// BeaconsOrErr returns the Beacons value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostProcessEdges) BeaconsOrErr() ([]*Beacon, error) {
+	if e.loadedTypes[3] {
+		return e.Beacons, nil
 	}
-	return nil, &NotLoadedError{edge: "beacon"}
+	return nil, &NotLoadedError{edge: "beacons"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -129,15 +127,13 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case hostprocess.FieldCreatedAt, hostprocess.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case hostprocess.ForeignKeys[0]: // beacon_process
+		case hostprocess.ForeignKeys[0]: // host_processes
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[1]: // host_processes
+		case hostprocess.ForeignKeys[1]: // host_process_host
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[2]: // host_process_host
+		case hostprocess.ForeignKeys[2]: // shell_task_reported_processes
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[3]: // shell_task_reported_processes
-			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[4]: // task_reported_processes
+		case hostprocess.ForeignKeys[3]: // task_reported_processes
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -228,33 +224,26 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 			}
 		case hostprocess.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field beacon_process", value)
-			} else if value.Valid {
-				hp.beacon_process = new(int)
-				*hp.beacon_process = int(value.Int64)
-			}
-		case hostprocess.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_processes", value)
 			} else if value.Valid {
 				hp.host_processes = new(int)
 				*hp.host_processes = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[2]:
+		case hostprocess.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_process_host", value)
 			} else if value.Valid {
 				hp.host_process_host = new(int)
 				*hp.host_process_host = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[3]:
+		case hostprocess.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_processes", value)
 			} else if value.Valid {
 				hp.shell_task_reported_processes = new(int)
 				*hp.shell_task_reported_processes = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[4]:
+		case hostprocess.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_processes", value)
 			} else if value.Valid {
@@ -289,9 +278,9 @@ func (hp *HostProcess) QueryShellTask() *ShellTaskQuery {
 	return NewHostProcessClient(hp.config).QueryShellTask(hp)
 }
 
-// QueryBeacon queries the "beacon" edge of the HostProcess entity.
-func (hp *HostProcess) QueryBeacon() *BeaconQuery {
-	return NewHostProcessClient(hp.config).QueryBeacon(hp)
+// QueryBeacons queries the "beacons" edge of the HostProcess entity.
+func (hp *HostProcess) QueryBeacons() *BeaconQuery {
+	return NewHostProcessClient(hp.config).QueryBeacons(hp)
 }
 
 // Update returns a builder for updating this HostProcess.
@@ -351,6 +340,30 @@ func (hp *HostProcess) String() string {
 	builder.WriteString(fmt.Sprintf("%v", hp.Status))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedBeacons returns the Beacons named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (hp *HostProcess) NamedBeacons(name string) ([]*Beacon, error) {
+	if hp.Edges.namedBeacons == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := hp.Edges.namedBeacons[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (hp *HostProcess) appendNamedBeacons(name string, edges ...*Beacon) {
+	if hp.Edges.namedBeacons == nil {
+		hp.Edges.namedBeacons = make(map[string][]*Beacon)
+	}
+	if len(edges) == 0 {
+		hp.Edges.namedBeacons[name] = []*Beacon{}
+	} else {
+		hp.Edges.namedBeacons[name] = append(hp.Edges.namedBeacons[name], edges...)
+	}
 }
 
 // HostProcesses is a parsable slice of HostProcess.

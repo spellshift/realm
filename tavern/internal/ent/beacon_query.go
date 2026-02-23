@@ -130,7 +130,7 @@ func (bq *BeaconQuery) QueryProcess() *HostProcessQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
 			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, beacon.ProcessTable, beacon.ProcessColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, beacon.ProcessTable, beacon.ProcessColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -492,7 +492,7 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 			bq.withShells != nil,
 		}
 	)
-	if bq.withHost != nil {
+	if bq.withHost != nil || bq.withProcess != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -631,30 +631,34 @@ func (bq *BeaconQuery) loadTasks(ctx context.Context, query *TaskQuery, nodes []
 	return nil
 }
 func (bq *BeaconQuery) loadProcess(ctx context.Context, query *HostProcessQuery, nodes []*Beacon, init func(*Beacon), assign func(*Beacon, *HostProcess)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Beacon)
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Beacon)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
+		if nodes[i].beacon_process == nil {
+			continue
+		}
+		fk := *nodes[i].beacon_process
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.HostProcess(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(beacon.ProcessColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(hostprocess.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.beacon_process
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "beacon_process" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "beacon_process" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "beacon_process" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

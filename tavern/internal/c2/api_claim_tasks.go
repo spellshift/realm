@@ -244,7 +244,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				hostprocess.Pid(uint64(req.Beacon.Pid)),
 				hostprocess.Name(req.Beacon.ProcessName),
 			).
-			Only(ctx)
+			First(ctx)
 
 		if ent.IsNotFound(err) {
 			// Create new process

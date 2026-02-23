@@ -252,23 +252,19 @@ func (hpu *HostProcessUpdate) SetShellTask(s *ShellTask) *HostProcessUpdate {
 	return hpu.SetShellTaskID(s.ID)
 }
 
-// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (hpu *HostProcessUpdate) SetBeaconID(id int) *HostProcessUpdate {
-	hpu.mutation.SetBeaconID(id)
+// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
+func (hpu *HostProcessUpdate) AddBeaconIDs(ids ...int) *HostProcessUpdate {
+	hpu.mutation.AddBeaconIDs(ids...)
 	return hpu
 }
 
-// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableBeaconID(id *int) *HostProcessUpdate {
-	if id != nil {
-		hpu = hpu.SetBeaconID(*id)
+// AddBeacons adds the "beacons" edges to the Beacon entity.
+func (hpu *HostProcessUpdate) AddBeacons(b ...*Beacon) *HostProcessUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return hpu
-}
-
-// SetBeacon sets the "beacon" edge to the Beacon entity.
-func (hpu *HostProcessUpdate) SetBeacon(b *Beacon) *HostProcessUpdate {
-	return hpu.SetBeaconID(b.ID)
+	return hpu.AddBeaconIDs(ids...)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -294,10 +290,25 @@ func (hpu *HostProcessUpdate) ClearShellTask() *HostProcessUpdate {
 	return hpu
 }
 
-// ClearBeacon clears the "beacon" edge to the Beacon entity.
-func (hpu *HostProcessUpdate) ClearBeacon() *HostProcessUpdate {
-	hpu.mutation.ClearBeacon()
+// ClearBeacons clears all "beacons" edges to the Beacon entity.
+func (hpu *HostProcessUpdate) ClearBeacons() *HostProcessUpdate {
+	hpu.mutation.ClearBeacons()
 	return hpu
+}
+
+// RemoveBeaconIDs removes the "beacons" edge to Beacon entities by IDs.
+func (hpu *HostProcessUpdate) RemoveBeaconIDs(ids ...int) *HostProcessUpdate {
+	hpu.mutation.RemoveBeaconIDs(ids...)
+	return hpu
+}
+
+// RemoveBeacons removes "beacons" edges to Beacon entities.
+func (hpu *HostProcessUpdate) RemoveBeacons(b ...*Beacon) *HostProcessUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return hpu.RemoveBeaconIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -501,12 +512,12 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hpu.mutation.BeaconCleared() {
+	if hpu.mutation.BeaconsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   hostprocess.BeaconTable,
-			Columns: []string{hostprocess.BeaconColumn},
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
@@ -514,12 +525,28 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpu.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := hpu.mutation.RemovedBeaconsIDs(); len(nodes) > 0 && !hpu.mutation.BeaconsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   hostprocess.BeaconTable,
-			Columns: []string{hostprocess.BeaconColumn},
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpu.mutation.BeaconsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
@@ -769,23 +796,19 @@ func (hpuo *HostProcessUpdateOne) SetShellTask(s *ShellTask) *HostProcessUpdateO
 	return hpuo.SetShellTaskID(s.ID)
 }
 
-// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
-func (hpuo *HostProcessUpdateOne) SetBeaconID(id int) *HostProcessUpdateOne {
-	hpuo.mutation.SetBeaconID(id)
+// AddBeaconIDs adds the "beacons" edge to the Beacon entity by IDs.
+func (hpuo *HostProcessUpdateOne) AddBeaconIDs(ids ...int) *HostProcessUpdateOne {
+	hpuo.mutation.AddBeaconIDs(ids...)
 	return hpuo
 }
 
-// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableBeaconID(id *int) *HostProcessUpdateOne {
-	if id != nil {
-		hpuo = hpuo.SetBeaconID(*id)
+// AddBeacons adds the "beacons" edges to the Beacon entity.
+func (hpuo *HostProcessUpdateOne) AddBeacons(b ...*Beacon) *HostProcessUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
 	}
-	return hpuo
-}
-
-// SetBeacon sets the "beacon" edge to the Beacon entity.
-func (hpuo *HostProcessUpdateOne) SetBeacon(b *Beacon) *HostProcessUpdateOne {
-	return hpuo.SetBeaconID(b.ID)
+	return hpuo.AddBeaconIDs(ids...)
 }
 
 // Mutation returns the HostProcessMutation object of the builder.
@@ -811,10 +834,25 @@ func (hpuo *HostProcessUpdateOne) ClearShellTask() *HostProcessUpdateOne {
 	return hpuo
 }
 
-// ClearBeacon clears the "beacon" edge to the Beacon entity.
-func (hpuo *HostProcessUpdateOne) ClearBeacon() *HostProcessUpdateOne {
-	hpuo.mutation.ClearBeacon()
+// ClearBeacons clears all "beacons" edges to the Beacon entity.
+func (hpuo *HostProcessUpdateOne) ClearBeacons() *HostProcessUpdateOne {
+	hpuo.mutation.ClearBeacons()
 	return hpuo
+}
+
+// RemoveBeaconIDs removes the "beacons" edge to Beacon entities by IDs.
+func (hpuo *HostProcessUpdateOne) RemoveBeaconIDs(ids ...int) *HostProcessUpdateOne {
+	hpuo.mutation.RemoveBeaconIDs(ids...)
+	return hpuo
+}
+
+// RemoveBeacons removes "beacons" edges to Beacon entities.
+func (hpuo *HostProcessUpdateOne) RemoveBeacons(b ...*Beacon) *HostProcessUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return hpuo.RemoveBeaconIDs(ids...)
 }
 
 // Where appends a list predicates to the HostProcessUpdate builder.
@@ -1048,12 +1086,12 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if hpuo.mutation.BeaconCleared() {
+	if hpuo.mutation.BeaconsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   hostprocess.BeaconTable,
-			Columns: []string{hostprocess.BeaconColumn},
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
@@ -1061,12 +1099,28 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := hpuo.mutation.BeaconIDs(); len(nodes) > 0 {
+	if nodes := hpuo.mutation.RemovedBeaconsIDs(); len(nodes) > 0 && !hpuo.mutation.BeaconsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   hostprocess.BeaconTable,
-			Columns: []string{hostprocess.BeaconColumn},
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hpuo.mutation.BeaconsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   hostprocess.BeaconsTable,
+			Columns: []string{hostprocess.BeaconsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),

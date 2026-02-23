@@ -2084,9 +2084,9 @@ type HostProcess implements Node {
   """
   shellTask: ShellTask
   """
-  The beacon running in this process.
+  The beacons running in this process.
   """
-  beacon: Beacon
+  beacons: [Beacon!]
 }
 """
 A connection to a list of items.
@@ -2350,10 +2350,10 @@ input HostProcessWhereInput {
   hasShellTask: Boolean
   hasShellTaskWith: [ShellTaskWhereInput!]
   """
-  beacon edge predicates
+  beacons edge predicates
   """
-  hasBeacon: Boolean
-  hasBeaconWith: [BeaconWhereInput!]
+  hasBeacons: Boolean
+  hasBeaconsWith: [BeaconWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.

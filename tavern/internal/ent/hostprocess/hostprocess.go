@@ -45,8 +45,8 @@ const (
 	EdgeTask = "task"
 	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
 	EdgeShellTask = "shell_task"
-	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
-	EdgeBeacon = "beacon"
+	// EdgeBeacons holds the string denoting the beacons edge name in mutations.
+	EdgeBeacons = "beacons"
 	// Table holds the table name of the hostprocess in the database.
 	Table = "host_processes"
 	// HostTable is the table that holds the host relation/edge.
@@ -70,13 +70,13 @@ const (
 	ShellTaskInverseTable = "shell_tasks"
 	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
 	ShellTaskColumn = "shell_task_reported_processes"
-	// BeaconTable is the table that holds the beacon relation/edge.
-	BeaconTable = "host_processes"
-	// BeaconInverseTable is the table name for the Beacon entity.
+	// BeaconsTable is the table that holds the beacons relation/edge.
+	BeaconsTable = "beacons"
+	// BeaconsInverseTable is the table name for the Beacon entity.
 	// It exists in this package in order to avoid circular dependency with the "beacon" package.
-	BeaconInverseTable = "beacons"
-	// BeaconColumn is the table column denoting the beacon relation/edge.
-	BeaconColumn = "beacon_process"
+	BeaconsInverseTable = "beacons"
+	// BeaconsColumn is the table column denoting the beacons relation/edge.
+	BeaconsColumn = "beacon_process"
 )
 
 // Columns holds all SQL columns for hostprocess fields.
@@ -98,7 +98,6 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_processes"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"beacon_process",
 	"host_processes",
 	"host_process_host",
 	"shell_task_reported_processes",
@@ -225,10 +224,17 @@ func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByBeaconField orders the results by beacon field.
-func ByBeaconField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByBeaconsCount orders the results by beacons count.
+func ByBeaconsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newBeaconStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborsCount(s, newBeaconsStep(), opts...)
+	}
+}
+
+// ByBeacons orders the results by beacons terms.
+func ByBeacons(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBeaconsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newHostStep() *sqlgraph.Step {
@@ -252,11 +258,11 @@ func newShellTaskStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
 	)
 }
-func newBeaconStep() *sqlgraph.Step {
+func newBeaconsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(BeaconInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, true, BeaconTable, BeaconColumn),
+		sqlgraph.To(BeaconsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, BeaconsTable, BeaconsColumn),
 	)
 }
 

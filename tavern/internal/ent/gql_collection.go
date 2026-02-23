@@ -2029,16 +2029,18 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 			}
 			hp.withShellTask = query
 
-		case "beacon":
+		case "beacons":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
 				query = (&BeaconClient{config: hp.config}).Query()
 			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
 				return err
 			}
-			hp.withBeacon = query
+			hp.WithNamedBeacons(alias, func(wq *BeaconQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)

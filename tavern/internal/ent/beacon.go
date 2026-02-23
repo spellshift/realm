@@ -42,9 +42,10 @@ type Beacon struct {
 	Transport c2pb.Transport_Type `json:"transport,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
-	Edges        BeaconEdges `json:"edges"`
-	beacon_host  *int
-	selectValues sql.SelectValues
+	Edges          BeaconEdges `json:"edges"`
+	beacon_host    *int
+	beacon_process *int
+	selectValues   sql.SelectValues
 }
 
 // BeaconEdges holds the relations/edges for other nodes in the graph.
@@ -121,6 +122,8 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 		case beacon.FieldCreatedAt, beacon.FieldLastModifiedAt, beacon.FieldLastSeenAt, beacon.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
 		case beacon.ForeignKeys[0]: // beacon_host
+			values[i] = new(sql.NullInt64)
+		case beacon.ForeignKeys[1]: // beacon_process
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -209,6 +212,13 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.beacon_host = new(int)
 				*b.beacon_host = int(value.Int64)
+			}
+		case beacon.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field beacon_process", value)
+			} else if value.Valid {
+				b.beacon_process = new(int)
+				*b.beacon_process = int(value.Int64)
 			}
 		default:
 			b.selectValues.Set(columns[i], values[i])

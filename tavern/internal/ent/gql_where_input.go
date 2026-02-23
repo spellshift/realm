@@ -4048,9 +4048,9 @@ type HostProcessWhereInput struct {
 	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
 	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
 
-	// "beacon" edge predicates.
-	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
-	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
+	// "beacons" edge predicates.
+	HasBeacons     *bool               `json:"hasBeacons,omitempty"`
+	HasBeaconsWith []*BeaconWhereInput `json:"hasBeaconsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4569,23 +4569,23 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 		}
 		predicates = append(predicates, hostprocess.HasShellTaskWith(with...))
 	}
-	if i.HasBeacon != nil {
-		p := hostprocess.HasBeacon()
-		if !*i.HasBeacon {
+	if i.HasBeacons != nil {
+		p := hostprocess.HasBeacons()
+		if !*i.HasBeacons {
 			p = hostprocess.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasBeaconWith) > 0 {
-		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
-		for _, w := range i.HasBeaconWith {
+	if len(i.HasBeaconsWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconsWith))
+		for _, w := range i.HasBeaconsWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasBeaconsWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, hostprocess.HasBeaconWith(with...))
+		predicates = append(predicates, hostprocess.HasBeaconsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -2414,8 +2414,8 @@ func (ec *executionContext) fieldContext_Beacon_process(_ context.Context, field
 				return ec.fieldContext_HostProcess_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostProcess_shellTask(ctx, field)
-			case "beacon":
-				return ec.fieldContext_HostProcess_beacon(ctx, field)
+			case "beacons":
+				return ec.fieldContext_HostProcess_beacons(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostProcess", field.Name)
 		},
@@ -6330,23 +6330,23 @@ func (ec *executionContext) fieldContext_HostProcess_shellTask(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _HostProcess_beacon(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
+func (ec *executionContext) _HostProcess_beacons(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_HostProcess_beacon,
+		ec.fieldContext_HostProcess_beacons,
 		func(ctx context.Context) (any, error) {
-			return obj.Beacon(ctx)
+			return obj.Beacons(ctx)
 		},
 		nil,
-		ec.marshalOBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon,
+		ec.marshalOBeacon2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconᚄ,
 		true,
 		false,
 	)
 }
 
-func (ec *executionContext) fieldContext_HostProcess_beacon(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_HostProcess_beacons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "HostProcess",
 		Field:      field,
@@ -6548,8 +6548,8 @@ func (ec *executionContext) fieldContext_HostProcessEdge_node(_ context.Context,
 				return ec.fieldContext_HostProcess_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostProcess_shellTask(ctx, field)
-			case "beacon":
-				return ec.fieldContext_HostProcess_beacon(ctx, field)
+			case "beacons":
+				return ec.fieldContext_HostProcess_beacons(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostProcess", field.Name)
 		},
@@ -11091,8 +11091,8 @@ func (ec *executionContext) fieldContext_ShellTask_reportedProcesses(_ context.C
 				return ec.fieldContext_HostProcess_task(ctx, field)
 			case "shellTask":
 				return ec.fieldContext_HostProcess_shellTask(ctx, field)
-			case "beacon":
-				return ec.fieldContext_HostProcess_beacon(ctx, field)
+			case "beacons":
+				return ec.fieldContext_HostProcess_beacons(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type HostProcess", field.Name)
 		},
@@ -18576,7 +18576,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hasBeacon", "hasBeaconWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith", "hasBeacons", "hasBeaconsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -19556,20 +19556,20 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.HasShellTaskWith = data
-		case "hasBeacon":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeacon"))
+		case "hasBeacons":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeacons"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasBeacon = data
-		case "hasBeaconWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeaconWith"))
+			it.HasBeacons = data
+		case "hasBeaconsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBeaconsWith"))
 			data, err := ec.unmarshalOBeaconWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.HasBeaconWith = data
+			it.HasBeaconsWith = data
 		}
 	}
 
@@ -29066,7 +29066,7 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "beacon":
+		case "beacons":
 			field := field
 
 			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
@@ -29075,7 +29075,7 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._HostProcess_beacon(ctx, field, obj)
+				res = ec._HostProcess_beacons(ctx, field, obj)
 				return res
 			}
 
@@ -33753,6 +33753,53 @@ func (ec *executionContext) unmarshalOAssetWhereInput2ᚖrealmᚗpubᚋtavernᚋ
 	}
 	res, err := ec.unmarshalInputAssetWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOBeacon2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Beacon) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOBeacon2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeacon(ctx context.Context, sel ast.SelectionSet, v *ent.Beacon) graphql.Marshaler {

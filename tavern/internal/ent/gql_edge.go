@@ -330,12 +330,16 @@ func (hp *HostProcess) ShellTask(ctx context.Context) (*ShellTask, error) {
 	return result, MaskNotFound(err)
 }
 
-func (hp *HostProcess) Beacon(ctx context.Context) (*Beacon, error) {
-	result, err := hp.Edges.BeaconOrErr()
-	if IsNotLoaded(err) {
-		result, err = hp.QueryBeacon().Only(ctx)
+func (hp *HostProcess) Beacons(ctx context.Context) (result []*Beacon, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = hp.NamedBeacons(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = hp.Edges.BeaconsOrErr()
 	}
-	return result, MaskNotFound(err)
+	if IsNotLoaded(err) {
+		result, err = hp.QueryBeacons().All(ctx)
+	}
+	return result, err
 }
 
 func (l *Link) Asset(ctx context.Context) (*Asset, error) {

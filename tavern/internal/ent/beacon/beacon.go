@@ -62,7 +62,7 @@ const (
 	// TasksColumn is the table column denoting the tasks relation/edge.
 	TasksColumn = "task_beacon"
 	// ProcessTable is the table that holds the process relation/edge.
-	ProcessTable = "host_processes"
+	ProcessTable = "beacons"
 	// ProcessInverseTable is the table name for the HostProcess entity.
 	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
 	ProcessInverseTable = "host_processes"
@@ -96,6 +96,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"beacon_host",
+	"beacon_process",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -261,7 +262,7 @@ func newProcessStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProcessInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, ProcessTable, ProcessColumn),
+		sqlgraph.Edge(sqlgraph.M2O, false, ProcessTable, ProcessColumn),
 	)
 }
 func newShellsStep() *sqlgraph.Step {
