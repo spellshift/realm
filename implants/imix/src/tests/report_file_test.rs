@@ -2,8 +2,8 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use pb::c2::{ReportFileRequest, ReportFileResponse};
 use pb::config::Config;
-use std::sync::mpsc::Receiver;
 use std::sync::Arc;
+use std::sync::mpsc::Receiver;
 use tokio::sync::RwLock;
 use transport::Transport;
 
@@ -220,11 +220,10 @@ async fn test_report_file_failure_propagation() {
     }; // Yields 2 OKs then 1 Err
 
     let agent_clone = agent.clone();
-    let result = tokio::task::spawn_blocking(move || {
-        agent_clone.report_file(Box::new(failing_iter))
-    })
-    .await
-    .unwrap();
+    let result =
+        tokio::task::spawn_blocking(move || agent_clone.report_file(Box::new(failing_iter)))
+            .await
+            .unwrap();
 
     // 4. Verify failure
     assert!(result.is_err());
