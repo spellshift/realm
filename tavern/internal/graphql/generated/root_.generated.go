@@ -191,6 +191,7 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		Secret         func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
 
@@ -220,6 +221,7 @@ type ComplexityRoot struct {
 		Owner          func(childComplexity int) int
 		Path           func(childComplexity int) int
 		Permissions    func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -248,6 +250,7 @@ type ComplexityRoot struct {
 		Pid            func(childComplexity int) int
 		Ppid           func(childComplexity int) int
 		Principal      func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -435,19 +438,22 @@ type ComplexityRoot struct {
 	}
 
 	ShellTask struct {
-		ClaimedAt      func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Creator        func(childComplexity int) int
-		Error          func(childComplexity int) int
-		ExecFinishedAt func(childComplexity int) int
-		ExecStartedAt  func(childComplexity int) int
-		ID             func(childComplexity int) int
-		Input          func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Output         func(childComplexity int) int
-		SequenceID     func(childComplexity int) int
-		Shell          func(childComplexity int) int
-		StreamID       func(childComplexity int) int
+		ClaimedAt           func(childComplexity int) int
+		CreatedAt           func(childComplexity int) int
+		Creator             func(childComplexity int) int
+		Error               func(childComplexity int) int
+		ExecFinishedAt      func(childComplexity int) int
+		ExecStartedAt       func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		Input               func(childComplexity int) int
+		LastModifiedAt      func(childComplexity int) int
+		Output              func(childComplexity int) int
+		ReportedCredentials func(childComplexity int) int
+		ReportedFiles       func(childComplexity int) int
+		ReportedProcesses   func(childComplexity int) int
+		SequenceID          func(childComplexity int) int
+		Shell               func(childComplexity int) int
+		StreamID            func(childComplexity int) int
 	}
 
 	ShellTaskConnection struct {
@@ -1323,6 +1329,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostCredential.Secret(childComplexity), true
 
+	case "HostCredential.shellTask":
+		if e.complexity.HostCredential.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostCredential.ShellTask(childComplexity), true
+
 	case "HostCredential.task":
 		if e.complexity.HostCredential.Task == nil {
 			break
@@ -1441,6 +1454,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.shellTask":
+		if e.complexity.HostFile.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostFile.ShellTask(childComplexity), true
 
 	case "HostFile.size":
 		if e.complexity.HostFile.Size == nil {
@@ -1574,6 +1594,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostProcess.Principal(childComplexity), true
+
+	case "HostProcess.shellTask":
+		if e.complexity.HostProcess.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.ShellTask(childComplexity), true
 
 	case "HostProcess.status":
 		if e.complexity.HostProcess.Status == nil {
@@ -2686,6 +2713,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ShellTask.Output(childComplexity), true
+
+	case "ShellTask.reportedCredentials":
+		if e.complexity.ShellTask.ReportedCredentials == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedCredentials(childComplexity), true
+
+	case "ShellTask.reportedFiles":
+		if e.complexity.ShellTask.ReportedFiles == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedFiles(childComplexity), true
+
+	case "ShellTask.reportedProcesses":
+		if e.complexity.ShellTask.ReportedProcesses == nil {
+			break
+		}
+
+		return e.complexity.ShellTask.ReportedProcesses(childComplexity), true
 
 	case "ShellTask.sequenceID":
 		if e.complexity.ShellTask.SequenceID == nil {
@@ -4581,6 +4629,7 @@ input CreateHostCredentialInput {
   kind: HostCredentialKind!
   hostID: ID!
   taskID: ID
+  shellTaskID: ID
 }
 """
 CreateLinkInput is used for create Link object.
@@ -4946,6 +4995,10 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+  """
+  Shell Task that reported this credential.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5097,6 +5150,11 @@ input HostCredentialWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 An edge in a connection.
@@ -5152,7 +5210,11 @@ type HostFile implements Node {
   """
   Task that reported this file.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this file.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5356,6 +5418,11 @@ input HostFileWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 Ordering options for Host connections
@@ -5442,7 +5509,11 @@ type HostProcess implements Node {
   """
   Task that reported this process.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this process.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -5700,6 +5771,11 @@ input HostProcessWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -6965,6 +7041,18 @@ type ShellTask implements Node {
   The user who created this ShellTask
   """
   creator: User!
+  """
+  Credentials reported by this shell task
+  """
+  reportedCredentials: [HostCredential!]
+  """
+  Files reported by this shell task
+  """
+  reportedFiles: [HostFile!]
+  """
+  Processes reported by this shell task
+  """
+  reportedProcesses: [HostProcess!]
 }
 """
 A connection to a list of items.
@@ -7188,6 +7276,21 @@ input ShellTaskWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  reported_credentials edge predicates
+  """
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """
+  reported_files edge predicates
+  """
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
+  """
+  reported_processes edge predicates
+  """
+  hasReportedProcesses: Boolean
+  hasReportedProcessesWith: [HostProcessWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.

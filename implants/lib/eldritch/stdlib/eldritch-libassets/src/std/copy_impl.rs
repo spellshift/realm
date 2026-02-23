@@ -26,10 +26,10 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext {
+            eldritch_agent::Context::Task(TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            },
+            }),
             Vec::new(),
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
@@ -49,10 +49,10 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext {
+            eldritch_agent::Context::Task(TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            },
+            }),
             Vec::new(),
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;
@@ -72,10 +72,10 @@ mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext {
+            eldritch_agent::Context::Task(TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            },
+            }),
             Vec::new(),
         )))?;
         lib.add(Arc::new(EmbeddedAssets::<TestAsset>::new()))?;

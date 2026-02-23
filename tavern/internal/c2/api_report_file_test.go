@@ -13,15 +13,15 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
-	"realm.pub/tavern/internal/c2/epb"
+    "realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 )
 
 func TestReportFile(t *testing.T) {
 	// Setup Dependencies
-	ctx := context.Background()
 	client, graph, close, token := c2test.New(t)
 	defer close()
+    ctx := context.Background()
 
 	// Test Data
 	existingBeacons := []*ent.Beacon{
@@ -99,7 +99,9 @@ func TestReportFile(t *testing.T) {
 			name: "MissingPath",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+                        TaskContext: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+                    },
 				},
 			},
 			wantCode: codes.InvalidArgument,
@@ -108,7 +110,9 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_Single",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+                    },
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path:         "/new/file",
@@ -142,7 +146,9 @@ func TestReportFile(t *testing.T) {
 			name: "NewFile_MultiChunk",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+                    },
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -174,7 +180,9 @@ func TestReportFile(t *testing.T) {
 			name: "Replace_File",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+                    },
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -201,7 +209,9 @@ func TestReportFile(t *testing.T) {
 			name: "No_Prexisting_Files",
 			reqs: []*c2pb.ReportFileRequest{
 				{
-					Context: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					Context: &c2pb.ReportFileRequest_TaskContext{
+                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+                    },
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/no/other/files",
@@ -233,7 +243,8 @@ func TestReportFile(t *testing.T) {
 			resp, err := rClient.CloseAndRecv()
 
 			// Assert Response Code
-			require.Equal(t, tc.wantCode.String(), status.Code(err).String(), err)
+			st, _ := status.FromError(err)
+			require.Equal(t, tc.wantCode.String(), st.Code().String(), err)
 			if status.Code(err) != codes.OK {
 				// Do not continue if we expected error code
 				return
@@ -244,30 +255,32 @@ func TestReportFile(t *testing.T) {
 				t.Errorf("invalid response (-want +got): %v", diff)
 			}
 
-			// Load Files
-			testHost := graph.Host.GetX(ctx, tc.host.ID)
-			testHostFiles := testHost.QueryFiles().AllX(ctx)
-			testHostFilePaths := make([]string, 0, len(testHostFiles))
-			var testFile *ent.HostFile
-			for _, f := range testHostFiles {
-				testHostFilePaths = append(testHostFilePaths, f.Path)
-				if f.Path == tc.wantPath {
-					testFile = f
-				}
-			}
-			require.NotNil(t, testFile, "%q file was not associated with host", tc.wantPath)
+            if tc.host != nil {
+			    // Load Files
+			    testHost := graph.Host.GetX(ctx, tc.host.ID)
+			    testHostFiles := testHost.QueryFiles().AllX(ctx)
+			    testHostFilePaths := make([]string, 0, len(testHostFiles))
+			    var testFile *ent.HostFile
+			    for _, f := range testHostFiles {
+				    testHostFilePaths = append(testHostFilePaths, f.Path)
+				    if f.Path == tc.wantPath {
+					    testFile = f
+				    }
+			    }
+			    require.NotNil(t, testFile, "%q file was not associated with host", tc.wantPath)
 
-			// Assert Files
-			sorter := func(a, b string) bool { return a < b }
-			if diff := cmp.Diff(tc.wantHostFiles, testHostFilePaths, cmpopts.SortSlices(sorter)); diff != "" {
-				t.Errorf("invalid host file associations (-want +got): %v", diff)
-			}
-			assert.Equal(t, tc.wantPath, testFile.Path)
-			assert.Equal(t, tc.wantOwner, testFile.Owner)
-			assert.Equal(t, tc.wantGroup, testFile.Group)
-			assert.Equal(t, tc.wantPermissions, testFile.Permissions)
-			assert.Equal(t, tc.wantSize, testFile.Size)
-			assert.Equal(t, tc.wantHash, testFile.Hash)
+			    // Assert Files
+			    sorter := func(a, b string) bool { return a < b }
+			    if diff := cmp.Diff(tc.wantHostFiles, testHostFilePaths, cmpopts.SortSlices(sorter)); diff != "" {
+				    t.Errorf("invalid host file associations (-want +got): %v", diff)
+			    }
+			    assert.Equal(t, tc.wantPath, testFile.Path)
+			    assert.Equal(t, tc.wantOwner, testFile.Owner)
+			    assert.Equal(t, tc.wantGroup, testFile.Group)
+			    assert.Equal(t, tc.wantPermissions, testFile.Permissions)
+			    assert.Equal(t, tc.wantSize, testFile.Size)
+			    assert.Equal(t, tc.wantHash, testFile.Hash)
+            }
 		})
 	}
 

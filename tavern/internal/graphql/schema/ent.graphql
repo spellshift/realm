@@ -1184,6 +1184,7 @@ input CreateHostCredentialInput {
   kind: HostCredentialKind!
   hostID: ID!
   taskID: ID
+  shellTaskID: ID
 }
 """
 CreateLinkInput is used for create Link object.
@@ -1549,6 +1550,10 @@ type HostCredential implements Node {
   Task that reported this credential.
   """
   task: Task
+  """
+  Shell Task that reported this credential.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -1700,6 +1705,11 @@ input HostCredentialWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 An edge in a connection.
@@ -1755,7 +1765,11 @@ type HostFile implements Node {
   """
   Task that reported this file.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this file.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -1959,6 +1973,11 @@ input HostFileWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 Ordering options for Host connections
@@ -2045,7 +2064,11 @@ type HostProcess implements Node {
   """
   Task that reported this process.
   """
-  task: Task!
+  task: Task
+  """
+  Shell Task that reported this process.
+  """
+  shellTask: ShellTask
 }
 """
 A connection to a list of items.
@@ -2303,6 +2326,11 @@ input HostProcessWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
 }
 """
 HostWhereInput is used for filtering Host objects.
@@ -2728,7 +2756,11 @@ type Portal implements Node {
   """
   Task that created the portal
   """
-  task: Task!
+  task: Task
+  """
+  ShellTask that created the portal
+  """
+  shellTask: ShellTask
   """
   Beacon that created the portal
   """
@@ -2879,6 +2911,11 @@ input PortalWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
   """
   beacon edge predicates
   """
@@ -3568,6 +3605,18 @@ type ShellTask implements Node {
   The user who created this ShellTask
   """
   creator: User!
+  """
+  Credentials reported by this shell task
+  """
+  reportedCredentials: [HostCredential!]
+  """
+  Files reported by this shell task
+  """
+  reportedFiles: [HostFile!]
+  """
+  Processes reported by this shell task
+  """
+  reportedProcesses: [HostProcess!]
 }
 """
 A connection to a list of items.
@@ -3791,6 +3840,21 @@ input ShellTaskWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  reported_credentials edge predicates
+  """
+  hasReportedCredentials: Boolean
+  hasReportedCredentialsWith: [HostCredentialWhereInput!]
+  """
+  reported_files edge predicates
+  """
+  hasReportedFiles: Boolean
+  hasReportedFilesWith: [HostFileWhereInput!]
+  """
+  reported_processes edge predicates
+  """
+  hasReportedProcesses: Boolean
+  hasReportedProcessesWith: [HostProcessWhereInput!]
 }
 """
 ShellWhereInput is used for filtering Shell objects.
