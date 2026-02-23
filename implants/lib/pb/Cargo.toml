@@ -38,7 +38,7 @@ url = { workspace = true }
 tonic-prost-build = { workspace = true }
 which = { workspace = true }
 home = "=0.5.11"
-reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls"] }
+reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls", "http2"] }
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_yaml = { workspace = true }
