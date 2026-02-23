@@ -266,6 +266,14 @@ func (hc *HostCredential) Task(ctx context.Context) (*Task, error) {
 	return result, MaskNotFound(err)
 }
 
+func (hc *HostCredential) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hc.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hc.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (hf *HostFile) Host(ctx context.Context) (*Host, error) {
 	result, err := hf.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -279,7 +287,15 @@ func (hf *HostFile) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = hf.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (hf *HostFile) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hf.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hf.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (hp *HostProcess) Host(ctx context.Context) (*Host, error) {
@@ -295,7 +311,15 @@ func (hp *HostProcess) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = hp.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (hp *HostProcess) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := hp.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = hp.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (l *Link) Asset(ctx context.Context) (*Asset, error) {
@@ -319,7 +343,15 @@ func (po *Portal) Task(ctx context.Context) (*Task, error) {
 	if IsNotLoaded(err) {
 		result, err = po.QueryTask().Only(ctx)
 	}
-	return result, err
+	return result, MaskNotFound(err)
+}
+
+func (po *Portal) ShellTask(ctx context.Context) (*ShellTask, error) {
+	result, err := po.Edges.ShellTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = po.QueryShellTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (po *Portal) Beacon(ctx context.Context) (*Beacon, error) {
@@ -346,7 +378,7 @@ func (po *Portal) ActiveUsers(
 		WithUserFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := po.Edges.totalCount[3][alias]
+	totalCount, hasTotalCount := po.Edges.totalCount[4][alias]
 	if nodes, err := po.NamedActiveUsers(alias); err == nil || hasTotalCount {
 		pager, err := newUserPager(opts, last != nil)
 		if err != nil {
@@ -523,6 +555,42 @@ func (st *ShellTask) Creator(ctx context.Context) (*User, error) {
 	result, err := st.Edges.CreatorOrErr()
 	if IsNotLoaded(err) {
 		result, err = st.QueryCreator().Only(ctx)
+	}
+	return result, err
+}
+
+func (st *ShellTask) ReportedCredentials(ctx context.Context) (result []*HostCredential, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = st.NamedReportedCredentials(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = st.Edges.ReportedCredentialsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = st.QueryReportedCredentials().All(ctx)
+	}
+	return result, err
+}
+
+func (st *ShellTask) ReportedFiles(ctx context.Context) (result []*HostFile, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = st.NamedReportedFiles(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = st.Edges.ReportedFilesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = st.QueryReportedFiles().All(ctx)
+	}
+	return result, err
+}
+
+func (st *ShellTask) ReportedProcesses(ctx context.Context) (result []*HostProcess, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = st.NamedReportedProcesses(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = st.Edges.ReportedProcessesOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = st.QueryReportedProcesses().All(ctx)
 	}
 	return result, err
 }

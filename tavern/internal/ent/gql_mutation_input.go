@@ -155,11 +155,12 @@ func (c *HostUpdateOne) SetInput(i UpdateHostInput) *HostUpdateOne {
 
 // CreateHostCredentialInput represents a mutation input for creating hostcredentials.
 type CreateHostCredentialInput struct {
-	Principal string
-	Secret    string
-	Kind      epb.Credential_Kind
-	HostID    int
-	TaskID    *int
+	Principal   string
+	Secret      string
+	Kind        epb.Credential_Kind
+	HostID      int
+	TaskID      *int
+	ShellTaskID *int
 }
 
 // Mutate applies the CreateHostCredentialInput on the HostCredentialMutation builder.
@@ -170,6 +171,9 @@ func (i *CreateHostCredentialInput) Mutate(m *HostCredentialMutation) {
 	m.SetHostID(i.HostID)
 	if v := i.TaskID; v != nil {
 		m.SetTaskID(*v)
+	}
+	if v := i.ShellTaskID; v != nil {
+		m.SetShellTaskID(*v)
 	}
 }
 

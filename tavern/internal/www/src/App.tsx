@@ -74,19 +74,15 @@ const router = createBrowserRouter([
         element: <Shell />,
       },
       {
-        path: "shellv2",
-        element: <ShellV2 />,
-      },
-      {
-        path: "shellv2/:shellId",
-        element: <ShellV2 />,
-      },
-      {
         path: "admin",
         element: <AdminPortal />,
       },
-      
+
     ]
+  },
+  {
+    path: "shellv2/:shellId",
+    element: <ShellV2 />,
   },
 ]);
 
@@ -95,11 +91,11 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-          <TagContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
-          </TagContextProvider>
+        <TagContextProvider>
+          <UserPreferencesContextProvider>
+            <RouterProvider router={router} />
+          </UserPreferencesContextProvider>
+        </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

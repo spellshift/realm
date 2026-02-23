@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -11,6 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -20,15 +24,21 @@ import (
 // ShellTaskQuery is the builder for querying ShellTask entities.
 type ShellTaskQuery struct {
 	config
-	ctx         *QueryContext
-	order       []shelltask.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.ShellTask
-	withShell   *ShellQuery
-	withCreator *UserQuery
-	withFKs     bool
-	modifiers   []func(*sql.Selector)
-	loadTotal   []func(context.Context, []*ShellTask) error
+	ctx                          *QueryContext
+	order                        []shelltask.OrderOption
+	inters                       []Interceptor
+	predicates                   []predicate.ShellTask
+	withShell                    *ShellQuery
+	withCreator                  *UserQuery
+	withReportedCredentials      *HostCredentialQuery
+	withReportedFiles            *HostFileQuery
+	withReportedProcesses        *HostProcessQuery
+	withFKs                      bool
+	modifiers                    []func(*sql.Selector)
+	loadTotal                    []func(context.Context, []*ShellTask) error
+	withNamedReportedCredentials map[string]*HostCredentialQuery
+	withNamedReportedFiles       map[string]*HostFileQuery
+	withNamedReportedProcesses   map[string]*HostProcessQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +112,72 @@ func (stq *ShellTaskQuery) QueryCreator() *UserQuery {
 			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, shelltask.CreatorTable, shelltask.CreatorColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedCredentials chains the current query on the "reported_credentials" edge.
+func (stq *ShellTaskQuery) QueryReportedCredentials() *HostCredentialQuery {
+	query := (&HostCredentialClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedCredentialsTable, shelltask.ReportedCredentialsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedFiles chains the current query on the "reported_files" edge.
+func (stq *ShellTaskQuery) QueryReportedFiles() *HostFileQuery {
+	query := (&HostFileClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
+			sqlgraph.To(hostfile.Table, hostfile.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedFilesTable, shelltask.ReportedFilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedProcesses chains the current query on the "reported_processes" edge.
+func (stq *ShellTaskQuery) QueryReportedProcesses() *HostProcessQuery {
+	query := (&HostProcessClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
+			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedProcessesTable, shelltask.ReportedProcessesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +372,16 @@ func (stq *ShellTaskQuery) Clone() *ShellTaskQuery {
 		return nil
 	}
 	return &ShellTaskQuery{
-		config:      stq.config,
-		ctx:         stq.ctx.Clone(),
-		order:       append([]shelltask.OrderOption{}, stq.order...),
-		inters:      append([]Interceptor{}, stq.inters...),
-		predicates:  append([]predicate.ShellTask{}, stq.predicates...),
-		withShell:   stq.withShell.Clone(),
-		withCreator: stq.withCreator.Clone(),
+		config:                  stq.config,
+		ctx:                     stq.ctx.Clone(),
+		order:                   append([]shelltask.OrderOption{}, stq.order...),
+		inters:                  append([]Interceptor{}, stq.inters...),
+		predicates:              append([]predicate.ShellTask{}, stq.predicates...),
+		withShell:               stq.withShell.Clone(),
+		withCreator:             stq.withCreator.Clone(),
+		withReportedCredentials: stq.withReportedCredentials.Clone(),
+		withReportedFiles:       stq.withReportedFiles.Clone(),
+		withReportedProcesses:   stq.withReportedProcesses.Clone(),
 		// clone intermediate query.
 		sql:  stq.sql.Clone(),
 		path: stq.path,
@@ -328,6 +407,39 @@ func (stq *ShellTaskQuery) WithCreator(opts ...func(*UserQuery)) *ShellTaskQuery
 		opt(query)
 	}
 	stq.withCreator = query
+	return stq
+}
+
+// WithReportedCredentials tells the query-builder to eager-load the nodes that are connected to
+// the "reported_credentials" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithReportedCredentials(opts ...func(*HostCredentialQuery)) *ShellTaskQuery {
+	query := (&HostCredentialClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withReportedCredentials = query
+	return stq
+}
+
+// WithReportedFiles tells the query-builder to eager-load the nodes that are connected to
+// the "reported_files" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithReportedFiles(opts ...func(*HostFileQuery)) *ShellTaskQuery {
+	query := (&HostFileClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withReportedFiles = query
+	return stq
+}
+
+// WithReportedProcesses tells the query-builder to eager-load the nodes that are connected to
+// the "reported_processes" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithReportedProcesses(opts ...func(*HostProcessQuery)) *ShellTaskQuery {
+	query := (&HostProcessClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withReportedProcesses = query
 	return stq
 }
 
@@ -410,9 +522,12 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 		nodes       = []*ShellTask{}
 		withFKs     = stq.withFKs
 		_spec       = stq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [5]bool{
 			stq.withShell != nil,
 			stq.withCreator != nil,
+			stq.withReportedCredentials != nil,
+			stq.withReportedFiles != nil,
+			stq.withReportedProcesses != nil,
 		}
 	)
 	if stq.withShell != nil || stq.withCreator != nil {
@@ -451,6 +566,50 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 	if query := stq.withCreator; query != nil {
 		if err := stq.loadCreator(ctx, query, nodes, nil,
 			func(n *ShellTask, e *User) { n.Edges.Creator = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := stq.withReportedCredentials; query != nil {
+		if err := stq.loadReportedCredentials(ctx, query, nodes,
+			func(n *ShellTask) { n.Edges.ReportedCredentials = []*HostCredential{} },
+			func(n *ShellTask, e *HostCredential) {
+				n.Edges.ReportedCredentials = append(n.Edges.ReportedCredentials, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := stq.withReportedFiles; query != nil {
+		if err := stq.loadReportedFiles(ctx, query, nodes,
+			func(n *ShellTask) { n.Edges.ReportedFiles = []*HostFile{} },
+			func(n *ShellTask, e *HostFile) { n.Edges.ReportedFiles = append(n.Edges.ReportedFiles, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := stq.withReportedProcesses; query != nil {
+		if err := stq.loadReportedProcesses(ctx, query, nodes,
+			func(n *ShellTask) { n.Edges.ReportedProcesses = []*HostProcess{} },
+			func(n *ShellTask, e *HostProcess) { n.Edges.ReportedProcesses = append(n.Edges.ReportedProcesses, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range stq.withNamedReportedCredentials {
+		if err := stq.loadReportedCredentials(ctx, query, nodes,
+			func(n *ShellTask) { n.appendNamedReportedCredentials(name) },
+			func(n *ShellTask, e *HostCredential) { n.appendNamedReportedCredentials(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range stq.withNamedReportedFiles {
+		if err := stq.loadReportedFiles(ctx, query, nodes,
+			func(n *ShellTask) { n.appendNamedReportedFiles(name) },
+			func(n *ShellTask, e *HostFile) { n.appendNamedReportedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range stq.withNamedReportedProcesses {
+		if err := stq.loadReportedProcesses(ctx, query, nodes,
+			func(n *ShellTask) { n.appendNamedReportedProcesses(name) },
+			func(n *ShellTask, e *HostProcess) { n.appendNamedReportedProcesses(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -523,6 +682,99 @@ func (stq *ShellTaskQuery) loadCreator(ctx context.Context, query *UserQuery, no
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (stq *ShellTaskQuery) loadReportedCredentials(ctx context.Context, query *HostCredentialQuery, nodes []*ShellTask, init func(*ShellTask), assign func(*ShellTask, *HostCredential)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*ShellTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostCredential(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shelltask.ReportedCredentialsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_task_reported_credentials
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_task_reported_credentials" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_task_reported_credentials" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (stq *ShellTaskQuery) loadReportedFiles(ctx context.Context, query *HostFileQuery, nodes []*ShellTask, init func(*ShellTask), assign func(*ShellTask, *HostFile)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*ShellTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostFile(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shelltask.ReportedFilesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_task_reported_files
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_task_reported_files" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_task_reported_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (stq *ShellTaskQuery) loadReportedProcesses(ctx context.Context, query *HostProcessQuery, nodes []*ShellTask, init func(*ShellTask), assign func(*ShellTask, *HostProcess)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*ShellTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.HostProcess(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shelltask.ReportedProcessesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_task_reported_processes
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_task_reported_processes" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_task_reported_processes" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -609,6 +861,48 @@ func (stq *ShellTaskQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedReportedCredentials tells the query-builder to eager-load the nodes that are connected to the "reported_credentials"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithNamedReportedCredentials(name string, opts ...func(*HostCredentialQuery)) *ShellTaskQuery {
+	query := (&HostCredentialClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if stq.withNamedReportedCredentials == nil {
+		stq.withNamedReportedCredentials = make(map[string]*HostCredentialQuery)
+	}
+	stq.withNamedReportedCredentials[name] = query
+	return stq
+}
+
+// WithNamedReportedFiles tells the query-builder to eager-load the nodes that are connected to the "reported_files"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithNamedReportedFiles(name string, opts ...func(*HostFileQuery)) *ShellTaskQuery {
+	query := (&HostFileClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if stq.withNamedReportedFiles == nil {
+		stq.withNamedReportedFiles = make(map[string]*HostFileQuery)
+	}
+	stq.withNamedReportedFiles[name] = query
+	return stq
+}
+
+// WithNamedReportedProcesses tells the query-builder to eager-load the nodes that are connected to the "reported_processes"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithNamedReportedProcesses(name string, opts ...func(*HostProcessQuery)) *ShellTaskQuery {
+	query := (&HostProcessClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if stq.withNamedReportedProcesses == nil {
+		stq.withNamedReportedProcesses = make(map[string]*HostProcessQuery)
+	}
+	stq.withNamedReportedProcesses[name] = query
+	return stq
 }
 
 // ShellTaskGroupBy is the group-by builder for ShellTask entities.
