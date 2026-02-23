@@ -11,6 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/hostcredential"
+	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/user"
@@ -160,6 +163,51 @@ func (stc *ShellTaskCreate) SetCreatorID(id int) *ShellTaskCreate {
 // SetCreator sets the "creator" edge to the User entity.
 func (stc *ShellTaskCreate) SetCreator(u *User) *ShellTaskCreate {
 	return stc.SetCreatorID(u.ID)
+}
+
+// AddReportedCredentialIDs adds the "reported_credentials" edge to the HostCredential entity by IDs.
+func (stc *ShellTaskCreate) AddReportedCredentialIDs(ids ...int) *ShellTaskCreate {
+	stc.mutation.AddReportedCredentialIDs(ids...)
+	return stc
+}
+
+// AddReportedCredentials adds the "reported_credentials" edges to the HostCredential entity.
+func (stc *ShellTaskCreate) AddReportedCredentials(h ...*HostCredential) *ShellTaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stc.AddReportedCredentialIDs(ids...)
+}
+
+// AddReportedFileIDs adds the "reported_files" edge to the HostFile entity by IDs.
+func (stc *ShellTaskCreate) AddReportedFileIDs(ids ...int) *ShellTaskCreate {
+	stc.mutation.AddReportedFileIDs(ids...)
+	return stc
+}
+
+// AddReportedFiles adds the "reported_files" edges to the HostFile entity.
+func (stc *ShellTaskCreate) AddReportedFiles(h ...*HostFile) *ShellTaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stc.AddReportedFileIDs(ids...)
+}
+
+// AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
+func (stc *ShellTaskCreate) AddReportedProcessIDs(ids ...int) *ShellTaskCreate {
+	stc.mutation.AddReportedProcessIDs(ids...)
+	return stc
+}
+
+// AddReportedProcesses adds the "reported_processes" edges to the HostProcess entity.
+func (stc *ShellTaskCreate) AddReportedProcesses(h ...*HostProcess) *ShellTaskCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return stc.AddReportedProcessIDs(ids...)
 }
 
 // Mutation returns the ShellTaskMutation object of the builder.
@@ -329,6 +377,54 @@ func (stc *ShellTaskCreate) createSpec() (*ShellTask, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.shell_task_creator = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.ReportedCredentialsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedCredentialsTable,
+			Columns: []string{shelltask.ReportedCredentialsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostcredential.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.ReportedFilesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedFilesTable,
+			Columns: []string{shelltask.ReportedFilesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.ReportedProcessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ReportedProcessesTable,
+			Columns: []string{shelltask.ReportedProcessesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

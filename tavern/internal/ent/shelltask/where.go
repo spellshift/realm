@@ -701,6 +701,75 @@ func HasCreatorWith(preds ...predicate.User) predicate.ShellTask {
 	})
 }
 
+// HasReportedCredentials applies the HasEdge predicate on the "reported_credentials" edge.
+func HasReportedCredentials() predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ReportedCredentialsTable, ReportedCredentialsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReportedCredentialsWith applies the HasEdge predicate on the "reported_credentials" edge with a given conditions (other predicates).
+func HasReportedCredentialsWith(preds ...predicate.HostCredential) predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := newReportedCredentialsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasReportedFiles applies the HasEdge predicate on the "reported_files" edge.
+func HasReportedFiles() predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ReportedFilesTable, ReportedFilesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReportedFilesWith applies the HasEdge predicate on the "reported_files" edge with a given conditions (other predicates).
+func HasReportedFilesWith(preds ...predicate.HostFile) predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := newReportedFilesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasReportedProcesses applies the HasEdge predicate on the "reported_processes" edge.
+func HasReportedProcesses() predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ReportedProcessesTable, ReportedProcessesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasReportedProcessesWith applies the HasEdge predicate on the "reported_processes" edge with a given conditions (other predicates).
+func HasReportedProcessesWith(preds ...predicate.HostProcess) predicate.ShellTask {
+	return predicate.ShellTask(func(s *sql.Selector) {
+		step := newReportedProcessesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.ShellTask) predicate.ShellTask {
 	return predicate.ShellTask(sql.AndPredicates(predicates...))

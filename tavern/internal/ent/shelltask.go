@@ -53,11 +53,21 @@ type ShellTaskEdges struct {
 	Shell *Shell `json:"shell,omitempty"`
 	// The user who created this ShellTask
 	Creator *User `json:"creator,omitempty"`
+	// Credentials reported by this shell task
+	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
+	// Files reported by this shell task
+	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
+	// Processes reported by this shell task
+	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [5]map[string]int
+
+	namedReportedCredentials map[string][]*HostCredential
+	namedReportedFiles       map[string][]*HostFile
+	namedReportedProcesses   map[string][]*HostProcess
 }
 
 // ShellOrErr returns the Shell value or an error if the edge
@@ -80,6 +90,33 @@ func (e ShellTaskEdges) CreatorOrErr() (*User, error) {
 		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "creator"}
+}
+
+// ReportedCredentialsOrErr returns the ReportedCredentials value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellTaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
+	if e.loadedTypes[2] {
+		return e.ReportedCredentials, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_credentials"}
+}
+
+// ReportedFilesOrErr returns the ReportedFiles value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellTaskEdges) ReportedFilesOrErr() ([]*HostFile, error) {
+	if e.loadedTypes[3] {
+		return e.ReportedFiles, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_files"}
+}
+
+// ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellTaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
+	if e.loadedTypes[4] {
+		return e.ReportedProcesses, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_processes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -215,6 +252,21 @@ func (st *ShellTask) QueryCreator() *UserQuery {
 	return NewShellTaskClient(st.config).QueryCreator(st)
 }
 
+// QueryReportedCredentials queries the "reported_credentials" edge of the ShellTask entity.
+func (st *ShellTask) QueryReportedCredentials() *HostCredentialQuery {
+	return NewShellTaskClient(st.config).QueryReportedCredentials(st)
+}
+
+// QueryReportedFiles queries the "reported_files" edge of the ShellTask entity.
+func (st *ShellTask) QueryReportedFiles() *HostFileQuery {
+	return NewShellTaskClient(st.config).QueryReportedFiles(st)
+}
+
+// QueryReportedProcesses queries the "reported_processes" edge of the ShellTask entity.
+func (st *ShellTask) QueryReportedProcesses() *HostProcessQuery {
+	return NewShellTaskClient(st.config).QueryReportedProcesses(st)
+}
+
 // Update returns a builder for updating this ShellTask.
 // Note that you need to call ShellTask.Unwrap() before calling this method if this ShellTask
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -269,6 +321,78 @@ func (st *ShellTask) String() string {
 	builder.WriteString(st.ExecFinishedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedReportedCredentials returns the ReportedCredentials named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ShellTask) NamedReportedCredentials(name string) ([]*HostCredential, error) {
+	if st.Edges.namedReportedCredentials == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedReportedCredentials[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ShellTask) appendNamedReportedCredentials(name string, edges ...*HostCredential) {
+	if st.Edges.namedReportedCredentials == nil {
+		st.Edges.namedReportedCredentials = make(map[string][]*HostCredential)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedReportedCredentials[name] = []*HostCredential{}
+	} else {
+		st.Edges.namedReportedCredentials[name] = append(st.Edges.namedReportedCredentials[name], edges...)
+	}
+}
+
+// NamedReportedFiles returns the ReportedFiles named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ShellTask) NamedReportedFiles(name string) ([]*HostFile, error) {
+	if st.Edges.namedReportedFiles == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedReportedFiles[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ShellTask) appendNamedReportedFiles(name string, edges ...*HostFile) {
+	if st.Edges.namedReportedFiles == nil {
+		st.Edges.namedReportedFiles = make(map[string][]*HostFile)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedReportedFiles[name] = []*HostFile{}
+	} else {
+		st.Edges.namedReportedFiles[name] = append(st.Edges.namedReportedFiles[name], edges...)
+	}
+}
+
+// NamedReportedProcesses returns the ReportedProcesses named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ShellTask) NamedReportedProcesses(name string) ([]*HostProcess, error) {
+	if st.Edges.namedReportedProcesses == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedReportedProcesses[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ShellTask) appendNamedReportedProcesses(name string, edges ...*HostProcess) {
+	if st.Edges.namedReportedProcesses == nil {
+		st.Edges.namedReportedProcesses = make(map[string][]*HostProcess)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedReportedProcesses[name] = []*HostProcess{}
+	} else {
+		st.Edges.namedReportedProcesses[name] = append(st.Edges.namedReportedProcesses[name], edges...)
+	}
 }
 
 // ShellTasks is a parsable slice of ShellTask.
