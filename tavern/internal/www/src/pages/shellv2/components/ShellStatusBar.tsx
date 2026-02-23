@@ -1,5 +1,6 @@
-import { Info } from "lucide-react";
+import { Bug, Info } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
+import Button from "../../../components/tavern-base-ui/button/Button";
 
 interface ShellStatusBarProps {
     portalId: number | null;
@@ -19,6 +20,9 @@ const ShellStatusBar = ({ portalId, timeUntilCallback, isMissedCallback }: Shell
                         <Tooltip label="This shell is currently in non-interactive mode. Input will be asynchronously queued for the beacon and output will be submitted through beacon callbacks. To upgrade to an interactive low-latency shell, you may open a 'Portal' on the beacon, which leverages an established connection to provide low-latency interactivity.">
                             <span><Info size={14} /></span>
                         </Tooltip>
+                        <a title="Report a Bug" target="_blank" href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E" rel="noreferrer">
+                            <Bug size={14} />
+                        </a>
                     </div>
                 )}
             </div>

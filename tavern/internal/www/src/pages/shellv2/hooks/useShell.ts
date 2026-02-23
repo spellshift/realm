@@ -92,7 +92,10 @@ export const useShell = () => {
             const now = moment();
             const diff = next.diff(now, 'seconds');
 
-            if (diff > 0) {
+            if (diff > -1.5 && diff <= 0) { // Allow 1500ms delay before missed
+                setTimeUntilCallback(`now`);
+                setIsMissedCallback(false);
+            } else if (diff > 0){
                 setTimeUntilCallback(`in ${diff} seconds`);
                 setIsMissedCallback(false);
             } else {
@@ -103,7 +106,7 @@ export const useShell = () => {
         };
 
         updateTimer(); // Initial call
-        const intervalId = setInterval(updateTimer, 1000);
+        const intervalId = setInterval(updateTimer, 500);
         return () => clearInterval(intervalId);
     }, [beaconData]);
 
