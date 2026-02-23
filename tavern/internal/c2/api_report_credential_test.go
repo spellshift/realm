@@ -19,9 +19,9 @@ import (
 
 func TestReportCredential(t *testing.T) {
 	// Setup Dependencies
-	ctx := context.Background()
 	client, graph, close, token := c2test.New(t)
 	defer close()
+    ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
@@ -51,11 +51,13 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+                },
 				Credential: &epb.Credential{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 			},
 			wantResp: &c2pb.ReportCredentialResponse{},
@@ -64,12 +66,12 @@ func TestReportCredential(t *testing.T) {
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 			},
 		},
@@ -78,7 +80,9 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+                },
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "changeme123",
@@ -91,17 +95,17 @@ func TestReportCredential(t *testing.T) {
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 				{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 				{
 					Principal: "root",
 					Secret:    "changeme123",
-					Kind:      existingCredential.Kind,
+					Kind:      epb.Credential_KIND_PASSWORD,
 				},
 			},
 		},
@@ -125,7 +129,9 @@ func TestReportCredential(t *testing.T) {
 			host: existingHost,
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+                },
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -133,7 +139,9 @@ func TestReportCredential(t *testing.T) {
 		{
 			name: "NotFound",
 			req: &c2pb.ReportCredentialRequest{
-				Context: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+				Context: &c2pb.ReportCredentialRequest_TaskContext{
+                    TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+                },
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "oopsies",
@@ -151,8 +159,9 @@ func TestReportCredential(t *testing.T) {
 			resp, err := client.ReportCredential(ctx, tc.req)
 
 			// Assert Response Code
-			require.Equal(t, tc.wantCode.String(), status.Code(err).String(), err)
-			if status.Code(err) != codes.OK {
+			st, _ := status.FromError(err)
+			require.Equal(t, tc.wantCode.String(), st.Code().String(), err)
+			if st.Code() != codes.OK {
 				// Do not continue if we expected error code
 				return
 			}
@@ -163,28 +172,30 @@ func TestReportCredential(t *testing.T) {
 			}
 
 			// Reload Host
-			host := graph.Host.GetX(ctx, tc.host.ID)
+            if tc.host != nil {
+			    host := graph.Host.GetX(ctx, tc.host.ID)
 
-			// Assert Host Credentials
-			var pbHostCreds []*epb.Credential
-			entHostCredentials := host.QueryCredentials().AllX(ctx)
-			for _, cred := range entHostCredentials {
-				pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret, Kind: cred.Kind})
-			}
+			    // Assert Host Credentials
+			    var pbHostCreds []*epb.Credential
+			    entHostCredentials := host.QueryCredentials().AllX(ctx)
+			    for _, cred := range entHostCredentials {
+				    pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret, Kind: cred.Kind})
+			    }
 
-			comparer := func(x any, y any) bool {
-				credX, okX := x.(*epb.Credential)
-				credY, okY := y.(*epb.Credential)
-				if !okX || !okY {
-					return false
-				}
+			    comparer := func(x any, y any) bool {
+				    credX, okX := x.(*epb.Credential)
+				    credY, okY := y.(*epb.Credential)
+				    if !okX || !okY {
+					    return false
+				    }
 
-				return credX.Principal < credY.Principal
-			}
-			assert.Equal(t, len(tc.wantHostCredentials), len(pbHostCreds))
-			if diff := cmp.Diff(tc.wantHostCredentials, pbHostCreds, protocmp.Transform(), cmpopts.SortSlices(comparer)); diff != "" {
-				t.Errorf("invalid host credentials (-want +got): %v", diff)
-			}
+				    return credX.Principal < credY.Principal
+			    }
+			    assert.Equal(t, len(tc.wantHostCredentials), len(pbHostCreds))
+			    if diff := cmp.Diff(tc.wantHostCredentials, pbHostCreds, protocmp.Transform(), cmpopts.SortSlices(comparer)); diff != "" {
+				    t.Errorf("invalid host credentials (-want +got): %v", diff)
+			    }
+            }
 		})
 	}
 }

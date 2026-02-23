@@ -2955,6 +2955,10 @@ type HostCredentialWhereInput struct {
 	// "task" edge predicates.
 	HasTask     *bool             `json:"hasTask,omitempty"`
 	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+
+	// "shell_task" edge predicates.
+	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
+	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3227,6 +3231,24 @@ func (i *HostCredentialWhereInput) P() (predicate.HostCredential, error) {
 		}
 		predicates = append(predicates, hostcredential.HasTaskWith(with...))
 	}
+	if i.HasShellTask != nil {
+		p := hostcredential.HasShellTask()
+		if !*i.HasShellTask {
+			p = hostcredential.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTaskWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTaskWith))
+		for _, w := range i.HasShellTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostcredential.HasShellTaskWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyHostCredentialWhereInput
@@ -3374,6 +3396,10 @@ type HostFileWhereInput struct {
 	// "task" edge predicates.
 	HasTask     *bool             `json:"hasTask,omitempty"`
 	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+
+	// "shell_task" edge predicates.
+	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
+	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3799,6 +3825,24 @@ func (i *HostFileWhereInput) P() (predicate.HostFile, error) {
 		}
 		predicates = append(predicates, hostfile.HasTaskWith(with...))
 	}
+	if i.HasShellTask != nil {
+		p := hostfile.HasShellTask()
+		if !*i.HasShellTask {
+			p = hostfile.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTaskWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTaskWith))
+		for _, w := range i.HasShellTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostfile.HasShellTaskWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyHostFileWhereInput
@@ -3977,6 +4021,10 @@ type HostProcessWhereInput struct {
 	// "task" edge predicates.
 	HasTask     *bool             `json:"hasTask,omitempty"`
 	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+
+	// "shell_task" edge predicates.
+	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
+	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4476,6 +4524,24 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, hostprocess.HasTaskWith(with...))
+	}
+	if i.HasShellTask != nil {
+		p := hostprocess.HasShellTask()
+		if !*i.HasShellTask {
+			p = hostprocess.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTaskWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTaskWith))
+		for _, w := range i.HasShellTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostprocess.HasShellTaskWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6635,6 +6701,18 @@ type ShellTaskWhereInput struct {
 	// "creator" edge predicates.
 	HasCreator     *bool             `json:"hasCreator,omitempty"`
 	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
+
+	// "reported_credentials" edge predicates.
+	HasReportedCredentials     *bool                       `json:"hasReportedCredentials,omitempty"`
+	HasReportedCredentialsWith []*HostCredentialWhereInput `json:"hasReportedCredentialsWith,omitempty"`
+
+	// "reported_files" edge predicates.
+	HasReportedFiles     *bool                 `json:"hasReportedFiles,omitempty"`
+	HasReportedFilesWith []*HostFileWhereInput `json:"hasReportedFilesWith,omitempty"`
+
+	// "reported_processes" edge predicates.
+	HasReportedProcesses     *bool                    `json:"hasReportedProcesses,omitempty"`
+	HasReportedProcessesWith []*HostProcessWhereInput `json:"hasReportedProcessesWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7098,6 +7176,60 @@ func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shelltask.HasCreatorWith(with...))
+	}
+	if i.HasReportedCredentials != nil {
+		p := shelltask.HasReportedCredentials()
+		if !*i.HasReportedCredentials {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasReportedCredentialsWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasReportedCredentialsWith))
+		for _, w := range i.HasReportedCredentialsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasReportedCredentialsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasReportedCredentialsWith(with...))
+	}
+	if i.HasReportedFiles != nil {
+		p := shelltask.HasReportedFiles()
+		if !*i.HasReportedFiles {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasReportedFilesWith) > 0 {
+		with := make([]predicate.HostFile, 0, len(i.HasReportedFilesWith))
+		for _, w := range i.HasReportedFilesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasReportedFilesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasReportedFilesWith(with...))
+	}
+	if i.HasReportedProcesses != nil {
+		p := shelltask.HasReportedProcesses()
+		if !*i.HasReportedProcesses {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasReportedProcessesWith) > 0 {
+		with := make([]predicate.HostProcess, 0, len(i.HasReportedProcessesWith))
+		for _, w := range i.HasReportedProcessesWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasReportedProcessesWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasReportedProcessesWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

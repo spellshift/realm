@@ -6,7 +6,11 @@ use std::time::SystemTime;
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmbeddedAssets;
 use eldritch::{Interpreter, Value, conversion::ToValue};
-use pb::c2::{ReportTaskOutputRequest, Task, TaskContext, TaskError, TaskOutput};
+use eldritch_agent::Context;
+use pb::c2::{
+    report_output_request, ReportOutputRequest, ReportTaskOutputMessage, Task, TaskContext,
+    TaskError, TaskOutput,
+};
 use prost_types::Timestamp;
 use tokio::sync::mpsc;
 
@@ -45,6 +49,7 @@ impl TaskRegistry {
             task_id: task.clone().id,
             jwt: task.clone().jwt,
         };
+        let context = Context::Task(task_context.clone());
 
         // 1. Register logic
         // TODO: Should de-dupe Tasks and TaskContext?
@@ -62,7 +67,7 @@ impl TaskRegistry {
 
         thread::spawn(move || {
             if let Some(tome) = task.tome {
-                execute_task(task_context.clone(), tome, agent, runtime_handle);
+                execute_task(context, tome, agent, runtime_handle);
             } else {
                 #[cfg(debug_assertions)]
                 log::warn!("Task {0} has no tome", task_context.clone().task_id);
@@ -140,7 +145,7 @@ impl TaskRegistry {
 }
 
 fn execute_task(
-    task_context: TaskContext,
+    context: Context,
     tome: pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
@@ -149,14 +154,19 @@ fn execute_task(
     let (tx, rx) = mpsc::unbounded_channel();
     let (error_tx, error_rx) = mpsc::unbounded_channel();
     let printer = Arc::new(StreamPrinter::new(tx, error_tx));
-    let mut interp = setup_interpreter(task_context.clone(), &tome, agent.clone(), printer.clone());
+    let mut interp = setup_interpreter(context.clone(), &tome, agent.clone(), printer.clone());
+
+    let task_id = match &context {
+        Context::Task(tc) => tc.task_id,
+        _ => 0,
+    };
 
     // Report Start
-    report_start(task_context.clone(), &agent);
+    report_start(context.clone(), &agent);
 
     // Spawn output consumer task
     let consumer_join_handle = spawn_output_consumer(
-        task_context.clone(),
+        context.clone(),
         agent.clone(),
         runtime_handle.clone(),
         rx,
@@ -179,22 +189,22 @@ fn execute_task(
             #[cfg(debug_assertions)]
             log::error!(
                 "task={0} failed to wait for output consumer to join: {_e}",
-                task_context.clone().task_id
+                task_id
             );
         }
     }
 
     // Handle result
     match result {
-        Ok(exec_result) => report_result(task_context, exec_result, &agent),
+        Ok(exec_result) => report_result(context, exec_result, &agent),
         Err(e) => {
-            report_panic(task_context, &agent, format!("panic: {e:?}"));
+            report_panic(context, &agent, format!("panic: {e:?}"));
         }
     }
 }
 
 fn setup_interpreter(
-    task_context: TaskContext,
+    context: Context,
     tome: &pb::eldritch::Tome,
     agent: Arc<dyn Agent>,
     printer: Arc<StreamPrinter>,
@@ -206,7 +216,7 @@ fn setup_interpreter(
     // Support embedded assets behind remote asset filenames
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
     // Register Task Context (Agent, Report, Assets)
-    interp = interp.with_task_context(agent, task_context, remote_assets, backend);
+    interp = interp.with_context(agent, context, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome
@@ -220,21 +230,28 @@ fn setup_interpreter(
     interp
 }
 
-fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
-    let task_id = task_context.task_id;
+fn report_start(context: Context, agent: &Arc<dyn Agent>) {
+    let (task_id, task_context) = match context {
+        Context::Task(tc) => (tc.task_id, tc),
+        _ => return, // Only reporting for TaskContext
+    };
+
     #[cfg(debug_assertions)]
     log::info!("task={task_id} Started execution");
 
-    match agent.report_task_output(ReportTaskOutputRequest {
-        output: Some(TaskOutput {
-            id: task_id,
-            output: String::new(),
-            error: None,
-            exec_started_at: Some(Timestamp::from(SystemTime::now())),
-            exec_finished_at: None,
-        }),
-        context: Some(task_context.into()),
-        shell_task_output: None,
+    match agent.report_output(ReportOutputRequest {
+        message: Some(report_output_request::Message::TaskOutput(
+            ReportTaskOutputMessage {
+                context: Some(task_context.clone()),
+                output: Some(TaskOutput {
+                    id: task_id,
+                    output: String::new(),
+                    error: None,
+                    exec_started_at: Some(Timestamp::from(SystemTime::now())),
+                    exec_finished_at: None,
+                }),
+            },
+        )),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -245,16 +262,20 @@ fn report_start(task_context: TaskContext, agent: &Arc<dyn Agent>) {
 }
 
 fn spawn_output_consumer(
-    task_context: TaskContext,
+    context: Context,
     agent: Arc<dyn Agent>,
     runtime_handle: tokio::runtime::Handle,
     mut rx: mpsc::UnboundedReceiver<String>,
     mut error_rx: mpsc::UnboundedReceiver<String>,
 ) -> tokio::task::JoinHandle<()> {
     runtime_handle.spawn(async move {
+        let (task_id, task_context) = match context {
+            Context::Task(tc) => (tc.task_id, tc),
+            _ => return, // Only reporting for TaskContext
+        };
+
         #[cfg(debug_assertions)]
-        log::info!("task={} Started output stream", task_context.task_id);
-        let task_id = task_context.task_id;
+        log::info!("task={} Started output stream", task_id);
         let mut rx_open = true;
         let mut error_rx_open = true;
 
@@ -263,16 +284,19 @@ fn spawn_output_consumer(
                 val = rx.recv(), if rx_open => {
                     match val {
                         Some(msg) => {
-                            match agent.report_task_output(ReportTaskOutputRequest {
-                                output: Some(TaskOutput {
-                                    id: task_id,
-                                    output: msg,
-                                    error: None,
-                                    exec_started_at: None,
-                                    exec_finished_at: None,
-                                }),
-                                context: Some(task_context.clone().into()),
-                                shell_task_output: None,
+                            match agent.report_output(ReportOutputRequest {
+                                message: Some(report_output_request::Message::TaskOutput(
+                                    ReportTaskOutputMessage {
+                                        context: Some(task_context.clone()),
+                                        output: Some(TaskOutput {
+                                            id: task_id,
+                                            output: msg,
+                                            error: None,
+                                            exec_started_at: None,
+                                            exec_finished_at: None,
+                                        }),
+                                    },
+                                )),
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
@@ -289,16 +313,19 @@ fn spawn_output_consumer(
                 val = error_rx.recv(), if error_rx_open => {
                     match val {
                         Some(msg) => {
-                            match agent.report_task_output(ReportTaskOutputRequest {
-                                output: Some(TaskOutput {
-                                    id: task_id,
-                                    output: String::new(),
-                                    error: Some(TaskError { msg }),
-                                    exec_started_at: None,
-                                    exec_finished_at: None,
-                                }),
-                                context: Some(task_context.clone().into()),
-                                shell_task_output: None,
+                            match agent.report_output(ReportOutputRequest {
+                                message: Some(report_output_request::Message::TaskOutput(
+                                    ReportTaskOutputMessage {
+                                        context: Some(task_context.clone()),
+                                        output: Some(TaskOutput {
+                                            id: task_id,
+                                            output: String::new(),
+                                            error: Some(TaskError { msg }),
+                                            exec_started_at: None,
+                                            exec_finished_at: None,
+                                        }),
+                                    },
+                                )),
                             }) {
                                 Ok(_) => {}
                                 Err(_e) => {
@@ -321,18 +348,25 @@ fn spawn_output_consumer(
     })
 }
 
-fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) {
-    let task_id = task_context.task_id;
-    match agent.report_task_output(ReportTaskOutputRequest {
-        output: Some(TaskOutput {
-            id: task_id,
-            output: String::new(),
-            error: Some(TaskError { msg: err }),
-            exec_started_at: None,
-            exec_finished_at: Some(Timestamp::from(SystemTime::now())),
-        }),
-        context: Some(task_context.into()),
-        shell_task_output: None,
+fn report_panic(context: Context, agent: &Arc<dyn Agent>, err: String) {
+    let (task_id, task_context) = match context {
+        Context::Task(tc) => (tc.task_id, tc),
+        _ => return, // Only reporting for TaskContext
+    };
+
+    match agent.report_output(ReportOutputRequest {
+        message: Some(report_output_request::Message::TaskOutput(
+            ReportTaskOutputMessage {
+                context: Some(task_context.clone()),
+                output: Some(TaskOutput {
+                    id: task_id,
+                    output: String::new(),
+                    error: Some(TaskError { msg: err }),
+                    exec_started_at: None,
+                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+                }),
+            },
+        )),
     }) {
         Ok(_) => {}
         Err(_e) => {
@@ -342,39 +376,49 @@ fn report_panic(task_context: TaskContext, agent: &Arc<dyn Agent>, err: String) 
     }
 }
 
-fn report_result(task_context: TaskContext, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
-    let task_id = task_context.task_id;
+fn report_result(context: Context, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
+    let (task_id, task_context) = match context {
+        Context::Task(tc) => (tc.task_id, tc),
+        _ => return, // Only reporting for TaskContext
+    };
+
     match result {
         Ok(v) => {
             #[cfg(debug_assertions)]
             log::info!("task={task_id} Success: {v}");
 
-            let _ = agent.report_task_output(ReportTaskOutputRequest {
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output: String::new(),
-                    error: None,
-                    exec_started_at: None,
-                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
-                }),
-                context: Some(task_context.into()),
-                shell_task_output: None,
+            let _ = agent.report_output(ReportOutputRequest {
+                message: Some(report_output_request::Message::TaskOutput(
+                    ReportTaskOutputMessage {
+                        context: Some(task_context.clone()),
+                        output: Some(TaskOutput {
+                            id: task_id,
+                            output: String::new(),
+                            error: None,
+                            exec_started_at: None,
+                            exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+                        }),
+                    },
+                )),
             });
         }
         Err(e) => {
             #[cfg(debug_assertions)]
             log::info!("task={task_id} Error: {e}");
 
-            match agent.report_task_output(ReportTaskOutputRequest {
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output: String::new(),
-                    error: Some(TaskError { msg: e }),
-                    exec_started_at: None,
-                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
-                }),
-                context: Some(task_context.into()),
-                shell_task_output: None,
+            match agent.report_output(ReportOutputRequest {
+                message: Some(report_output_request::Message::TaskOutput(
+                    ReportTaskOutputMessage {
+                        context: Some(task_context.clone()),
+                        output: Some(TaskOutput {
+                            id: task_id,
+                            output: String::new(),
+                            error: Some(TaskError { msg: e }),
+                            exec_started_at: None,
+                            exec_finished_at: Some(Timestamp::from(SystemTime::now())),
+                        }),
+                    },
+                )),
             }) {
                 Ok(_) => {}
                 Err(_e) => {

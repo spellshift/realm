@@ -25,7 +25,36 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
 	}
 
-	taskID := int(registerMsg.GetContext().GetTaskId())
+	var taskID int
+	if tc := registerMsg.GetTaskContext(); tc != nil {
+		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
+			return err
+		}
+		taskID = int(tc.GetTaskId())
+	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
+		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
+			return err
+		}
+		shellTaskID := int(stc.GetShellTaskId())
+		st, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
+		if err != nil {
+			slog.ErrorContext(ctx, "create portal failed: could not load associated shell task", "shell_task_id", shellTaskID, "error", err)
+			return status.Errorf(codes.Internal, "failed to get shell task: %v", err)
+		}
+		s, err := st.QueryShell().Only(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "create portal failed: could not load associated shell", "shell_task_id", shellTaskID, "error", err)
+			return status.Errorf(codes.Internal, "failed to get shell: %v", err)
+		}
+		taskID, err = s.QueryTask().OnlyID(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "create portal failed: could not load associated task from shell", "shell_id", s.ID, "error", err)
+			return status.Errorf(codes.Internal, "failed to get task ID: %v", err)
+		}
+	} else {
+		return status.Errorf(codes.InvalidArgument, "missing context")
+	}
+
 	if taskID <= 0 {
 		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
 	}

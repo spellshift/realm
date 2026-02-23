@@ -158,6 +158,7 @@ var (
 		{Name: "secret", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "kind", Type: field.TypeEnum, Enums: []string{"KIND_NTLM_HASH", "KIND_PASSWORD", "KIND_SSH_KEY", "KIND_UNSPECIFIED"}},
 		{Name: "host_credential_host", Type: field.TypeInt},
+		{Name: "shell_task_reported_credentials", Type: field.TypeInt, Nullable: true},
 		{Name: "task_reported_credentials", Type: field.TypeInt, Nullable: true},
 	}
 	// HostCredentialsTable holds the schema information for the "host_credentials" table.
@@ -173,8 +174,14 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "host_credentials_tasks_reported_credentials",
+				Symbol:     "host_credentials_shell_tasks_reported_credentials",
 				Columns:    []*schema.Column{HostCredentialsColumns[7]},
+				RefColumns: []*schema.Column{ShellTasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_credentials_tasks_reported_credentials",
+				Columns:    []*schema.Column{HostCredentialsColumns[8]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -194,7 +201,8 @@ var (
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
 		{Name: "host_file_host", Type: field.TypeInt},
-		{Name: "task_reported_files", Type: field.TypeInt},
+		{Name: "shell_task_reported_files", Type: field.TypeInt, Nullable: true},
+		{Name: "task_reported_files", Type: field.TypeInt, Nullable: true},
 	}
 	// HostFilesTable holds the schema information for the "host_files" table.
 	HostFilesTable = &schema.Table{
@@ -215,10 +223,16 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "host_files_tasks_reported_files",
+				Symbol:     "host_files_shell_tasks_reported_files",
 				Columns:    []*schema.Column{HostFilesColumns[12]},
+				RefColumns: []*schema.Column{ShellTasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_files_tasks_reported_files",
+				Columns:    []*schema.Column{HostFilesColumns[13]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -238,7 +252,8 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_DEAD", "STATUS_IDLE", "STATUS_LOCK_BLOCKED", "STATUS_PARKED", "STATUS_RUN", "STATUS_SLEEP", "STATUS_STOP", "STATUS_TRACING", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_UNSPECIFIED", "STATUS_WAKE_KILL", "STATUS_WAKING", "STATUS_ZOMBIE"}},
 		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
 		{Name: "host_process_host", Type: field.TypeInt},
-		{Name: "task_reported_processes", Type: field.TypeInt},
+		{Name: "shell_task_reported_processes", Type: field.TypeInt, Nullable: true},
+		{Name: "task_reported_processes", Type: field.TypeInt, Nullable: true},
 	}
 	// HostProcessesTable holds the schema information for the "host_processes" table.
 	HostProcessesTable = &schema.Table{
@@ -259,10 +274,16 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "host_processes_tasks_reported_processes",
+				Symbol:     "host_processes_shell_tasks_reported_processes",
 				Columns:    []*schema.Column{HostProcessesColumns[14]},
+				RefColumns: []*schema.Column{ShellTasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "host_processes_tasks_reported_processes",
+				Columns:    []*schema.Column{HostProcessesColumns[15]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -712,19 +733,22 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	HostCredentialsTable.ForeignKeys[0].RefTable = HostsTable
-	HostCredentialsTable.ForeignKeys[1].RefTable = TasksTable
+	HostCredentialsTable.ForeignKeys[1].RefTable = ShellTasksTable
+	HostCredentialsTable.ForeignKeys[2].RefTable = TasksTable
 	HostCredentialsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostFilesTable.ForeignKeys[0].RefTable = HostsTable
 	HostFilesTable.ForeignKeys[1].RefTable = HostsTable
-	HostFilesTable.ForeignKeys[2].RefTable = TasksTable
+	HostFilesTable.ForeignKeys[2].RefTable = ShellTasksTable
+	HostFilesTable.ForeignKeys[3].RefTable = TasksTable
 	HostFilesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostProcessesTable.ForeignKeys[0].RefTable = HostsTable
 	HostProcessesTable.ForeignKeys[1].RefTable = HostsTable
-	HostProcessesTable.ForeignKeys[2].RefTable = TasksTable
+	HostProcessesTable.ForeignKeys[2].RefTable = ShellTasksTable
+	HostProcessesTable.ForeignKeys[3].RefTable = TasksTable
 	HostProcessesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

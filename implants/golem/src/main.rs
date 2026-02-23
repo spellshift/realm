@@ -9,6 +9,7 @@ use eldritch::assets::{
 };
 use eldritch::conversion::ToValue;
 use eldritch::{ForeignValue, Interpreter, StdoutPrinter};
+use eldritch_agent::Context;
 use pb::c2::TaskContext;
 use std::collections::BTreeMap;
 use std::fs;
@@ -46,12 +47,13 @@ fn new_runtime(assetlib: impl ForeignValue + 'static) -> Interpreter {
         task_id: 0,
         jwt: String::new(),
     };
-    let agent_lib = StdAgentLibrary::new(agent.clone(), task_context.clone());
+    let context = Context::Task(task_context);
+    let agent_lib = StdAgentLibrary::new(agent.clone(), context.clone());
     interp.register_lib(agent_lib);
     let report_lib =
-        eldritch::report::std::StdReportLibrary::new(agent.clone(), task_context.clone());
+        eldritch::report::std::StdReportLibrary::new(agent.clone(), context.clone());
     interp.register_lib(report_lib);
-    let pivot_lib = eldritch::pivot::std::StdPivotLibrary::new(agent.clone(), task_context.clone());
+    let pivot_lib = eldritch::pivot::std::StdPivotLibrary::new(agent.clone(), context.clone());
     interp.register_lib(pivot_lib);
     interp.register_lib(assetlib);
     interp
