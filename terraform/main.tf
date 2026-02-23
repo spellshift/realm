@@ -570,7 +570,7 @@ locals {
 }
 
 output "redir_domain_configuration" {
-  value = length(local.redirector_zones_missing) == 0 ? "All domains configured automatically" : format("Unable to configure DNS for the following, please configure a CNAME pointing to `ghs.googlehosted.com.`: %s", join(",", local.redirector_zones_missing))
+  value = length(local.redirector_zones_missing) == 0 ? "All domains configured automatically" : format("Unable to configure DNS for the following: %s", join(",", local.redirector_zones_missing))
 }
 
 # Setup DNS for grpc / http transports
