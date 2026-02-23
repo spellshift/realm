@@ -1,7 +1,7 @@
 use anyhow::Result;
 use eldritch_agent::Context;
-use pb::c2::{reverse_shell_request, ReverseShellMessageKind, ReverseShellRequest};
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
+use portable_pty::{CommandBuilder, PtySize, native_pty_system};
 use std::io::{Read, Write};
 use transport::Transport;
 
@@ -24,7 +24,9 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 
     let context_val = match &context {
         Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
-        Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+        Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
+            stc.clone(),
+        )),
     };
 
     // First, send an initial registration message

@@ -113,10 +113,8 @@ pub trait UnsafeTransport: Clone + Send {
     ///
     /// Report execution output for a task.
     #[allow(dead_code)]
-    async fn report_output(
-        &mut self,
-        request: ReportOutputRequest,
-    ) -> Result<ReportOutputResponse>;
+    async fn report_output(&mut self, request: ReportOutputRequest)
+        -> Result<ReportOutputResponse>;
 
     ///
     /// Open a shell via the transport.

@@ -17,7 +17,9 @@ pub fn report_process_list(
 ) -> Result<(), String> {
     let context_val = match context {
         Context::Task(tc) => Some(report_process_list_request::Context::TaskContext(tc)),
-        Context::ShellTask(stc) => Some(report_process_list_request::Context::ShellTaskContext(stc)),
+        Context::ShellTask(stc) => {
+            Some(report_process_list_request::Context::ShellTaskContext(stc))
+        }
     };
 
     let req = c2::ReportProcessListRequest {

@@ -18,7 +18,9 @@ impl std::io::Write for VtWriter {
 
         let context_val = match &self.context {
             Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
-            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
+                stc.clone(),
+            )),
         };
 
         match self.tx.blocking_send(ReverseShellRequest {
@@ -34,7 +36,9 @@ impl std::io::Write for VtWriter {
     fn flush(&mut self) -> std::io::Result<()> {
         let context_val = match &self.context {
             Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
-            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+            Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
+                stc.clone(),
+            )),
         };
 
         match self.tx.blocking_send(ReverseShellRequest {

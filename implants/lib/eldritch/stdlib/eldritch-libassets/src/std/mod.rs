@@ -83,9 +83,9 @@ impl AssetBackend for AgentAssets {
     fn get(&self, name: &str) -> Result<Vec<u8>> {
         if self.remote_assets.iter().any(|s| s == name) {
             let context_val = match &self.context {
-                Context::Task(tc) => {
-                    Some(pb::c2::fetch_asset_request::Context::TaskContext(tc.clone()))
-                }
+                Context::Task(tc) => Some(pb::c2::fetch_asset_request::Context::TaskContext(
+                    tc.clone(),
+                )),
                 Context::ShellTask(stc) => Some(
                     pb::c2::fetch_asset_request::Context::ShellTaskContext(stc.clone()),
                 ),

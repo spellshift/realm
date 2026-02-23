@@ -10,8 +10,8 @@ use eldritch::assets::std::EmptyAssets;
 use eldritch::{Interpreter, Printer, Span, Value};
 use eldritch_agent::Context;
 use pb::c2::{
-    report_output_request, ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask,
-    ShellTaskContext, ShellTaskOutput, TaskError,
+    ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask, ShellTaskContext,
+    ShellTaskOutput, TaskError, report_output_request,
 };
 use pb::portal::{self, Mote, ShellPayload};
 use transport::Transport;
@@ -47,7 +47,9 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
     match context {
         ExecutionContext::ShellTask(stc) => {
             let task_error = if is_error {
-                Some(TaskError { msg: output.clone() })
+                Some(TaskError {
+                    msg: output.clone(),
+                })
             } else {
                 None
             };

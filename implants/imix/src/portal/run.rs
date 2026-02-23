@@ -1,6 +1,6 @@
 use anyhow::Result;
 use eldritch_agent::Context;
-use pb::c2::{create_portal_request, CreatePortalRequest, CreatePortalResponse};
+use pb::c2::{CreatePortalRequest, CreatePortalResponse, create_portal_request};
 use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
@@ -51,9 +51,9 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
 
     let context_val = match &context {
         Context::Task(tc) => Some(create_portal_request::Context::TaskContext(tc.clone())),
-        Context::ShellTask(stc) => {
-            Some(create_portal_request::Context::ShellTaskContext(stc.clone()))
-        }
+        Context::ShellTask(stc) => Some(create_portal_request::Context::ShellTaskContext(
+            stc.clone(),
+        )),
     };
 
     // Send initial registration message

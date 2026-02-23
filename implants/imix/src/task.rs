@@ -8,8 +8,8 @@ use eldritch::assets::std::EmbeddedAssets;
 use eldritch::{Interpreter, Value, conversion::ToValue};
 use eldritch_agent::Context;
 use pb::c2::{
-    report_output_request, ReportOutputRequest, ReportTaskOutputMessage, Task, TaskContext,
-    TaskError, TaskOutput,
+    ReportOutputRequest, ReportTaskOutputMessage, Task, TaskContext, TaskError, TaskOutput,
+    report_output_request,
 };
 use prost_types::Timestamp;
 use tokio::sync::mpsc;

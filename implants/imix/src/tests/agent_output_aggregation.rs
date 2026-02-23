@@ -1,8 +1,8 @@
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use pb::c2::{
-    report_output_request, ReportOutputRequest, ReportShellTaskOutputMessage,
-    ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
+    ReportOutputRequest, ReportShellTaskOutputMessage, ReportTaskOutputMessage, ShellTaskContext,
+    ShellTaskOutput, TaskContext, TaskOutput, report_output_request,
 };
 use pb::config::Config;
 use std::sync::{Arc, Mutex};

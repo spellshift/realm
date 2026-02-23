@@ -3,9 +3,9 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use eldritch_agent::Context;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
-use eldritch_agent::Context;
 
 use crate::{CredentialWrapper, FileWrapper, ProcessListWrapper, TaskWrapper};
 
@@ -45,10 +45,7 @@ impl core::fmt::Debug for StdAgentLibrary {
 
 impl StdAgentLibrary {
     pub fn new(agent: Arc<dyn Agent>, context: Context) -> Self {
-        Self {
-            agent,
-            context,
-        }
+        Self { agent, context }
     }
 }
 

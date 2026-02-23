@@ -1,7 +1,10 @@
 use alloc::string::String;
 use alloc::sync::Arc;
 use eldritch_agent::{Agent, Context};
-use pb::c2::{report_output_request, ReportShellTaskOutputMessage, ReportTaskOutputMessage, ShellTaskOutput, TaskError, TaskOutput};
+use pb::c2::{
+    ReportShellTaskOutputMessage, ReportTaskOutputMessage, ShellTaskOutput, TaskError, TaskOutput,
+    report_output_request,
+};
 
 #[cfg(feature = "stdlib")]
 use pb::c2;

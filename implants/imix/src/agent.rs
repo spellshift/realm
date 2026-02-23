@@ -4,9 +4,9 @@ use eldritch_agent::Context;
 use pb::c2::host::Platform;
 use pb::c2::transport::Type;
 use pb::c2::{
-    self, report_output_request, ClaimTasksRequest, ReportOutputRequest,
-    ReportShellTaskOutputMessage, ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput,
-    TaskContext, TaskOutput,
+    self, ClaimTasksRequest, ReportOutputRequest, ReportShellTaskOutputMessage,
+    ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
+    report_output_request,
 };
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
@@ -162,9 +162,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                                     existing_out.output.push_str(&new_out.output);
                                     match (&mut existing_out.error, &new_out.error) {
                                         (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
-                                        (None, Some(e2)) => {
-                                            existing_out.error = Some(e2.clone())
-                                        }
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
                                         _ => {}
                                     }
                                     if new_out.exec_finished_at.is_some() {
@@ -188,9 +186,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                                     existing_out.output.push_str(&new_shell_out.output);
                                     match (&mut existing_out.error, &new_shell_out.error) {
                                         (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
-                                        (None, Some(e2)) => {
-                                            existing_out.error = Some(e2.clone())
-                                        }
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
                                         _ => {}
                                     }
                                     if new_shell_out.exec_finished_at.is_some() {
@@ -443,11 +439,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(
-        &self,
-        context: Context,
-        cmd: Option<String>,
-    ) -> Result<(), String> {
+    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
         let id = match &context {
             Context::Task(tc) => tc.task_id,
             Context::ShellTask(stc) => stc.shell_task_id,

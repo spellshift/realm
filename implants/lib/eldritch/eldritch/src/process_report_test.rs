@@ -62,11 +62,7 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportOutputResponse, String> {
         Ok(c2::ReportOutputResponse::default())
     }
-    fn start_reverse_shell(
-        &self,
-        _context: Context,
-        _cmd: Option<String>,
-    ) -> Result<(), String> {
+    fn start_reverse_shell(&self, _context: Context, _cmd: Option<String>) -> Result<(), String> {
         Ok(())
     }
     fn create_portal(&self, _context: Context) -> Result<(), String> {

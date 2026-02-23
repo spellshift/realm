@@ -3,7 +3,7 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use eldritch::agent::agent::Agent;
 use eldritch_agent::Context;
 use pb::c2;
-use pb::c2::{report_output_request, ReportOutputRequest};
+use pb::c2::{ReportOutputRequest, report_output_request};
 use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;

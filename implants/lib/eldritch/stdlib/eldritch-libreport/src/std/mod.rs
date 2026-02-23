@@ -29,10 +29,7 @@ impl core::fmt::Debug for StdReportLibrary {
 
 impl StdReportLibrary {
     pub fn new(agent: Arc<dyn Agent>, context: Context) -> Self {
-        Self {
-            agent,
-            context,
-        }
+        Self { agent, context }
     }
 }
 
@@ -59,11 +56,6 @@ impl ReportLibrary for StdReportLibrary {
     }
 
     fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String> {
-        ntlm_hash_impl::ntlm_hash(
-            self.agent.clone(),
-            self.context.clone(),
-            username,
-            hash,
-        )
+        ntlm_hash_impl::ntlm_hash(self.agent.clone(), self.context.clone(), username, hash)
     }
 }
