@@ -574,9 +574,21 @@ type BeaconWhereInput struct {
 	TransportIn    []c2pb.Transport_Type `json:"transportIn,omitempty"`
 	TransportNotIn []c2pb.Transport_Type `json:"transportNotIn,omitempty"`
 
+	// "process_id" field predicates.
+	ProcessID       *int  `json:"processID,omitempty"`
+	ProcessIDNEQ    *int  `json:"processIDNEQ,omitempty"`
+	ProcessIDIn     []int `json:"processIDIn,omitempty"`
+	ProcessIDNotIn  []int `json:"processIDNotIn,omitempty"`
+	ProcessIDIsNil  bool  `json:"processIDIsNil,omitempty"`
+	ProcessIDNotNil bool  `json:"processIDNotNil,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
+
+	// "process" edge predicates.
+	HasProcess     *bool                    `json:"hasProcess,omitempty"`
+	HasProcessWith []*HostProcessWhereInput `json:"hasProcessWith,omitempty"`
 
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
@@ -1000,6 +1012,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	if len(i.TransportNotIn) > 0 {
 		predicates = append(predicates, beacon.TransportNotIn(i.TransportNotIn...))
 	}
+	if i.ProcessID != nil {
+		predicates = append(predicates, beacon.ProcessIDEQ(*i.ProcessID))
+	}
+	if i.ProcessIDNEQ != nil {
+		predicates = append(predicates, beacon.ProcessIDNEQ(*i.ProcessIDNEQ))
+	}
+	if len(i.ProcessIDIn) > 0 {
+		predicates = append(predicates, beacon.ProcessIDIn(i.ProcessIDIn...))
+	}
+	if len(i.ProcessIDNotIn) > 0 {
+		predicates = append(predicates, beacon.ProcessIDNotIn(i.ProcessIDNotIn...))
+	}
+	if i.ProcessIDIsNil {
+		predicates = append(predicates, beacon.ProcessIDIsNil())
+	}
+	if i.ProcessIDNotNil {
+		predicates = append(predicates, beacon.ProcessIDNotNil())
+	}
 
 	if i.HasHost != nil {
 		p := beacon.HasHost()
@@ -1018,6 +1048,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, beacon.HasHostWith(with...))
+	}
+	if i.HasProcess != nil {
+		p := beacon.HasProcess()
+		if !*i.HasProcess {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasProcessWith) > 0 {
+		with := make([]predicate.HostProcess, 0, len(i.HasProcessWith))
+		for _, w := range i.HasProcessWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasProcessWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasProcessWith(with...))
 	}
 	if i.HasTasks != nil {
 		p := beacon.HasTasks()
@@ -4025,6 +4073,10 @@ type HostProcessWhereInput struct {
 	// "shell_task" edge predicates.
 	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
 	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
+
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4542,6 +4594,24 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, hostprocess.HasShellTaskWith(with...))
+	}
+	if i.HasBeacon != nil {
+		p := hostprocess.HasBeacon()
+		if !*i.HasBeacon {
+			p = hostprocess.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostprocess.HasBeaconWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

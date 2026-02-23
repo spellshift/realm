@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -21,16 +23,18 @@ import (
 // HostProcessQuery is the builder for querying HostProcess entities.
 type HostProcessQuery struct {
 	config
-	ctx           *QueryContext
-	order         []hostprocess.OrderOption
-	inters        []Interceptor
-	predicates    []predicate.HostProcess
-	withHost      *HostQuery
-	withTask      *TaskQuery
-	withShellTask *ShellTaskQuery
-	withFKs       bool
-	modifiers     []func(*sql.Selector)
-	loadTotal     []func(context.Context, []*HostProcess) error
+	ctx             *QueryContext
+	order           []hostprocess.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.HostProcess
+	withHost        *HostQuery
+	withTask        *TaskQuery
+	withShellTask   *ShellTaskQuery
+	withBeacon      *BeaconQuery
+	withFKs         bool
+	modifiers       []func(*sql.Selector)
+	loadTotal       []func(context.Context, []*HostProcess) error
+	withNamedBeacon map[string]*BeaconQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -126,6 +130,28 @@ func (hpq *HostProcessQuery) QueryShellTask() *ShellTaskQuery {
 			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
 			sqlgraph.To(shelltask.Table, shelltask.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, hostprocess.ShellTaskTable, hostprocess.ShellTaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBeacon chains the current query on the "beacon" edge.
+func (hpq *HostProcessQuery) QueryBeacon() *BeaconQuery {
+	query := (&BeaconClient{config: hpq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hpq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hpq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, hostprocess.BeaconTable, hostprocess.BeaconColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
 		return fromU, nil
@@ -328,6 +354,7 @@ func (hpq *HostProcessQuery) Clone() *HostProcessQuery {
 		withHost:      hpq.withHost.Clone(),
 		withTask:      hpq.withTask.Clone(),
 		withShellTask: hpq.withShellTask.Clone(),
+		withBeacon:    hpq.withBeacon.Clone(),
 		// clone intermediate query.
 		sql:  hpq.sql.Clone(),
 		path: hpq.path,
@@ -364,6 +391,17 @@ func (hpq *HostProcessQuery) WithShellTask(opts ...func(*ShellTaskQuery)) *HostP
 		opt(query)
 	}
 	hpq.withShellTask = query
+	return hpq
+}
+
+// WithBeacon tells the query-builder to eager-load the nodes that are connected to
+// the "beacon" edge. The optional arguments are used to configure the query builder of the edge.
+func (hpq *HostProcessQuery) WithBeacon(opts ...func(*BeaconQuery)) *HostProcessQuery {
+	query := (&BeaconClient{config: hpq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hpq.withBeacon = query
 	return hpq
 }
 
@@ -446,10 +484,11 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*HostProcess{}
 		withFKs     = hpq.withFKs
 		_spec       = hpq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			hpq.withHost != nil,
 			hpq.withTask != nil,
 			hpq.withShellTask != nil,
+			hpq.withBeacon != nil,
 		}
 	)
 	if hpq.withHost != nil || hpq.withTask != nil || hpq.withShellTask != nil {
@@ -494,6 +533,20 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := hpq.withShellTask; query != nil {
 		if err := hpq.loadShellTask(ctx, query, nodes, nil,
 			func(n *HostProcess, e *ShellTask) { n.Edges.ShellTask = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hpq.withBeacon; query != nil {
+		if err := hpq.loadBeacon(ctx, query, nodes,
+			func(n *HostProcess) { n.Edges.Beacon = []*Beacon{} },
+			func(n *HostProcess, e *Beacon) { n.Edges.Beacon = append(n.Edges.Beacon, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hpq.withNamedBeacon {
+		if err := hpq.loadBeacon(ctx, query, nodes,
+			func(n *HostProcess) { n.appendNamedBeacon(name) },
+			func(n *HostProcess, e *Beacon) { n.appendNamedBeacon(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -601,6 +654,37 @@ func (hpq *HostProcessQuery) loadShellTask(ctx context.Context, query *ShellTask
 	}
 	return nil
 }
+func (hpq *HostProcessQuery) loadBeacon(ctx context.Context, query *BeaconQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Beacon)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*HostProcess)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(beacon.FieldProcessID)
+	}
+	query.Where(predicate.Beacon(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(hostprocess.BeaconColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProcessID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "process_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (hpq *HostProcessQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hpq.querySpec()
@@ -684,6 +768,20 @@ func (hpq *HostProcessQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedBeacon tells the query-builder to eager-load the nodes that are connected to the "beacon"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hpq *HostProcessQuery) WithNamedBeacon(name string, opts ...func(*BeaconQuery)) *HostProcessQuery {
+	query := (&BeaconClient{config: hpq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hpq.withNamedBeacon == nil {
+		hpq.withNamedBeacon = make(map[string]*BeaconQuery)
+	}
+	hpq.withNamedBeacon[name] = query
+	return hpq
 }
 
 // HostProcessGroupBy is the group-by builder for HostProcess entities.

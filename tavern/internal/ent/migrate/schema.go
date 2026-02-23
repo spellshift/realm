@@ -48,6 +48,7 @@ var (
 		{Name: "interval", Type: field.TypeUint64, Nullable: true},
 		{Name: "transport", Type: field.TypeEnum, Enums: []string{"TRANSPORT_DNS", "TRANSPORT_GRPC", "TRANSPORT_HTTP1", "TRANSPORT_UNSPECIFIED"}},
 		{Name: "beacon_host", Type: field.TypeInt},
+		{Name: "process_id", Type: field.TypeInt, Nullable: true},
 	}
 	// BeaconsTable holds the schema information for the "beacons" table.
 	BeaconsTable = &schema.Table{
@@ -60,6 +61,12 @@ var (
 				Columns:    []*schema.Column{BeaconsColumns[11]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "beacons_host_processes_process",
+				Columns:    []*schema.Column{BeaconsColumns[12]},
+				RefColumns: []*schema.Column{HostProcessesColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -724,6 +731,7 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	BeaconsTable.ForeignKeys[0].RefTable = HostsTable
+	BeaconsTable.ForeignKeys[1].RefTable = HostProcessesTable
 	BeaconsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

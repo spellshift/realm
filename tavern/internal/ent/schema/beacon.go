@@ -80,6 +80,9 @@ func (Beacon) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationUpdateInput),
 			).
 			Comment("Beacon's current transport."),
+		field.Int("process_id").
+			Optional().
+			Comment("ID of the process the beacon is running in."),
 	}
 }
 
@@ -93,6 +96,10 @@ func (Beacon) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Host this beacon is running on."),
+		edge.To("process", HostProcess.Type).
+			Unique().
+			Field("process_id").
+			Comment("Process the beacon is running in."),
 		edge.From("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),

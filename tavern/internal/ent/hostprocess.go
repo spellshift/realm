@@ -61,11 +61,15 @@ type HostProcessEdges struct {
 	Task *Task `json:"task,omitempty"`
 	// Shell Task that reported this process.
 	ShellTask *ShellTask `json:"shell_task,omitempty"`
+	// Beacon running in this process.
+	Beacon []*Beacon `json:"beacon,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
+
+	namedBeacon map[string][]*Beacon
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -99,6 +103,15 @@ func (e HostProcessEdges) ShellTaskOrErr() (*ShellTask, error) {
 		return nil, &NotFoundError{label: shelltask.Label}
 	}
 	return nil, &NotLoadedError{edge: "shell_task"}
+}
+
+// BeaconOrErr returns the Beacon value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostProcessEdges) BeaconOrErr() ([]*Beacon, error) {
+	if e.loadedTypes[3] {
+		return e.Beacon, nil
+	}
+	return nil, &NotLoadedError{edge: "beacon"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -265,6 +278,11 @@ func (hp *HostProcess) QueryShellTask() *ShellTaskQuery {
 	return NewHostProcessClient(hp.config).QueryShellTask(hp)
 }
 
+// QueryBeacon queries the "beacon" edge of the HostProcess entity.
+func (hp *HostProcess) QueryBeacon() *BeaconQuery {
+	return NewHostProcessClient(hp.config).QueryBeacon(hp)
+}
+
 // Update returns a builder for updating this HostProcess.
 // Note that you need to call HostProcess.Unwrap() before calling this method if this HostProcess
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -322,6 +340,30 @@ func (hp *HostProcess) String() string {
 	builder.WriteString(fmt.Sprintf("%v", hp.Status))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedBeacon returns the Beacon named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (hp *HostProcess) NamedBeacon(name string) ([]*Beacon, error) {
+	if hp.Edges.namedBeacon == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := hp.Edges.namedBeacon[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (hp *HostProcess) appendNamedBeacon(name string, edges ...*Beacon) {
+	if hp.Edges.namedBeacon == nil {
+		hp.Edges.namedBeacon = make(map[string][]*Beacon)
+	}
+	if len(edges) == 0 {
+		hp.Edges.namedBeacon[name] = []*Beacon{}
+	} else {
+		hp.Edges.namedBeacon[name] = append(hp.Edges.namedBeacon[name], edges...)
+	}
 }
 
 // HostProcesses is a parsable slice of HostProcess.

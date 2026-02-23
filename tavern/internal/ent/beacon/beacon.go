@@ -37,8 +37,12 @@ const (
 	FieldInterval = "interval"
 	// FieldTransport holds the string denoting the transport field in the database.
 	FieldTransport = "transport"
+	// FieldProcessID holds the string denoting the process_id field in the database.
+	FieldProcessID = "process_id"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
+	// EdgeProcess holds the string denoting the process edge name in mutations.
+	EdgeProcess = "process"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
 	// EdgeShells holds the string denoting the shells edge name in mutations.
@@ -52,6 +56,13 @@ const (
 	HostInverseTable = "hosts"
 	// HostColumn is the table column denoting the host relation/edge.
 	HostColumn = "beacon_host"
+	// ProcessTable is the table that holds the process relation/edge.
+	ProcessTable = "beacons"
+	// ProcessInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ProcessInverseTable = "host_processes"
+	// ProcessColumn is the table column denoting the process relation/edge.
+	ProcessColumn = "process_id"
 	// TasksTable is the table that holds the tasks relation/edge.
 	TasksTable = "tasks"
 	// TasksInverseTable is the table name for the Task entity.
@@ -81,6 +92,7 @@ var Columns = []string{
 	FieldNextSeenAt,
 	FieldInterval,
 	FieldTransport,
+	FieldProcessID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "beacons"
@@ -193,10 +205,22 @@ func ByTransport(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTransport, opts...).ToFunc()
 }
 
+// ByProcessID orders the results by the process_id field.
+func ByProcessID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProcessID, opts...).ToFunc()
+}
+
 // ByHostField orders the results by host field.
 func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newHostStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByProcessField orders the results by process field.
+func ByProcessField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProcessStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -232,6 +256,13 @@ func newHostStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(HostInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, HostTable, HostColumn),
+	)
+}
+func newProcessStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProcessInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ProcessTable, ProcessColumn),
 	)
 }
 func newTasksStep() *sqlgraph.Step {

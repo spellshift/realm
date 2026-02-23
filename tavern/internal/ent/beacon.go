@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 )
 
 // Beacon is the model entity for the Beacon schema.
@@ -39,6 +40,8 @@ type Beacon struct {
 	Interval uint64 `json:"interval,omitempty"`
 	// Beacon's current transport.
 	Transport c2pb.Transport_Type `json:"transport,omitempty"`
+	// ID of the process the beacon is running in.
+	ProcessID int `json:"process_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BeaconQuery when eager-loading is set.
 	Edges        BeaconEdges `json:"edges"`
@@ -50,15 +53,17 @@ type Beacon struct {
 type BeaconEdges struct {
 	// Host this beacon is running on.
 	Host *Host `json:"host,omitempty"`
+	// Process the beacon is running in.
+	Process *HostProcess `json:"process,omitempty"`
 	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
 	// Shells that have been created by the beacon.
 	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTasks  map[string][]*Task
 	namedShells map[string][]*Shell
@@ -75,10 +80,21 @@ func (e BeaconEdges) HostOrErr() (*Host, error) {
 	return nil, &NotLoadedError{edge: "host"}
 }
 
+// ProcessOrErr returns the Process value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BeaconEdges) ProcessOrErr() (*HostProcess, error) {
+	if e.Process != nil {
+		return e.Process, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: hostprocess.Label}
+	}
+	return nil, &NotLoadedError{edge: "process"}
+}
+
 // TasksOrErr returns the Tasks value or an error if the edge
 // was not loaded in eager-loading.
 func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Tasks, nil
 	}
 	return nil, &NotLoadedError{edge: "tasks"}
@@ -87,7 +103,7 @@ func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
 // ShellsOrErr returns the Shells value or an error if the edge
 // was not loaded in eager-loading.
 func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
@@ -100,7 +116,7 @@ func (*Beacon) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case beacon.FieldTransport:
 			values[i] = new(c2pb.Transport_Type)
-		case beacon.FieldID, beacon.FieldInterval:
+		case beacon.FieldID, beacon.FieldInterval, beacon.FieldProcessID:
 			values[i] = new(sql.NullInt64)
 		case beacon.FieldName, beacon.FieldPrincipal, beacon.FieldIdentifier, beacon.FieldAgentIdentifier:
 			values[i] = new(sql.NullString)
@@ -189,6 +205,12 @@ func (b *Beacon) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				b.Transport = *value
 			}
+		case beacon.FieldProcessID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field process_id", values[i])
+			} else if value.Valid {
+				b.ProcessID = int(value.Int64)
+			}
 		case beacon.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field beacon_host", value)
@@ -212,6 +234,11 @@ func (b *Beacon) Value(name string) (ent.Value, error) {
 // QueryHost queries the "host" edge of the Beacon entity.
 func (b *Beacon) QueryHost() *HostQuery {
 	return NewBeaconClient(b.config).QueryHost(b)
+}
+
+// QueryProcess queries the "process" edge of the Beacon entity.
+func (b *Beacon) QueryProcess() *HostProcessQuery {
+	return NewBeaconClient(b.config).QueryProcess(b)
 }
 
 // QueryTasks queries the "tasks" edge of the Beacon entity.
@@ -276,6 +303,9 @@ func (b *Beacon) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("transport=")
 	builder.WriteString(fmt.Sprintf("%v", b.Transport))
+	builder.WriteString(", ")
+	builder.WriteString("process_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.ProcessID))
 	builder.WriteByte(')')
 	return builder.String()
 }

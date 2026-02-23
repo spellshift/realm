@@ -80,6 +80,9 @@ func (HostProcess) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Shell Task that reported this process."),
+		edge.From("beacon", Beacon.Type).
+			Ref("process").
+			Comment("Beacon running in this process."),
 	}
 }
 

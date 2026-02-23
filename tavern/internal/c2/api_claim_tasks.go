@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -234,6 +235,46 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
 	}
 
+	// Create or find HostProcess for the beacon
+	var processID *int
+	if req.Beacon.Pid != 0 {
+		proc, err := srv.graph.HostProcess.Query().
+			Where(
+				hostprocess.Pid(uint64(req.Beacon.Pid)),
+				hostprocess.HasHostWith(host.ID(hostID)),
+			).
+			First(ctx)
+
+		if ent.IsNotFound(err) {
+			proc, err = srv.graph.HostProcess.Create().
+				SetPid(uint64(req.Beacon.Pid)).
+				SetName(req.Beacon.ProcessName).
+				SetPrincipal(req.Beacon.Principal).
+				SetHostID(hostID).
+				Save(ctx)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to create host process for beacon", "err", err)
+			} else {
+				id := proc.ID
+				processID = &id
+			}
+		} else if err != nil {
+			slog.ErrorContext(ctx, "failed to query host process for beacon", "err", err)
+		} else {
+			id := proc.ID
+			processID = &id
+
+			if proc.Name != req.Beacon.ProcessName && req.Beacon.ProcessName != "" {
+				_, err := srv.graph.HostProcess.UpdateOne(proc).
+					SetName(req.Beacon.ProcessName).
+					Save(ctx)
+				if err != nil {
+					slog.ErrorContext(ctx, "failed to update host process name", "err", err)
+				}
+			}
+		}
+	}
+
 	// Metrics
 	defer func() {
 		var hostGroupTags []string
@@ -314,7 +355,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	// Upsert the beacon
-	beaconID, err := srv.graph.Beacon.Create().
+	beaconCreate := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
@@ -323,7 +364,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
 		SetInterval(activeTransport.Interval).
-		SetTransport(activeTransport.Type).
+		SetTransport(activeTransport.Type)
+
+	if processID != nil {
+		beaconCreate.SetProcessID(*processID)
+	}
+
+	beaconID, err := beaconCreate.
 		OnConflict().
 		UpdateNewValues().
 		ID(ctx)

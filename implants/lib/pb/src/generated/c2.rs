@@ -83,6 +83,10 @@ pub struct Beacon {
     pub agent: ::core::option::Option<Agent>,
     #[prost(message, optional, tag = "5")]
     pub available_transports: ::core::option::Option<AvailableTransports>,
+    #[prost(uint32, tag = "6")]
+    pub pid: u32,
+    #[prost(string, tag = "7")]
+    pub process_name: ::prost::alloc::string::String,
 }
 /// Host information for the system a beacon is running on.
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]

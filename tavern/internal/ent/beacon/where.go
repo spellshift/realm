@@ -101,6 +101,11 @@ func Interval(v uint64) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldInterval, v))
 }
 
+// ProcessID applies equality check predicate on the "process_id" field. It's identical to ProcessIDEQ.
+func ProcessID(v int) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldProcessID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Beacon {
 	return predicate.Beacon(sql.FieldEQ(FieldCreatedAt, v))
@@ -631,6 +636,36 @@ func TransportNotIn(vs ...c2pb.Transport_Type) predicate.Beacon {
 	return predicate.Beacon(sql.FieldNotIn(FieldTransport, vs...))
 }
 
+// ProcessIDEQ applies the EQ predicate on the "process_id" field.
+func ProcessIDEQ(v int) predicate.Beacon {
+	return predicate.Beacon(sql.FieldEQ(FieldProcessID, v))
+}
+
+// ProcessIDNEQ applies the NEQ predicate on the "process_id" field.
+func ProcessIDNEQ(v int) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNEQ(FieldProcessID, v))
+}
+
+// ProcessIDIn applies the In predicate on the "process_id" field.
+func ProcessIDIn(vs ...int) predicate.Beacon {
+	return predicate.Beacon(sql.FieldIn(FieldProcessID, vs...))
+}
+
+// ProcessIDNotIn applies the NotIn predicate on the "process_id" field.
+func ProcessIDNotIn(vs ...int) predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotIn(FieldProcessID, vs...))
+}
+
+// ProcessIDIsNil applies the IsNil predicate on the "process_id" field.
+func ProcessIDIsNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldIsNull(FieldProcessID))
+}
+
+// ProcessIDNotNil applies the NotNil predicate on the "process_id" field.
+func ProcessIDNotNil() predicate.Beacon {
+	return predicate.Beacon(sql.FieldNotNull(FieldProcessID))
+}
+
 // HasHost applies the HasEdge predicate on the "host" edge.
 func HasHost() predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
@@ -646,6 +681,29 @@ func HasHost() predicate.Beacon {
 func HasHostWith(preds ...predicate.Host) predicate.Beacon {
 	return predicate.Beacon(func(s *sql.Selector) {
 		step := newHostStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProcess applies the HasEdge predicate on the "process" edge.
+func HasProcess() predicate.Beacon {
+	return predicate.Beacon(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProcessTable, ProcessColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProcessWith applies the HasEdge predicate on the "process" edge with a given conditions (other predicates).
+func HasProcessWith(preds ...predicate.HostProcess) predicate.Beacon {
+	return predicate.Beacon(func(s *sql.Selector) {
+		step := newProcessStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

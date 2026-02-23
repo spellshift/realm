@@ -371,6 +371,21 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			}
 			b.withHost = query
 
+		case "process":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostProcessClient{config: b.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostprocessImplementors)...); err != nil {
+				return err
+			}
+			b.withProcess = query
+			if _, ok := fieldSeen[beacon.FieldProcessID]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldProcessID)
+				fieldSeen[beacon.FieldProcessID] = struct{}{}
+			}
+
 		case "tasks":
 			var (
 				alias = field.Alias
@@ -414,10 +429,10 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[1] == nil {
-								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[1][alias] = n
+							nodes[i].Edges.totalCount[2][alias] = n
 						}
 						return nil
 					})
@@ -425,10 +440,10 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Tasks)
-							if nodes[i].Edges.totalCount[1] == nil {
-								nodes[i].Edges.totalCount[1] = make(map[string]int)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[1][alias] = n
+							nodes[i].Edges.totalCount[2][alias] = n
 						}
 						return nil
 					})
@@ -503,10 +518,10 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 						}
 						for i := range nodes {
 							n := m[nodes[i].ID]
-							if nodes[i].Edges.totalCount[2] == nil {
-								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[2][alias] = n
+							nodes[i].Edges.totalCount[3][alias] = n
 						}
 						return nil
 					})
@@ -514,10 +529,10 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Shells)
-							if nodes[i].Edges.totalCount[2] == nil {
-								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
 							}
-							nodes[i].Edges.totalCount[2][alias] = n
+							nodes[i].Edges.totalCount[3][alias] = n
 						}
 						return nil
 					})
@@ -597,6 +612,11 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			if _, ok := fieldSeen[beacon.FieldTransport]; !ok {
 				selectedFields = append(selectedFields, beacon.FieldTransport)
 				fieldSeen[beacon.FieldTransport] = struct{}{}
+			}
+		case "processID":
+			if _, ok := fieldSeen[beacon.FieldProcessID]; !ok {
+				selectedFields = append(selectedFields, beacon.FieldProcessID)
+				fieldSeen[beacon.FieldProcessID] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -2017,6 +2037,19 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 				return err
 			}
 			hp.withShellTask = query
+
+		case "beacon":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BeaconClient{config: hp.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
+				return err
+			}
+			hp.WithNamedBeacon(alias, func(wq *BeaconQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[hostprocess.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, hostprocess.FieldCreatedAt)

@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -158,6 +159,20 @@ func (bc *BeaconCreate) SetTransport(ct c2pb.Transport_Type) *BeaconCreate {
 	return bc
 }
 
+// SetProcessID sets the "process_id" field.
+func (bc *BeaconCreate) SetProcessID(i int) *BeaconCreate {
+	bc.mutation.SetProcessID(i)
+	return bc
+}
+
+// SetNillableProcessID sets the "process_id" field if the given value is not nil.
+func (bc *BeaconCreate) SetNillableProcessID(i *int) *BeaconCreate {
+	if i != nil {
+		bc.SetProcessID(*i)
+	}
+	return bc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
 	bc.mutation.SetHostID(id)
@@ -167,6 +182,11 @@ func (bc *BeaconCreate) SetHostID(id int) *BeaconCreate {
 // SetHost sets the "host" edge to the Host entity.
 func (bc *BeaconCreate) SetHost(h *Host) *BeaconCreate {
 	return bc.SetHostID(h.ID)
+}
+
+// SetProcess sets the "process" edge to the HostProcess entity.
+func (bc *BeaconCreate) SetProcess(h *HostProcess) *BeaconCreate {
+	return bc.SetProcessID(h.ID)
 }
 
 // AddTaskIDs adds the "tasks" edge to the Task entity by IDs.
@@ -379,6 +399,23 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.beacon_host = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.ProcessIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   beacon.ProcessTable,
+			Columns: []string{beacon.ProcessColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProcessID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := bc.mutation.TasksIDs(); len(nodes) > 0 {
@@ -597,6 +634,24 @@ func (u *BeaconUpsert) UpdateTransport() *BeaconUpsert {
 	return u
 }
 
+// SetProcessID sets the "process_id" field.
+func (u *BeaconUpsert) SetProcessID(v int) *BeaconUpsert {
+	u.Set(beacon.FieldProcessID, v)
+	return u
+}
+
+// UpdateProcessID sets the "process_id" field to the value that was provided on create.
+func (u *BeaconUpsert) UpdateProcessID() *BeaconUpsert {
+	u.SetExcluded(beacon.FieldProcessID)
+	return u
+}
+
+// ClearProcessID clears the value of the "process_id" field.
+func (u *BeaconUpsert) ClearProcessID() *BeaconUpsert {
+	u.SetNull(beacon.FieldProcessID)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -796,6 +851,27 @@ func (u *BeaconUpsertOne) SetTransport(v c2pb.Transport_Type) *BeaconUpsertOne {
 func (u *BeaconUpsertOne) UpdateTransport() *BeaconUpsertOne {
 	return u.Update(func(s *BeaconUpsert) {
 		s.UpdateTransport()
+	})
+}
+
+// SetProcessID sets the "process_id" field.
+func (u *BeaconUpsertOne) SetProcessID(v int) *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetProcessID(v)
+	})
+}
+
+// UpdateProcessID sets the "process_id" field to the value that was provided on create.
+func (u *BeaconUpsertOne) UpdateProcessID() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateProcessID()
+	})
+}
+
+// ClearProcessID clears the value of the "process_id" field.
+func (u *BeaconUpsertOne) ClearProcessID() *BeaconUpsertOne {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearProcessID()
 	})
 }
 
@@ -1164,6 +1240,27 @@ func (u *BeaconUpsertBulk) SetTransport(v c2pb.Transport_Type) *BeaconUpsertBulk
 func (u *BeaconUpsertBulk) UpdateTransport() *BeaconUpsertBulk {
 	return u.Update(func(s *BeaconUpsert) {
 		s.UpdateTransport()
+	})
+}
+
+// SetProcessID sets the "process_id" field.
+func (u *BeaconUpsertBulk) SetProcessID(v int) *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.SetProcessID(v)
+	})
+}
+
+// UpdateProcessID sets the "process_id" field to the value that was provided on create.
+func (u *BeaconUpsertBulk) UpdateProcessID() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.UpdateProcessID()
+	})
+}
+
+// ClearProcessID clears the value of the "process_id" field.
+func (u *BeaconUpsertBulk) ClearProcessID() *BeaconUpsertBulk {
+	return u.Update(func(s *BeaconUpsert) {
+		s.ClearProcessID()
 	})
 }
 
