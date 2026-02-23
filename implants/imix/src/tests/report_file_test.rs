@@ -2,8 +2,8 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use pb::c2::{ReportFileRequest, ReportFileResponse};
 use pb::config::Config;
-use std::sync::mpsc::Receiver;
 use std::sync::Arc;
+use std::sync::mpsc::Receiver;
 use tokio::sync::RwLock;
 use transport::Transport;
 
@@ -152,7 +152,9 @@ async fn test_report_large_file_via_eldritch() {
     let agent_clone = agent.clone();
     let result = tokio::task::spawn_blocking(move || {
         eldritch::report::std::file_impl::file(agent_clone, context, path_str)
-    }).await.unwrap();
+    })
+    .await
+    .unwrap();
 
     assert!(result.is_ok(), "Report file failed: {:?}", result.err());
 
@@ -163,7 +165,10 @@ async fn test_report_large_file_via_eldritch() {
     // Clean up
     let _ = std::fs::remove_file(file_path);
 
-    assert_eq!(total_bytes, file_size, "Total bytes received should match file size");
+    assert_eq!(
+        total_bytes, file_size,
+        "Total bytes received should match file size"
+    );
     assert_eq!(chunks.len(), 5, "Should have received 5 chunks of 1MB each");
     for &chunk_size in chunks.iter() {
         assert_eq!(chunk_size, 1024 * 1024, "Each chunk should be 1MB");
