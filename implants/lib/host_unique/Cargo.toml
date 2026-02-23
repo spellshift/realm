@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 uuid = { workspace = true, features = ["v4", "v5", "fast-rng"] }
 log = { workspace = true }
+netstat = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg = { workspace = true }

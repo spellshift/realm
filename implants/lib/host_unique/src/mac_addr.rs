@@ -8,15 +8,12 @@ pub struct MacAddr {}
 impl MacAddr {
     /// Returns the first non-zero MAC address from a sorted list of network interfaces.
     fn get_mac_bytes(&self) -> Option<[u8; 6]> {
-        let mut interfaces = datalink::interfaces();
-        interfaces.sort_by(|a, b| a.name.cmp(&b.name));
+        let mut interfaces = netstat::list_interfaces().ok()?;
+        interfaces.sort_by(|a, b| a.iface_name.cmp(&b.iface_name));
 
         for iface in interfaces {
-            if let Some(mac) = iface.mac {
-                let bytes = mac.octets();
-                if bytes != [0u8; 6] {
-                    return Some(bytes);
-                }
+            if iface.mac_address != [0u8; 6] {
+                return Some(iface.mac_address);
             }
         }
         None
