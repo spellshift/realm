@@ -146,6 +146,7 @@ fn change_user_password_linux(username: String, password: String) -> Result<bool
 fn crypt(password: &str, salt: &str) -> Result<String> {
     // Check for libc crypt function.
     // Assuming libc is linked and available.
+    #[link(name = "crypt")]
     unsafe extern "C" {
         fn crypt(key: *const libc::c_char, salt: *const libc::c_char) -> *mut libc::c_char;
     }
