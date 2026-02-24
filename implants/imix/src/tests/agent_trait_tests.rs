@@ -207,14 +207,15 @@ async fn test_imix_agent_report_file() {
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
-        let _ = agent_clone.report_file(c2::ReportFileRequest {
+        let req = c2::ReportFileRequest {
             chunk: None,
             context: Some(report_file_request::Context::TaskContext(c2::TaskContext {
                 task_id: 1,
                 jwt: "test jwt".to_string(),
             })),
             kind: c2::ReportFileKind::Ondisk as i32,
-        });
+        };
+        let _ = agent_clone.report_file(Box::new(vec![req].into_iter()));
     })
     .join()
     .unwrap();

@@ -46,7 +46,7 @@ impl Agent for MockAgent {
     }
     fn report_file(
         &self,
-        _: pb::c2::ReportFileRequest,
+        _: Box<dyn Iterator<Item = pb::c2::ReportFileRequest> + Send + 'static>,
     ) -> Result<pb::c2::ReportFileResponse, String> {
         Err("".into())
     }

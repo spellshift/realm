@@ -1,5 +1,7 @@
+use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec;
 
 use crate::FileWrapper;
 use eldritch_agent::Context;
@@ -25,5 +27,7 @@ pub fn report_file(
         chunk: Some(file.0),
         kind: c2::ReportFileKind::Ondisk as i32,
     };
-    agent.report_file(req).map(|_| ())
+    agent
+        .report_file(Box::new(vec![req].into_iter()))
+        .map(|_| ())
 }

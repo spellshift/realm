@@ -53,7 +53,10 @@ impl Agent for MockAgent {
     ) -> Result<c2::ReportCredentialResponse, String> {
         Ok(c2::ReportCredentialResponse::default())
     }
-    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(
+        &self,
+        _req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + 'static>,
+    ) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse::default())
     }
     fn report_output(
