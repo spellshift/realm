@@ -335,6 +335,7 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			// Create new process
 			p, err := srv.graph.HostProcess.Create().
 				SetPid(uint64(pid)).
+				SetPpid(0).
 				SetName(processName).
 				SetPrincipal(req.Beacon.Principal).
 				SetHostID(hostID).
@@ -375,11 +376,31 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}
 
 	if processID != 0 {
-		_, err = srv.graph.Beacon.UpdateOneID(beaconID).
-			SetProcessID(processID).
-			Save(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to link beacon to host process: %v", err)
+		// Check if beacon is already linked to a different process and unlink it to avoid unique constraint violation
+		existingProcess, err := srv.graph.Beacon.Query().
+			Where(beacon.ID(beaconID)).
+			QueryProcess().
+			Only(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return nil, status.Errorf(codes.Internal, "failed to query existing beacon process: %v", err)
+		}
+
+		if existingProcess != nil {
+			if existingProcess.ID != processID {
+				if _, err := srv.graph.HostProcess.UpdateOneID(existingProcess.ID).ClearBeacon().Save(ctx); err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to unlink old host process: %v", err)
+				}
+			}
+		}
+
+		// Only update if the process is different (or if there was no previous process, handled by nil check implicitly as ID!=0)
+		if existingProcess == nil || existingProcess.ID != processID {
+			_, err = srv.graph.Beacon.UpdateOneID(beaconID).
+				SetProcessID(processID).
+				Save(ctx)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to link beacon to host process: %v", err)
+			}
 		}
 	}
 
