@@ -153,6 +153,33 @@ fn handle_exec(
                 }
             }
         }
+        #[cfg(target_os = "solaris")]
+        {
+            // On Solaris without nix, we fallback to simple spawn without double-fork disown dance
+            // or just not supporting disown fully.
+            // Spawning detached process is non-trivial without platform APIs.
+            // For now, let's just spawn it. It might be killed if parent dies, but it's "disowned"
+            // in the sense that we don't wait for it.
+            let mut child = Command::new(path)
+                .args(args)
+                .envs(env_vars)
+                .stdin(stdinpipe)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()?;
+
+            if let Some(text) = input {
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = stdin.write_all(text.as_bytes());
+                }
+            }
+
+            Ok(CommandOutput {
+                stdout: "".to_string(),
+                stderr: "".to_string(),
+                status: 0,
+            })
+        }
     }
 }
 
