@@ -13,14 +13,31 @@ export const useCallbackTimer = (beaconData: any) => {
             const next = moment(beaconData.node.nextSeenAt);
             const now = moment();
             const diff = next.diff(now, 'seconds');
+            const absDiff = Math.abs(diff);
 
-            if (diff > 0) {
-                setTimeUntilCallback(`in ${diff} seconds`);
-                setIsMissedCallback(false);
+            if (diff > 1 || diff < -1) {
+                const duration = moment.duration(absDiff, 'seconds');
+                const hours = Math.floor(duration.asHours());
+                const minutes = duration.minutes();
+                const seconds = duration.seconds();
+
+                const parts = [];
+                if (hours > 0) parts.push(`${hours} hr`);
+                if (minutes > 0) parts.push(`${minutes} min`);
+                if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+
+                const timeStr = parts.join(" ");
+
+                if (diff > 1) {
+                    setTimeUntilCallback(`in ${timeStr}`);
+                    setIsMissedCallback(false);
+                } else {
+                    setTimeUntilCallback(`expected ${timeStr} ago`);
+                    setIsMissedCallback(true);
+                }
             } else {
-                const missedSeconds = Math.abs(diff);
-                setTimeUntilCallback(`expected ${missedSeconds} seconds ago`);
-                setIsMissedCallback(true);
+                setTimeUntilCallback("now");
+                setIsMissedCallback(false);
             }
         };
 
