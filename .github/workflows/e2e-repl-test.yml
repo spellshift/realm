@@ -24,8 +24,6 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: '1.91.1'
-        default: true
-        profile: minimal
         components: rustfmt, clippy
 
     - name: ⚡ Setup Node.js
@@ -38,7 +36,7 @@ jobs:
     - name: 📦 Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y protobuf-compiler libssl-dev
+        sudo apt-get install -y protobuf-compiler libssl-dev libxcb1-dev libxrandr-dev libdbus-1-dev
     - name: 🔨 Build Tavern
       run: |
         go mod download
