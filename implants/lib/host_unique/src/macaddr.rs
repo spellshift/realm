@@ -22,7 +22,7 @@ impl MacAddr {
 
 impl HostIDSelector for MacAddr {
     fn get_name(&self) -> String {
-        "mac_address".to_string()
+        "macaddr".to_string()
     }
 
     fn get_host_id(&self) -> Option<Uuid> {

@@ -4,8 +4,8 @@ mod env;
 pub use env::Env;
 mod file;
 pub use file::File;
-mod mac_addr;
-pub use mac_addr::MacAddr;
+mod macaddr;
+pub use macaddr::MacAddr;
 mod registry;
 pub use registry::Registry;
 
@@ -16,33 +16,81 @@ pub trait HostIDSelector {
 
 /// Describes a single uniqueness selector as encoded in `IMIX_UNIQUE`.
 ///
-/// The JSON representation uses `type` as a tag and `arg` as the
-/// selector struct directly (its fields become the arg object keys).
+/// The JSON representation uses `type` as a tag and `args` as the
+/// selector struct directly (its fields become the args object keys).
 /// Example:
 ///
 /// ```json
 /// [
-///   {"type": "env",         "arg": {}},
-///   {"type": "mac_address", "arg": {}},
-///   {"type": "file",        "arg": {"path_override": "/custom/path"}},
-///   {"type": "registry",    "arg": {"subkey": "SOFTWARE\\Custom"}}
+///   {"type": "env"},
+///   {"type": "macaddr"},
+///   {"type": "file",        "args": {"path_override": "/custom/path"}},
+///   {"type": "registry",    "args": {"subkey": "SOFTWARE\\Custom"}}
 /// ]
 /// ```
 ///
 /// Adding a new selector requires only:
 /// 1. Adding `#[derive(Serialize, Deserialize)]` to the selector struct.
 /// 2. Adding a variant here — serde handles JSON marshaling automatically.
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(tag = "type", content = "arg")]
+#[derive(serde::Serialize)]
+#[serde(tag = "type", content = "args")]
 pub enum SelectorSpec {
     #[serde(rename = "env")]
     Env(Env),
     #[serde(rename = "file")]
     File(File),
-    #[serde(rename = "mac_address")]
+    #[serde(rename = "macaddr")]
     MacAddr(MacAddr),
     #[serde(rename = "registry")]
     Registry(Registry),
+}
+
+/// Helper type identical to [`SelectorSpec`] used only to derive the
+/// adjacently-tagged deserializer.  [`SelectorSpec`] itself has a custom
+/// [`Deserialize`] impl that inserts a default `"args": {}` when the key
+/// is absent, then delegates to this derived impl.
+#[derive(serde::Deserialize)]
+#[serde(tag = "type", content = "args")]
+enum SelectorSpecDerived {
+    #[serde(rename = "env")]
+    Env(Env),
+    #[serde(rename = "file")]
+    File(File),
+    #[serde(rename = "macaddr")]
+    MacAddr(MacAddr),
+    #[serde(rename = "registry")]
+    Registry(Registry),
+}
+
+impl From<SelectorSpecDerived> for SelectorSpec {
+    fn from(d: SelectorSpecDerived) -> Self {
+        match d {
+            SelectorSpecDerived::Env(v) => SelectorSpec::Env(v),
+            SelectorSpecDerived::File(v) => SelectorSpec::File(v),
+            SelectorSpecDerived::MacAddr(v) => SelectorSpec::MacAddr(v),
+            SelectorSpecDerived::Registry(v) => SelectorSpec::Registry(v),
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for SelectorSpec {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde_json::Value;
+
+        let mut v = Value::deserialize(deserializer)?;
+        // Insert a default empty "args" when the key is absent so that the
+        // derived adjacently-tagged deserializer always finds the content field.
+        if let Some(obj) = v.as_object_mut() {
+            obj.entry("args")
+                .or_insert_with(|| Value::Object(Default::default()));
+        }
+        SelectorSpecDerived::deserialize(v)
+            .map(SelectorSpec::from)
+            .map_err(serde::de::Error::custom)
+    }
 }
 
 impl SelectorSpec {
@@ -81,48 +129,10 @@ pub fn get_id_with_selectors(selectors: Vec<Box<dyn HostIDSelector>>) -> Uuid {
 ///
 /// Returns `None` when `IMIX_UNIQUE` was not set at build time, in which
 /// case callers should fall back to [`defaults`].
-pub fn from_imix_unique() -> Option<Vec<Box<dyn HostIDSelector>>> {
-    let json = option_env!("IMIX_UNIQUE")?;
-    let specs: Vec<SelectorSpec> = serde_json::from_str(json)
+pub fn from_imix_unique(json: String) -> Option<Vec<Box<dyn HostIDSelector>>> {
+    let specs: Vec<SelectorSpec> = serde_json::from_str(&json)
         .expect("IMIX_UNIQUE contains invalid JSON - this should have been caught at build time");
     Some(specs.into_iter().map(SelectorSpec::into_selector).collect())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_selector_spec_roundtrip() {
-        let json = r#"[
-            {"type": "env",         "arg": {}},
-            {"type": "mac_address", "arg": {}},
-            {"type": "file",        "arg": {"path_override": "/tmp/test-id"}},
-            {"type": "registry",    "arg": {"subkey": "SOFTWARE\\Test", "value_name": null}}
-        ]"#;
-
-        let specs: Vec<SelectorSpec> = serde_json::from_str(json).expect("parse failed");
-        assert_eq!(specs.len(), 4);
-
-        // Verify each spec produces a valid selector with the expected name.
-        let names: Vec<String> = specs
-            .into_iter()
-            .map(|s| s.into_selector().get_name())
-            .collect();
-        assert_eq!(names, ["env", "mac_address", "file", "registry"]);
-    }
-
-    #[test]
-    fn test_selector_spec_serialize() {
-        let specs = vec![
-            SelectorSpec::Env(Env::default()),
-            SelectorSpec::MacAddr(MacAddr::default()),
-        ];
-        let json = serde_json::to_string(&specs).expect("serialize failed");
-        assert!(json.contains(r#""type":"env""#));
-        assert!(json.contains(r#""type":"mac_address""#));
-        assert!(json.contains(r#""arg":{}"#));
-    }
 }
 
 // Return the default list of unique selectors to evaluate
@@ -142,4 +152,58 @@ pub fn defaults() -> Vec<Box<dyn HostIDSelector>> {
         Box::new(File::new_with_file("/etc/system-id")),
         Box::<MacAddr>::default(),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_selector_spec_roundtrip() {
+        let json = r#"[
+            {"type": "env",         "args": {}},
+            {"type": "macaddr", "args": {}},
+            {"type": "file",        "args": {"path_override": "/tmp/test-id"}},
+            {"type": "registry",    "args": {"subkey": "SOFTWARE\\Test", "value_name": null}}
+        ]"#;
+
+        let specs: Vec<SelectorSpec> = serde_json::from_str(json).expect("parse failed");
+        assert_eq!(specs.len(), 4);
+
+        // Verify each spec produces a valid selector with the expected name.
+        let names: Vec<String> = specs
+            .into_iter()
+            .map(|s| s.into_selector().get_name())
+            .collect();
+        assert_eq!(names, ["env", "macaddr", "file", "registry"]);
+    }
+
+    #[test]
+    fn test_selector_spec_optional_args() {
+        let json = r#"[
+            {"type": "env"},
+            {"type": "macaddr"}
+        ]"#;
+
+        let specs: Vec<SelectorSpec> = serde_json::from_str(json).expect("parse failed");
+        assert_eq!(specs.len(), 2);
+
+        let names: Vec<String> = specs
+            .into_iter()
+            .map(|s| s.into_selector().get_name())
+            .collect();
+        assert_eq!(names, ["env", "macaddr"]);
+    }
+
+    #[test]
+    fn test_selector_spec_serialize() {
+        let specs = vec![
+            SelectorSpec::Env(Env::default()),
+            SelectorSpec::MacAddr(MacAddr::default()),
+        ];
+        let json = serde_json::to_string(&specs).expect("serialize failed");
+        assert!(json.contains(r#""type":"env""#));
+        assert!(json.contains(r#""type":"macaddr""#));
+        assert!(json.contains(r#""args":{}"#));
+    }
 }
