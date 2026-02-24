@@ -110,7 +110,7 @@ reqwest = { version = "0.12.15", default-features = false }
 russh = "0.37.1"
 russh-sftp = "=2.0.8" # `thiserror` dependcy in older versions causes downstream issues in other libraries.
 russh-keys = "0.37.1"
-rustls = "0.23"
+rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rust-embed = "8.5.0"
 serde = "1.0"
 serde_json = "1.0.87"

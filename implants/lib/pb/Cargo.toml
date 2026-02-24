@@ -15,7 +15,6 @@ dns = []
 anyhow = { workspace = true }
 host_unique = { workspace = true }
 log = { workspace = true }
-netdev = { workspace = true }
 prost = { workspace = true }
 serde_json = { workspace = true }
 prost-types = { workspace = true }
@@ -33,6 +32,9 @@ lru = { workspace = true }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 whoami = { workspace = true }
 url = { workspace = true }
+
+[target.'cfg(not(target_os = "solaris"))'.dependencies]
+netdev = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

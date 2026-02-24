@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "solaris")))]
 use nix::unistd::{Gid, Group, Uid, User};
 #[cfg(feature = "stdlib")]
 use std::fs;
@@ -108,7 +108,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     dict.insert("permissions".to_string(), Value::String(perms));
 
     // Owner and Group
-    #[cfg(unix)]
+    #[cfg(all(unix, not(target_os = "solaris")))]
     {
         use ::std::os::unix::fs::MetadataExt;
         let uid = metadata.uid();
@@ -123,7 +123,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
         dict.insert("owner".to_string(), Value::String(owner_name));
         dict.insert("group".to_string(), Value::String(group_name));
     }
-    #[cfg(not(unix))]
+    #[cfg(any(not(unix), target_os = "solaris"))]
     {
         // Fallback for Windows or others
         dict.insert("owner".to_string(), Value::String("".to_string()));

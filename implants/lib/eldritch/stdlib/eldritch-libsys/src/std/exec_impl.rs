@@ -153,6 +153,10 @@ fn handle_exec(
                 }
             }
         }
+        #[cfg(target_os = "solaris")]
+        {
+            return Err(anyhow::anyhow!("Disown not supported on Solaris"));
+        }
     }
 }
 

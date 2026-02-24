@@ -34,7 +34,7 @@ notify = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
-[target.'cfg(unix)'.dependencies]
+[target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
 nix = { workspace = true, features = ["user", "fs"] }
 
 [target.'cfg(windows)'.dependencies]

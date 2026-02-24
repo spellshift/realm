@@ -278,6 +278,10 @@ fn get_host_platform() -> crate::c2::host::Platform {
  * Returns the empty string otherwise.
  */
 fn get_primary_ip() -> String {
+    #[cfg(target_os = "solaris")]
+    return String::from("");
+
+    #[cfg(not(target_os = "solaris"))]
     match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
             Some(ip) => ip.addr().to_string(),

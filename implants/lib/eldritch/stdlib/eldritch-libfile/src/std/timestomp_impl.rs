@@ -104,7 +104,7 @@ fn parse_time(val: Value) -> AnyhowResult<::std::time::SystemTime> {
     }
 }
 
-#[cfg(all(unix, feature = "stdlib"))]
+#[cfg(all(unix, not(target_os = "solaris"), feature = "stdlib"))]
 fn apply_timestamps(
     path: &str,
     mtime: Option<::std::time::SystemTime>,
@@ -228,7 +228,7 @@ fn apply_timestamps(
     Ok(())
 }
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(any(all(unix, not(target_os = "solaris")), windows)))]
 #[cfg(feature = "stdlib")]
 fn apply_timestamps(
     _path: &str,

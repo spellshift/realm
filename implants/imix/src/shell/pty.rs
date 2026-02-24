@@ -1,8 +1,10 @@
 use anyhow::Result;
 use eldritch_agent::Context;
+#[cfg(not(target_os = "solaris"))]
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
 #[cfg(not(target_os = "solaris"))]
 use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+#[cfg(not(target_os = "solaris"))]
 use std::io::{Read, Write};
 use transport::Transport;
 
