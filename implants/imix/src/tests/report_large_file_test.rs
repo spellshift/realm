@@ -167,11 +167,9 @@ async fn test_report_large_file_via_eldritch() {
     let agent_clone = agent.clone();
     let file_path_str = file_path.to_string();
 
-    let result = std::thread::spawn(move || {
-        file_impl::file(agent_clone, context, file_path_str)
-    })
-    .join()
-    .unwrap();
+    let result = std::thread::spawn(move || file_impl::file(agent_clone, context, file_path_str))
+        .join()
+        .unwrap();
 
     // Cleanup first to ensure file removal even if assertion fails (best effort)
     std::fs::remove_file(file_path).unwrap();
