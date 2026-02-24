@@ -149,6 +149,10 @@ impl SysLibrary for SysLibraryFake {
     ) -> Result<bool, String> {
         Ok(true)
     }
+
+    fn change_user_password(&self, _username: String, _password: String) -> Result<bool, String> {
+        Ok(true)
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

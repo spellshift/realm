@@ -4,7 +4,6 @@ use anyhow::{Result, anyhow};
 #[cfg(target_os = "windows")]
 use alloc::vec::Vec;
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::Foundation::WIN32_ERROR;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::NetworkManagement::NetManagement::{
     NERR_Success, NetUserSetInfo, USER_INFO_1003,
@@ -36,6 +35,8 @@ pub fn change_user_password(username: String, password: String) -> Result<bool> 
     }
     #[cfg(target_os = "macos")]
     {
+        let _ = username;
+        let _ = password;
         // MacOS password changing requires OpenDirectory API or dscl.
         // Direct file manipulation is not standard.
         // Binaries are not allowed.
@@ -146,7 +147,7 @@ fn change_user_password_linux(username: String, password: String) -> Result<bool
 fn crypt(password: &str, salt: &str) -> Result<String> {
     // Check for libc crypt function.
     // Assuming libc is linked and available.
-    #[link(name = "crypt")]
+    // NOTE: Linking is handled in build.rs for linux targets
     unsafe extern "C" {
         fn crypt(key: *const libc::c_char, salt: *const libc::c_char) -> *mut libc::c_char;
     }

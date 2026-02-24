@@ -170,6 +170,10 @@ fn main() -> Result<()> {
     let binding = std::env::var_os("CARGO_CFG_TARGET_OS").unwrap();
     let build_target_os = binding.to_str().unwrap();
 
+    if build_target_os == "linux" {
+        println!("cargo:rustc-link-lib=crypt");
+    }
+
     if build_target_os == "windows" {
         #[cfg(debug_assertions)]
         build_bin_create_file_dll();
