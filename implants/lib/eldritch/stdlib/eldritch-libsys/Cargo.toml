@@ -15,6 +15,7 @@ spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true }
+libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = { workspace = true }
@@ -29,6 +30,7 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
     "Win32_UI_Shell",
+    "Win32_NetworkManagement_NetManagement",
 ] }
 
 [features]

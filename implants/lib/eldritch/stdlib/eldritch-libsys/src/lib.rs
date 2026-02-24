@@ -25,6 +25,20 @@ pub mod std;
 /// - Environment variable access.
 pub trait SysLibrary {
     #[eldritch_method]
+    /// Creates a new user account on the system.
+    ///
+    /// **Parameters**
+    /// - `username` (`str`): The username of the new account.
+    /// - `password` (`str`): The password for the new account.
+    ///
+    /// **Returns**
+    /// - `bool`: True on success.
+    ///
+    /// **Errors**
+    /// - Returns an error string if user creation fails.
+    fn create_user(&self, username: String, password: String) -> Result<bool, String>;
+
+    #[eldritch_method]
     /// Injects a DLL from disk into a remote process.
     ///
     /// **Parameters**
