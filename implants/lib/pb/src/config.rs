@@ -315,8 +315,10 @@ fn get_primary_ip() -> String {
                 // Check flags: UP and RUNNING, and not LOOPBACK
                 // IFF_UP = 0x1, IFF_LOOPBACK = 0x8
                 let flags = entry.ifa_flags;
-                let is_up = (flags & libc::IFF_UP as u32) != 0;
-                let is_loopback = (flags & libc::IFF_LOOPBACK as u32) != 0;
+                // Cast libc constants to match flags type (usually u32 or i32 depending on platform/libc version)
+                // On Solaris/Illumos, ifa_flags is likely u64 but libc constants might be i32/u32
+                let is_up = (flags & (libc::IFF_UP as u64)) != 0;
+                let is_loopback = (flags & (libc::IFF_LOOPBACK as u64)) != 0;
 
                 if is_up && !is_loopback {
                     // Extract IP
@@ -328,8 +330,9 @@ fn get_primary_ip() -> String {
                     // If we read it as u32 on LE machine, it's reversed.
                     // But we want to treat it as bytes.
                     // The easiest way is to cast the pointer to u8 array of 4.
-                    let ip_bytes =
-                        unsafe { std::slice::from_raw_parts(&ip_u32 as *const u32 as *const u8, 4) };
+                    let ip_bytes = unsafe {
+                        std::slice::from_raw_parts(&ip_u32 as *const u32 as *const u8, 4)
+                    };
 
                     let ip = Ipv4Addr::new(ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
                     result = ip.to_string();
