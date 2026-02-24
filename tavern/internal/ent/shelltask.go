@@ -57,16 +57,19 @@ type ShellTaskEdges struct {
 	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
 	// Files reported by this shell task
 	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
+	// Screenshots reported by this shell task
+	ReportedScreenshots []*Screenshot `json:"reported_screenshots,omitempty"`
 	// Processes reported by this shell task
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
 	namedReportedCredentials map[string][]*HostCredential
 	namedReportedFiles       map[string][]*HostFile
+	namedReportedScreenshots map[string][]*Screenshot
 	namedReportedProcesses   map[string][]*HostProcess
 }
 
@@ -110,10 +113,19 @@ func (e ShellTaskEdges) ReportedFilesOrErr() ([]*HostFile, error) {
 	return nil, &NotLoadedError{edge: "reported_files"}
 }
 
+// ReportedScreenshotsOrErr returns the ReportedScreenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellTaskEdges) ReportedScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[4] {
+		return e.ReportedScreenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_screenshots"}
+}
+
 // ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
 // was not loaded in eager-loading.
 func (e ShellTaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.ReportedProcesses, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_processes"}
@@ -262,6 +274,11 @@ func (st *ShellTask) QueryReportedFiles() *HostFileQuery {
 	return NewShellTaskClient(st.config).QueryReportedFiles(st)
 }
 
+// QueryReportedScreenshots queries the "reported_screenshots" edge of the ShellTask entity.
+func (st *ShellTask) QueryReportedScreenshots() *ScreenshotQuery {
+	return NewShellTaskClient(st.config).QueryReportedScreenshots(st)
+}
+
 // QueryReportedProcesses queries the "reported_processes" edge of the ShellTask entity.
 func (st *ShellTask) QueryReportedProcesses() *HostProcessQuery {
 	return NewShellTaskClient(st.config).QueryReportedProcesses(st)
@@ -368,6 +385,30 @@ func (st *ShellTask) appendNamedReportedFiles(name string, edges ...*HostFile) {
 		st.Edges.namedReportedFiles[name] = []*HostFile{}
 	} else {
 		st.Edges.namedReportedFiles[name] = append(st.Edges.namedReportedFiles[name], edges...)
+	}
+}
+
+// NamedReportedScreenshots returns the ReportedScreenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ShellTask) NamedReportedScreenshots(name string) ([]*Screenshot, error) {
+	if st.Edges.namedReportedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedReportedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ShellTask) appendNamedReportedScreenshots(name string, edges ...*Screenshot) {
+	if st.Edges.namedReportedScreenshots == nil {
+		st.Edges.namedReportedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedReportedScreenshots[name] = []*Screenshot{}
+	} else {
+		st.Edges.namedReportedScreenshots[name] = append(st.Edges.namedReportedScreenshots[name], edges...)
 	}
 }
 

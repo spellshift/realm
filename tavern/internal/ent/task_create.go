@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -175,6 +176,21 @@ func (tc *TaskCreate) AddReportedFiles(h ...*HostFile) *TaskCreate {
 		ids[i] = h[i].ID
 	}
 	return tc.AddReportedFileIDs(ids...)
+}
+
+// AddReportedScreenshotIDs adds the "reported_screenshots" edge to the Screenshot entity by IDs.
+func (tc *TaskCreate) AddReportedScreenshotIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddReportedScreenshotIDs(ids...)
+	return tc
+}
+
+// AddReportedScreenshots adds the "reported_screenshots" edges to the Screenshot entity.
+func (tc *TaskCreate) AddReportedScreenshots(s ...*Screenshot) *TaskCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tc.AddReportedScreenshotIDs(ids...)
 }
 
 // AddReportedProcessIDs adds the "reported_processes" edge to the HostProcess entity by IDs.
@@ -404,6 +420,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ReportedScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ReportedScreenshotsTable,
+			Columns: []string{task.ReportedScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

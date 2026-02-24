@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -99,6 +100,11 @@ var repositoryImplementors = []string{"Repository", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Repository) IsNode() {}
+
+var screenshotImplementors = []string{"Screenshot", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Screenshot) IsNode() {}
 
 var shellImplementors = []string{"Shell", "Node"}
 
@@ -292,6 +298,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(repository.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, repositoryImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case screenshot.Table:
+		query := c.Screenshot.Query().
+			Where(screenshot.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, screenshotImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -603,6 +618,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Repository.Query().
 			Where(repository.IDIn(ids...))
 		query, err := query.CollectFields(ctx, repositoryImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case screenshot.Table:
+		query := c.Screenshot.Query().
+			Where(screenshot.IDIn(ids...))
+		query, err := query.CollectFields(ctx, screenshotImplementors...)
 		if err != nil {
 			return nil, err
 		}

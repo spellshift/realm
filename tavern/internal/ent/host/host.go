@@ -41,6 +41,8 @@ const (
 	EdgeBeacons = "beacons"
 	// EdgeFiles holds the string denoting the files edge name in mutations.
 	EdgeFiles = "files"
+	// EdgeScreenshots holds the string denoting the screenshots edge name in mutations.
+	EdgeScreenshots = "screenshots"
 	// EdgeProcesses holds the string denoting the processes edge name in mutations.
 	EdgeProcesses = "processes"
 	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
@@ -66,6 +68,13 @@ const (
 	FilesInverseTable = "host_files"
 	// FilesColumn is the table column denoting the files relation/edge.
 	FilesColumn = "host_files"
+	// ScreenshotsTable is the table that holds the screenshots relation/edge.
+	ScreenshotsTable = "screenshots"
+	// ScreenshotsInverseTable is the table name for the Screenshot entity.
+	// It exists in this package in order to avoid circular dependency with the "screenshot" package.
+	ScreenshotsInverseTable = "screenshots"
+	// ScreenshotsColumn is the table column denoting the screenshots relation/edge.
+	ScreenshotsColumn = "host_screenshots"
 	// ProcessesTable is the table that holds the processes relation/edge.
 	ProcessesTable = "host_processes"
 	// ProcessesInverseTable is the table name for the HostProcess entity.
@@ -241,6 +250,20 @@ func ByFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByScreenshotsCount orders the results by screenshots count.
+func ByScreenshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScreenshotsStep(), opts...)
+	}
+}
+
+// ByScreenshots orders the results by screenshots terms.
+func ByScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByProcessesCount orders the results by processes count.
 func ByProcessesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -287,6 +310,13 @@ func newFilesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FilesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, FilesTable, FilesColumn),
+	)
+}
+func newScreenshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScreenshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScreenshotsTable, ScreenshotsColumn),
 	)
 }
 func newProcessesStep() *sqlgraph.Step {

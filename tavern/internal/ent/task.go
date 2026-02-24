@@ -51,6 +51,8 @@ type TaskEdges struct {
 	Beacon *Beacon `json:"beacon,omitempty"`
 	// Files that have been reported by this task.
 	ReportedFiles []*HostFile `json:"reported_files,omitempty"`
+	// Screenshots that have been reported by this task.
+	ReportedScreenshots []*Screenshot `json:"reported_screenshots,omitempty"`
 	// Processes that have been reported by this task.
 	ReportedProcesses []*HostProcess `json:"reported_processes,omitempty"`
 	// Credentials that have been reported by this task.
@@ -59,11 +61,12 @@ type TaskEdges struct {
 	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [7]map[string]int
 
 	namedReportedFiles       map[string][]*HostFile
+	namedReportedScreenshots map[string][]*Screenshot
 	namedReportedProcesses   map[string][]*HostProcess
 	namedReportedCredentials map[string][]*HostCredential
 	namedShells              map[string][]*Shell
@@ -100,10 +103,19 @@ func (e TaskEdges) ReportedFilesOrErr() ([]*HostFile, error) {
 	return nil, &NotLoadedError{edge: "reported_files"}
 }
 
+// ReportedScreenshotsOrErr returns the ReportedScreenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ReportedScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[3] {
+		return e.ReportedScreenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "reported_screenshots"}
+}
+
 // ReportedProcessesOrErr returns the ReportedProcesses value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.ReportedProcesses, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_processes"}
@@ -112,7 +124,7 @@ func (e TaskEdges) ReportedProcessesOrErr() ([]*HostProcess, error) {
 // ReportedCredentialsOrErr returns the ReportedCredentials value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.ReportedCredentials, nil
 	}
 	return nil, &NotLoadedError{edge: "reported_credentials"}
@@ -121,7 +133,7 @@ func (e TaskEdges) ReportedCredentialsOrErr() ([]*HostCredential, error) {
 // ShellsOrErr returns the Shells value or an error if the edge
 // was not loaded in eager-loading.
 func (e TaskEdges) ShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[6] {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
@@ -253,6 +265,11 @@ func (t *Task) QueryReportedFiles() *HostFileQuery {
 	return NewTaskClient(t.config).QueryReportedFiles(t)
 }
 
+// QueryReportedScreenshots queries the "reported_screenshots" edge of the Task entity.
+func (t *Task) QueryReportedScreenshots() *ScreenshotQuery {
+	return NewTaskClient(t.config).QueryReportedScreenshots(t)
+}
+
 // QueryReportedProcesses queries the "reported_processes" edge of the Task entity.
 func (t *Task) QueryReportedProcesses() *HostProcessQuery {
 	return NewTaskClient(t.config).QueryReportedProcesses(t)
@@ -339,6 +356,30 @@ func (t *Task) appendNamedReportedFiles(name string, edges ...*HostFile) {
 		t.Edges.namedReportedFiles[name] = []*HostFile{}
 	} else {
 		t.Edges.namedReportedFiles[name] = append(t.Edges.namedReportedFiles[name], edges...)
+	}
+}
+
+// NamedReportedScreenshots returns the ReportedScreenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedReportedScreenshots(name string) ([]*Screenshot, error) {
+	if t.Edges.namedReportedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedReportedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedReportedScreenshots(name string, edges ...*Screenshot) {
+	if t.Edges.namedReportedScreenshots == nil {
+		t.Edges.namedReportedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedReportedScreenshots[name] = []*Screenshot{}
+	} else {
+		t.Edges.namedReportedScreenshots[name] = append(t.Edges.namedReportedScreenshots[name], edges...)
 	}
 }
 

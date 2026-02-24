@@ -84,6 +84,12 @@ func (Task) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Files that have been reported by this task."),
+		edge.To("reported_screenshots", Screenshot.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Screenshots that have been reported by this task."),
 		edge.To("reported_processes", HostProcess.Type).
 			Annotations(
 				entgql.RelayConnection(),

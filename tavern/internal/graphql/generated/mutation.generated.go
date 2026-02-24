@@ -670,6 +670,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_beacons(ctx, field)
 			case "files":
 				return ec.fieldContext_Host_files(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "processes":
 				return ec.fieldContext_Host_processes(ctx, field)
 			case "credentials":

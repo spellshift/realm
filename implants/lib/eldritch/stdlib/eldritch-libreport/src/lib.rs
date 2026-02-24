@@ -78,4 +78,11 @@ pub trait ReportLibrary {
     /// **Returns**
     /// - `None`
     fn ntlm_hash(&self, username: String, hash: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Reports screenshots of all monitors.
+    ///
+    /// **Returns**
+    /// - `None`
+    fn screenshot(&self) -> Result<(), String>;
 }

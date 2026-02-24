@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -213,6 +214,21 @@ func (hu *HostUpdate) AddFiles(h ...*HostFile) *HostUpdate {
 	return hu.AddFileIDs(ids...)
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by IDs.
+func (hu *HostUpdate) AddScreenshotIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddScreenshotIDs(ids...)
+	return hu
+}
+
+// AddScreenshots adds the "screenshots" edges to the Screenshot entity.
+func (hu *HostUpdate) AddScreenshots(s ...*Screenshot) *HostUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return hu.AddScreenshotIDs(ids...)
+}
+
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (hu *HostUpdate) AddProcessIDs(ids ...int) *HostUpdate {
 	hu.mutation.AddProcessIDs(ids...)
@@ -309,6 +325,27 @@ func (hu *HostUpdate) RemoveFiles(h ...*HostFile) *HostUpdate {
 		ids[i] = h[i].ID
 	}
 	return hu.RemoveFileIDs(ids...)
+}
+
+// ClearScreenshots clears all "screenshots" edges to the Screenshot entity.
+func (hu *HostUpdate) ClearScreenshots() *HostUpdate {
+	hu.mutation.ClearScreenshots()
+	return hu
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to Screenshot entities by IDs.
+func (hu *HostUpdate) RemoveScreenshotIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveScreenshotIDs(ids...)
+	return hu
+}
+
+// RemoveScreenshots removes "screenshots" edges to Screenshot entities.
+func (hu *HostUpdate) RemoveScreenshots(s ...*Screenshot) *HostUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return hu.RemoveScreenshotIDs(ids...)
 }
 
 // ClearProcesses clears all "processes" edges to the HostProcess entity.
@@ -588,6 +625,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hu.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedScreenshotsIDs(); len(nodes) > 0 && !hu.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.ScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -884,6 +966,21 @@ func (huo *HostUpdateOne) AddFiles(h ...*HostFile) *HostUpdateOne {
 	return huo.AddFileIDs(ids...)
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by IDs.
+func (huo *HostUpdateOne) AddScreenshotIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddScreenshotIDs(ids...)
+	return huo
+}
+
+// AddScreenshots adds the "screenshots" edges to the Screenshot entity.
+func (huo *HostUpdateOne) AddScreenshots(s ...*Screenshot) *HostUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return huo.AddScreenshotIDs(ids...)
+}
+
 // AddProcessIDs adds the "processes" edge to the HostProcess entity by IDs.
 func (huo *HostUpdateOne) AddProcessIDs(ids ...int) *HostUpdateOne {
 	huo.mutation.AddProcessIDs(ids...)
@@ -980,6 +1077,27 @@ func (huo *HostUpdateOne) RemoveFiles(h ...*HostFile) *HostUpdateOne {
 		ids[i] = h[i].ID
 	}
 	return huo.RemoveFileIDs(ids...)
+}
+
+// ClearScreenshots clears all "screenshots" edges to the Screenshot entity.
+func (huo *HostUpdateOne) ClearScreenshots() *HostUpdateOne {
+	huo.mutation.ClearScreenshots()
+	return huo
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to Screenshot entities by IDs.
+func (huo *HostUpdateOne) RemoveScreenshotIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveScreenshotIDs(ids...)
+	return huo
+}
+
+// RemoveScreenshots removes "screenshots" edges to Screenshot entities.
+func (huo *HostUpdateOne) RemoveScreenshots(s ...*Screenshot) *HostUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return huo.RemoveScreenshotIDs(ids...)
 }
 
 // ClearProcesses clears all "processes" edges to the HostProcess entity.
@@ -1289,6 +1407,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostfile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedScreenshotsIDs(); len(nodes) > 0 && !huo.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.ScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.ScreenshotsTable,
+			Columns: []string{host.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
