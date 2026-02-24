@@ -13,6 +13,7 @@ rust-embed = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch = { workspace = true, features = ["std", "stdlib", "fake_agent"] }
+eldritch-agent = { workspace = true }
 # Need fake here so we import this on its own
 tokio.workspace = true
 futures.workspace = true

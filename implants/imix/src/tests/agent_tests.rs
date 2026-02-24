@@ -27,21 +27,23 @@ async fn test_start_reverse_shell() {
     let handle = tokio::runtime::Handle::current();
 
     let task_registry = Arc::new(TaskRegistry::new());
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = Arc::new(ImixAgent::new(
         Config::default(),
         transport,
         handle,
         task_registry,
+        tx,
     ));
 
     // Execution must happen in a separate thread to allow block_on
     let agent_clone = agent.clone();
     let result = std::thread::spawn(move || {
         agent_clone.start_reverse_shell(
-            pb::c2::TaskContext {
+            eldritch_agent::Context::Task(pb::c2::TaskContext {
                 task_id: 12345,
                 jwt: "some jwt".to_string(),
-            },
+            }),
             Some("echo test".to_string()),
         )
     })

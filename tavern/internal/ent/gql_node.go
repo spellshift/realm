@@ -17,6 +17,8 @@ import (
 	"golang.org/x/sync/semaphore"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -26,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -46,6 +49,16 @@ var beaconImplementors = []string{"Beacon", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Beacon) IsNode() {}
+
+var buildtaskImplementors = []string{"BuildTask", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*BuildTask) IsNode() {}
+
+var builderImplementors = []string{"Builder", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Builder) IsNode() {}
 
 var hostImplementors = []string{"Host", "Node"}
 
@@ -91,6 +104,11 @@ var shellImplementors = []string{"Shell", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Shell) IsNode() {}
+
+var shelltaskImplementors = []string{"ShellTask", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ShellTask) IsNode() {}
 
 var tagImplementors = []string{"Tag", "Node"}
 
@@ -188,6 +206,24 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			}
 		}
 		return query.Only(ctx)
+	case buildtask.Table:
+		query := c.BuildTask.Query().
+			Where(buildtask.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, buildtaskImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case builder.Table:
+		query := c.Builder.Query().
+			Where(builder.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, builderImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case host.Table:
 		query := c.Host.Query().
 			Where(host.ID(id))
@@ -265,6 +301,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(shell.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case shelltask.Table:
+		query := c.ShellTask.Query().
+			Where(shelltask.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shelltaskImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -410,6 +455,38 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
+	case buildtask.Table:
+		query := c.BuildTask.Query().
+			Where(buildtask.IDIn(ids...))
+		query, err := query.CollectFields(ctx, buildtaskImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case builder.Table:
+		query := c.Builder.Query().
+			Where(builder.IDIn(ids...))
+		query, err := query.CollectFields(ctx, builderImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case host.Table:
 		query := c.Host.Query().
 			Where(host.IDIn(ids...))
@@ -542,6 +619,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Shell.Query().
 			Where(shell.IDIn(ids...))
 		query, err := query.CollectFields(ctx, shellImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case shelltask.Table:
+		query := c.ShellTask.Query().
+			Where(shelltask.IDIn(ids...))
+		query, err := query.CollectFields(ctx, shelltaskImplementors...)
 		if err != nil {
 			return nil, err
 		}

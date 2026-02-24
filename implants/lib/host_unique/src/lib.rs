@@ -4,6 +4,8 @@ mod env;
 pub use env::Env;
 mod file;
 pub use file::File;
+mod mac_addr;
+pub use mac_addr::MacAddr;
 mod registry;
 pub use registry::Registry;
 
@@ -46,5 +48,6 @@ pub fn defaults() -> Vec<Box<dyn HostIDSelector>> {
             target_os = "netbsd"
         ))]
         Box::new(File::new_with_file("/etc/system-id")),
+        Box::<MacAddr>::default(),
     ]
 }

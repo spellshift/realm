@@ -2,13 +2,13 @@ import { ReactElement, useState } from "react";
 
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
 import ImportRepositoryModal from "./import-modal/ImportRepositoryModal";
-import { RepositoriesTable } from "./repository-table/RepositoriesTable";
-import { useRepositoryIds } from "./hooks/useRepositoryIds";
+import RepositoryTable from "./components/RepositoryTable";
+import { useRepositoryView } from "./hooks/useRepositoryView";
 import TomesHeader from "./TomesHeader";
 
-const Tomes = (): ReactElement => {
+export const Tomes = (): ReactElement => {
     const [isOpen, setOpen] = useState<boolean>(false);
-    const { repositoryIds, loading, error } = useRepositoryIds();
+    const { loading, repositories, error } = useRepositoryView();
 
     return (
         <>
@@ -18,8 +18,8 @@ const Tomes = (): ReactElement => {
                     <EmptyState type={EmptyStateType.loading} label="Loading quest repositories..." />
                 ) : error ? (
                     <EmptyState type={EmptyStateType.error} label="Error loading repositories..." />
-                ) : repositoryIds && repositoryIds.length > 0 ? (
-                    <RepositoriesTable repositoryIds={repositoryIds} />
+                ) : repositories && repositories.length > 0 ? (
+                    <RepositoryTable repositories={repositories} />
                 ) : <EmptyState type={EmptyStateType.noData} label="No repository data" />
                 }
 
@@ -28,5 +28,3 @@ const Tomes = (): ReactElement => {
         </>
     )
 }
-
-export default Tomes;

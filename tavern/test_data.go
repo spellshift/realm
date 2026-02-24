@@ -56,6 +56,21 @@ func createTestData(ctx context.Context, client *ent.Client) {
 		)
 	}
 
+	/*
+	 * Example Quest: Process List
+	 */
+	processListTome := client.Tome.Create().
+		SetName("ProcessList").
+		SetDescription("List running processes").
+		SetAuthor("kcarretto").
+		SetEldritch(`print(ps.list())`).
+		SaveX(ctx)
+
+	processListQuest := client.Quest.Create().
+		SetName("ProcessList").
+		SetTome(processListTome).
+		SaveX(ctx)
+
 	// Create test beacons (with tags)
 	var testBeacons []*ent.Beacon
 	for groupNum := 1; groupNum <= 15; groupNum++ {
@@ -168,18 +183,26 @@ func createTestData(ctx context.Context, client *ent.Client) {
 						SaveX(ctx),
 				)
 			} else {
-				testBeacons = append(testBeacons,
-					client.Beacon.Create().
-						SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-						SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
-						SetIdentifier(newRandomIdentifier()).
-						SetAgentIdentifier("test-data").
-						SetHost(testHost).
-						SetInterval(600000).
-						SetPrincipal("root").
-						SetTransport(getTransport(groupNum*100+i*10+0)).
-						SaveX(ctx),
-				)
+				b := client.Beacon.Create().
+					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
+					SetIdentifier(newRandomIdentifier()).
+					SetAgentIdentifier("test-data").
+					SetHost(testHost).
+					SetInterval(600000).
+					SetPrincipal("root").
+					SetTransport(getTransport(groupNum*100+i*10+0)).
+					SaveX(ctx)
+
+				testBeacons = append(testBeacons, b)
+
+				// Create Process List for select hosts
+				// Groups 1, 2, 3 and Platforms Windows (1), Linux (2), MacOS (3), BSD (4)
+				// i%5 gives platform: 1, 2, 3, 4
+				if groupNum <= 3 && i > 0 && i <= 4 {
+					createProcessList(ctx, client, testHost, b, processListQuest)
+				}
+
 				if i == 3 {
 					testBeacons = append(testBeacons,
 						client.Beacon.Create().
@@ -377,6 +400,108 @@ func newRandomCredential() string {
 // timeAgo returns the current time minus the provided duration (e.g. 5 seconds ago)
 func timeAgo(duration time.Duration) time.Time {
 	return time.Now().Add(-1 * duration)
+}
+
+type processInfo struct {
+	PID       uint64
+	PPID      uint64
+	Name      string
+	Principal string
+	Path      string
+	Cmd       string
+	Env       string
+	Status    epb.Process_Status
+}
+
+func createProcessList(ctx context.Context, client *ent.Client, host *ent.Host, beacon *ent.Beacon, quest *ent.Quest) {
+	var processes []processInfo
+
+	// Common PIDs for consistency, but randomized slightly could be better.
+	// We'll stick to static lists for reproducibility in tests.
+
+	switch host.Platform {
+	case c2pb.Host_PLATFORM_WINDOWS:
+		processes = []processInfo{
+			{PID: 4, PPID: 0, Name: "System", Principal: "NT AUTHORITY\\SYSTEM", Status: epb.Process_STATUS_RUN},
+			{PID: 392, PPID: 4, Name: "smss.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\smss.exe", Cmd: "\\SystemRoot\\System32\\smss.exe", Status: epb.Process_STATUS_RUN},
+			{PID: 512, PPID: 392, Name: "csrss.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\csrss.exe", Cmd: "%SystemRoot%\\system32\\csrss.exe ObjectDirectory=\\Windows SharedSection=1024,20480,768 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=sxssrv,4 ProfileControl=Off MaxRequestThreads=16", Status: epb.Process_STATUS_RUN},
+			{PID: 604, PPID: 392, Name: "wininit.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\wininit.exe", Cmd: "wininit.exe", Status: epb.Process_STATUS_RUN},
+			{PID: 668, PPID: 604, Name: "services.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\services.exe", Cmd: "C:\\Windows\\system32\\services.exe", Env: "SystemRoot=C:\\Windows", Status: epb.Process_STATUS_RUN},
+			{PID: 680, PPID: 604, Name: "lsass.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\lsass.exe", Cmd: "C:\\Windows\\system32\\lsass.exe", Status: epb.Process_STATUS_RUN},
+			{PID: 812, PPID: 668, Name: "svchost.exe", Principal: "NT AUTHORITY\\SYSTEM", Path: "C:\\Windows\\System32\\svchost.exe", Cmd: "C:\\Windows\\system32\\svchost.exe -k DcomLaunch", Status: epb.Process_STATUS_RUN},
+			{PID: 1240, PPID: 668, Name: "svchost.exe", Principal: "NT AUTHORITY\\NETWORK SERVICE", Path: "C:\\Windows\\System32\\svchost.exe", Cmd: "C:\\Windows\\system32\\svchost.exe -k RPCSS", Status: epb.Process_STATUS_RUN},
+			{PID: 4502, PPID: 3400, Name: "explorer.exe", Principal: "User", Path: "C:\\Windows\\explorer.exe", Cmd: "C:\\Windows\\Explorer.EXE", Env: "USERNAME=User", Status: epb.Process_STATUS_RUN},
+			{PID: 5612, PPID: 4502, Name: "chrome.exe", Principal: "User", Path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", Cmd: "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\"", Status: epb.Process_STATUS_RUN},
+			{PID: 6000, PPID: 4502, Name: "powershell.exe", Principal: "User", Path: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", Cmd: "powershell.exe -NoProfile -ExecutionPolicy Bypass", Env: "PSModulePath=C:\\Program Files\\WindowsPowerShell\\Modules", Status: epb.Process_STATUS_RUN},
+		}
+	case c2pb.Host_PLATFORM_LINUX:
+		processes = []processInfo{
+			{PID: 1, PPID: 0, Name: "systemd", Principal: "root", Path: "/usr/lib/systemd/systemd", Cmd: "/sbin/init", Env: "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", Status: epb.Process_STATUS_RUN},
+			{PID: 2, PPID: 0, Name: "kthreadd", Principal: "root", Status: epb.Process_STATUS_IDLE},
+			{PID: 3, PPID: 2, Name: "rcu_gp", Principal: "root", Status: epb.Process_STATUS_IDLE},
+			{PID: 4, PPID: 2, Name: "rcu_par_gp", Principal: "root", Status: epb.Process_STATUS_IDLE},
+			{PID: 10, PPID: 2, Name: "kworker/0:1-events", Principal: "root", Status: epb.Process_STATUS_IDLE},
+			{PID: 850, PPID: 1, Name: "sshd", Principal: "root", Path: "/usr/sbin/sshd", Cmd: "/usr/sbin/sshd -D", Status: epb.Process_STATUS_RUN},
+			{PID: 1200, PPID: 850, Name: "sshd", Principal: "root", Path: "/usr/sbin/sshd", Cmd: "sshd: root@pts/0", Status: epb.Process_STATUS_RUN},
+			{PID: 1201, PPID: 1200, Name: "bash", Principal: "root", Path: "/bin/bash", Cmd: "-bash", Env: "SHELL=/bin/bash\nHOME=/root", Status: epb.Process_STATUS_SLEEP},
+			{PID: 1500, PPID: 1, Name: "dockerd", Principal: "root", Path: "/usr/bin/dockerd", Cmd: "/usr/bin/dockerd -H fd://", Status: epb.Process_STATUS_RUN},
+			{PID: 1510, PPID: 1500, Name: "containerd", Principal: "root", Path: "/usr/bin/containerd", Cmd: "/usr/bin/containerd", Status: epb.Process_STATUS_RUN},
+		}
+	case c2pb.Host_PLATFORM_MACOS:
+		processes = []processInfo{
+			{PID: 0, PPID: 0, Name: "kernel_task", Principal: "root", Status: epb.Process_STATUS_RUN},
+			{PID: 1, PPID: 0, Name: "launchd", Principal: "root", Path: "/sbin/launchd", Cmd: "/sbin/launchd", Status: epb.Process_STATUS_RUN},
+			{PID: 290, PPID: 1, Name: "logd", Principal: "root", Path: "/usr/libexec/logd", Cmd: "/usr/libexec/logd", Status: epb.Process_STATUS_RUN},
+			{PID: 300, PPID: 1, Name: "UserEventAgent", Principal: "root", Path: "/usr/libexec/UserEventAgent", Cmd: "/usr/libexec/UserEventAgent (System)", Status: epb.Process_STATUS_RUN},
+			{PID: 450, PPID: 1, Name: "fseventsd", Principal: "root", Path: "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd", Cmd: "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseventsd", Status: epb.Process_STATUS_RUN},
+			{PID: 800, PPID: 1, Name: "WindowServer", Principal: "_windowserver", Path: "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer", Cmd: "/System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer -daemon", Status: epb.Process_STATUS_RUN},
+			{PID: 1205, PPID: 1, Name: "Finder", Principal: "user", Path: "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder", Cmd: "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder", Env: "HOME=/Users/user", Status: epb.Process_STATUS_RUN},
+			{PID: 1210, PPID: 1, Name: "Dock", Principal: "user", Path: "/System/Library/CoreServices/Dock.app/Contents/MacOS/Dock", Cmd: "/System/Library/CoreServices/Dock.app/Contents/MacOS/Dock", Env: "HOME=/Users/user", Status: epb.Process_STATUS_RUN},
+		}
+	case c2pb.Host_PLATFORM_BSD:
+		processes = []processInfo{
+			{PID: 0, PPID: 0, Name: "kernel", Principal: "root", Cmd: "[kernel]", Status: epb.Process_STATUS_RUN},
+			{PID: 1, PPID: 0, Name: "init", Principal: "root", Path: "/sbin/init", Cmd: "/sbin/init --", Status: epb.Process_STATUS_RUN},
+			{PID: 180, PPID: 1, Name: "syslogd", Principal: "root", Path: "/usr/sbin/syslogd", Cmd: "/usr/sbin/syslogd -s", Status: epb.Process_STATUS_RUN},
+			{PID: 440, PPID: 1, Name: "cron", Principal: "root", Path: "/usr/sbin/cron", Cmd: "/usr/sbin/cron -s", Status: epb.Process_STATUS_SLEEP},
+			{PID: 550, PPID: 1, Name: "getty", Principal: "root", Path: "/usr/libexec/getty", Cmd: "/usr/libexec/getty Pc ttyv0", Status: epb.Process_STATUS_SLEEP},
+			{PID: 900, PPID: 1, Name: "sh", Principal: "root", Path: "/bin/sh", Cmd: "/bin/sh /etc/rc", Status: epb.Process_STATUS_RUN},
+			{PID: 950, PPID: 1, Name: "sshd", Principal: "root", Path: "/usr/sbin/sshd", Cmd: "/usr/sbin/sshd", Status: epb.Process_STATUS_RUN},
+		}
+	}
+
+	if len(processes) == 0 {
+		return
+	}
+
+	task := client.Task.Create().
+		SetBeacon(beacon).
+		SetCreatedAt(timeAgo(5 * time.Minute)).
+		SetClaimedAt(timeAgo(1 * time.Minute)).
+		SetExecStartedAt(timeAgo(5 * time.Second)).
+		SetExecFinishedAt(timeAgo(5 * time.Second)).
+		SetOutput("Process list reported").
+		SetQuest(quest).
+		SaveX(ctx)
+
+	builders := make([]*ent.HostProcessCreate, len(processes))
+	for i, p := range processes {
+		builders[i] = client.HostProcess.Create().
+			SetPid(p.PID).
+			SetPpid(p.PPID).
+			SetName(p.Name).
+			SetPrincipal(p.Principal).
+			SetPath(p.Path).
+			SetCmd(p.Cmd).
+			SetEnv(p.Env).
+			SetStatus(p.Status).
+			SetHost(host).
+			SetTask(task)
+	}
+	createdProcesses := client.HostProcess.CreateBulk(builders...).SaveX(ctx)
+
+	// Also add processes to the Host.processes edge (separate from HostProcess.host)
+	host.Update().AddProcesses(createdProcesses...).SaveX(ctx)
 }
 
 const loremIpsum = `

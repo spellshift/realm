@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -73,9 +74,36 @@ func (pc *PortalCreate) SetTaskID(id int) *PortalCreate {
 	return pc
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (pc *PortalCreate) SetNillableTaskID(id *int) *PortalCreate {
+	if id != nil {
+		pc = pc.SetTaskID(*id)
+	}
+	return pc
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (pc *PortalCreate) SetTask(t *Task) *PortalCreate {
 	return pc.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (pc *PortalCreate) SetShellTaskID(id int) *PortalCreate {
+	pc.mutation.SetShellTaskID(id)
+	return pc
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (pc *PortalCreate) SetNillableShellTaskID(id *int) *PortalCreate {
+	if id != nil {
+		pc = pc.SetShellTaskID(*id)
+	}
+	return pc
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (pc *PortalCreate) SetShellTask(s *ShellTask) *PortalCreate {
+	return pc.SetShellTaskID(s.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
@@ -168,9 +196,6 @@ func (pc *PortalCreate) check() error {
 	if _, ok := pc.mutation.LastModifiedAt(); !ok {
 		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "Portal.last_modified_at"`)}
 	}
-	if len(pc.mutation.TaskIDs()) == 0 {
-		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Portal.task"`)}
-	}
 	if len(pc.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Portal.beacon"`)}
 	}
@@ -231,6 +256,23 @@ func (pc *PortalCreate) createSpec() (*Portal, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.portal_task = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   portal.ShellTaskTable,
+			Columns: []string{portal.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.portal_shell_task = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.BeaconIDs(); len(nodes) > 0 {

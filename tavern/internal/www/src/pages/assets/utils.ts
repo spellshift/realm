@@ -73,7 +73,7 @@ export const handleCopyLink = (path: string, toast: CreateToastFnReturn) => {
 };
 
 export const sortLinks = (links: LinkEdge[]) => {
-    return links.sort((a: LinkEdge, b: LinkEdge) => {
+    return [...links].sort((a: LinkEdge, b: LinkEdge) => {
         const now = new Date();
         const aExpired = new Date(a.node.expiresAt) < now;
         const bExpired = new Date(b.node.expiresAt) < now;

@@ -24,7 +24,7 @@ const (
 	C2_ReportCredential_FullMethodName  = "/c2.C2/ReportCredential"
 	C2_ReportFile_FullMethodName        = "/c2.C2/ReportFile"
 	C2_ReportProcessList_FullMethodName = "/c2.C2/ReportProcessList"
-	C2_ReportTaskOutput_FullMethodName  = "/c2.C2/ReportTaskOutput"
+	C2_ReportOutput_FullMethodName      = "/c2.C2/ReportOutput"
 	C2_ReverseShell_FullMethodName      = "/c2.C2/ReverseShell"
 	C2_CreatePortal_FullMethodName      = "/c2.C2/CreatePortal"
 )
@@ -56,8 +56,8 @@ type C2Client interface {
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
-	// Report execution output for a task.
-	ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error)
+	// Report execution output.
+	ReportOutput(ctx context.Context, in *ReportOutputRequest, opts ...grpc.CallOption) (*ReportOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
 	// Open a portal bi-directional stream.
@@ -170,10 +170,10 @@ func (c *c2Client) ReportProcessList(ctx context.Context, in *ReportProcessListR
 	return out, nil
 }
 
-func (c *c2Client) ReportTaskOutput(ctx context.Context, in *ReportTaskOutputRequest, opts ...grpc.CallOption) (*ReportTaskOutputResponse, error) {
+func (c *c2Client) ReportOutput(ctx context.Context, in *ReportOutputRequest, opts ...grpc.CallOption) (*ReportOutputResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReportTaskOutputResponse)
-	err := c.cc.Invoke(ctx, C2_ReportTaskOutput_FullMethodName, in, out, cOpts...)
+	out := new(ReportOutputResponse)
+	err := c.cc.Invoke(ctx, C2_ReportOutput_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -271,8 +271,8 @@ type C2Server interface {
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
-	// Report execution output for a task.
-	ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error)
+	// Report execution output.
+	ReportOutput(context.Context, *ReportOutputRequest) (*ReportOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
 	ReverseShell(C2_ReverseShellServer) error
 	// Open a portal bi-directional stream.
@@ -299,8 +299,8 @@ func (UnimplementedC2Server) ReportFile(C2_ReportFileServer) error {
 func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReportProcessList not implemented")
 }
-func (UnimplementedC2Server) ReportTaskOutput(context.Context, *ReportTaskOutputRequest) (*ReportTaskOutputResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReportTaskOutput not implemented")
+func (UnimplementedC2Server) ReportOutput(context.Context, *ReportOutputRequest) (*ReportOutputResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportOutput not implemented")
 }
 func (UnimplementedC2Server) ReverseShell(C2_ReverseShellServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReverseShell not implemented")
@@ -422,20 +422,20 @@ func _C2_ReportProcessList_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _C2_ReportTaskOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReportTaskOutputRequest)
+func _C2_ReportOutput_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportOutputRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(C2Server).ReportTaskOutput(ctx, in)
+		return srv.(C2Server).ReportOutput(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: C2_ReportTaskOutput_FullMethodName,
+		FullMethod: C2_ReportOutput_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(C2Server).ReportTaskOutput(ctx, req.(*ReportTaskOutputRequest))
+		return srv.(C2Server).ReportOutput(ctx, req.(*ReportOutputRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -512,8 +512,8 @@ var C2_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _C2_ReportProcessList_Handler,
 		},
 		{
-			MethodName: "ReportTaskOutput",
-			Handler:    _C2_ReportTaskOutput_Handler,
+			MethodName: "ReportOutput",
+			Handler:    _C2_ReportOutput_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

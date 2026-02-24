@@ -45,20 +45,3 @@ export const GET_REPOSITORY_DETAIL_QUERY = gql`
     }
 `;
 
-export const GET_FIRST_PARTY_TOMES_QUERY = gql`
-    query GetFirstPartyTomes {
-        tomes(where: { supportModel: FIRST_PARTY }) {
-            edges {
-                node {
-                    id
-                    name
-                    paramDefs
-                    tactic
-                    eldritch
-                    supportModel
-                    description
-                }
-            }
-        }
-    }
-`;

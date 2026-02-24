@@ -9,8 +9,22 @@ import (
 	"strconv"
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
+	"realm.pub/tavern/internal/ent"
 )
+
+// Input for a single transport configuration.
+type BuildTaskTransportInput struct {
+	// The URI for the IMIX agent.
+	URI string `json:"uri"`
+	// The callback interval in seconds.
+	Interval int `json:"interval"`
+	// The transport type.
+	Type c2pb.Transport_Type `json:"type"`
+	// Extra transport configuration.
+	Extra *string `json:"extra,omitempty"`
+}
 
 type ClaimTasksInput struct {
 	// The identity the beacon is authenticated as (e.g. 'root')
@@ -29,10 +43,34 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
+// Input for creating a new build task.
+type CreateBuildTaskInput struct {
+	// The target operating system for the build.
+	TargetOs c2pb.Host_Platform `json:"targetOS"`
+	// The output format for the build. Defaults to BIN.
+	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
+	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
+	BuildImage *string `json:"buildImage,omitempty"`
+	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
+	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
+	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
+	ArtifactPath *string `json:"artifactPath,omitempty"`
+}
+
 type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
 	IncludeDirs []string `json:"includeDirs,omitempty"`
+}
+
+// Output returned when registering a new builder.
+type RegisterBuilderOutput struct {
+	// The created builder entity.
+	Builder *ent.Builder `json:"builder"`
+	// mTLS certificate PEM bundle for the builder to authenticate.
+	MtlsCert string `json:"mtlsCert"`
+	// YAML-formatted configuration for the builder.
+	Config string `json:"config"`
 }
 
 type SubmitTaskResultInput struct {

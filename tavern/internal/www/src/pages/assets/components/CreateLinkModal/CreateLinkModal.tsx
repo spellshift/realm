@@ -1,7 +1,7 @@
 import { FC, useState } from "react";
 import Modal from "../../../../components/tavern-base-ui/Modal";
 import AlertError from "../../../../components/tavern-base-ui/AlertError";
-import { CREATE_LINK } from "../../useAssets";
+import { CREATE_LINK } from "../../queries";
 import { format, add } from "date-fns";
 import * as yup from "yup";
 import { useFormik } from "formik";
