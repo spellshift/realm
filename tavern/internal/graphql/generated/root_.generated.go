@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 		Name            func(childComplexity int) int
 		NextSeenAt      func(childComplexity int) int
 		Principal       func(childComplexity int) int
+		Process         func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Transport       func(childComplexity int) int
@@ -238,6 +239,7 @@ type ComplexityRoot struct {
 	}
 
 	HostProcess struct {
+		Beacon         func(childComplexity int) int
 		Cmd            func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Cwd            func(childComplexity int) int
@@ -327,6 +329,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		ShellTask      func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
 
@@ -770,6 +773,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Beacon.Principal(childComplexity), true
+
+	case "Beacon.process":
+		if e.complexity.Beacon.Process == nil {
+			break
+		}
+
+		return e.complexity.Beacon.Process(childComplexity), true
 
 	case "Beacon.shells":
 		if e.complexity.Beacon.Shells == nil {
@@ -1511,6 +1521,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostFileEdge.Node(childComplexity), true
 
+	case "HostProcess.beacon":
+		if e.complexity.HostProcess.Beacon == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.Beacon(childComplexity), true
+
 	case "HostProcess.cmd":
 		if e.complexity.HostProcess.Cmd == nil {
 			break
@@ -2065,6 +2082,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Portal.Owner(childComplexity), true
+
+	case "Portal.shellTask":
+		if e.complexity.Portal.ShellTask == nil {
+			break
+		}
+
+		return e.complexity.Portal.ShellTask(childComplexity), true
 
 	case "Portal.task":
 		if e.complexity.Portal.Task == nil {
@@ -3732,6 +3756,10 @@ type Beacon implements Node {
   Host this beacon is running on.
   """
   host: Host!
+  """
+  Process the beacon is running in.
+  """
+  process: HostProcess
   tasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -4017,6 +4045,11 @@ input BeaconWhereInput {
   """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
+  """
+  process edge predicates
+  """
+  hasProcess: Boolean
+  hasProcessWith: [HostProcessWhereInput!]
   """
   tasks edge predicates
   """
@@ -5507,6 +5540,10 @@ type HostProcess implements Node {
   """
   host: Host!
   """
+  Beacon running in this process.
+  """
+  beacon: Beacon
+  """
   Task that reported this process.
   """
   task: Task
@@ -5766,6 +5803,11 @@ input HostProcessWhereInput {
   """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
   """
   task edge predicates
   """
@@ -6201,7 +6243,11 @@ type Portal implements Node {
   """
   Task that created the portal
   """
-  task: Task!
+  task: Task
+  """
+  ShellTask that created the portal
+  """
+  shellTask: ShellTask
   """
   Beacon that created the portal
   """
@@ -6352,6 +6398,11 @@ input PortalWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
   """
   beacon edge predicates
   """
@@ -8290,6 +8341,8 @@ input UpdateBeaconInput {
   """
   lastModifiedAt: Time
   hostID: ID
+  processID: ID
+  clearProcess: Boolean
 }
 """
 UpdateHostInput is used for update Host object.

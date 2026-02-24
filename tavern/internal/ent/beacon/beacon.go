@@ -39,6 +39,8 @@ const (
 	FieldTransport = "transport"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
+	// EdgeProcess holds the string denoting the process edge name in mutations.
+	EdgeProcess = "process"
 	// EdgeTasks holds the string denoting the tasks edge name in mutations.
 	EdgeTasks = "tasks"
 	// EdgeShells holds the string denoting the shells edge name in mutations.
@@ -52,6 +54,13 @@ const (
 	HostInverseTable = "hosts"
 	// HostColumn is the table column denoting the host relation/edge.
 	HostColumn = "beacon_host"
+	// ProcessTable is the table that holds the process relation/edge.
+	ProcessTable = "host_processes"
+	// ProcessInverseTable is the table name for the HostProcess entity.
+	// It exists in this package in order to avoid circular dependency with the "hostprocess" package.
+	ProcessInverseTable = "host_processes"
+	// ProcessColumn is the table column denoting the process relation/edge.
+	ProcessColumn = "beacon_process"
 	// TasksTable is the table that holds the tasks relation/edge.
 	TasksTable = "tasks"
 	// TasksInverseTable is the table name for the Task entity.
@@ -200,6 +209,13 @@ func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByProcessField orders the results by process field.
+func ByProcessField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProcessStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByTasksCount orders the results by tasks count.
 func ByTasksCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -232,6 +248,13 @@ func newHostStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(HostInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, HostTable, HostColumn),
+	)
+}
+func newProcessStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProcessInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProcessTable, ProcessColumn),
 	)
 }
 func newTasksStep() *sqlgraph.Step {

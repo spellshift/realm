@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 )
 
 // Beacon is the model entity for the Beacon schema.
@@ -50,15 +51,17 @@ type Beacon struct {
 type BeaconEdges struct {
 	// Host this beacon is running on.
 	Host *Host `json:"host,omitempty"`
+	// Process the beacon is running in.
+	Process *HostProcess `json:"process,omitempty"`
 	// Tasks that have been assigned to the beacon.
 	Tasks []*Task `json:"tasks,omitempty"`
 	// Shells that have been created by the beacon.
 	Shells []*Shell `json:"shells,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
 	namedTasks  map[string][]*Task
 	namedShells map[string][]*Shell
@@ -75,10 +78,21 @@ func (e BeaconEdges) HostOrErr() (*Host, error) {
 	return nil, &NotLoadedError{edge: "host"}
 }
 
+// ProcessOrErr returns the Process value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BeaconEdges) ProcessOrErr() (*HostProcess, error) {
+	if e.Process != nil {
+		return e.Process, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: hostprocess.Label}
+	}
+	return nil, &NotLoadedError{edge: "process"}
+}
+
 // TasksOrErr returns the Tasks value or an error if the edge
 // was not loaded in eager-loading.
 func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Tasks, nil
 	}
 	return nil, &NotLoadedError{edge: "tasks"}
@@ -87,7 +101,7 @@ func (e BeaconEdges) TasksOrErr() ([]*Task, error) {
 // ShellsOrErr returns the Shells value or an error if the edge
 // was not loaded in eager-loading.
 func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
@@ -212,6 +226,11 @@ func (b *Beacon) Value(name string) (ent.Value, error) {
 // QueryHost queries the "host" edge of the Beacon entity.
 func (b *Beacon) QueryHost() *HostQuery {
 	return NewBeaconClient(b.config).QueryHost(b)
+}
+
+// QueryProcess queries the "process" edge of the Beacon entity.
+func (b *Beacon) QueryProcess() *HostProcessQuery {
+	return NewBeaconClient(b.config).QueryProcess(b)
 }
 
 // QueryTasks queries the "tasks" edge of the Beacon entity.

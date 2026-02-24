@@ -93,6 +93,9 @@ func (Beacon) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Host this beacon is running on."),
+		edge.To("process", HostProcess.Type).
+			Unique().
+			Comment("Process the beacon is running in."),
 		edge.From("tasks", Task.Type).
 			Annotations(
 				entgql.Skip(entgql.SkipMutationUpdateInput),

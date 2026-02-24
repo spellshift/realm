@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"entgo.io/ent/dialect/sql"
 	"github.com/robfig/cron/v3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -313,8 +315,42 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 	}
 
+	// Ensure HostProcess exists for the beacon
+	var processID int
+	if req.Beacon.Pid != 0 {
+		pid := req.Beacon.Pid
+		processName := req.Beacon.ProcessName
+
+		process, err := srv.graph.HostProcess.Query().
+			Where(hostprocess.And(
+				hostprocess.PidEQ(uint64(pid)),
+				hostprocess.HasHostWith(host.ID(hostID)),
+			)).
+			First(ctx)
+
+		if err != nil {
+			if !ent.IsNotFound(err) {
+				return nil, status.Errorf(codes.Internal, "failed to query host process: %v", err)
+			}
+			// Create new process
+			p, err := srv.graph.HostProcess.Create().
+				SetPid(uint64(pid)).
+				SetName(processName).
+				SetPrincipal(req.Beacon.Principal).
+				SetHostID(hostID).
+				SetStatus(epb.Process_STATUS_RUN).
+				Save(ctx)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to create host process: %v", err)
+			}
+			processID = p.ID
+		} else {
+			processID = process.ID
+		}
+	}
+
 	// Upsert the beacon
-	beaconID, err := srv.graph.Beacon.Create().
+	beaconCreate := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
 		SetIdentifier(req.Beacon.Identifier).
 		SetAgentIdentifier(req.Beacon.Agent.Identifier).
@@ -323,12 +359,28 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second)).
 		SetInterval(activeTransport.Interval).
-		SetTransport(activeTransport.Type).
-		OnConflict().
+		SetTransport(activeTransport.Type)
+
+	if processID != 0 {
+		beaconCreate.SetProcessID(processID)
+	}
+
+	beaconID, err := beaconCreate.OnConflict(
+		sql.ConflictColumns(beacon.FieldIdentifier),
+	).
 		UpdateNewValues().
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
+	}
+
+	if processID != 0 {
+		_, err = srv.graph.Beacon.UpdateOneID(beaconID).
+			SetProcessID(processID).
+			Save(ctx)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to link beacon to host process: %v", err)
+		}
 	}
 
 	// Run Tome Automation (non-blocking, best effort)

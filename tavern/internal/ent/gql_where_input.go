@@ -578,6 +578,10 @@ type BeaconWhereInput struct {
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
 
+	// "process" edge predicates.
+	HasProcess     *bool                    `json:"hasProcess,omitempty"`
+	HasProcessWith []*HostProcessWhereInput `json:"hasProcessWith,omitempty"`
+
 	// "tasks" edge predicates.
 	HasTasks     *bool             `json:"hasTasks,omitempty"`
 	HasTasksWith []*TaskWhereInput `json:"hasTasksWith,omitempty"`
@@ -1018,6 +1022,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, beacon.HasHostWith(with...))
+	}
+	if i.HasProcess != nil {
+		p := beacon.HasProcess()
+		if !*i.HasProcess {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasProcessWith) > 0 {
+		with := make([]predicate.HostProcess, 0, len(i.HasProcessWith))
+		for _, w := range i.HasProcessWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasProcessWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasProcessWith(with...))
 	}
 	if i.HasTasks != nil {
 		p := beacon.HasTasks()
@@ -4018,6 +4040,10 @@ type HostProcessWhereInput struct {
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
 
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
+
 	// "task" edge predicates.
 	HasTask     *bool             `json:"hasTask,omitempty"`
 	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
@@ -4506,6 +4532,24 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, hostprocess.HasHostWith(with...))
+	}
+	if i.HasBeacon != nil {
+		p := hostprocess.HasBeacon()
+		if !*i.HasBeacon {
+			p = hostprocess.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, hostprocess.HasBeaconWith(with...))
 	}
 	if i.HasTask != nil {
 		p := hostprocess.HasTask()

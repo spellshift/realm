@@ -498,6 +498,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_transport(ctx, field)
 			case "host":
 				return ec.fieldContext_Beacon_host(ctx, field)
+			case "process":
+				return ec.fieldContext_Beacon_process(ctx, field)
 			case "tasks":
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":

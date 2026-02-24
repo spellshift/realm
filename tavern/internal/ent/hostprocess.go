@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -46,6 +47,7 @@ type HostProcess struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostProcessQuery when eager-loading is set.
 	Edges                         HostProcessEdges `json:"edges"`
+	beacon_process                *int
 	host_processes                *int
 	host_process_host             *int
 	shell_task_reported_processes *int
@@ -57,15 +59,17 @@ type HostProcess struct {
 type HostProcessEdges struct {
 	// Host the process was reported on.
 	Host *Host `json:"host,omitempty"`
+	// Beacon running in this process.
+	Beacon *Beacon `json:"beacon,omitempty"`
 	// Task that reported this process.
 	Task *Task `json:"task,omitempty"`
 	// Shell Task that reported this process.
 	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -79,12 +83,23 @@ func (e HostProcessEdges) HostOrErr() (*Host, error) {
 	return nil, &NotLoadedError{edge: "host"}
 }
 
+// BeaconOrErr returns the Beacon value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e HostProcessEdges) BeaconOrErr() (*Beacon, error) {
+	if e.Beacon != nil {
+		return e.Beacon, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: beacon.Label}
+	}
+	return nil, &NotLoadedError{edge: "beacon"}
+}
+
 // TaskOrErr returns the Task value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e HostProcessEdges) TaskOrErr() (*Task, error) {
 	if e.Task != nil {
 		return e.Task, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: task.Label}
 	}
 	return nil, &NotLoadedError{edge: "task"}
@@ -95,7 +110,7 @@ func (e HostProcessEdges) TaskOrErr() (*Task, error) {
 func (e HostProcessEdges) ShellTaskOrErr() (*ShellTask, error) {
 	if e.ShellTask != nil {
 		return e.ShellTask, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: shelltask.Label}
 	}
 	return nil, &NotLoadedError{edge: "shell_task"}
@@ -114,13 +129,15 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case hostprocess.FieldCreatedAt, hostprocess.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case hostprocess.ForeignKeys[0]: // host_processes
+		case hostprocess.ForeignKeys[0]: // beacon_process
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[1]: // host_process_host
+		case hostprocess.ForeignKeys[1]: // host_processes
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[2]: // shell_task_reported_processes
+		case hostprocess.ForeignKeys[2]: // host_process_host
 			values[i] = new(sql.NullInt64)
-		case hostprocess.ForeignKeys[3]: // task_reported_processes
+		case hostprocess.ForeignKeys[3]: // shell_task_reported_processes
+			values[i] = new(sql.NullInt64)
+		case hostprocess.ForeignKeys[4]: // task_reported_processes
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -211,26 +228,33 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 			}
 		case hostprocess.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field beacon_process", value)
+			} else if value.Valid {
+				hp.beacon_process = new(int)
+				*hp.beacon_process = int(value.Int64)
+			}
+		case hostprocess.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_processes", value)
 			} else if value.Valid {
 				hp.host_processes = new(int)
 				*hp.host_processes = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[1]:
+		case hostprocess.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field host_process_host", value)
 			} else if value.Valid {
 				hp.host_process_host = new(int)
 				*hp.host_process_host = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[2]:
+		case hostprocess.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field shell_task_reported_processes", value)
 			} else if value.Valid {
 				hp.shell_task_reported_processes = new(int)
 				*hp.shell_task_reported_processes = int(value.Int64)
 			}
-		case hostprocess.ForeignKeys[3]:
+		case hostprocess.ForeignKeys[4]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field task_reported_processes", value)
 			} else if value.Valid {
@@ -253,6 +277,11 @@ func (hp *HostProcess) Value(name string) (ent.Value, error) {
 // QueryHost queries the "host" edge of the HostProcess entity.
 func (hp *HostProcess) QueryHost() *HostQuery {
 	return NewHostProcessClient(hp.config).QueryHost(hp)
+}
+
+// QueryBeacon queries the "beacon" edge of the HostProcess entity.
+func (hp *HostProcess) QueryBeacon() *BeaconQuery {
+	return NewHostProcessClient(hp.config).QueryBeacon(hp)
 }
 
 // QueryTask queries the "task" edge of the HostProcess entity.

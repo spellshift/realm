@@ -292,6 +292,10 @@ type Beacon implements Node {
   Host this beacon is running on.
   """
   host: Host!
+  """
+  Process the beacon is running in.
+  """
+  process: HostProcess
   tasks(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -577,6 +581,11 @@ input BeaconWhereInput {
   """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
+  """
+  process edge predicates
+  """
+  hasProcess: Boolean
+  hasProcessWith: [HostProcessWhereInput!]
   """
   tasks edge predicates
   """
@@ -2067,6 +2076,10 @@ type HostProcess implements Node {
   """
   host: Host!
   """
+  Beacon running in this process.
+  """
+  beacon: Beacon
+  """
   Task that reported this process.
   """
   task: Task
@@ -2326,6 +2339,11 @@ input HostProcessWhereInput {
   """
   hasHost: Boolean
   hasHostWith: [HostWhereInput!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
   """
   task edge predicates
   """
@@ -2761,7 +2779,11 @@ type Portal implements Node {
   """
   Task that created the portal
   """
-  task: Task!
+  task: Task
+  """
+  ShellTask that created the portal
+  """
+  shellTask: ShellTask
   """
   Beacon that created the portal
   """
@@ -2912,6 +2934,11 @@ input PortalWhereInput {
   """
   hasTask: Boolean
   hasTaskWith: [TaskWhereInput!]
+  """
+  shell_task edge predicates
+  """
+  hasShellTask: Boolean
+  hasShellTaskWith: [ShellTaskWhereInput!]
   """
   beacon edge predicates
   """
@@ -4850,6 +4877,8 @@ input UpdateBeaconInput {
   """
   lastModifiedAt: Time
   hostID: ID
+  processID: ID
+  clearProcess: Boolean
 }
 """
 UpdateHostInput is used for update Host object.

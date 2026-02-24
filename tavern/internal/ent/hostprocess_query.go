@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -26,6 +27,7 @@ type HostProcessQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.HostProcess
 	withHost      *HostQuery
+	withBeacon    *BeaconQuery
 	withTask      *TaskQuery
 	withShellTask *ShellTaskQuery
 	withFKs       bool
@@ -82,6 +84,28 @@ func (hpq *HostProcessQuery) QueryHost() *HostQuery {
 			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, hostprocess.HostTable, hostprocess.HostColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryBeacon chains the current query on the "beacon" edge.
+func (hpq *HostProcessQuery) QueryBeacon() *BeaconQuery {
+	query := (&BeaconClient{config: hpq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hpq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hpq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(hostprocess.Table, hostprocess.FieldID, selector),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, hostprocess.BeaconTable, hostprocess.BeaconColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hpq.driver.Dialect(), step)
 		return fromU, nil
@@ -326,6 +350,7 @@ func (hpq *HostProcessQuery) Clone() *HostProcessQuery {
 		inters:        append([]Interceptor{}, hpq.inters...),
 		predicates:    append([]predicate.HostProcess{}, hpq.predicates...),
 		withHost:      hpq.withHost.Clone(),
+		withBeacon:    hpq.withBeacon.Clone(),
 		withTask:      hpq.withTask.Clone(),
 		withShellTask: hpq.withShellTask.Clone(),
 		// clone intermediate query.
@@ -342,6 +367,17 @@ func (hpq *HostProcessQuery) WithHost(opts ...func(*HostQuery)) *HostProcessQuer
 		opt(query)
 	}
 	hpq.withHost = query
+	return hpq
+}
+
+// WithBeacon tells the query-builder to eager-load the nodes that are connected to
+// the "beacon" edge. The optional arguments are used to configure the query builder of the edge.
+func (hpq *HostProcessQuery) WithBeacon(opts ...func(*BeaconQuery)) *HostProcessQuery {
+	query := (&BeaconClient{config: hpq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hpq.withBeacon = query
 	return hpq
 }
 
@@ -446,13 +482,14 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*HostProcess{}
 		withFKs     = hpq.withFKs
 		_spec       = hpq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			hpq.withHost != nil,
+			hpq.withBeacon != nil,
 			hpq.withTask != nil,
 			hpq.withShellTask != nil,
 		}
 	)
-	if hpq.withHost != nil || hpq.withTask != nil || hpq.withShellTask != nil {
+	if hpq.withHost != nil || hpq.withBeacon != nil || hpq.withTask != nil || hpq.withShellTask != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -482,6 +519,12 @@ func (hpq *HostProcessQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := hpq.withHost; query != nil {
 		if err := hpq.loadHost(ctx, query, nodes, nil,
 			func(n *HostProcess, e *Host) { n.Edges.Host = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := hpq.withBeacon; query != nil {
+		if err := hpq.loadBeacon(ctx, query, nodes, nil,
+			func(n *HostProcess, e *Beacon) { n.Edges.Beacon = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -530,6 +573,38 @@ func (hpq *HostProcessQuery) loadHost(ctx context.Context, query *HostQuery, nod
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "host_process_host" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (hpq *HostProcessQuery) loadBeacon(ctx context.Context, query *BeaconQuery, nodes []*HostProcess, init func(*HostProcess), assign func(*HostProcess, *Beacon)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*HostProcess)
+	for i := range nodes {
+		if nodes[i].beacon_process == nil {
+			continue
+		}
+		fk := *nodes[i].beacon_process
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(beacon.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "beacon_process" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

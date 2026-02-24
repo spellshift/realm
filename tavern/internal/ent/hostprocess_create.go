@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -149,6 +150,25 @@ func (hpc *HostProcessCreate) SetHostID(id int) *HostProcessCreate {
 // SetHost sets the "host" edge to the Host entity.
 func (hpc *HostProcessCreate) SetHost(h *Host) *HostProcessCreate {
 	return hpc.SetHostID(h.ID)
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
+func (hpc *HostProcessCreate) SetBeaconID(id int) *HostProcessCreate {
+	hpc.mutation.SetBeaconID(id)
+	return hpc
+}
+
+// SetNillableBeaconID sets the "beacon" edge to the Beacon entity by ID if the given value is not nil.
+func (hpc *HostProcessCreate) SetNillableBeaconID(id *int) *HostProcessCreate {
+	if id != nil {
+		hpc = hpc.SetBeaconID(*id)
+	}
+	return hpc
+}
+
+// SetBeacon sets the "beacon" edge to the Beacon entity.
+func (hpc *HostProcessCreate) SetBeacon(b *Beacon) *HostProcessCreate {
+	return hpc.SetBeaconID(b.ID)
 }
 
 // SetTaskID sets the "task" edge to the Task entity by ID.
@@ -356,6 +376,23 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.host_process_host = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hpc.mutation.BeaconIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   hostprocess.BeaconTable,
+			Columns: []string{hostprocess.BeaconColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beacon.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.beacon_process = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := hpc.mutation.TaskIDs(); len(nodes) > 0 {
