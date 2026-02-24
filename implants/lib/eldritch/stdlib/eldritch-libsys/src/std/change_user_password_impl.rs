@@ -4,7 +4,6 @@ use anyhow::{Result, anyhow};
 #[cfg(target_os = "windows")]
 use alloc::vec::Vec;
 #[cfg(target_os = "windows")]
-#[cfg(target_os = "windows")]
 use windows_sys::Win32::NetworkManagement::NetManagement::{
     NERR_Success, NetUserSetInfo, USER_INFO_1003,
 };
