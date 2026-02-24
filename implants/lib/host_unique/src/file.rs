@@ -39,7 +39,8 @@ impl File {
             target_os = "linux",
             target_os = "freebsd",
             target_os = "openbsd",
-            target_os = "netbsd"
+            target_os = "netbsd",
+            target_os = "solaris"
         ))]
         return String::from("/var/tmp/system-id");
 
