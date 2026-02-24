@@ -218,5 +218,7 @@ pub async fn run_reverse_shell_pty<T: Transport>(
 ) -> Result<()> {
     #[cfg(debug_assertions)]
     log::error!("reverse_shell_pty is not supported on Solaris");
-    Err(anyhow::anyhow!("reverse_shell_pty is not supported on Solaris"))
+    Err(anyhow::anyhow!(
+        "reverse_shell_pty is not supported on Solaris"
+    ))
 }
