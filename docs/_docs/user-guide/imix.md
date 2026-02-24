@@ -255,7 +255,7 @@ To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environm
 
 `IMIX_UNIQUE` should be a list of JSON objects with `type` as a required field with args as an optional field.
 
-By default IMIX_UNIQUE is about equal to: `[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"},{"type":"macaddr"}]'`
+By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}},{"type":"macaddr"}]'`
 
-To proiritize stealth we reccomend removing the file uniqueness selectors: `[{"type":"env"},{"type":"macaddr"}]'`
-If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}]'`
+To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
+If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
