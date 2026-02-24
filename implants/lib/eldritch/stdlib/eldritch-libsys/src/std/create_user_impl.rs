@@ -1,4 +1,4 @@
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use anyhow::{Result, anyhow};
 
 #[cfg(target_os = "windows")]
@@ -18,6 +18,7 @@ use std::io::Write;
 #[cfg(target_os = "linux")]
 use std::os::unix::fs::PermissionsExt;
 
+#[allow(unused_variables)]
 pub fn create_user(username: String, password: String) -> Result<bool> {
     #[cfg(target_os = "windows")]
     {

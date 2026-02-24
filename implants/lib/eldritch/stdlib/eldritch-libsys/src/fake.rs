@@ -149,6 +149,10 @@ impl SysLibrary for SysLibraryFake {
     ) -> Result<bool, String> {
         Ok(true)
     }
+
+    fn create_user(&self, _username: String, _password: String) -> Result<bool, String> {
+        Ok(true)
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]
