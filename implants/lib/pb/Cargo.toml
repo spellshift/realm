@@ -36,6 +36,9 @@ url = { workspace = true }
 [target.'cfg(not(target_os = "solaris"))'.dependencies]
 netdev = { workspace = true }
 
+[target.'cfg(target_os = "solaris")'.dependencies]
+libc = { workspace = true }
+
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 which = { workspace = true }
