@@ -4,10 +4,6 @@ use anyhow::Result;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
-        // We have a hashmap of all the names, might as well use it
-        if !self.asset_names.contains(name) {
-            return Err(anyhow::anyhow!("asset not found: {}", name));
-        };
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
             if let Ok(file) = backend.get(name) {

@@ -81,23 +81,20 @@ impl AgentAssets {
 
 impl AssetBackend for AgentAssets {
     fn get(&self, name: &str) -> Result<Vec<u8>> {
-        if self.remote_assets.iter().any(|s| s == name) {
-            let context_val = match &self.context {
-                Context::Task(tc) => Some(pb::c2::fetch_asset_request::Context::TaskContext(
-                    tc.clone(),
-                )),
-                Context::ShellTask(stc) => Some(
-                    pb::c2::fetch_asset_request::Context::ShellTaskContext(stc.clone()),
-                ),
-            };
+        let context_val = match &self.context {
+            Context::Task(tc) => Some(pb::c2::fetch_asset_request::Context::TaskContext(
+                tc.clone(),
+            )),
+            Context::ShellTask(stc) => Some(
+                pb::c2::fetch_asset_request::Context::ShellTaskContext(stc.clone()),
+            ),
+        };
 
-            let req = FetchAssetRequest {
-                name: name.to_string(),
-                context: context_val,
-            };
-            return self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e));
-        }
-        return Err(anyhow::anyhow!("asset not found: {}", name));
+        let req = FetchAssetRequest {
+            name: name.to_string(),
+            context: context_val,
+        };
+        self.agent.fetch_asset(req).map_err(|e| anyhow::anyhow!(e))
     }
 
     fn assets(&self) -> Vec<Cow<'static, str>> {
@@ -145,7 +142,7 @@ impl StdAssetsLibrary {
             .map(String::as_str)
             .collect();
 
-        if colliding_names.len() > 0 {
+        if !colliding_names.is_empty() {
             let error_message = format!(
                 "asset collision detected. The following asset names already exist in the library: {}",
                 colliding_names.join(", ")
