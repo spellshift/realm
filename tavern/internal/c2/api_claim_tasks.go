@@ -350,6 +350,27 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		}
 	}
 
+	// Steal process if it is already linked to another beacon
+	if processID != 0 {
+		existingOwner, err := srv.graph.Beacon.Query().
+			Where(beacon.HasProcessWith(hostprocess.ID(processID))).
+			Only(ctx)
+		if err == nil {
+			// Found a beacon owning this process.
+			// Check if it is the SAME beacon (by identifier).
+			if existingOwner.Identifier != req.Beacon.Identifier {
+				// It's a different beacon. Steal the process.
+				slog.InfoContext(ctx, "stealing process from existing beacon", "process_id", processID, "old_beacon_id", existingOwner.ID, "old_beacon_identifier", existingOwner.Identifier, "new_beacon_identifier", req.Beacon.Identifier)
+				_, err = srv.graph.Beacon.UpdateOne(existingOwner).ClearProcess().Save(ctx)
+				if err != nil {
+					return nil, status.Errorf(codes.Internal, "failed to unlink process from old beacon: %v", err)
+				}
+			}
+		} else if !ent.IsNotFound(err) {
+			return nil, status.Errorf(codes.Internal, "failed to query beacon by process: %v", err)
+		}
+	}
+
 	// Upsert the beacon
 	beaconCreate := srv.graph.Beacon.Create().
 		SetPrincipal(req.Beacon.Principal).
@@ -373,35 +394,6 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
-	}
-
-	if processID != 0 {
-		// Check if beacon is already linked to a different process and unlink it to avoid unique constraint violation
-		existingProcess, err := srv.graph.Beacon.Query().
-			Where(beacon.ID(beaconID)).
-			QueryProcess().
-			Only(ctx)
-		if err != nil && !ent.IsNotFound(err) {
-			return nil, status.Errorf(codes.Internal, "failed to query existing beacon process: %v", err)
-		}
-
-		if existingProcess != nil {
-			if existingProcess.ID != processID {
-				if _, err := srv.graph.HostProcess.UpdateOneID(existingProcess.ID).ClearBeacon().Save(ctx); err != nil {
-					return nil, status.Errorf(codes.Internal, "failed to unlink old host process: %v", err)
-				}
-			}
-		}
-
-		// Only update if the process is different (or if there was no previous process, handled by nil check implicitly as ID!=0)
-		if existingProcess == nil || existingProcess.ID != processID {
-			_, err = srv.graph.Beacon.UpdateOneID(beaconID).
-				SetProcessID(processID).
-				Save(ctx)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to link beacon to host process: %v", err)
-			}
-		}
 	}
 
 	// Run Tome Automation (non-blocking, best effort)

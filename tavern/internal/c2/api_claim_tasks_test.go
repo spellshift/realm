@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 )
@@ -29,6 +30,24 @@ func TestClaimTasks(t *testing.T) {
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 		c2test.NewRandomAssignedTask(ctx, graph, existingBeacon.Identifier),
 	}
+
+	// Create a beacon and process for the stealing test
+	victimBeacon := c2test.NewRandomBeacon(ctx, graph)
+	victimHost, err := victimBeacon.QueryHost().Only(ctx)
+	require.NoError(t, err)
+
+	victimProcess, err := graph.HostProcess.Create().
+		SetPid(12345).
+		SetName("victim_process").
+		SetPpid(0).
+		SetPrincipal("root").
+		SetStatus(epb.Process_STATUS_RUN).
+		SetHost(victimHost).
+		Save(ctx)
+	require.NoError(t, err)
+	// Link them
+	_, err = graph.Beacon.UpdateOne(victimBeacon).SetProcess(victimProcess).Save(ctx)
+	require.NoError(t, err)
 
 	// Test Cases
 	tests := []struct {
@@ -148,11 +167,52 @@ func TestClaimTasks(t *testing.T) {
 			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
 			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
 		},
+		{
+			name: "Steal_Process_From_Another_Beacon",
+			req: &c2pb.ClaimTasksRequest{
+				Beacon: &c2pb.Beacon{
+					Identifier: "thief-beacon",
+					Principal:  "root",
+					Pid:        12345, // Same PID as victimProcess
+					ProcessName: "victim_process",
+					Agent: &c2pb.Agent{
+						Identifier: "test-agent",
+					},
+					Host: &c2pb.Host{
+						Identifier: "host-" + victimBeacon.Identifier, // This will be overwritten by logic below
+						Name:       "host-for-test",
+						Platform:   c2pb.Host_PLATFORM_LINUX,
+						PrimaryIp:  "127.0.0.1",
+					},
+					AvailableTransports: &c2pb.AvailableTransports{
+						Transports: []*c2pb.Transport{
+							{
+								Uri:      "grpc://127.0.0.1:8080",
+								Interval: uint64(60),
+								Type:     c2pb.Transport_TRANSPORT_GRPC,
+							},
+						},
+						ActiveIndex: 0,
+					},
+				},
+			},
+			wantResp: &c2pb.ClaimTasksResponse{},
+			wantCode: codes.OK,
+
+			wantBeaconExist:            true,
+			wantBeaconLastSeenAtBefore: time.Now().UTC().Add(10 * time.Second),
+			wantBeaconLastSeenAtAfter:  time.Now().UTC().Add(-10 * time.Second),
+		},
 	}
 
 	// Run Tests
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			// Ensure host exists for the stealing test if needed
+			if tc.name == "Steal_Process_From_Another_Beacon" {
+				tc.req.Beacon.Host.Identifier = victimHost.Identifier
+			}
+
 			// Callback
 			resp, err := client.ClaimTasks(ctx, tc.req)
 
@@ -188,6 +248,20 @@ func TestClaimTasks(t *testing.T) {
 
 			// Beacon Assertions
 			assert.WithinRange(t, testBeacon.LastSeenAt, tc.wantBeaconLastSeenAtAfter, tc.wantBeaconLastSeenAtBefore)
+
+			if tc.name == "Steal_Process_From_Another_Beacon" {
+				// Verify the process is now linked to the thief beacon
+				p, err := testBeacon.QueryProcess().Only(ctx)
+				require.NoError(t, err)
+				assert.Equal(t, uint64(12345), p.Pid)
+
+				// Verify the victim beacon no longer has the process
+				// Reload victimBeacon
+				reloadedVictim, err := graph.Beacon.Get(ctx, victimBeacon.ID)
+				require.NoError(t, err)
+				_, err = reloadedVictim.QueryProcess().Only(ctx)
+				assert.True(t, ent.IsNotFound(err), "Victim beacon should have lost its process")
+			}
 		})
 	}
 }
