@@ -655,6 +655,29 @@ func HasFilesWith(preds ...predicate.HostFile) predicate.Host {
 	})
 }
 
+// HasScreenshots applies the HasEdge predicate on the "screenshots" edge.
+func HasScreenshots() predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ScreenshotsTable, ScreenshotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasScreenshotsWith applies the HasEdge predicate on the "screenshots" edge with a given conditions (other predicates).
+func HasScreenshotsWith(preds ...predicate.Screenshot) predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := newScreenshotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasProcesses applies the HasEdge predicate on the "processes" edge.
 func HasProcesses() predicate.Host {
 	return predicate.Host(func(s *sql.Selector) {

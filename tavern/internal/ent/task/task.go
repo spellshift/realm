@@ -37,6 +37,8 @@ const (
 	EdgeBeacon = "beacon"
 	// EdgeReportedFiles holds the string denoting the reported_files edge name in mutations.
 	EdgeReportedFiles = "reported_files"
+	// EdgeReportedScreenshots holds the string denoting the reported_screenshots edge name in mutations.
+	EdgeReportedScreenshots = "reported_screenshots"
 	// EdgeReportedProcesses holds the string denoting the reported_processes edge name in mutations.
 	EdgeReportedProcesses = "reported_processes"
 	// EdgeReportedCredentials holds the string denoting the reported_credentials edge name in mutations.
@@ -66,6 +68,13 @@ const (
 	ReportedFilesInverseTable = "host_files"
 	// ReportedFilesColumn is the table column denoting the reported_files relation/edge.
 	ReportedFilesColumn = "task_reported_files"
+	// ReportedScreenshotsTable is the table that holds the reported_screenshots relation/edge.
+	ReportedScreenshotsTable = "screenshots"
+	// ReportedScreenshotsInverseTable is the table name for the Screenshot entity.
+	// It exists in this package in order to avoid circular dependency with the "screenshot" package.
+	ReportedScreenshotsInverseTable = "screenshots"
+	// ReportedScreenshotsColumn is the table column denoting the reported_screenshots relation/edge.
+	ReportedScreenshotsColumn = "task_reported_screenshots"
 	// ReportedProcessesTable is the table that holds the reported_processes relation/edge.
 	ReportedProcessesTable = "host_processes"
 	// ReportedProcessesInverseTable is the table name for the HostProcess entity.
@@ -219,6 +228,20 @@ func ByReportedFiles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByReportedScreenshotsCount orders the results by reported_screenshots count.
+func ByReportedScreenshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newReportedScreenshotsStep(), opts...)
+	}
+}
+
+// ByReportedScreenshots orders the results by reported_screenshots terms.
+func ByReportedScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newReportedScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByReportedProcessesCount orders the results by reported_processes count.
 func ByReportedProcessesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -279,6 +302,13 @@ func newReportedFilesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReportedFilesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportedFilesTable, ReportedFilesColumn),
+	)
+}
+func newReportedScreenshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ReportedScreenshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ReportedScreenshotsTable, ReportedScreenshotsColumn),
 	)
 }
 func newReportedProcessesStep() *sqlgraph.Step {

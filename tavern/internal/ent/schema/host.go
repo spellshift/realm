@@ -86,6 +86,12 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Files reported on this host system."),
+		edge.To("screenshots", Screenshot.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Screenshots reported on this host system."),
 		edge.To("processes", HostProcess.Type).
 			Annotations(
 				entgql.RelayConnection(),

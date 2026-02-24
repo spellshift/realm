@@ -72,6 +72,11 @@ func (ShellTask) Edges() []ent.Edge {
 				entsql.OnDelete(entsql.Cascade),
 			).
 			Comment("Files reported by this shell task"),
+		edge.To("reported_screenshots", Screenshot.Type).
+			Annotations(
+				entsql.OnDelete(entsql.Cascade),
+			).
+			Comment("Screenshots reported by this shell task"),
 		edge.To("reported_processes", HostProcess.Type).
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),

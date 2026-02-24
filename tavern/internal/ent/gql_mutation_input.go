@@ -75,6 +75,9 @@ type UpdateHostInput struct {
 	ClearFiles          bool
 	AddFileIDs          []int
 	RemoveFileIDs       []int
+	ClearScreenshots    bool
+	AddScreenshotIDs    []int
+	RemoveScreenshotIDs []int
 	ClearProcesses      bool
 	AddProcessIDs       []int
 	RemoveProcessIDs    []int
@@ -120,6 +123,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveFileIDs; len(v) > 0 {
 		m.RemoveFileIDs(v...)
+	}
+	if i.ClearScreenshots {
+		m.ClearScreenshots()
+	}
+	if v := i.AddScreenshotIDs; len(v) > 0 {
+		m.AddScreenshotIDs(v...)
+	}
+	if v := i.RemoveScreenshotIDs; len(v) > 0 {
+		m.RemoveScreenshotIDs(v...)
 	}
 	if i.ClearProcesses {
 		m.ClearProcesses()

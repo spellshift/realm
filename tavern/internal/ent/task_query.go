@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -32,6 +33,7 @@ type TaskQuery struct {
 	withQuest                    *QuestQuery
 	withBeacon                   *BeaconQuery
 	withReportedFiles            *HostFileQuery
+	withReportedScreenshots      *ScreenshotQuery
 	withReportedProcesses        *HostProcessQuery
 	withReportedCredentials      *HostCredentialQuery
 	withShells                   *ShellQuery
@@ -39,6 +41,7 @@ type TaskQuery struct {
 	modifiers                    []func(*sql.Selector)
 	loadTotal                    []func(context.Context, []*Task) error
 	withNamedReportedFiles       map[string]*HostFileQuery
+	withNamedReportedScreenshots map[string]*ScreenshotQuery
 	withNamedReportedProcesses   map[string]*HostProcessQuery
 	withNamedReportedCredentials map[string]*HostCredentialQuery
 	withNamedShells              map[string]*ShellQuery
@@ -137,6 +140,28 @@ func (tq *TaskQuery) QueryReportedFiles() *HostFileQuery {
 			sqlgraph.From(task.Table, task.FieldID, selector),
 			sqlgraph.To(hostfile.Table, hostfile.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedFilesTable, task.ReportedFilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReportedScreenshots chains the current query on the "reported_screenshots" edge.
+func (tq *TaskQuery) QueryReportedScreenshots() *ScreenshotQuery {
+	query := (&ScreenshotClient{config: tq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(task.Table, task.FieldID, selector),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, task.ReportedScreenshotsTable, task.ReportedScreenshotsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -405,6 +430,7 @@ func (tq *TaskQuery) Clone() *TaskQuery {
 		withQuest:               tq.withQuest.Clone(),
 		withBeacon:              tq.withBeacon.Clone(),
 		withReportedFiles:       tq.withReportedFiles.Clone(),
+		withReportedScreenshots: tq.withReportedScreenshots.Clone(),
 		withReportedProcesses:   tq.withReportedProcesses.Clone(),
 		withReportedCredentials: tq.withReportedCredentials.Clone(),
 		withShells:              tq.withShells.Clone(),
@@ -444,6 +470,17 @@ func (tq *TaskQuery) WithReportedFiles(opts ...func(*HostFileQuery)) *TaskQuery 
 		opt(query)
 	}
 	tq.withReportedFiles = query
+	return tq
+}
+
+// WithReportedScreenshots tells the query-builder to eager-load the nodes that are connected to
+// the "reported_screenshots" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithReportedScreenshots(opts ...func(*ScreenshotQuery)) *TaskQuery {
+	query := (&ScreenshotClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tq.withReportedScreenshots = query
 	return tq
 }
 
@@ -559,10 +596,11 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		nodes       = []*Task{}
 		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			tq.withQuest != nil,
 			tq.withBeacon != nil,
 			tq.withReportedFiles != nil,
+			tq.withReportedScreenshots != nil,
 			tq.withReportedProcesses != nil,
 			tq.withReportedCredentials != nil,
 			tq.withShells != nil,
@@ -614,6 +652,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 			return nil, err
 		}
 	}
+	if query := tq.withReportedScreenshots; query != nil {
+		if err := tq.loadReportedScreenshots(ctx, query, nodes,
+			func(n *Task) { n.Edges.ReportedScreenshots = []*Screenshot{} },
+			func(n *Task, e *Screenshot) { n.Edges.ReportedScreenshots = append(n.Edges.ReportedScreenshots, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := tq.withReportedProcesses; query != nil {
 		if err := tq.loadReportedProcesses(ctx, query, nodes,
 			func(n *Task) { n.Edges.ReportedProcesses = []*HostProcess{} },
@@ -639,6 +684,13 @@ func (tq *TaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Task, e
 		if err := tq.loadReportedFiles(ctx, query, nodes,
 			func(n *Task) { n.appendNamedReportedFiles(name) },
 			func(n *Task, e *HostFile) { n.appendNamedReportedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range tq.withNamedReportedScreenshots {
+		if err := tq.loadReportedScreenshots(ctx, query, nodes,
+			func(n *Task) { n.appendNamedReportedScreenshots(name) },
+			func(n *Task, e *Screenshot) { n.appendNamedReportedScreenshots(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -761,6 +813,37 @@ func (tq *TaskQuery) loadReportedFiles(ctx context.Context, query *HostFileQuery
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "task_reported_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tq *TaskQuery) loadReportedScreenshots(ctx context.Context, query *ScreenshotQuery, nodes []*Task, init func(*Task), assign func(*Task, *Screenshot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Task)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Screenshot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(task.ReportedScreenshotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.task_reported_screenshots
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "task_reported_screenshots" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "task_reported_screenshots" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -955,6 +1038,20 @@ func (tq *TaskQuery) WithNamedReportedFiles(name string, opts ...func(*HostFileQ
 		tq.withNamedReportedFiles = make(map[string]*HostFileQuery)
 	}
 	tq.withNamedReportedFiles[name] = query
+	return tq
+}
+
+// WithNamedReportedScreenshots tells the query-builder to eager-load the nodes that are connected to the "reported_screenshots"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (tq *TaskQuery) WithNamedReportedScreenshots(name string, opts ...func(*ScreenshotQuery)) *TaskQuery {
+	query := (&ScreenshotClient{config: tq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if tq.withNamedReportedScreenshots == nil {
+		tq.withNamedReportedScreenshots = make(map[string]*ScreenshotQuery)
+	}
+	tq.withNamedReportedScreenshots[name] = query
 	return tq
 }
 

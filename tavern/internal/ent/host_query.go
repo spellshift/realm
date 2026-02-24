@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 )
 
@@ -31,6 +32,7 @@ type HostQuery struct {
 	withTags             *TagQuery
 	withBeacons          *BeaconQuery
 	withFiles            *HostFileQuery
+	withScreenshots      *ScreenshotQuery
 	withProcesses        *HostProcessQuery
 	withCredentials      *HostCredentialQuery
 	withFKs              bool
@@ -39,6 +41,7 @@ type HostQuery struct {
 	withNamedTags        map[string]*TagQuery
 	withNamedBeacons     map[string]*BeaconQuery
 	withNamedFiles       map[string]*HostFileQuery
+	withNamedScreenshots map[string]*ScreenshotQuery
 	withNamedProcesses   map[string]*HostProcessQuery
 	withNamedCredentials map[string]*HostCredentialQuery
 	// intermediate query (i.e. traversal path).
@@ -136,6 +139,28 @@ func (hq *HostQuery) QueryFiles() *HostFileQuery {
 			sqlgraph.From(host.Table, host.FieldID, selector),
 			sqlgraph.To(hostfile.Table, hostfile.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, host.FilesTable, host.FilesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryScreenshots chains the current query on the "screenshots" edge.
+func (hq *HostQuery) QueryScreenshots() *ScreenshotQuery {
+	query := (&ScreenshotClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.ScreenshotsTable, host.ScreenshotsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
 		return fromU, nil
@@ -382,6 +407,7 @@ func (hq *HostQuery) Clone() *HostQuery {
 		withTags:        hq.withTags.Clone(),
 		withBeacons:     hq.withBeacons.Clone(),
 		withFiles:       hq.withFiles.Clone(),
+		withScreenshots: hq.withScreenshots.Clone(),
 		withProcesses:   hq.withProcesses.Clone(),
 		withCredentials: hq.withCredentials.Clone(),
 		// clone intermediate query.
@@ -420,6 +446,17 @@ func (hq *HostQuery) WithFiles(opts ...func(*HostFileQuery)) *HostQuery {
 		opt(query)
 	}
 	hq.withFiles = query
+	return hq
+}
+
+// WithScreenshots tells the query-builder to eager-load the nodes that are connected to
+// the "screenshots" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithScreenshots(opts ...func(*ScreenshotQuery)) *HostQuery {
+	query := (&ScreenshotClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withScreenshots = query
 	return hq
 }
 
@@ -524,10 +561,11 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		nodes       = []*Host{}
 		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
+			hq.withScreenshots != nil,
 			hq.withProcesses != nil,
 			hq.withCredentials != nil,
 		}
@@ -577,6 +615,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withScreenshots; query != nil {
+		if err := hq.loadScreenshots(ctx, query, nodes,
+			func(n *Host) { n.Edges.Screenshots = []*Screenshot{} },
+			func(n *Host, e *Screenshot) { n.Edges.Screenshots = append(n.Edges.Screenshots, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := hq.withProcesses; query != nil {
 		if err := hq.loadProcesses(ctx, query, nodes,
 			func(n *Host) { n.Edges.Processes = []*HostProcess{} },
@@ -609,6 +654,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadFiles(ctx, query, nodes,
 			func(n *Host) { n.appendNamedFiles(name) },
 			func(n *Host, e *HostFile) { n.appendNamedFiles(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedScreenshots {
+		if err := hq.loadScreenshots(ctx, query, nodes,
+			func(n *Host) { n.appendNamedScreenshots(name) },
+			func(n *Host, e *Screenshot) { n.appendNamedScreenshots(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -752,6 +804,37 @@ func (hq *HostQuery) loadFiles(ctx context.Context, query *HostFileQuery, nodes 
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "host_files" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (hq *HostQuery) loadScreenshots(ctx context.Context, query *ScreenshotQuery, nodes []*Host, init func(*Host), assign func(*Host, *Screenshot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Host)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Screenshot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(host.ScreenshotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.host_screenshots
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "host_screenshots" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "host_screenshots" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -943,6 +1026,20 @@ func (hq *HostQuery) WithNamedFiles(name string, opts ...func(*HostFileQuery)) *
 		hq.withNamedFiles = make(map[string]*HostFileQuery)
 	}
 	hq.withNamedFiles[name] = query
+	return hq
+}
+
+// WithNamedScreenshots tells the query-builder to eager-load the nodes that are connected to the "screenshots"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedScreenshots(name string, opts ...func(*ScreenshotQuery)) *HostQuery {
+	query := (&ScreenshotClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedScreenshots == nil {
+		hq.withNamedScreenshots = make(map[string]*ScreenshotQuery)
+	}
+	hq.withNamedScreenshots[name] = query
 	return hq
 }
 

@@ -51,19 +51,22 @@ type HostEdges struct {
 	Beacons []*Beacon `json:"beacons,omitempty"`
 	// Files reported on this host system.
 	Files []*HostFile `json:"files,omitempty"`
+	// Screenshots reported on this host system.
+	Screenshots []*Screenshot `json:"screenshots,omitempty"`
 	// Processes reported as running on this host system.
 	Processes []*HostProcess `json:"processes,omitempty"`
 	// Credentials reported from this host system.
 	Credentials []*HostCredential `json:"credentials,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [6]map[string]int
 
 	namedTags        map[string][]*Tag
 	namedBeacons     map[string][]*Beacon
 	namedFiles       map[string][]*HostFile
+	namedScreenshots map[string][]*Screenshot
 	namedProcesses   map[string][]*HostProcess
 	namedCredentials map[string][]*HostCredential
 }
@@ -95,10 +98,19 @@ func (e HostEdges) FilesOrErr() ([]*HostFile, error) {
 	return nil, &NotLoadedError{edge: "files"}
 }
 
+// ScreenshotsOrErr returns the Screenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) ScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[3] {
+		return e.Screenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "screenshots"}
+}
+
 // ProcessesOrErr returns the Processes value or an error if the edge
 // was not loaded in eager-loading.
 func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Processes, nil
 	}
 	return nil, &NotLoadedError{edge: "processes"}
@@ -107,7 +119,7 @@ func (e HostEdges) ProcessesOrErr() ([]*HostProcess, error) {
 // CredentialsOrErr returns the Credentials value or an error if the edge
 // was not loaded in eager-loading.
 func (e HostEdges) CredentialsOrErr() ([]*HostCredential, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Credentials, nil
 	}
 	return nil, &NotLoadedError{edge: "credentials"}
@@ -236,6 +248,11 @@ func (h *Host) QueryBeacons() *BeaconQuery {
 // QueryFiles queries the "files" edge of the Host entity.
 func (h *Host) QueryFiles() *HostFileQuery {
 	return NewHostClient(h.config).QueryFiles(h)
+}
+
+// QueryScreenshots queries the "screenshots" edge of the Host entity.
+func (h *Host) QueryScreenshots() *ScreenshotQuery {
+	return NewHostClient(h.config).QueryScreenshots(h)
 }
 
 // QueryProcesses queries the "processes" edge of the Host entity.
@@ -370,6 +387,30 @@ func (h *Host) appendNamedFiles(name string, edges ...*HostFile) {
 		h.Edges.namedFiles[name] = []*HostFile{}
 	} else {
 		h.Edges.namedFiles[name] = append(h.Edges.namedFiles[name], edges...)
+	}
+}
+
+// NamedScreenshots returns the Screenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedScreenshots(name string) ([]*Screenshot, error) {
+	if h.Edges.namedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedScreenshots(name string, edges ...*Screenshot) {
+	if h.Edges.namedScreenshots == nil {
+		h.Edges.namedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedScreenshots[name] = []*Screenshot{}
+	} else {
+		h.Edges.namedScreenshots[name] = append(h.Edges.namedScreenshots[name], edges...)
 	}
 }
 
