@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.b922d6e6.css",
+    "main.js": "/static/js/main.6d1c50ac.js",
+    "static/js/787.5aa41665.chunk.js": "/static/js/787.5aa41665.chunk.js",
+    "static/media/eldrich.png": "/static/media/eldrich.a80c74e8249d2461e174.png",
+    "index.html": "/index.html",
+    "main.b922d6e6.css.map": "/static/css/main.b922d6e6.css.map",
+    "main.6d1c50ac.js.map": "/static/js/main.6d1c50ac.js.map",
+    "787.5aa41665.chunk.js.map": "/static/js/787.5aa41665.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b922d6e6.css",
+    "static/js/main.6d1c50ac.js"
+  ]
+}
