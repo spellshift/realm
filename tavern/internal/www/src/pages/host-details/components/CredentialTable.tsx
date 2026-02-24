@@ -12,6 +12,7 @@ const CredentialTable = ({ data }: any) => {
             header: 'Created',
             accessorFn: row => formatDistance(new Date(row.createdAt), currentDate),
             footer: props => props.column.id,
+            maxSize: 10,
             sortingFn: (
                 rowA,
                 rowB,
@@ -27,7 +28,7 @@ const CredentialTable = ({ data }: any) => {
             header: "principal",
             accessorFn: row => row.principal,
             footer: props => props.column.id,
-            maxSize: 100,
+            maxSize: 10,
         },
         {
             id: "kind",
@@ -35,6 +36,7 @@ const CredentialTable = ({ data }: any) => {
             accessorFn: row => row.kind,
             footer: props => props.column.id,
             enableSorting: true,
+            maxSize: 10,
             cell: (cellData: any) => {
                 const kind = cellData.getValue();
                 return (
@@ -49,7 +51,7 @@ const CredentialTable = ({ data }: any) => {
             header: 'Secret',
             accessorFn: row => row.secret,
             footer: props => props.column.id,
-            maxSize: 250,
+           // maxSize: 350,
             enableSorting: false,
             cell: (cellData: any) => {
                 const secret = cellData.getValue();

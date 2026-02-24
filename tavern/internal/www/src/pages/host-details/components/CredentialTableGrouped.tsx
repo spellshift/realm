@@ -12,6 +12,7 @@ const CredentialTableGrouped = ({ data }: any) => {
             header: 'Created',
             accessorFn: row => formatDistance(new Date(row.createdAt), currentDate),
             footer: props => props.column.id,
+            maxSize: 10,
             sortingFn: (
                 rowA,
                 rowB,
@@ -27,6 +28,7 @@ const CredentialTableGrouped = ({ data }: any) => {
             header: 'Last Modified',
             accessorFn: row => formatDistance(new Date(row.lastModifiedAt), currentDate),
             footer: props => props.column.id,
+            maxSize: 10,
             sortingFn: (
                 rowA,
                 rowB,
@@ -42,7 +44,7 @@ const CredentialTableGrouped = ({ data }: any) => {
             header: "principal",
             accessorFn: row => row.principal,
             footer: props => props.column.id,
-            maxSize: 100,
+            maxSize: 10,
         },
         {
             id: "kind",
@@ -50,6 +52,7 @@ const CredentialTableGrouped = ({ data }: any) => {
             accessorFn: row => row.kind,
             footer: props => props.column.id,
             enableSorting: false,
+            maxSize: 10,
             cell: (cellData: any) => {
                 const kind = cellData.getValue();
                 return (
@@ -64,7 +67,7 @@ const CredentialTableGrouped = ({ data }: any) => {
             header: 'Secret',
             accessorFn: row => row.secret,
             footer: props => props.column.id,
-            maxSize: 250,
+            // maxSize: 250,
             enableSorting: false,
             cell: (cellData: any) => {
                 const secret = cellData.getValue();
