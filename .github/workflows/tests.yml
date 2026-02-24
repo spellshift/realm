@@ -86,12 +86,16 @@ jobs:
       with:
         toolchain: '1.91.1'
         components: rustfmt, clippy
+        default: true
+        profile: minimal
     - name: Setup Rust (Loader)
       uses: dtolnay/rust-toolchain@master
       if: matrix.os == 'windows-latest'
       with:
         toolchain: 'nightly-2025-11-27'
         components: rust-src, rustfmt
+        default: true
+        profile: minimal
     - name: rust-cache
       uses: Swatinem/rust-cache@v2
       with:
