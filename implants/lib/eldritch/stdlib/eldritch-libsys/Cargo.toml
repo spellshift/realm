@@ -12,9 +12,12 @@ whoami = { workspace = true, optional = true }
 local-ip-address = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+rand = { workspace = true, optional = true }
 
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true }
+libc = { workspace = true }
+tempfile = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 winreg = { workspace = true }
@@ -29,11 +32,12 @@ windows-sys = { workspace = true, features = [
     "Win32_System_SystemInformation",
     "Win32_System_SystemServices",
     "Win32_UI_Shell",
+    "Win32_NetworkManagement_NetManagement",
 ] }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:sysinfo", "dep:whoami", "dep:local-ip-address", "dep:hex"]
+stdlib = ["dep:sysinfo", "dep:whoami", "dep:local-ip-address", "dep:hex", "dep:rand"]
 fake_bindings = []
 
 [dev-dependencies]

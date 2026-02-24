@@ -25,6 +25,17 @@ pub mod std;
 /// - Environment variable access.
 pub trait SysLibrary {
     #[eldritch_method]
+    /// Changes a local user's password.
+    ///
+    /// **Parameters**
+    /// - `username` (`str`): The username.
+    /// - `password` (`str`): The new password.
+    ///
+    /// **Returns**
+    /// - `bool`: True on success.
+    fn change_user_password(&self, username: String, password: String) -> Result<bool, String>;
+
+    #[eldritch_method]
     /// Injects a DLL from disk into a remote process.
     ///
     /// **Parameters**

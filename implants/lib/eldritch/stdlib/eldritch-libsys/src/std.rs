@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
+mod change_user_password_impl;
 mod dll_inject_impl;
 mod dll_reflect_impl;
 mod exec_impl;
@@ -30,6 +31,11 @@ mod write_reg_str_impl;
 pub struct StdSysLibrary;
 
 impl SysLibrary for StdSysLibrary {
+    fn change_user_password(&self, username: String, password: String) -> Result<bool, String> {
+        change_user_password_impl::change_user_password(username, password)
+            .map_err(|e| e.to_string())
+    }
+
     fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String> {
         dll_inject_impl::dll_inject(dll_path, pid as u32).map_err(|e| e.to_string())
     }
