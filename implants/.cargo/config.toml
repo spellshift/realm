@@ -1,2 +1,5 @@
 [target.release]
 rustflags = ["-Clink-arg=/DEBUG:NONE", "-C", "target-feature=+crt-static"]
+
+[target.x86_64-pc-solaris]
+rustflags = ["-C", "link-arg=-lssp"]

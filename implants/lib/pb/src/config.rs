@@ -277,6 +277,7 @@ fn get_host_platform() -> crate::c2::host::Platform {
  * Return the first IPv4 address of the default interface as a string.
  * Returns the empty string otherwise.
  */
+#[cfg(not(target_os = "solaris"))]
 fn get_primary_ip() -> String {
     match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
@@ -290,6 +291,60 @@ fn get_primary_ip() -> String {
             String::from("")
         }
     }
+}
+
+#[cfg(target_os = "solaris")]
+fn get_primary_ip() -> String {
+    use std::net::Ipv4Addr;
+
+    let mut ifap: *mut libc::ifaddrs = std::ptr::null_mut();
+    if unsafe { libc::getifaddrs(&mut ifap) } != 0 {
+        #[cfg(debug_assertions)]
+        log::error!("getifaddrs failed");
+        return String::from("");
+    }
+
+    let mut cursor = ifap;
+    let mut result = String::from("");
+
+    while !cursor.is_null() {
+        let entry = unsafe { &*cursor };
+        if !entry.ifa_addr.is_null() {
+            let addr = unsafe { &*entry.ifa_addr };
+            if addr.sa_family as i32 == libc::AF_INET {
+                // Check flags: UP and RUNNING, and not LOOPBACK
+                // IFF_UP = 0x1, IFF_LOOPBACK = 0x8
+                let flags = entry.ifa_flags;
+                // Cast libc constants to match flags type (usually u32 or i32 depending on platform/libc version)
+                // On Solaris/Illumos, ifa_flags is likely u64 but libc constants might be i32/u32
+                let is_up = (flags & (libc::IFF_UP as u64)) != 0;
+                let is_loopback = (flags & (libc::IFF_LOOPBACK as u64)) != 0;
+
+                if is_up && !is_loopback {
+                    // Extract IP
+                    let sockaddr_in = unsafe { &*(entry.ifa_addr as *const libc::sockaddr_in) };
+                    // s_addr is in network byte order (Big Endian)
+                    let ip_u32 = sockaddr_in.sin_addr.s_addr;
+
+                    // Convert to native bytes. Note: s_addr is u32.
+                    // If we read it as u32 on LE machine, it's reversed.
+                    // But we want to treat it as bytes.
+                    // The easiest way is to cast the pointer to u8 array of 4.
+                    let ip_bytes = unsafe {
+                        std::slice::from_raw_parts(&ip_u32 as *const u32 as *const u8, 4)
+                    };
+
+                    let ip = Ipv4Addr::new(ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                    result = ip.to_string();
+                    break;
+                }
+            }
+        }
+        cursor = unsafe { entry.ifa_next };
+    }
+
+    unsafe { libc::freeifaddrs(ifap) };
+    result
 }
 
 #[cfg(test)]
