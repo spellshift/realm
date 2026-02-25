@@ -1,137 +1,130 @@
+
 use alloc::collections::BTreeMap;
-use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use eldritch_core::Value;
 
-#[cfg(not(target_os = "solaris"))]
-use sysinfo::{PidExt, ProcessExt, System, SystemExt, UserExt};
+#[cfg(target_os = "solaris")]
+use std::fs;
 
-#[cfg(not(target_os = "solaris"))]
-pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
-    if !System::IS_SUPPORTED {
-        return Err("System not supported".to_string());
-    }
-
-    let mut sys = System::new();
-    sys.refresh_processes();
-    sys.refresh_users_list();
-
-    let mut list = Vec::new();
-    for (pid, process) in sys.processes() {
-        let mut map = BTreeMap::new();
-        map.insert("pid".to_string(), Value::Int(pid.as_u32() as i64));
-
-        if let Some(ppid) = process.parent() {
-            map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
-        } else {
-            map.insert("ppid".to_string(), Value::Int(0));
-        }
-
-        map.insert(
-            "status".to_string(),
-            Value::String(process.status().to_string()),
-        );
-
-        let user_name = process
-            .user_id()
-            .and_then(|uid| sys.get_user_by_id(uid))
-            .map(|u| u.name())
-            .unwrap_or("???");
-        map.insert(
-            "principal".to_string(),
-            Value::String(user_name.to_string()),
-        );
-
-        map.insert(
-            "path".to_string(),
-            Value::String(process.exe().to_string_lossy().into_owned()),
-        );
-        map.insert(
-            "command".to_string(),
-            Value::String(process.cmd().join(" ")),
-        );
-        map.insert(
-            "cwd".to_string(),
-            Value::String(process.cwd().to_string_lossy().into_owned()),
-        );
-        map.insert(
-            "environ".to_string(),
-            Value::String(process.environ().join(" ")),
-        );
-        map.insert(
-            "name".to_string(),
-            Value::String(process.name().to_string()),
-        );
-
-        list.push(map);
-    }
-    Ok(list)
-}
+// Shared PsInfo struct and reading logic could be here, or imported if we put it in a common module.
+// Since modules are separate files, we can put it in mod.rs and make it pub(crate).
 
 #[cfg(target_os = "solaris")]
-pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
-    use std::process::Command;
+use crate::std::solaris_proc;
 
-    // ps -e -o pid,ppid,user,comm,s,args
-    let output = Command::new("ps")
-        .args(&["-e", "-o", "pid,ppid,user,comm,s,args"])
-        .output()
-        .map_err(|e| format!("Failed to execute ps: {}", e))?;
+pub fn list() -> Result<Vec<BTreeMap<alloc::string::String, Value>>, alloc::string::String> {
+    #[cfg(not(target_os = "solaris"))]
+    {
+        use sysinfo::{PidExt, ProcessExt, System, SystemExt, UserExt};
 
-    if !output.status.success() {
-        return Err("ps command failed".to_string());
+        if !System::IS_SUPPORTED {
+            return Err("System not supported".to_string());
+        }
+
+        let mut sys = System::new();
+        sys.refresh_processes();
+        sys.refresh_users_list();
+
+        let mut list = Vec::new();
+        for (pid, process) in sys.processes() {
+            let mut map = BTreeMap::new();
+            map.insert("pid".to_string(), Value::Int(pid.as_u32() as i64));
+
+            if let Some(ppid) = process.parent() {
+                map.insert("ppid".to_string(), Value::Int(ppid.as_u32() as i64));
+            } else {
+                map.insert("ppid".to_string(), Value::Int(0));
+            }
+
+            map.insert(
+                "status".to_string(),
+                Value::String(process.status().to_string()),
+            );
+
+            let user_name = process
+                .user_id()
+                .and_then(|uid| sys.get_user_by_id(uid))
+                .map(|u| u.name())
+                .unwrap_or("???");
+            map.insert(
+                "principal".to_string(),
+                Value::String(user_name.to_string()),
+            );
+
+            map.insert(
+                "path".to_string(),
+                Value::String(process.exe().to_string_lossy().into_owned()),
+            );
+            map.insert(
+                "command".to_string(),
+                Value::String(process.cmd().join(" ")),
+            );
+            map.insert(
+                "cwd".to_string(),
+                Value::String(process.cwd().to_string_lossy().into_owned()),
+            );
+            map.insert(
+                "environ".to_string(),
+                Value::String(process.environ().join(" ")),
+            );
+            map.insert(
+                "name".to_string(),
+                Value::String(process.name().to_string()),
+            );
+
+            list.push(map);
+        }
+        Ok(list)
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let mut list = Vec::new();
+    #[cfg(target_os = "solaris")]
+    {
+        let mut list = Vec::new();
+        let proc_dir = fs::read_dir("/proc").map_err(|e| format!("Failed to read /proc: {}", e))?;
 
-    // skip header
-    for line in stdout.lines().skip(1) {
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        // min 5 fields + args
-        if parts.len() < 6 {
-            continue;
+        for entry in proc_dir {
+            if let Ok(entry) = entry {
+                if let Ok(file_name) = entry.file_name().into_string() {
+                    // Filter numeric directories only
+                    if let Ok(pid) = file_name.parse::<i32>() {
+                        if let Ok(info) = solaris_proc::read_psinfo(pid) {
+                            let mut map = BTreeMap::new();
+                            map.insert("pid".to_string(), Value::Int(info.pr_pid as i64));
+                            map.insert("ppid".to_string(), Value::Int(info.pr_ppid as i64));
+
+                            // User lookup would require parsing /etc/passwd or similar if we want name,
+                            // otherwise just use UID for principal for now as we don't have easy `getpwuid`.
+                            // Or leave it as stringified UID.
+                            map.insert("principal".to_string(), Value::String(info.pr_uid.to_string()));
+
+                            // Name from psinfo
+                            let name = String::from_utf8_lossy(&info.pr_fname)
+                                .trim_matches(char::from(0))
+                                .to_string();
+                            map.insert("name".to_string(), Value::String(name.clone()));
+                            map.insert("path".to_string(), Value::String(name)); // Path is hard without reading link, use name
+
+                            // Command args
+                            let args = String::from_utf8_lossy(&info.pr_psargs)
+                                .trim_matches(char::from(0))
+                                .to_string();
+                            map.insert("command".to_string(), Value::String(args));
+
+                            // Status not easily available in psinfo (it's in pstatus/lwpstatus), skipping or "Unknown"
+                            map.insert("status".to_string(), Value::String("Unknown".to_string()));
+
+                            // Cwd, Environ: Empty/skipped for list to be fast
+                            map.insert("cwd".to_string(), Value::String("".to_string()));
+                            map.insert("environ".to_string(), Value::String("".to_string()));
+
+                            list.push(map);
+                        }
+                    }
+                }
+            }
         }
-
-        let mut map = BTreeMap::new();
-        // Parse fields
-        // pid
-        if let Ok(pid) = parts[0].parse::<i64>() {
-            map.insert("pid".to_string(), Value::Int(pid));
-        } else {
-            continue;
-        }
-
-        // ppid
-        if let Ok(ppid) = parts[1].parse::<i64>() {
-            map.insert("ppid".to_string(), Value::Int(ppid));
-        }
-
-        // user
-        map.insert(
-            "principal".to_string(),
-            Value::String(parts[2].to_string()),
-        );
-
-        // comm (name)
-        map.insert("name".to_string(), Value::String(parts[3].to_string()));
-        map.insert("path".to_string(), Value::String(parts[3].to_string())); // ps doesn't give full path easily without /proc
-
-        // status
-        map.insert("status".to_string(), Value::String(parts[4].to_string()));
-
-        // args (command)
-        let args = parts[5..].join(" ");
-        map.insert("command".to_string(), Value::String(args.clone()));
-
-        // Missing: cwd, environ (too expensive to get for all processes)
-        map.insert("cwd".to_string(), Value::String("".to_string()));
-        map.insert("environ".to_string(), Value::String("".to_string()));
-
-        list.push(map);
+        Ok(list)
     }
-
-    Ok(list)
 }
 
 #[cfg(all(test, feature = "stdlib"))]
