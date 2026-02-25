@@ -1,4 +1,3 @@
-#![no_std]
 extern crate alloc;
 
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -19,7 +18,10 @@ pub trait Agent: Send + Sync {
         &self,
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String>;
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
+    fn report_file(
+        &self,
+        req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(
         &self,
         req: c2::ReportProcessListRequest,

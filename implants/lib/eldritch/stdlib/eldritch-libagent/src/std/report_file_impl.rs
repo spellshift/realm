@@ -25,5 +25,8 @@ pub fn report_file(
         chunk: Some(file.0),
         kind: c2::ReportFileKind::Ondisk as i32,
     };
-    agent.report_file(req).map(|_| ())
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    tx.send(req).map_err(|e| e.to_string())?;
+    agent.report_file(rx).map(|_| ())
 }
