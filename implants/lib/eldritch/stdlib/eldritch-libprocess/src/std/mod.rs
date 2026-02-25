@@ -61,19 +61,14 @@ pub mod solaris_proc {
         let path = format!("/proc/{}/psinfo", pid);
         let mut file = File::open(&path).map_err(|_| format!("Process {} not found", pid))?;
 
-        // Use a fixed size buffer instead of read_to_end to avoid issues with 0-sized proc files
-        // psinfo_t is usually ~336 (32bit) or ~416 (64bit) bytes. 1024 is plenty.
         let mut buffer = [0u8; 1024];
         let n = file.read(&mut buffer).map_err(|e| e.to_string())?;
 
-        // Basic sanity check on size
         if n < 200 {
              return Err(format!("Failed to read psinfo for process {} (too small: {})", pid, n));
         }
 
         let buffer = &buffer[..n];
-
-        // Determine offsets based on pointer width
         let is_64bit = std::mem::size_of::<usize>() == 8;
 
         // Helper to read u32/i32
@@ -92,13 +87,11 @@ pub mod solaris_proc {
             let bytes = &buffer[offset..offset+8];
             u64::from_ne_bytes(bytes.try_into().unwrap())
         };
-        // For 32-bit read, extend to u64
         let read_u32_as_u64 = |offset: usize| -> u64 {
             if offset + 4 > buffer.len() { return 0; }
             let bytes = &buffer[offset..offset+4];
             u32::from_ne_bytes(bytes.try_into().unwrap()) as u64
         };
-
         let read_u16 = |offset: usize| -> u16 {
             if offset + 2 > buffer.len() { return 0; }
             let bytes = &buffer[offset..offset+2];
@@ -124,96 +117,147 @@ pub mod solaris_proc {
             }
         };
 
-        // Offsets
-        // 0-40: same for both (11 i32/u32)
-        // Verify PID match (at offset 12)
-        // We relax this check slightly or just log it if we could, but let's keep it but handle failure gracefully?
-        // Actually, if we read the wrong file (unlikely) or layout is wrong, PID will be garbage.
-        let pr_pid = read_i32(12);
+        // Dynamic PID offset detection
+        let mut pr_pid_offset = 12; // Default
+        let mut found_pid = false;
 
-        // If PID is 0, it matches our `sched`.
-        // If PID is 1, and we read 1, good.
-        // If we read garbage, `pr_pid` might be anything.
-        // We will trust the read if it looks sane, but we can't easily validate without `pr_pid`.
-        // Let's assume the caller gave us the right PID and we opened the right file.
-        // If `pr_pid` mismatches, it's a strong indicator of layout mismatch.
-        // BUT, if we are reading 32-bit `psinfo` struct with 64-bit logic (or vice versa) and they share the first few fields (which they do),
-        // then `pr_pid` should still match!
-        // `pr_flag` (0), `pr_nlwp` (4), `pr_nzomb` (8), `pr_pid` (12).
-        // These are all `int` or `pid_t` (usually `int`).
-        // So `pr_pid` check should pass even if rest of layout is wrong.
-
-        if pr_pid != pid {
-             return Err(format!("PID mismatch in psinfo: expected {}, got {}", pid, pr_pid));
+        // If PID is 0, we trust offset 12 because scanning for 0 is ambiguous
+        if pid == 0 {
+            found_pid = true;
+        } else {
+            // Scan first 64 bytes for PID
+            for offset in (0..64).step_by(4) {
+                if read_i32(offset) == pid {
+                    pr_pid_offset = offset;
+                    found_pid = true;
+                    // println!("DEBUG: Found PID {} at offset {}", pid, offset);
+                    break;
+                }
+            }
         }
+
+        if !found_pid {
+             // Fallback: try to read at 12 anyway and report error if mismatch
+             let val_at_12 = read_i32(12);
+             return Err(format!("PID mismatch in psinfo: expected {}, not found in header (offset 12 has {})", pid, val_at_12));
+        }
+
+        let pr_pid = read_i32(pr_pid_offset);
+
+        // Calculate other offsets relative to pr_pid
+        // pr_pid is at offset 12 usually.
+        // pr_ppid (4) -> +4
+        // pr_pgid (4) -> +8
+        // pr_sid (4) -> +12
+        // pr_uid (4) -> +16
+        // pr_euid (4) -> +20
+        // pr_gid (4) -> +24
+        // pr_egid (4) -> +28
+        // pr_addr (ptr) -> +32 (aligned to 8 if 64-bit)
+
+        let off = pr_pid_offset;
+        let pr_ppid = read_i32(off + 4);
+        let pr_pgid = read_i32(off + 8);
+        let pr_sid = read_i32(off + 12);
+        let pr_uid = read_u32(off + 16);
+        let pr_euid = read_u32(off + 20);
+        let pr_gid = read_u32(off + 24);
+        let pr_egid = read_u32(off + 28);
+
+        let pr_egid_end = off + 32;
+        let pr_addr_off = if is_64bit {
+            (pr_egid_end + 7) & !7 // Align to 8
+        } else {
+            pr_egid_end
+        };
 
         let (pr_addr, pr_size, pr_rssize, pr_ttydev, pr_pctcpu, pr_pctmem, pr_start_off) = if is_64bit {
             (
-                read_u64(48),
-                read_u64(56),
-                read_u64(64),
-                read_u64(72),
-                read_u16(80),
-                read_u16(82),
-                88, // pr_start
+                read_u64(pr_addr_off),
+                read_u64(pr_addr_off + 8),
+                read_u64(pr_addr_off + 16),
+                read_u64(pr_addr_off + 24),
+                read_u16(pr_addr_off + 32),
+                read_u16(pr_addr_off + 34),
+                pr_addr_off + 40, // 36 + 4 pad -> 40
             )
         } else {
-            // 32-bit offsets (assuming dev_t is 64-bit)
             (
-                read_u32_as_u64(44),
-                read_u32_as_u64(48),
-                read_u32_as_u64(52),
-                read_u64(56), // dev_t 64-bit
-                read_u16(64),
-                read_u16(66),
-                72, // pr_start
+                read_u32_as_u64(pr_addr_off),
+                read_u32_as_u64(pr_addr_off + 4),
+                read_u32_as_u64(pr_addr_off + 8),
+                read_u64(pr_addr_off + 12), // dev_t 64-bit
+                read_u16(pr_addr_off + 20),
+                read_u16(pr_addr_off + 22),
+                pr_addr_off + 28, // 24 + 4 pad?
             )
         };
 
-        let fname_off = if is_64bit { 136 } else { 96 };
-        let psargs_off = if is_64bit { 152 } else { 112 };
+        // Time structs size
+        let time_size = if is_64bit { 16 } else { 8 };
+        // pr_start, pr_time, pr_ctime
+        let pr_fname_off = pr_start_off + (3 * time_size);
+        let pr_psargs_off = pr_fname_off + 16; // PRFNSZ = 16
 
         let mut fname = [0u8; 16];
-        if fname_off + 16 <= buffer.len() {
-            fname.copy_from_slice(&buffer[fname_off..fname_off+16]);
+        if pr_fname_off + 16 <= buffer.len() {
+            fname.copy_from_slice(&buffer[pr_fname_off..pr_fname_off+16]);
         }
 
         let mut psargs = [0u8; 80];
-        if psargs_off + 80 <= buffer.len() {
-            psargs.copy_from_slice(&buffer[psargs_off..psargs_off+80]);
+        if pr_psargs_off + 80 <= buffer.len() {
+            psargs.copy_from_slice(&buffer[pr_psargs_off..pr_psargs_off+80]);
         }
 
         // Additional fields at end
+        // pr_wstat, pr_argc, pr_argv, pr_envp, pr_dmodel
+        // Offset calculation:
+        // pr_psargs_off + 80 = pr_wstat_off
+        let pr_wstat_off = pr_psargs_off + 80;
+
         let (pr_wstat, pr_argc, pr_argv, pr_envp, pr_dmodel) = if is_64bit {
             (
-                read_i32(232),
-                read_i32(236),
-                read_u64(240),
-                read_u64(248),
-                read_i8(256),
+                read_i32(pr_wstat_off),
+                read_i32(pr_wstat_off + 4),
+                read_u64(pr_wstat_off + 8),
+                read_u64(pr_wstat_off + 16),
+                read_i8(pr_wstat_off + 24),
             )
         } else {
             (
-                read_i32(192),
-                read_i32(196),
-                read_u32_as_u64(200),
-                read_u32_as_u64(204),
-                read_i8(208),
+                read_i32(pr_wstat_off),
+                read_i32(pr_wstat_off + 4),
+                read_u32_as_u64(pr_wstat_off + 8),
+                read_u32_as_u64(pr_wstat_off + 12),
+                read_i8(pr_wstat_off + 16),
             )
         };
 
+        // Reconstruct PsInfo.
+        // Note: pr_flag, pr_nlwp, pr_nzomb might be before pr_pid.
+        // We only found pr_pid. We can try to read them backward if pr_pid_offset >= 12.
+        let (pr_flag, pr_nlwp, pr_nzomb) = if pr_pid_offset >= 12 {
+            (
+                read_i32(pr_pid_offset - 12),
+                read_i32(pr_pid_offset - 8),
+                read_i32(pr_pid_offset - 4),
+            )
+        } else {
+            (0, 0, 0)
+        };
+
         Ok(PsInfo {
-            pr_flag: read_i32(0),
-            pr_nlwp: read_i32(4),
-            pr_nzomb: read_i32(8),
+            pr_flag,
+            pr_nlwp,
+            pr_nzomb,
             pr_pid,
-            pr_ppid: read_i32(16),
-            pr_pgid: read_i32(20),
-            pr_sid: read_i32(24),
-            pr_uid: read_u32(28),
-            pr_euid: read_u32(32),
-            pr_gid: read_u32(36),
-            pr_egid: read_u32(40),
+            pr_ppid,
+            pr_pgid,
+            pr_sid,
+            pr_uid,
+            pr_euid,
+            pr_gid,
+            pr_egid,
             pr_addr,
             pr_size,
             pr_rssize,
@@ -222,8 +266,8 @@ pub mod solaris_proc {
             pr_pctmem,
             _pad: [0; 4],
             pr_start: read_time(pr_start_off),
-            pr_time: read_time(pr_start_off + (if is_64bit { 16 } else { 8 })),
-            pr_ctime: read_time(pr_start_off + (if is_64bit { 32 } else { 16 })),
+            pr_time: read_time(pr_start_off + time_size),
+            pr_ctime: read_time(pr_start_off + 2 * time_size),
             pr_fname: fname,
             pr_psargs: psargs,
             pr_wstat,

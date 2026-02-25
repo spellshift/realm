@@ -82,7 +82,7 @@ pub fn list() -> Result<Vec<BTreeMap<alloc::string::String, Value>>, alloc::stri
         let mut list = Vec::new();
         let proc_dir = fs::read_dir("/proc").map_err(|e| format!("Failed to read /proc: {}", e))?;
 
-        // println!("DEBUG: listing /proc");
+        println!("DEBUG: listing /proc");
 
         for entry in proc_dir {
             if let Ok(entry) = entry {
@@ -117,7 +117,7 @@ pub fn list() -> Result<Vec<BTreeMap<alloc::string::String, Value>>, alloc::stri
                                 list.push(map);
                             },
                             Err(_e) => {
-                                // println!("DEBUG: failed to read psinfo for {}: {}", pid, _e);
+                                println!("DEBUG: failed to read psinfo for {}: {}", pid, _e);
                             }
                         }
                     }
