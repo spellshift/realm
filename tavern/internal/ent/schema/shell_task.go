@@ -3,6 +3,7 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -17,13 +18,22 @@ type ShellTask struct {
 // Fields of the ShellTask.
 func (ShellTask) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("input").
+		field.Text("input").
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
 			Comment("The command input sent to the shell"),
-		field.String("output").
+		field.Text("output").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
 			Comment("Any output received from the shell"),
-		field.String("error").
+		field.Text("error").
 			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
 			Comment("Any error received from the shell"),
 		field.String("stream_id").
 			Comment("Unique identifier for the stream that created this shell task (likely a websocket uuid)"),
