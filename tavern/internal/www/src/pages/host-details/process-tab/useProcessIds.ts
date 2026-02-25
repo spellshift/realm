@@ -1,5 +1,5 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageNavItem, TableRowLimit } from "../../../utils/enums";
 import { Cursor, OrderByField } from "../../../utils/interfacesQuery";
 import { useSorts } from "../../../context/SortContext";
@@ -14,6 +14,7 @@ export const useProcessIds = (hostId: string) => {
   const [hasMore, setHasMore] = useState(true);
   const [endCursor, setEndCursor] = useState<Cursor | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const isLoadingMore = useRef(false);
 
   const queryVariables = useMemo(
     () => getProcessIdsQuery(hostId, undefined, searchTerm, processSort),
@@ -52,13 +53,15 @@ export const useProcessIds = (hostId: string) => {
     setAllProcessIds([]);
     setHasMore(true);
     setEndCursor(undefined);
+    isLoadingMore.current = false;
   }, [hostId, searchTerm, processSort]);
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
+    if (!hasMore || loading || isLoadingMore.current) return;
 
+    isLoadingMore.current = true;
     try {
-      await fetchMore({
+      const result = await fetchMore({
         variables: getProcessIdsQuery(hostId, endCursor, searchTerm, processSort),
         updateQuery: (previousResult, { fetchMoreResult }) => {
           if (!fetchMoreResult) return previousResult;
@@ -67,13 +70,6 @@ export const useProcessIds = (hostId: string) => {
           if (!newProcesses) return previousResult;
 
           const newEdges = newProcesses.edges;
-          const newIds = newEdges.map(edge => edge.node.id);
-
-          // Append new IDs to existing list
-          setAllProcessIds(prev => [...prev, ...newIds]);
-          setHasMore(newProcesses.pageInfo?.hasNextPage ?? false);
-          setEndCursor(newProcesses.pageInfo?.endCursor);
-
           const prevProcesses = getProcessesFromResponse(previousResult);
 
           return {
@@ -90,8 +86,16 @@ export const useProcessIds = (hostId: string) => {
           };
         },
       });
+
+      const newProcesses = getProcessesFromResponse(result.data);
+      if (newProcesses?.edges && newProcesses.edges.length === 0) {
+        setHasMore(false);
+      }
     } catch (err) {
       console.error("Error loading more processes:", err);
+      setHasMore(false);
+    } finally {
+      isLoadingMore.current = false;
     }
   }, [hasMore, loading, fetchMore, hostId, endCursor, searchTerm, processSort, getProcessesFromResponse]);
 
