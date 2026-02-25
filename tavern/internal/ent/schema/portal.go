@@ -35,7 +35,7 @@ func (Portal) Edges() []ent.Edge {
 			Comment("Task that created the portal"),
 		edge.To("shell_task", ShellTask.Type).
 			Unique().
-			Comment("ShellTask that created the portal"),
+			Comment("ShellTask that created the portal (if applicable)"),
 		edge.To("beacon", Beacon.Type).
 			Unique().
 			Required().
