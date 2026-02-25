@@ -12,12 +12,10 @@ const FilesTab = () => {
     const nav = useNavigate();
 
     const {
-        data,
         fileIds,
+        totalCount,
         initialLoading,
         error,
-        hasMore,
-        loadMore,
         searchTerm,
         setSearchTerm,
     } = useFileIds(hostId || "");
@@ -33,7 +31,7 @@ const FilesTab = () => {
                 );
             }
 
-            if (initialLoading || data?.totalCount === undefined) {
+            if (initialLoading || totalCount === undefined) {
                 return (
                     <EmptyState
                         type={EmptyStateType.loading}
@@ -42,7 +40,7 @@ const FilesTab = () => {
                 );
             }
 
-            if (data?.totalCount === 0 && searchTerm.trim() !== "") {
+            if (totalCount === 0 && searchTerm.trim() !== "") {
                 return (
                     <EmptyState
                         type={EmptyStateType.noMatches}
@@ -59,7 +57,7 @@ const FilesTab = () => {
                 );
             }
 
-            if (data?.totalCount === 0 ) {
+            if (totalCount === 0 ) {
                 return (
                     <EmptyState
                         type={EmptyStateType.noData}
@@ -80,8 +78,6 @@ const FilesTab = () => {
                 <FilesTable
                     hostId={hostId || ""}
                     fileIds={fileIds}
-                    hasMore={hasMore}
-                    onLoadMore={loadMore}
                 />
             );
         };
@@ -93,7 +89,7 @@ const FilesTab = () => {
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">
                             Files
                         </h3>
-                        <p className='text-md text-gray-600'>{data?.totalCount !== undefined && `(${data?.totalCount})`}</p>
+                        <p className='text-md text-gray-600'>{totalCount !== undefined && `(${totalCount})`}</p>
                     </div>
                     <div className="flex flex-row justify-end gap-2 w-full">
                         <SortingControls sortType={PageNavItem.files} />
