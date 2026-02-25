@@ -81,7 +81,7 @@ pub mod tests {
         }
         fn report_file(
             &self,
-            _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+            _req: c2::ReportFileRequest,
         ) -> Result<c2::ReportFileResponse, String> {
             Ok(c2::ReportFileResponse::default())
         }

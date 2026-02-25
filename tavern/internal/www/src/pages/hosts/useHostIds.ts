@@ -5,12 +5,14 @@ import { Filters, useFilters } from "../../context/FilterContext";
 import { constructBeaconFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, OrderByField } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 import { GET_HOST_IDS_QUERY } from "./queries";
 import { HostIdsQueryTopLevel, GetHostIdsQueryVariables } from "./types";
 
 export const useHostIds = () => {
   const { filters } = useFilters();
   const { sorts } = useSorts();
+  const { lastFetchedTimestamp } = useTags();
   const hostSort = sorts[PageNavItem.hosts];
 
   const [allHostIds, setAllHostIds] = useState<string[]>([]);
@@ -18,8 +20,8 @@ export const useHostIds = () => {
   const [endCursor, setEndCursor] = useState<Cursor | undefined>(undefined);
 
   const queryVariables = useMemo(
-    () => getHostIdsQuery(filters, undefined, hostSort),
-    [filters, hostSort]
+    () => getHostIdsQuery(filters, undefined, hostSort, lastFetchedTimestamp),
+    [filters, hostSort, lastFetchedTimestamp]
   );
 
   const { data, previousData, error, fetchMore, networkStatus, loading, refetch } = useQuery<HostIdsQueryTopLevel>(
@@ -54,7 +56,7 @@ export const useHostIds = () => {
 
     try {
       await fetchMore({
-        variables: getHostIdsQuery(filters, endCursor, hostSort),
+        variables: getHostIdsQuery(filters, endCursor, hostSort, lastFetchedTimestamp),
         updateQuery: (previousResult, { fetchMoreResult }) => {
           if (!fetchMoreResult) return previousResult;
 
@@ -77,7 +79,7 @@ export const useHostIds = () => {
     } catch (err) {
       console.error("Error loading more hosts:", err);
     }
-  }, [hasMore, loading, fetchMore, filters, endCursor, hostSort]);
+  }, [hasMore, loading, fetchMore, filters, endCursor, hostSort, lastFetchedTimestamp]);
 
   const currentData = data ?? previousData;
 
@@ -96,8 +98,8 @@ const getHostIdsQuery = (
   filters: Filters,
   afterCursor?: Cursor,
   sort?: OrderByField,
+  currentTimestamp?: Date
 ): GetHostIdsQueryVariables => {
-  const currentTimestamp = new Date();
   const defaultRowLimit = TableRowLimit.HostRowLimit;
   const filterInfo = constructBeaconFilterQuery(filters.beaconFields, currentTimestamp);
   const hostFields = (filterInfo && filterInfo.hasBeaconWith?.hasHostWith) || {};

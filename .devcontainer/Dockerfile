@@ -133,6 +133,3 @@ RUN set -eux; \
 	cargo install cargo-zigbuild; \
 	cargo +1.89.0 install cargo-xwin --locked
 
-# Install screenshot deps
-RUN apt update && \
-    apt install -y libxcb1-dev libxrandr-dev libdbus-1-dev

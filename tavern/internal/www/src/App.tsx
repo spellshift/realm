@@ -1,3 +1,4 @@
+import * as React from "react"
 import {
   ChakraProvider,
   theme,
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
       },
       {
         path: "createQuest",
-        element: <TagContextProvider><CreateQuest /></TagContextProvider>,
+        element: <CreateQuest />,
       },
       {
         path: "tasks",
@@ -90,9 +91,11 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
+        <TagContextProvider>
+          <UserPreferencesContextProvider>
+            <RouterProvider router={router} />
+          </UserPreferencesContextProvider>
+        </TagContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

