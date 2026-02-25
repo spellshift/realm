@@ -8,9 +8,10 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
+nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix"]
 fake_bindings = []
