@@ -12,11 +12,9 @@ import { formatBytes } from "../../../utils/utils";
 interface FilesTableProps {
     hostId: string;
     fileIds: string[];
-    hasMore?: boolean;
-    onLoadMore?: () => void;
 }
 
-export const FilesTable = ({ hostId, fileIds, hasMore = false, onLoadMore }: FilesTableProps) => {
+export const FilesTable = ({ hostId, fileIds }: FilesTableProps) => {
     const getVariables = useCallback((id: string) => ({ hostId, fileId: id }), [hostId]);
 
     const extractData = useCallback((response: FileDetailQueryResponse): FileNode | null => {
@@ -104,8 +102,6 @@ export const FilesTable = ({ hostId, fileIds, hasMore = false, onLoadMore }: Fil
             query={GET_FILE_DETAIL_QUERY}
             getVariables={getVariables}
             extractData={extractData}
-            hasMore={hasMore}
-            onLoadMore={onLoadMore}
             height="60vh"
         />
     );
