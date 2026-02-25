@@ -10,10 +10,10 @@ eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 xcap = { version = "0.0.6", optional = true }
-image = { version = "0.24", default-features = false, features = ["png"], optional = true }
 chrono = { workspace = true, optional = true }
+whoami = { version = "1.5", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:xcap", "dep:image", "dep:chrono"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:xcap", "dep:chrono", "dep:whoami"]
 fake_bindings = []

