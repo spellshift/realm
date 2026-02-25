@@ -49,8 +49,8 @@ export default function FilterControls() {
                 <div key={field}>
                     <BeaconFilterBar
                         key={field}
-                        setFiltersSelected={(newValue) => updateFilters({ 'beaconFields': newValue })}
-                        filtersSelected={filters.beaconFields}
+                        onChange={(newValue) => updateFilters({ beaconFields: newValue })}
+                        value={filters.beaconFields}
                         isDisabled={isLocked}
                     />
                 </div>
