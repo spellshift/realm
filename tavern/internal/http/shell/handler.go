@@ -576,12 +576,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 							creatorName = task.Edges.Creator.Name
 						}
 
-						truncatedInput := task.Input
-						if len(truncatedInput) > 255 {
-							truncatedInput = truncatedInput[:255] + "..."
-						}
-
-						otherStreamMsg.Output = fmt.Sprintf("[+] [%s] Task Output for %s\n", creatorName, truncatedInput)
+						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, task.Input)
 						otherStreamMsg.Output += string(bytesPayload.Data)
 
 						otherStreamCh <- otherStreamMsg

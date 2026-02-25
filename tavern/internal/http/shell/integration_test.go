@@ -439,7 +439,9 @@ func TestOtherStreamOutput(t *testing.T) {
 	}
 
 	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
-	require.Contains(t, otherMsg.Output, "Other User")
+
+	expectedFormat := fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", "Other User", "sudo reboot")
+	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format")
 	require.Contains(t, otherMsg.Output, "rebooting...")
 }
 
