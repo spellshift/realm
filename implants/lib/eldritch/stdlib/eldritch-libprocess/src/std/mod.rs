@@ -121,39 +121,24 @@ pub mod solaris_proc {
         let mut pr_pid_offset = 12; // Default
         let mut found_pid = false;
 
-        // If PID is 0, we trust offset 12 because scanning for 0 is ambiguous
         if pid == 0 {
             found_pid = true;
         } else {
-            // Scan first 64 bytes for PID
             for offset in (0..64).step_by(4) {
                 if read_i32(offset) == pid {
                     pr_pid_offset = offset;
                     found_pid = true;
-                    // println!("DEBUG: Found PID {} at offset {}", pid, offset);
                     break;
                 }
             }
         }
 
         if !found_pid {
-             // Fallback: try to read at 12 anyway and report error if mismatch
              let val_at_12 = read_i32(12);
              return Err(format!("PID mismatch in psinfo: expected {}, not found in header (offset 12 has {})", pid, val_at_12));
         }
 
         let pr_pid = read_i32(pr_pid_offset);
-
-        // Calculate other offsets relative to pr_pid
-        // pr_pid is at offset 12 usually.
-        // pr_ppid (4) -> +4
-        // pr_pgid (4) -> +8
-        // pr_sid (4) -> +12
-        // pr_uid (4) -> +16
-        // pr_euid (4) -> +20
-        // pr_gid (4) -> +24
-        // pr_egid (4) -> +28
-        // pr_addr (ptr) -> +32 (aligned to 8 if 64-bit)
 
         let off = pr_pid_offset;
         let pr_ppid = read_i32(off + 4);
@@ -179,25 +164,57 @@ pub mod solaris_proc {
                 read_u64(pr_addr_off + 24),
                 read_u16(pr_addr_off + 32),
                 read_u16(pr_addr_off + 34),
-                pr_addr_off + 40, // 36 + 4 pad -> 40
+                pr_addr_off + 40,
             )
         } else {
             (
                 read_u32_as_u64(pr_addr_off),
                 read_u32_as_u64(pr_addr_off + 4),
                 read_u32_as_u64(pr_addr_off + 8),
-                read_u64(pr_addr_off + 12), // dev_t 64-bit
+                read_u64(pr_addr_off + 12),
                 read_u16(pr_addr_off + 20),
                 read_u16(pr_addr_off + 22),
-                pr_addr_off + 28, // 24 + 4 pad?
+                pr_addr_off + 28,
             )
         };
 
-        // Time structs size
         let time_size = if is_64bit { 16 } else { 8 };
-        // pr_start, pr_time, pr_ctime
-        let pr_fname_off = pr_start_off + (3 * time_size);
-        let pr_psargs_off = pr_fname_off + 16; // PRFNSZ = 16
+        // Calculated name offset
+        let mut pr_fname_off = pr_start_off + (3 * time_size);
+
+        // Heuristic: Check if pr_fname looks like a valid name (printable chars).
+        // If not, scan forward a bit (max 32 bytes) to find printable sequence.
+        // This handles potential padding or struct differences.
+        let mut found_fname = false;
+        for scan_off in (pr_fname_off..std::cmp::min(pr_fname_off + 32, buffer.len() - 16)) {
+            // Check if first char is printable alphanumeric or typical name start
+            let c = buffer[scan_off];
+            if (c >= 32 && c <= 126) && c != 0 {
+                // Check if it looks like a string (null terminated within 16 chars)
+                let mut valid = true;
+                for i in 0..16 {
+                    let bc = buffer[scan_off + i];
+                    if bc == 0 { break; } // Null terminator found
+                    if bc < 32 || bc > 126 {
+                        valid = false;
+                        break;
+                    }
+                }
+                if valid {
+                    pr_fname_off = scan_off;
+                    found_fname = true;
+                    // println!("DEBUG: Adjusted fname offset to {}", scan_off);
+                    break;
+                }
+            }
+        }
+
+        // If not found, revert to calculated (might produce garbage but better than nothing)
+        if !found_fname {
+            // println!("DEBUG: fname heuristic failed, using calculated {}", pr_fname_off);
+        }
+
+        let pr_psargs_off = pr_fname_off + 16;
 
         let mut fname = [0u8; 16];
         if pr_fname_off + 16 <= buffer.len() {
@@ -209,10 +226,6 @@ pub mod solaris_proc {
             psargs.copy_from_slice(&buffer[pr_psargs_off..pr_psargs_off+80]);
         }
 
-        // Additional fields at end
-        // pr_wstat, pr_argc, pr_argv, pr_envp, pr_dmodel
-        // Offset calculation:
-        // pr_psargs_off + 80 = pr_wstat_off
         let pr_wstat_off = pr_psargs_off + 80;
 
         let (pr_wstat, pr_argc, pr_argv, pr_envp, pr_dmodel) = if is_64bit {
@@ -234,8 +247,6 @@ pub mod solaris_proc {
         };
 
         // Reconstruct PsInfo.
-        // Note: pr_flag, pr_nlwp, pr_nzomb might be before pr_pid.
-        // We only found pr_pid. We can try to read them backward if pr_pid_offset >= 12.
         let (pr_flag, pr_nlwp, pr_nzomb) = if pr_pid_offset >= 12 {
             (
                 read_i32(pr_pid_offset - 12),
