@@ -34,7 +34,7 @@ impl Agent for MockAgent {
     }
     fn report_file(
         &self,
-        _req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + 'static>,
+        _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
     ) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse {})
     }

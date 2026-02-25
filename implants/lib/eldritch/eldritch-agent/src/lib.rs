@@ -1,7 +1,5 @@
-#![no_std]
 extern crate alloc;
 
-use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -22,7 +20,7 @@ pub trait Agent: Send + Sync {
     ) -> Result<c2::ReportCredentialResponse, String>;
     fn report_file(
         &self,
-        req: Box<dyn Iterator<Item = c2::ReportFileRequest> + Send + 'static>,
+        req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
     ) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(
         &self,

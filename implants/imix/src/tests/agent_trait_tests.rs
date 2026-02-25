@@ -215,7 +215,9 @@ async fn test_imix_agent_report_file() {
             })),
             kind: c2::ReportFileKind::Ondisk as i32,
         };
-        let _ = agent_clone.report_file(Box::new(vec![req].into_iter()));
+        let (tx, rx) = std::sync::mpsc::channel();
+        tx.send(req).unwrap();
+        let _ = agent_clone.report_file(rx);
     })
     .join()
     .unwrap();
