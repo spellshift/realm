@@ -7,10 +7,30 @@ package graphql
 
 import (
 	"context"
+	"encoding/base64"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/graphql/generated"
 )
+
+// Preview is the resolver for the preview field.
+func (r *hostFileResolver) Preview(ctx context.Context, obj *ent.HostFile) (*string, error) {
+	if len(obj.Preview) == 0 {
+		return nil, nil
+	}
+
+	switch obj.PreviewType {
+	case hostfile.PreviewTypeTEXT:
+		s := string(obj.Preview)
+		return &s, nil
+	case hostfile.PreviewTypeIMAGE:
+		s := base64.StdEncoding.EncodeToString(obj.Preview)
+		return &s, nil
+	default:
+		return nil, nil
+	}
+}
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
@@ -108,6 +128,9 @@ func (r *shellTaskWhereInputResolver) SequenceIdlte(ctx context.Context, obj *en
 	return nil
 }
 
+// HostFile returns generated.HostFileResolver implementation.
+func (r *Resolver) HostFile() generated.HostFileResolver { return &hostFileResolver{r} }
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
@@ -119,6 +142,7 @@ func (r *Resolver) ShellTaskWhereInput() generated.ShellTaskWhereInputResolver {
 	return &shellTaskWhereInputResolver{r}
 }
 
+type hostFileResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type shellTaskResolver struct{ *Resolver }
 type shellTaskWhereInputResolver struct{ *Resolver }

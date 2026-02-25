@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	HostFile() HostFileResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	ShellTask() ShellTaskResolver
@@ -221,6 +222,8 @@ type ComplexityRoot struct {
 		Owner          func(childComplexity int) int
 		Path           func(childComplexity int) int
 		Permissions    func(childComplexity int) int
+		Preview        func(childComplexity int) int
+		PreviewType    func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
@@ -1455,6 +1458,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.preview":
+		if e.complexity.HostFile.Preview == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Preview(childComplexity), true
+
+	case "HostFile.previewType":
+		if e.complexity.HostFile.PreviewType == nil {
+			break
+		}
+
+		return e.complexity.HostFile.PreviewType(childComplexity), true
 
 	case "HostFile.shellTask":
 		if e.complexity.HostFile.ShellTask == nil {
@@ -5212,6 +5229,14 @@ type HostFile implements Node {
   """
   hash: String
   """
+  The type of preview available for the file
+  """
+  previewType: HostFilePreviewType!
+  """
+  A preview of the file content (max 512kb)
+  """
+  preview: String
+  """
   Host the file was reported on.
   """
   host: Host!
@@ -5275,6 +5300,14 @@ enum HostFileOrderField {
   LAST_MODIFIED_AT
   NAME
   SIZE
+}
+"""
+HostFilePreviewType is enum for the field preview_type
+"""
+enum HostFilePreviewType @goModel(model: "realm.pub/tavern/internal/ent/hostfile.PreviewType") {
+  TEXT
+  IMAGE
+  NONE
 }
 """
 HostFileWhereInput is used for filtering HostFile objects.
@@ -5416,6 +5449,13 @@ input HostFileWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
+  """
+  preview_type field predicates
+  """
+  previewType: HostFilePreviewType
+  previewTypeNEQ: HostFilePreviewType
+  previewTypeIn: [HostFilePreviewType!]
+  previewTypeNotIn: [HostFilePreviewType!]
   """
   host edge predicates
   """
@@ -6211,7 +6251,7 @@ type Portal implements Node {
   """
   task: Task
   """
-  ShellTask that created the portal
+  ShellTask that created the portal (if applicable)
   """
   shellTask: ShellTask
   """
