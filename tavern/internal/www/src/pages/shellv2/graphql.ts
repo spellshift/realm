@@ -13,6 +13,10 @@ export const GET_SHELL = gql`
         beacon {
           id
           name
+          host {
+            id
+            name
+          }
         }
         portals {
           id

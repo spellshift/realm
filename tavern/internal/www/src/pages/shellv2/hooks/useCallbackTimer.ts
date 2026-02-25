@@ -14,13 +14,22 @@ export const useCallbackTimer = (beaconData: any) => {
             const now = moment();
             const diff = next.diff(now, 'seconds');
 
-            if (diff > 0) {
-                setTimeUntilCallback(`in ${diff} seconds`);
-                setIsMissedCallback(false);
+            if (diff > 1 || diff < -1) {
+                if (diff > 1) {
+                    setTimeUntilCallback(next.fromNow());
+                    setIsMissedCallback(false);
+                } else {
+                    // next.fromNow() returns "X [time_unit] ago" for past dates
+                    // We want "expected X [time_unit] ago"
+                    // However, fromNow() already includes "ago", so just prepend "expected "
+                    // But wait, "expected 2 minutes ago" vs "expected 2 minutes ago ago"? No, fromNow() returns "2 minutes ago".
+                    // So `expected ${next.fromNow()}` yields "expected 2 minutes ago". Correct.
+                    setTimeUntilCallback(`expected ${next.fromNow()}`);
+                    setIsMissedCallback(true);
+                }
             } else {
-                const missedSeconds = Math.abs(diff);
-                setTimeUntilCallback(`expected ${missedSeconds} seconds ago`);
-                setIsMissedCallback(true);
+                setTimeUntilCallback("now");
+                setIsMissedCallback(false);
             }
         };
 

@@ -1,79 +1,41 @@
-import { useMemo } from "react";
-import Select, { createFilter, } from "react-select"
-import { useTags } from "../../context/TagContext";
+import { useCallback } from "react";
+import Select, { createFilter, MultiValue } from "react-select";
+import { FilterBarOption } from "../../utils/interfacesUI";
+import { useBeaconFilterBar } from "./useBeaconFilterBar";
+import { BeaconFilterBarProps } from "./types";
 
-type Props = {
-    setFiltersSelected: (arg1: any) => void;
-    filtersSelected?: any;
-    initialFilters?: any;
-    isDisabled?: boolean;
-    hideStatusFilter?: boolean; // Some views may default to only online hosts/beacons
-}
-export const BeaconFilterBar = (props: Props) => {
-    const { data } = useTags();
-    const { beacons, groupTags, serviceTags, hosts, principals, primaryIPs, platforms, transports, onlineOfflineStatus } = data;
+export function BeaconFilterBar({
+    value,
+    defaultValue,
+    onChange,
+    isDisabled,
+    hideStatusFilter,
+}: BeaconFilterBarProps) {
+    const { options, isLoading } = useBeaconFilterBar({ hideStatusFilter });
 
-    const { setFiltersSelected, filtersSelected, isDisabled, initialFilters, hideStatusFilter } = props;
-
-    const options = useMemo(() => {
-        const allOptions = [
-            {
-                label: "Platform",
-                options: platforms
-            },
-            {
-                label: "Transport",
-                options: transports
-            },
-            ...!hideStatusFilter ? [{
-                label: "Status",
-                options: onlineOfflineStatus
-            }] : [],
-            {
-                label: "Service",
-                options: serviceTags
-            },
-            {
-                label: "Group",
-                options: groupTags
-            },
-            {
-                label: "Principal",
-                options: principals
-            },
-            {
-                label: "PrimaryIPs",
-                options: primaryIPs
-            },
-            {
-                label: "Host",
-                options: hosts
-            },
-            {
-                label: "Beacon",
-                options: beacons
-            }
-        ];
-
-        return allOptions;
-    }, [platforms, serviceTags, groupTags, principals, primaryIPs, hosts, beacons, transports, onlineOfflineStatus, hideStatusFilter]);
-
+    const handleChange = useCallback(
+        (selected: MultiValue<FilterBarOption>) => {
+            onChange([...selected]);
+        },
+        [onChange]
+    );
 
     return (
         <div className="flex flex-col gap-1">
             <label className=" font-medium text-gray-700">Beacon fields</label>
             <Select
                 isDisabled={isDisabled}
-                isSearchable={true}
+                isLoading={isLoading}
+                isSearchable
                 isMulti
                 options={options}
-                onChange={setFiltersSelected}
+                onChange={handleChange}
                 filterOption={createFilter({
-                    matchFrom: 'any',
-                    stringify: option => `${option.label}`,
+                    matchFrom: "any",
+                    stringify: (option) => `${option.label}`,
                 })}
-                value={filtersSelected || undefined}
-                defaultValue={initialFilters || undefined}
+                value={value}
+                defaultValue={defaultValue}
             />
         </div>
     );
