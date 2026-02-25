@@ -1,7 +1,10 @@
 use alloc::format;
 use alloc::string::ToString;
+
+#[cfg(not(target_os = "solaris"))]
 use sysinfo::{Pid, ProcessExt, Signal, System, SystemExt};
 
+#[cfg(not(target_os = "solaris"))]
 pub fn kill(pid: i64) -> Result<(), String> {
     if !System::IS_SUPPORTED {
         return Err("System not supported".to_string());
@@ -18,6 +21,21 @@ pub fn kill(pid: i64) -> Result<(), String> {
         }
     } else {
         Err(format!("Process {pid} not found"))
+    }
+}
+
+#[cfg(target_os = "solaris")]
+pub fn kill(pid: i64) -> Result<(), String> {
+    use libc;
+    let res = unsafe { libc::kill(pid as i32, libc::SIGKILL) };
+    if res == 0 {
+        Ok(())
+    } else {
+        Err(format!(
+            "Failed to kill process {}: {}",
+            pid,
+            std::io::Error::last_os_error()
+        ))
     }
 }
 

@@ -10,6 +10,9 @@ sysinfo = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 netstat = { workspace = true }
 
+[target.'cfg(target_os = "solaris")'.dependencies]
+libc = "0.2"
+
 [features]
 default = ["stdlib"]
 stdlib = ["dep:sysinfo"]
