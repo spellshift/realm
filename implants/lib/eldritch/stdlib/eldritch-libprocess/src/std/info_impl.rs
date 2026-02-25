@@ -6,6 +6,7 @@ use eldritch_core::Value;
 use spin::RwLock;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
+#[cfg(not(target_os = "solaris"))]
 pub fn info(pid: Option<i64>) -> Result<BTreeMap<String, Value>, String> {
     let mut sys = System::new();
     sys.refresh_processes();

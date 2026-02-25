@@ -1,4 +1,6 @@
 use alloc::format;
+
+#[cfg(not(target_os = "solaris"))]
 use alloc::string::ToString;
 
 #[cfg(not(target_os = "solaris"))]
