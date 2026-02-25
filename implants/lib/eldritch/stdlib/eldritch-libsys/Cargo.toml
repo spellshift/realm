@@ -12,6 +12,7 @@ whoami = { workspace = true, optional = true }
 local-ip-address = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
+libc = { workspace = true }
 
 [target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
 nix = { workspace = true }
