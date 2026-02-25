@@ -9,7 +9,8 @@ import { GET_BEACON_DETAIL_QUERY } from "./queries";
 import { BeaconDetailQueryResponse } from "./types";
 import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { BeaconNode } from "../../../utils/interfacesQuery";
-import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
+import { checkIfBeaconOffline, getEnumKey, isBeaconActive } from "../../../utils/utils";
+import { CreateShellButton } from "../../../components/create-shell-button/CreateShellButton";
 
 interface BeaconsTableProps {
     beaconIds: string[];
@@ -144,7 +145,7 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                 const isOffline = checkIfBeaconOffline(beacon);
                 const id = beacon.id;
                 return (
-                    <div className="flex flex-row justify-end">
+                    <div className="flex flex-row justify-end space-x-2">
                         {!isOffline &&
                             <Button
                                 buttonStyle={{ color: "gray", size: 'md' }}
@@ -161,6 +162,7 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                                 New quest
                             </Button>
                         }
+                        {isBeaconActive(beacon, 10) && <CreateShellButton beaconId={id} />}
                     </div>
                 );
             },

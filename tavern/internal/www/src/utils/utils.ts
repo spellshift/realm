@@ -170,6 +170,12 @@ export function checkIfBeaconOffline(beacon: { lastSeenAt: string, interval: num
     return add(new Date(beacon?.lastSeenAt), { seconds: beacon?.interval, minutes: 1 }) < currentDate;
 }
 
+export function isBeaconActive(beacon: { lastSeenAt: string, interval: number }, toleranceSeconds: number = 10): boolean {
+    if (!beacon || !beacon.lastSeenAt || beacon.interval === undefined) return false;
+    const currentDate = new Date();
+    return add(new Date(beacon.lastSeenAt), { seconds: beacon.interval + toleranceSeconds }) >= currentDate;
+}
+
 export function isBeaconSelected(selectedBeacons: any): boolean {
     for (let key in selectedBeacons) {
         if (selectedBeacons[key] === true) {
