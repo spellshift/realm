@@ -1,16 +1,6 @@
 import { CreateToastFnReturn } from "@chakra-ui/react";
 import { LinkEdge } from "../../utils/interfacesQuery";
-
-const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT ?? 'http://localhost:8000';
-
-export const formatBytes = (bytes: number, decimals = 2) => {
-    if (!+bytes) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
+import { API_ENDPOINT } from "../../utils/utils";
 
 export const truncateAssetName = (name: string, maxLength: number = 25): string => {
     if (name.length <= maxLength) return name;
