@@ -110,9 +110,15 @@ export const CreateShellButton = ({ hostId, beaconId }: CreateShellButtonProps) 
 
     if (queryLoading) {
         return (
-             <Button isLoading disabled buttonStyle={{ size: 'sm', color: 'purple' }} data-testid="create-shell-button-loading">
-                 <Terminal className="h-4 w-4" />
-             </Button>
+             <Button
+                isLoading
+                disabled
+                buttonVariant="ghost"
+                buttonStyle={{ size: 'xs', color: 'gray' }}
+                data-testid="create-shell-button-loading"
+                leftIcon={<Terminal className="w-4 h-4" />}
+                aria-label="New Shell"
+            />
         );
     }
 
@@ -129,10 +135,11 @@ export const CreateShellButton = ({ hostId, beaconId }: CreateShellButtonProps) 
                 handleClick();
             }}
             isLoading={mutationLoading}
-            buttonStyle={{ size: 'sm', color: 'purple' }}
+            buttonVariant="ghost"
+            buttonStyle={{ size: 'xs', color: 'gray' }}
             data-testid="create-shell-button"
-        >
-            <Terminal className="h-4 w-4" />
-        </Button>
+            leftIcon={<Terminal className="w-4 h-4" />}
+            aria-label="New Shell"
+        />
     );
 };
