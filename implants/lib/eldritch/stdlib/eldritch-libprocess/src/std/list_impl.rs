@@ -82,42 +82,43 @@ pub fn list() -> Result<Vec<BTreeMap<alloc::string::String, Value>>, alloc::stri
         let mut list = Vec::new();
         let proc_dir = fs::read_dir("/proc").map_err(|e| format!("Failed to read /proc: {}", e))?;
 
+        // println!("DEBUG: listing /proc");
+
         for entry in proc_dir {
             if let Ok(entry) = entry {
                 if let Ok(file_name) = entry.file_name().into_string() {
                     // Filter numeric directories only
                     if let Ok(pid) = file_name.parse::<i32>() {
-                        if let Ok(info) = solaris_proc::read_psinfo(pid) {
-                            let mut map = BTreeMap::new();
-                            map.insert("pid".to_string(), Value::Int(info.pr_pid as i64));
-                            map.insert("ppid".to_string(), Value::Int(info.pr_ppid as i64));
+                        match solaris_proc::read_psinfo(pid) {
+                            Ok(info) => {
+                                let mut map = BTreeMap::new();
+                                map.insert("pid".to_string(), Value::Int(info.pr_pid as i64));
+                                map.insert("ppid".to_string(), Value::Int(info.pr_ppid as i64));
 
-                            // User lookup would require parsing /etc/passwd or similar if we want name,
-                            // otherwise just use UID for principal for now as we don't have easy `getpwuid`.
-                            // Or leave it as stringified UID.
-                            map.insert("principal".to_string(), Value::String(info.pr_uid.to_string()));
+                                map.insert("principal".to_string(), Value::String(info.pr_uid.to_string()));
 
-                            // Name from psinfo
-                            let name = String::from_utf8_lossy(&info.pr_fname)
-                                .trim_matches(char::from(0))
-                                .to_string();
-                            map.insert("name".to_string(), Value::String(name.clone()));
-                            map.insert("path".to_string(), Value::String(name)); // Path is hard without reading link, use name
+                                // Name from psinfo
+                                let name = String::from_utf8_lossy(&info.pr_fname)
+                                    .trim_matches(char::from(0))
+                                    .to_string();
+                                map.insert("name".to_string(), Value::String(name.clone()));
+                                map.insert("path".to_string(), Value::String(name));
 
-                            // Command args
-                            let args = String::from_utf8_lossy(&info.pr_psargs)
-                                .trim_matches(char::from(0))
-                                .to_string();
-                            map.insert("command".to_string(), Value::String(args));
+                                // Command args
+                                let args = String::from_utf8_lossy(&info.pr_psargs)
+                                    .trim_matches(char::from(0))
+                                    .to_string();
+                                map.insert("command".to_string(), Value::String(args));
 
-                            // Status not easily available in psinfo (it's in pstatus/lwpstatus), skipping or "Unknown"
-                            map.insert("status".to_string(), Value::String("Unknown".to_string()));
+                                map.insert("status".to_string(), Value::String("Unknown".to_string()));
+                                map.insert("cwd".to_string(), Value::String("".to_string()));
+                                map.insert("environ".to_string(), Value::String("".to_string()));
 
-                            // Cwd, Environ: Empty/skipped for list to be fast
-                            map.insert("cwd".to_string(), Value::String("".to_string()));
-                            map.insert("environ".to_string(), Value::String("".to_string()));
-
-                            list.push(map);
+                                list.push(map);
+                            },
+                            Err(_e) => {
+                                // println!("DEBUG: failed to read psinfo for {}: {}", pid, _e);
+                            }
                         }
                     }
                 }
