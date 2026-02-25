@@ -21,7 +21,7 @@ const ShellV2 = () => {
         setPortalId
     } = useShellData(shellId);
 
-    const { timeUntilCallback, isMissedCallback } = useCallbackTimer(beaconData);
+    const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
 
     const {
         termRef,
@@ -30,7 +30,7 @@ const ShellV2 = () => {
         showCompletions,
         completionPos,
         completionIndex
-    } = useShellTerminal(shellId, loading, error, shellData, setPortalId);
+    } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
 
     if (connectionError) {
         return (

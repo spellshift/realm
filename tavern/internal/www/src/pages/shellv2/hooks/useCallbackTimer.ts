@@ -4,6 +4,7 @@ import moment from "moment";
 export const useCallbackTimer = (beaconData: any) => {
     const [timeUntilCallback, setTimeUntilCallback] = useState<string>("");
     const [isMissedCallback, setIsMissedCallback] = useState(false);
+    const [isLateCheckin, setIsLateCheckin] = useState(false);
 
     useEffect(() => {
         const updateTimer = () => {
@@ -18,6 +19,7 @@ export const useCallbackTimer = (beaconData: any) => {
                 if (diff > 1) {
                     setTimeUntilCallback(next.fromNow());
                     setIsMissedCallback(false);
+                    setIsLateCheckin(false);
                 } else {
                     // next.fromNow() returns "X [time_unit] ago" for past dates
                     // We want "expected X [time_unit] ago"
@@ -26,10 +28,17 @@ export const useCallbackTimer = (beaconData: any) => {
                     // So `expected ${next.fromNow()}` yields "expected 2 minutes ago". Correct.
                     setTimeUntilCallback(`expected ${next.fromNow()}`);
                     setIsMissedCallback(true);
+
+                    if (diff < -300) {
+                        setIsLateCheckin(true);
+                    } else {
+                        setIsLateCheckin(false);
+                    }
                 }
             } else {
                 setTimeUntilCallback("now");
                 setIsMissedCallback(false);
+                setIsLateCheckin(false);
             }
         };
 
@@ -38,5 +47,5 @@ export const useCallbackTimer = (beaconData: any) => {
         return () => clearInterval(intervalId);
     }, [beaconData]);
 
-    return { timeUntilCallback, isMissedCallback };
+    return { timeUntilCallback, isMissedCallback, isLateCheckin };
 };

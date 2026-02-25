@@ -21,7 +21,8 @@ export const useShellTerminal = (
     loading: boolean,
     error: any,
     shellData: any,
-    setPortalId: (id: number | null) => void
+    setPortalId: (id: number | null) => void,
+    isLateCheckin: boolean
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -54,6 +55,19 @@ export const useShellTerminal = (
         list: [], start: 0, show: false, index: 0
     });
 
+    // Ref for late checkin to access in event handlers
+    const isLateCheckinRef = useRef(isLateCheckin);
+
+    useEffect(() => {
+        isLateCheckinRef.current = isLateCheckin;
+        if (termInstance.current) {
+            termInstance.current.options.theme = {
+                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
+                background: "#1e1e1e",
+            };
+        }
+    }, [isLateCheckin]);
+
     useEffect(() => {
         if (!termRef.current || loading) return;
 
@@ -82,7 +96,7 @@ export const useShellTerminal = (
             cursorBlink: true,
             theme: {
                 background: "#1e1e1e",
-                foreground: "#d4d4d4",
+                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
             },
             fontFamily: 'Menlo, Monaco, "Courier New", monospace',
             fontSize: 18,
@@ -272,6 +286,9 @@ export const useShellTerminal = (
         };
 
         termInstance.current.onData((data) => {
+            // Check for late checkin and block input
+            if (isLateCheckinRef.current) return;
+
             const code = data.charCodeAt(0);
             const state = shellState.current;
             const term = termInstance.current;
