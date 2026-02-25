@@ -17,12 +17,12 @@ type ShellTask struct {
 // Fields of the ShellTask.
 func (ShellTask) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("input").
+		field.Text("input").
 			Comment("The command input sent to the shell"),
-		field.String("output").
+		field.Text("output").
 			Optional().
 			Comment("Any output received from the shell"),
-		field.String("error").
+		field.Text("error").
 			Optional().
 			Comment("Any error received from the shell"),
 		field.String("stream_id").

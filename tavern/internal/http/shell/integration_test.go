@@ -519,3 +519,33 @@ func TestTruncation(t *testing.T) {
 	expectedPrefix := "[+] " + longInput[:64] + "...\n"
 	require.Contains(t, outMsg.Output, expectedPrefix)
 }
+
+func TestLargeShellTask(t *testing.T) {
+	env := SetupTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	// Create 20KB string
+	largeData := strings.Repeat("A", 1024*20)
+
+	// Create ShellTask
+	st, err := env.EntClient.ShellTask.Create().
+		SetShell(env.Shell).
+		SetInput(largeData).
+		SetOutput(largeData).
+		SetError(largeData).
+		SetCreator(env.User).
+		SetStreamID("test-stream").
+		SetSequenceID(1).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Retrieve ShellTask
+	retrieved, err := env.EntClient.ShellTask.Get(ctx, st.ID)
+	require.NoError(t, err)
+
+	// Verify Data
+	require.Equal(t, largeData, retrieved.Input)
+	require.Equal(t, largeData, retrieved.Output)
+	require.Equal(t, largeData, retrieved.Error)
+}
