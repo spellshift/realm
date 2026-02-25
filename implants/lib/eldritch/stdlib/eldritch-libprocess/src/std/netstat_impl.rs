@@ -3,12 +3,12 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use eldritch_core::Value;
 
-#[cfg(target_os = "freebsd")]
+#[cfg(any(target_os = "freebsd", target_os = "solaris"))]
 pub fn netstat() -> Result<Vec<BTreeMap<String, Value>>, String> {
-    Err("Not implemented for FreeBSD".to_string())
+    Err("Not implemented for this OS".to_string())
 }
 
-#[cfg(not(target_os = "freebsd"))]
+#[cfg(all(not(target_os = "freebsd"), not(target_os = "solaris")))]
 pub fn netstat() -> Result<Vec<BTreeMap<String, Value>>, String> {
     const UNKNOWN: &str = "UNKNOWN";
     let entries = netstat::netstat().map_err(|e| e.to_string())?;
