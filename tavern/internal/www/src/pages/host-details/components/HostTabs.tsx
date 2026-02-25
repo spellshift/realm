@@ -3,8 +3,8 @@ import { useHost } from "../../../context/HostContext";
 import { getOfflineOnlineStatus } from "../../../utils/utils";
 import { useQuery } from "@apollo/client";
 import { useParams } from "react-router-dom";
-import { GET_HOST_TASK_COUNT } from "../../../utils/queries";
-import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo } from "lucide-react";
+import { GET_HOST_TASK_COUNT, GET_HOST_SHELL_COUNT } from "../../../utils/queries";
+import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon } from "lucide-react";
 
 
 const HostTabs = () => {
@@ -21,6 +21,27 @@ const HostTabs = () => {
                 }
             }
         }
+    });
+
+    const { data: shellCountData } = useQuery(GET_HOST_SHELL_COUNT, {
+        variables: {
+            whereTotal: {
+                hasBeaconWith: {
+                    hasHostWith: {
+                        id: hostId
+                    }
+                }
+            },
+            whereActive: {
+                hasBeaconWith: {
+                    hasHostWith: {
+                        id: hostId
+                    }
+                },
+                closedAtIsNil: true
+            }
+        },
+        skip: !hostId
     });
 
     const { online } = getOfflineOnlineStatus(host?.beacons?.edges || []);
@@ -70,6 +91,15 @@ const HostTabs = () => {
                 </div>
                 <div>
                     {host?.credentials?.totalCount !== undefined && `(${host.credentials.totalCount})`}
+                </div>
+            </Tab>
+            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+                <TerminalIcon className="w-4 h-4" />
+                <div>
+                    Shells
+                </div>
+                <div>
+                    {shellCountData?.totalShells?.totalCount !== undefined && `(${shellCountData.activeShells?.totalCount || 0}/${shellCountData.totalShells.totalCount})`}
                 </div>
             </Tab>
         </TabList>
