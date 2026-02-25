@@ -8,7 +8,7 @@ use pb::{c2, eldritch};
 use std::io::Read;
 use std::sync::Mutex;
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "solaris")))]
 fn get_file_metadata_fields(metadata: &std::fs::Metadata) -> (String, String, String) {
     use nix::unistd::{Gid, Group, Uid, User};
     use std::os::unix::fs::MetadataExt;
@@ -31,6 +31,18 @@ fn get_file_metadata_fields(metadata: &std::fs::Metadata) -> (String, String, St
         .unwrap_or_else(|| gid.to_string());
 
     (permissions, owner, group)
+}
+
+#[cfg(target_os = "solaris")]
+fn get_file_metadata_fields(metadata: &std::fs::Metadata) -> (String, String, String) {
+    use std::os::unix::fs::MetadataExt;
+
+    let mode = metadata.mode();
+    let permissions = format!("{:o}", mode & 0o7777);
+    let uid = metadata.uid();
+    let gid = metadata.gid();
+
+    (permissions, uid.to_string(), gid.to_string())
 }
 
 #[cfg(windows)]
