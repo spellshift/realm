@@ -10,6 +10,7 @@ import { BeaconDetailQueryResponse } from "./types";
 import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { BeaconNode } from "../../../utils/interfacesQuery";
 import { checkIfBeaconOffline, getEnumKey } from "../../../utils/utils";
+import { CreateShellButton } from "../../../components/create-shell-button/CreateShellButton";
 
 interface BeaconsTableProps {
     beaconIds: string[];
@@ -144,23 +145,26 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                 const isOffline = checkIfBeaconOffline(beacon);
                 const id = beacon.id;
                 return (
-                    <div className="flex flex-row justify-end">
-                        {!isOffline &&
-                            <Button
-                                buttonStyle={{ color: "gray", size: 'md' }}
-                                buttonVariant="ghost"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate("/createQuest", {
-                                        state: {
-                                            step: 1,
-                                            beacons: [id]
-                                        }
-                                    });
-                                }}>
-                                New quest
-                            </Button>
-                        }
+                    <div className="flex flex-row justify-end items-center gap-2">
+                        {!isOffline && (
+                            <>
+                                <CreateShellButton beaconId={id} />
+                                <Button
+                                    buttonStyle={{ color: "gray", size: 'md' }}
+                                    buttonVariant="ghost"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate("/createQuest", {
+                                            state: {
+                                                step: 1,
+                                                beacons: [id]
+                                            }
+                                        });
+                                    }}>
+                                    New quest
+                                </Button>
+                            </>
+                        )}
                     </div>
                 );
             },
