@@ -46,7 +46,7 @@ impl Agent for MockAgent {
     }
     fn report_file(
         &self,
-        _: pb::c2::ReportFileRequest,
+        _: std::sync::mpsc::Receiver<pb::c2::ReportFileRequest>,
     ) -> Result<pb::c2::ReportFileResponse, String> {
         Err("".into())
     }
