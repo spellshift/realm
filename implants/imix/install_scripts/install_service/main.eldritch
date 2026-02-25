@@ -220,7 +220,7 @@ smf_template = """<?xml version="1.0"?>
       <service_fmri value="svc:/milestone/network:default"/>
     </dependency>
 
-    <exec_method type="method" name="start" exec="{{ SERVICE_START_CMD }}" timeout_seconds="60"/>
+    <exec_method type="method" name="start" exec="{{ SERVICE_START_CMD }} &amp;" timeout_seconds="60"/>
 
     <exec_method type="method" name="stop" exec=":kill" timeout_seconds="60"/>
 
