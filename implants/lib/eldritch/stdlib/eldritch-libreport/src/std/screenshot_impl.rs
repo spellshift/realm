@@ -58,7 +58,10 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
             kind: c2::ReportFileKind::Screenshot as i32,
         };
 
-        agent.report_file(req).map_err(|e| e.to_string())?;
+        let (tx, rx) = std::sync::mpsc::channel();
+        tx.send(req).map_err(|e| e.to_string())?;
+        drop(tx);
+        agent.report_file(rx).map_err(|e| e.to_string())?;
     }
 
     Ok(())
