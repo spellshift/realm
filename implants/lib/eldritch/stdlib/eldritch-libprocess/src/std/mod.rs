@@ -60,13 +60,18 @@ pub mod solaris_proc {
     pub fn read_psinfo(pid: i32) -> Result<PsInfo, String> {
         let path = format!("/proc/{}/psinfo", pid);
         let mut file = File::open(&path).map_err(|_| format!("Process {} not found", pid))?;
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
+
+        // Use a fixed size buffer instead of read_to_end to avoid issues with 0-sized proc files
+        // psinfo_t is usually ~336 (32bit) or ~416 (64bit) bytes. 1024 is plenty.
+        let mut buffer = [0u8; 1024];
+        let n = file.read(&mut buffer).map_err(|e| e.to_string())?;
 
         // Basic sanity check on size
-        if buffer.len() < 200 {
-             return Err(format!("Failed to read psinfo for process {} (too small: {})", pid, buffer.len()));
+        if n < 200 {
+             return Err(format!("Failed to read psinfo for process {} (too small: {})", pid, n));
         }
+
+        let buffer = &buffer[..n];
 
         // Determine offsets based on pointer width
         let is_64bit = std::mem::size_of::<usize>() == 8;
@@ -121,38 +126,28 @@ pub mod solaris_proc {
 
         // Offsets
         // 0-40: same for both (11 i32/u32)
-        // 64-bit:
-        // 44-48: pad
-        // 48: pr_addr (8)
-        // 56: pr_size (8)
-        // 64: pr_rssize (8)
-        // 72: pr_ttydev (8)
-        // 80: pr_pctcpu (2)
-        // ...
-        // 88: pr_start (16)
-
-        // 32-bit:
-        // 44: pr_addr (4)
-        // 48: pr_size (4)
-        // 52: pr_rssize (4)
-        // 56: pr_ttydev (4) (dev_t is 32-bit on 32-bit Solaris typically, or 64-bit aligned? Let's assume 32-bit for now or check header)
-        // Actually, dev_t is often 64-bit even on 32-bit Solaris since 2.5?
-        // If dev_t is 64-bit (8 bytes):
-        // 56: pr_ttydev (8)
-        // 64: pr_pctcpu (2)
-        // 66: pr_pctmem (2)
-        // 68: pad?
-        // 72: pr_start (8) (time_t 4 + long 4)
-
         // Verify PID match (at offset 12)
+        // We relax this check slightly or just log it if we could, but let's keep it but handle failure gracefully?
+        // Actually, if we read the wrong file (unlikely) or layout is wrong, PID will be garbage.
         let pr_pid = read_i32(12);
+
+        // If PID is 0, it matches our `sched`.
+        // If PID is 1, and we read 1, good.
+        // If we read garbage, `pr_pid` might be anything.
+        // We will trust the read if it looks sane, but we can't easily validate without `pr_pid`.
+        // Let's assume the caller gave us the right PID and we opened the right file.
+        // If `pr_pid` mismatches, it's a strong indicator of layout mismatch.
+        // BUT, if we are reading 32-bit `psinfo` struct with 64-bit logic (or vice versa) and they share the first few fields (which they do),
+        // then `pr_pid` should still match!
+        // `pr_flag` (0), `pr_nlwp` (4), `pr_nzomb` (8), `pr_pid` (12).
+        // These are all `int` or `pid_t` (usually `int`).
+        // So `pr_pid` check should pass even if rest of layout is wrong.
+
         if pr_pid != pid {
-             // If PID mismatches, offsets might be totally wrong or file is wrong.
-             // But we opened /proc/PID/psinfo.
              return Err(format!("PID mismatch in psinfo: expected {}, got {}", pid, pr_pid));
         }
 
-        let (pr_addr, pr_size, pr_rssize, pr_ttydev, pr_pctcpu, pr_pctmem, pr_start_off, pr_fname_off) = if is_64bit {
+        let (pr_addr, pr_size, pr_rssize, pr_ttydev, pr_pctcpu, pr_pctmem, pr_start_off) = if is_64bit {
             (
                 read_u64(48),
                 read_u64(56),
@@ -161,30 +156,9 @@ pub mod solaris_proc {
                 read_u16(80),
                 read_u16(82),
                 88, // pr_start
-                136 // pr_fname
             )
         } else {
             // 32-bit offsets (assuming dev_t is 64-bit)
-            // 44: pr_addr (4)
-            // 48: pr_size (4)
-            // 52: pr_rssize (4)
-            // 56: pr_ttydev (8) ??
-            // Let's try to detect based on buffer size or align?
-            // If dev_t is 32-bit:
-            // 56: pr_ttydev (4)
-            // 60: pr_pctcpu (2)
-            // ...
-            // Let's assume standard ILP32 with largefile/dev support.
-            // On Solaris 10+, dev_t is 64-bit (u_longlong_t).
-            // But padding?
-            // 44: pr_addr (4)
-            // 48: pr_size (4)
-            // 52: pr_rssize (4)
-            // 56: pr_ttydev (8) (aligned?) 56 is div by 8.
-            // 64: pr_pctcpu (2)
-            // 66: pr_pctmem (2)
-            // 68: pad?
-            // 72: pr_start (8)
             (
                 read_u32_as_u64(44),
                 read_u32_as_u64(48),
@@ -193,23 +167,9 @@ pub mod solaris_proc {
                 read_u16(64),
                 read_u16(66),
                 72, // pr_start
-                72 + 8 + 8 + 8 + 16 // start(8)+time(8)+ctime(8)+fname(16) -> 120?
-                // Wait, structure:
-                // timestruc_t (8 bytes: 4+4)
-                // pr_start (8) at 72
-                // pr_time (8) at 80
-                // pr_ctime (8) at 88
-                // pr_fname (16) at 96
-                // pr_psargs (80) at 112
-                // pr_wstat (4) at 192
-                // pr_argc (4) at 196
-                // pr_argv (4) at 200
-                // pr_envp (4) at 204
-                // pr_dmodel (1) at 208
             )
         };
 
-        // Recalculate fname/psargs offsets for 32-bit if needed.
         let fname_off = if is_64bit { 136 } else { 96 };
         let psargs_off = if is_64bit { 152 } else { 112 };
 
