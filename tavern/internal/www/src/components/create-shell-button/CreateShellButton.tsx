@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@chakra-ui/react";
+import { Terminal } from "lucide-react";
 import { GET_BEACONS_FOR_HOST_QUERY, CREATE_SHELL_MUTATION } from "./queries";
 import Button from "../tavern-base-ui/button/Button";
 import { isBeaconActive } from "../../utils/utils";
@@ -109,7 +110,9 @@ export const CreateShellButton = ({ hostId, beaconId }: CreateShellButtonProps) 
 
     if (queryLoading) {
         return (
-             <Button isLoading disabled buttonStyle={{ size: 'sm', color: 'purple' }}>Shell</Button>
+             <Button isLoading disabled buttonStyle={{ size: 'sm', color: 'purple' }} data-testid="create-shell-button-loading">
+                 <Terminal className="h-4 w-4" />
+             </Button>
         );
     }
 
@@ -127,8 +130,9 @@ export const CreateShellButton = ({ hostId, beaconId }: CreateShellButtonProps) 
             }}
             isLoading={mutationLoading}
             buttonStyle={{ size: 'sm', color: 'purple' }}
+            data-testid="create-shell-button"
         >
-            Shell
+            <Terminal className="h-4 w-4" />
         </Button>
     );
 };
