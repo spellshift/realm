@@ -525,8 +525,8 @@ func TestLargeShellTask(t *testing.T) {
 	defer env.Close()
 	ctx := context.Background()
 
-	// Create 20KB string
-	largeData := strings.Repeat("A", 1024*20)
+	// Create 70KB string (exceeds standard TEXT 64KB limit)
+	largeData := strings.Repeat("A", 1024*70)
 
 	// Create ShellTask
 	st, err := env.EntClient.ShellTask.Create().
