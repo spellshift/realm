@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/schema/hostfilepreviewtype"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -1987,6 +1988,29 @@ type HostFileWhereInput struct {
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
 
+	// "preview" field predicates.
+	Preview             *string  `json:"preview,omitempty"`
+	PreviewNEQ          *string  `json:"previewNEQ,omitempty"`
+	PreviewIn           []string `json:"previewIn,omitempty"`
+	PreviewNotIn        []string `json:"previewNotIn,omitempty"`
+	PreviewGT           *string  `json:"previewGT,omitempty"`
+	PreviewGTE          *string  `json:"previewGTE,omitempty"`
+	PreviewLT           *string  `json:"previewLT,omitempty"`
+	PreviewLTE          *string  `json:"previewLTE,omitempty"`
+	PreviewContains     *string  `json:"previewContains,omitempty"`
+	PreviewHasPrefix    *string  `json:"previewHasPrefix,omitempty"`
+	PreviewHasSuffix    *string  `json:"previewHasSuffix,omitempty"`
+	PreviewIsNil        bool     `json:"previewIsNil,omitempty"`
+	PreviewNotNil       bool     `json:"previewNotNil,omitempty"`
+	PreviewEqualFold    *string  `json:"previewEqualFold,omitempty"`
+	PreviewContainsFold *string  `json:"previewContainsFold,omitempty"`
+
+	// "preview_type" field predicates.
+	PreviewType      *hostfilepreviewtype.HostFilePreviewType  `json:"previewType,omitempty"`
+	PreviewTypeNEQ   *hostfilepreviewtype.HostFilePreviewType  `json:"previewTypeNEQ,omitempty"`
+	PreviewTypeIn    []hostfilepreviewtype.HostFilePreviewType `json:"previewTypeIn,omitempty"`
+	PreviewTypeNotIn []hostfilepreviewtype.HostFilePreviewType `json:"previewTypeNotIn,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -2381,6 +2405,63 @@ func (i *HostFileWhereInput) P() (predicate.HostFile, error) {
 	}
 	if i.HashContainsFold != nil {
 		predicates = append(predicates, hostfile.HashContainsFold(*i.HashContainsFold))
+	}
+	if i.Preview != nil {
+		predicates = append(predicates, hostfile.PreviewEQ(*i.Preview))
+	}
+	if i.PreviewNEQ != nil {
+		predicates = append(predicates, hostfile.PreviewNEQ(*i.PreviewNEQ))
+	}
+	if len(i.PreviewIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewIn(i.PreviewIn...))
+	}
+	if len(i.PreviewNotIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewNotIn(i.PreviewNotIn...))
+	}
+	if i.PreviewGT != nil {
+		predicates = append(predicates, hostfile.PreviewGT(*i.PreviewGT))
+	}
+	if i.PreviewGTE != nil {
+		predicates = append(predicates, hostfile.PreviewGTE(*i.PreviewGTE))
+	}
+	if i.PreviewLT != nil {
+		predicates = append(predicates, hostfile.PreviewLT(*i.PreviewLT))
+	}
+	if i.PreviewLTE != nil {
+		predicates = append(predicates, hostfile.PreviewLTE(*i.PreviewLTE))
+	}
+	if i.PreviewContains != nil {
+		predicates = append(predicates, hostfile.PreviewContains(*i.PreviewContains))
+	}
+	if i.PreviewHasPrefix != nil {
+		predicates = append(predicates, hostfile.PreviewHasPrefix(*i.PreviewHasPrefix))
+	}
+	if i.PreviewHasSuffix != nil {
+		predicates = append(predicates, hostfile.PreviewHasSuffix(*i.PreviewHasSuffix))
+	}
+	if i.PreviewIsNil {
+		predicates = append(predicates, hostfile.PreviewIsNil())
+	}
+	if i.PreviewNotNil {
+		predicates = append(predicates, hostfile.PreviewNotNil())
+	}
+	if i.PreviewEqualFold != nil {
+		predicates = append(predicates, hostfile.PreviewEqualFold(*i.PreviewEqualFold))
+	}
+	if i.PreviewContainsFold != nil {
+		predicates = append(predicates, hostfile.PreviewContainsFold(*i.PreviewContainsFold))
+	}
+	if i.PreviewType != nil {
+		predicates = append(predicates, hostfile.PreviewTypeEQ(*i.PreviewType))
+	}
+	if i.PreviewTypeNEQ != nil {
+		predicates = append(predicates, hostfile.PreviewTypeNEQ(*i.PreviewTypeNEQ))
+	}
+	if len(i.PreviewTypeIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewTypeIn(i.PreviewTypeIn...))
+	}
+	if len(i.PreviewTypeNotIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewTypeNotIn(i.PreviewTypeNotIn...))
 	}
 
 	if i.HasHost != nil {

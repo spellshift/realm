@@ -106,6 +106,8 @@ type ComplexityRoot struct {
 		Owner          func(childComplexity int) int
 		Path           func(childComplexity int) int
 		Permissions    func(childComplexity int) int
+		Preview        func(childComplexity int) int
+		PreviewType    func(childComplexity int) int
 		Size           func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -664,6 +666,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.HostFile.Permissions(childComplexity), true
+
+	case "HostFile.preview":
+		if e.complexity.HostFile.Preview == nil {
+			break
+		}
+
+		return e.complexity.HostFile.Preview(childComplexity), true
+
+	case "HostFile.previewType":
+		if e.complexity.HostFile.PreviewType == nil {
+			break
+		}
+
+		return e.complexity.HostFile.PreviewType(childComplexity), true
 
 	case "HostFile.size":
 		if e.complexity.HostFile.Size == nil {
@@ -2585,6 +2601,14 @@ type HostFile implements Node {
   """
   hash: String
   """
+  Preview of the file content (text or base64-encoded image), max 512KB.
+  """
+  preview: String
+  """
+  The type of preview available for this file.
+  """
+  previewType: HostFileHostFilePreviewType!
+  """
   Host the file was reported on.
   """
   host: Host!
@@ -2592,6 +2616,14 @@ type HostFile implements Node {
   Task that reported this file.
   """
   task: Task!
+}
+"""
+HostFileHostFilePreviewType is enum for the field preview_type
+"""
+enum HostFileHostFilePreviewType @goModel(model: "realm.pub/tavern/internal/ent/schema/hostfilepreviewtype.HostFilePreviewType") {
+  TEXT
+  IMAGE
+  NONE
 }
 """
 Ordering options for HostFile connections
@@ -2755,6 +2787,31 @@ input HostFileWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
+  """
+  preview field predicates
+  """
+  preview: String
+  previewNEQ: String
+  previewIn: [String!]
+  previewNotIn: [String!]
+  previewGT: String
+  previewGTE: String
+  previewLT: String
+  previewLTE: String
+  previewContains: String
+  previewHasPrefix: String
+  previewHasSuffix: String
+  previewIsNil: Boolean
+  previewNotNil: Boolean
+  previewEqualFold: String
+  previewContainsFold: String
+  """
+  preview_type field predicates
+  """
+  previewType: HostFileHostFilePreviewType
+  previewTypeNEQ: HostFileHostFilePreviewType
+  previewTypeIn: [HostFileHostFilePreviewType!]
+  previewTypeNotIn: [HostFileHostFilePreviewType!]
   """
   host edge predicates
   """

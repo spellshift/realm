@@ -3,11 +3,14 @@
 package hostfile
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/99designs/gqlgen/graphql"
+	"realm.pub/tavern/internal/ent/schema/hostfilepreviewtype"
 )
 
 const (
@@ -33,6 +36,10 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// FieldPreview holds the string denoting the preview field in the database.
+	FieldPreview = "preview"
+	// FieldPreviewType holds the string denoting the preview_type field in the database.
+	FieldPreviewType = "preview_type"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
@@ -67,6 +74,8 @@ var Columns = []string{
 	FieldSize,
 	FieldHash,
 	FieldContent,
+	FieldPreview,
+	FieldPreviewType,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_files"
@@ -114,6 +123,18 @@ var (
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
 )
+
+const DefaultPreviewType hostfilepreviewtype.HostFilePreviewType = "NONE"
+
+// PreviewTypeValidator is a validator for the "preview_type" field enum values. It is called by the builders before save.
+func PreviewTypeValidator(pt hostfilepreviewtype.HostFilePreviewType) error {
+	switch pt {
+	case "TEXT", "IMAGE", "NONE":
+		return nil
+	default:
+		return fmt.Errorf("hostfile: invalid enum value for preview_type field: %q", pt)
+	}
+}
 
 // OrderOption defines the ordering options for the HostFile queries.
 type OrderOption func(*sql.Selector)
@@ -163,6 +184,16 @@ func ByHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHash, opts...).ToFunc()
 }
 
+// ByPreview orders the results by the preview field.
+func ByPreview(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreview, opts...).ToFunc()
+}
+
+// ByPreviewType orders the results by the preview_type field.
+func ByPreviewType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreviewType, opts...).ToFunc()
+}
+
 // ByHostField orders the results by host field.
 func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -190,3 +221,10 @@ func newTaskStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
 	)
 }
+
+var (
+	// hostfilepreviewtype.HostFilePreviewType must implement graphql.Marshaler.
+	_ graphql.Marshaler = (*hostfilepreviewtype.HostFilePreviewType)(nil)
+	// hostfilepreviewtype.HostFilePreviewType must implement graphql.Unmarshaler.
+	_ graphql.Unmarshaler = (*hostfilepreviewtype.HostFilePreviewType)(nil)
+)

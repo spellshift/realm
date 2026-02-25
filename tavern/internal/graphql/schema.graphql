@@ -725,6 +725,14 @@ type HostFile implements Node {
   """
   hash: String
   """
+  Preview of the file content (text or base64-encoded image), max 512KB.
+  """
+  preview: String
+  """
+  The type of preview available for this file.
+  """
+  previewType: HostFileHostFilePreviewType!
+  """
   Host the file was reported on.
   """
   host: Host!
@@ -732,6 +740,14 @@ type HostFile implements Node {
   Task that reported this file.
   """
   task: Task!
+}
+"""
+HostFileHostFilePreviewType is enum for the field preview_type
+"""
+enum HostFileHostFilePreviewType @goModel(model: "realm.pub/tavern/internal/ent/schema/hostfilepreviewtype.HostFilePreviewType") {
+  TEXT
+  IMAGE
+  NONE
 }
 """
 Ordering options for HostFile connections
@@ -895,6 +911,31 @@ input HostFileWhereInput {
   hashNotNil: Boolean
   hashEqualFold: String
   hashContainsFold: String
+  """
+  preview field predicates
+  """
+  preview: String
+  previewNEQ: String
+  previewIn: [String!]
+  previewNotIn: [String!]
+  previewGT: String
+  previewGTE: String
+  previewLT: String
+  previewLTE: String
+  previewContains: String
+  previewHasPrefix: String
+  previewHasSuffix: String
+  previewIsNil: Boolean
+  previewNotNil: Boolean
+  previewEqualFold: String
+  previewContainsFold: String
+  """
+  preview_type field predicates
+  """
+  previewType: HostFileHostFilePreviewType
+  previewTypeNEQ: HostFileHostFilePreviewType
+  previewTypeIn: [HostFileHostFilePreviewType!]
+  previewTypeNotIn: [HostFileHostFilePreviewType!]
   """
   host edge predicates
   """

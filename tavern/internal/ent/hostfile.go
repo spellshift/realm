@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/schema/hostfilepreviewtype"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -37,6 +38,10 @@ type HostFile struct {
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
 	Content []byte `json:"content,omitempty"`
+	// Preview of the file content (text or base64-encoded image), max 512KB.
+	Preview string `json:"preview,omitempty"`
+	// The type of preview available for this file.
+	PreviewType hostfilepreviewtype.HostFilePreviewType `json:"preview_type,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostFileQuery when eager-loading is set.
 	Edges               HostFileEdges `json:"edges"`
@@ -88,9 +93,11 @@ func (*HostFile) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case hostfile.FieldContent:
 			values[i] = new([]byte)
+		case hostfile.FieldPreviewType:
+			values[i] = new(hostfilepreviewtype.HostFilePreviewType)
 		case hostfile.FieldID, hostfile.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case hostfile.FieldPath, hostfile.FieldOwner, hostfile.FieldGroup, hostfile.FieldPermissions, hostfile.FieldHash:
+		case hostfile.FieldPath, hostfile.FieldOwner, hostfile.FieldGroup, hostfile.FieldPermissions, hostfile.FieldHash, hostfile.FieldPreview:
 			values[i] = new(sql.NullString)
 		case hostfile.FieldCreatedAt, hostfile.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -174,6 +181,18 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
 				hf.Content = *value
+			}
+		case hostfile.FieldPreview:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field preview", values[i])
+			} else if value.Valid {
+				hf.Preview = value.String
+			}
+		case hostfile.FieldPreviewType:
+			if value, ok := values[i].(*hostfilepreviewtype.HostFilePreviewType); !ok {
+				return fmt.Errorf("unexpected type %T for field preview_type", values[i])
+			} else if value != nil {
+				hf.PreviewType = *value
 			}
 		case hostfile.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -268,6 +287,12 @@ func (hf *HostFile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(fmt.Sprintf("%v", hf.Content))
+	builder.WriteString(", ")
+	builder.WriteString("preview=")
+	builder.WriteString(hf.Preview)
+	builder.WriteString(", ")
+	builder.WriteString("preview_type=")
+	builder.WriteString(fmt.Sprintf("%v", hf.PreviewType))
 	builder.WriteByte(')')
 	return builder.String()
 }

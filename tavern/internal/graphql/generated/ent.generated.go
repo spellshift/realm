@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/schema/hostfilepreviewtype"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -2602,6 +2603,10 @@ func (ec *executionContext) fieldContext_Host_files(_ context.Context, field gra
 				return ec.fieldContext_HostFile_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_HostFile_hash(ctx, field)
+			case "preview":
+				return ec.fieldContext_HostFile_preview(ctx, field)
+			case "previewType":
+				return ec.fieldContext_HostFile_previewType(ctx, field)
 			case "host":
 				return ec.fieldContext_HostFile_host(ctx, field)
 			case "task":
@@ -3531,6 +3536,91 @@ func (ec *executionContext) fieldContext_HostFile_hash(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HostFile_preview(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HostFile_preview(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Preview, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HostFile_preview(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HostFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HostFile_previewType(ctx context.Context, field graphql.CollectedField, obj *ent.HostFile) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HostFile_previewType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PreviewType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(hostfilepreviewtype.HostFilePreviewType)
+	fc.Result = res
+	return ec.marshalNHostFileHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HostFile_previewType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HostFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type HostFileHostFilePreviewType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8685,6 +8775,10 @@ func (ec *executionContext) fieldContext_Task_reportedFiles(_ context.Context, f
 				return ec.fieldContext_HostFile_size(ctx, field)
 			case "hash":
 				return ec.fieldContext_HostFile_hash(ctx, field)
+			case "preview":
+				return ec.fieldContext_HostFile_preview(ctx, field)
+			case "previewType":
+				return ec.fieldContext_HostFile_previewType(ctx, field)
 			case "host":
 				return ec.fieldContext_HostFile_host(ctx, field)
 			case "task":
@@ -12199,7 +12293,7 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "hasHost", "hasHostWith", "hasTask", "hasTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathEqualFold", "pathContainsFold", "owner", "ownerNEQ", "ownerIn", "ownerNotIn", "ownerGT", "ownerGTE", "ownerLT", "ownerLTE", "ownerContains", "ownerHasPrefix", "ownerHasSuffix", "ownerIsNil", "ownerNotNil", "ownerEqualFold", "ownerContainsFold", "group", "groupNEQ", "groupIn", "groupNotIn", "groupGT", "groupGTE", "groupLT", "groupLTE", "groupContains", "groupHasPrefix", "groupHasSuffix", "groupIsNil", "groupNotNil", "groupEqualFold", "groupContainsFold", "permissions", "permissionsNEQ", "permissionsIn", "permissionsNotIn", "permissionsGT", "permissionsGTE", "permissionsLT", "permissionsLTE", "permissionsContains", "permissionsHasPrefix", "permissionsHasSuffix", "permissionsIsNil", "permissionsNotNil", "permissionsEqualFold", "permissionsContainsFold", "size", "sizeNEQ", "sizeIn", "sizeNotIn", "sizeGT", "sizeGTE", "sizeLT", "sizeLTE", "hash", "hashNEQ", "hashIn", "hashNotIn", "hashGT", "hashGTE", "hashLT", "hashLTE", "hashContains", "hashHasPrefix", "hashHasSuffix", "hashIsNil", "hashNotNil", "hashEqualFold", "hashContainsFold", "preview", "previewNEQ", "previewIn", "previewNotIn", "previewGT", "previewGTE", "previewLT", "previewLTE", "previewContains", "previewHasPrefix", "previewHasSuffix", "previewIsNil", "previewNotNil", "previewEqualFold", "previewContainsFold", "previewType", "previewTypeNEQ", "previewTypeIn", "previewTypeNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12962,6 +13056,139 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 				return it, err
 			}
 			it.HashContainsFold = data
+		case "preview":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preview"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Preview = data
+		case "previewNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewNEQ = data
+		case "previewIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewIn = data
+		case "previewNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewNotIn = data
+		case "previewGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewGT = data
+		case "previewGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewGTE = data
+		case "previewLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewLT = data
+		case "previewLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewLTE = data
+		case "previewContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewContains = data
+		case "previewHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewHasPrefix = data
+		case "previewHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewHasSuffix = data
+		case "previewIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewIsNil = data
+		case "previewNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewNotNil = data
+		case "previewEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewEqualFold = data
+		case "previewContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewContainsFold = data
+		case "previewType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewType"))
+			data, err := ec.unmarshalOHostFileHostFilePreviewType2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewType = data
+		case "previewTypeNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewTypeNEQ"))
+			data, err := ec.unmarshalOHostFileHostFilePreviewType2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewTypeNEQ = data
+		case "previewTypeIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewTypeIn"))
+			data, err := ec.unmarshalOHostFileHostFilePreviewType2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewTypeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewTypeIn = data
+		case "previewTypeNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("previewTypeNotIn"))
+			data, err := ec.unmarshalOHostFileHostFilePreviewType2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewTypeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreviewTypeNotIn = data
 		case "hasHost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasHost"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -19749,6 +19976,13 @@ func (ec *executionContext) _HostFile(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "hash":
 			out.Values[i] = ec._HostFile_hash(ctx, field, obj)
+		case "preview":
+			out.Values[i] = ec._HostFile_preview(ctx, field, obj)
+		case "previewType":
+			out.Values[i] = ec._HostFile_previewType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "host":
 			field := field
 
@@ -22205,6 +22439,16 @@ func (ec *executionContext) marshalNHostFile2ᚖrealmᚗpubᚋtavernᚋinternal�
 	return ec._HostFile(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNHostFileHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx context.Context, v any) (hostfilepreviewtype.HostFilePreviewType, error) {
+	var res hostfilepreviewtype.HostFilePreviewType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNHostFileHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx context.Context, sel ast.SelectionSet, v hostfilepreviewtype.HostFilePreviewType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNHostFileOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileOrderField(ctx context.Context, v any) (*ent.HostFileOrderField, error) {
 	var res = new(ent.HostFileOrderField)
 	err := res.UnmarshalGQL(v)
@@ -23253,6 +23497,89 @@ func (ec *executionContext) marshalOHostFile2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOHostFileHostFilePreviewType2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewTypeᚄ(ctx context.Context, v any) ([]hostfilepreviewtype.HostFilePreviewType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]hostfilepreviewtype.HostFilePreviewType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNHostFileHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOHostFileHostFilePreviewType2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []hostfilepreviewtype.HostFilePreviewType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNHostFileHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOHostFileHostFilePreviewType2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx context.Context, v any) (*hostfilepreviewtype.HostFilePreviewType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(hostfilepreviewtype.HostFilePreviewType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOHostFileHostFilePreviewType2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋschemaᚋhostfilepreviewtypeᚐHostFilePreviewType(ctx context.Context, sel ast.SelectionSet, v *hostfilepreviewtype.HostFilePreviewType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOHostFileWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileWhereInputᚄ(ctx context.Context, v any) ([]*ent.HostFileWhereInput, error) {
