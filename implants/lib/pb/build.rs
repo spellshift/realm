@@ -297,6 +297,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
     println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
     println!("cargo:rerun-if-env-changed=PROTOC");
+    println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
 
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;
@@ -318,19 +319,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let is_wasm = target_arch == "wasm32";
+
     // Build Eldritch Proto
-    match tonic_prost_build::configure()
-        .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
-        .build_client(false)
-        .build_server(false)
-        .compile_protos(
-            &["eldritch.proto"],
-            &[
-                "../../../tavern/internal/c2/proto/",
-                "../../../tavern/portals/proto/",
-            ],
-        ) {
+    let mut eldritch_config = tonic_prost_build::configure();
+    eldritch_config = eldritch_config.out_dir("./src/generated/");
+    if !is_wasm {
+        eldritch_config = eldritch_config.codec_path("crate::xchacha::ChachaCodec");
+    } else {
+        eldritch_config = eldritch_config.build_client(false);
+        eldritch_config = eldritch_config.build_server(false);
+    }
+    match eldritch_config.compile_protos(
+        &["eldritch.proto"],
+        &[
+            "../../../tavern/internal/c2/proto/",
+            "../../../tavern/portals/proto/",
+        ],
+    ) {
         Err(err) => {
             println!("WARNING: Failed to compile eldritch protos: {}", err);
             panic!("{}", err);
@@ -339,31 +346,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build Portal Protos
-    match tonic_prost_build::configure()
-        .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
-        .build_client(false)
-        .build_server(false)
-        .compile_protos(
-            &["portal.proto"],
-            &[
-                "../../../tavern/internal/c2/proto/",
-                "../../../tavern/portals/proto/",
-            ],
-        ) {
+    let mut portal_config = tonic_prost_build::configure();
+    portal_config = portal_config.out_dir("./src/generated/");
+    if !is_wasm {
+        portal_config = portal_config.codec_path("crate::xchacha::ChachaCodec");
+    } else {
+        portal_config = portal_config.build_client(false);
+        portal_config = portal_config.build_server(false);
+    }
+    match portal_config.compile_protos(
+        &["portal.proto"],
+        &[
+            "../../../tavern/internal/c2/proto/",
+            "../../../tavern/portals/proto/",
+        ],
+    ) {
         Err(err) => {
             println!("WARNING: Failed to compile portal protos: {}", err);
             panic!("{}", err);
         }
         Ok(_) => println!("generated portal protos"),
     };
-    match tonic_prost_build::configure()
-        .out_dir("./src/generated/")
-        .codec_path("crate::xchacha::ChachaCodec")
-        .build_client(false)
-        .build_server(false)
-        .compile_protos(&["trace.proto"], &["../../../tavern/portals/proto/"])
-    {
+
+    let mut trace_config = tonic_prost_build::configure();
+    trace_config = trace_config.out_dir("./src/generated/");
+    if !is_wasm {
+        trace_config = trace_config.codec_path("crate::xchacha::ChachaCodec");
+    }
+    trace_config = trace_config.build_client(false);
+    trace_config = trace_config.build_server(false);
+    match trace_config.compile_protos(&["trace.proto"], &["../../../tavern/portals/proto/"]) {
         Err(err) => {
             println!("WARNING: Failed to compile portal protos: {}", err);
             panic!("{}", err);
@@ -372,18 +384,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build C2 Protos
-    match tonic_prost_build::configure()
-        .out_dir("./src/generated")
-        .codec_path("crate::xchacha::ChachaCodec")
-        .build_server(false)
-        .extern_path(".eldritch", "crate::eldritch")
-        .compile_protos(
-            &["c2.proto"],
-            &[
-                "../../../tavern/internal/c2/proto/",
-                "../../../tavern/portals/proto/",
-            ],
-        ) {
+    let mut c2_config = tonic_prost_build::configure();
+    c2_config = c2_config.out_dir("./src/generated");
+    if !is_wasm {
+        c2_config = c2_config.codec_path("crate::xchacha::ChachaCodec");
+    } else {
+        c2_config = c2_config.build_client(false);
+        c2_config = c2_config.build_server(false);
+    }
+    c2_config = c2_config.build_server(false);
+    c2_config = c2_config.extern_path(".eldritch", "crate::eldritch");
+    match c2_config.compile_protos(
+        &["c2.proto"],
+        &[
+            "../../../tavern/internal/c2/proto/",
+            "../../../tavern/portals/proto/",
+        ],
+    ) {
         Err(err) => {
             println!("WARNING: Failed to compile c2 protos: {}", err);
             panic!("{}", err);

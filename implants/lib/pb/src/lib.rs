@@ -14,4 +14,5 @@ pub mod trace {
     include!("generated/trace.rs");
 }
 pub mod config;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod xchacha;

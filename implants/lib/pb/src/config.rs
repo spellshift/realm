@@ -277,6 +277,7 @@ fn get_host_platform() -> crate::c2::host::Platform {
  * Return the first IPv4 address of the default interface as a string.
  * Returns the empty string otherwise.
  */
+#[cfg(not(target_arch = "wasm32"))]
 fn get_primary_ip() -> String {
     match netdev::get_default_interface() {
         Ok(default_interface) => match default_interface.ipv4.first() {
@@ -290,6 +291,11 @@ fn get_primary_ip() -> String {
             String::from("")
         }
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn get_primary_ip() -> String {
+    String::from("127.0.0.1")
 }
 
 #[cfg(test)]

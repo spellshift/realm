@@ -45,6 +45,9 @@ impl File {
 
         #[cfg(target_os = "macos")]
         return String::from("/Users/Shared/system-id");
+
+        #[cfg(target_arch = "wasm32")]
+        return String::from("system-id");
     }
 }
 
