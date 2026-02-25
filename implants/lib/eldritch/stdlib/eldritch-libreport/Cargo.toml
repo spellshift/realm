@@ -11,7 +11,10 @@ pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 
+[target.'cfg(all(unix, not(target_os = "solaris")))'.dependencies]
+nix = { workspace = true }
+
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix"]
+stdlib = ["dep:pb", "dep:eldritch-agent"]
 fake_bindings = []
