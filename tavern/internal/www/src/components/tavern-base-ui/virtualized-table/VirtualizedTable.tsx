@@ -133,7 +133,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
         >
             {/* Header */}
             <div
-                className='bg-gray-50 sticky top-0 z-10 grid gap-4 px-6 py-3 border-b border-gray-200'
+                className='bg-gray-50 sticky top-0 grid gap-4 px-6 py-3 border-b border-gray-200'
                 style={{
                     gridTemplateColumns: headerGridTemplateColumns,
                     minWidth,

@@ -10,14 +10,12 @@ type TagContextType = {
     data: TagContextProps;
     isLoading: boolean;
     error: ApolloError | undefined;
-    lastFetchedTimestamp: Date;
 };
 
 export const TagContext = createContext<TagContextType | undefined>(undefined);
 
 export const TagContextProvider = ({ children }: { children: React.ReactNode }) => {
-    const [lastFetchedTimestamp, setLastFetchedTimestamp] = useState<Date>(new Date());
-
+    const [isLoading, setIsLoading] = useState(true);
     const [tags, setTags] = useState<TagContextProps>({
         beacons: [],
         groupTags: [],
@@ -30,14 +28,15 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
         onlineOfflineStatus: [],
     });
 
-    const PARAMS = {
-        variables: {
-            groupTag: { kind: "group" },
-            serviceTag: { kind: "service" },
+    const { error, data} = useQuery(GET_TAG_FILTERS, 
+        {
+            variables: {
+                groupTag: { kind: "group" },
+                serviceTag: { kind: "service" },
+            },
+            fetchPolicy: "network-only",
         }
-    }
-
-    const { loading: isLoading, error, data } = useQuery(GET_TAG_FILTERS, PARAMS);
+    );
 
 
     const getTags = useCallback((data: TagContextQueryResponse) => {
@@ -145,19 +144,19 @@ export const TagContextProvider = ({ children }: { children: React.ReactNode }) 
             transports,
             onlineOfflineStatus: OnlineOfflineOptions
         };
+        setIsLoading(false);
         setTags(tags);
     }, []);
 
     useEffect(() => {
         if (data) {
             getTags(data)
-            setLastFetchedTimestamp(new Date());
         }
     }, [data, getTags])
 
 
     return (
-        <TagContext.Provider value={{ data: tags, isLoading, error, lastFetchedTimestamp }}>
+        <TagContext.Provider value={{ data: tags, isLoading, error }}>
             {children}
         </TagContext.Provider>
     );
