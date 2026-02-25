@@ -67,6 +67,9 @@ export interface HostNode {
     processes?: {
         totalCount: number;
     }
+    files?:{
+        totalCount: number;
+    }
 }
 
 export interface HostEdge {
@@ -190,6 +193,9 @@ export interface TaskNode {
         edges: ShellEdge[];
     };
     reportedProcesses: {
+        totalCount: number;
+    };
+    reportedFiles: {
         totalCount: number;
     };
     quest: QuestNode;
