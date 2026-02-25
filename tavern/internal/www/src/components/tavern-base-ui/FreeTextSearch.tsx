@@ -1,6 +1,6 @@
 import { SearchIcon } from "@chakra-ui/icons";
 import { Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { debounce } from "lodash"
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
 }
 const FreeTextSearch = (props: Props) => {
     const { placeholder, defaultValue, setSearch, isDisabled, labelVisible= true } = props;
+    const [inputValue, setInputValue] = useState(defaultValue || "");
 
     const debouncedSearch = useRef(
         debounce(async (criteria) => {
@@ -20,6 +21,7 @@ const FreeTextSearch = (props: Props) => {
     ).current;
 
     async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setInputValue(e.target.value);
         debouncedSearch(e.target.value);
     }
 
@@ -29,6 +31,11 @@ const FreeTextSearch = (props: Props) => {
         };
     }, [debouncedSearch]);
 
+    // Sync input value when defaultValue changes externally (e.g., clear filters)
+    useEffect(() => {
+        setInputValue(defaultValue || "");
+    }, [defaultValue]);
+
     return (
         <div className="flex flex-col gap-1">
             {labelVisible && <label className="text-gray-700"> {placeholder}</label>}
@@ -36,7 +43,7 @@ const FreeTextSearch = (props: Props) => {
                 <InputLeftElement pointerEvents='none'>
                     <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input aria-label={placeholder} type='text' defaultValue={defaultValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
+                <Input aria-label={placeholder} type='text' value={inputValue} placeholder={placeholder} onChange={handleChange} disabled={isDisabled} />
             </InputGroup>
         </div>
     );

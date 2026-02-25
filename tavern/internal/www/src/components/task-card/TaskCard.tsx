@@ -4,6 +4,7 @@ import UserImageAndName from "../UserImageAndName";
 import TaskStatusBadge from "../TaskStatusBadge";
 import TaskShells from "./components/TaskShells";
 import TaskProcesses from "./components/TaskProcesses";
+import TaskFiles from "./components/TaskFiles";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { BookOpenIcon, CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import TaskResults from "./components/TaskResults";
@@ -11,7 +12,7 @@ import { TaskNode } from "../../utils/interfacesQuery";
 import BeaconTile from "../BeaconTile";
 import TomeAccordion from "../TomeAccordion";
 import { constructTomeParams } from "../../utils/utils";
-import { ListVideo } from "lucide-react";
+import { FileText, ListVideo } from "lucide-react";
 
 interface TaskCardType {
     task: TaskNode
@@ -45,6 +46,7 @@ const TaskCard: FC<TaskCardType> = (
                         {task?.error && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><NoSymbolIcon className="w-4" /> Error</Tab>}
                         {task?.shells?.edges.length > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><CommandLineIcon className="w-4" /> Shells</Tab>}
                         {task?.reportedProcesses?.totalCount > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><ListVideo className="w-4" /> Processes ({task?.reportedProcesses?.totalCount})</Tab>}
+                        {task?.reportedFiles?.totalCount > 0 && <Tab className={({ selected }) => `flex flex-row gap-1 items-center py-2 px-4 ${selected && 'bg-white rounded border-t-2 border-gray-200'}`}><FileText className="w-4" /> Files ({task?.reportedFiles?.totalCount})</Tab>}
                     </TabList>
                     <TabPanels className="px-4">
                         <TabPanel aria-label="output panel">
@@ -60,6 +62,11 @@ const TaskCard: FC<TaskCardType> = (
                         {task?.reportedProcesses?.totalCount > 0 && (
                             <TabPanel aria-label="process panel">
                                 <TaskProcesses taskId={task.id} hostId={task.beacon.host?.id || ""} />
+                            </TabPanel>
+                        )}
+                        {task?.reportedFiles?.totalCount > 0 && (
+                            <TabPanel aria-label="files panel">
+                                <TaskFiles taskId={task.id} hostId={task.beacon.host?.id || ""} />
                             </TabPanel>
                         )}
                     </TabPanels>

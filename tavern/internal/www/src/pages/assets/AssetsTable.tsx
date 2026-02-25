@@ -8,10 +8,11 @@ import { VirtualizedTableColumn } from "../../components/tavern-base-ui/virtuali
 import { AssetNode } from "../../utils/interfacesQuery";
 import Button from "../../components/tavern-base-ui/button/Button";
 import UserImageAndName from "../../components/UserImageAndName";
-import { formatBytes, truncateAssetName } from "./utils";
+import { truncateAssetName } from "./utils";
 import { GET_ASSET_DETAIL_QUERY } from "./queries";
 import { AssetDetailQueryResponse } from "./types";
 import AssetAccordion from "./components/AssetAccordion";
+import { formatBytes } from "../../utils/utils";
 
 interface AssetsTableProps {
     assetIds: string[];
