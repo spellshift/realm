@@ -487,9 +487,19 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			}
 
 			if task.Output != "" {
-				msg := NewWebsocketTaskOutputMessage(task)
-				msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
-				taskOutputCh <- msg
+				if task.StreamID == streamID {
+					msg := NewWebsocketTaskOutputMessage(task)
+					msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
+					taskOutputCh <- msg
+				} else {
+					msg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+					creatorName := "Unknown"
+					if task.Edges.Creator != nil {
+						creatorName = task.Edges.Creator.Name
+					}
+					msg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n%s", creatorName, truncateInput(task.Input), msg.Output)
+					otherStreamCh <- msg
+				}
 			}
 			if task.Error != "" {
 				msg := NewWebsocketTaskErrorMessage(task)
@@ -576,7 +586,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 							creatorName = task.Edges.Creator.Name
 						}
 
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, task.Input)
+						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
 						otherStreamMsg.Output += string(bytesPayload.Data)
 
 						otherStreamCh <- otherStreamMsg
