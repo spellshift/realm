@@ -9,10 +9,8 @@ use std::io::Read;
 use std::sync::Mutex;
 
 #[cfg(unix)]
-fn get_file_metadata_fields(
-    metadata: &std::fs::Metadata,
-) -> (String, String, String) {
-    use nix::unistd::{Group, User, Gid, Uid};
+fn get_file_metadata_fields(metadata: &std::fs::Metadata) -> (String, String, String) {
+    use nix::unistd::{Gid, Group, Uid, User};
     use std::os::unix::fs::MetadataExt;
 
     let mode = metadata.mode();
@@ -36,9 +34,7 @@ fn get_file_metadata_fields(
 }
 
 #[cfg(windows)]
-fn get_file_metadata_fields(
-    _metadata: &std::fs::Metadata,
-) -> (String, String, String) {
+fn get_file_metadata_fields(_metadata: &std::fs::Metadata) -> (String, String, String) {
     (String::new(), String::new(), String::new())
 }
 
