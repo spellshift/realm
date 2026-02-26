@@ -7,7 +7,7 @@ import Button from "../../../components/tavern-base-ui/button/Button";
 import { VirtualizedTable } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../../components/tavern-base-ui/virtualized-table/types";
 import { GET_SHELL_DETAIL_QUERY } from "./queries";
-import { ShellsQueryResponse, ShellNode } from "./types";
+import { ShellsQueryTopLevel, ShellNode } from "./types";
 import { checkIfBeaconOffline } from "../../../utils/utils";
 import UserImageAndName from "../../../components/UserImageAndName";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
@@ -23,8 +23,8 @@ export const ShellsTable = ({ shellIds, hasMore = false, onLoadMore }: ShellsTab
 
     const getVariables = useCallback((id: string) => ({ id }), []);
 
-    const extractData = useCallback((response: ShellsQueryResponse): ShellNode | null => {
-        return response?.edges?.[0]?.node || null;
+    const extractData = useCallback((response: ShellsQueryTopLevel): ShellNode | null => {
+        return response?.shells?.edges?.[0]?.node || null;
     }, []);
 
     const columns: VirtualizedTableColumn<ShellNode>[] = useMemo(() => [
@@ -159,7 +159,7 @@ export const ShellsTable = ({ shellIds, hasMore = false, onLoadMore }: ShellsTab
     ], [navigate]);
 
     return (
-        <VirtualizedTable<ShellNode, ShellsQueryResponse>
+        <VirtualizedTable<ShellNode, ShellsQueryTopLevel>
             items={shellIds}
             columns={columns}
             query={GET_SHELL_DETAIL_QUERY}
