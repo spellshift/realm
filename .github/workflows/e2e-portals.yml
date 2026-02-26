@@ -38,7 +38,7 @@ jobs:
     - name: 📦 Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y protobuf-compiler libssl-dev jq
+        sudo apt-get install -y protobuf-compiler libssl-dev jq libx11-dev libxcb1-dev libxrandr-dev libdbus-1-dev pkg-config
 
     - name: 🔨 Build Tavern & Socks5
       run: |

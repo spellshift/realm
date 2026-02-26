@@ -3,12 +3,12 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_agent::{Agent, Context};
+use image::ImageFormat;
 use pb::c2::report_file_request;
 use pb::{c2, eldritch};
 use std::io::Cursor;
 use std::sync::Mutex;
 use xcap::Monitor;
-use image::ImageFormat;
 
 #[cfg(all(unix, feature = "stdlib"))]
 fn get_hostname() -> String {
