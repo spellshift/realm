@@ -5,7 +5,9 @@
 
 #[cfg(feature = "doh")]
 pub mod doh {
-    use hickory_resolver::config::{ResolverConfig, ResolverOpts};
+    use hickory_resolver::config::{
+        NameServerConfig, Protocol, ResolverConfig, ResolverOpts,
+    };
     use hickory_resolver::TokioAsyncResolver;
     use hyper_legacy::client::connect::dns::Name;
     use hyper_legacy::client::HttpConnector;
@@ -15,7 +17,7 @@ pub mod doh {
     #[cfg(feature = "grpc")]
     use hyper_util::client::legacy::connect::HttpConnector as Hyper1HttpConnector;
     use std::future::Future;
-    use std::net::SocketAddr;
+    use std::net::{IpAddr, SocketAddr};
     use std::pin::Pin;
     use std::task::{Context, Poll};
     #[cfg(feature = "grpc")]
@@ -38,9 +40,58 @@ pub mod doh {
                 DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
                 DohProvider::System => {
                     // Read system DNS configuration
-                    let (config, _opts) = hickory_resolver::system_conf::read_system_conf()
-                        .map_err(|e| anyhow::anyhow!("Failed to read system DNS config: {}", e))?;
-                    Ok(config)
+                    match hickory_resolver::system_conf::read_system_conf() {
+                        Ok((config, _opts)) => Ok(config),
+                        Err(e) => {
+                            log::warn!(
+                                "Failed to read system DNS config: {}. Attempting to manually parse resolv.conf",
+                                e
+                            );
+
+                            let mut config = ResolverConfig::new();
+                            let mut found_nameservers = false;
+
+                            // Try to read /etc/resolv.conf manually
+                            if let Ok(contents) = std::fs::read_to_string("/etc/resolv.conf") {
+                                for line in contents.lines() {
+                                    let parts: Vec<&str> = line.split_whitespace().collect();
+                                    if parts.len() >= 2 && parts[0] == "nameserver" {
+                                        if let Ok(ip) = parts[1].parse::<IpAddr>() {
+                                            let socket = SocketAddr::new(ip, 53);
+                                            config.add_name_server(NameServerConfig::new(
+                                                socket,
+                                                Protocol::Udp,
+                                            ));
+                                            config.add_name_server(NameServerConfig::new(
+                                                socket,
+                                                Protocol::Tcp,
+                                            ));
+                                            found_nameservers = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !found_nameservers {
+                                log::warn!("Failed to parse resolv.conf or no nameservers found. Falling back to 1.1.1.1 and 8.8.8.8");
+                                let cloudflare: SocketAddr = "1.1.1.1:53".parse().unwrap();
+                                let google: SocketAddr = "8.8.8.8:53".parse().unwrap();
+
+                                config.add_name_server(NameServerConfig::new(
+                                    cloudflare,
+                                    Protocol::Udp,
+                                ));
+                                config.add_name_server(NameServerConfig::new(
+                                    cloudflare,
+                                    Protocol::Tcp,
+                                ));
+                                config.add_name_server(NameServerConfig::new(google, Protocol::Udp));
+                                config.add_name_server(NameServerConfig::new(google, Protocol::Tcp));
+                            }
+
+                            Ok(config)
+                        }
+                    }
                 }
             }
         }
