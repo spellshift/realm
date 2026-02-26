@@ -1,4 +1,5 @@
 use anyhow::Context;
+use host_unique::HostIDSelector;
 use url::Url;
 use uuid::Uuid;
 
@@ -176,6 +177,24 @@ fn parse_callback_interval() -> anyhow::Result<u64> {
     })
 }
 
+fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
+    let final_res = match option_env!("IMIX_UNIQUE") {
+        Some(json) => {
+            if let Some(res) = host_unique::from_imix_unique(json.to_owned()) {
+                return res;
+            } else {
+                #[cfg(debug_assertions)]
+                log::error!(
+                    "Error parsing uniqueness string (should have been caught at build time"
+                );
+                return host_unique::defaults();
+            }
+        }
+        None => host_unique::defaults(),
+    };
+    final_res
+}
+
 /*
  * Config methods.
  */
@@ -185,7 +204,7 @@ impl Config {
             identifier: format!("imix-v{}", imix_version),
         };
 
-        let selectors = host_unique::defaults();
+        let selectors = parse_host_unique_selectors();
 
         let host = crate::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),

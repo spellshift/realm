@@ -1,9 +1,11 @@
 use crate::HostIDSelector;
 use uuid::Uuid;
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Registry {
+    #[serde(default)]
     subkey: Option<String>,
+    #[serde(default)]
     value_name: Option<String>,
 }
 

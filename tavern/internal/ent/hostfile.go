@@ -38,6 +38,10 @@ type HostFile struct {
 	Hash string `json:"hash,omitempty"`
 	// The content of the file
 	Content []byte `json:"content,omitempty"`
+	// The type of preview available for the file
+	PreviewType hostfile.PreviewType `json:"preview_type,omitempty"`
+	// A preview of the file content (max 512kb)
+	Preview []byte `json:"preview,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostFileQuery when eager-loading is set.
 	Edges                     HostFileEdges `json:"edges"`
@@ -101,11 +105,11 @@ func (*HostFile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case hostfile.FieldContent:
+		case hostfile.FieldContent, hostfile.FieldPreview:
 			values[i] = new([]byte)
 		case hostfile.FieldID, hostfile.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case hostfile.FieldPath, hostfile.FieldOwner, hostfile.FieldGroup, hostfile.FieldPermissions, hostfile.FieldHash:
+		case hostfile.FieldPath, hostfile.FieldOwner, hostfile.FieldGroup, hostfile.FieldPermissions, hostfile.FieldHash, hostfile.FieldPreviewType:
 			values[i] = new(sql.NullString)
 		case hostfile.FieldCreatedAt, hostfile.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -191,6 +195,18 @@ func (hf *HostFile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value != nil {
 				hf.Content = *value
+			}
+		case hostfile.FieldPreviewType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field preview_type", values[i])
+			} else if value.Valid {
+				hf.PreviewType = hostfile.PreviewType(value.String)
+			}
+		case hostfile.FieldPreview:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field preview", values[i])
+			} else if value != nil {
+				hf.Preview = *value
 			}
 		case hostfile.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -297,6 +313,12 @@ func (hf *HostFile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("content=")
 	builder.WriteString(fmt.Sprintf("%v", hf.Content))
+	builder.WriteString(", ")
+	builder.WriteString("preview_type=")
+	builder.WriteString(fmt.Sprintf("%v", hf.PreviewType))
+	builder.WriteString(", ")
+	builder.WriteString("preview=")
+	builder.WriteString(fmt.Sprintf("%v", hf.Preview))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -6466,6 +6466,8 @@ type HostFileMutation struct {
 	addsize           *int64
 	hash              *string
 	content           *[]byte
+	preview_type      *hostfile.PreviewType
+	preview           *[]byte
 	clearedFields     map[string]struct{}
 	host              *int
 	clearedhost       bool
@@ -6985,6 +6987,91 @@ func (m *HostFileMutation) ResetContent() {
 	delete(m.clearedFields, hostfile.FieldContent)
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (m *HostFileMutation) SetPreviewType(ht hostfile.PreviewType) {
+	m.preview_type = &ht
+}
+
+// PreviewType returns the value of the "preview_type" field in the mutation.
+func (m *HostFileMutation) PreviewType() (r hostfile.PreviewType, exists bool) {
+	v := m.preview_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreviewType returns the old "preview_type" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPreviewType(ctx context.Context) (v hostfile.PreviewType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreviewType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreviewType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreviewType: %w", err)
+	}
+	return oldValue.PreviewType, nil
+}
+
+// ResetPreviewType resets all changes to the "preview_type" field.
+func (m *HostFileMutation) ResetPreviewType() {
+	m.preview_type = nil
+}
+
+// SetPreview sets the "preview" field.
+func (m *HostFileMutation) SetPreview(b []byte) {
+	m.preview = &b
+}
+
+// Preview returns the value of the "preview" field in the mutation.
+func (m *HostFileMutation) Preview() (r []byte, exists bool) {
+	v := m.preview
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreview returns the old "preview" field's value of the HostFile entity.
+// If the HostFile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostFileMutation) OldPreview(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreview is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreview requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreview: %w", err)
+	}
+	return oldValue.Preview, nil
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (m *HostFileMutation) ClearPreview() {
+	m.preview = nil
+	m.clearedFields[hostfile.FieldPreview] = struct{}{}
+}
+
+// PreviewCleared returns if the "preview" field was cleared in this mutation.
+func (m *HostFileMutation) PreviewCleared() bool {
+	_, ok := m.clearedFields[hostfile.FieldPreview]
+	return ok
+}
+
+// ResetPreview resets all changes to the "preview" field.
+func (m *HostFileMutation) ResetPreview() {
+	m.preview = nil
+	delete(m.clearedFields, hostfile.FieldPreview)
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *HostFileMutation) SetHostID(id int) {
 	m.host = &id
@@ -7136,7 +7223,7 @@ func (m *HostFileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostFileMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, hostfile.FieldCreatedAt)
 	}
@@ -7164,6 +7251,12 @@ func (m *HostFileMutation) Fields() []string {
 	if m.content != nil {
 		fields = append(fields, hostfile.FieldContent)
 	}
+	if m.preview_type != nil {
+		fields = append(fields, hostfile.FieldPreviewType)
+	}
+	if m.preview != nil {
+		fields = append(fields, hostfile.FieldPreview)
+	}
 	return fields
 }
 
@@ -7190,6 +7283,10 @@ func (m *HostFileMutation) Field(name string) (ent.Value, bool) {
 		return m.Hash()
 	case hostfile.FieldContent:
 		return m.Content()
+	case hostfile.FieldPreviewType:
+		return m.PreviewType()
+	case hostfile.FieldPreview:
+		return m.Preview()
 	}
 	return nil, false
 }
@@ -7217,6 +7314,10 @@ func (m *HostFileMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldHash(ctx)
 	case hostfile.FieldContent:
 		return m.OldContent(ctx)
+	case hostfile.FieldPreviewType:
+		return m.OldPreviewType(ctx)
+	case hostfile.FieldPreview:
+		return m.OldPreview(ctx)
 	}
 	return nil, fmt.Errorf("unknown HostFile field %s", name)
 }
@@ -7289,6 +7390,20 @@ func (m *HostFileMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetContent(v)
 		return nil
+	case hostfile.FieldPreviewType:
+		v, ok := value.(hostfile.PreviewType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreviewType(v)
+		return nil
+	case hostfile.FieldPreview:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreview(v)
+		return nil
 	}
 	return fmt.Errorf("unknown HostFile field %s", name)
 }
@@ -7349,6 +7464,9 @@ func (m *HostFileMutation) ClearedFields() []string {
 	if m.FieldCleared(hostfile.FieldContent) {
 		fields = append(fields, hostfile.FieldContent)
 	}
+	if m.FieldCleared(hostfile.FieldPreview) {
+		fields = append(fields, hostfile.FieldPreview)
+	}
 	return fields
 }
 
@@ -7377,6 +7495,9 @@ func (m *HostFileMutation) ClearField(name string) error {
 		return nil
 	case hostfile.FieldContent:
 		m.ClearContent()
+		return nil
+	case hostfile.FieldPreview:
+		m.ClearPreview()
 		return nil
 	}
 	return fmt.Errorf("unknown HostFile nullable field %s", name)
@@ -7412,6 +7533,12 @@ func (m *HostFileMutation) ResetField(name string) error {
 		return nil
 	case hostfile.FieldContent:
 		m.ResetContent()
+		return nil
+	case hostfile.FieldPreviewType:
+		m.ResetPreviewType()
+		return nil
+	case hostfile.FieldPreview:
+		m.ResetPreview()
 		return nil
 	}
 	return fmt.Errorf("unknown HostFile field %s", name)

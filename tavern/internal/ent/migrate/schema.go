@@ -199,6 +199,8 @@ var (
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
+		{Name: "preview_type", Type: field.TypeEnum, Enums: []string{"TEXT", "NONE"}, Default: "NONE"},
+		{Name: "preview", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
 		{Name: "host_file_host", Type: field.TypeInt},
 		{Name: "shell_task_reported_files", Type: field.TypeInt, Nullable: true},
@@ -212,25 +214,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "host_files_hosts_files",
-				Columns:    []*schema.Column{HostFilesColumns[10]},
+				Columns:    []*schema.Column{HostFilesColumns[12]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "host_files_hosts_host",
-				Columns:    []*schema.Column{HostFilesColumns[11]},
+				Columns:    []*schema.Column{HostFilesColumns[13]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_files_shell_tasks_reported_files",
-				Columns:    []*schema.Column{HostFilesColumns[12]},
+				Columns:    []*schema.Column{HostFilesColumns[14]},
 				RefColumns: []*schema.Column{ShellTasksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_files_tasks_reported_files",
-				Columns:    []*schema.Column{HostFilesColumns[13]},
+				Columns:    []*schema.Column{HostFilesColumns[15]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

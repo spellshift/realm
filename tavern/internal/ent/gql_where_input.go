@@ -3412,6 +3412,12 @@ type HostFileWhereInput struct {
 	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
 	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
 
+	// "preview_type" field predicates.
+	PreviewType      *hostfile.PreviewType  `json:"previewType,omitempty"`
+	PreviewTypeNEQ   *hostfile.PreviewType  `json:"previewTypeNEQ,omitempty"`
+	PreviewTypeIn    []hostfile.PreviewType `json:"previewTypeIn,omitempty"`
+	PreviewTypeNotIn []hostfile.PreviewType `json:"previewTypeNotIn,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -3810,6 +3816,18 @@ func (i *HostFileWhereInput) P() (predicate.HostFile, error) {
 	}
 	if i.HashContainsFold != nil {
 		predicates = append(predicates, hostfile.HashContainsFold(*i.HashContainsFold))
+	}
+	if i.PreviewType != nil {
+		predicates = append(predicates, hostfile.PreviewTypeEQ(*i.PreviewType))
+	}
+	if i.PreviewTypeNEQ != nil {
+		predicates = append(predicates, hostfile.PreviewTypeNEQ(*i.PreviewTypeNEQ))
+	}
+	if len(i.PreviewTypeIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewTypeIn(i.PreviewTypeIn...))
+	}
+	if len(i.PreviewTypeNotIn) > 0 {
+		predicates = append(predicates, hostfile.PreviewTypeNotIn(i.PreviewTypeNotIn...))
 	}
 
 	if i.HasHost != nil {
