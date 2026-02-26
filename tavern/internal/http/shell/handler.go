@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -35,6 +36,7 @@ const (
 	defaultKeepAliveInterval             = 1 * time.Second
 	defaultWriteWaitTimeout              = 10 * time.Second
 	defaultReadWaitTimeout               = 10 * time.Second
+	defaultActiveUserPollingInterval     = 10 * time.Second
 )
 
 // A Handler for browser to server shell communication using websockets.
@@ -42,17 +44,18 @@ type Handler struct {
 	graph *ent.Client
 	mux   *mux.Mux
 
-	maxTaskInputsBuffered   int
-	maxTaskOutputsBuffered  int
-	maxTaskErrorsBuffered   int
-	maxErrorsBuffered       int
-	maxControlFlowsBuffered int
-	maxMessageSize          int64
-	portalPollingInterval   time.Duration
-	outputPollingInterval   time.Duration
-	keepAliveInterval       time.Duration
-	writeWaitTimeout        time.Duration
-	readWaitTimeout         time.Duration
+	maxTaskInputsBuffered     int
+	maxTaskOutputsBuffered    int
+	maxTaskErrorsBuffered     int
+	maxErrorsBuffered         int
+	maxControlFlowsBuffered   int
+	maxMessageSize            int64
+	portalPollingInterval     time.Duration
+	outputPollingInterval     time.Duration
+	keepAliveInterval         time.Duration
+	writeWaitTimeout          time.Duration
+	readWaitTimeout           time.Duration
+	activeUserPollingInterval time.Duration
 }
 
 // NewHandler initializes and returns a new handler using the provided ent client and portal mux.
@@ -61,18 +64,25 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 		graph: graph,
 		mux:   mux,
 
-		maxTaskInputsBuffered:   defaultMaxTaskInputsBuffered,
-		maxTaskOutputsBuffered:  defaultMaxTaskOutputsBuffered,
-		maxTaskErrorsBuffered:   defaultMaxTaskErrorsBuffered,
-		maxErrorsBuffered:       defaultMaxErrorsBuffered,
-		maxControlFlowsBuffered: defaultMaxControlFlowsBuffered,
-		maxMessageSize:          defaultMaxMessageSize,
-		portalPollingInterval:   defaultPortalPollingInterval,
-		outputPollingInterval:   defaultOutputPollingInterval,
-		keepAliveInterval:       defaultKeepAliveInterval,
-		writeWaitTimeout:        defaultWriteWaitTimeout,
-		readWaitTimeout:         defaultReadWaitTimeout,
+		maxTaskInputsBuffered:     defaultMaxTaskInputsBuffered,
+		maxTaskOutputsBuffered:    defaultMaxTaskOutputsBuffered,
+		maxTaskErrorsBuffered:     defaultMaxTaskErrorsBuffered,
+		maxErrorsBuffered:         defaultMaxErrorsBuffered,
+		maxControlFlowsBuffered:   defaultMaxControlFlowsBuffered,
+		maxMessageSize:            defaultMaxMessageSize,
+		portalPollingInterval:     defaultPortalPollingInterval,
+		outputPollingInterval:     defaultOutputPollingInterval,
+		keepAliveInterval:         defaultKeepAliveInterval,
+		writeWaitTimeout:          defaultWriteWaitTimeout,
+		readWaitTimeout:           defaultReadWaitTimeout,
+		activeUserPollingInterval: defaultActiveUserPollingInterval,
 	}
+}
+
+// SetActiveUserPollingInterval sets the polling interval for updating active users.
+// This is primarily used for testing.
+func (h *Handler) SetActiveUserPollingInterval(d time.Duration) {
+	h.activeUserPollingInterval = d
 }
 
 // ShellSession holds the state for a single websocket connection.
@@ -196,6 +206,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.writeMessagesFromShell(ctx, session, streamID, sh, portalCh, wsTaskOutputCh, wsTaskOtherStreamCh, wsTaskErrCh, wsControlFlowCh, wsErrCh)
 	}()
 
+	// Manage Active User Status
+	if authUser != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer cancel()
+			h.manageActiveUserStatus(ctx, sh.ID, authUser.ID)
+		}()
+	}
+
 	wg.Wait()
 	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
@@ -253,6 +273,56 @@ func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalC
 			return
 		case <-timer.C:
 			poll()
+		}
+	}
+}
+
+// manageActiveUserStatus manages the active user status for the shell.
+func (h *Handler) manageActiveUserStatus(ctx context.Context, shellID int, userID int) {
+	// Helper to add user to active users list
+	ensureActive := func() {
+		exists, err := h.graph.Shell.Query().
+			Where(shell.ID(shellID)).
+			QueryActiveUsers().
+			Where(user.ID(userID)).
+			Exist(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to check if user is active", "error", err, "shell_id", shellID, "user_id", userID)
+			return
+		}
+
+		if !exists {
+			if err := h.graph.Shell.UpdateOneID(shellID).AddActiveUserIDs(userID).Exec(ctx); err != nil {
+				slog.ErrorContext(ctx, "failed to add user to active users", "error", err, "shell_id", shellID, "user_id", userID)
+			}
+		}
+	}
+
+	// Initial check
+	ensureActive()
+
+	// Poll
+	ticker := time.NewTicker(h.activeUserPollingInterval)
+	defer ticker.Stop()
+
+	// Defer cleanup
+	defer func() {
+		// Use a new context for cleanup because ctx is canceled
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := h.graph.Shell.UpdateOneID(shellID).RemoveActiveUserIDs(userID).Exec(cleanupCtx); err != nil {
+			// It's okay if it fails if the shell was deleted or user was already removed
+			slog.WarnContext(context.Background(), "failed to remove user from active users", "error", err, "shell_id", shellID, "user_id", userID)
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			ensureActive()
 		}
 	}
 }

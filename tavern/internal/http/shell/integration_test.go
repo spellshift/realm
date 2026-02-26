@@ -616,3 +616,74 @@ func TestLargeShellTask(t *testing.T) {
 	require.Equal(t, largeData, retrieved.Output)
 	require.Equal(t, largeData, retrieved.Error)
 }
+
+func TestActiveUsers(t *testing.T) {
+	// Setup Test Env
+	env := SetupTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	// 1. Configure Handler with short polling interval
+	// Note: SetupTestEnv creates a handler inside the server, we need to access it or recreate it?
+	// SetupTestEnv creates the handler and server in one go.
+	// To test this properly without refactoring SetupTestEnv, we can just modify SetupTestEnv to accept options
+	// or we can manually setup the server here.
+	// However, modifying SetupTestEnv is better if we want reusable code.
+	// For now, I will manually setup the server here similar to SetupTestEnv.
+
+	// Re-create handler/server for this test to set the polling interval
+	env.Server.Close() // Close default server
+
+	handler := shell.NewHandler(env.EntClient, env.Mux)
+	handler.SetActiveUserPollingInterval(100 * time.Millisecond)
+
+	authMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			newCtx, err := auth.ContextFromSessionToken(r.Context(), env.EntClient, "test-token")
+			if err != nil {
+				http.Error(w, "auth failed", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r.WithContext(newCtx))
+		})
+	}
+	server := httptest.NewServer(authMiddleware(http.HandlerFunc(handler.ServeHTTP)))
+	env.Server = server // Update env server
+	env.WSURL = "ws" + strings.TrimPrefix(server.URL, "http")
+
+	// 2. Initial Check: No active users
+	activeUsers, err := env.Shell.QueryActiveUsers().All(ctx)
+	require.NoError(t, err)
+	require.Empty(t, activeUsers)
+
+	// 3. Connect WebSocket
+	url := fmt.Sprintf("%s?shell_id=%d", env.WSURL, env.Shell.ID)
+	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+	require.NoError(t, err)
+
+	// 4. Verify Active User Added
+	// Poll DB until user appears
+	require.Eventually(t, func() bool {
+		users, err := env.Shell.QueryActiveUsers().All(ctx)
+		if err != nil {
+			return false
+		}
+		if len(users) != 1 {
+			return false
+		}
+		return users[0].ID == env.User.ID
+	}, 2*time.Second, 100*time.Millisecond, "User should be added to active users")
+
+	// 5. Disconnect WebSocket
+	ws.Close()
+
+	// 6. Verify Active User Removed
+	// Poll DB until user disappears
+	require.Eventually(t, func() bool {
+		users, err := env.Shell.QueryActiveUsers().All(ctx)
+		if err != nil {
+			return false
+		}
+		return len(users) == 0
+	}, 2*time.Second, 100*time.Millisecond, "User should be removed from active users")
+}
