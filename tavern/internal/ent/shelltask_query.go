@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/user"
@@ -33,12 +34,14 @@ type ShellTaskQuery struct {
 	withReportedCredentials      *HostCredentialQuery
 	withReportedFiles            *HostFileQuery
 	withReportedProcesses        *HostProcessQuery
+	withScreenshots              *ScreenshotQuery
 	withFKs                      bool
 	modifiers                    []func(*sql.Selector)
 	loadTotal                    []func(context.Context, []*ShellTask) error
 	withNamedReportedCredentials map[string]*HostCredentialQuery
 	withNamedReportedFiles       map[string]*HostFileQuery
 	withNamedReportedProcesses   map[string]*HostProcessQuery
+	withNamedScreenshots         map[string]*ScreenshotQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -178,6 +181,28 @@ func (stq *ShellTaskQuery) QueryReportedProcesses() *HostProcessQuery {
 			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
 			sqlgraph.To(hostprocess.Table, hostprocess.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ReportedProcessesTable, shelltask.ReportedProcessesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryScreenshots chains the current query on the "screenshots" edge.
+func (stq *ShellTaskQuery) QueryScreenshots() *ScreenshotQuery {
+	query := (&ScreenshotClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shelltask.Table, shelltask.FieldID, selector),
+			sqlgraph.To(screenshot.Table, screenshot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shelltask.ScreenshotsTable, shelltask.ScreenshotsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
 		return fromU, nil
@@ -382,6 +407,7 @@ func (stq *ShellTaskQuery) Clone() *ShellTaskQuery {
 		withReportedCredentials: stq.withReportedCredentials.Clone(),
 		withReportedFiles:       stq.withReportedFiles.Clone(),
 		withReportedProcesses:   stq.withReportedProcesses.Clone(),
+		withScreenshots:         stq.withScreenshots.Clone(),
 		// clone intermediate query.
 		sql:  stq.sql.Clone(),
 		path: stq.path,
@@ -440,6 +466,17 @@ func (stq *ShellTaskQuery) WithReportedProcesses(opts ...func(*HostProcessQuery)
 		opt(query)
 	}
 	stq.withReportedProcesses = query
+	return stq
+}
+
+// WithScreenshots tells the query-builder to eager-load the nodes that are connected to
+// the "screenshots" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithScreenshots(opts ...func(*ScreenshotQuery)) *ShellTaskQuery {
+	query := (&ScreenshotClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withScreenshots = query
 	return stq
 }
 
@@ -522,12 +559,13 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 		nodes       = []*ShellTask{}
 		withFKs     = stq.withFKs
 		_spec       = stq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			stq.withShell != nil,
 			stq.withCreator != nil,
 			stq.withReportedCredentials != nil,
 			stq.withReportedFiles != nil,
 			stq.withReportedProcesses != nil,
+			stq.withScreenshots != nil,
 		}
 	)
 	if stq.withShell != nil || stq.withCreator != nil {
@@ -592,6 +630,13 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 			return nil, err
 		}
 	}
+	if query := stq.withScreenshots; query != nil {
+		if err := stq.loadScreenshots(ctx, query, nodes,
+			func(n *ShellTask) { n.Edges.Screenshots = []*Screenshot{} },
+			func(n *ShellTask, e *Screenshot) { n.Edges.Screenshots = append(n.Edges.Screenshots, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range stq.withNamedReportedCredentials {
 		if err := stq.loadReportedCredentials(ctx, query, nodes,
 			func(n *ShellTask) { n.appendNamedReportedCredentials(name) },
@@ -610,6 +655,13 @@ func (stq *ShellTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*S
 		if err := stq.loadReportedProcesses(ctx, query, nodes,
 			func(n *ShellTask) { n.appendNamedReportedProcesses(name) },
 			func(n *ShellTask, e *HostProcess) { n.appendNamedReportedProcesses(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range stq.withNamedScreenshots {
+		if err := stq.loadScreenshots(ctx, query, nodes,
+			func(n *ShellTask) { n.appendNamedScreenshots(name) },
+			func(n *ShellTask, e *Screenshot) { n.appendNamedScreenshots(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -778,6 +830,37 @@ func (stq *ShellTaskQuery) loadReportedProcesses(ctx context.Context, query *Hos
 	}
 	return nil
 }
+func (stq *ShellTaskQuery) loadScreenshots(ctx context.Context, query *ScreenshotQuery, nodes []*ShellTask, init func(*ShellTask), assign func(*ShellTask, *Screenshot)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*ShellTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Screenshot(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shelltask.ScreenshotsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_task_screenshots
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_task_screenshots" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_task_screenshots" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (stq *ShellTaskQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := stq.querySpec()
@@ -902,6 +985,20 @@ func (stq *ShellTaskQuery) WithNamedReportedProcesses(name string, opts ...func(
 		stq.withNamedReportedProcesses = make(map[string]*HostProcessQuery)
 	}
 	stq.withNamedReportedProcesses[name] = query
+	return stq
+}
+
+// WithNamedScreenshots tells the query-builder to eager-load the nodes that are connected to the "screenshots"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (stq *ShellTaskQuery) WithNamedScreenshots(name string, opts ...func(*ScreenshotQuery)) *ShellTaskQuery {
+	query := (&ScreenshotClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if stq.withNamedScreenshots == nil {
+		stq.withNamedScreenshots = make(map[string]*ScreenshotQuery)
+	}
+	stq.withNamedScreenshots[name] = query
 	return stq
 }
 

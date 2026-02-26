@@ -10,8 +10,10 @@ eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
+xcap = { workspace = true, optional = true }
+image = { version = "0.25", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
 fake_bindings = []

@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/user"
@@ -255,6 +256,21 @@ func (stu *ShellTaskUpdate) AddReportedProcesses(h ...*HostProcess) *ShellTaskUp
 	return stu.AddReportedProcessIDs(ids...)
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by IDs.
+func (stu *ShellTaskUpdate) AddScreenshotIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.AddScreenshotIDs(ids...)
+	return stu
+}
+
+// AddScreenshots adds the "screenshots" edges to the Screenshot entity.
+func (stu *ShellTaskUpdate) AddScreenshots(s ...*Screenshot) *ShellTaskUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return stu.AddScreenshotIDs(ids...)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stu *ShellTaskUpdate) Mutation() *ShellTaskMutation {
 	return stu.mutation
@@ -333,6 +349,27 @@ func (stu *ShellTaskUpdate) RemoveReportedProcesses(h ...*HostProcess) *ShellTas
 		ids[i] = h[i].ID
 	}
 	return stu.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearScreenshots clears all "screenshots" edges to the Screenshot entity.
+func (stu *ShellTaskUpdate) ClearScreenshots() *ShellTaskUpdate {
+	stu.mutation.ClearScreenshots()
+	return stu
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to Screenshot entities by IDs.
+func (stu *ShellTaskUpdate) RemoveScreenshotIDs(ids ...int) *ShellTaskUpdate {
+	stu.mutation.RemoveScreenshotIDs(ids...)
+	return stu
+}
+
+// RemoveScreenshots removes "screenshots" edges to Screenshot entities.
+func (stu *ShellTaskUpdate) RemoveScreenshots(s ...*Screenshot) *ShellTaskUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return stu.RemoveScreenshotIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -632,6 +669,51 @@ func (stu *ShellTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if stu.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.RemovedScreenshotsIDs(); len(nodes) > 0 && !stu.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.ScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, stu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shelltask.Label}
@@ -874,6 +956,21 @@ func (stuo *ShellTaskUpdateOne) AddReportedProcesses(h ...*HostProcess) *ShellTa
 	return stuo.AddReportedProcessIDs(ids...)
 }
 
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by IDs.
+func (stuo *ShellTaskUpdateOne) AddScreenshotIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.AddScreenshotIDs(ids...)
+	return stuo
+}
+
+// AddScreenshots adds the "screenshots" edges to the Screenshot entity.
+func (stuo *ShellTaskUpdateOne) AddScreenshots(s ...*Screenshot) *ShellTaskUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return stuo.AddScreenshotIDs(ids...)
+}
+
 // Mutation returns the ShellTaskMutation object of the builder.
 func (stuo *ShellTaskUpdateOne) Mutation() *ShellTaskMutation {
 	return stuo.mutation
@@ -952,6 +1049,27 @@ func (stuo *ShellTaskUpdateOne) RemoveReportedProcesses(h ...*HostProcess) *Shel
 		ids[i] = h[i].ID
 	}
 	return stuo.RemoveReportedProcessIDs(ids...)
+}
+
+// ClearScreenshots clears all "screenshots" edges to the Screenshot entity.
+func (stuo *ShellTaskUpdateOne) ClearScreenshots() *ShellTaskUpdateOne {
+	stuo.mutation.ClearScreenshots()
+	return stuo
+}
+
+// RemoveScreenshotIDs removes the "screenshots" edge to Screenshot entities by IDs.
+func (stuo *ShellTaskUpdateOne) RemoveScreenshotIDs(ids ...int) *ShellTaskUpdateOne {
+	stuo.mutation.RemoveScreenshotIDs(ids...)
+	return stuo
+}
+
+// RemoveScreenshots removes "screenshots" edges to Screenshot entities.
+func (stuo *ShellTaskUpdateOne) RemoveScreenshots(s ...*Screenshot) *ShellTaskUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return stuo.RemoveScreenshotIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellTaskUpdate builder.
@@ -1274,6 +1392,51 @@ func (stuo *ShellTaskUpdateOne) sqlSave(ctx context.Context) (_node *ShellTask, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(hostprocess.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.RemovedScreenshotsIDs(); len(nodes) > 0 && !stuo.mutation.ScreenshotsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.ScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shelltask.ScreenshotsTable,
+			Columns: []string{shelltask.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

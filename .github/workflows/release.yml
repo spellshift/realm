@@ -61,7 +61,7 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-musl && \
           sudo apt update && \
-          sudo apt install -y musl-tools
+          sudo apt install -y musl-tools libx11-dev libxcb1-dev libxrandr-dev libdbus-1-dev pkg-config
       - name: 🔨 Build Imix
         run: cargo build --bin=imix --release --target=x86_64-unknown-linux-musl
         working-directory: ./implants/imix
@@ -191,7 +191,7 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-musl && \
           sudo apt update && \
-          sudo apt install -y musl-tools
+          sudo apt install -y musl-tools libx11-dev libxcb1-dev libxrandr-dev libdbus-1-dev pkg-config
       - name: 🔨 Build Golem
         run: cargo build --bin=golem --release --target=x86_64-unknown-linux-musl
         working-directory: ./implants/golem

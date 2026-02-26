@@ -38,7 +38,7 @@ jobs:
     - name: 📦 Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y protobuf-compiler libssl-dev
+        sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
     - name: 🔨 Build Tavern
       run: |
         go mod download

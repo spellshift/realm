@@ -27,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -4816,6 +4817,392 @@ func (r *Repository) ToEdge(order *RepositoryOrder) *RepositoryEdge {
 	return &RepositoryEdge{
 		Node:   r,
 		Cursor: order.Field.toCursor(r),
+	}
+}
+
+// ScreenshotEdge is the edge representation of Screenshot.
+type ScreenshotEdge struct {
+	Node   *Screenshot `json:"node"`
+	Cursor Cursor      `json:"cursor"`
+}
+
+// ScreenshotConnection is the connection containing edges to Screenshot.
+type ScreenshotConnection struct {
+	Edges      []*ScreenshotEdge `json:"edges"`
+	PageInfo   PageInfo          `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (c *ScreenshotConnection) build(nodes []*Screenshot, pager *screenshotPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Screenshot
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Screenshot {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Screenshot {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ScreenshotEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ScreenshotEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ScreenshotPaginateOption enables pagination customization.
+type ScreenshotPaginateOption func(*screenshotPager) error
+
+// WithScreenshotOrder configures pagination ordering.
+func WithScreenshotOrder(order []*ScreenshotOrder) ScreenshotPaginateOption {
+	return func(pager *screenshotPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithScreenshotFilter configures pagination filter.
+func WithScreenshotFilter(filter func(*ScreenshotQuery) (*ScreenshotQuery, error)) ScreenshotPaginateOption {
+	return func(pager *screenshotPager) error {
+		if filter == nil {
+			return errors.New("ScreenshotQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type screenshotPager struct {
+	reverse bool
+	order   []*ScreenshotOrder
+	filter  func(*ScreenshotQuery) (*ScreenshotQuery, error)
+}
+
+func newScreenshotPager(opts []ScreenshotPaginateOption, reverse bool) (*screenshotPager, error) {
+	pager := &screenshotPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *screenshotPager) applyFilter(query *ScreenshotQuery) (*ScreenshotQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *screenshotPager) toCursor(s *Screenshot) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(s).Value)
+	}
+	return Cursor{ID: s.ID, Value: cs_}
+}
+
+func (p *screenshotPager) applyCursors(query *ScreenshotQuery, after, before *Cursor) (*ScreenshotQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultScreenshotOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *screenshotPager) applyOrder(query *ScreenshotQuery) *ScreenshotQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultScreenshotOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultScreenshotOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *screenshotPager) orderExpr(query *ScreenshotQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultScreenshotOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Screenshot.
+func (s *ScreenshotQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ScreenshotPaginateOption,
+) (*ScreenshotConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newScreenshotPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if s, err = pager.applyFilter(s); err != nil {
+		return nil, err
+	}
+	conn := &ScreenshotConnection{Edges: []*ScreenshotEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := s.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if s, err = pager.applyCursors(s, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		s.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	s = pager.applyOrder(s)
+	nodes, err := s.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ScreenshotOrderFieldCreatedAt orders Screenshot by created_at.
+	ScreenshotOrderFieldCreatedAt = &ScreenshotOrderField{
+		Value: func(s *Screenshot) (ent.Value, error) {
+			return s.CreatedAt, nil
+		},
+		column: screenshot.FieldCreatedAt,
+		toTerm: screenshot.ByCreatedAt,
+		toCursor: func(s *Screenshot) Cursor {
+			return Cursor{
+				ID:    s.ID,
+				Value: s.CreatedAt,
+			}
+		},
+	}
+	// ScreenshotOrderFieldLastModifiedAt orders Screenshot by last_modified_at.
+	ScreenshotOrderFieldLastModifiedAt = &ScreenshotOrderField{
+		Value: func(s *Screenshot) (ent.Value, error) {
+			return s.LastModifiedAt, nil
+		},
+		column: screenshot.FieldLastModifiedAt,
+		toTerm: screenshot.ByLastModifiedAt,
+		toCursor: func(s *Screenshot) Cursor {
+			return Cursor{
+				ID:    s.ID,
+				Value: s.LastModifiedAt,
+			}
+		},
+	}
+	// ScreenshotOrderFieldName orders Screenshot by name.
+	ScreenshotOrderFieldName = &ScreenshotOrderField{
+		Value: func(s *Screenshot) (ent.Value, error) {
+			return s.Name, nil
+		},
+		column: screenshot.FieldName,
+		toTerm: screenshot.ByName,
+		toCursor: func(s *Screenshot) Cursor {
+			return Cursor{
+				ID:    s.ID,
+				Value: s.Name,
+			}
+		},
+	}
+	// ScreenshotOrderFieldSize orders Screenshot by size.
+	ScreenshotOrderFieldSize = &ScreenshotOrderField{
+		Value: func(s *Screenshot) (ent.Value, error) {
+			return s.Size, nil
+		},
+		column: screenshot.FieldSize,
+		toTerm: screenshot.BySize,
+		toCursor: func(s *Screenshot) Cursor {
+			return Cursor{
+				ID:    s.ID,
+				Value: s.Size,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ScreenshotOrderField) String() string {
+	var str string
+	switch f.column {
+	case ScreenshotOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ScreenshotOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case ScreenshotOrderFieldName.column:
+		str = "NAME"
+	case ScreenshotOrderFieldSize.column:
+		str = "SIZE"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ScreenshotOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ScreenshotOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ScreenshotOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ScreenshotOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *ScreenshotOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *ScreenshotOrderFieldName
+	case "SIZE":
+		*f = *ScreenshotOrderFieldSize
+	default:
+		return fmt.Errorf("%s is not a valid ScreenshotOrderField", str)
+	}
+	return nil
+}
+
+// ScreenshotOrderField defines the ordering field of Screenshot.
+type ScreenshotOrderField struct {
+	// Value extracts the ordering value from the given Screenshot.
+	Value    func(*Screenshot) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) screenshot.OrderOption
+	toCursor func(*Screenshot) Cursor
+}
+
+// ScreenshotOrder defines the ordering of Screenshot.
+type ScreenshotOrder struct {
+	Direction OrderDirection        `json:"direction"`
+	Field     *ScreenshotOrderField `json:"field"`
+}
+
+// DefaultScreenshotOrder is the default ordering of Screenshot.
+var DefaultScreenshotOrder = &ScreenshotOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ScreenshotOrderField{
+		Value: func(s *Screenshot) (ent.Value, error) {
+			return s.ID, nil
+		},
+		column: screenshot.FieldID,
+		toTerm: screenshot.ByID,
+		toCursor: func(s *Screenshot) Cursor {
+			return Cursor{ID: s.ID}
+		},
+	},
+}
+
+// ToEdge converts Screenshot into ScreenshotEdge.
+func (s *Screenshot) ToEdge(order *ScreenshotOrder) *ScreenshotEdge {
+	if order == nil {
+		order = DefaultScreenshotOrder
+	}
+	return &ScreenshotEdge{
+		Node:   s,
+		Cursor: order.Field.toCursor(s),
 	}
 }
 

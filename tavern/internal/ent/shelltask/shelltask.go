@@ -44,6 +44,8 @@ const (
 	EdgeReportedFiles = "reported_files"
 	// EdgeReportedProcesses holds the string denoting the reported_processes edge name in mutations.
 	EdgeReportedProcesses = "reported_processes"
+	// EdgeScreenshots holds the string denoting the screenshots edge name in mutations.
+	EdgeScreenshots = "screenshots"
 	// Table holds the table name of the shelltask in the database.
 	Table = "shell_tasks"
 	// ShellTable is the table that holds the shell relation/edge.
@@ -81,6 +83,13 @@ const (
 	ReportedProcessesInverseTable = "host_processes"
 	// ReportedProcessesColumn is the table column denoting the reported_processes relation/edge.
 	ReportedProcessesColumn = "shell_task_reported_processes"
+	// ScreenshotsTable is the table that holds the screenshots relation/edge.
+	ScreenshotsTable = "screenshots"
+	// ScreenshotsInverseTable is the table name for the Screenshot entity.
+	// It exists in this package in order to avoid circular dependency with the "screenshot" package.
+	ScreenshotsInverseTable = "screenshots"
+	// ScreenshotsColumn is the table column denoting the screenshots relation/edge.
+	ScreenshotsColumn = "shell_task_screenshots"
 )
 
 // Columns holds all SQL columns for shelltask fields.
@@ -242,6 +251,20 @@ func ByReportedProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 		sqlgraph.OrderByNeighborTerms(s, newReportedProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByScreenshotsCount orders the results by screenshots count.
+func ByScreenshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScreenshotsStep(), opts...)
+	}
+}
+
+// ByScreenshots orders the results by screenshots terms.
+func ByScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newShellStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -275,5 +298,12 @@ func newReportedProcessesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReportedProcessesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReportedProcessesTable, ReportedProcessesColumn),
+	)
+}
+func newScreenshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScreenshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScreenshotsTable, ScreenshotsColumn),
 	)
 }
