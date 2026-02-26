@@ -9,8 +9,9 @@ import HostBreadcrumbs from "./components/HostBreadcrumbs";
 import { BeaconTab } from "./beacon-tab";
 import { ProcessTab } from "./process-tab";
 import { FilesTab } from "./files-tab";
+import { ShellTab } from "./shell-tab";
 
-const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials"] as const;
+const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
 
 const HostDetails = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -44,6 +45,9 @@ const HostDetails = () => {
                         </TabPanel>
                         <TabPanel>
                             <CredentialTab />
+                        </TabPanel>
+                        <TabPanel>
+                            <ShellTab />
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>
