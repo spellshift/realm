@@ -5,9 +5,9 @@ import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
+import { moveWordLeft, moveWordRight } from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
-import { moveWordLeft, moveWordRight } from "./shellUtils";
 
 interface ShellState {
     inputBuffer: string;
