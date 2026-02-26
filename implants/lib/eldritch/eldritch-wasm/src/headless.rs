@@ -56,6 +56,22 @@ impl HeadlessRepl {
         self.buffer.push_str(line);
 
         let trimmed = self.buffer.trim();
+
+        // Check for macro expansion: !cmd -> sys.shell("cmd")
+        // We ensure it's not != (NotEq)
+        if trimmed.starts_with('!') && !trimmed.starts_with("!=") {
+            let cmd = trimmed[1..].trim();
+            // Escape the command string for inclusion in the sys.shell call
+            let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
+            let expanded = format!("sys.shell(\"{}\")", escaped_cmd);
+
+            self.buffer.clear();
+            return format!(
+                "{{ \"status\": \"complete\", \"payload\": {:?} }}",
+                expanded
+            );
+        }
+
         if trimmed == "exit" {
             let payload = self.buffer.clone();
             self.buffer.clear();
@@ -213,5 +229,28 @@ mod tests {
         let res = repl.input("print('reset')");
         assert!(res.contains("\"status\": \"complete\""));
         assert!(res.contains("print('reset')"));
+    }
+
+    #[test]
+    fn test_headless_repl_macro() {
+        let mut repl = HeadlessRepl::new();
+        // Test !ls macro
+        let res = repl.input("!ls");
+        assert!(res.contains("\"status\": \"complete\""));
+        assert!(res.contains("sys.shell(\\\"ls\\\")"));
+
+        // Test !echo "hello" with quotes
+        let res = repl.input("!echo \"hello\"");
+        assert!(res.contains("\"status\": \"complete\""));
+        // Expected: sys.shell("echo \"hello\"") -> escaped in JSON: sys.shell(\"echo \\\"hello\\\"\")
+        assert!(res.contains("sys.shell(\\\"echo \\\\\\\"hello\\\\\\\"\\\")"));
+
+        // Test != should NOT expand
+        let res = repl.input("!= 1");
+        // This is incomplete/invalid syntax but handled by Lexer logic, not macro logic
+        // Lexer sees !=, 1. Balance 0.
+        // It should return complete with payload "!= 1" (if single line)
+        assert!(res.contains("\"status\": \"complete\""));
+        assert!(res.contains("\"payload\": \"!= 1\""));
     }
 }
