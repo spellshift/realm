@@ -3,8 +3,6 @@ package c2
 import (
 	"fmt"
 	"io"
-	"net/http"
-	"strings"
 	"unicode/utf8"
 
 	"google.golang.org/grpc/codes"
@@ -149,22 +147,10 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		SetContent(content)
 
 	// Derive Preview
-	const maxPreviewSize = 512 * 1024
-	if len(content) > 0 {
-		contentType := http.DetectContentType(content)
-		if strings.HasPrefix(contentType, "image/") && len(content) < maxPreviewSize {
-			builder.SetPreviewType(hostfile.PreviewTypeIMAGE)
-			builder.SetPreview(content)
-		} else if utf8.Valid(content) {
-			builder.SetPreviewType(hostfile.PreviewTypeTEXT)
-			if len(content) > maxPreviewSize {
-				builder.SetPreview(content[:maxPreviewSize])
-			} else {
-				builder.SetPreview(content)
-			}
-		} else {
-			builder.SetPreviewType(hostfile.PreviewTypeNONE)
-		}
+	const maxPreviewSize = 100 * 1024
+	if len(content) > 0 && utf8.Valid(content){
+		builder.SetPreviewType(hostfile.PreviewTypeTEXT)
+		builder.SetPreview(content[:min(len(content), maxPreviewSize)])
 	} else {
 		builder.SetPreviewType(hostfile.PreviewTypeNONE)
 	}
