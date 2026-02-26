@@ -46,8 +46,8 @@
     "yup": "^1.0.2"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "node scripts/generate-docs.js && react-scripts start",
+    "build": "node scripts/generate-docs.js && react-scripts build",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
