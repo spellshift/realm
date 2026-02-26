@@ -5,7 +5,9 @@
 
 #[cfg(feature = "doh")]
 pub mod doh {
-    use hickory_resolver::config::{ResolverConfig, ResolverOpts};
+    use hickory_resolver::config::{
+        NameServerConfig, Protocol, ResolverConfig, ResolverOpts,
+    };
     use hickory_resolver::TokioAsyncResolver;
     use hyper_legacy::client::connect::dns::Name;
     use hyper_legacy::client::HttpConnector;
@@ -38,9 +40,26 @@ pub mod doh {
                 DohProvider::Quad9 => Ok(ResolverConfig::quad9_https()),
                 DohProvider::System => {
                     // Read system DNS configuration
-                    let (config, _opts) = hickory_resolver::system_conf::read_system_conf()
-                        .map_err(|e| anyhow::anyhow!("Failed to read system DNS config: {}", e))?;
-                    Ok(config)
+                    match hickory_resolver::system_conf::read_system_conf() {
+                        Ok((config, _opts)) => Ok(config),
+                        Err(e) => {
+                            log::warn!(
+                                "Failed to read system DNS config: {}. Falling back to 1.1.1.1 and 8.8.8.8",
+                                e
+                            );
+                            let mut config = ResolverConfig::new();
+                            let cloudflare: SocketAddr = "1.1.1.1:53".parse().unwrap();
+                            let google: SocketAddr = "8.8.8.8:53".parse().unwrap();
+
+                            let ns1 = NameServerConfig::new(cloudflare, Protocol::Udp);
+                            let ns2 = NameServerConfig::new(google, Protocol::Udp);
+
+                            config.add_name_server(ns1);
+                            config.add_name_server(ns2);
+
+                            Ok(config)
+                        }
+                    }
                 }
             }
         }
