@@ -18,9 +18,81 @@ const cache = new InMemoryCache({
   typePolicies: {
     Query: {
       fields: {
-        tasks: relayStylePagination(["where"]),
-        quests: relayStylePagination(["where"]),
-        hosts: relayStylePagination(["where"])
+        tasks: relayStylePagination(["where", "orderBy"]),
+        quests: relayStylePagination(["where", "orderBy"]),
+        hosts: relayStylePagination(["where", "orderBy"]),
+      },
+    },
+    Asset: {
+      fields: {
+        tomes: relayStylePagination(),
+        links: relayStylePagination(),
+      },
+    },
+    Beacon: {
+      fields: {
+        tasks: relayStylePagination(),
+        shells: relayStylePagination(),
+      },
+    },
+    Builder: {
+      fields: {
+        buildTasks: relayStylePagination(),
+      },
+    },
+    Host: {
+      fields: {
+        tags: relayStylePagination(),
+        beacons: relayStylePagination(),
+        files: relayStylePagination(["where", "orderBy"]),
+        processes: relayStylePagination(["where", "orderBy"]),
+        credentials: relayStylePagination(),
+      },
+    },
+    Portal: {
+      fields: {
+        activeUsers: relayStylePagination(),
+      },
+    },
+    Quest: {
+      fields: {
+        tasks: relayStylePagination(["where", "orderBy"]),
+      },
+    },
+    Repository: {
+      fields: {
+        tomes: relayStylePagination(),
+      },
+    },
+    Shell: {
+      fields: {
+        activeUsers: relayStylePagination(),
+        shellTasks: relayStylePagination(),
+      },
+    },
+    Tag: {
+      fields: {
+        hosts: relayStylePagination(),
+      },
+    },
+    Task: {
+      fields: {
+        shells: relayStylePagination(),
+        reportedFiles: relayStylePagination(["where", "orderBy"]),
+        reportedProcesses: relayStylePagination(["where", "orderBy"]),
+        reportedCredentials: relayStylePagination(),
+      },
+    },
+    Tome: {
+      fields: {
+        assets: relayStylePagination(),
+        scheduledHosts: relayStylePagination(),
+      },
+    },
+    User: {
+      fields: {
+        tomes: relayStylePagination(),
+        activeShells: relayStylePagination(),
       },
     },
   },
