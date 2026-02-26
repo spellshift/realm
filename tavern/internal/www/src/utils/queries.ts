@@ -126,9 +126,6 @@ export const GET_HOST_QUERY = gql`
                 processes {
                     totalCount
                 }
-                files{
-                    totalCount
-                }
             }
             }
         }
@@ -325,9 +322,6 @@ export const GET_TASK_QUERY = gql`
                         }
                     }
                     reportedProcesses{
-                        totalCount
-                    }
-                    reportedFiles{
                         totalCount
                     }
                     quest {

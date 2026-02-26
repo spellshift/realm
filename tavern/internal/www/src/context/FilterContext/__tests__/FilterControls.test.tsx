@@ -7,11 +7,11 @@ import { MemoryRouter } from 'react-router-dom';
 
 // Mock the child components
 vi.mock('../../../components/beacon-filter-bar', () => ({
-  BeaconFilterBar: ({ onChange, value, isDisabled }: any) => (
+  BeaconFilterBar: ({ setFiltersSelected, filtersSelected, isDisabled }: any) => (
     <div data-testid="beacon-filter-bar">
       <span data-testid="beacon-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
-      <span data-testid="beacon-count">{value.length}</span>
-      <button onClick={() => onChange([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
+      <span data-testid="beacon-count">{filtersSelected.length}</span>
+      <button onClick={() => setFiltersSelected([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
         Add Beacon
       </button>
     </div>

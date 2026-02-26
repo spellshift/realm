@@ -12,10 +12,12 @@ const ProcessTab = () => {
     const nav = useNavigate();
 
     const {
+        data,
         processIds,
-        totalCount,
         initialLoading,
         error,
+        hasMore,
+        loadMore,
         searchTerm,
         setSearchTerm,
     } = useProcessIds(hostId || "");
@@ -31,7 +33,7 @@ const ProcessTab = () => {
                 );
             }
     
-            if (initialLoading || totalCount === undefined) {
+            if (initialLoading || data?.totalCount === undefined) {
                 return (
                     <EmptyState
                         type={EmptyStateType.loading}
@@ -40,7 +42,7 @@ const ProcessTab = () => {
                 );
             }
     
-            if (totalCount === 0 && searchTerm.trim() !== "") {
+            if (data?.totalCount === 0 && searchTerm.trim() !== "") {
                 return (
                     <EmptyState
                         type={EmptyStateType.noMatches}
@@ -57,7 +59,7 @@ const ProcessTab = () => {
                 );
             }
     
-            if (totalCount === 0 ) {
+            if (data?.totalCount === 0 ) {
                 // TODO: Later make this button pre-populate the quest
                 return (
                     <EmptyState
@@ -77,8 +79,10 @@ const ProcessTab = () => {
     
             return (
                 <ProcessesTable
+                    hostId={hostId || ""}
                     processIds={processIds}
-                    hostId={hostId}
+                    hasMore={hasMore}
+                    onLoadMore={loadMore}
                 />
             );
         };
@@ -90,7 +94,7 @@ const ProcessTab = () => {
                         <h3 className="text-xl font-semibold leading-6 text-gray-900">
                             Processes
                         </h3>
-                        <p className='text-md text-gray-600'>{totalCount !== undefined && `(${totalCount})`}</p>
+                        <p className='text-md text-gray-600'>{data?.totalCount !== undefined && `(${data?.totalCount})`}</p>
                     </div>
                     <div className="flex flex-row justify-end gap-2 w-full">
                         <SortingControls sortType={PageNavItem.processes} />

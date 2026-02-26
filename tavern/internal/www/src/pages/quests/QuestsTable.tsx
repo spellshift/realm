@@ -9,6 +9,7 @@ import { GET_QUEST_DETAIL_QUERY } from "./queries";
 import { QuestDetailQueryResponse, QuestDetailNode, GetQuestDetailQueryVariables } from "./types";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { useFilters } from "../../context/FilterContext";
+import { useTags } from "../../context/TagContext";
 import { OrderDirection, TaskOrderField } from "../../utils/enums";
 
 interface QuestsTableProps {
@@ -20,6 +21,7 @@ interface QuestsTableProps {
 export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTableProps) => {
     const navigate = useNavigate();
     const { filters } = useFilters();
+    const { lastFetchedTimestamp } = useTags();
     const currentDate = useMemo(() => new Date(), []);
 
     const handleRowClick = useCallback((questId: string) => {
@@ -27,8 +29,7 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
     }, [navigate]);
 
     const getVariables = useCallback((id: string): GetQuestDetailQueryVariables => {
-        const currentTimestamp = new Date();
-        const filterQueryTaskFields = constructTaskFilterQuery(filters, currentTimestamp);
+        const filterQueryTaskFields = constructTaskFilterQuery(filters, lastFetchedTimestamp);
 
         return {
             id,
@@ -50,7 +51,7 @@ export const QuestsTable = ({ questIds, hasMore = false, onLoadMore }: QuestsTab
             firstTask: 1,
             orderByTask: [{ direction: OrderDirection.Desc, field: TaskOrderField.LastModifiedAt }]
         };
-    }, [filters]);
+    }, [filters, lastFetchedTimestamp]);
 
     const extractData = useCallback((response: QuestDetailQueryResponse): QuestDetailNode | null => {
         return response?.quests?.edges?.[0]?.node || null;

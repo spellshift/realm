@@ -387,10 +387,9 @@ func TestOtherStreamOutput(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	longInput := strings.Repeat("A", 100)
 	otherTask, err := env.EntClient.ShellTask.Create().
 		SetShell(env.Shell).
-		SetInput(longInput).
+		SetInput("sudo reboot").
 		SetCreator(otherUser).
 		SetStreamID(otherStreamID).
 		SetSequenceID(1).
@@ -440,73 +439,7 @@ func TestOtherStreamOutput(t *testing.T) {
 	}
 
 	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
-
-	truncatedInput := longInput[:64] + "..."
-	expectedFormat := fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", "Other User", truncatedInput)
-	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format with truncation")
-	require.Contains(t, otherMsg.Output, "rebooting...")
-}
-
-func TestOtherStreamOutput_Polling(t *testing.T) {
-	env := SetupTestEnv(t)
-	defer env.Close()
-	ctx := context.Background()
-
-	// 1. Connect User 1 (Non-interactive, no portal created)
-	url := fmt.Sprintf("%s?shell_id=%d", env.WSURL, env.Shell.ID)
-	ws1, _, err := websocket.DefaultDialer.Dial(url, nil)
-	require.NoError(t, err)
-	defer ws1.Close()
-
-	// 2. Create Task from Other Stream (simulate it was created by another user, and has output in DB)
-	otherStreamID := uuid.NewString()
-	otherUser, err := env.EntClient.User.Create().
-		SetOauthID("other").
-		SetName("Other User").
-		SetPhotoURL("...").
-		SetSessionToken("token-2").
-		Save(ctx)
-	require.NoError(t, err)
-
-	otherTask, err := env.EntClient.ShellTask.Create().
-		SetShell(env.Shell).
-		SetInput("sudo reboot").
-		SetCreator(otherUser).
-		SetStreamID(otherStreamID).
-		SetSequenceID(1).
-		SetOutput("rebooting...").
-		Save(ctx)
-	require.NoError(t, err)
-
-	// 3. Verify User 1 receives "Other Stream" message via Polling
-	var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
-	found := false
-	timeout := time.After(5 * time.Second)
-
-	for !found {
-		select {
-		case <-timeout:
-			t.Fatal("timeout waiting for other stream message via polling")
-		default:
-			_, data, err := ws1.ReadMessage()
-			if err != nil {
-				continue
-			}
-
-			var genericMsg struct {
-				Kind string `json:"kind"`
-			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
-				json.Unmarshal(data, &otherMsg)
-				found = true
-			}
-		}
-	}
-
-	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
-	expectedFormat := fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", "Other User", "sudo reboot")
-	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format")
+	require.Contains(t, otherMsg.Output, "Other User")
 	require.Contains(t, otherMsg.Output, "rebooting...")
 }
 
@@ -585,34 +518,4 @@ func TestTruncation(t *testing.T) {
 
 	expectedPrefix := "[+] " + longInput[:64] + "...\n"
 	require.Contains(t, outMsg.Output, expectedPrefix)
-}
-
-func TestLargeShellTask(t *testing.T) {
-	env := SetupTestEnv(t)
-	defer env.Close()
-	ctx := context.Background()
-
-	// Create 70KB string (exceeds standard TEXT 64KB limit)
-	largeData := strings.Repeat("A", 1024*70)
-
-	// Create ShellTask
-	st, err := env.EntClient.ShellTask.Create().
-		SetShell(env.Shell).
-		SetInput(largeData).
-		SetOutput(largeData).
-		SetError(largeData).
-		SetCreator(env.User).
-		SetStreamID("test-stream").
-		SetSequenceID(1).
-		Save(ctx)
-	require.NoError(t, err)
-
-	// Retrieve ShellTask
-	retrieved, err := env.EntClient.ShellTask.Get(ctx, st.ID)
-	require.NoError(t, err)
-
-	// Verify Data
-	require.Equal(t, largeData, retrieved.Input)
-	require.Equal(t, largeData, retrieved.Output)
-	require.Equal(t, largeData, retrieved.Error)
 }

@@ -85,7 +85,7 @@ export function VirtualizedTableRowInternal<TData, TResponse>({
                 )}
                 {columns.map((column) => (
                     <div key={column.key} className="text-sm text-gray-700">
-                        {column.render(itemData) ?? "-"}
+                        {column.render(itemData)}
                     </div>
                 ))}
             </div>

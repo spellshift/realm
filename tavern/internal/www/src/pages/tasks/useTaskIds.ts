@@ -5,6 +5,7 @@ import { Filters, useFilters } from "../../context/FilterContext";
 import { constructTaskFilterQuery } from "../../utils/constructQueryUtils";
 import { Cursor, OrderByField, QueryPageInfo } from "../../utils/interfacesQuery";
 import { useSorts } from "../../context/SortContext";
+import { useTags } from "../../context/TagContext";
 
 export const GET_TASK_IDS_QUERY = gql`
     query GetTaskIds($where: TaskWhereInput, $first: Int, $last: Int, $after: Cursor, $before: Cursor, $orderBy: [TaskOrder!]) {
@@ -56,11 +57,12 @@ export const useTaskIds = (questId?: string): TaskIdsHook => {
     const [endCursor, setEndCursor] = useState<Cursor>(null);
     const { filters } = useFilters();
     const { sorts } = useSorts();
+    const { lastFetchedTimestamp } = useTags();
     const taskSort = sorts[PageNavItem.tasks];
 
     const queryVariables = useMemo(
-        () => getTaskIdsQuery(filters, undefined, undefined, questId, taskSort),
-        [filters, questId, taskSort]
+        () => getTaskIdsQuery(filters, undefined, undefined, questId, taskSort, lastFetchedTimestamp),
+        [filters, questId, taskSort, lastFetchedTimestamp]
     );
 
     const { data, error, refetch, networkStatus, loading, fetchMore } = useQuery<TaskIdsResponse>(
@@ -136,8 +138,8 @@ const getTaskIdsQuery = (
     beforeCursor?: Cursor,
     questId?: string,
     sort?: OrderByField,
+    currentTimestamp?: Date
 ) => {
-    const currentTimestamp = new Date();
     const defaultRowLimit = TableRowLimit.TaskRowLimit;
     const filterQueryFields = constructTaskFilterQuery(filters, currentTimestamp, questId);
 

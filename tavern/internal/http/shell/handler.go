@@ -487,19 +487,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			}
 
 			if task.Output != "" {
-				if task.StreamID == streamID {
-					msg := NewWebsocketTaskOutputMessage(task)
-					msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
-					taskOutputCh <- msg
-				} else {
-					msg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
-					creatorName := "Unknown"
-					if task.Edges.Creator != nil {
-						creatorName = task.Edges.Creator.Name
-					}
-					msg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n%s", creatorName, truncateInput(task.Input), msg.Output)
-					otherStreamCh <- msg
-				}
+				msg := NewWebsocketTaskOutputMessage(task)
+				msg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), msg.Output)
+				taskOutputCh <- msg
 			}
 			if task.Error != "" {
 				msg := NewWebsocketTaskErrorMessage(task)
@@ -586,7 +576,12 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 							creatorName = task.Edges.Creator.Name
 						}
 
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
+						truncatedInput := task.Input
+						if len(truncatedInput) > 255 {
+							truncatedInput = truncatedInput[:255] + "..."
+						}
+
+						otherStreamMsg.Output = fmt.Sprintf("[+] [%s] Task Output for %s\n", creatorName, truncatedInput)
 						otherStreamMsg.Output += string(bytesPayload.Data)
 
 						otherStreamCh <- otherStreamMsg

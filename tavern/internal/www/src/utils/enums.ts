@@ -14,8 +14,7 @@ export enum PageNavItem {
     tomes="Tomes",
     assets="Assets",
     admin="Admin",
-    processes="Processes",
-    files="Files"
+    processes="Processes"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",
@@ -103,13 +102,6 @@ export enum ProcessOrderField {
     Name = "NAME",
     ProcessId = "PROCESS_ID",
     ParentProcessId= "PARENT_PROCESS_ID",
-}
-
-export enum HostFileOrderField {
-    CreatedAt = "CREATED_AT",
-    LastModifiedAt = "LAST_MODIFIED_AT",
-    Name = "NAME",
-    Size = "SIZE",
 }
 
 export enum RepositoryOrderField {

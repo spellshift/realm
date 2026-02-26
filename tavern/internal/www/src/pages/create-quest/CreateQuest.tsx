@@ -8,7 +8,7 @@ import PageHeader from "../../components/tavern-base-ui/PageHeader";
 export const CreateQuest = () => {
     const { data, isLoading, error } = useTags();
 
-    const isDataLoading = isLoading || !data?.beacons;
+    const isDataLoading = isLoading || !data.beacons;
     const hasBeacons = data.beacons && data.beacons.length > 0;
 
     return (

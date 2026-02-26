@@ -5,6 +5,7 @@ import { Filters, useFilters } from "../../../context/FilterContext";
 import { constructHostTaskFilterQuery } from "../../../utils/constructQueryUtils";
 import { Cursor, OrderByField, QueryPageInfo } from "../../../utils/interfacesQuery";
 import { useSorts } from "../../../context/SortContext";
+import { useTags } from "../../../context/TagContext";
 
 export const GET_HOST_TASK_IDS_QUERY = gql`
     query GetHostTaskIds($where: TaskWhereInput, $first: Int, $last: Int, $after: Cursor, $before: Cursor, $orderBy: [TaskOrder!]) {
@@ -56,11 +57,12 @@ export const useHostTaskIds = (hostId?: string): HostTaskIdsHook => {
     const [endCursor, setEndCursor] = useState<Cursor>(null);
     const { filters } = useFilters();
     const { sorts } = useSorts();
+    const { lastFetchedTimestamp } = useTags();
     const taskSort = sorts[PageNavItem.tasks];
 
     const queryVariables = useMemo(
-        () => getHostTaskIdsQuery(filters, undefined, undefined, hostId, taskSort),
-        [filters, hostId, taskSort]
+        () => getHostTaskIdsQuery(filters, undefined, undefined, hostId, taskSort, lastFetchedTimestamp),
+        [filters, hostId, taskSort, lastFetchedTimestamp]
     );
 
     const { data, error, refetch, networkStatus, loading, fetchMore } = useQuery<HostTaskIdsResponse>(
@@ -136,8 +138,8 @@ const getHostTaskIdsQuery = (
     beforeCursor?: Cursor,
     hostId?: string,
     sort?: OrderByField,
+    currentTimestamp?: Date
 ) => {
-    const currentTimestamp = new Date();
     const defaultRowLimit = TableRowLimit.TaskRowLimit;
     const filterQueryFields = constructHostTaskFilterQuery(filters, currentTimestamp);
 

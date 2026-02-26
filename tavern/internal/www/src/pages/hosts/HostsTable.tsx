@@ -10,7 +10,6 @@ import { HostDetailQueryResponse } from "./types";
 import { getOfflineOnlineStatus, getFormatForPrincipal } from "../../utils/utils";
 import { PrincipalAdminTypes } from "../../utils/enums";
 import { HostNode } from "../../utils/interfacesQuery";
-import { CreateShellButton } from "../../components/create-shell-button/CreateShellButton";
 
 interface HostsTableProps {
     hostIds: string[];
@@ -123,21 +122,6 @@ export const HostsTable = ({ hostIds, hasMore = false, onLoadMore }: HostsTableP
             renderSkeleton: () => (
                 <div className="flex items-center min-w-0">
                     <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                </div>
-            ),
-        },
-        {
-            key: 'actions',
-            label: '',
-            width: 'minmax(40px,1fr)',
-            render: (host) => (
-                <div className="flex justify-end pr-4">
-                    <CreateShellButton hostId={host.id} />
-                </div>
-            ),
-            renderSkeleton: () => (
-                <div className="flex justify-end pr-4">
-                    <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
                 </div>
             ),
         },

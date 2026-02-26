@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle, Loader2, Pencil, X } from "lucide-react";
 import { useState } from "react";
-import { formatBytes } from "../../../../utils/utils";
+import { formatBytes } from "../../utils";
 
 export type FileStatus = "pending" | "uploading" | "success" | "error";
 

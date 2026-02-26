@@ -57,15 +57,6 @@ const HostTabs = () => {
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
                 <KeyRoundIcon className="w-4 h-4" />
                 <div>
-                    Files
-                </div>
-                <div>
-                    {host?.files?.totalCount !== undefined && `(${host.files.totalCount})`}
-                </div>
-            </Tab>
-            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
-                <KeyRoundIcon className="w-4 h-4" />
-                <div>
                     Credentials
                 </div>
                 <div>

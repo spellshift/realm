@@ -8,13 +8,13 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
-nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 xcap = { version = "0.0.6", optional = true }
-image = { version = "0.25", default-features = false, features = ["png"], optional = true }
+image = { version = "0.25", optional = true }
 chrono = { workspace = true, optional = true }
+whoami = { version = "1.5", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image", "dep:chrono"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:xcap", "dep:image", "dep:chrono", "dep:whoami"]
 fake_bindings = []

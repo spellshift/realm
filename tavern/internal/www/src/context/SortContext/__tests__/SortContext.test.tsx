@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { SortsProvider, useSorts } from '../SortContext';
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField } from '../../../utils/enums';
+import { AssetOrderField, HostOrderField, OrderDirection, PageNavItem, ProcessOrderField, QuestOrderField, TaskOrderField } from '../../../utils/enums';
 import { OrderByField } from '../../../utils/interfacesQuery';
-import { defaultSorts, Sorts } from '../sortingUtils';
+import { Sorts } from '../sortingUtils';
 
 const STORAGE_KEY = 'realm-sorting-v1.0';
 
@@ -19,12 +19,32 @@ describe('SortContext', () => {
         wrapper: SortsProvider,
       });
 
-      expect(result.current.sorts).toEqual(defaultSorts);
+      expect(result.current.sorts).toEqual({
+        [PageNavItem.hosts]: {
+          direction: OrderDirection.Desc,
+          field: HostOrderField.CreatedAt,
+        },
+        [PageNavItem.quests]: {
+          direction: OrderDirection.Desc,
+          field: QuestOrderField.CreatedAt,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Desc,
+          field: TaskOrderField.LastModifiedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
+        },
+      });
     });
 
     it('should load sorts from sessionStorage if available', () => {
       const storedSorts: Sorts = {
-        ...defaultSorts,
         [PageNavItem.hosts]: {
           direction: OrderDirection.Asc,
           field: HostOrderField.LastSeenAt,
@@ -32,6 +52,18 @@ describe('SortContext', () => {
         [PageNavItem.quests]: {
           direction: OrderDirection.Asc,
           field: QuestOrderField.Name,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Asc,
+          field: TaskOrderField.CreatedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
         },
       };
 
@@ -63,7 +95,10 @@ describe('SortContext', () => {
         wrapper: SortsProvider,
       });
 
-      expect(result.current.sorts[PageNavItem.hosts]).toEqual(defaultSorts[PageNavItem.hosts]);
+      expect(result.current.sorts[PageNavItem.hosts]).toEqual({
+        direction: OrderDirection.Desc,
+        field: HostOrderField.CreatedAt,
+      });
     });
 
     it('should reject data with missing required fields', () => {
@@ -75,6 +110,10 @@ describe('SortContext', () => {
         [PageNavItem.quests]: {
           direction: OrderDirection.Desc,
           field: QuestOrderField.CreatedAt,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Desc,
+          field: TaskOrderField.LastModifiedAt,
         },
       };
 
@@ -97,6 +136,10 @@ describe('SortContext', () => {
           direction: OrderDirection.Desc,
           field: QuestOrderField.CreatedAt,
         },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Desc,
+          field: TaskOrderField.LastModifiedAt,
+        },
       };
 
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(invalidSorts));
@@ -110,10 +153,25 @@ describe('SortContext', () => {
 
     it('should accept valid OrderByField structure', () => {
       const validSorts: Sorts = {
-        ...defaultSorts,
         [PageNavItem.hosts]: {
           direction: OrderDirection.Asc,
           field: HostOrderField.LastSeenAt,
+        },
+        [PageNavItem.quests]: {
+          direction: OrderDirection.Asc,
+          field: QuestOrderField.Name,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Asc,
+          field: TaskOrderField.CreatedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
         },
       };
 
@@ -219,7 +277,28 @@ describe('SortContext', () => {
         result.current.resetSorts();
       });
 
-      expect(result.current.sorts).toEqual(defaultSorts);
+      expect(result.current.sorts).toEqual({
+        [PageNavItem.hosts]: {
+          direction: OrderDirection.Desc,
+          field: HostOrderField.CreatedAt,
+        },
+        [PageNavItem.quests]: {
+          direction: OrderDirection.Desc,
+          field: QuestOrderField.CreatedAt,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Desc,
+          field: TaskOrderField.LastModifiedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
+        },
+      });
     });
 
     it('should persist default sorts to sessionStorage after reset', async () => {
@@ -244,7 +323,28 @@ describe('SortContext', () => {
         const stored = sessionStorage.getItem(STORAGE_KEY);
         expect(stored).toBeTruthy();
         const parsed = JSON.parse(stored!);
-        expect(parsed).toEqual(defaultSorts);
+        expect(parsed).toEqual({
+          [PageNavItem.hosts]: {
+            direction: OrderDirection.Desc,
+            field: HostOrderField.CreatedAt,
+          },
+          [PageNavItem.quests]: {
+            direction: OrderDirection.Desc,
+            field: QuestOrderField.CreatedAt,
+          },
+          [PageNavItem.tasks]: {
+            direction: OrderDirection.Desc,
+            field: TaskOrderField.LastModifiedAt,
+          },
+          [PageNavItem.assets]: {
+            direction: OrderDirection.Desc,
+            field: AssetOrderField.CreatedAt,
+          },
+          [PageNavItem.processes]: {
+            direction: OrderDirection.Desc,
+            field: ProcessOrderField.LastModifiedAt,
+          },
+        });
       });
     });
   });
@@ -256,7 +356,6 @@ describe('SortContext', () => {
       });
 
       const newSorts: Sorts = {
-        ...defaultSorts,
         [PageNavItem.hosts]: {
           direction: OrderDirection.Asc,
           field: HostOrderField.LastSeenAt,
@@ -264,6 +363,18 @@ describe('SortContext', () => {
         [PageNavItem.quests]: {
           direction: OrderDirection.Asc,
           field: QuestOrderField.Name,
+        },
+        [PageNavItem.tasks]: {
+          direction: OrderDirection.Asc,
+          field: TaskOrderField.CreatedAt,
+        },
+        [PageNavItem.assets]: {
+          direction: OrderDirection.Desc,
+          field: AssetOrderField.CreatedAt,
+        },
+        [PageNavItem.processes]: {
+          direction: OrderDirection.Desc,
+          field: ProcessOrderField.LastModifiedAt,
         },
       };
 
