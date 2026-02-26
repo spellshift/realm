@@ -32,6 +32,24 @@ pub mod doh {
         System, // Use system DNS configuration
     }
 
+    pub(crate) fn parse_resolv_conf(content: &str) -> Vec<SocketAddr> {
+        let mut addrs = Vec::new();
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("nameserver") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    let ip_str = parts[1];
+                    // Try to parse as IP address, default port 53
+                    if let Ok(ip) = ip_str.parse::<std::net::IpAddr>() {
+                        addrs.push(SocketAddr::new(ip, 53));
+                    }
+                }
+            }
+        }
+        addrs
+    }
+
     impl DohProvider {
         fn resolver_config(&self) -> Result<ResolverConfig, anyhow::Error> {
             match self {
@@ -44,18 +62,30 @@ pub mod doh {
                         Ok((config, _opts)) => Ok(config),
                         Err(e) => {
                             log::warn!(
-                                "Failed to read system DNS config: {}. Falling back to 1.1.1.1 and 8.8.8.8",
+                                "Failed to read system DNS config: {}. Attempting manual parsing.",
                                 e
                             );
+
                             let mut config = ResolverConfig::new();
-                            let cloudflare: SocketAddr = "1.1.1.1:53".parse().unwrap();
-                            let google: SocketAddr = "8.8.8.8:53".parse().unwrap();
+                            let mut nameservers = Vec::new();
 
-                            let ns1 = NameServerConfig::new(cloudflare, Protocol::Udp);
-                            let ns2 = NameServerConfig::new(google, Protocol::Udp);
+                            // Try to read /etc/resolv.conf manually
+                            if let Ok(content) = std::fs::read_to_string("/etc/resolv.conf") {
+                                nameservers = parse_resolv_conf(&content);
+                            }
 
-                            config.add_name_server(ns1);
-                            config.add_name_server(ns2);
+                            if nameservers.is_empty() {
+                                log::warn!("Manual parsing failed or found no nameservers. Falling back to 1.1.1.1 and 8.8.8.8");
+                                nameservers.push("1.1.1.1:53".parse().unwrap());
+                                nameservers.push("8.8.8.8:53".parse().unwrap());
+                            } else {
+                                log::info!("Manual parsing found {} nameservers.", nameservers.len());
+                            }
+
+                            for ns in nameservers {
+                                config.add_name_server(NameServerConfig::new(ns, Protocol::Udp));
+                                config.add_name_server(NameServerConfig::new(ns, Protocol::Tcp));
+                            }
 
                             Ok(config)
                         }
@@ -255,5 +285,23 @@ mod tests {
                 panic!("DNS resolution failed with error: {}", e);
             }
         }
+    }
+
+    #[cfg(feature = "doh")]
+    #[test]
+    fn test_parse_resolv_conf() {
+        use std::net::SocketAddr;
+        use std::str::FromStr;
+        let content = r#"
+# Some comments
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+unknown_directive foo bar
+nameserver invalid_ip
+"#;
+        let addrs = parse_resolv_conf(content);
+        assert_eq!(addrs.len(), 2);
+        assert_eq!(addrs[0], SocketAddr::from_str("8.8.8.8:53").unwrap());
+        assert_eq!(addrs[1], SocketAddr::from_str("1.1.1.1:53").unwrap());
     }
 }
