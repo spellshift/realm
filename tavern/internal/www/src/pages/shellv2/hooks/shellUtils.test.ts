@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { moveWordLeft, moveWordRight } from './shellUtils';
+import { moveWordLeft, moveWordRight, highlightPythonSyntax } from './shellUtils';
 
 describe('moveWordLeft', () => {
     it('moves to start of current word', () => {
@@ -63,5 +63,61 @@ describe('moveWordRight', () => {
     it('handles end of buffer', () => {
         const buffer = "hello";
         expect(moveWordRight(buffer, 5)).toBe(5);
+    });
+});
+
+describe('highlightPythonSyntax', () => {
+    it('highlights keywords', () => {
+        const input = "def my_func(): return True";
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain("\x1b[35mdef\x1b[0m");
+        expect(output).toContain("\x1b[35mreturn\x1b[0m");
+        expect(output).toContain("\x1b[35mTrue\x1b[0m");
+    });
+
+    it('highlights strings', () => {
+        const input = 'print("hello")';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain('\x1b[32m"hello"\x1b[0m');
+    });
+
+    it('highlights single quoted strings', () => {
+        const input = "print('hello')";
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain("\x1b[32m'hello'\x1b[0m");
+    });
+
+    it('highlights numbers', () => {
+        const input = "x = 123";
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain("\x1b[33m123\x1b[0m");
+    });
+
+    it('highlights comments', () => {
+        const input = "x = 1 # comment";
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain("\x1b[90m# comment\x1b[0m");
+    });
+
+    it('handles mixed content', () => {
+        const input = 'if x == "test": # check';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain("\x1b[35mif\x1b[0m");
+        expect(output).toContain('\x1b[32m"test"\x1b[0m');
+        expect(output).toContain("\x1b[90m# check\x1b[0m");
+    });
+
+    it('does not highlight keywords inside strings', () => {
+        const input = 'print("def not a keyword")';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain('\x1b[32m"def not a keyword"\x1b[0m');
+        expect(output).not.toContain("\x1b[35mdef\x1b[0m");
+    });
+
+    it('does not highlight comments inside strings', () => {
+        const input = 'print("# not a comment")';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain('\x1b[32m"# not a comment"\x1b[0m');
+        expect(output).not.toContain("\x1b[90m# not a comment\x1b[0m");
     });
 });
