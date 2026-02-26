@@ -250,3 +250,12 @@ For Windows hosts, a `Registry` selector is available, but must be enabled befor
 
 If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
 This isn't ideal as in the UI each new beacon will appear as though it were on a new host.
+
+To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environment variable at build time.
+
+`IMIX_UNIQUE` should be a list of JSON objects with `type` as a required field with args as an optional field.
+
+By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}},{"type":"macaddr"}]'`
+
+To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
+If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`

@@ -7,6 +7,7 @@ import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } fr
 import docsData from "../../../assets/eldritch-docs.json";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
+import { moveWordLeft, moveWordRight } from "./shellUtils";
 
 interface ShellState {
     inputBuffer: string;
@@ -182,6 +183,7 @@ export const useShellTerminal = (
         // Initialize terminal
         termInstance.current = new Terminal({
             cursorBlink: true,
+            macOptionIsMeta: true,
             theme: {
                 background: "#1e1e1e",
                 foreground: "#d4d4d4",
@@ -487,13 +489,13 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x01") { // Ctrl+A
+            if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH") { // Ctrl+A / Home
                 state.cursorPos = 0;
                 redrawLine();
                 return;
             }
 
-            if (data === "\x05") { // Ctrl+E
+            if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF") { // Ctrl+E / End
                 state.cursorPos = state.inputBuffer.length;
                 redrawLine();
                 return;
@@ -506,14 +508,43 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x17") { // Ctrl+W
-                const beforeCursor = state.inputBuffer.slice(0, state.cursorPos);
-                const trimmed = beforeCursor.trimEnd();
-                const lastSpace = trimmed.lastIndexOf(" ");
-                const newPos = lastSpace === -1 ? 0 : lastSpace + 1;
+            if (data === "\x0b") { // Ctrl+K (Kill to end)
+                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos);
+                redrawLine();
+                return;
+            }
+
+            // Word Navigation: Left (Alt+Left, Alt+b)
+            if (data === "\x1b[1;3D" || data === "\x1b[1;5D" || data === "\x1b\x1b[D" || data === "\x1bb") {
+                state.cursorPos = moveWordLeft(state.inputBuffer, state.cursorPos);
+                redrawLine();
+                return;
+            }
+
+            // Word Navigation: Right (Alt+Right, Alt+f)
+            if (data === "\x1b[1;3C" || data === "\x1b[1;5C" || data === "\x1b\x1b[C" || data === "\x1bf") {
+                state.cursorPos = moveWordRight(state.inputBuffer, state.cursorPos);
+                redrawLine();
+                return;
+            }
+
+            // Word Deletion: Backward (Alt+Backspace / Ctrl+W)
+            if (data === "\x17" || data === "\x1b\x7f" || data === "\x1b\x08") {
+                const newPos = moveWordLeft(state.inputBuffer, state.cursorPos);
                 const afterCursor = state.inputBuffer.slice(state.cursorPos);
                 state.inputBuffer = state.inputBuffer.slice(0, newPos) + afterCursor;
                 state.cursorPos = newPos;
+                redrawLine();
+                return;
+            }
+
+            // Word Deletion: Forward (Alt+Delete / Alt+d)
+            if (data === "\x1b[3;3~" || data === "\x1bd") {
+                const endPos = moveWordRight(state.inputBuffer, state.cursorPos);
+                const beforeCursor = state.inputBuffer.slice(0, state.cursorPos);
+                const afterWord = state.inputBuffer.slice(endPos);
+                state.inputBuffer = beforeCursor + afterWord;
+                // Cursor stays at current pos
                 redrawLine();
                 return;
             }
