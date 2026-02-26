@@ -81,6 +81,9 @@ type UpdateHostInput struct {
 	ClearCredentials    bool
 	AddCredentialIDs    []int
 	RemoveCredentialIDs []int
+	ClearScreenshots    bool
+	AddScreenshotIDs    []int
+	RemoveScreenshotIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -138,6 +141,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveCredentialIDs; len(v) > 0 {
 		m.RemoveCredentialIDs(v...)
+	}
+	if i.ClearScreenshots {
+		m.ClearScreenshots()
+	}
+	if v := i.AddScreenshotIDs; len(v) > 0 {
+		m.AddScreenshotIDs(v...)
+	}
+	if v := i.RemoveScreenshotIDs; len(v) > 0 {
+		m.RemoveScreenshotIDs(v...)
 	}
 }
 

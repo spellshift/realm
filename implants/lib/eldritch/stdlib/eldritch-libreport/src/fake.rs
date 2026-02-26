@@ -29,6 +29,10 @@ impl ReportLibrary for ReportLibraryFake {
     fn ntlm_hash(&self, _username: String, _hash: String) -> Result<(), String> {
         Ok(())
     }
+
+    fn screenshot(&self) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

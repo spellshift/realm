@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -220,6 +221,21 @@ func (tc *TaskCreate) AddShells(s ...*Shell) *TaskCreate {
 		ids[i] = s[i].ID
 	}
 	return tc.AddShellIDs(ids...)
+}
+
+// AddScreenshotIDs adds the "screenshots" edge to the Screenshot entity by IDs.
+func (tc *TaskCreate) AddScreenshotIDs(ids ...int) *TaskCreate {
+	tc.mutation.AddScreenshotIDs(ids...)
+	return tc
+}
+
+// AddScreenshots adds the "screenshots" edges to the Screenshot entity.
+func (tc *TaskCreate) AddScreenshots(s ...*Screenshot) *TaskCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return tc.AddScreenshotIDs(ids...)
 }
 
 // Mutation returns the TaskMutation object of the builder.
@@ -452,6 +468,22 @@ func (tc *TaskCreate) createSpec() (*Task, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tc.mutation.ScreenshotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   task.ScreenshotsTable,
+			Columns: []string{task.ScreenshotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
