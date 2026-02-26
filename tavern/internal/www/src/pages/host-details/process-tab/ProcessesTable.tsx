@@ -12,8 +12,6 @@ import { format } from "date-fns";
 interface ProcessesTableProps {
     hostId: string;
     processIds: string[];
-    hasMore?: boolean;
-    onLoadMore?: () => void;
 }
 
 
@@ -21,7 +19,7 @@ const formatStatus = (status: string): string => {
     return status.replace('STATUS_', '').toLowerCase().replace(/_/g, ' ');
 };
 
-export const ProcessesTable = ({ hostId, processIds, hasMore = false, onLoadMore }: ProcessesTableProps) => {
+export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => {
     const principalColors = Object.values(PrincipalAdminTypes);
 
     const getVariables = useCallback((id: string) => ({ hostId, processId: id }), [hostId]);
@@ -103,8 +101,6 @@ export const ProcessesTable = ({ hostId, processIds, hasMore = false, onLoadMore
             query={GET_PROCESS_DETAIL_QUERY}
             getVariables={getVariables}
             extractData={extractData}
-            hasMore={hasMore}
-            onLoadMore={onLoadMore}
             estimateRowSize={73}
             overscan={5}
             height="60vh"
