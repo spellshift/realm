@@ -59,6 +59,8 @@ export const useShellTerminal = (
         description: string;
     }>({ visible: false, x: 0, y: 0, signature: "", description: "" });
 
+    const currentTooltipWord = useRef<string | null>(null);
+
     const lastBufferHeight = useRef(0);
 
     // We need a ref to access current completions inside onData without stale closure
@@ -132,6 +134,12 @@ export const useShellTerminal = (
 
         // Look up in docs
         if (docs[word]) {
+            // If already showing tooltip for this word, don't update position
+            if (currentTooltipWord.current === word && tooltipState.visible) {
+                return;
+            }
+
+            currentTooltipWord.current = word;
             setTooltipState({
                 visible: true,
                 x: e.clientX, // Screen coordinates for fixed positioning
@@ -140,7 +148,11 @@ export const useShellTerminal = (
                 description: docs[word].description
             });
         } else {
-             setTooltipState(s => ({ ...s, visible: false }));
+             currentTooltipWord.current = null;
+             setTooltipState(s => {
+                 if (!s.visible) return s;
+                 return { ...s, visible: false };
+             });
         }
     };
 
