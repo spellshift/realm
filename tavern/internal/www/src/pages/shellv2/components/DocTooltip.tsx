@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Text, Code } from '@chakra-ui/react';
+import { Box, Code } from '@chakra-ui/react';
+import ReactMarkdown from 'react-markdown';
 
 interface DocTooltipProps {
   signature: string;
@@ -27,7 +28,7 @@ export const DocTooltip: React.FC<DocTooltipProps> = ({ signature, description, 
       pointerEvents="none"
       border="1px solid"
       borderColor="gray.600"
-      transform="translateY(10px)" // Add some offset so it doesn't cover the text directly
+      transform="translateY(10px)"
     >
       <Code
         display="block"
@@ -42,9 +43,15 @@ export const DocTooltip: React.FC<DocTooltipProps> = ({ signature, description, 
       >
         {signature}
       </Code>
-      <Text fontSize="xs" lineHeight="short">
-        {description}
-      </Text>
+      <Box fontSize="xs" lineHeight="short" sx={{
+          'p': { marginBottom: '0.5rem' },
+          'code': { bg: 'blackAlpha.400', px: 1, borderRadius: 'sm', fontFamily: 'monospace' },
+          'pre': { bg: 'blackAlpha.400', p: 2, borderRadius: 'sm', overflowX: 'auto', marginBottom: '0.5rem' },
+          'ul': { paddingLeft: '1rem', marginBottom: '0.5rem' },
+          'li': { marginBottom: '0.25rem' }
+      }}>
+        <ReactMarkdown>{description}</ReactMarkdown>
+      </Box>
     </Box>
   );
 };
