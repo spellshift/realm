@@ -264,8 +264,8 @@ func TestReportFile(t *testing.T) {
 			wantSize:        16,
 			wantHash:        "73dbda7f84fac5e8980fb197ce5942fa6db45f666a182762845784c54da85166",
 			wantContent:     []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
-			wantPreviewType: hostfile.PreviewTypeIMAGE,
-			wantPreview:     []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+			wantPreviewType: hostfile.PreviewTypeNONE,
+			wantPreview:     nil,
 		},
 		{
 			name: "LargeTextFile",
@@ -301,7 +301,7 @@ func TestReportFile(t *testing.T) {
 			wantSize:        600 * 1024,
 			wantPreviewType: hostfile.PreviewTypeTEXT,
 			wantPreview: func() []byte {
-				data := make([]byte, 512*1024)
+				data := make([]byte, 100*1024)
 				for i := range data {
 					data[i] = 'A'
 				}

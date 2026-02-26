@@ -5306,7 +5306,6 @@ HostFilePreviewType is enum for the field preview_type
 """
 enum HostFilePreviewType @goModel(model: "realm.pub/tavern/internal/ent/hostfile.PreviewType") {
   TEXT
-  IMAGE
   NONE
 }
 """

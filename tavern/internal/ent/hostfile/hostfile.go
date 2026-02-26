@@ -142,9 +142,8 @@ const DefaultPreviewType = PreviewTypeNONE
 
 // PreviewType values.
 const (
-	PreviewTypeTEXT  PreviewType = "TEXT"
-	PreviewTypeIMAGE PreviewType = "IMAGE"
-	PreviewTypeNONE  PreviewType = "NONE"
+	PreviewTypeTEXT PreviewType = "TEXT"
+	PreviewTypeNONE PreviewType = "NONE"
 )
 
 func (pt PreviewType) String() string {
@@ -154,7 +153,7 @@ func (pt PreviewType) String() string {
 // PreviewTypeValidator is a validator for the "preview_type" field enum values. It is called by the builders before save.
 func PreviewTypeValidator(pt PreviewType) error {
 	switch pt {
-	case PreviewTypeTEXT, PreviewTypeIMAGE, PreviewTypeNONE:
+	case PreviewTypeTEXT, PreviewTypeNONE:
 		return nil
 	default:
 		return fmt.Errorf("hostfile: invalid enum value for preview_type field: %q", pt)

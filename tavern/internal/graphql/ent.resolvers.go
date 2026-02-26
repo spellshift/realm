@@ -7,7 +7,6 @@ package graphql
 
 import (
 	"context"
-	"encoding/base64"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -23,9 +22,6 @@ func (r *hostFileResolver) Preview(ctx context.Context, obj *ent.HostFile) (*str
 	switch obj.PreviewType {
 	case hostfile.PreviewTypeTEXT:
 		s := string(obj.Preview)
-		return &s, nil
-	case hostfile.PreviewTypeIMAGE:
-		s := base64.StdEncoding.EncodeToString(obj.Preview)
 		return &s, nil
 	default:
 		return nil, nil

@@ -61,7 +61,7 @@ func (HostFile) Fields() []ent.Field {
 			).
 			Comment("The content of the file"),
 		field.Enum("preview_type").
-			Values("TEXT", "IMAGE", "NONE").
+			Values("TEXT", "NONE").
 			Default("NONE").
 			Comment("The type of preview available for the file"),
 		field.Bytes("preview").

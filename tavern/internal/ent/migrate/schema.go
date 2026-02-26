@@ -199,7 +199,7 @@ var (
 		{Name: "size", Type: field.TypeUint64, Default: 0},
 		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "content", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
-		{Name: "preview_type", Type: field.TypeEnum, Enums: []string{"TEXT", "IMAGE", "NONE"}, Default: "NONE"},
+		{Name: "preview_type", Type: field.TypeEnum, Enums: []string{"TEXT", "NONE"}, Default: "NONE"},
 		{Name: "preview", Type: field.TypeBytes, Nullable: true, SchemaType: map[string]string{"mysql": "LONGBLOB"}},
 		{Name: "host_files", Type: field.TypeInt, Nullable: true},
 		{Name: "host_file_host", Type: field.TypeInt},
