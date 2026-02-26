@@ -1894,6 +1894,16 @@ func (hf *HostFileQuery) collectField(ctx context.Context, oneNode bool, opCtx *
 				selectedFields = append(selectedFields, hostfile.FieldHash)
 				fieldSeen[hostfile.FieldHash] = struct{}{}
 			}
+		case "previewType":
+			if _, ok := fieldSeen[hostfile.FieldPreviewType]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPreviewType)
+				fieldSeen[hostfile.FieldPreviewType] = struct{}{}
+			}
+		case "preview":
+			if _, ok := fieldSeen[hostfile.FieldPreview]; !ok {
+				selectedFields = append(selectedFields, hostfile.FieldPreview)
+				fieldSeen[hostfile.FieldPreview] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

@@ -60,6 +60,19 @@ func (HostFile) Fields() []ent.Field {
 				entgql.Skip(), // Don't return file content in GraphQL queries
 			).
 			Comment("The content of the file"),
+		field.Enum("preview_type").
+			Values("TEXT", "NONE").
+			Default("NONE").
+			Comment("The type of preview available for the file"),
+		field.Bytes("preview").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGBLOB", // Override MySQL, improve length maximum
+			}).
+			Annotations(
+				entgql.Type("String"),
+			).
+			Comment("A preview of the file content (max 512kb)"),
 	}
 }
 

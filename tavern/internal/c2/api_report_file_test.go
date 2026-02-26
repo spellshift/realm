@@ -13,8 +13,9 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/c2test"
-    "realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/hostfile"
 )
 
 func TestReportFile(t *testing.T) {
@@ -81,6 +82,8 @@ func TestReportFile(t *testing.T) {
 		wantSize        uint64
 		wantHash        string
 		wantContent     []byte
+		wantPreviewType hostfile.PreviewType
+		wantPreview     []byte
 	}{
 		{
 			name: "MissingTaskID",
@@ -141,6 +144,8 @@ func TestReportFile(t *testing.T) {
 			wantSize:        5,
 			wantHash:        "da4b6723781fc3c92cf4e303532668f1352034a4250efa47f225a4243e33c89b",
 			wantContent:     []byte("death"),
+			wantPreviewType: hostfile.PreviewTypeTEXT,
+			wantPreview:     []byte("death"),
 		},
 		{
 			name: "NewFile_MultiChunk",
@@ -172,9 +177,11 @@ func TestReportFile(t *testing.T) {
 				"/another/new/file",
 			},
 			wantPath:    "/another/new/file",
-			wantSize:    9,
-			wantHash:    "a89332a42f5fbfcda0711dd7615aee897a9977f2b6adf12bb2db41a1b9f79a90",
-			wantContent: []byte("deathnote"),
+			wantSize:        9,
+			wantHash:        "a89332a42f5fbfcda0711dd7615aee897a9977f2b6adf12bb2db41a1b9f79a90",
+			wantContent:     []byte("deathnote"),
+			wantPreviewType: hostfile.PreviewTypeTEXT,
+			wantPreview:     []byte("deathnote"),
 		},
 		{
 			name: "Replace_File",
@@ -201,9 +208,11 @@ func TestReportFile(t *testing.T) {
 				"/another/new/file",
 			},
 			wantPath:    "/another/new/file",
-			wantSize:    8,
-			wantHash:    "e0f00440c4d0ee2fd0b63b59402faf9a9d6b6c26a41c2353141328ae8df80832",
-			wantContent: []byte("replaced"),
+			wantSize:        8,
+			wantHash:        "e0f00440c4d0ee2fd0b63b59402faf9a9d6b6c26a41c2353141328ae8df80832",
+			wantContent:     []byte("replaced"),
+			wantPreviewType: hostfile.PreviewTypeTEXT,
+			wantPreview:     []byte("replaced"),
 		},
 		{
 			name: "No_Prexisting_Files",
@@ -225,9 +234,136 @@ func TestReportFile(t *testing.T) {
 			wantResp:      &c2pb.ReportFileResponse{},
 			wantHostFiles: []string{"/no/other/files"},
 			wantPath:      "/no/other/files",
-			wantSize:      4,
-			wantHash:      "ecb287a944d62ba58b7e7310529172a9c121957c2edea47a948919c342ca9467",
-			wantContent:   []byte("meow"),
+			wantSize:        4,
+			wantHash:        "ecb287a944d62ba58b7e7310529172a9c121957c2edea47a948919c342ca9467",
+			wantContent:     []byte("meow"),
+			wantPreviewType: hostfile.PreviewTypeTEXT,
+			wantPreview:     []byte("meow"),
+		},
+		{
+			name: "SmallImage",
+			reqs: []*c2pb.ReportFileRequest{
+				{
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					},
+					Chunk: &epb.File{
+						Metadata: &epb.FileMetadata{
+							Path: "/image.png",
+						},
+						// PNG Magic Number
+						Chunk: []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+					},
+				},
+			},
+			host:            existingHosts[1],
+			wantCode:        codes.OK,
+			wantResp:        &c2pb.ReportFileResponse{},
+			wantHostFiles:   []string{"/no/other/files", "/image.png"},
+			wantPath:        "/image.png",
+			wantSize:        16,
+			wantHash:        "73dbda7f84fac5e8980fb197ce5942fa6db45f666a182762845784c54da85166",
+			wantContent:     []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"),
+			wantPreviewType: hostfile.PreviewTypeNONE,
+			wantPreview:     nil,
+		},
+		{
+			name: "LargeTextFile",
+			reqs: func() []*c2pb.ReportFileRequest {
+				data := make([]byte, 600*1024)
+				for i := range data {
+					data[i] = 'A'
+				}
+				return []*c2pb.ReportFileRequest{
+					{
+						Context: &c2pb.ReportFileRequest_TaskContext{
+							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+						},
+						Chunk: &epb.File{
+							Metadata: &epb.FileMetadata{
+								Path: "/large.txt",
+							},
+							Chunk: data[:300*1024],
+						},
+					},
+					{
+						Chunk: &epb.File{
+							Chunk: data[300*1024:],
+						},
+					},
+				}
+			}(),
+			host:            existingHosts[1],
+			wantCode:        codes.OK,
+			wantResp:        &c2pb.ReportFileResponse{},
+			wantHostFiles:   []string{"/no/other/files", "/image.png", "/large.txt"},
+			wantPath:        "/large.txt",
+			wantSize:        600 * 1024,
+			wantPreviewType: hostfile.PreviewTypeTEXT,
+			wantPreview: func() []byte {
+				data := make([]byte, 100*1024)
+				for i := range data {
+					data[i] = 'A'
+				}
+				return data
+			}(),
+		},
+		{
+			name: "LargeImageFile",
+			reqs: func() []*c2pb.ReportFileRequest {
+				data := make([]byte, 600*1024)
+				copy(data, []byte("\x89PNG\r\n\x1a\n"))
+				return []*c2pb.ReportFileRequest{
+					{
+						Context: &c2pb.ReportFileRequest_TaskContext{
+							TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+						},
+						Chunk: &epb.File{
+							Metadata: &epb.FileMetadata{
+								Path: "/large.png",
+							},
+							Chunk: data[:300*1024],
+						},
+					},
+					{
+						Chunk: &epb.File{
+							Chunk: data[300*1024:],
+						},
+					},
+				}
+			}(),
+			host:            existingHosts[1],
+			wantCode:        codes.OK,
+			wantResp:        &c2pb.ReportFileResponse{},
+			wantHostFiles:   []string{"/no/other/files", "/image.png", "/large.txt", "/large.png"},
+			wantPath:        "/large.png",
+			wantSize:        600 * 1024,
+			wantPreviewType: hostfile.PreviewTypeNONE,
+			wantPreview:     nil,
+		},
+		{
+			name: "BinaryFile",
+			reqs: []*c2pb.ReportFileRequest{
+				{
+					Context: &c2pb.ReportFileRequest_TaskContext{
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					},
+					Chunk: &epb.File{
+						Metadata: &epb.FileMetadata{
+							Path: "/binary.bin",
+						},
+						Chunk: []byte{0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD},
+					},
+				},
+			},
+			host:            existingHosts[1],
+			wantCode:        codes.OK,
+			wantResp:        &c2pb.ReportFileResponse{},
+			wantHostFiles:   []string{"/no/other/files", "/image.png", "/large.txt", "/large.png", "/binary.bin"},
+			wantPath:        "/binary.bin",
+			wantSize:        7,
+			wantPreviewType: hostfile.PreviewTypeNONE,
+			wantPreview:     nil,
 		},
 	}
 
@@ -279,7 +415,11 @@ func TestReportFile(t *testing.T) {
 			    assert.Equal(t, tc.wantGroup, testFile.Group)
 			    assert.Equal(t, tc.wantPermissions, testFile.Permissions)
 			    assert.Equal(t, tc.wantSize, testFile.Size)
-			    assert.Equal(t, tc.wantHash, testFile.Hash)
+			    if tc.wantHash != "" {
+				    assert.Equal(t, tc.wantHash, testFile.Hash)
+			    }
+			    assert.Equal(t, tc.wantPreviewType, testFile.PreviewType)
+			    assert.Equal(t, tc.wantPreview, testFile.Preview)
             }
 		})
 	}

@@ -3,6 +3,7 @@ package c2
 import (
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -144,6 +145,15 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		SetSize(size).
 		SetHash(hash).
 		SetContent(content)
+
+	// Derive Preview
+	const maxPreviewSize = 100 * 1024
+	if len(content) > 0 && utf8.Valid(content){
+		builder.SetPreviewType(hostfile.PreviewTypeTEXT)
+		builder.SetPreview(content[:min(len(content), maxPreviewSize)])
+	} else {
+		builder.SetPreviewType(hostfile.PreviewTypeNONE)
+	}
 
 	if task != nil {
 		builder.SetTaskID(task.ID)

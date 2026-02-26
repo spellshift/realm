@@ -164,6 +164,32 @@ func (hfu *HostFileUpdate) ClearContent() *HostFileUpdate {
 	return hfu
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (hfu *HostFileUpdate) SetPreviewType(ht hostfile.PreviewType) *HostFileUpdate {
+	hfu.mutation.SetPreviewType(ht)
+	return hfu
+}
+
+// SetNillablePreviewType sets the "preview_type" field if the given value is not nil.
+func (hfu *HostFileUpdate) SetNillablePreviewType(ht *hostfile.PreviewType) *HostFileUpdate {
+	if ht != nil {
+		hfu.SetPreviewType(*ht)
+	}
+	return hfu
+}
+
+// SetPreview sets the "preview" field.
+func (hfu *HostFileUpdate) SetPreview(b []byte) *HostFileUpdate {
+	hfu.mutation.SetPreview(b)
+	return hfu
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (hfu *HostFileUpdate) ClearPreview() *HostFileUpdate {
+	hfu.mutation.ClearPreview()
+	return hfu
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hfu *HostFileUpdate) SetHostID(id int) *HostFileUpdate {
 	hfu.mutation.SetHostID(id)
@@ -295,6 +321,11 @@ func (hfu *HostFileUpdate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
+	if v, ok := hfu.mutation.PreviewType(); ok {
+		if err := hostfile.PreviewTypeValidator(v); err != nil {
+			return &ValidationError{Name: "preview_type", err: fmt.Errorf(`ent: validator failed for field "HostFile.preview_type": %w`, err)}
+		}
+	}
 	if hfu.mutation.HostCleared() && len(hfu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
 	}
@@ -354,6 +385,15 @@ func (hfu *HostFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if hfu.mutation.ContentCleared() {
 		_spec.ClearField(hostfile.FieldContent, field.TypeBytes)
+	}
+	if value, ok := hfu.mutation.PreviewType(); ok {
+		_spec.SetField(hostfile.FieldPreviewType, field.TypeEnum, value)
+	}
+	if value, ok := hfu.mutation.Preview(); ok {
+		_spec.SetField(hostfile.FieldPreview, field.TypeBytes, value)
+	}
+	if hfu.mutation.PreviewCleared() {
+		_spec.ClearField(hostfile.FieldPreview, field.TypeBytes)
 	}
 	if hfu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -595,6 +635,32 @@ func (hfuo *HostFileUpdateOne) ClearContent() *HostFileUpdateOne {
 	return hfuo
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (hfuo *HostFileUpdateOne) SetPreviewType(ht hostfile.PreviewType) *HostFileUpdateOne {
+	hfuo.mutation.SetPreviewType(ht)
+	return hfuo
+}
+
+// SetNillablePreviewType sets the "preview_type" field if the given value is not nil.
+func (hfuo *HostFileUpdateOne) SetNillablePreviewType(ht *hostfile.PreviewType) *HostFileUpdateOne {
+	if ht != nil {
+		hfuo.SetPreviewType(*ht)
+	}
+	return hfuo
+}
+
+// SetPreview sets the "preview" field.
+func (hfuo *HostFileUpdateOne) SetPreview(b []byte) *HostFileUpdateOne {
+	hfuo.mutation.SetPreview(b)
+	return hfuo
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (hfuo *HostFileUpdateOne) ClearPreview() *HostFileUpdateOne {
+	hfuo.mutation.ClearPreview()
+	return hfuo
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hfuo *HostFileUpdateOne) SetHostID(id int) *HostFileUpdateOne {
 	hfuo.mutation.SetHostID(id)
@@ -739,6 +805,11 @@ func (hfuo *HostFileUpdateOne) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
+	if v, ok := hfuo.mutation.PreviewType(); ok {
+		if err := hostfile.PreviewTypeValidator(v); err != nil {
+			return &ValidationError{Name: "preview_type", err: fmt.Errorf(`ent: validator failed for field "HostFile.preview_type": %w`, err)}
+		}
+	}
 	if hfuo.mutation.HostCleared() && len(hfuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
 	}
@@ -815,6 +886,15 @@ func (hfuo *HostFileUpdateOne) sqlSave(ctx context.Context) (_node *HostFile, er
 	}
 	if hfuo.mutation.ContentCleared() {
 		_spec.ClearField(hostfile.FieldContent, field.TypeBytes)
+	}
+	if value, ok := hfuo.mutation.PreviewType(); ok {
+		_spec.SetField(hostfile.FieldPreviewType, field.TypeEnum, value)
+	}
+	if value, ok := hfuo.mutation.Preview(); ok {
+		_spec.SetField(hostfile.FieldPreview, field.TypeBytes, value)
+	}
+	if hfuo.mutation.PreviewCleared() {
+		_spec.ClearField(hostfile.FieldPreview, field.TypeBytes)
 	}
 	if hfuo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
