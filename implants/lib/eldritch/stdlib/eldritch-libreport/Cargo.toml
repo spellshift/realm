@@ -10,7 +10,7 @@ eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
-xcap = { version = "0.0.14", optional = true }
+xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 
 [features]
