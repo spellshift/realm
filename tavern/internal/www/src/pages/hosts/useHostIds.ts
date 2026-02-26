@@ -8,6 +8,7 @@ import { useSorts } from "../../context/SortContext";
 import { GET_HOST_IDS_QUERY } from "./queries";
 import { HostIdsQueryTopLevel, GetHostIdsQueryVariables } from "./types";
 
+// TODO: Clean up load more / hasMore, this seems like overengineering to avoid getting a full list of ids, we might as well.
 export const useHostIds = () => {
   const { filters } = useFilters();
   const { sorts } = useSorts();
