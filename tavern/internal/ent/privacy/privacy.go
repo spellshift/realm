@@ -398,6 +398,30 @@ func (f RepositoryMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Muta
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RepositoryMutation", m)
 }
 
+// The ScreenshotQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ScreenshotQueryRuleFunc func(context.Context, *ent.ScreenshotQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ScreenshotQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ScreenshotQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ScreenshotQuery", q)
+}
+
+// The ScreenshotMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ScreenshotMutationRuleFunc func(context.Context, *ent.ScreenshotMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ScreenshotMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ScreenshotMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ScreenshotMutation", m)
+}
+
 // The ShellQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ShellQueryRuleFunc func(context.Context, *ent.ShellQuery) error

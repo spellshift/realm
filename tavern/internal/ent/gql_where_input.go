@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
@@ -2383,6 +2384,10 @@ type HostWhereInput struct {
 	// "credentials" edge predicates.
 	HasCredentials     *bool                       `json:"hasCredentials,omitempty"`
 	HasCredentialsWith []*HostCredentialWhereInput `json:"hasCredentialsWith,omitempty"`
+
+	// "screenshots" edge predicates.
+	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
+	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -2864,6 +2869,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasCredentialsWith(with...))
+	}
+	if i.HasScreenshots != nil {
+		p := host.HasScreenshots()
+		if !*i.HasScreenshots {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScreenshotsWith) > 0 {
+		with := make([]predicate.Screenshot, 0, len(i.HasScreenshotsWith))
+		for _, w := range i.HasScreenshotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScreenshotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasScreenshotsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6203,6 +6226,414 @@ func (i *RepositoryWhereInput) P() (predicate.Repository, error) {
 	}
 }
 
+// ScreenshotWhereInput represents a where input for filtering Screenshot queries.
+type ScreenshotWhereInput struct {
+	Predicates []predicate.Screenshot  `json:"-"`
+	Not        *ScreenshotWhereInput   `json:"not,omitempty"`
+	Or         []*ScreenshotWhereInput `json:"or,omitempty"`
+	And        []*ScreenshotWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "size" field predicates.
+	Size      *uint64  `json:"size,omitempty"`
+	SizeNEQ   *uint64  `json:"sizeNEQ,omitempty"`
+	SizeIn    []uint64 `json:"sizeIn,omitempty"`
+	SizeNotIn []uint64 `json:"sizeNotIn,omitempty"`
+	SizeGT    *uint64  `json:"sizeGT,omitempty"`
+	SizeGTE   *uint64  `json:"sizeGTE,omitempty"`
+	SizeLT    *uint64  `json:"sizeLT,omitempty"`
+	SizeLTE   *uint64  `json:"sizeLTE,omitempty"`
+
+	// "hash" field predicates.
+	Hash             *string  `json:"hash,omitempty"`
+	HashNEQ          *string  `json:"hashNEQ,omitempty"`
+	HashIn           []string `json:"hashIn,omitempty"`
+	HashNotIn        []string `json:"hashNotIn,omitempty"`
+	HashGT           *string  `json:"hashGT,omitempty"`
+	HashGTE          *string  `json:"hashGTE,omitempty"`
+	HashLT           *string  `json:"hashLT,omitempty"`
+	HashLTE          *string  `json:"hashLTE,omitempty"`
+	HashContains     *string  `json:"hashContains,omitempty"`
+	HashHasPrefix    *string  `json:"hashHasPrefix,omitempty"`
+	HashHasSuffix    *string  `json:"hashHasSuffix,omitempty"`
+	HashIsNil        bool     `json:"hashIsNil,omitempty"`
+	HashNotNil       bool     `json:"hashNotNil,omitempty"`
+	HashEqualFold    *string  `json:"hashEqualFold,omitempty"`
+	HashContainsFold *string  `json:"hashContainsFold,omitempty"`
+
+	// "host" edge predicates.
+	HasHost     *bool             `json:"hasHost,omitempty"`
+	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
+
+	// "task" edge predicates.
+	HasTask     *bool             `json:"hasTask,omitempty"`
+	HasTaskWith []*TaskWhereInput `json:"hasTaskWith,omitempty"`
+
+	// "shell_task" edge predicates.
+	HasShellTask     *bool                  `json:"hasShellTask,omitempty"`
+	HasShellTaskWith []*ShellTaskWhereInput `json:"hasShellTaskWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *ScreenshotWhereInput) AddPredicates(predicates ...predicate.Screenshot) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the ScreenshotWhereInput filter on the ScreenshotQuery builder.
+func (i *ScreenshotWhereInput) Filter(q *ScreenshotQuery) (*ScreenshotQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyScreenshotWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyScreenshotWhereInput is returned in case the ScreenshotWhereInput is empty.
+var ErrEmptyScreenshotWhereInput = errors.New("ent: empty predicate ScreenshotWhereInput")
+
+// P returns a predicate for filtering screenshots.
+// An error is returned if the input is empty or invalid.
+func (i *ScreenshotWhereInput) P() (predicate.Screenshot, error) {
+	var predicates []predicate.Screenshot
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, screenshot.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Screenshot, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, screenshot.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Screenshot, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, screenshot.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, screenshot.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, screenshot.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, screenshot.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, screenshot.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, screenshot.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, screenshot.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, screenshot.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, screenshot.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, screenshot.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, screenshot.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, screenshot.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, screenshot.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, screenshot.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, screenshot.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, screenshot.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, screenshot.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, screenshot.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, screenshot.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, screenshot.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, screenshot.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, screenshot.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, screenshot.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, screenshot.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, screenshot.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, screenshot.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, screenshot.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, screenshot.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, screenshot.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, screenshot.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, screenshot.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, screenshot.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, screenshot.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Size != nil {
+		predicates = append(predicates, screenshot.SizeEQ(*i.Size))
+	}
+	if i.SizeNEQ != nil {
+		predicates = append(predicates, screenshot.SizeNEQ(*i.SizeNEQ))
+	}
+	if len(i.SizeIn) > 0 {
+		predicates = append(predicates, screenshot.SizeIn(i.SizeIn...))
+	}
+	if len(i.SizeNotIn) > 0 {
+		predicates = append(predicates, screenshot.SizeNotIn(i.SizeNotIn...))
+	}
+	if i.SizeGT != nil {
+		predicates = append(predicates, screenshot.SizeGT(*i.SizeGT))
+	}
+	if i.SizeGTE != nil {
+		predicates = append(predicates, screenshot.SizeGTE(*i.SizeGTE))
+	}
+	if i.SizeLT != nil {
+		predicates = append(predicates, screenshot.SizeLT(*i.SizeLT))
+	}
+	if i.SizeLTE != nil {
+		predicates = append(predicates, screenshot.SizeLTE(*i.SizeLTE))
+	}
+	if i.Hash != nil {
+		predicates = append(predicates, screenshot.HashEQ(*i.Hash))
+	}
+	if i.HashNEQ != nil {
+		predicates = append(predicates, screenshot.HashNEQ(*i.HashNEQ))
+	}
+	if len(i.HashIn) > 0 {
+		predicates = append(predicates, screenshot.HashIn(i.HashIn...))
+	}
+	if len(i.HashNotIn) > 0 {
+		predicates = append(predicates, screenshot.HashNotIn(i.HashNotIn...))
+	}
+	if i.HashGT != nil {
+		predicates = append(predicates, screenshot.HashGT(*i.HashGT))
+	}
+	if i.HashGTE != nil {
+		predicates = append(predicates, screenshot.HashGTE(*i.HashGTE))
+	}
+	if i.HashLT != nil {
+		predicates = append(predicates, screenshot.HashLT(*i.HashLT))
+	}
+	if i.HashLTE != nil {
+		predicates = append(predicates, screenshot.HashLTE(*i.HashLTE))
+	}
+	if i.HashContains != nil {
+		predicates = append(predicates, screenshot.HashContains(*i.HashContains))
+	}
+	if i.HashHasPrefix != nil {
+		predicates = append(predicates, screenshot.HashHasPrefix(*i.HashHasPrefix))
+	}
+	if i.HashHasSuffix != nil {
+		predicates = append(predicates, screenshot.HashHasSuffix(*i.HashHasSuffix))
+	}
+	if i.HashIsNil {
+		predicates = append(predicates, screenshot.HashIsNil())
+	}
+	if i.HashNotNil {
+		predicates = append(predicates, screenshot.HashNotNil())
+	}
+	if i.HashEqualFold != nil {
+		predicates = append(predicates, screenshot.HashEqualFold(*i.HashEqualFold))
+	}
+	if i.HashContainsFold != nil {
+		predicates = append(predicates, screenshot.HashContainsFold(*i.HashContainsFold))
+	}
+
+	if i.HasHost != nil {
+		p := screenshot.HasHost()
+		if !*i.HasHost {
+			p = screenshot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasHostWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasHostWith))
+		for _, w := range i.HasHostWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasHostWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, screenshot.HasHostWith(with...))
+	}
+	if i.HasTask != nil {
+		p := screenshot.HasTask()
+		if !*i.HasTask {
+			p = screenshot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasTaskWith) > 0 {
+		with := make([]predicate.Task, 0, len(i.HasTaskWith))
+		for _, w := range i.HasTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, screenshot.HasTaskWith(with...))
+	}
+	if i.HasShellTask != nil {
+		p := screenshot.HasShellTask()
+		if !*i.HasShellTask {
+			p = screenshot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellTaskWith) > 0 {
+		with := make([]predicate.ShellTask, 0, len(i.HasShellTaskWith))
+		for _, w := range i.HasShellTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, screenshot.HasShellTaskWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyScreenshotWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return screenshot.And(predicates...), nil
+	}
+}
+
 // ShellWhereInput represents a where input for filtering Shell queries.
 type ShellWhereInput struct {
 	Predicates []predicate.Shell  `json:"-"`
@@ -6735,6 +7166,10 @@ type ShellTaskWhereInput struct {
 	// "reported_processes" edge predicates.
 	HasReportedProcesses     *bool                    `json:"hasReportedProcesses,omitempty"`
 	HasReportedProcessesWith []*HostProcessWhereInput `json:"hasReportedProcessesWith,omitempty"`
+
+	// "screenshots" edge predicates.
+	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
+	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7253,6 +7688,24 @@ func (i *ShellTaskWhereInput) P() (predicate.ShellTask, error) {
 		}
 		predicates = append(predicates, shelltask.HasReportedProcessesWith(with...))
 	}
+	if i.HasScreenshots != nil {
+		p := shelltask.HasScreenshots()
+		if !*i.HasScreenshots {
+			p = shelltask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScreenshotsWith) > 0 {
+		with := make([]predicate.Screenshot, 0, len(i.HasScreenshotsWith))
+		for _, w := range i.HasScreenshotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScreenshotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shelltask.HasScreenshotsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyShellTaskWhereInput
@@ -7621,6 +8074,10 @@ type TaskWhereInput struct {
 	// "shells" edge predicates.
 	HasShells     *bool              `json:"hasShells,omitempty"`
 	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
+
+	// "screenshots" edge predicates.
+	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
+	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -8078,6 +8535,24 @@ func (i *TaskWhereInput) P() (predicate.Task, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, task.HasShellsWith(with...))
+	}
+	if i.HasScreenshots != nil {
+		p := task.HasScreenshots()
+		if !*i.HasScreenshots {
+			p = task.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScreenshotsWith) > 0 {
+		with := make([]predicate.Screenshot, 0, len(i.HasScreenshotsWith))
+		for _, w := range i.HasScreenshotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScreenshotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, task.HasScreenshotsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

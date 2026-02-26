@@ -22,7 +22,7 @@ RUN bash /tmp/library-scripts/jekyll-debian.sh
 #   - Git: git-lfs
 #   - Rust Cross-compilation: musl-tools gcc-mingw-w64
 #   - Protobuf: protobuf-compiler protoc-gen-go protoc-gen
-RUN apt update && apt install -y git-lfs musl-tools gcc-mingw-w64 protobuf-compiler protoc-gen-go protoc-gen-go-grpc
+RUN apt update && apt install -y git-lfs musl-tools gcc-mingw-w64 protobuf-compiler protoc-gen-go protoc-gen-go-grpc libx11-dev libxcb1-dev libxrandr-dev libdbus-1-dev
 
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
     | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \

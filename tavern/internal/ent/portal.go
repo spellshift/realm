@@ -42,7 +42,7 @@ type Portal struct {
 type PortalEdges struct {
 	// Task that created the portal
 	Task *Task `json:"task,omitempty"`
-	// ShellTask that created the portal
+	// ShellTask that created the portal (if applicable)
 	ShellTask *ShellTask `json:"shell_task,omitempty"`
 	// Beacon that created the portal
 	Beacon *Beacon `json:"beacon,omitempty"`

@@ -42,6 +42,9 @@ type Quest func(*sql.Selector)
 // Repository is the predicate function for repository builders.
 type Repository func(*sql.Selector)
 
+// Screenshot is the predicate function for screenshot builders.
+type Screenshot func(*sql.Selector)
+
 // Shell is the predicate function for shell builders.
 type Shell func(*sql.Selector)
 

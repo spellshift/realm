@@ -153,6 +153,18 @@ func (f RepositoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RepositoryMutation", m)
 }
 
+// The ScreenshotFunc type is an adapter to allow the use of ordinary
+// function as Screenshot mutator.
+type ScreenshotFunc func(context.Context, *ent.ScreenshotMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScreenshotFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ScreenshotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScreenshotMutation", m)
+}
+
 // The ShellFunc type is an adapter to allow the use of ordinary
 // function as Shell mutator.
 type ShellFunc func(context.Context, *ent.ShellMutation) (ent.Value, error)
