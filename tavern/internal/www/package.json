@@ -32,6 +32,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^3.11.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.9.0",
     "react-scripts": "^5.0.1",
     "react-select": "^5.7.0",
@@ -46,8 +47,8 @@
     "yup": "^1.0.2"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "node scripts/generate-docs.js && react-scripts start",
+    "build": "node scripts/generate-docs.js && react-scripts build",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

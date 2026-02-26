@@ -4,6 +4,9 @@ import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
+import docsData from "../../../assets/eldritch-docs.json";
+
+const docs = docsData as Record<string, { signature: string; description: string }>;
 import { moveWordLeft, moveWordRight } from "./shellUtils";
 
 interface ShellState {
@@ -48,12 +51,111 @@ export const useShellTerminal = (
     const [completionIndex, setCompletionIndex] = useState(0);
     const [completionPos, setCompletionPos] = useState({ x: 0, y: 0 });
 
+    // Tooltip state
+    const [tooltipState, setTooltipState] = useState<{
+        visible: boolean;
+        x: number;
+        y: number;
+        signature: string;
+        description: string;
+    }>({ visible: false, x: 0, y: 0, signature: "", description: "" });
+
+    const currentTooltipWord = useRef<string | null>(null);
+
     const lastBufferHeight = useRef(0);
 
     // We need a ref to access current completions inside onData without stale closure
     const completionsRef = useRef<{ list: string[], start: number, show: boolean, index: number }>({
         list: [], start: 0, show: false, index: 0
     });
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!termInstance.current || !termRef.current) return;
+
+        // Simple debounce could be added here if performance is an issue
+
+        const rect = termRef.current.getBoundingClientRect();
+        const cols = termInstance.current.cols;
+        const rows = termInstance.current.rows;
+
+        // Approximate cell dimensions
+        // Note: This assumes the terminal fills the container.
+        // xterm-addon-fit should ensure this mostly, but padding might affect it.
+        // A better way is to use the internal metrics or measure a character.
+        // For now, simple division:
+        const cellWidth = rect.width / cols;
+        const cellHeight = rect.height / rows;
+
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const col = Math.floor(x / cellWidth);
+        const row = Math.floor(y / cellHeight);
+
+        if (col < 0 || col >= cols || row < 0 || row >= rows) {
+            setTooltipState(s => ({ ...s, visible: false }));
+            return;
+        }
+
+        // Map visual row to buffer row
+        const buffer = termInstance.current.buffer.active;
+        const bufferRowIndex = buffer.viewportY + row;
+        const line = buffer.getLine(bufferRowIndex);
+
+        if (!line) {
+            setTooltipState(s => ({ ...s, visible: false }));
+            return;
+        }
+
+        const lineStr = line.translateToString(true);
+
+        // Extract word
+        if (col >= lineStr.length) {
+            setTooltipState(s => ({ ...s, visible: false }));
+            return;
+        }
+
+        const allowedChars = /[a-zA-Z0-9_\.]/;
+        if (!allowedChars.test(lineStr[col])) {
+            setTooltipState(s => ({ ...s, visible: false }));
+            return;
+        }
+
+        let start = col;
+        while (start > 0 && allowedChars.test(lineStr[start - 1])) {
+            start--;
+        }
+
+        let end = col;
+        while (end < lineStr.length && allowedChars.test(lineStr[end])) {
+            end++;
+        }
+
+        const word = lineStr.slice(start, end);
+
+        // Look up in docs
+        if (docs[word]) {
+            // If already showing tooltip for this word, don't update position
+            if (currentTooltipWord.current === word && tooltipState.visible) {
+                return;
+            }
+
+            currentTooltipWord.current = word;
+            setTooltipState({
+                visible: true,
+                x: e.clientX, // Screen coordinates for fixed positioning
+                y: e.clientY,
+                signature: docs[word].signature,
+                description: docs[word].description
+            });
+        } else {
+             currentTooltipWord.current = null;
+             setTooltipState(s => {
+                 if (!s.visible) return s;
+                 return { ...s, visible: false };
+             });
+        }
+    };
 
     useEffect(() => {
         if (!termRef.current || loading) return;
@@ -601,6 +703,8 @@ export const useShellTerminal = (
         completions,
         showCompletions,
         completionPos,
-        completionIndex
+        completionIndex,
+        handleMouseMove,
+        tooltipState
     };
 };
