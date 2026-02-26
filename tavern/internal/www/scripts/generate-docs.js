@@ -36,7 +36,7 @@ try {
             if (currentFunction) {
                 docs[currentFunction] = {
                     signature: currentSignature,
-                    description: currentDescription.join(' ').trim()
+                    description: currentDescription.join('\n').trim()
                 };
             }
 
@@ -88,7 +88,7 @@ try {
     if (currentFunction) {
         docs[currentFunction] = {
             signature: currentSignature,
-            description: currentDescription.join(' ').trim()
+            description: currentDescription.join('\n').trim()
         };
     }
 

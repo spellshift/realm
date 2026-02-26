@@ -5,6 +5,21 @@ import { DocTooltip } from "./DocTooltip";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
+// Helper to find doc key
+const findDoc = (completion: string) => {
+    // 1. Exact match (e.g. "agent")
+    if (docs[completion]) return docs[completion];
+    // 2. Suffix match (e.g. "get_config" -> "agent.get_config")
+    // This assumes no collisions or picks the first one.
+    // Given eldritch DSL structure, collisions on method names are possible but likely context specific.
+    // However, completions usually come with context.
+    // If we only have the completion text "get_config", we try to find a key ending in ".get_config".
+    const suffix = "." + completion;
+    const key = Object.keys(docs).find(k => k.endsWith(suffix));
+    if (key) return docs[key];
+    return null;
+};
+
 interface ShellCompletionsProps {
   completions: string[];
   show: boolean;
@@ -48,36 +63,39 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
         fontSize: "14px"
       }}>
         <ul ref={completionsListRef} style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {completions.map((c, i) => (
-            <li
-              key={i}
-              style={{
-                padding: "4px 8px",
-                background: i === index ? "#094771" : "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between"
-              }}
-              onMouseEnter={(e) => {
-                  if (docs[c]) {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredDoc({
-                          sig: docs[c].signature,
-                          desc: docs[c].description,
-                          x: rect.right + 10,
-                          y: rect.top
-                      });
-                  } else {
-                      setHoveredDoc(null);
-                  }
-              }}
-              onMouseLeave={() => setHoveredDoc(null)}
-            >
-              <span>{c}</span>
-              {docs[c] && <Info size={14} style={{ marginLeft: 8 }} />}
-            </li>
-          ))}
+          {completions.map((c, i) => {
+            const doc = findDoc(c);
+            return (
+                <li
+                key={i}
+                style={{
+                    padding: "4px 8px",
+                    background: i === index ? "#094771" : "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                }}
+                onMouseEnter={(e) => {
+                    if (doc) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setHoveredDoc({
+                            sig: doc.signature,
+                            desc: doc.description,
+                            x: rect.right + 10,
+                            y: rect.top
+                        });
+                    } else {
+                        setHoveredDoc(null);
+                    }
+                }}
+                onMouseLeave={() => setHoveredDoc(null)}
+                >
+                <span>{c}</span>
+                {doc && <Info size={14} style={{ marginLeft: 8 }} />}
+                </li>
+            );
+          })}
         </ul>
       </div>
       {hoveredDoc && (
