@@ -8,6 +8,7 @@ pub mod doh {
     use hickory_resolver::config::{
         NameServerConfig, Protocol, ResolverConfig, ResolverOpts,
     };
+    use hickory_resolver::Name as HickoryName;
     use hickory_resolver::TokioAsyncResolver;
     use hyper_legacy::client::connect::dns::Name;
     use hyper_legacy::client::HttpConnector;
@@ -32,6 +33,36 @@ pub mod doh {
         System, // Use system DNS configuration
     }
 
+    pub(crate) fn parse_resolv_conf(content: &str) -> (Vec<SocketAddr>, Vec<String>) {
+        let mut addrs = Vec::new();
+        let mut search = Vec::new();
+
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("nameserver") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    let ip_str = parts[1];
+                    // Try to parse as IP address, default port 53
+                    if let Ok(ip) = ip_str.parse::<std::net::IpAddr>() {
+                        addrs.push(SocketAddr::new(ip, 53));
+                    }
+                }
+            } else if line.starts_with("search") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    search = parts[1..].iter().map(|s| s.to_string()).collect();
+                }
+            } else if line.starts_with("domain") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    search = vec![parts[1].to_string()];
+                }
+            }
+        }
+        (addrs, search)
+    }
+
     impl DohProvider {
         fn resolver_config(&self) -> Result<ResolverConfig, anyhow::Error> {
             match self {
@@ -44,20 +75,56 @@ pub mod doh {
                         Ok((config, _opts)) => Ok(config),
                         Err(e) => {
                             log::warn!(
-                                "Failed to read system DNS config: {}. Falling back to 1.1.1.1 and 8.8.8.8",
+                                "Failed to read system DNS config: {}. Attempting manual parsing.",
                                 e
                             );
-                            let mut config = ResolverConfig::new();
-                            let cloudflare: SocketAddr = "1.1.1.1:53".parse().unwrap();
-                            let google: SocketAddr = "8.8.8.8:53".parse().unwrap();
 
-                            let ns1 = NameServerConfig::new(cloudflare, Protocol::Udp);
-                            let ns2 = NameServerConfig::new(google, Protocol::Udp);
+                            let mut nameservers = Vec::new();
+                            let mut search = Vec::new();
 
-                            config.add_name_server(ns1);
-                            config.add_name_server(ns2);
+                            // Try to read /etc/resolv.conf manually
+                            if let Ok(content) = std::fs::read_to_string("/etc/resolv.conf") {
+                                let (ns, s) = parse_resolv_conf(&content);
+                                nameservers = ns;
+                                search = s;
+                            }
 
-                            Ok(config)
+                            if nameservers.is_empty() {
+                                log::warn!("Manual parsing failed or found no nameservers. Falling back to 1.1.1.1 and 8.8.8.8");
+                                nameservers.push("1.1.1.1:53".parse().unwrap());
+                                nameservers.push("8.8.8.8:53".parse().unwrap());
+                            } else {
+                                log::info!(
+                                    "Manual parsing found {} nameservers and {} search domains.",
+                                    nameservers.len(),
+                                    search.len()
+                                );
+                            }
+
+                            let mut ns_config_group = Vec::new();
+                            for ns in nameservers {
+                                ns_config_group
+                                    .push(NameServerConfig::new(ns, Protocol::Udp));
+                                ns_config_group
+                                    .push(NameServerConfig::new(ns, Protocol::Tcp));
+                            }
+
+                            let search_list: Vec<HickoryName> = search
+                                .iter()
+                                .filter_map(|s| {
+                                    use std::str::FromStr;
+                                    HickoryName::from_str(s).ok()
+                                })
+                                .collect();
+
+                            let domain = search_list.first().cloned();
+
+                            // Use from_parts to fully construct the config with search domains
+                            Ok(ResolverConfig::from_parts(
+                                domain,
+                                search_list,
+                                ns_config_group,
+                            ))
                         }
                     }
                 }
@@ -255,5 +322,55 @@ mod tests {
                 panic!("DNS resolution failed with error: {}", e);
             }
         }
+    }
+
+    #[cfg(feature = "doh")]
+    #[test]
+    fn test_parse_resolv_conf() {
+        use std::net::SocketAddr;
+        use std::str::FromStr;
+        let content = r#"
+# Some comments
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+unknown_directive foo bar
+nameserver invalid_ip
+search corp.local internal.net
+"#;
+        let (addrs, search) = parse_resolv_conf(content);
+        assert_eq!(addrs.len(), 2);
+        assert_eq!(addrs[0], SocketAddr::from_str("8.8.8.8:53").unwrap());
+        assert_eq!(addrs[1], SocketAddr::from_str("1.1.1.1:53").unwrap());
+
+        assert_eq!(search.len(), 2);
+        assert_eq!(search[0], "corp.local");
+        assert_eq!(search[1], "internal.net");
+    }
+
+    #[cfg(feature = "doh")]
+    #[test]
+    fn test_parse_resolv_conf_domain() {
+        let content = r#"
+nameserver 8.8.8.8
+domain example.com
+"#;
+        let (_, search) = parse_resolv_conf(content);
+        assert_eq!(search.len(), 1);
+        assert_eq!(search[0], "example.com");
+    }
+
+    #[cfg(feature = "doh")]
+    #[test]
+    fn test_parse_resolv_conf_precedence() {
+        // Last one wins
+        let content = r#"
+search old.search
+domain example.com
+search new.search another.search
+"#;
+        let (_, search) = parse_resolv_conf(content);
+        assert_eq!(search.len(), 2);
+        assert_eq!(search[0], "new.search");
+        assert_eq!(search[1], "another.search");
     }
 }
