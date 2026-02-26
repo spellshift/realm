@@ -6,21 +6,58 @@ export interface ExecutionResult {
     message?: string;
 }
 
+export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
+
 export class HeadlessWasmAdapter {
     private repl: any; // HeadlessRepl instance
-    private ws: WebSocket;
+    private ws!: WebSocket;
     private onMessageCallback: (msg: WebsocketMessage) => void;
     private onReadyCallback?: () => void;
+    private onStatusChange?: (status: ConnectionStatus) => void;
     private isWsOpen: boolean = false;
 
-    constructor(url: string, onMessage: (msg: WebsocketMessage) => void, onReady?: () => void) {
+    // Reconnection logic
+    private url: string;
+    private reconnectInterval: number = 3000;
+    private isExplicitClose: boolean = false;
+    private reconnectTimeout: any = null;
+
+    constructor(
+        url: string,
+        onMessage: (msg: WebsocketMessage) => void,
+        onReady?: () => void,
+        onStatusChange?: (status: ConnectionStatus) => void
+    ) {
+        this.url = url;
         this.onMessageCallback = onMessage;
         this.onReadyCallback = onReady;
-        this.ws = new WebSocket(url);
+        this.onStatusChange = onStatusChange;
+
+        this.connect();
+    }
+
+    private connect() {
+        // Cleanup existing listeners if any
+        if (this.ws) {
+            this.ws.onclose = null;
+            this.ws.onerror = null;
+            this.ws.onmessage = null;
+            this.ws.onopen = null;
+            this.ws.close();
+        }
+
+        this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
             this.isWsOpen = true;
             this.checkReady();
+            if (this.onStatusChange) this.onStatusChange("connected");
+
+            // Clear any pending reconnect timeout
+            if (this.reconnectTimeout) {
+                clearTimeout(this.reconnectTimeout);
+                this.reconnectTimeout = null;
+            }
         };
 
         this.ws.onmessage = (event) => {
@@ -35,14 +72,28 @@ export class HeadlessWasmAdapter {
 
         this.ws.onclose = () => {
             this.isWsOpen = false;
+            if (this.onStatusChange) this.onStatusChange("disconnected");
+
+            if (!this.isExplicitClose) {
+                if (this.onStatusChange) this.onStatusChange("reconnecting");
+                this.reconnectTimeout = setTimeout(() => {
+                    this.connect();
+                }, this.reconnectInterval);
+            }
+        };
+
+        this.ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            // onclose will be called after onerror usually
         };
     }
 
     async init() {
         try {
             // Load the WASM module dynamically from public folder
+            const wasmPath = "/wasm/eldritch_wasm.js";
             // @ts-ignore
-            const module = await import(/* webpackIgnore: true */ "/wasm/eldritch_wasm.js");
+            const module = await import(/* webpackIgnore: true */ /* @vite-ignore */ wasmPath);
             await module.default("/wasm/eldritch_wasm_bg.wasm");
             this.repl = new module.HeadlessRepl();
             this.checkReady();
@@ -107,6 +158,11 @@ export class HeadlessWasmAdapter {
     }
 
     close() {
+        this.isExplicitClose = true;
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
+        }
         if (this.ws) {
             this.ws.close();
         }
