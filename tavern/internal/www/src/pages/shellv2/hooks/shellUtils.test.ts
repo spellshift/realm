@@ -1,5 +1,52 @@
-import { describe, it, expect } from 'vitest';
-import { moveWordLeft, moveWordRight, highlightPythonSyntax } from './shellUtils';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, HISTORY_KEY, MAX_HISTORY } from './shellUtils';
+
+describe('History Persistence', () => {
+    beforeEach(() => {
+        // Clear localStorage before each test
+        localStorage.clear();
+        vi.restoreAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('loadHistory returns empty array when storage is empty', () => {
+        expect(loadHistory()).toEqual([]);
+    });
+
+    it('loadHistory returns parsed array from storage', () => {
+        const history = ["cmd1", "cmd2"];
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        expect(loadHistory()).toEqual(history);
+    });
+
+    it('loadHistory returns empty array on parse error', () => {
+        localStorage.setItem(HISTORY_KEY, "invalid json");
+        // Mock console.error to suppress expected error log
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(loadHistory()).toEqual([]);
+        expect(consoleSpy).toHaveBeenCalled();
+    });
+
+    it('saveHistory saves data to localStorage', () => {
+        const history = ["cmd1", "cmd2"];
+        saveHistory(history);
+        const stored = localStorage.getItem(HISTORY_KEY);
+        expect(JSON.parse(stored!)).toEqual(history);
+    });
+
+    it('saveHistory truncates history exceeding MAX_HISTORY', () => {
+        const history = Array.from({ length: MAX_HISTORY + 10 }, (_, i) => `cmd${i}`);
+        saveHistory(history);
+        const stored = JSON.parse(localStorage.getItem(HISTORY_KEY)!);
+        expect(stored.length).toBe(MAX_HISTORY);
+        // Should keep the last MAX_HISTORY items
+        expect(stored[0]).toBe('cmd10');
+        expect(stored[MAX_HISTORY - 1]).toBe(`cmd${MAX_HISTORY + 9}`);
+    });
+});
 
 describe('moveWordLeft', () => {
     it('moves to start of current word', () => {
