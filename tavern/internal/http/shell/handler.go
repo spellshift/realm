@@ -141,6 +141,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer slog.InfoContext(r.Context(), "websocket shell connection closed", "shell_id", sh.ID, "user_id", authUserID, "user_name", authUserName)
+	defer wsConn.Close()
 
 	// Configure Websocket Connection
 	wsConn.SetReadLimit(h.maxMessageSize)
@@ -212,7 +213,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
