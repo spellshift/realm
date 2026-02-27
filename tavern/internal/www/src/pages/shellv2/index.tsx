@@ -33,7 +33,8 @@ const ShellV2 = () => {
         completionIndex,
         handleMouseMove,
         tooltipState,
-        handleCompletionSelect
+        handleCompletionSelect,
+        connectionStatus
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
 
     if (connectionError) {
@@ -68,6 +69,7 @@ const ShellV2 = () => {
                     portalId={portalId}
                     timeUntilCallback={timeUntilCallback}
                     isMissedCallback={isMissedCallback}
+                    connectionStatus={connectionStatus}
                 />
             </div>
         </AccessGate>
