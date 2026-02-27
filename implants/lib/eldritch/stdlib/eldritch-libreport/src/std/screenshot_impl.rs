@@ -1,5 +1,5 @@
-use eldritch_agent::{Agent, Context};
 use alloc::sync::Arc;
+use eldritch_agent::{Agent, Context};
 
 #[cfg(not(target_os = "linux"))]
 use {
