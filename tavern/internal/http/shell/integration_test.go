@@ -12,19 +12,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"database/sql"
 	"github.com/stretchr/testify/require"
 	_ "gocloud.dev/pubsub/mempubsub"
 
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	"realm.pub/tavern/internal/ent/enttest"
+	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 
 	// Needed for ent to work
 	_ "github.com/mattn/go-sqlite3"
+	_ "realm.pub/tavern/internal/ent/runtime"
 )
 
 type TestEnv struct {
@@ -47,8 +49,17 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctx := context.Background()
 
 	// 1. Setup DB
-	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=5000", uuid.NewString())
-	entClient := enttest.Open(t, "sqlite3", dsn)
+	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=30000", uuid.NewString())
+
+	db, err := sql.Open("sqlite3", dsn)
+	require.NoError(t, err)
+	db.SetMaxOpenConns(1)
+
+	drv := entsql.OpenDB("sqlite3", db)
+	entClient := ent.NewClient(ent.Driver(drv))
+
+	// Create Schema
+	require.NoError(t, entClient.Schema.Create(ctx))
 
 	// 2. Setup Portal Mux
 	portalMux := mux.New()
@@ -177,6 +188,7 @@ func TestInteractiveShell(t *testing.T) {
 
 	// 3. Wait for Portal Upgrade Message
 	var msg shell.WebsocketControlFlowMessage
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
 	for {
 		_, data, err := ws.ReadMessage()
 		require.NoError(t, err)
@@ -238,25 +250,30 @@ func TestInteractiveShell(t *testing.T) {
 	// 7. Verify Output on WebSocket
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
-	for !found {
-		select {
-		case <-timeout:
-			t.Fatal("timeout waiting for output on websocket")
-		default:
-			_, data, err := ws.ReadMessage()
-			if err != nil {
-				continue
-			}
+	deadline := time.Now().Add(5 * time.Second)
+	ws.SetReadDeadline(deadline)
 
-			var genericMsg struct {
-				Kind string `json:"kind"`
+	for !found {
+		if time.Now().After(deadline) {
+			t.Fatal("timeout waiting for output on websocket")
+		}
+
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			// If it's a timeout error, fail the test
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for output on websocket")
 			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutput {
-				json.Unmarshal(data, &outMsg)
-				found = true
-			}
+			continue
+		}
+
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutput {
+			json.Unmarshal(data, &outMsg)
+			found = true
 		}
 	}
 	require.Equal(t, fmt.Sprintf("[+] %s\n%s", inputCmd, outputData), outMsg.Output)
@@ -284,6 +301,7 @@ func TestNonInteractiveShell(t *testing.T) {
 
 	// 3. Expect "Task Queued" Control Message
 	var msg shell.WebsocketControlFlowMessage
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
 	for {
 		_, data, err := ws.ReadMessage()
 		require.NoError(t, err)
@@ -314,24 +332,28 @@ func TestNonInteractiveShell(t *testing.T) {
 	// 5. Expect Output on WebSocket (polled)
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	deadline := time.Now().Add(5 * time.Second)
+	ws.SetReadDeadline(deadline)
+
 	for !found {
-		select {
-		case <-timeout:
+		if time.Now().After(deadline) {
 			t.Fatal("timeout waiting for output")
-		default:
-			_, data, err := ws.ReadMessage()
-			if err != nil {
-				continue
+		}
+
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for output")
 			}
-			var genericMsg struct {
-				Kind string `json:"kind"`
-			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutput {
-				json.Unmarshal(data, &outMsg)
-				found = true
-			}
+			continue
+		}
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutput {
+			json.Unmarshal(data, &outMsg)
+			found = true
 		}
 	}
 	require.Equal(t, fmt.Sprintf("[+] %s\nroot", inputCmd), outMsg.Output)
@@ -362,6 +384,7 @@ func TestOtherStreamOutput(t *testing.T) {
 
 	// Wait for upgrade
 	var msg shell.WebsocketControlFlowMessage
+	ws1.SetReadDeadline(time.Now().Add(10 * time.Second))
 	for {
 		_, data, err := ws1.ReadMessage()
 		require.NoError(t, err)
@@ -414,28 +437,29 @@ func TestOtherStreamOutput(t *testing.T) {
 	// 5. Verify User 1 receives "Other Stream" message
 	var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	deadline := time.Now().Add(5 * time.Second)
+	ws1.SetReadDeadline(deadline)
 
 	for !found {
-		select {
-		case <-timeout:
+		if time.Now().After(deadline) {
 			t.Fatal("timeout waiting for other stream message")
-		default:
-			_, data, err := ws1.ReadMessage()
-			if err != nil {
-				// if error, fail or retry if valid
-				// e.g. read closed
-				t.Fatalf("ws read error: %v", err)
-			}
+		}
 
-			var genericMsg struct {
-				Kind string `json:"kind"`
+		_, data, err := ws1.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for other stream message")
 			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
-				json.Unmarshal(data, &otherMsg)
-				found = true
-			}
+			t.Fatalf("ws read error: %v", err)
+		}
+
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
+			json.Unmarshal(data, &otherMsg)
+			found = true
 		}
 	}
 
@@ -481,26 +505,29 @@ func TestOtherStreamOutput_Polling(t *testing.T) {
 	// 3. Verify User 1 receives "Other Stream" message via Polling
 	var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	deadline := time.Now().Add(5 * time.Second)
+	ws1.SetReadDeadline(deadline)
 
 	for !found {
-		select {
-		case <-timeout:
+		if time.Now().After(deadline) {
 			t.Fatal("timeout waiting for other stream message via polling")
-		default:
-			_, data, err := ws1.ReadMessage()
-			if err != nil {
-				continue
-			}
+		}
 
-			var genericMsg struct {
-				Kind string `json:"kind"`
+		_, data, err := ws1.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for other stream message via polling")
 			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
-				json.Unmarshal(data, &otherMsg)
-				found = true
-			}
+			continue
+		}
+
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
+			json.Unmarshal(data, &otherMsg)
+			found = true
 		}
 	}
 
@@ -531,6 +558,7 @@ func TestTruncation(t *testing.T) {
 
 	// 3. Expect "Task Queued" Control Message
 	var msg shell.WebsocketControlFlowMessage
+	ws.SetReadDeadline(time.Now().Add(10 * time.Second))
 	for {
 		_, data, err := ws.ReadMessage()
 		require.NoError(t, err)
@@ -561,24 +589,28 @@ func TestTruncation(t *testing.T) {
 	// 5. Expect Output on WebSocket
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	deadline := time.Now().Add(5 * time.Second)
+	ws.SetReadDeadline(deadline)
+
 	for !found {
-		select {
-		case <-timeout:
+		if time.Now().After(deadline) {
 			t.Fatal("timeout waiting for output")
-		default:
-			_, data, err := ws.ReadMessage()
-			if err != nil {
-				continue
+		}
+
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for output")
 			}
-			var genericMsg struct {
-				Kind string `json:"kind"`
-			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutput {
-				json.Unmarshal(data, &outMsg)
-				found = true
-			}
+			continue
+		}
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutput {
+			json.Unmarshal(data, &outMsg)
+			found = true
 		}
 	}
 	require.Equal(t, task.ID, outMsg.ShellTaskID)
@@ -658,35 +690,38 @@ func TestShellHistory_Interactive(t *testing.T) {
 	// We expect the history to be sent upon connection, even if interactive mode is active.
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(2 * time.Second) // Should be fast
+	deadline := time.Now().Add(2 * time.Second)
+	ws.SetReadDeadline(deadline)
 
 	for !found {
-		select {
-		case <-timeout:
+		if time.Now().After(deadline) {
 			t.Fatal("timeout waiting for history output")
-		default:
-			_, data, err := ws.ReadMessage()
-			if err != nil {
-				continue
-			}
+		}
 
-			var genericMsg struct {
-				Kind string `json:"kind"`
+		_, data, err := ws.ReadMessage()
+		if err != nil {
+			if strings.Contains(err.Error(), "i/o timeout") {
+				t.Fatal("timeout waiting for history output")
 			}
-			json.Unmarshal(data, &genericMsg)
-			if genericMsg.Kind == shell.WebsocketMessageKindOutput {
-				json.Unmarshal(data, &outMsg)
-				if strings.Contains(outMsg.Output, "history_output") {
-					found = true
-				}
-			} else if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
-				var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
-				json.Unmarshal(data, &otherMsg)
-				if strings.Contains(otherMsg.Output, "history_output") {
-					found = true
-					// Assign to outMsg for final assertion if needed
-					outMsg.Output = otherMsg.Output
-				}
+			continue
+		}
+
+		var genericMsg struct {
+			Kind string `json:"kind"`
+		}
+		json.Unmarshal(data, &genericMsg)
+		if genericMsg.Kind == shell.WebsocketMessageKindOutput {
+			json.Unmarshal(data, &outMsg)
+			if strings.Contains(outMsg.Output, "history_output") {
+				found = true
+			}
+		} else if genericMsg.Kind == shell.WebsocketMessageKindOutputFromOtherStream {
+			var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
+			json.Unmarshal(data, &otherMsg)
+			if strings.Contains(otherMsg.Output, "history_output") {
+				found = true
+				// Assign to outMsg for final assertion if needed
+				outMsg.Output = otherMsg.Output
 			}
 		}
 	}
