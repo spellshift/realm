@@ -251,8 +251,30 @@ export const useShellTerminal = (
                 cursorIndex = state.prompt.length + state.cursorPos;
             }
 
-            // Calculate rows based on newlines
-            const rows = contentToWrite.split('\n').length - 1;
+            // Calculate rows based on visual line wrapping
+            const termCols = term.cols;
+            const getVisualLineCount = (text: string, cols: number) => {
+                const lines = text.split('\n');
+                let count = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (i > 0) count++; // Newline character
+                    // Calculate wrapped lines for this segment
+                    // Even an empty line takes 1 row if explicitly split
+                    // But here, split('\n') gives empty string for consecutive newlines
+
+                    if (line.length > 0) {
+                        count += Math.floor((line.length - 1) / cols);
+                    }
+                    // If line is exactly cols length, it doesn't wrap to next line unless another char comes
+                    // But we are counting *visual* rows.
+                    // xterm wraps: if I write 80 chars on 80 col terminal, cursor is at (80, y)
+                    // if I write 81 chars, cursor is at (1, y+1)
+                }
+                return count;
+            };
+
+            const rows = getVisualLineCount(contentToWrite, termCols);
 
             // Move up to start of previous rendering (regardless of mode)
             const prevRows = lastBufferHeight.current;
@@ -273,13 +295,23 @@ export const useShellTerminal = (
             if (!state.isSearching) {
                 // Calculate cursor position in terms of rows/cols relative to start
                 const prefix = contentToWrite.slice(0, cursorIndex);
-                const cursorRow = prefix.split('\n').length - 1;
-                const cursorCol = prefix.split('\n').pop()?.length || 0;
+                // Calculate rows occupied by prefix
+                const cursorRow = getVisualLineCount(prefix, termCols);
 
-                // Current position after write is at end of content
-                const totalRows = rows;
-                // We need to move UP from end to cursorRow
-                const moveUp = totalRows - cursorRow;
+                // Calculate cursor column
+                const lastLine = prefix.split('\n').pop() || "";
+                let cursorCol = lastLine.length % termCols;
+                // If we are exactly at end of line (and not empty), it might be tricky
+                // But xterm handles cursor positioning
+                // If length is multiple of cols, cursor is effectively at index 0 of next line physically?
+                // Actually, if we write 80 chars, cursor is at 80. Writing next char moves it.
+                // We use relative movement.
+
+                // We moved up `prevRows`. We wrote `rows` lines.
+                // We are now at the end of the content.
+                // We want to be at `cursorRow`.
+
+                const moveUp = rows - cursorRow;
                 if (moveUp > 0) {
                     term.write(`\x1b[${moveUp}A`);
                 }

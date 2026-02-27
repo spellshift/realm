@@ -55,3 +55,49 @@ src/utils/utils.ts
 
 webpack compiled with 1 warning
 No issues found.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 50:12:   'completionStart' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+  Line 133:42:  Unnecessary escape character: \.                                                                                  no-useless-escape
+  Line 765:8:   React Hook useEffect has a missing dependency: 'isLateCheckin'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 19:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 50:12:   'completionStart' is assigned a value but never used                                                              @typescript-eslint/no-unused-vars
+  Line 133:42:  Unnecessary escape character: \.                                                                                  no-useless-escape
+  Line 765:8:   React Hook useEffect has a missing dependency: 'isLateCheckin'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 19:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
