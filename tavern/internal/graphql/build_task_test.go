@@ -116,9 +116,9 @@ func TestCreateBuildTask(t *testing.T) {
 			"targetOS": "PLATFORM_LINUX",
 			"transports": []map[string]any{
 				{
-					"uri":   "https://callback.example.com",
-					"interval":      10,
-					"type": "TRANSPORT_GRPC",
+					"uri":      "https://callback.example.com",
+					"interval": 10,
+					"type":     "TRANSPORT_GRPC",
 				},
 			},
 		}))
@@ -153,10 +153,10 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID         string
+				ID           string
 				TargetFormat string
 				BuildImage   string
-				Transports []struct {
+				Transports   []struct {
 					URI      string
 					Interval int
 					Type     string

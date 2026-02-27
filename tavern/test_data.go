@@ -184,14 +184,14 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				)
 			} else {
 				b := client.Beacon.Create().
-					SetLastSeenAt(time.Now().Add(-1*time.Minute)).
-					SetNextSeenAt(time.Now().Add(-1*time.Minute).Add(600000*time.Second)).
+					SetLastSeenAt(time.Now().Add(-1 * time.Minute)).
+					SetNextSeenAt(time.Now().Add(-1 * time.Minute).Add(600000 * time.Second)).
 					SetIdentifier(newRandomIdentifier()).
 					SetAgentIdentifier("test-data").
 					SetHost(testHost).
 					SetInterval(600000).
 					SetPrincipal("root").
-					SetTransport(getTransport(groupNum*100+i*10+0)).
+					SetTransport(getTransport(groupNum*100 + i*10 + 0)).
 					SaveX(ctx)
 
 				testBeacons = append(testBeacons, b)

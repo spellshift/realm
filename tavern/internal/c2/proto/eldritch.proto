@@ -52,7 +52,7 @@ message Process {
         STATUS_WAKING = 10;
         STATUS_PARKED = 11;
         STATUS_LOCK_BLOCKED = 12;
-        STATUS_UNINTERUPTIBLE_DISK_SLEEP = 13;
+        STATUS_UNINTERRUPTIBLE_DISK_SLEEP = 13;
     }
     Status status = 9;
 }

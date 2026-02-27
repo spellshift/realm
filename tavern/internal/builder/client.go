@@ -28,7 +28,7 @@ const (
 	maxConcurrentBuilds = 4
 
 	maxOutputChSize = 64
-	maxErrorChSize = 64
+	maxErrorChSize  = 64
 )
 
 // builderCredentials implements grpc.PerRPCCredentials for mTLS authentication.
