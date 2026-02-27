@@ -212,7 +212,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
@@ -605,8 +604,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 							creatorName = task.Edges.Creator.Name
 						}
 
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
-						otherStreamMsg.Output += string(bytesPayload.Data)
+						otherStreamMsg.Output = fmt.Sprintf("%s[@%s]%s%s[+]%s %s\n%s", colorCodeUsername, creatorName, colorCodeReset, colorCodeSuccess, colorCodeReset, truncateInput(task.Input), string(bytesPayload.Data))
 
 						otherStreamCh <- otherStreamMsg
 						sentTasks[task.ID] = struct{}{}
