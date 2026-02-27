@@ -33,5 +33,12 @@ mod tests {
         // Check completions for global 'print'
         let res = repl.complete("pri", 3);
         assert!(res.contains("print"));
+
+        // Check filtering of keywords
+        let res = repl.complete("def", 3);
+        assert!(!res.contains("def"));
+
+        let res = repl.complete("pa", 2);
+        assert!(!res.contains("pass"));
     }
 }
