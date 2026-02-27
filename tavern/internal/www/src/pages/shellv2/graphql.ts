@@ -54,8 +54,12 @@ export const GET_SHELL_ACTIVE_USERS = gql`
     node(id: $id) {
       ... on Shell {
         activeUsers {
-          id
-          name
+          edges {
+            node {
+              id
+              name
+            }
+          }
         }
       }
     }
