@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -194,6 +195,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		defer cancel()
 		h.writeMessagesFromShell(ctx, session, streamID, sh, portalCh, wsTaskOutputCh, wsTaskOtherStreamCh, wsTaskErrCh, wsControlFlowCh, wsErrCh)
+	}()
+
+	// Manage User Presence
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		h.manageUserPresence(ctx, sh, authUser)
 	}()
 
 	wg.Wait()
@@ -668,4 +676,50 @@ func truncateInput(input string) string {
 		return input[:maxLength] + "..."
 	}
 	return input
+}
+
+// manageUserPresence tracks the active user on the shell.
+func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.User) {
+	if u == nil {
+		return
+	}
+
+	// Helper to add user
+	addUser := func() {
+		exists, err := sh.QueryActiveUsers().Where(user.ID(u.ID)).Exist(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to check active user presence", "error", err)
+			return
+		}
+		if !exists {
+			if err := sh.Update().AddActiveUsers(u).Exec(ctx); err != nil {
+				slog.ErrorContext(ctx, "failed to add active user", "error", err)
+			}
+		}
+	}
+
+	// Initial Add
+	addUser()
+
+	// Remove on exit
+	defer func() {
+		// Use a fresh context as the parent context is likely canceled
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := sh.Update().RemoveActiveUsers(u).Exec(ctx); err != nil {
+			slog.ErrorContext(ctx, "failed to remove active user", "error", err)
+		}
+	}()
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			addUser()
+		}
+	}
 }
