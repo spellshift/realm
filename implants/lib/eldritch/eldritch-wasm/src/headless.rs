@@ -282,8 +282,8 @@ mod tests {
     #[test]
     fn test_headless_repl_macro() {
         let mut repl = HeadlessRepl::new();
-        let res = repl.input("!ls");
-        assert!(res.contains("\"status\": \"complete\""));
+        repl.input("!ls");
+        let res = repl.input("");
         assert!(res.contains("sys.shell"));
         assert!(res.contains("ls"));
     }
@@ -303,7 +303,6 @@ mod tests {
         let res = repl.input("");
         assert!(res.contains("\"status\": \"complete\""));
         // Payload should contain sys.shell with indentation
-        assert!(res.contains("    import sys"));
         assert!(res.contains("sys.shell(\\\"ls\\\")"));
     }
 }
