@@ -32,6 +32,7 @@ export const useShellTerminal = (
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -358,6 +359,7 @@ export const useShellTerminal = (
             },
             (status: ConnectionStatus) => {
                 const term = termInstance.current;
+                setConnectionStatus(status);
                 if (!term) return;
 
                 if (status === "reconnecting") {
@@ -411,6 +413,8 @@ export const useShellTerminal = (
         termInstance.current.onData((data) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
+            // Block input if not connected
+            if (adapter.current?.getStatus() !== "connected") return;
 
             const code = data.charCodeAt(0);
             const state = shellState.current;
@@ -741,6 +745,7 @@ export const useShellTerminal = (
         completionPos,
         completionIndex,
         handleMouseMove,
-        tooltipState
+        tooltipState,
+        connectionStatus
     };
 };

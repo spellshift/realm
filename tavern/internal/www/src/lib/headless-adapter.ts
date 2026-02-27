@@ -167,4 +167,10 @@ export class HeadlessWasmAdapter {
             this.ws.close();
         }
     }
+
+    getStatus(): ConnectionStatus {
+        if (this.isWsOpen) return "connected";
+        if (!this.isExplicitClose && this.reconnectTimeout) return "reconnecting";
+        return "disconnected";
+    }
 }

@@ -1,17 +1,56 @@
 import React from "react";
-import { Info } from "lucide-react";
+import { Info, Wifi, WifiOff } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
+import { ConnectionStatus } from "../../../lib/headless-adapter";
 
 interface ShellStatusBarProps {
   portalId: number | null;
   timeUntilCallback: string;
   isMissedCallback: boolean;
+  connectionStatus: ConnectionStatus;
 }
 
-const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback }) => {
+const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus }) => {
+  const getConnectionStatusIndicator = () => {
+    switch (connectionStatus) {
+      case "connected":
+        return (
+          <Tooltip label="Connected to Shell">
+             <div className="flex items-center gap-1 text-green-500">
+               <Wifi size={14} />
+               <span className="text-xs">Connected</span>
+             </div>
+          </Tooltip>
+        );
+      case "reconnecting":
+        return (
+          <Tooltip label="Connection lost. Reconnecting...">
+             <div className="flex items-center gap-1 text-yellow-500">
+               <WifiOff size={14} />
+               <span className="text-xs">Reconnecting...</span>
+             </div>
+          </Tooltip>
+        );
+      case "disconnected":
+      default:
+        return (
+          <Tooltip label="Disconnected from Shell">
+             <div className="flex items-center gap-1 text-red-500">
+               <WifiOff size={14} />
+               <span className="text-xs">Disconnected</span>
+             </div>
+          </Tooltip>
+        );
+    }
+  };
+
   return (
     <div className="flex justify-between items-center mt-2 text-sm text-gray-400 h-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
+        {getConnectionStatusIndicator()}
+
+        <div className="h-4 w-px bg-gray-700"></div>
+
         {portalId ? (
           <span className="text-green-500 font-semibold">Portal Active (ID: {portalId})</span>
         ) : (
