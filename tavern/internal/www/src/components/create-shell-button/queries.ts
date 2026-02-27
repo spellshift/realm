@@ -14,6 +14,7 @@ export const GET_BEACONS_FOR_HOST_QUERY = gql`
                     interval
                     lastSeenAt
                     nextSeenAt
+                    transport
                 }
             }
         }
