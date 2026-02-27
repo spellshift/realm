@@ -47,7 +47,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctx := context.Background()
 
 	// 1. Setup DB
-	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=5000", uuid.NewString())
+	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=20000", uuid.NewString())
 	entClient := enttest.Open(t, "sqlite3", dsn)
 
 	// 2. Setup Portal Mux
@@ -250,12 +250,15 @@ func TestInteractiveShell(t *testing.T) {
 			}
 
 			var genericMsg struct {
-				Kind string `json:"kind"`
+				Kind    string `json:"kind"`
+				Message string `json:"message"` // For error messages
 			}
 			json.Unmarshal(data, &genericMsg)
 			if genericMsg.Kind == shell.WebsocketMessageKindOutput {
 				json.Unmarshal(data, &outMsg)
 				found = true
+			} else if genericMsg.Kind == shell.WebsocketMessageKindError {
+				t.Fatalf("Received error from websocket: %s", genericMsg.Message)
 			}
 		}
 	}
@@ -442,7 +445,7 @@ func TestOtherStreamOutput(t *testing.T) {
 	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
 
 	truncatedInput := longInput[:64] + "..."
-	expectedFormat := fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", "Other User", truncatedInput)
+	expectedFormat := fmt.Sprintf("\x1b[38;5;104m[@%s]\x1b[0m\x1b[38;5;35m[+]\x1b[0m %s\n", "Other User", truncatedInput)
 	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format with truncation")
 	require.Contains(t, otherMsg.Output, "rebooting...")
 }
@@ -505,7 +508,7 @@ func TestOtherStreamOutput_Polling(t *testing.T) {
 	}
 
 	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
-	expectedFormat := fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", "Other User", "sudo reboot")
+	expectedFormat := fmt.Sprintf("\x1b[38;5;104m[@%s]\x1b[0m\x1b[38;5;35m[+]\x1b[0m %s\n", "Other User", "sudo reboot")
 	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format")
 	require.Contains(t, otherMsg.Output, "rebooting...")
 }
