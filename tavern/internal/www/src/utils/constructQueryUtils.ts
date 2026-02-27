@@ -197,7 +197,7 @@ export function constructHostTaskFilterQuery(
 const createRecentlyLostQuery = (currentTimestamp: Date) => ({
   and: [
     { nextSeenAtGTE: sub(currentTimestamp, { minutes: 5 }).toISOString() },
-    { nextSeenAtLT: sub(currentTimestamp, { seconds: 15 }).toISOString() }
+    { nextSeenAtLT: sub(currentTimestamp, { seconds: 30 }).toISOString() }
   ]
 });
 
