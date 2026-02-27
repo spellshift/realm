@@ -62,6 +62,15 @@ impl HeadlessRepl {
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
         }
 
+        // Handle macro expansion for single-line commands starting with '!'
+        if self.buffer.starts_with('!') && !self.buffer.starts_with("!=") {
+            let cmd = &self.buffer[1..];
+            // Transform into sys.shell call
+            let payload = format!("import sys; sys.shell({:?})", cmd);
+            self.buffer.clear();
+            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+        }
+
         // Check for completeness
         let mut balance = 0;
         let mut is_incomplete_string = false;
@@ -213,5 +222,13 @@ mod tests {
         let res = repl.input("print('reset')");
         assert!(res.contains("\"status\": \"complete\""));
         assert!(res.contains("print('reset')"));
+    }
+
+    #[test]
+    fn test_headless_repl_macro() {
+        let mut repl = HeadlessRepl::new();
+        let res = repl.input("!whoami");
+        assert!(res.contains("\"status\": \"complete\""));
+        assert!(res.contains("sys.shell(\"whoami\")"));
     }
 }
