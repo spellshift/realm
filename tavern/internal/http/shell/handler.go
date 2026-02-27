@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -671,10 +672,22 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 }
 
 func truncateInput(input string) string {
+	input = truncateShellMacro(input)
 	const maxLength = 64
 	if len(input) > maxLength {
 		return input[:maxLength] + "..."
 	}
+	return input
+}
+
+// truncateShellMacro removes the macro wrapper added in eldritch to make shell output more readable in the frontend.
+// This is needed because the macro adds a lot of boilerplate that clutters the input display in the frontend.
+// See expand_macros() in eldritch-wasm/src/headless.rs for how we do this macro.
+func truncateShellMacro(input string) string {
+	expandedMacroPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
+	expandedMacroSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"
+	input = strings.TrimPrefix(input, expandedMacroPrefix)
+	input = strings.TrimSuffix(input, expandedMacroSuffix)
 	return input
 }
 
