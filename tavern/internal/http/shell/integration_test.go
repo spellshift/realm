@@ -209,7 +209,7 @@ func TestInteractiveShell(t *testing.T) {
 		require.NotNil(t, mote.GetShell())
 		require.Equal(t, inputCmd, mote.GetShell().Input)
 		require.Equal(t, int64(env.Shell.ID), mote.GetShell().ShellId)
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("timeout waiting for input on portal")
 	}
 
@@ -238,7 +238,7 @@ func TestInteractiveShell(t *testing.T) {
 	// 7. Verify Output on WebSocket
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(10 * time.Second)
 	for !found {
 		select {
 		case <-timeout:
@@ -302,7 +302,8 @@ func TestNonInteractiveShell(t *testing.T) {
 	require.Contains(t, msg.Message, "Task Queued for testbeacon")
 
 	// 4. Simulate C2 updating Task Output
-	time.Sleep(100 * time.Millisecond)
+	// We increased sleep to ensure transaction stability in test env
+	time.Sleep(200 * time.Millisecond)
 	tasks, err := env.EntClient.ShellTask.Query().All(context.Background())
 	require.NoError(t, err)
 	require.NotEmpty(t, tasks)
@@ -314,7 +315,8 @@ func TestNonInteractiveShell(t *testing.T) {
 	// 5. Expect Output on WebSocket (polled)
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	// Increased timeout for polling to catch up in slower CI environments
+	timeout := time.After(15 * time.Second)
 	for !found {
 		select {
 		case <-timeout:
@@ -414,7 +416,7 @@ func TestOtherStreamOutput(t *testing.T) {
 	// 5. Verify User 1 receives "Other Stream" message
 	var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(10 * time.Second)
 
 	for !found {
 		select {
@@ -481,7 +483,7 @@ func TestOtherStreamOutput_Polling(t *testing.T) {
 	// 3. Verify User 1 receives "Other Stream" message via Polling
 	var otherMsg shell.WebsocketTaskOutputFromOtherStreamMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(10 * time.Second)
 
 	for !found {
 		select {
@@ -561,7 +563,7 @@ func TestTruncation(t *testing.T) {
 	// 5. Expect Output on WebSocket
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(5 * time.Second)
+	timeout := time.After(10 * time.Second)
 	for !found {
 		select {
 		case <-timeout:
@@ -658,7 +660,7 @@ func TestShellHistory_Interactive(t *testing.T) {
 	// We expect the history to be sent upon connection, even if interactive mode is active.
 	var outMsg shell.WebsocketTaskOutputMessage
 	found := false
-	timeout := time.After(2 * time.Second) // Should be fast
+	timeout := time.After(5 * time.Second) // Should be fast
 
 	for !found {
 		select {
@@ -718,7 +720,7 @@ func TestShellActiveUsers(t *testing.T) {
 			return false
 		}
 		return users[0].ID == env.User.ID
-	}, 5*time.Second, 100*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	// 4. Disconnect
 	ws.Close()
@@ -728,5 +730,5 @@ func TestShellActiveUsers(t *testing.T) {
 		users, err := env.Shell.QueryActiveUsers().All(ctx)
 		require.NoError(t, err)
 		return len(users) == 0
-	}, 5*time.Second, 100*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 }

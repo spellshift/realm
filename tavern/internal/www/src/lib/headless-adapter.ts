@@ -6,27 +6,51 @@ export interface ExecutionResult {
     message?: string;
 }
 
+export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
+
 export class HeadlessWasmAdapter {
     private repl: any; // HeadlessRepl instance
-    private ws: WebSocket;
+    private ws: WebSocket | null = null;
+    private url: string;
     private onMessageCallback: (msg: WebsocketMessage) => void;
     private onReadyCallback?: () => void;
+    private onStatusChangeCallback?: (status: ConnectionStatus) => void;
     private isWsOpen: boolean = false;
+    private reconnectTimer: NodeJS.Timeout | null = null;
+    private isClosedExplicitly: boolean = false;
 
-    constructor(url: string, onMessage: (msg: WebsocketMessage) => void, onReady?: () => void) {
+    constructor(
+        url: string,
+        onMessage: (msg: WebsocketMessage) => void,
+        onReady?: () => void,
+        onStatusChange?: (status: ConnectionStatus) => void
+    ) {
+        this.url = url;
         this.onMessageCallback = onMessage;
         this.onReadyCallback = onReady;
-        this.ws = new WebSocket(url);
+        this.onStatusChangeCallback = onStatusChange;
+
+        this.connect();
+    }
+
+    private connect() {
+        if (this.isClosedExplicitly) return;
+
+        this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
             this.isWsOpen = true;
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = null;
+            }
+            this.onStatusChangeCallback?.("connected");
             this.checkReady();
         };
 
         this.ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data) as WebsocketMessage;
-                // Basic validation or filtering could happen here, but we pass it all
                 this.onMessageCallback(msg);
             } catch (e) {
                 console.error("Failed to parse WebSocket message", e);
@@ -35,7 +59,29 @@ export class HeadlessWasmAdapter {
 
         this.ws.onclose = () => {
             this.isWsOpen = false;
+            if (this.isClosedExplicitly) {
+                 this.onStatusChangeCallback?.("disconnected");
+                 return;
+            }
+
+            this.onStatusChangeCallback?.("disconnected");
+            this.scheduleReconnect();
         };
+
+        this.ws.onerror = (e) => {
+            console.error("WebSocket error:", e);
+            // onError usually precedes onClose, so we handle reconnection in onClose
+        };
+    }
+
+    private scheduleReconnect() {
+        if (this.reconnectTimer || this.isClosedExplicitly) return;
+
+        this.onStatusChangeCallback?.("reconnecting");
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            this.connect();
+        }, 3000); // Retry every 3 seconds
     }
 
     async init() {
@@ -54,7 +100,13 @@ export class HeadlessWasmAdapter {
     private checkReady() {
         if (this.repl && this.isWsOpen && this.onReadyCallback) {
             this.onReadyCallback();
-            this.onReadyCallback = undefined; // Only call once
+            // We don't clear onReadyCallback because we might need it again on reconnect?
+            // The original code cleared it. If the WASM REPL is already initialized,
+            // we probably want to signal "ready" again if we reconnect so the UI can perhaps re-print the prompt or status.
+            // But usually "ready" means "initial load done".
+            // Let's keep the original behavior of calling it once for now,
+            // assuming the UI handles reconnection status separately.
+            this.onReadyCallback = undefined;
         }
     }
 
@@ -68,7 +120,7 @@ export class HeadlessWasmAdapter {
             const result = JSON.parse(resultJson);
 
             if (result.status === "complete") {
-                if (this.isWsOpen) {
+                if (this.isWsOpen && this.ws) {
                     this.ws.send(JSON.stringify({
                         kind: WebsocketMessageKind.Input,
                         input: result.payload
@@ -90,7 +142,6 @@ export class HeadlessWasmAdapter {
 
     complete(line: string, cursor: number): { suggestions: string[], start: number } {
         if (!this.repl) return { suggestions: [], start: cursor };
-        // complete returns a JSON object { suggestions: [...], start: number }
         const resultJson = this.repl.complete(line, cursor);
         try {
             return JSON.parse(resultJson);
@@ -107,8 +158,14 @@ export class HeadlessWasmAdapter {
     }
 
     close() {
+        this.isClosedExplicitly = true;
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
         if (this.ws) {
             this.ws.close();
+            this.ws = null;
         }
     }
 }
