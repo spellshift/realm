@@ -8,9 +8,11 @@ interface DocTooltipProps {
   x: number;
   y: number;
   visible: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-export const DocTooltip: React.FC<DocTooltipProps> = ({ signature, description, x, y, visible }) => {
+export const DocTooltip: React.FC<DocTooltipProps> = ({ signature, description, x, y, visible, onMouseEnter, onMouseLeave }) => {
   if (!visible) return null;
 
   return (
@@ -31,6 +33,8 @@ export const DocTooltip: React.FC<DocTooltipProps> = ({ signature, description, 
       border="1px solid"
       borderColor="gray.600"
       transform="translateY(10px)"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <Code
         display="block"

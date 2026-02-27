@@ -35,7 +35,9 @@ const ShellV2 = () => {
         tooltipState,
         handleCompletionSelect,
         connectionStatus,
-        connectionMessage
+        connectionMessage,
+        handleTooltipMouseEnter,
+        handleTooltipMouseLeave
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
 
     if (connectionError) {
@@ -62,8 +64,11 @@ const ShellV2 = () => {
                     completionPos={completionPos}
                     completionIndex={completionIndex}
                     onMouseMove={handleMouseMove}
+                    onMouseLeave={handleTooltipMouseLeave}
                     tooltipState={tooltipState}
                     handleCompletionSelect={handleCompletionSelect}
+                    onTooltipMouseEnter={handleTooltipMouseEnter}
+                    onTooltipMouseLeave={handleTooltipMouseLeave}
                 />
 
                 <ShellStatusBar

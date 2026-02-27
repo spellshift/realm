@@ -505,16 +505,8 @@ func TestOtherStreamOutput_Polling(t *testing.T) {
 	}
 
 	require.Equal(t, otherTask.ID, otherMsg.ShellTaskID)
-
-	// Updated to match the actual 256-color output format used by the shell handler:
-	// \x1b[38;5;104m[@User]\x1b[0m\x1b[38;5;35m[+]\x1b[0m Input\n
 	expectedFormat := fmt.Sprintf("\x1b[38;5;104m[@%s]\x1b[0m\x1b[38;5;35m[+]\x1b[0m %s\n", "Other User", "sudo reboot")
-
-	if !strings.HasPrefix(otherMsg.Output, expectedFormat) {
-		t.Logf("Expected format: %q", expectedFormat)
-		t.Logf("Actual output:   %q", otherMsg.Output)
-		t.Fail()
-	}
+	require.True(t, strings.HasPrefix(otherMsg.Output, expectedFormat), "Output should start with expected format")
 	require.Contains(t, otherMsg.Output, "rebooting...")
 }
 
