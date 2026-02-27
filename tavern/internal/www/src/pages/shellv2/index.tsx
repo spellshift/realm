@@ -18,7 +18,8 @@ const ShellV2 = () => {
         beaconData,
         portalData,
         portalId,
-        setPortalId
+        setPortalId,
+        activeUsers
     } = useShellData(shellId);
 
     const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
@@ -51,7 +52,7 @@ const ShellV2 = () => {
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-                <ShellHeader shellData={shellData} />
+                <ShellHeader shellData={shellData} activeUsers={activeUsers} />
 
                 <ShellTerminal
                     termRef={termRef}
