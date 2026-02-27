@@ -13,9 +13,16 @@ export const GET_SHELL = gql`
         beacon {
           id
           name
+          principal
+          agentIdentifier
+          interval
+          transport
           host {
             id
             name
+            primaryIP
+            externalIP
+            platform
           }
         }
         portals {
