@@ -145,7 +145,11 @@
   },
   "zip": {
     "signature": "zip(*iterables) -> List<Tuple>",
-    "description": "The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.\n# Standard Library\nThe standard library is the default functionality that eldritch provides. It contains the following libraries:\n- `agent` - Used for meta-style interactions with the agent itself.\n- `assets` - Used to interact with files stored natively in the agent.\n- `crypto` - Used to encrypt/decrypt or hash data.\n- `file` - Used to interact with files on the system.\n- `http` - Used to make http(s) requests from the agent.\n- `pivot` - Used to identify and move between systems.\n- `process` - Used to interact with processes on the system.\n- `random` - Used to generate cryptographically secure random values.\n- `regex` - Regular expression capabilities for operating on strings.\n- `report` - Structured data reporting capabilities.\n- `sys` - General system capabilities can include loading libraries, or information about the current context.\n- `time` - General functions for obtaining and formatting time, also add delays into code.\n**🚨 DANGER 🚨: Name shadowing**\nDo not use the standard library names as local variables as it will prevent you from accessing library functions.\nFor example, if you do:\n```rust\nfor file in file.list(\"/home/\"):\nprint(file[\"file_name\"])\n```\nThe file library will become inaccessible.\nIt may even raise an error: `error: Local variable 'file' referenced before assignment`\nInstead we recommend using more descriptive names like:\n```rust\nfor user_home_dir in file.list(\"/home/\"):\nprint(user_home_dir[\"file_name\"])\n```\n---\n## Agent"
+    "description": "The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.\n# Standard Library\nThe standard library is the default functionality that eldritch provides. It contains the following libraries:\n- `agent` - Used for meta-style interactions with the agent itself.\n- `assets` - Used to interact with files stored natively in the agent.\n- `crypto` - Used to encrypt/decrypt or hash data.\n- `file` - Used to interact with files on the system.\n- `http` - Used to make http(s) requests from the agent.\n- `pivot` - Used to identify and move between systems.\n- `process` - Used to interact with processes on the system.\n- `random` - Used to generate cryptographically secure random values.\n- `regex` - Regular expression capabilities for operating on strings.\n- `report` - Structured data reporting capabilities.\n- `sys` - General system capabilities can include loading libraries, or information about the current context.\n- `time` - General functions for obtaining and formatting time, also add delays into code.\n**🚨 DANGER 🚨: Name shadowing**\nDo not use the standard library names as local variables as it will prevent you from accessing library functions.\nFor example, if you do:\n```rust\nfor file in file.list(\"/home/\"):\nprint(file[\"file_name\"])\n```\nThe file library will become inaccessible.\nIt may even raise an error: `error: Local variable 'file' referenced before assignment`\nInstead we recommend using more descriptive names like:\n```rust\nfor user_home_dir in file.list(\"/home/\"):\nprint(user_home_dir[\"file_name\"])\n```\n---"
+  },
+  "agent": {
+    "signature": "import agent",
+    "description": "The `agent` library provides functions for meta-style interactions with the agent itself. It allows you to inspect its configuration, check transport details, or list and manage background tasks."
   },
   "agent._terminate_this_process_clowntown": {
     "signature": "agent._terminate_this_process_clowntown() -> None",
@@ -181,7 +185,11 @@
   },
   "agent.set_callback_uri": {
     "signature": "agent.set_callback_uri(new_uri: str) -> None",
-    "description": "The **agent.set_callback_uri** method takes an string and changes the\nrunning agent's callback URI to the passed value. This configuration change will\nnot persist across agent reboots. NOTE: please ensure the passed URI path is correct\nfor the underlying `Transport` being used, as a URI can take many forms and we make no\nassumptions on `Transport` requirements no checks are applied to the passed string.\n---\n## Assets"
+    "description": "The **agent.set_callback_uri** method takes an string and changes the\nrunning agent's callback URI to the passed value. This configuration change will\nnot persist across agent reboots. NOTE: please ensure the passed URI path is correct\nfor the underlying `Transport` being used, as a URI can take many forms and we make no\nassumptions on `Transport` requirements no checks are applied to the passed string.\n---"
+  },
+  "assets": {
+    "signature": "import assets",
+    "description": "The `assets` library is used to interact with embedded files stored natively within the agent. It provides capabilities to list, read, or extract these files to disk for further execution or deployment."
   },
   "assets.copy": {
     "signature": "assets.copy(src: str, dst: str) -> None",
@@ -197,7 +205,11 @@
   },
   "assets.read": {
     "signature": "assets.read(src: str) -> str",
-    "description": "The **assets.read** method returns a UTF-8 string representation of the asset file.\n---\n## Crypto"
+    "description": "The **assets.read** method returns a UTF-8 string representation of the asset file.\n---"
+  },
+  "crypto": {
+    "signature": "import crypto",
+    "description": "The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing."
   },
   "crypto.aes_decrypt": {
     "signature": "crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
@@ -249,7 +261,11 @@
   },
   "crypto.sha256": {
     "signature": "crypto.sha256(data: Bytes) -> str",
-    "description": "The **crypto.sha256** method calculates the SHA256 hash of the provided data.\n---\n## File"
+    "description": "The **crypto.sha256** method calculates the SHA256 hash of the provided data.\n---"
+  },
+  "file": {
+    "signature": "import file",
+    "description": "The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping."
   },
   "file.append": {
     "signature": "file.append(path: str, content: str) -> None",
@@ -345,7 +361,11 @@
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",
-    "description": "The **file.find** method finds all files matching the used parameters. Returns file path for all matching items.\n- name: Checks if file name contains provided input\n- file_type: Checks for 'file' or 'dir' for files or directories, respectively.\n- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.\n- modified_time: Checks if last modified time matches input specified in time since EPOCH\n- create_time: Checks if last modified time matches input specified in time since EPOCH\n---\n## HTTP\nThe HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`)."
+    "description": "The **file.find** method finds all files matching the used parameters. Returns file path for all matching items.\n- name: Checks if file name contains provided input\n- file_type: Checks for 'file' or 'dir' for files or directories, respectively.\n- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.\n- modified_time: Checks if last modified time matches input specified in time since EPOCH\n- create_time: Checks if last modified time matches input specified in time since EPOCH\n---"
+  },
+  "http": {
+    "signature": "import http",
+    "description": "The `http` library allows the agent to send HTTP and HTTPS requests over the network. You can download files, submit form data, or interact with external REST APIs directly from the agent.\nThe HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`)."
   },
   "http.download": {
     "signature": "http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None",
@@ -357,7 +377,11 @@
   },
   "http.post": {
     "signature": "http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str",
-    "description": "The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\n---\n## Pivot"
+    "description": "The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\n---"
+  },
+  "pivot": {
+    "signature": "import pivot",
+    "description": "The `pivot` library provides tools to identify and move laterally between systems on a network. It includes functionalities like port scanning, reverse shells, port forwarding, and executing commands remotely over SMB or SSH."
   },
   "pivot.arp_scan": {
     "signature": "pivot.arp_scan(target_cidrs: List<str>) -> List<str>",
@@ -401,7 +425,11 @@
   },
   "pivot.ssh_exec": {
     "signature": "pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>",
-    "description": "The **pivot.ssh_exec** method executes a command string on the remote host using the default shell.\nStdout returns the string result from the command output.\nStderr will return any errors from the SSH connection but not the command being executed.\nStatus will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.\n```json\n{\n\"stdout\": \"uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\\n\",\n\"stderr\":\"\",\n\"status\": 0\n}\n```\n---\n## Process"
+    "description": "The **pivot.ssh_exec** method executes a command string on the remote host using the default shell.\nStdout returns the string result from the command output.\nStderr will return any errors from the SSH connection but not the command being executed.\nStatus will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.\n```json\n{\n\"stdout\": \"uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\\n\",\n\"stderr\":\"\",\n\"status\": 0\n}\n```\n---"
+  },
+  "process": {
+    "signature": "import process",
+    "description": "The `process` library is used to interact with running processes on the local system. It provides functionalities to list processes, gather detailed information, enumerate network sockets, or terminate specific processes."
   },
   "process.info": {
     "signature": "process.info(pid: Optional<int>) -> Dict",
@@ -421,7 +449,11 @@
   },
   "process.netstat": {
     "signature": "process.netstat() -> List<Dict>",
-    "description": "The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.\n_Currently only shows LISTENING TCP connections_\n```json\n[\n{\n\"socket_type\": \"TCP\",\n\"local_address\": \"127.0.0.1\",\n\"local_port\": 46341,\n\"pid\": 2359037\n},\n...\n]\n```\n---\n## Random\nThe random library is designed to enable generation of cryptographically secure random values. None of these functions will be blocking."
+    "description": "The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.\n_Currently only shows LISTENING TCP connections_\n```json\n[\n{\n\"socket_type\": \"TCP\",\n\"local_address\": \"127.0.0.1\",\n\"local_port\": 46341,\n\"pid\": 2359037\n},\n...\n]\n```\n---"
+  },
+  "random": {
+    "signature": "import random",
+    "description": "The `random` library is designed to enable generation of cryptographically secure random values without blocking execution. It allows you to create random booleans, integers, bytes, strings, and UUIDs."
   },
   "random.bool": {
     "signature": "random.bool() -> bool",
@@ -441,7 +473,11 @@
   },
   "random.uuid": {
     "signature": "random.uuid() -> str",
-    "description": "The **random.uuid** method returns a randomly generated UUID (v4).\n---\n## Regex\nThe regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written\nin Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
+    "description": "The **random.uuid** method returns a randomly generated UUID (v4).\n---"
+  },
+  "regex": {
+    "signature": "import regex",
+    "description": "The `regex` library provides regular expression capabilities for operating on strings. Using Rust's regex syntax, you can match, extract, or replace substrings within larger text blocks. Be aware as the underlying implementation is written in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
   },
   "regex.match_all": {
     "signature": "regex.match_all(haystack: str, pattern: str) -> List<str>",
@@ -457,7 +493,11 @@
   },
   "regex.replace": {
     "signature": "regex.replace(haystack: str, pattern: str, value: string) -> str",
-    "description": "The **regex.replace** method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.\n---\n## Report\nThe report library is designed to enable reporting structured data to Tavern. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**."
+    "description": "The **regex.replace** method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.\n---"
+  },
+  "report": {
+    "signature": "import report",
+    "description": "The `report` library is designed to enable reporting structured data to Tavern. You can use it to securely exfiltrate files, process lists, captured credentials, or screenshots from the host. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**."
   },
   "report.file": {
     "signature": "report.file(path: str) -> None",
@@ -481,7 +521,11 @@
   },
   "report.screenshot": {
     "signature": "report.screenshot() -> None",
-    "description": "Reports a screenshot of all screens to Tavern.\n---\n## Sys"
+    "description": "Reports a screenshot of all screens to Tavern.\n---"
+  },
+  "sys": {
+    "signature": "import sys",
+    "description": "The `sys` library offers general system capabilities to retrieve context about the host environment. It provides functionalities to check the operating system, retrieve environment variables, query the registry, and run native shell commands."
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
@@ -557,7 +601,11 @@
   },
   "sys.write_reg_str": {
     "signature": "sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool",
-    "description": "The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"BAR2\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"A PLAIN STRING\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"1234567812345678\")\nTrue\n```\n## Time"
+    "description": "The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"BAR2\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"A PLAIN STRING\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"1234567812345678\")\nTrue\n```"
+  },
+  "time": {
+    "signature": "import time",
+    "description": "The `time` library contains general functions for obtaining and formatting the current system time. It allows you to convert between timestamps and readable strings, or introduce execution delays using sleep."
   },
   "time.format_to_epoch": {
     "signature": "time.format_to_epoch(input: str, format: str) -> int",

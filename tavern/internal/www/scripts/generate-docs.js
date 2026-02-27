@@ -17,21 +17,67 @@ try {
     const content = fs.readFileSync(inputPath, 'utf-8');
     const docs = {};
 
-    // Simple parsing logic
-    // We look for "### function_name"
-    // Then capture the next code block as signature
-    // Then capture the text until the next header or end of file as description
-
     const lines = content.split('\n');
     let currentFunction = null;
+    let currentLibrary = null;
     let currentSignature = '';
     let currentDescription = [];
     let capturingDescription = false;
+    let inLibrarySection = false;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
 
+        if (line.startsWith('## ')) {
+            // New library section
+            const match = line.match(/^##\s+(\w+)/);
+            if (match) {
+                const libName = match[1].toLowerCase();
+
+                const ignoreHeaders = ['examples', 'data', 'error', 'built-ins', 'standard'];
+                if (!ignoreHeaders.includes(libName)) {
+                    // Save previous function if any
+                    if (currentFunction) {
+                        docs[currentFunction] = {
+                            signature: currentSignature,
+                            description: currentDescription.join('\n').trim()
+                        };
+                        currentFunction = null;
+                    }
+
+                    currentLibrary = libName;
+                    inLibrarySection = true;
+                    currentDescription = [];
+                    capturingDescription = true;
+                } else {
+                    inLibrarySection = false;
+                    currentLibrary = null;
+                }
+            } else {
+                inLibrarySection = false;
+                currentLibrary = null;
+            }
+            continue;
+        }
+
+        if (inLibrarySection && !line.startsWith('### ')) {
+            if (line.length > 0) {
+                currentDescription.push(line);
+            }
+            continue;
+        }
+
         if (line.startsWith('### ')) {
+            // If we were capturing a library description, save it
+            if (inLibrarySection && currentLibrary) {
+                docs[currentLibrary] = {
+                    signature: `import ${currentLibrary}`, // Use a dummy signature or just name
+                    description: currentDescription.join('\n').trim()
+                };
+                inLibrarySection = false;
+                currentLibrary = null;
+            }
+
             // New function found, save previous one if exists
             if (currentFunction) {
                 docs[currentFunction] = {
@@ -41,7 +87,6 @@ try {
             }
 
             // Start new function
-            // format: ### agent.get_config
             const match = line.match(/^###\s+([\w\.]+)/);
             if (match) {
                 currentFunction = match[1];
@@ -49,43 +94,33 @@ try {
                 currentDescription = [];
                 capturingDescription = false;
             } else {
-                currentFunction = null; // invalid header format or not a function header we care about
+                currentFunction = null;
             }
             continue;
         }
 
         if (currentFunction) {
-            // Try to capture signature
-            // It might be in inline code `...` or block ```python ... ```
-            // The markdown seems to use inline code `function() -> type` right after header mostly
-
             if (!currentSignature && line.startsWith('`') && line.endsWith('`')) {
                 currentSignature = line.slice(1, -1);
                 capturingDescription = true;
                 continue;
             }
 
-            // Handle multiline code block for signature if present (rare in the snippet I saw but possible)
-            // The snippet shows `function` so I will stick to that first.
-            // If the signature is missing, maybe it is in the description?
-
-            // If we have signature, subsequent text is description
             if (capturingDescription) {
-                 // Stop capturing if we hit another header (handled by the loop start)
-                 // Just append lines
                  if (line.length > 0) {
                      currentDescription.push(line);
                  }
-            } else if (!currentSignature && line.length > 0) {
-                 // If we haven't found a signature yet but found text, assume signature is missing or in a different format
-                 // For now, let's just treat it as description start if it doesn't look like code
-                 // But looking at the file, signature is almost always immediately after header in backticks
             }
         }
     }
 
-    // Add the last function
-    if (currentFunction) {
+    // Add the last function or library
+    if (inLibrarySection && currentLibrary) {
+        docs[currentLibrary] = {
+            signature: `import ${currentLibrary}`,
+            description: currentDescription.join('\n').trim()
+        };
+    } else if (currentFunction) {
         docs[currentFunction] = {
             signature: currentSignature,
             description: currentDescription.join('\n').trim()
@@ -93,7 +128,7 @@ try {
     }
 
     fs.writeFileSync(outputPath, JSON.stringify(docs, null, 2));
-    console.log(`Successfully generated docs for ${Object.keys(docs).length} functions.`);
+    console.log(`Successfully generated docs for ${Object.keys(docs).length} items.`);
 
 } catch (error) {
     console.error('Error generating docs:', error);
