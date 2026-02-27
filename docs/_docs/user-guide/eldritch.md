@@ -77,6 +77,235 @@ def write_systemd_service():
 write_systemd_service()
 ```
 
+# Built-Ins
+
+### abs
+
+`abs(x) -> Int | Float`
+
+The **abs** method returns the absolute value of a number.
+
+### all
+
+`all(iterable) -> Bool`
+
+The **all** method returns True if all elements of the iterable are true (or if the iterable is empty).
+
+### any
+
+`any(iterable) -> Bool`
+
+The **any** method returns True if any element of the iterable is true. If the iterable is empty, return False.
+
+### assert
+
+`assert(condition) -> None`
+
+The **assert** method aborts execution if the condition is false.
+
+### assert_eq
+
+`assert_eq(a, b) -> None`
+
+The **assert_eq** method aborts execution if `a` is not equal to `b`.
+
+### bool
+
+`bool(x) -> Bool`
+
+The **bool** method converts a value to a Boolean. Returns True when the argument x is true, False otherwise.
+
+### bytes
+
+`bytes(source) -> Bytes`
+
+The **bytes** method creates a bytes object.
+- If source is an integer, the array will have that size and will be initialized with null bytes.
+- If source is a string, it will be converted using UTF-8 encoding.
+- If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256.
+
+### chr
+
+`chr(i) -> Str`
+
+The **chr** method returns the string representing a character whose Unicode code point is the integer `i`.
+
+### dict
+
+`dict(**kwargs) -> Dict`
+`dict(iterable, **kwargs) -> Dict`
+
+The **dict** method creates a new dictionary.
+
+### dir
+
+`dir([object]) -> List<str>`
+
+The **dir** method returns a list of valid attributes for the object. Without arguments, return the list of names in the current local scope.
+
+### enumerate
+
+`enumerate(iterable, start=0) -> List<Tuple>`
+
+The **enumerate** method returns a list of tuples containing (index, value) pairs.
+
+### eprint
+
+`eprint(*args) -> None`
+
+The **eprint** method prints objects to the standard error output, separated by spaces.
+
+### fail
+
+`fail(message) -> None`
+
+The **fail** method aborts execution with an error message.
+
+### filter
+
+`filter(function, iterable) -> List`
+
+The **filter** method constructs a list from those elements of iterable for which function returns true. If function is None, the identity function is assumed.
+
+### float
+
+`float(x) -> Float`
+
+The **float** method converts a number or string to a floating point number.
+
+### hex
+
+`hex(x) -> Str`
+
+The **hex** method converts an integer number to a lowercase hexadecimal string prefixed with "0x".
+
+### int
+
+`int(x, base=10) -> Int`
+
+The **int** method converts a number or string to an integer.
+
+### len
+
+`len(s) -> Int`
+
+The **len** method returns the length of an object. The argument may be a sequence (such as a string, bytes, tuple, list, or range) or a collection (such as a dictionary or set).
+
+### libs
+
+`libs() -> List<str>`
+
+The **libs** method lists all registered libraries.
+
+### list
+
+`list([iterable]) -> List`
+
+The **list** method creates a list.
+
+### map
+
+`map(function, iterable) -> List`
+
+The **map** method applies function to every item of iterable and returns a list of the results.
+
+### max
+
+`max(iterable, *args) -> Any`
+
+The **max** method returns the largest item in an iterable or the largest of two or more arguments.
+
+### min
+
+`min(iterable, *args) -> Any`
+
+The **min** method returns the smallest item in an iterable or the smallest of two or more arguments.
+
+### ord
+
+`ord(c) -> Int`
+
+The **ord** method returns an integer representing the Unicode code point of that character.
+
+### pprint
+
+`pprint(object, indent=2) -> None`
+
+The **pprint** method pretty-prints an object.
+
+### print
+
+`print(*args) -> None`
+
+The **print** method prints objects to the standard output, separated by spaces.
+
+### range
+
+`range(stop) -> List<Int>`
+`range(start, stop[, step]) -> List<Int>`
+
+The **range** method returns a list of arithmetic progressions.
+
+### reduce
+
+`reduce(function, iterable[, initializer]) -> Any`
+
+The **reduce** method applies a function of two arguments cumulatively to the items of a sequence, from left to right, so as to reduce the sequence to a single value.
+
+### repr
+
+`repr(object) -> Str`
+
+The **repr** method returns a string containing a printable representation of an object.
+
+### reversed
+
+`reversed(seq) -> List`
+
+The **reversed** method returns a list with the elements of the sequence in reverse order.
+
+### set
+
+`set([iterable]) -> Set`
+
+The **set** method creates a new set object.
+
+### sorted
+
+`sorted(iterable, *, key=None, reverse=False) -> List`
+
+The **sorted** method returns a new sorted list from the items in iterable.
+
+### str
+
+`str(object) -> Str`
+
+The **str** method returns a string containing a nicely printable representation of an object.
+
+### tprint
+
+`tprint(list_of_dicts) -> None`
+
+The **tprint** method prints a list of dictionaries as a markdown table.
+
+### tuple
+
+`tuple([iterable]) -> Tuple`
+
+The **tuple** method creates a tuple.
+
+### type
+
+`type(object) -> Str`
+
+The **type** method returns the type of the object.
+
+### zip
+
+`zip(*iterables) -> List<Tuple>`
+
+The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.
+
 # Standard Library
 
 The standard library is the default functionality that eldritch provides. It contains the following libraries:
@@ -228,6 +457,18 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 
 ## Crypto
 
+### crypto.aes_decrypt
+
+`crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The <b>crypto.aes_decrypt</b> method decrypts the given data using the given key and IV (AES CBC).
+
+### crypto.aes_encrypt
+
+`crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
+
+The <b>crypto.aes_encrypt</b> method encrypts the given data using the given key and IV (AES CBC).
+
 ### crypto.aes_decrypt_file
 
 `crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
@@ -316,6 +557,24 @@ The <b>crypto.hash_file</b> method will produce the hash of the given file's con
 - SHA1
 - SHA256
 - SHA512
+
+### crypto.md5
+
+`crypto.md5(data: Bytes) -> str`
+
+The <b>crypto.md5</b> method calculates the MD5 hash of the provided data.
+
+### crypto.sha1
+
+`crypto.sha1(data: Bytes) -> str`
+
+The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data.
+
+### crypto.sha256
+
+`crypto.sha256(data: Bytes) -> str`
+
+The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data.
 
 ---
 
@@ -453,11 +712,11 @@ for log in recent_logs:
 
 The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
-### file.moveto
+### file.move
 
-`file.moveto(src: str, dst: str) -> None`
+`file.move(src: str, dst: str) -> None`
 
-The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
@@ -532,9 +791,10 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 ### file.timestomp
 
-`file.timestomp(src: str, dst: str) -> None`
+`file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None`
 
-Unimplemented.
+The <b>file.timestomp</b> method modifies the timestamps of a file.
+It can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file.
 
 ### file.write
 
@@ -636,7 +896,7 @@ The <b>pivot.port_forward</b> method is being proposed to provide socat like fun
 
 ### pivot.port_scan
 
-`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>`
+`pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>`
 
 The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.
 Inputs:
@@ -645,6 +905,7 @@ Inputs:
 - `ports` can be a list of any number of integers between 1 and 65535.
 - `protocol` must be: `tcp` or `udp`. These are the only supported options.
 - `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`
+- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).
 
 Results will be in the format:
 
@@ -671,11 +932,23 @@ Be mindful of this when scanning large CIDRs as it may create large return objec
 
 NOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely.
 
+### pivot.create_portal
+
+`pivot.create_portal() -> None`
+
+The **pivot.create_portal** method opens a portal bi-directional stream.
+
 ### pivot.reverse_shell_pty
 
 `pivot.reverse_shell_pty(cmd: Optional<str>) -> None`
 
 The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used.
+
+### pivot.reverse_shell_repl
+
+`pivot.reverse_shell_repl() -> None`
+
+The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter.
 
 ### pivot.smb_exec
 
@@ -824,6 +1097,12 @@ The random library is designed to enable generation of cryptographically secure 
 
 The <b>random.bool</b> method returns a randomly sourced boolean value.
 
+### random.bytes
+
+`random.bytes(len: int) -> List<int>`
+
+The <b>random.bytes</b> method returns a list of randomly generated bytes.
+
 ### random.int
 
 `random.int(min: i32, max: i32) -> i32`
@@ -834,6 +1113,12 @@ The <b>random.int</b> method returns randomly generated integer value between a 
 
 `random.string(length: uint, charset: Optional<str>) -> str`
 The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+
+### random.uuid
+
+`random.uuid() -> str`
+
+The <b>random.uuid</b> method returns a randomly generated UUID (v4).
 
 ---
 
@@ -903,6 +1188,12 @@ Reports a captured username & password combination to Tavern. It will automatica
 
 Reports a captured username & ntlm hash combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.
 
+### report.screenshot
+
+`report.screenshot() -> None`
+
+Reports a screenshot of all screens to Tavern.
+
 ---
 
 ## Sys
@@ -924,7 +1215,7 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 ### sys.exec
 
-`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict`
+`sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
 The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
@@ -1096,6 +1387,12 @@ The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` 
 
 The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else.
 
+### sys.list_users
+
+`sys.list_users() -> List<Dict>`
+
+The <b>sys.list_users</b> method lists all user accounts on the system.
+
 ### sys.shell
 
 `sys.shell(cmd: str) -> Dict`
@@ -1255,6 +1552,6 @@ The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This
 
 ### time.sleep
 
-`time.sleep(secs: float)`
+`time.sleep(secs: int)`
 
 The <b>time.sleep</b> method sleeps the task for the given number of seconds.
