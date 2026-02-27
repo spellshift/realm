@@ -481,7 +481,7 @@ export const useShellTerminal = (
                     case WebsocketMessageKind.ControlFlow:
                         if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
                             content = msg.message + "\n";
-                            color = "\x1b[38;2;175;0;255m"; // Purple
+                            color = "\x1b[38;5;178m"; // Purple
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
                             setPortalId(msg.portal_id);
                         }

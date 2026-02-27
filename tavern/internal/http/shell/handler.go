@@ -26,6 +26,12 @@ import (
 )
 
 const (
+	colorCodeUsername = "\x1b[38;5;104m" // Realm Purple
+	colorCodeSuccess  = "\x1b[38;5;35m"  // Spring Green #00af5f
+	colorCodeReset    = "\x1b[0m"        // Resets color to default
+)
+
+const (
 	defaultMaxTaskInputsBuffered         = 1024 * 1024
 	defaultMaxTaskOutputsBuffered        = 1024 * 1024
 	defaultMaxTaskErrorsBuffered         = 1024
@@ -507,7 +513,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					if task.Edges.Creator != nil {
 						creatorName = task.Edges.Creator.Name
 					}
-					msg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n%s", creatorName, truncateInput(task.Input), msg.Output)
+					msg.Output = fmt.Sprintf("%s[@%s]%s%s[+]%s %s\n%s", colorCodeUsername, creatorName, colorCodeReset, colorCodeSuccess, colorCodeReset, truncateInput(task.Input), msg.Output)
 					otherStreamCh <- msg
 				}
 			}
