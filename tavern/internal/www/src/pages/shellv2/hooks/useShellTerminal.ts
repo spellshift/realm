@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
+import { ConnectionStatus, HeadlessWasmAdapter } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
 import { moveWordLeft, moveWordRight, highlightPythonSyntax } from "./shellUtils";
@@ -32,6 +32,7 @@ export const useShellTerminal = (
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -73,15 +74,20 @@ export const useShellTerminal = (
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
 
+    // Ref for connection status to access in event handlers
+    const connectionStatusRef = useRef(connectionStatus);
+
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
+        connectionStatusRef.current = connectionStatus;
         if (termInstance.current) {
+            const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
-                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
+                foreground: isDimmed ? "#777777" : "#d4d4d4",
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin]);
+    }, [isLateCheckin, connectionStatus]);
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!termInstance.current || !termRef.current) return;
 
@@ -352,6 +358,8 @@ export const useShellTerminal = (
             redrawLine();
         }, () => {
             termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+        }, (status) => {
+            setConnectionStatus(status);
         });
 
         adapter.current.init();
@@ -392,8 +400,8 @@ export const useShellTerminal = (
         };
 
         termInstance.current.onData((data) => {
-            // Check for late checkin and block input
-            if (isLateCheckinRef.current) return;
+            // Check for late checkin or disconnected status and block input
+            if (isLateCheckinRef.current || connectionStatusRef.current !== "connected") return;
 
             const code = data.charCodeAt(0);
             const state = shellState.current;
@@ -704,6 +712,7 @@ export const useShellTerminal = (
     return {
         termRef,
         connectionError,
+        connectionStatus,
         completions,
         showCompletions,
         completionPos,

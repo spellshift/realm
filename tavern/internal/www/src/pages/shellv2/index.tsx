@@ -26,6 +26,7 @@ const ShellV2 = () => {
     const {
         termRef,
         connectionError,
+        connectionStatus,
         completions,
         showCompletions,
         completionPos,
@@ -65,6 +66,7 @@ const ShellV2 = () => {
                     portalId={portalId}
                     timeUntilCallback={timeUntilCallback}
                     isMissedCallback={isMissedCallback}
+                    connectionStatus={connectionStatus}
                 />
             </div>
         </AccessGate>

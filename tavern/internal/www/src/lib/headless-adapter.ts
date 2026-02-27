@@ -6,27 +6,69 @@ export interface ExecutionResult {
     message?: string;
 }
 
+export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
+
 export class HeadlessWasmAdapter {
     private repl: any; // HeadlessRepl instance
-    private ws: WebSocket;
+    private ws: WebSocket | null = null;
+    private url: string;
     private onMessageCallback: (msg: WebsocketMessage) => void;
     private onReadyCallback?: () => void;
+    private onStatusChange?: (status: ConnectionStatus) => void;
     private isWsOpen: boolean = false;
+    private reconnectTimer: number | null = null;
+    private isClosed: boolean = false;
 
-    constructor(url: string, onMessage: (msg: WebsocketMessage) => void, onReady?: () => void) {
+    constructor(
+        url: string,
+        onMessage: (msg: WebsocketMessage) => void,
+        onReady?: () => void,
+        onStatusChange?: (status: ConnectionStatus) => void
+    ) {
+        this.url = url;
         this.onMessageCallback = onMessage;
         this.onReadyCallback = onReady;
-        this.ws = new WebSocket(url);
+        this.onStatusChange = onStatusChange;
+
+        this.connect();
+    }
+
+    private connect() {
+        if (this.isClosed) return;
+
+        // If we are already connected or connecting, close it first?
+        // Logic: if connect() is called, we want to establish a new connection.
+        if (this.ws) {
+            try {
+                this.ws.close();
+            } catch (e) {
+                // ignore
+            }
+            this.ws = null;
+        }
+
+        // Notify status as reconnecting (unless it's the very first time, but even then 'connecting' is fine)
+        // Since we don't have 'connecting', 'reconnecting' is a good proxy for "trying to connect".
+        // But maybe for the first time we might want to start with 'disconnected' -> 'connected'.
+        // However, the prompt asked for "connected, disconnected, and reconnecting".
+        this.onStatusChange?.("reconnecting");
+
+        this.ws = new WebSocket(this.url);
 
         this.ws.onopen = () => {
             this.isWsOpen = true;
+            this.onStatusChange?.("connected");
             this.checkReady();
+            // If we had a reconnect timer active (e.g. we manually called connect), clear it
+            if (this.reconnectTimer) {
+                clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = null;
+            }
         };
 
         this.ws.onmessage = (event) => {
             try {
                 const msg = JSON.parse(event.data) as WebsocketMessage;
-                // Basic validation or filtering could happen here, but we pass it all
                 this.onMessageCallback(msg);
             } catch (e) {
                 console.error("Failed to parse WebSocket message", e);
@@ -35,7 +77,24 @@ export class HeadlessWasmAdapter {
 
         this.ws.onclose = () => {
             this.isWsOpen = false;
+            this.onStatusChange?.("disconnected");
+            this.scheduleReconnect();
         };
+
+        this.ws.onerror = (e) => {
+            // On error, we rely on onclose to handle the reconnection flow
+            console.error("WebSocket error:", e);
+        };
+    }
+
+    private scheduleReconnect() {
+        if (this.isClosed) return;
+        if (this.reconnectTimer) return;
+
+        this.reconnectTimer = window.setTimeout(() => {
+            this.reconnectTimer = null;
+            this.connect();
+        }, 3000);
     }
 
     async init() {
@@ -68,7 +127,7 @@ export class HeadlessWasmAdapter {
             const result = JSON.parse(resultJson);
 
             if (result.status === "complete") {
-                if (this.isWsOpen) {
+                if (this.isWsOpen && this.ws) {
                     this.ws.send(JSON.stringify({
                         kind: WebsocketMessageKind.Input,
                         input: result.payload
@@ -107,8 +166,15 @@ export class HeadlessWasmAdapter {
     }
 
     close() {
+        this.isClosed = true;
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
         if (this.ws) {
+            this.ws.onclose = null; // Prevent reconnection trigger
             this.ws.close();
+            this.ws = null;
         }
     }
 }
