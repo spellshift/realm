@@ -70,6 +70,8 @@ export const useShellTerminal = (
         list: [], start: 0, show: false, index: 0
     });
 
+    const redrawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
 
@@ -323,6 +325,119 @@ export const useShellTerminal = (
         window.addEventListener("resize", handleResize);
 
         termInstance.current.write("Eldritch v0.3.0\r\n");
+
+        // Define redrawLine early so it can be used by adapter callback
+        const redrawLine = () => {
+            const term = termInstance.current;
+            if (!term) return;
+            const state = shellState.current;
+
+            let contentToWrite = "";
+            let contentToDisplay = "";
+            let cursorIndex = 0;
+
+            if (state.isSearching) {
+                const prompt = `(reverse-i-search)'${state.searchQuery}': `;
+                let match = "";
+                if (state.searchQuery) {
+                    // Simple search backwards
+                    for (let i = state.history.length - 1; i >= 0; i--) {
+                        if (state.history[i].includes(state.searchQuery)) {
+                            match = state.history[i];
+                            break;
+                        }
+                    }
+                }
+                contentToWrite = prompt + match;
+                contentToDisplay = contentToWrite;
+                // In search mode, cursor is typically at the end of the match
+                cursorIndex = contentToWrite.length;
+            } else {
+                contentToWrite = state.prompt + state.inputBuffer;
+                contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
+                cursorIndex = state.prompt.length + state.cursorPos;
+            }
+
+            // Calculate rows based on visual line wrapping
+            const termCols = term.cols;
+            const getVisualLineCount = (text: string, cols: number) => {
+                const lines = text.split('\n');
+                let count = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (i > 0) count++; // Newline character
+                    // Calculate wrapped lines for this segment
+                    // Even an empty line takes 1 row if explicitly split
+                    // But here, split('\n') gives empty string for consecutive newlines
+
+                    if (line.length > 0) {
+                        count += Math.floor((line.length - 1) / cols);
+                    }
+                    // If line is exactly cols length, it doesn't wrap to next line unless another char comes
+                    // But we are counting *visual* rows.
+                    // xterm wraps: if I write 80 chars on 80 col terminal, cursor is at (80, y)
+                    // if I write 81 chars, cursor is at (1, y+1)
+                }
+                return count;
+            };
+
+            const rows = getVisualLineCount(contentToWrite, termCols);
+
+            // Move up to start of previous rendering (regardless of mode)
+            const prevRows = lastBufferHeight.current;
+            if (prevRows > 0) {
+                term.write(`\x1b[${prevRows}A`);
+            }
+
+            // Clear everything below
+            term.write("\r\x1b[J");
+
+            // Write new content, ensuring newlines are carriage-return + newline
+            term.write(contentToDisplay.replace(/\n/g, "\r\n"));
+
+            // Update last height
+            lastBufferHeight.current = rows;
+
+            // Move cursor to correct position
+            if (!state.isSearching) {
+                // Calculate cursor position in terms of rows/cols relative to start
+                const prefix = contentToWrite.slice(0, cursorIndex);
+                // Calculate rows occupied by prefix
+                const cursorRow = getVisualLineCount(prefix, termCols);
+
+                // Calculate cursor column
+                const lastLine = prefix.split('\n').pop() || "";
+                let cursorCol = lastLine.length % termCols;
+                // If we are exactly at end of line (and not empty), it might be tricky
+                // But xterm handles cursor positioning
+                // If length is multiple of cols, cursor is effectively at index 0 of next line physically?
+                // Actually, if we write 80 chars, cursor is at 80. Writing next char moves it.
+                // We use relative movement.
+
+                // We moved up `prevRows`. We wrote `rows` lines.
+                // We are now at the end of the content.
+                // We want to be at `cursorRow`.
+
+                const moveUp = rows - cursorRow;
+                if (moveUp > 0) {
+                    term.write(`\x1b[${moveUp}A`);
+                }
+
+                term.write("\r"); // Go to start of line
+                if (cursorCol > 0) {
+                    term.write(`\x1b[${cursorCol}C`);
+                }
+            }
+        };
+
+        const scheduleRedraw = () => {
+            if (redrawTimeoutRef.current) {
+                clearTimeout(redrawTimeoutRef.current);
+            }
+            redrawTimeoutRef.current = setTimeout(() => {
+                redrawLine();
+            }, 50);
+        };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
@@ -644,9 +759,17 @@ export const useShellTerminal = (
             }
 
             if (code >= 32 && code !== 127) {
-                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                state.cursorPos += data.length;
-                redrawLine();
+                // Fast path for simple appending at the end of the line
+                if (data.length === 1 && state.cursorPos === state.inputBuffer.length) {
+                    state.inputBuffer += data;
+                    state.cursorPos++;
+                    term.write(data);
+                    scheduleRedraw();
+                } else {
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos += data.length;
+                    redrawLine();
+                }
             } else if (code === 13) { // Enter
                 term.write("\r\n");
                 const res = adapter.current?.input(state.inputBuffer);
@@ -678,9 +801,17 @@ export const useShellTerminal = (
                 lastBufferHeight.current = 0;
             } else if (code === 127) { // Backspace
                 if (state.cursorPos > 0) {
-                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
-                    state.cursorPos--;
-                    redrawLine();
+                    // Fast path for backspace at the end of the line
+                    if (state.cursorPos === state.inputBuffer.length) {
+                        state.inputBuffer = state.inputBuffer.slice(0, -1);
+                        state.cursorPos--;
+                        term.write('\b \b');
+                        scheduleRedraw();
+                    } else {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos--;
+                        redrawLine();
+                    }
                 }
             }
 
@@ -701,6 +832,7 @@ export const useShellTerminal = (
             window.removeEventListener("resize", handleResize);
             adapter.current?.close();
             termInstance.current?.dispose();
+            if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
     }, [shellId, loading, error, shellData, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
