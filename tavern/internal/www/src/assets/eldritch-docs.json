@@ -177,207 +177,207 @@
   },
   "agent.set_callback_interval": {
     "signature": "agent.set_callback_interval(new_interval: int) -> None",
-    "description": "The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the\nrunning agent's callback interval to the passed value as seconds. This configuration change will\nnot persist across agent reboots."
+    "description": "The **agent.set_callback_interval** method takes an unsigned int and changes the\nrunning agent's callback interval to the passed value as seconds. This configuration change will\nnot persist across agent reboots."
   },
   "agent.set_callback_uri": {
     "signature": "agent.set_callback_uri(new_uri: str) -> None",
-    "description": "The <b>agent.set_callback_uri</b> method takes an string and changes the\nrunning agent's callback URI to the passed value. This configuration change will\nnot persist across agent reboots. NOTE: please ensure the passed URI path is correct\nfor the underlying `Transport` being used, as a URI can take many forms and we make no\nassumptions on `Transport` requirements no checks are applied to the passed string.\n---\n## Assets"
+    "description": "The **agent.set_callback_uri** method takes an string and changes the\nrunning agent's callback URI to the passed value. This configuration change will\nnot persist across agent reboots. NOTE: please ensure the passed URI path is correct\nfor the underlying `Transport` being used, as a URI can take many forms and we make no\nassumptions on `Transport` requirements no checks are applied to the passed string.\n---\n## Assets"
   },
   "assets.copy": {
     "signature": "assets.copy(src: str, dst: str) -> None",
-    "description": "The <b>assets.copy</b> method copies an embedded file from the agent to disk.\nThe `src` variable will be the path from the `embed_files_golem_prod` as the root dir.\nFor example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.\nIf `dst` exists it will be overwritten. If it doesn't exist the function will fail.\n```python\ndef deploy_agent():\nif file.is_dir(\"/usr/bin\"):\nassets.copy(\"sliver/agent-x64\",\"/usr/bin/notsu\")\nsys.exec(\"/usr/bin/notsu\",[],true)\ndeploy_agent()\n```"
+    "description": "The **assets.copy** method copies an embedded file from the agent to disk.\nThe `src` variable will be the path from the `embed_files_golem_prod` as the root dir.\nFor example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.\nIf `dst` exists it will be overwritten. If it doesn't exist the function will fail.\n```python\ndef deploy_agent():\nif file.is_dir(\"/usr/bin\"):\nassets.copy(\"sliver/agent-x64\",\"/usr/bin/notsu\")\nsys.exec(\"/usr/bin/notsu\",[],true)\ndeploy_agent()\n```"
   },
   "assets.list": {
     "signature": "assets.list() -> List<str>",
-    "description": "The <b>assets.list</b> method returns a list of asset names that the agent is aware of."
+    "description": "The **assets.list** method returns a list of asset names that the agent is aware of."
   },
   "assets.read_binary": {
     "signature": "assets.read_binary(src: str) -> List<int>",
-    "description": "The <b>assets.read_binary</b> method returns a list of u32 numbers representing the asset files bytes."
+    "description": "The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes."
   },
   "assets.read": {
     "signature": "assets.read(src: str) -> str",
-    "description": "The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.\n---\n## Crypto"
+    "description": "The **assets.read** method returns a UTF-8 string representation of the asset file.\n---\n## Crypto"
   },
   "crypto.aes_decrypt": {
     "signature": "crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "The <b>crypto.aes_decrypt</b> method decrypts the given data using the given key and IV (AES CBC)."
+    "description": "The **crypto.aes_decrypt** method decrypts the given data using the given key and IV (AES CBC)."
   },
   "crypto.aes_encrypt": {
     "signature": "crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "The <b>crypto.aes_encrypt</b> method encrypts the given data using the given key and IV (AES CBC)."
+    "description": "The **crypto.aes_encrypt** method encrypts the given data using the given key and IV (AES CBC)."
   },
   "crypto.aes_decrypt_file": {
     "signature": "crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None",
-    "description": "The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.\nKey must be 16 Bytes (Characters)"
+    "description": "The **crypto.aes_decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location.\nKey must be 16 Bytes (Characters)"
   },
   "crypto.aes_encrypt_file": {
     "signature": "crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None",
-    "description": "The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.\nKey must be 16 Bytes (Characters)"
+    "description": "The **crypto.aes_encrypt_file** method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.\nKey must be 16 Bytes (Characters)"
   },
   "crypto.encode_b64": {
     "signature": "crypto.encode_b64(content: str, encode_type: Optional<str>) -> str",
-    "description": "The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:\n- STANDARD (default)\n- STANDARD_NO_PAD\n- URL_SAFE\n- URL_SAFE_NO_PAD"
+    "description": "The **crypto.encode_b64** method encodes the given text using the given base64 encoding method. Valid methods include:\n- STANDARD (default)\n- STANDARD_NO_PAD\n- URL_SAFE\n- URL_SAFE_NO_PAD"
   },
   "crypto.decode_b64": {
     "signature": "crypto.decode_b64(content: str, decode_type: Optional<str>) -> str",
-    "description": "The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:\n- STANDARD (default)\n- STANDARD_NO_PAD\n- URL_SAFE\n- URL_SAFE_NO_PAD"
+    "description": "The **crypto.decode_b64** method encodes the given text using the given base64 decoding method. Valid methods include:\n- STANDARD (default)\n- STANDARD_NO_PAD\n- URL_SAFE\n- URL_SAFE_NO_PAD"
   },
   "crypto.from_json": {
     "signature": "crypto.from_json(content: str) -> Value",
-    "description": "The <b>crypto.from_json</b> method converts JSON text to an object of correct type.\n```python\ncrypto.from_json(\"{\\\"foo\\\":\\\"bar\\\"}\")\n{\n\"foo\": \"bar\"\n}\n```"
+    "description": "The **crypto.from_json** method converts JSON text to an object of correct type.\n```python\ncrypto.from_json(\"{\\\"foo\\\":\\\"bar\\\"}\")\n{\n\"foo\": \"bar\"\n}\n```"
   },
   "crypto.is_json": {
     "signature": "crypto.is_json(content: str) -> bool",
-    "description": "The <b>crypto.is_json</b> tests if JSON is valid.\n```python\ncrypto.is_json(\"{\\\"foo\\\":\\\"bar\\\"}\")\nTrue\n```\n```python\ncrypto.is_json(\"foobar\")\nFalse\n```"
+    "description": "The **crypto.is_json** tests if JSON is valid.\n```python\ncrypto.is_json(\"{\\\"foo\\\":\\\"bar\\\"}\")\nTrue\n```\n```python\ncrypto.is_json(\"foobar\")\nFalse\n```"
   },
   "crypto.to_json": {
     "signature": "crypto.to_json(content: Value) -> str",
-    "description": "The <b>crypto.to_json</b> method converts given type to JSON text.\n```python\ncrypto.to_json({\"foo\": \"bar\"})\n\"{\\\"foo\\\":\\\"bar\\\"}\"\n```"
+    "description": "The **crypto.to_json** method converts given type to JSON text.\n```python\ncrypto.to_json({\"foo\": \"bar\"})\n\"{\\\"foo\\\":\\\"bar\\\"}\"\n```"
   },
   "crypto.hash_file": {
     "signature": "crypto.hash_file(file: str, algo: str) -> str",
-    "description": "The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:\n- MD5\n- SHA1\n- SHA256\n- SHA512"
+    "description": "The **crypto.hash_file** method will produce the hash of the given file's contents. Valid algorithms include:\n- MD5\n- SHA1\n- SHA256\n- SHA512"
   },
   "crypto.md5": {
     "signature": "crypto.md5(data: Bytes) -> str",
-    "description": "The <b>crypto.md5</b> method calculates the MD5 hash of the provided data."
+    "description": "The **crypto.md5** method calculates the MD5 hash of the provided data."
   },
   "crypto.sha1": {
     "signature": "crypto.sha1(data: Bytes) -> str",
-    "description": "The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data."
+    "description": "The **crypto.sha1** method calculates the SHA1 hash of the provided data."
   },
   "crypto.sha256": {
     "signature": "crypto.sha256(data: Bytes) -> str",
-    "description": "The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data.\n---\n## File"
+    "description": "The **crypto.sha256** method calculates the SHA256 hash of the provided data.\n---\n## File"
   },
   "file.append": {
     "signature": "file.append(path: str, content: str) -> None",
-    "description": "The <b>file.append</b> method appends the `content` to file at `path`. If no file exists at path create the file with the content."
+    "description": "The **file.append** method appends the `content` to file at `path`. If no file exists at path create the file with the content."
   },
   "file.compress": {
     "signature": "file.compress(src: str, dst: str) -> None",
-    "description": "The <b>file.compress</b> method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed."
+    "description": "The **file.compress** method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed."
   },
   "file.copy": {
     "signature": "file.copy(src: str, dst: str) -> None",
-    "description": "The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created."
+    "description": "The **file.copy** method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created."
   },
   "file.decompress": {
     "signature": "file.decompress(src: str, dst: str) -> None",
-    "description": "The <b>file.decompress</b> method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.\n```python\nfile.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')\nfile.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')\n# Files will exist in /tmp/bob_ssh_output/.ssh/*\n```"
+    "description": "The **file.decompress** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.\n```python\nfile.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')\nfile.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')\n# Files will exist in /tmp/bob_ssh_output/.ssh/*\n```"
   },
   "file.exists": {
     "signature": "file.exists(path: str) -> bool",
-    "description": "The <b>file.exists</b> method checks if a file or directory exists at the path specified."
+    "description": "The **file.exists** method checks if a file or directory exists at the path specified."
   },
   "file.follow": {
     "signature": "file.follow(path: str, fn: function(str)) -> None",
-    "description": "The <b>file.follow</b> method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).\n```python\n# Print every line added to bob's bash history\nfile.follow('/home/bob/.bash_history', print)\n```"
+    "description": "The **file.follow** method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).\n```python\n# Print every line added to bob's bash history\nfile.follow('/home/bob/.bash_history', print)\n```"
   },
   "file.is_dir": {
     "signature": "file.is_dir(path: str) -> bool",
-    "description": "The <b>file.is_dir</b> method checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return `False`."
+    "description": "The **file.is_dir** method checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return `False`."
   },
   "file.is_file": {
     "signature": "file.is_file(path: str) -> bool",
-    "description": "The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`."
+    "description": "The **file.is_file** method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`."
   },
   "file.list": {
     "signature": "file.list(path: str) -> List<Dict>",
-    "description": "The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.\nThis function also supports globbing with `*` for example:\n```python\nfile.list(\"/home/*/.bash_history\") # List all files called .bash_history in sub dirs of `/home/`\nfile.list(\"/etc/*ssh*\") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name\nfile.list(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\*.yml\") # List files over UNC paths\n```\nEach file is represented by a Dict type.\nHere is an example of the Dict layout:\n```json\n[\n{\n\"file_name\": \"implants\",\n\"absolute_path\": \"/workspace/realm/implants\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-09 01:35:40 UTC\",\n\"type\": \"Directory\"\n},\n{\n\"file_name\": \"README.md\",\n\"absolute_path\": \"/workspace/realm/README.md\",\n\"size\": 750,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"100644\",\n\"modified\": \"2023-07-08 02:49:47 UTC\",\n\"type\": \"File\"\n},\n{\n\"file_name\": \".git\",\n\"absolute_path\": \"/workspace/realm/.git\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-10 21:14:06 UTC\",\n\"type\": \"Directory\"\n}\n]\n```"
+    "description": "The **file.list** method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.\nThis function also supports globbing with `*` for example:\n```python\nfile.list(\"/home/*/.bash_history\") # List all files called .bash_history in sub dirs of `/home/`\nfile.list(\"/etc/*ssh*\") # List the contents of all dirs that have `ssh` in the name and all files in etc with `ssh` in the name\nfile.list(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\*.yml\") # List files over UNC paths\n```\nEach file is represented by a Dict type.\nHere is an example of the Dict layout:\n```json\n[\n{\n\"file_name\": \"implants\",\n\"absolute_path\": \"/workspace/realm/implants\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-09 01:35:40 UTC\",\n\"type\": \"Directory\"\n},\n{\n\"file_name\": \"README.md\",\n\"absolute_path\": \"/workspace/realm/README.md\",\n\"size\": 750,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"100644\",\n\"modified\": \"2023-07-08 02:49:47 UTC\",\n\"type\": \"File\"\n},\n{\n\"file_name\": \".git\",\n\"absolute_path\": \"/workspace/realm/.git\",\n\"size\": 4096,\n\"owner\": \"root\",\n\"group\": \"0\",\n\"permissions\": \"40755\",\n\"modified\": \"2023-07-10 21:14:06 UTC\",\n\"type\": \"Directory\"\n}\n]\n```"
   },
   "file.list_recent": {
     "signature": "file.list_recent(path: str, limit: int) -> List<str>",
-    "description": "The <b>file.list_recent</b> method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.\n- `path`: The directory to scan. Defaults to `/`.\n- `limit`: The maximum number of files to return. Defaults to `10`.\n```python\n# Get the 5 most recently modified files in /var/log\nrecent_logs = file.list_recent(\"/var/log\", 5)\nfor log in recent_logs:\nprint(log)\n```"
+    "description": "The **file.list_recent** method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.\n- `path`: The directory to scan. Defaults to `/`.\n- `limit`: The maximum number of files to return. Defaults to `10`.\n```python\n# Get the 5 most recently modified files in /var/log\nrecent_logs = file.list_recent(\"/var/log\", 5)\nfor log in recent_logs:\nprint(log)\n```"
   },
   "file.mkdir": {
     "signature": "file.mkdir(path: str, parent: Option<bool>) -> None",
-    "description": "The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`."
+    "description": "The **file.mkdir** method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`."
   },
   "file.move": {
     "signature": "file.move(src: str, dst: str) -> None",
-    "description": "The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems."
+    "description": "The **file.move** method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems."
   },
   "file.parent_dir": {
     "signature": "file.parent_dir(path: str) -> str",
-    "description": "The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`"
+    "description": "The **file.parent_dir** method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`"
   },
   "file.pwd": {
     "signature": "file.pwd() -> Option<str>",
-    "description": "The <b>file.pwd</b> method returns the current working directory of the process. If it could not be determined, `None` is returned."
+    "description": "The **file.pwd** method returns the current working directory of the process. If it could not be determined, `None` is returned."
   },
   "file.read": {
     "signature": "file.read(path: str) -> str",
-    "description": "The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
+    "description": "The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.read_binary": {
     "signature": "file.read(path: str) -> List<int>",
-    "description": "The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read_binary(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read_binary(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read_binary(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
+    "description": "The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read_binary(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read_binary(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read_binary(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.remove": {
     "signature": "file.remove(path: str) -> None",
-    "description": "The <b>file.remove</b> method deletes a file or directory (and it's contents) specified by path."
+    "description": "The **file.remove** method deletes a file or directory (and it's contents) specified by path."
   },
   "file.replace": {
     "signature": "file.replace(path: str, pattern: str, value: str) -> None",
-    "description": "The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
+    "description": "The **file.replace** method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
   },
   "file.replace_all": {
     "signature": "file.replace_all(path: str, pattern: str, value: str) -> None",
-    "description": "The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
+    "description": "The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
   },
   "file.temp_file": {
     "signature": "file.temp_file(name: Option<str>) -> str",
-    "description": "The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument."
+    "description": "The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument."
   },
   "file.template": {
     "signature": "file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None",
-    "description": "The <b>file.template</b> method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.\nIf the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.\nThe `args` dictionary currently supports values of: `int`, `str`, and `List`.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)"
+    "description": "The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.\nIf the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.\nThe `args` dictionary currently supports values of: `int`, `str`, and `List`.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)"
   },
   "file.timestomp": {
     "signature": "file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None",
-    "description": "The <b>file.timestomp</b> method modifies the timestamps of a file.\nIt can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file."
+    "description": "The **file.timestomp** method modifies the timestamps of a file.\nIt can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file."
   },
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
-    "description": "The <b>file.write</b> method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
+    "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",
-    "description": "The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.\n- name: Checks if file name contains provided input\n- file_type: Checks for 'file' or 'dir' for files or directories, respectively.\n- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.\n- modified_time: Checks if last modified time matches input specified in time since EPOCH\n- create_time: Checks if last modified time matches input specified in time since EPOCH\n---\n## HTTP\nThe HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`)."
+    "description": "The **file.find** method finds all files matching the used parameters. Returns file path for all matching items.\n- name: Checks if file name contains provided input\n- file_type: Checks for 'file' or 'dir' for files or directories, respectively.\n- permissions: On UNIX systems, takes numerical input of standard unix permissions (rwxrwxrwx == 777). On Windows, takes 1 or 0, 1 if file is read only.\n- modified_time: Checks if last modified time matches input specified in time since EPOCH\n- create_time: Checks if last modified time matches input specified in time since EPOCH\n---\n## HTTP\nThe HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`)."
   },
   "http.download": {
     "signature": "http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None",
-    "description": "The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten."
+    "description": "The **http.download** method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten."
   },
   "http.get": {
     "signature": "http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str",
-    "description": "The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase."
+    "description": "The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase."
   },
   "http.post": {
     "signature": "http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str",
-    "description": "The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\n---\n## Pivot"
+    "description": "The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.\n---\n## Pivot"
   },
   "pivot.arp_scan": {
     "signature": "pivot.arp_scan(target_cidrs: List<str>) -> List<str>",
-    "description": "The <b>pivot.arp_scan</b> method is for enumerating hosts on the agent network without using TCP connect or ping.\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- Must be running as `root` to use.\n- Not supported on Windows\nResults will be in the format:\n```python\n$> pivot.arp_scan([\"192.168.1.1/32\"])\n```\n**Success**\n```json\n[\n{ \"ip\": \"192.168.1.1\", \"mac\": \"ab:cd:ef:01:23:45\", \"interface\": \"eno0\" }\n]\n```\n**Failure**\n```json\n[]\n```"
+    "description": "The **pivot.arp_scan** method is for enumerating hosts on the agent network without using TCP connect or ping.\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- Must be running as `root` to use.\n- Not supported on Windows\nResults will be in the format:\n```python\n$> pivot.arp_scan([\"192.168.1.1/32\"])\n```\n**Success**\n```json\n[\n{ \"ip\": \"192.168.1.1\", \"mac\": \"ab:cd:ef:01:23:45\", \"interface\": \"eno0\" }\n]\n```\n**Failure**\n```json\n[]\n```"
   },
   "pivot.bind_proxy": {
     "signature": "pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None",
-    "description": "The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided)."
+    "description": "The **pivot.bind_proxy** method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided)."
   },
   "pivot.ncat": {
     "signature": "pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str",
-    "description": "The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.\n`protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`."
+    "description": "The **pivot.ncat** method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.\n`protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`."
   },
   "pivot.port_forward": {
     "signature": "pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None",
-    "description": "The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed."
+    "description": "The **pivot.port_forward** method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed."
   },
   "pivot.port_scan": {
     "signature": "pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>",
-    "description": "The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.\nInputs:\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- `ports` can be a list of any number of integers between 1 and 65535.\n- `protocol` must be: `tcp` or `udp`. These are the only supported options.\n- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`\n- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).\nResults will be in the format:\n```json\n[\n{ \"ip\": \"127.0.0.1\", \"port\": 22, \"protocol\": \"tcp\", \"status\": \"open\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 21, \"protocol\": \"tcp\", \"status\": \"closed\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 80, \"protocol\": \"tcp\", \"status\": \"timeout\"},\n]\n```\nA port's status can be open, closed, or timeout:\n|**State**|**Protocol**| **Meaning**                                          |\n|---------|------------|------------------------------------------------------|\n| open    | tcp        | Connection successful.                               |\n| close   | tcp        | Connection refused.                                  |\n| timeout | tcp        | Connection dropped or didn't respond.                |\n| open    | udp        | Connection returned some data.                       |\n| timeout | udp        | Connection was refused, dropped, or didn't respond.  |\nEach IP in the specified CIDR will be returned regardless of if it returns any open ports.\nBe mindful of this when scanning large CIDRs as it may create large return objects.\nNOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely."
+    "description": "The **pivot.port_scan** method allows users to scan TCP/UDP ports within the eldritch language.\nInputs:\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- `ports` can be a list of any number of integers between 1 and 65535.\n- `protocol` must be: `tcp` or `udp`. These are the only supported options.\n- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`\n- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).\nResults will be in the format:\n```json\n[\n{ \"ip\": \"127.0.0.1\", \"port\": 22, \"protocol\": \"tcp\", \"status\": \"open\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 21, \"protocol\": \"tcp\", \"status\": \"closed\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 80, \"protocol\": \"tcp\", \"status\": \"timeout\"},\n]\n```\nA port's status can be open, closed, or timeout:\n|**State**|**Protocol**| **Meaning**                                          |\n|---------|------------|------------------------------------------------------|\n| open    | tcp        | Connection successful.                               |\n| close   | tcp        | Connection refused.                                  |\n| timeout | tcp        | Connection dropped or didn't respond.                |\n| open    | udp        | Connection returned some data.                       |\n| timeout | udp        | Connection was refused, dropped, or didn't respond.  |\nEach IP in the specified CIDR will be returned regardless of if it returns any open ports.\nBe mindful of this when scanning large CIDRs as it may create large return objects.\nNOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely."
   },
   "pivot.create_portal": {
     "signature": "pivot.create_portal() -> None",
@@ -393,71 +393,71 @@
   },
   "pivot.smb_exec": {
     "signature": "pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str",
-    "description": "The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb."
+    "description": "The **pivot.smb_exec** method is being proposed to allow users a way to move between hosts running smb."
   },
   "pivot.ssh_copy": {
     "signature": "pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str",
-    "description": "The <b>pivot.ssh_copy</b> method copies a local file to a remote system.\nssh_copy will return `\"Success\"` if successful and `\"Failed to run handle_ssh_copy: ...\"` on failure.\nIf the connection is successful but the copy writes a file error will be returned.\nssh_copy will overwrite the remote file if it exists.\nThe file directory the `dst` file exists in must exist in order for ssh_copy to work."
+    "description": "The **pivot.ssh_copy** method copies a local file to a remote system.\nssh_copy will return `\"Success\"` if successful and `\"Failed to run handle_ssh_copy: ...\"` on failure.\nIf the connection is successful but the copy writes a file error will be returned.\nssh_copy will overwrite the remote file if it exists.\nThe file directory the `dst` file exists in must exist in order for ssh_copy to work."
   },
   "pivot.ssh_exec": {
     "signature": "pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>",
-    "description": "The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.\nStdout returns the string result from the command output.\nStderr will return any errors from the SSH connection but not the command being executed.\nStatus will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.\n```json\n{\n\"stdout\": \"uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\\n\",\n\"stderr\":\"\",\n\"status\": 0\n}\n```\n---\n## Process"
+    "description": "The **pivot.ssh_exec** method executes a command string on the remote host using the default shell.\nStdout returns the string result from the command output.\nStderr will return any errors from the SSH connection but not the command being executed.\nStatus will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.\n```json\n{\n\"stdout\": \"uid=1000(kali) gid=1000(kali) groups=1000(kali),24(cdrom),25(floppy),27(sudo),29(audio),30(dip),44(video),46(plugdev),109(netdev),118(bluetooth),128(lpadmin),132(scanner),143(docker)\\n\",\n\"stderr\":\"\",\n\"status\": 0\n}\n```\n---\n## Process"
   },
   "process.info": {
     "signature": "process.info(pid: Optional<int>) -> Dict",
-    "description": "The <b>process.info</b> method returns all information on a given process ID. Default is the current process.\n```json\n{\n\"pid\": 1286574,\n\"name\": \"golem\",\n\"cmd\": [\n\"./target/debug/golem\",\n\"-i\"\n],\n\"exe\": \"/home/user/realm/implants/target/debug/golem\",\n\"environ\": {\n\"USER\": \"user\",\n\"HOME\": \"/home/user\",\n\"PATH\": \"/home/user/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/snap/bin:/home/user/.dotnet/tools\",\n\"SHELL\": \"/bin/zsh\",\n\"TERM\": \"xterm-256color\",\n\"SSH_TTY\": \"/dev/pts/0\",\n\"SHLVL\": \"1\",\n\"PWD\": \"/home/user\",\n\"OLDPWD\": \"/home/user\",\n\"XDG_DATA_DIRS\": \"/usr/local/share:/usr/share:/var/lib/snapd/desktop\",\n\"P9K_TTY\": \"old\",\n\"_P9K_TTY\": \"/dev/pts/0\",\n\"ZSH\": \"/home/user/.oh-my-zsh\",\n},\n\"cwd\": \"/home/user/realm/implants\",\n\"root\": \"/\",\n\"memory_usage\": 32317440,\n\"virtual_memory_usage\": 1712074752,\n\"ppid\": 1180405,\n\"status\": \"Sleeping\",\n\"start_time\": 1698106833,\n\"run_time\": 2,\n\"uid\": 1000,\n\"euid\": 1000,\n\"gid\": 1000,\n\"egid\": 1000,\n\"sid\": 1180405\n}\n```"
+    "description": "The **process.info** method returns all information on a given process ID. Default is the current process.\n```json\n{\n\"pid\": 1286574,\n\"name\": \"golem\",\n\"cmd\": [\n\"./target/debug/golem\",\n\"-i\"\n],\n\"exe\": \"/home/user/realm/implants/target/debug/golem\",\n\"environ\": {\n\"USER\": \"user\",\n\"HOME\": \"/home/user\",\n\"PATH\": \"/home/user/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/snap/bin:/home/user/.dotnet/tools\",\n\"SHELL\": \"/bin/zsh\",\n\"TERM\": \"xterm-256color\",\n\"SSH_TTY\": \"/dev/pts/0\",\n\"SHLVL\": \"1\",\n\"PWD\": \"/home/user\",\n\"OLDPWD\": \"/home/user\",\n\"XDG_DATA_DIRS\": \"/usr/local/share:/usr/share:/var/lib/snapd/desktop\",\n\"P9K_TTY\": \"old\",\n\"_P9K_TTY\": \"/dev/pts/0\",\n\"ZSH\": \"/home/user/.oh-my-zsh\",\n},\n\"cwd\": \"/home/user/realm/implants\",\n\"root\": \"/\",\n\"memory_usage\": 32317440,\n\"virtual_memory_usage\": 1712074752,\n\"ppid\": 1180405,\n\"status\": \"Sleeping\",\n\"start_time\": 1698106833,\n\"run_time\": 2,\n\"uid\": 1000,\n\"euid\": 1000,\n\"gid\": 1000,\n\"egid\": 1000,\n\"sid\": 1180405\n}\n```"
   },
   "process.kill": {
     "signature": "process.kill(pid: int) -> None",
-    "description": "The <b>process.kill</b> method will kill a process using the KILL signal given its process id."
+    "description": "The **process.kill** method will kill a process using the KILL signal given its process id."
   },
   "process.list": {
     "signature": "process.list() -> List<Dict>",
-    "description": "The <b>process.list</b> method returns a list of dictionaries that describe each process. The dictionaries follow the schema:\n```json\n{\n\"pid\": \"9812\",\n\"ppid\": \"1\",\n\"status\": \"Sleeping\",\n\"name\": \"golem\",\n\"path\": \"/usr/bin/golem\",\n\"username\": \"root\",\n\"command\": \"/usr/bin/golem -i\",\n\"cwd\": \"/root/\",\n\"environ\": \"CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0\",\n}\n```"
+    "description": "The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:\n```json\n{\n\"pid\": \"9812\",\n\"ppid\": \"1\",\n\"status\": \"Sleeping\",\n\"name\": \"golem\",\n\"path\": \"/usr/bin/golem\",\n\"username\": \"root\",\n\"command\": \"/usr/bin/golem -i\",\n\"cwd\": \"/root/\",\n\"environ\": \"CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0\",\n}\n```"
   },
   "process.name": {
     "signature": "process.name(pid: int) -> str",
-    "description": "The <b>process.name</b> method returns the name of the process from its given process ID."
+    "description": "The **process.name** method returns the name of the process from its given process ID."
   },
   "process.netstat": {
     "signature": "process.netstat() -> List<Dict>",
-    "description": "The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.\n_Currently only shows LISTENING TCP connections_\n```json\n[\n{\n\"socket_type\": \"TCP\",\n\"local_address\": \"127.0.0.1\",\n\"local_port\": 46341,\n\"pid\": 2359037\n},\n...\n]\n```\n---\n## Random\nThe random library is designed to enable generation of cryptographically secure random values. None of these functions will be blocking."
+    "description": "The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.\n_Currently only shows LISTENING TCP connections_\n```json\n[\n{\n\"socket_type\": \"TCP\",\n\"local_address\": \"127.0.0.1\",\n\"local_port\": 46341,\n\"pid\": 2359037\n},\n...\n]\n```\n---\n## Random\nThe random library is designed to enable generation of cryptographically secure random values. None of these functions will be blocking."
   },
   "random.bool": {
     "signature": "random.bool() -> bool",
-    "description": "The <b>random.bool</b> method returns a randomly sourced boolean value."
+    "description": "The **random.bool** method returns a randomly sourced boolean value."
   },
   "random.bytes": {
     "signature": "random.bytes(len: int) -> List<int>",
-    "description": "The <b>random.bytes</b> method returns a list of randomly generated bytes."
+    "description": "The **random.bytes** method returns a list of randomly generated bytes."
   },
   "random.int": {
     "signature": "random.int(min: i32, max: i32) -> i32",
-    "description": "The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum."
+    "description": "The **random.int** method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum."
   },
   "random.string": {
     "signature": "random.string(length: uint, charset: Optional<str>) -> str",
-    "description": "The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues."
+    "description": "The **random.string** method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues."
   },
   "random.uuid": {
     "signature": "random.uuid() -> str",
-    "description": "The <b>random.uuid</b> method returns a randomly generated UUID (v4).\n---\n## Regex\nThe regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written\nin Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
+    "description": "The **random.uuid** method returns a randomly generated UUID (v4).\n---\n## Regex\nThe regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written\nin Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
   },
   "regex.match_all": {
     "signature": "regex.match_all(haystack: str, pattern: str) -> List<str>",
-    "description": "The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
+    "description": "The **regex.match_all** method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
   },
   "regex.match": {
     "signature": "regex.match(haystack: str, pattern: str) -> str",
-    "description": "The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given\nhaystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
+    "description": "The **regex.match** method returns the first capture group string that matched the given pattern within the given\nhaystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
   },
   "regex.replace_all": {
     "signature": "regex.replace_all(haystack: str, pattern: str, value: string) -> str",
-    "description": "The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
+    "description": "The **regex.replace_all** method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching."
   },
   "regex.replace": {
     "signature": "regex.replace(haystack: str, pattern: str, value: string) -> str",
-    "description": "The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.\n---\n## Report\nThe report library is designed to enable reporting structured data to Tavern. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**."
+    "description": "The **regex.replace** method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.\n---\n## Report\nThe report library is designed to enable reporting structured data to Tavern. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**."
   },
   "report.file": {
     "signature": "report.file(path: str) -> None",
@@ -485,94 +485,94 @@
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
-    "description": "The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call."
+    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call."
   },
   "sys.dll_reflect": {
     "signature": "sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None",
-    "description": "The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
+    "description": "The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
   },
   "sys.exec": {
     "signature": "sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict",
-    "description": "The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.\nOn *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.\nOn Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.\nThe `env_vars` will be a map of environment variables to be added to the process of the execution.\n```python\nsys.exec(\"/bin/bash\",[\"-c\", \"whoami\"])\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.exec(\"/bin/bash\",[\"-c\", \"ls /nofile\"])\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
+    "description": "The **sys.exec** method executes a program specified with `path` and passes the `args` list.\nOn *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.\nOn Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.\nThe `env_vars` will be a map of environment variables to be added to the process of the execution.\n```python\nsys.exec(\"/bin/bash\",[\"-c\", \"whoami\"])\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.exec(\"/bin/bash\",[\"-c\", \"ls /nofile\"])\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
   },
   "sys.get_env": {
     "signature": "sys.get_env() -> Dict",
-    "description": "The <b>sys.get_env</b> method returns a dictionary that describes the current process's environment variables.\nAn example is below:\n```json\n{\n\"FOO\": \"BAR\",\n\"CWD\": \"/\"\n}\n```"
+    "description": "The **sys.get_env** method returns a dictionary that describes the current process's environment variables.\nAn example is below:\n```json\n{\n\"FOO\": \"BAR\",\n\"CWD\": \"/\"\n}\n```"
   },
   "sys.get_ip": {
     "signature": "sys.get_ip() -> List<Dict>",
-    "description": "The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:\n```json\n[\n{\n\"name\": \"lo0\",\n\"ip\": \"127.0.0.1\"\n},\n{\n\"name\": \"lo0\",\n\"ip\": \"::1\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"10.0.124.42\"\n}\n]\n```"
+    "description": "The **sys.get_ip** method returns a list of network interfaces as a dictionary. An example is available below:\n```json\n[\n{\n\"name\": \"lo0\",\n\"ip\": \"127.0.0.1\"\n},\n{\n\"name\": \"lo0\",\n\"ip\": \"::1\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"fd5f:a709:7357:f34d:c8f:9bc8:ba40:db15\"\n},\n{\n\"name\": \"en0\",\n\"ip\": \"10.0.124.42\"\n}\n]\n```"
   },
   "sys.get_os": {
     "signature": "sys.get_os() -> Dict",
-    "description": "The <b>sys.get_os</b> method returns a dictionary that describes the current system's OS.\nAn example is below:\n```json\n{\n\"arch\": \"x86_64\",\n\"desktop_env\": \"Unknown: Unknown\",\n\"distro\": \"Debian GNU/Linux 10 (buster)\",\n\"platform\": \"PLATFORM_LINUX\"\n}\n```"
+    "description": "The **sys.get_os** method returns a dictionary that describes the current system's OS.\nAn example is below:\n```json\n{\n\"arch\": \"x86_64\",\n\"desktop_env\": \"Unknown: Unknown\",\n\"distro\": \"Debian GNU/Linux 10 (buster)\",\n\"platform\": \"PLATFORM_LINUX\"\n}\n```"
   },
   "sys.get_pid": {
     "signature": "sys.get_pid() -> int",
-    "description": "The <b>sys.get_pid</b> method returns the process ID of the current process.\nAn example is below:\n```python\n$> sys.get_pid()\n123456\n```"
+    "description": "The **sys.get_pid** method returns the process ID of the current process.\nAn example is below:\n```python\n$> sys.get_pid()\n123456\n```"
   },
   "sys.get_reg": {
     "signature": "sys.get_reg(reghive: str, regpath: str) -> Dict",
-    "description": "The <b>sys.get_reg</b> method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\",\"SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
+    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\",\"SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
   },
   "sys.get_user": {
     "signature": "sys.get_user() -> Dict",
-    "description": "The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.\nOn *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.\nFor users, will return name and groups of user.\n```json\n{\n\"uid\": {\n\"uid\": 0,\n\"name\": \"root\",\n\"gid\": 0,\n\"groups\": [\"root\"]\n},\n\"euid\": {\n\"uid\": 0,\n\"name\": \"root\",\n\"gid\": 0,\n\"groups\": [\"root\"]\n},\n\"gid\": 0,\n\"egid\": 0\n}\n```"
+    "description": "The **sys.get_user** method returns a dictionary that describes the current process's running user.\nOn *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.\nFor users, will return name and groups of user.\n```json\n{\n\"uid\": {\n\"uid\": 0,\n\"name\": \"root\",\n\"gid\": 0,\n\"groups\": [\"root\"]\n},\n\"euid\": {\n\"uid\": 0,\n\"name\": \"root\",\n\"gid\": 0,\n\"groups\": [\"root\"]\n},\n\"gid\": 0,\n\"egid\": 0\n}\n```"
   },
   "sys.hostname": {
     "signature": "sys.hostname() -> String",
-    "description": "The <b>sys.hostname</b> method returns a String containing the host's hostname."
+    "description": "The **sys.hostname** method returns a String containing the host's hostname."
   },
   "sys.is_bsd": {
     "signature": "sys.is_bsd() -> bool",
-    "description": "The <b>sys.is_bsd</b> method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else."
+    "description": "The **sys.is_bsd** method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else."
   },
   "sys.is_linux": {
     "signature": "sys.is_linux() -> bool",
-    "description": "The <b>sys.is_linux</b> method returns `True` if on a linux system and `False` on everything else."
+    "description": "The **sys.is_linux** method returns `True` if on a linux system and `False` on everything else."
   },
   "sys.is_macos": {
     "signature": "sys.is_macos() -> bool",
-    "description": "The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` on everything else."
+    "description": "The **sys.is_macos** method returns `True` if on a mac os system and `False` on everything else."
   },
   "sys.is_windows": {
     "signature": "sys.is_windows() -> bool",
-    "description": "The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else."
+    "description": "The **sys.is_windows** method returns `True` if on a windows system and `False` on everything else."
   },
   "sys.list_users": {
     "signature": "sys.list_users() -> List<Dict>",
-    "description": "The <b>sys.list_users</b> method lists all user accounts on the system."
+    "description": "The **sys.list_users** method lists all user accounts on the system."
   },
   "sys.shell": {
     "signature": "sys.shell(cmd: str) -> Dict",
-    "description": "The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:\n```python\nsys.shell(\"whoami\")\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.shell(\"ls /nofile\")\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
+    "description": "The **sys.shell** Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:\n```python\nsys.shell(\"whoami\")\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.shell(\"ls /nofile\")\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
   },
   "sys.write_reg_hex": {
     "signature": "sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool",
-    "description": "The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"dead,beef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"deadbeefdeadbeef\")\nTrue\n```"
+    "description": "The **sys.write_reg_hex** method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"dead,beef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"deadbeefdeadbeef\")\nTrue\n```"
   },
   "sys.write_reg_int": {
     "signature": "sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool",
-    "description": "The <b>sys.write_reg_int</b> method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```"
+    "description": "The **sys.write_reg_int** method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```"
   },
   "sys.write_reg_str": {
     "signature": "sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool",
-    "description": "The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"BAR2\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"A PLAIN STRING\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"1234567812345678\")\nTrue\n```\n## Time"
+    "description": "The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"BAR2\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"A PLAIN STRING\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"1234567812345678\")\nTrue\n```\n## Time"
   },
   "time.format_to_epoch": {
     "signature": "time.format_to_epoch(input: str, format: str) -> int",
-    "description": "The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.\nSome common formatting methods are:\n- \"%Y-%m-%d %H:%M:%S\" (24 Hour Time)\n- \"%Y-%m-%d %I:%M:%S %P\" (AM/PM)\nFor reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>"
+    "description": "The **time.format_to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.\nSome common formatting methods are:\n- \"%Y-%m-%d %H:%M:%S\" (24 Hour Time)\n- \"%Y-%m-%d %I:%M:%S %P\" (AM/PM)\nFor reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>"
   },
   "time.format_to_readable": {
     "signature": "time.format_to_readable(input: int, format: str) -> str",
-    "description": "The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.\nSome common formatting methods are:\n- \"%Y-%m-%d %H:%M:%S\" (24 Hour Time)\n- \"%Y-%m-%d %I:%M:%S %P\" (AM/PM)\nFor reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>"
+    "description": "The **time.format_to_readable** method returns the timestamp in the provided format of the provided UTC timestamp.\nSome common formatting methods are:\n- \"%Y-%m-%d %H:%M:%S\" (24 Hour Time)\n- \"%Y-%m-%d %I:%M:%S %P\" (AM/PM)\nFor reference on all available format specifiers, see <https://docs.rs/chrono/latest/chrono/format/strftime/index.html>"
   },
   "time.now": {
     "signature": "time.now() -> int",
-    "description": "The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time."
+    "description": "The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time."
   },
   "time.sleep": {
     "signature": "time.sleep(secs: int)",
-    "description": "The <b>time.sleep</b> method sleeps the task for the given number of seconds."
+    "description": "The **time.sleep** method sleeps the task for the given number of seconds."
   }
 }
