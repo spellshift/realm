@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { Bug } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import { Tooltip } from "@chakra-ui/react";
 
 interface ShellHeaderProps {
   shellData: any;
+  activeUsers?: { id: string; name: string }[];
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const hostName = shellData?.node?.beacon?.host?.name;
   const hostId = shellData?.node?.beacon?.host?.id;
@@ -29,6 +31,24 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData }) => {
       >
         <Bug size={20} />
       </a>
+
+      {/* Active Users Display */}
+      <div className="ml-auto flex items-center gap-2">
+        {activeUsers.length > 0 && (
+          <div className="flex -space-x-2">
+            {activeUsers.map((user) => (
+              <Tooltip key={user.id} label={user.name} hasArrow>
+                <div
+                  className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold border-2 border-[#1e1e1e] cursor-help"
+                  title={user.name}
+                >
+                  {user.name.substring(0, 2).toUpperCase()}
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

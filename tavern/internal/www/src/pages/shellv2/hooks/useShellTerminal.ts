@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
+import { HeadlessWasmAdapter, ConnectionStatus } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
 import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory } from "./shellUtils";
@@ -32,6 +32,7 @@ export const useShellTerminal = (
     const termInstance = useRef<Terminal | null>(null);
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -74,16 +75,19 @@ export const useShellTerminal = (
 
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
+    const connectionStatusRef = useRef(connectionStatus);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
+        connectionStatusRef.current = connectionStatus;
         if (termInstance.current) {
+            const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
-                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
+                foreground: isDimmed ? "#777777" : "#d4d4d4",
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin]);
+    }, [isLateCheckin, connectionStatus]);
 
     const redrawLine = useCallback(() => {
         const term = termInstance.current;
@@ -279,6 +283,9 @@ export const useShellTerminal = (
         }
     }, [tooltipState.visible]);
 
+    const shellNodeId = shellData?.node?.id;
+    const shellClosedAt = shellData?.node?.closedAt;
+
     useEffect(() => {
         if (!termRef.current || loading) return;
 
@@ -292,12 +299,12 @@ export const useShellTerminal = (
             return;
         }
 
-        if (!shellData?.node) {
+        if (!shellNodeId) {
             setConnectionError("Shell not found.");
             return;
         }
 
-        if (shellData.node.closedAt) {
+        if (shellClosedAt) {
             setConnectionError("This shell session is closed.");
             return;
         }
@@ -308,7 +315,7 @@ export const useShellTerminal = (
             macOptionIsMeta: true,
             theme: {
                 background: "#1e1e1e",
-                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
+                foreground: (isLateCheckinRef.current || connectionStatusRef.current !== "connected") ? "#777777" : "#d4d4d4",
             },
             fontFamily: 'Menlo, Monaco, "Courier New", monospace',
             fontSize: 18,
@@ -442,73 +449,82 @@ export const useShellTerminal = (
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
 
-        adapter.current = new HeadlessWasmAdapter(url, (msg: WebsocketMessage) => {
-            const term = termInstance.current;
-            if (!term) return;
+        adapter.current = new HeadlessWasmAdapter(
+            url,
+            (msg: WebsocketMessage) => {
+                const term = termInstance.current;
+                if (!term) return;
 
-            // Clear current input line(s) before printing output
-            const prevRows = lastBufferHeight.current;
-            if (prevRows > 0) {
-                term.write(`\x1b[${prevRows}A`);
-            }
-            term.write("\r\x1b[J");
+                // Clear current input line(s) before printing output
+                const prevRows = lastBufferHeight.current;
+                if (prevRows > 0) {
+                    term.write(`\x1b[${prevRows}A`);
+                }
+                term.write("\r\x1b[J");
 
-            // Process message content
-            let content = "";
-            let color = "";
+                // Process message content
+                let content = "";
+                let color = "";
 
-            switch (msg.kind) {
-                case WebsocketMessageKind.Output:
-                    content = msg.output;
-                    break;
-                case WebsocketMessageKind.TaskError:
-                    content = msg.error;
-                    color = "\x1b[31m"; // Red
-                    break;
-                case WebsocketMessageKind.Error:
-                    content = msg.error;
-                    color = "\x1b[31m"; // Red
-                    break;
-                case WebsocketMessageKind.ControlFlow:
-                    if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
-                        content = msg.message + "\n";
-                        color = "\x1b[33m"; // Yellow
-                    } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
-                        setPortalId(msg.portal_id);
+                switch (msg.kind) {
+                    case WebsocketMessageKind.Output:
+                        content = msg.output;
+                        break;
+                    case WebsocketMessageKind.TaskError:
+                        content = msg.error;
+                        color = "\x1b[31m"; // Red
+                        break;
+                    case WebsocketMessageKind.Error:
+                        content = msg.error;
+                        color = "\x1b[31m"; // Red
+                        break;
+                    case WebsocketMessageKind.ControlFlow:
+                        if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
+                            content = msg.message + "\n";
+                            color = "\x1b[33m"; // Yellow
+                        } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            setPortalId(msg.portal_id);
+                        }
+                        // Handle other control signals if needed
+                        break;
+                    case WebsocketMessageKind.OutputFromOtherStream:
+                        content = msg.output;
+                        break;
+                }
+
+                if (content) {
+                    const formatted = content.replace(/\n/g, "\r\n");
+                    if (color) {
+                        term.write(color + formatted + "\x1b[0m");
+                    } else {
+                        term.write(formatted);
                     }
-                    // Handle other control signals if needed
-                    break;
-                case WebsocketMessageKind.OutputFromOtherStream:
-                    content = msg.output;
-                    break;
-            }
 
-            if (content) {
-                const formatted = content.replace(/\n/g, "\r\n");
-                if (color) {
-                    term.write(color + formatted + "\x1b[0m");
-                } else {
-                    term.write(formatted);
+                    // Ensure there is a newline after output if not present, so prompt is on new line
+                    if (!content.endsWith('\n')) {
+                        term.write("\r\n");
+                    }
                 }
 
-                // Ensure there is a newline after output if not present, so prompt is on new line
-                if (!content.endsWith('\n')) {
-                    term.write("\r\n");
-                }
+                // Reset input line state and redraw it at the bottom
+                lastBufferHeight.current = 0;
+                redrawLine();
+            },
+            () => {
+                termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+            },
+            (status: ConnectionStatus) => {
+                setConnectionStatus(status);
             }
-
-            // Reset input line state and redraw it at the bottom
-            lastBufferHeight.current = 0;
-            redrawLine();
-        }, () => {
-            termInstance.current?.write("Connected to Tavern.\r\n>>> ");
-        });
+        );
 
         adapter.current.init();
 
         termInstance.current.onData((data) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
+            // Check for connection status and block input
+            if (connectionStatusRef.current !== "connected") return;
 
             const code = data.charCodeAt(0);
             const state = shellState.current;
@@ -834,7 +850,7 @@ export const useShellTerminal = (
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
-    }, [shellId, loading, error, shellData, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
+    }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     return {
         termRef,
@@ -845,6 +861,7 @@ export const useShellTerminal = (
         completionIndex,
         handleMouseMove,
         tooltipState,
-        handleCompletionSelect: applyCompletion
+        handleCompletionSelect: applyCompletion,
+        connectionStatus
     };
 };
