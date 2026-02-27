@@ -114,57 +114,115 @@ describe('moveWordRight', () => {
 });
 
 describe('highlightPythonSyntax', () => {
+    // New Color Constants
+    const COLOR_STRING = "\x1b[38;2;197;148;124m";
+    const COLOR_METHOD = "\x1b[38;2;220;220;175m";
+    const COLOR_KEYWORD = "\x1b[38;2;188;137;189m";
+    const COLOR_OPERAND = "\x1b[38;2;103;155;209m";
+    const COLOR_PUNCTUATION_1 = "\x1b[38;2;249;217;73m";
+    const COLOR_PUNCTUATION_2 = "\x1b[38;2;204;118;209m";
+    const COLOR_COMMENT = "\x1b[90m";
+    const COLOR_NUMBER = "\x1b[33m";
+    const RESET = "\x1b[0m";
+
     it('highlights keywords', () => {
         const input = "def my_func(): return True";
         const output = highlightPythonSyntax(input);
-        expect(output).toContain("\x1b[35mdef\x1b[0m");
-        expect(output).toContain("\x1b[35mreturn\x1b[0m");
-        expect(output).toContain("\x1b[35mTrue\x1b[0m");
+        expect(output).toContain(`${COLOR_KEYWORD}def${RESET}`);
+        expect(output).toContain(`${COLOR_KEYWORD}return${RESET}`);
+        expect(output).toContain(`${COLOR_OPERAND}True${RESET}`);
     });
 
     it('highlights strings', () => {
         const input = 'print("hello")';
         const output = highlightPythonSyntax(input);
-        expect(output).toContain('\x1b[32m"hello"\x1b[0m');
+        expect(output).toContain(`${COLOR_STRING}"hello"${RESET}`);
     });
 
     it('highlights single quoted strings', () => {
         const input = "print('hello')";
         const output = highlightPythonSyntax(input);
-        expect(output).toContain("\x1b[32m'hello'\x1b[0m");
+        expect(output).toContain(`${COLOR_STRING}'hello'${RESET}`);
     });
 
     it('highlights numbers', () => {
         const input = "x = 123";
         const output = highlightPythonSyntax(input);
-        expect(output).toContain("\x1b[33m123\x1b[0m");
+        expect(output).toContain(`${COLOR_NUMBER}123${RESET}`);
     });
 
     it('highlights comments', () => {
         const input = "x = 1 # comment";
         const output = highlightPythonSyntax(input);
-        expect(output).toContain("\x1b[90m# comment\x1b[0m");
+        expect(output).toContain(`${COLOR_COMMENT}# comment${RESET}`);
     });
 
     it('handles mixed content', () => {
         const input = 'if x == "test": # check';
         const output = highlightPythonSyntax(input);
-        expect(output).toContain("\x1b[35mif\x1b[0m");
-        expect(output).toContain('\x1b[32m"test"\x1b[0m');
-        expect(output).toContain("\x1b[90m# check\x1b[0m");
+        expect(output).toContain(`${COLOR_KEYWORD}if${RESET}`);
+        expect(output).toContain(`${COLOR_STRING}"test"${RESET}`);
+        expect(output).toContain(`${COLOR_COMMENT}# check${RESET}`);
     });
 
     it('does not highlight keywords inside strings', () => {
         const input = 'print("def not a keyword")';
         const output = highlightPythonSyntax(input);
-        expect(output).toContain('\x1b[32m"def not a keyword"\x1b[0m');
-        expect(output).not.toContain("\x1b[35mdef\x1b[0m");
+        expect(output).toContain(`${COLOR_STRING}"def not a keyword"${RESET}`);
+        expect(output).not.toContain(`${COLOR_KEYWORD}def${RESET}`);
     });
 
     it('does not highlight comments inside strings', () => {
         const input = 'print("# not a comment")';
         const output = highlightPythonSyntax(input);
-        expect(output).toContain('\x1b[32m"# not a comment"\x1b[0m');
-        expect(output).not.toContain("\x1b[90m# not a comment\x1b[0m");
+        expect(output).toContain(`${COLOR_STRING}"# not a comment"${RESET}`);
+        expect(output).not.toContain(`${COLOR_COMMENT}# not a comment${RESET}`);
+    });
+
+    it('highlights built-ins and methods', () => {
+        const input = 'sys.shell("ls")';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain(`${COLOR_METHOD}sys.shell${RESET}`);
+    });
+
+    it('alternates punctuation colors based on nesting depth', () => {
+        const input = '[ ( { } ) ]';
+        const output = highlightPythonSyntax(input);
+
+        // Depth 0 -> 1: [
+        expect(output).toContain(`${COLOR_PUNCTUATION_1}[${RESET}`);
+        // Depth 1 -> 2: (
+        expect(output).toContain(`${COLOR_PUNCTUATION_2}(${RESET}`);
+        // Depth 2 -> 3: {
+        expect(output).toContain(`${COLOR_PUNCTUATION_1}{${RESET}`);
+        // Depth 3 -> 2: }
+        expect(output).toContain(`${COLOR_PUNCTUATION_1}}${RESET}`); // Note: depth decrements *before* color selection in current logic?
+        // Let's check logic:
+        // if closing: depth = max(0, depth - 1); color = depth % 2 == 0 ? P1 : P2;
+        // if opening: depth++ (after printing)
+
+        // [ : initial depth 0. color P1 (0%2=0). depth becomes 1.
+        // ( : initial depth 1. color P2 (1%2=1). depth becomes 2.
+        // { : initial depth 2. color P1 (2%2=0). depth becomes 3.
+        // } : closing. depth 3->2. color P1 (2%2=0).
+        // ) : closing. depth 2->1. color P2 (1%2=1).
+        // ] : closing. depth 1->0. color P1 (0%2=0).
+
+        const parts = output.split(RESET);
+        // Clean empty strings from split if any
+
+        // We can check exact sequence using regex match on output
+        // Or simpler, check containment of substrings if they are unique enough or use exact match on short string
+
+        // Re-construct expected output manually
+        const expected =
+            `${COLOR_PUNCTUATION_1}[${RESET} ` +
+            `${COLOR_PUNCTUATION_2}(${RESET} ` +
+            `${COLOR_PUNCTUATION_1}{${RESET} ` +
+            `${COLOR_PUNCTUATION_1}}${RESET} ` +
+            `${COLOR_PUNCTUATION_2})${RESET} ` +
+            `${COLOR_PUNCTUATION_1}]${RESET}`;
+
+        expect(output).toBe(expected);
     });
 });
