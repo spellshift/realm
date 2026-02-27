@@ -53,7 +53,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
         </Tooltip>
       </h1>
       <a
-        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%%20Shell%3A%20%3CYOUR%20ISSUE%3E"
+        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"
         rel="noopener noreferrer"
         className="text-gray-400 hover:text-white transition-colors"

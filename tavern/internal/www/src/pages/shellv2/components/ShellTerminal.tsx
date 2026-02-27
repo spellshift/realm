@@ -9,6 +9,7 @@ interface ShellTerminalProps {
   completionPos: { x: number; y: number };
   completionIndex: number;
   onMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onMouseLeave?: (e: React.MouseEvent<HTMLDivElement>) => void;
   tooltipState: {
     visible: boolean;
     x: number;
@@ -17,6 +18,8 @@ interface ShellTerminalProps {
     description: string;
   };
   handleCompletionSelect: (completion: string) => void;
+  onTooltipMouseEnter?: () => void;
+  onTooltipMouseLeave?: () => void;
 }
 
 const ShellTerminal: React.FC<ShellTerminalProps> = ({
@@ -26,8 +29,11 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
   completionPos,
   completionIndex,
   onMouseMove,
+  onMouseLeave,
   tooltipState,
-  handleCompletionSelect
+  handleCompletionSelect,
+  onTooltipMouseEnter,
+  onTooltipMouseLeave
 }) => {
   return (
     <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
@@ -35,6 +41,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
         ref={termRef}
         style={{ height: "100%", width: "100%" }}
         onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
       />
       <ShellCompletions
         completions={completions}
@@ -49,6 +56,8 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
           x={tooltipState.x}
           y={tooltipState.y}
           visible={tooltipState.visible}
+          onMouseEnter={onTooltipMouseEnter}
+          onMouseLeave={onTooltipMouseLeave}
       />
     </div>
   );
