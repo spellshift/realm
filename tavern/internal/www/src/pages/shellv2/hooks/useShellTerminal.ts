@@ -70,6 +70,8 @@ export const useShellTerminal = (
         list: [], start: 0, show: false, index: 0
     });
 
+    const redrawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
 
@@ -287,6 +289,15 @@ export const useShellTerminal = (
                     term.write(`\x1b[${cursorCol}C`);
                 }
             }
+        };
+
+        const scheduleRedraw = () => {
+            if (redrawTimeoutRef.current) {
+                clearTimeout(redrawTimeoutRef.current);
+            }
+            redrawTimeoutRef.current = setTimeout(() => {
+                redrawLine();
+            }, 50);
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -644,9 +655,17 @@ export const useShellTerminal = (
             }
 
             if (code >= 32 && code !== 127) {
-                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                state.cursorPos += data.length;
-                redrawLine();
+                // Fast path for simple appending at the end of the line
+                if (data.length === 1 && state.cursorPos === state.inputBuffer.length) {
+                    state.inputBuffer += data;
+                    state.cursorPos++;
+                    term.write(data);
+                    scheduleRedraw();
+                } else {
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos += data.length;
+                    redrawLine();
+                }
             } else if (code === 13) { // Enter
                 term.write("\r\n");
                 const res = adapter.current?.input(state.inputBuffer);
@@ -678,9 +697,17 @@ export const useShellTerminal = (
                 lastBufferHeight.current = 0;
             } else if (code === 127) { // Backspace
                 if (state.cursorPos > 0) {
-                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
-                    state.cursorPos--;
-                    redrawLine();
+                    // Fast path for backspace at the end of the line
+                    if (state.cursorPos === state.inputBuffer.length) {
+                        state.inputBuffer = state.inputBuffer.slice(0, -1);
+                        state.cursorPos--;
+                        term.write('\b \b');
+                        scheduleRedraw();
+                    } else {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos--;
+                        redrawLine();
+                    }
                 }
             }
 
@@ -701,6 +728,7 @@ export const useShellTerminal = (
             window.removeEventListener("resize", handleResize);
             adapter.current?.close();
             termInstance.current?.dispose();
+            if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
     }, [shellId, loading, error, shellData, setPortalId]);
 
