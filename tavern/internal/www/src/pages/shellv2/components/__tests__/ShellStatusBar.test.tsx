@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ShellStatusBar from "../ShellStatusBar";
 import { ConnectionStatus } from "../../../../lib/headless-adapter";
 import React from "react";
@@ -11,6 +11,7 @@ describe("ShellStatusBar", () => {
         timeUntilCallback: "",
         isMissedCallback: false,
         connectionStatus: "connected" as ConnectionStatus,
+        connectionMessage: "",
     };
 
     it("renders connected status correctly", () => {

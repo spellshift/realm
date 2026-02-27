@@ -8,22 +8,24 @@ interface ShellStatusBarProps {
   timeUntilCallback: string;
   isMissedCallback: boolean;
   connectionStatus: ConnectionStatus;
+  connectionMessage?: string;
 }
 
-const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus }) => {
+const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus, connectionMessage }) => {
   const getConnectionIcon = () => {
     switch (connectionStatus) {
       case "connected":
         return (
-          <Tooltip label="Connected to Shell">
+          <Tooltip label="Connected to Tavern">
             <span className="text-green-500">
               <Wifi size={18} />
             </span>
           </Tooltip>
         );
       case "disconnected":
+        const label = connectionMessage ? `Disconnected from Tavern: ${connectionMessage}` : "Disconnected from Tavern";
         return (
-          <Tooltip label="Disconnected from Shell">
+          <Tooltip label={label}>
             <span className="text-red-500">
               <WifiOff size={18} />
             </span>
@@ -31,7 +33,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
         );
       case "reconnecting":
         return (
-          <Tooltip label="Reconnecting...">
+          <Tooltip label="Reconnecting to Tavern">
             <span className="text-yellow-500 animate-spin">
               <RefreshCw size={18} />
             </span>

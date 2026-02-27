@@ -33,6 +33,7 @@ export const useShellTerminal = (
     const adapter = useRef<HeadlessWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
+    const [connectionMessage, setConnectionMessage] = useState<string>("");
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -513,8 +514,9 @@ export const useShellTerminal = (
             () => {
                 termInstance.current?.write("Connected to Tavern.\r\n>>> ");
             },
-            (status: ConnectionStatus) => {
+            (status: ConnectionStatus, message?: string) => {
                 setConnectionStatus(status);
+                setConnectionMessage(message || "");
             }
         );
 
@@ -862,6 +864,7 @@ export const useShellTerminal = (
         handleMouseMove,
         tooltipState,
         handleCompletionSelect: applyCompletion,
-        connectionStatus
+        connectionStatus,
+        connectionMessage
     };
 };

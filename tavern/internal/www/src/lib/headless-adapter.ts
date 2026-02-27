@@ -14,7 +14,7 @@ export class HeadlessWasmAdapter {
     private url: string;
     private onMessageCallback: (msg: WebsocketMessage) => void;
     private onReadyCallback?: () => void;
-    private onStatusChangeCallback?: (status: ConnectionStatus) => void;
+    private onStatusChangeCallback?: (status: ConnectionStatus, message?: string) => void;
     private isWsOpen: boolean = false;
     private reconnectTimer: NodeJS.Timeout | null = null;
     private isClosedExplicitly: boolean = false;
@@ -23,7 +23,7 @@ export class HeadlessWasmAdapter {
         url: string,
         onMessage: (msg: WebsocketMessage) => void,
         onReady?: () => void,
-        onStatusChange?: (status: ConnectionStatus) => void
+        onStatusChange?: (status: ConnectionStatus, message?: string) => void
     ) {
         this.url = url;
         this.onMessageCallback = onMessage;
@@ -57,14 +57,15 @@ export class HeadlessWasmAdapter {
             }
         };
 
-        this.ws.onclose = () => {
+        this.ws.onclose = (event: CloseEvent) => {
             this.isWsOpen = false;
+            const reason = event.reason;
             if (this.isClosedExplicitly) {
-                 this.onStatusChangeCallback?.("disconnected");
+                 this.onStatusChangeCallback?.("disconnected", reason);
                  return;
             }
 
-            this.onStatusChangeCallback?.("disconnected");
+            this.onStatusChangeCallback?.("disconnected", reason);
             this.scheduleReconnect();
         };
 
