@@ -348,6 +348,8 @@ for user_home_dir in file.list("/home/"):
 
 ## Agent
 
+The `agent` library provides functions for meta-style interactions with the agent itself. It allows you to inspect its configuration, check transport details, or list and manage background tasks.
+
 ### agent._terminate_this_process_clowntown
 
 `agent._terminate_this_process_clowntown() -> None`
@@ -418,6 +420,8 @@ assumptions on `Transport` requirements no checks are applied to the passed stri
 
 ## Assets
 
+The `assets` library is used to interact with embedded files stored natively within the agent. It provides capabilities to list, read, or extract these files to disk for further execution or deployment.
+
 ### assets.copy
 
 `assets.copy(src: str, dst: str) -> None`
@@ -456,6 +460,8 @@ The **assets.read** method returns a UTF-8 string representation of the asset fi
 ---
 
 ## Crypto
+
+The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing.
 
 ### crypto.aes_decrypt
 
@@ -579,6 +585,8 @@ The **crypto.sha256** method calculates the SHA256 hash of the provided data.
 ---
 
 ## File
+
+The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping.
 
 ### file.append
 
@@ -820,6 +828,8 @@ The **file.find** method finds all files matching the used parameters. Returns f
 
 ## HTTP
 
+The `http` library allows the agent to send HTTP and HTTPS requests over the network. You can download files, submit form data, or interact with external REST APIs directly from the agent.
+
 The HTTP library also allows the user to allow the http client to ignore TLS validation via the `allow_insecure` optional parameter (defaults to `false`).
 
 ### http.download
@@ -843,6 +853,8 @@ The **http.post** method sends an HTTP POST request to the URI specified in `uri
 ---
 
 ## Pivot
+
+The `pivot` library provides tools to identify and move laterally between systems on a network. It includes functionalities like port scanning, reverse shells, port forwarding, and executing commands remotely over SMB or SSH.
 
 ### pivot.arp_scan
 
@@ -987,6 +999,8 @@ Status will be equal to the code returned by the command being run and -1 in the
 
 ## Process
 
+The `process` library is used to interact with running processes on the local system. It provides functionalities to list processes, gather detailed information, enumerate network sockets, or terminate specific processes.
+
 ### process.info
 
 `process.info(pid: Optional<int>) -> Dict`
@@ -1089,7 +1103,7 @@ _Currently only shows LISTENING TCP connections_
 
 ## Random
 
-The random library is designed to enable generation of cryptographically secure random values. None of these functions will be blocking.
+The `random` library is designed to enable generation of cryptographically secure random values without blocking execution. It allows you to create random booleans, integers, bytes, strings, and UUIDs.
 
 ### random.bool
 
@@ -1124,8 +1138,7 @@ The **random.uuid** method returns a randomly generated UUID (v4).
 
 ## Regex
 
-The regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written
-in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error.
+The `regex` library provides regular expression capabilities for operating on strings. Using Rust's regex syntax, you can match, extract, or replace substrings within larger text blocks. Be aware as the underlying implementation is written in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error.
 
 ### regex.match_all
 
@@ -1156,7 +1169,7 @@ The **regex.replace** method returns the given haystack with the first capture g
 
 ## Report
 
-The report library is designed to enable reporting structured data to Tavern. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
+The `report` library is designed to enable reporting structured data to Tavern. You can use it to securely exfiltrate files, process lists, captured credentials, or screenshots from the host. Its API is still in the active development phase, so **future versions of Eldritch may break tomes that rely on this API**.
 
 ### report.file
 
@@ -1197,6 +1210,8 @@ Reports a screenshot of all screens to Tavern.
 ---
 
 ## Sys
+
+The `sys` library offers general system capabilities to retrieve context about the host environment. It provides functionalities to check the operating system, retrieve environment variables, query the registry, and run native shell commands.
 
 ### sys.dll_inject
 
@@ -1517,6 +1532,8 @@ True
 ```
 
 ## Time
+
+The `time` library contains general functions for obtaining and formatting the current system time. It allows you to convert between timestamps and readable strings, or introduce execution delays using sleep.
 
 ### time.format_to_epoch
 

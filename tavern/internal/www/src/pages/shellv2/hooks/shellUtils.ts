@@ -65,7 +65,7 @@ const COLOR_NUMBER = "\x1b[33m";
 const RESET = "\x1b[0m";
 
 export const highlightPythonSyntax = (input: string): string => {
-    const builtins = Object.keys(docsData).map(k => k.replace(/\./g, "\\."));
+    const builtins = Object.keys(docsData).sort((a, b) => b.length - a.length).map(k => k.replace(/\./g, "\\."));
     const builtinsPattern = builtins.join("|");
 
     // Order matters for regex capture groups
