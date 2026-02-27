@@ -51,6 +51,8 @@ export const useShellData = (shellId: string | undefined) => {
         }
     }, [portalData]);
 
+    const activeUsers = activeUsersData?.node?.activeUsers?.edges?.map((edge: any) => edge.node) || [];
+
     return {
         loading,
         error,
@@ -59,6 +61,6 @@ export const useShellData = (shellId: string | undefined) => {
         portalData,
         portalId,
         setPortalId,
-        activeUsers: activeUsersData?.node?.activeUsers || []
+        activeUsers
     };
 };
