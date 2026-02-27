@@ -5,7 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
-import { moveWordLeft, moveWordRight, highlightPythonSyntax } from "./shellUtils";
+import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory } from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -37,7 +37,7 @@ export const useShellTerminal = (
     const shellState = useRef<ShellState>({
         inputBuffer: "",
         cursorPos: 0,
-        history: [],
+        history: loadHistory(),
         historyIndex: -1,
         prompt: ">>> ",
         isSearching: false,
@@ -654,7 +654,10 @@ export const useShellTerminal = (
                 state.currentBlock += state.inputBuffer + "\n";
 
                 if (res?.status === "complete") {
-                    if (state.currentBlock.trim()) state.history.push(state.currentBlock.trimEnd());
+                    if (state.currentBlock.trim()) {
+                        state.history.push(state.currentBlock.trimEnd());
+                        saveHistory(state.history);
+                    }
                     state.currentBlock = "";
                     state.historyIndex = -1;
                     state.inputBuffer = "";
