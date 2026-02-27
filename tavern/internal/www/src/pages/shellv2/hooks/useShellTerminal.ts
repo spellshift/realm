@@ -5,7 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
-import { moveWordLeft, moveWordRight } from "./shellUtils";
+import { moveWordLeft, moveWordRight, highlightPythonSyntax } from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -224,6 +224,7 @@ export const useShellTerminal = (
             const state = shellState.current;
 
             let contentToWrite = "";
+            let contentToDisplay = "";
             let cursorIndex = 0;
 
             if (state.isSearching) {
@@ -239,10 +240,12 @@ export const useShellTerminal = (
                     }
                 }
                 contentToWrite = prompt + match;
+                contentToDisplay = contentToWrite;
                 // In search mode, cursor is typically at the end of the match
                 cursorIndex = contentToWrite.length;
             } else {
                 contentToWrite = state.prompt + state.inputBuffer;
+                contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
                 cursorIndex = state.prompt.length + state.cursorPos;
             }
 
@@ -259,7 +262,7 @@ export const useShellTerminal = (
             term.write("\r\x1b[J");
 
             // Write new content, ensuring newlines are carriage-return + newline
-            term.write(contentToWrite.replace(/\n/g, "\r\n"));
+            term.write(contentToDisplay.replace(/\n/g, "\r\n"));
 
             // Update last height
             lastBufferHeight.current = rows;
@@ -641,17 +644,9 @@ export const useShellTerminal = (
             }
 
             if (code >= 32 && code !== 127) {
-                if (state.cursorPos === state.inputBuffer.length) {
-                    // Fast path: append at end
-                    state.inputBuffer += data;
-                    state.cursorPos += data.length;
-                    term.write(data);
-                } else {
-                    // Insert in middle
-                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
-                    state.cursorPos += data.length;
-                    redrawLine();
-                }
+                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + data + state.inputBuffer.slice(state.cursorPos);
+                state.cursorPos += data.length;
+                redrawLine();
             } else if (code === 13) { // Enter
                 term.write("\r\n");
                 const res = adapter.current?.input(state.inputBuffer);
@@ -680,16 +675,9 @@ export const useShellTerminal = (
                 lastBufferHeight.current = 0;
             } else if (code === 127) { // Backspace
                 if (state.cursorPos > 0) {
-                    if (state.cursorPos === state.inputBuffer.length) {
-                        // Fast path: delete at end
-                        state.inputBuffer = state.inputBuffer.slice(0, -1);
-                        state.cursorPos--;
-                        term.write("\b \b");
-                    } else {
-                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
-                        state.cursorPos--;
-                        redrawLine();
-                    }
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos - 1) + state.inputBuffer.slice(state.cursorPos);
+                    state.cursorPos--;
+                    redrawLine();
                 }
             }
 
