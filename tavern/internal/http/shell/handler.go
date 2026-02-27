@@ -212,7 +212,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
-	time.Sleep(60 * time.Second) // TODO: Remove this, just for testing
 }
 
 // getShellForRequest using the shell_id query param.
