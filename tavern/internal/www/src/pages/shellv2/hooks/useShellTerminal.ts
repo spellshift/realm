@@ -82,6 +82,7 @@ export const useShellTerminal = (
         setPortalIdRef.current = setPortalId;
     }, [setPortalId]);
 
+    // Update theme when late checkin status changes
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         if (termInstance.current) {
@@ -91,6 +92,22 @@ export const useShellTerminal = (
             };
         }
     }, [isLateCheckin]);
+
+    // Check for errors/loading state
+    useEffect(() => {
+        if (!loading && !shellId) {
+            setConnectionError("No Shell ID provided in URL.");
+        } else if (error) {
+            setConnectionError(`Failed to load shell: ${error.message}`);
+        } else if (!loading && !shellData?.node) {
+            setConnectionError("Shell not found.");
+        } else if (shellData?.node?.closedAt) {
+            setConnectionError("This shell session is closed.");
+        } else {
+            setConnectionError(null);
+        }
+    }, [shellId, loading, error, shellData]);
+
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!termInstance.current || !termRef.current) return;
 
@@ -179,55 +196,47 @@ export const useShellTerminal = (
         }
     };
 
+    // Initialize Terminal (Run once)
     useEffect(() => {
-        if (!termRef.current || loading) return;
+        if (!termRef.current) return;
 
-        if (!shellId) {
-            setConnectionError("No Shell ID provided in URL.");
-            return;
-        }
+        // Initialize terminal
+        termInstance.current = new Terminal({
+            cursorBlink: true,
+            macOptionIsMeta: true,
+            theme: {
+                background: "#1e1e1e",
+                foreground: isLateCheckin ? "#777777" : "#d4d4d4",
+            },
+            fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            fontSize: 18,
+        });
 
-        if (error) {
-            setConnectionError(`Failed to load shell: ${error.message}`);
-            return;
-        }
+        const fitAddon = new FitAddon();
+        termInstance.current.loadAddon(fitAddon);
+        termInstance.current.open(termRef.current);
+        fitAddon.fit();
 
-        if (!shellData?.node) {
-            setConnectionError("Shell not found.");
-            return;
-        }
-
-        if (shellData.node.closedAt) {
-            setConnectionError("This shell session is closed.");
-            return;
-        }
-
-        // Only initialize terminal if it hasn't been initialized yet
-        if (!termInstance.current) {
-            // Initialize terminal
-            termInstance.current = new Terminal({
-                cursorBlink: true,
-                macOptionIsMeta: true,
-                theme: {
-                    background: "#1e1e1e",
-                    foreground: isLateCheckin ? "#777777" : "#d4d4d4",
-                },
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                fontSize: 18,
-            });
-
-            const fitAddon = new FitAddon();
-            termInstance.current.loadAddon(fitAddon);
-            termInstance.current.open(termRef.current);
+        const handleResize = () => {
             fitAddon.fit();
+        };
+        window.addEventListener("resize", handleResize);
 
-            const handleResize = () => {
-                fitAddon.fit();
-            };
-            window.addEventListener("resize", handleResize);
+        termInstance.current.write("Eldritch v0.3.0\r\n");
 
-            termInstance.current.write("Eldritch v0.3.0\r\n");
-        }
+        return () => {
+            window.removeEventListener("resize", handleResize);
+            termInstance.current?.dispose();
+            termInstance.current = null;
+        };
+    }, []); // Only run once on mount
+
+    // Initialize WebSocket Adapter (Run when shellId changes)
+    useEffect(() => {
+        if (!shellId || loading) return;
+
+        // Wait for terminal to be ready
+        if (!termInstance.current) return;
 
         // Define redrawLine early so it can be used by adapter callback
         const redrawLine = () => {
@@ -298,94 +307,96 @@ export const useShellTerminal = (
             }
         };
 
-        // Only initialize adapter if it hasn't been initialized yet
-        if (!adapter.current) {
-            const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-            const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
+        const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
 
-            adapter.current = new HeadlessWasmAdapter(
-                url,
-                (msg: WebsocketMessage) => {
-                    const term = termInstance.current;
-                    if (!term) return;
+        // Cleanup old adapter if exists (though cleanup function should handle it)
+        if (adapter.current) {
+            adapter.current.close();
+        }
 
-                    // Clear current input line(s) before printing output
-                    const prevRows = lastBufferHeight.current;
-                    if (prevRows > 0) {
-                        term.write(`\x1b[${prevRows}A`);
-                    }
-                    term.write("\r\x1b[J");
+        adapter.current = new HeadlessWasmAdapter(
+            url,
+            (msg: WebsocketMessage) => {
+                const term = termInstance.current;
+                if (!term) return;
 
-                    // Process message content
-                    let content = "";
-                    let color = "";
+                // Clear current input line(s) before printing output
+                const prevRows = lastBufferHeight.current;
+                if (prevRows > 0) {
+                    term.write(`\x1b[${prevRows}A`);
+                }
+                term.write("\r\x1b[J");
 
-                    switch (msg.kind) {
-                        case WebsocketMessageKind.Output:
-                            content = msg.output;
-                            break;
-                        case WebsocketMessageKind.TaskError:
-                            content = msg.error;
-                            color = "\x1b[31m"; // Red
-                            break;
-                        case WebsocketMessageKind.Error:
-                            content = msg.error;
-                            color = "\x1b[31m"; // Red
-                            break;
-                        case WebsocketMessageKind.ControlFlow:
-                            if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
-                                content = msg.message + "\n";
-                                color = "\x1b[33m"; // Yellow
-                            } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
-                                setPortalIdRef.current(msg.portal_id);
-                            }
-                            // Handle other control signals if needed
-                            break;
-                        case WebsocketMessageKind.OutputFromOtherStream:
-                            content = msg.output;
-                            break;
-                    }
+                // Process message content
+                let content = "";
+                let color = "";
 
-                    if (content) {
-                        const formatted = content.replace(/\n/g, "\r\n");
-                        if (color) {
-                            term.write(color + formatted + "\x1b[0m");
-                        } else {
-                            term.write(formatted);
+                switch (msg.kind) {
+                    case WebsocketMessageKind.Output:
+                        content = msg.output;
+                        break;
+                    case WebsocketMessageKind.TaskError:
+                        content = msg.error;
+                        color = "\x1b[31m"; // Red
+                        break;
+                    case WebsocketMessageKind.Error:
+                        content = msg.error;
+                        color = "\x1b[31m"; // Red
+                        break;
+                    case WebsocketMessageKind.ControlFlow:
+                        if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
+                            content = msg.message + "\n";
+                            color = "\x1b[33m"; // Yellow
+                        } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            setPortalIdRef.current(msg.portal_id);
                         }
+                        // Handle other control signals if needed
+                        break;
+                    case WebsocketMessageKind.OutputFromOtherStream:
+                        content = msg.output;
+                        break;
+                }
 
-                        // Ensure there is a newline after output if not present, so prompt is on new line
-                        if (!content.endsWith('\n')) {
-                            term.write("\r\n");
-                        }
+                if (content) {
+                    const formatted = content.replace(/\n/g, "\r\n");
+                    if (color) {
+                        term.write(color + formatted + "\x1b[0m");
+                    } else {
+                        term.write(formatted);
                     }
 
-                    // Reset input line state and redraw it at the bottom
-                    lastBufferHeight.current = 0;
-                    redrawLine();
-                },
-                () => {
-                    hasConnectedOnce.current = true;
-                    termInstance.current?.write("Connected to Tavern.\r\n>>> ");
-                },
-                (status: ConnectionStatus) => {
-                    const term = termInstance.current;
-                    setConnectionStatus(status);
-                    if (!term) return;
-
-                    if (status === "reconnecting") {
-                        term.write("\r\n\x1b[33mConnection lost. Reconnecting...\x1b[0m\r\n");
-                        lastBufferHeight.current = 0;
-                    } else if (status === "connected" && hasConnectedOnce.current) {
-                        term.write("\r\n\x1b[32mReconnected.\x1b[0m\r\n");
-                        lastBufferHeight.current = 0;
-                        redrawLine();
+                    // Ensure there is a newline after output if not present, so prompt is on new line
+                    if (!content.endsWith('\n')) {
+                        term.write("\r\n");
                     }
                 }
-            );
 
-            adapter.current.init();
-        }
+                // Reset input line state and redraw it at the bottom
+                lastBufferHeight.current = 0;
+                redrawLine();
+            },
+            () => {
+                hasConnectedOnce.current = true;
+                termInstance.current?.write("Connected to Tavern.\r\n>>> ");
+            },
+            (status: ConnectionStatus) => {
+                const term = termInstance.current;
+                setConnectionStatus(status);
+                if (!term) return;
+
+                if (status === "reconnecting") {
+                    term.write("\r\n\x1b[33mConnection lost. Reconnecting...\x1b[0m\r\n");
+                    lastBufferHeight.current = 0;
+                } else if (status === "connected" && hasConnectedOnce.current) {
+                    term.write("\r\n\x1b[32mReconnected.\x1b[0m\r\n");
+                    lastBufferHeight.current = 0;
+                    redrawLine();
+                }
+            }
+        );
+
+        adapter.current.init();
 
         const updateCompletionsUI = (list: string[], start: number, show: boolean, index: number) => {
             setCompletions(list);
@@ -742,22 +753,12 @@ export const useShellTerminal = (
             }
         });
 
-        // No cleanup function here for adapter/term to persist across re-renders
-        // Cleanup happens when component unmounts - we need a separate effect for that or manage it differently
-        // For now, we rely on refs to keep singleton instances
-
-    }, [shellId, loading, error, shellData]); // Removed setPortalId
-
-    // Cleanup effect
-    useEffect(() => {
         return () => {
-            // This will run when component UNMOUNTS
             adapter.current?.close();
-            termInstance.current?.dispose();
             adapter.current = null;
-            termInstance.current = null;
         };
-    }, []);
+
+    }, [shellId, loading]); // Depend only on shellId (and loading)
 
     return {
         termRef,

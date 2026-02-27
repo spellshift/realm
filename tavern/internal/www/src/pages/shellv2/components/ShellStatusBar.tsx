@@ -1,5 +1,5 @@
 import React from "react";
-import { Info, Wifi, WifiOff } from "lucide-react";
+import { Info, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import { ConnectionStatus } from "../../../lib/headless-adapter";
 
@@ -26,7 +26,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
         return (
           <Tooltip label="Connection lost. Reconnecting...">
              <div className="flex items-center gap-1 text-yellow-500">
-               <WifiOff size={14} />
+               <RefreshCw size={14} className="animate-spin" />
                <span className="text-xs">Reconnecting...</span>
              </div>
           </Tooltip>
