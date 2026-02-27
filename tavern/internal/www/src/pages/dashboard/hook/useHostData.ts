@@ -13,6 +13,7 @@ type UniqueCountHost = {
     lastSeenAt: string | undefined | null
     hostsOnline: number,
     hostsTotal: number,
+    tagKind: string,
 }
 
 type HostUsageByKind = {
@@ -39,7 +40,7 @@ export const useHostData = (data: HostQueryTopLevel | undefined) => {
     const [offlineHostCount, setOfflineHostCount] = useState(0);
     const [totalHostCount, setTotalHostCount] = useState(0);
 
-    const applyUniqueTermData = useCallback((term: string | undefined, id: string | undefined, uniqueObject: UniqueCountHostByTag, host: HostEdge, beaconStatus: any) => {
+    const applyUniqueTermData = useCallback((term: string | undefined, id: string | undefined, tagKind: string, uniqueObject: UniqueCountHostByTag, host: HostEdge, beaconStatus: any) => {
         if (!term || !id) {
             return uniqueObject;
         }
@@ -63,6 +64,7 @@ export const useHostData = (data: HostQueryTopLevel | undefined) => {
         }
         else {
             uniqueObject[term] = {
+                tagKind: tagKind,
                 tagId: id,
                 tag: term,
                 lastSeenAt: host.node.lastSeenAt,
@@ -101,9 +103,9 @@ export const useHostData = (data: HostQueryTopLevel | undefined) => {
                 totalCount += 1;
             }
 
-            applyUniqueTermData(groupTag?.name, groupTag?.id, uniqueGroups, host, beaconStatus);
-            applyUniqueTermData(serviceTag?.name, serviceTag?.id, uniqueServices, host, beaconStatus);
-            applyUniqueTermData(getEnumKey(SupportedPlatforms, host.node.platform), host.node.platform, uniquePlatform, host, beaconStatus);
+            applyUniqueTermData(groupTag?.name, groupTag?.id, "group", uniqueGroups, host, beaconStatus);
+            applyUniqueTermData(serviceTag?.name, serviceTag?.id, "service", uniqueServices, host, beaconStatus);
+            applyUniqueTermData(getEnumKey(SupportedPlatforms, host.node.platform), host.node.platform, "platform", uniquePlatform, host, beaconStatus);
         });
 
         setHostActivity(
