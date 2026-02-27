@@ -24,7 +24,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
         {beaconName} @ <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
       </h1>
       <a
-        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%%20Shell%3A%20%3CYOUR%20ISSUE%3E"
+        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"
         rel="noopener noreferrer"
         className="text-gray-400 hover:text-white transition-colors"
