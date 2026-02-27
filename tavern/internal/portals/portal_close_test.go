@@ -75,9 +75,22 @@ func TestPortalClose(t *testing.T) {
 	require.NoError(t, err)
 
 	// Receive ping on Agent side
-	resp, err := c2Stream.Recv()
-	require.NoError(t, err)
-	require.Equal(t, pingData, resp.Mote.GetBytes().Data)
+	// NOTE: We might receive keepalive pings (every 5s) if test setup takes long, so loop until we get DATA or error
+	for {
+		resp, err := c2Stream.Recv()
+		require.NoError(t, err)
+
+		mote := resp.GetMote()
+		require.NotNil(t, mote)
+
+		bytesPayload := mote.GetBytes()
+		if bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE {
+			continue // Skip keepalive
+		}
+
+		require.Equal(t, pingData, bytesPayload.Data)
+		break
+	}
 
 	// 5. Close Agent Stream (Simulate Agent Disconnect/End of Session)
 	err = c2Stream.CloseSend()
@@ -88,17 +101,29 @@ func TestPortalClose(t *testing.T) {
 	// and should forward it to the user client before closing the stream.
 
 	// Read from portalStream - expect CLOSE mote
-	msg, err := portalStream.Recv()
+	// Loop to skip keepalives if any
+	for {
+		msg, err := portalStream.Recv()
+		if err == io.EOF {
+			// If we get immediate EOF, it means we missed the CLOSE mote or it wasn't sent.
+			// But based on code reading, it should be sent.
+			t.Fatal("Expected CLOSE mote, got EOF immediately")
+		}
+		require.NoError(t, err)
 
-	if err == io.EOF {
-		// If we get immediate EOF, it means we missed the CLOSE mote or it wasn't sent.
-		// But based on code reading, it should be sent.
-		t.Fatal("Expected CLOSE mote, got EOF immediately")
+		mote := msg.GetMote()
+		require.NotNil(t, mote)
+
+		bytesPayload := mote.GetBytes()
+		require.NotNil(t, bytesPayload)
+
+		if bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE {
+			continue
+		}
+
+		require.Equal(t, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE, bytesPayload.Kind)
+		break
 	}
-	require.NoError(t, err)
-	require.NotNil(t, msg.Mote)
-	require.NotNil(t, msg.Mote.GetBytes())
-	require.Equal(t, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE, msg.Mote.GetBytes().Kind)
 
 	// Attempt to receive again - expect error (portal closed) or EOF
 	_, err = portalStream.Recv()
