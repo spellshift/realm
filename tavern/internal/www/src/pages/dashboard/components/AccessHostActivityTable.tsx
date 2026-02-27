@@ -17,10 +17,11 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
             return null;
         }
         if (filters.beaconFields.findIndex((field) => field.id === item?.original?.tagId) === -1) {
+            const name = item?.original?.kind === "platform" ? item?.original?.tagId : item?.original?.tag;
             const newFilter = {
                 'label': item?.original?.tag,
                 'kind': term,
-                'name': item?.original?.tagId,
+                'name': name,
                 'value': item?.original?.tagId,
                 'id': item?.original?.tagId
             };
