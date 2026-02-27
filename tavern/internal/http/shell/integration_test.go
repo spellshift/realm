@@ -692,3 +692,41 @@ func TestShellHistory_Interactive(t *testing.T) {
 	}
 	require.Contains(t, outMsg.Output, "history_output")
 }
+
+func TestShellActiveUsers(t *testing.T) {
+	env := SetupTestEnv(t)
+	defer env.Close()
+	ctx := context.Background()
+
+	// 1. Initial State: No Active Users
+	users, err := env.Shell.QueryActiveUsers().All(ctx)
+	require.NoError(t, err)
+	require.Empty(t, users)
+
+	// 2. Connect via WebSocket
+	url := fmt.Sprintf("%s?shell_id=%d", env.WSURL, env.Shell.ID)
+	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	// 3. Verify Active User Added
+	// Give a small grace period for the goroutine to run
+	require.Eventually(t, func() bool {
+		users, err := env.Shell.QueryActiveUsers().All(ctx)
+		require.NoError(t, err)
+		if len(users) != 1 {
+			return false
+		}
+		return users[0].ID == env.User.ID
+	}, 5*time.Second, 100*time.Millisecond)
+
+	// 4. Disconnect
+	ws.Close()
+
+	// 5. Verify Active User Removed
+	require.Eventually(t, func() bool {
+		users, err := env.Shell.QueryActiveUsers().All(ctx)
+		require.NoError(t, err)
+		return len(users) == 0
+	}, 5*time.Second, 100*time.Millisecond)
+}
