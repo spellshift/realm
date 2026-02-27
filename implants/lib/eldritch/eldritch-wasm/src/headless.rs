@@ -206,7 +206,7 @@ fn expand_macros(code: &str) -> String {
                     let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
                     let macro_var = "_nonomacroclowntown";
                     let replacement = alloc::format!(
-                        "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
+                        "{indentation}for {macro_var} in range(1): {macro_var} = sys.shell(\"{escaped_cmd}\"); print({macro_var}['stdout']); print({macro_var}['stderr'])"
                     );
 
                     let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
@@ -282,8 +282,8 @@ mod tests {
     #[test]
     fn test_headless_repl_macro() {
         let mut repl = HeadlessRepl::new();
-        repl.input("!ls");
-        let res = repl.input("");
+        let res = repl.input("!ls");
+        assert!(res.contains("\"status\": \"complete\""));
         assert!(res.contains("sys.shell"));
         assert!(res.contains("ls"));
     }
