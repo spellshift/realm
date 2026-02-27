@@ -1,3 +1,30 @@
+export const HISTORY_KEY = "eldritch_shell_history";
+export const MAX_HISTORY = 1000;
+
+export const loadHistory = (): string[] => {
+    try {
+        const stored = localStorage.getItem(HISTORY_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+                return parsed;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load history", e);
+    }
+    return [];
+};
+
+export const saveHistory = (history: string[]) => {
+    try {
+        const sliced = history.slice(-MAX_HISTORY);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(sliced));
+    } catch (e) {
+        console.error("Failed to save history", e);
+    }
+};
+
 export const moveWordLeft = (buffer: string, cursor: number): number => {
     const beforeCursor = buffer.slice(0, cursor);
     const trimmed = beforeCursor.trimEnd();
