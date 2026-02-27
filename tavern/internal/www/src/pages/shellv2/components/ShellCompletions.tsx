@@ -25,9 +25,10 @@ interface ShellCompletionsProps {
   show: boolean;
   pos: { x: number; y: number };
   index: number;
+  onCompletionSelect: (completion: string) => void;
 }
 
-const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, pos, index }) => {
+const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, pos, index, onCompletionSelect }) => {
   const completionsListRef = useRef<HTMLUListElement>(null);
   const [hoveredDoc, setHoveredDoc] = useState<{ sig: string, desc: string, x: number, y: number } | null>(null);
 
@@ -90,6 +91,11 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
                     }
                 }}
                 onMouseLeave={() => setHoveredDoc(null)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onCompletionSelect(c);
+                }}
                 >
                 <span>{c}</span>
                 {doc && <Info size={14} style={{ marginLeft: 8 }} />}
