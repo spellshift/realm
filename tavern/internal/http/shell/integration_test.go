@@ -47,7 +47,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctx := context.Background()
 
 	// 1. Setup DB
-	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1", uuid.NewString())
+	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=5000", uuid.NewString())
 	entClient := enttest.Open(t, "sqlite3", dsn)
 
 	// 2. Setup Portal Mux
