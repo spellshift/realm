@@ -605,7 +605,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 							creatorName = task.Edges.Creator.Name
 						}
 
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
+						otherStreamMsg.Output = fmt.Sprintf("%s[@%s]%s%s[+]%s %s\n", colorCodeUsername, creatorName, colorCodeReset, colorCodeSuccess, colorCodeReset, truncateInput(task.Input))
 						otherStreamMsg.Output += string(bytesPayload.Data)
 
 						otherStreamCh <- otherStreamMsg
