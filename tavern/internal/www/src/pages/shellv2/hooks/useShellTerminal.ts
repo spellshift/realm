@@ -202,7 +202,7 @@ export const useShellTerminal = (
         tooltipTimeoutRef.current = setTimeout(() => {
             currentTooltipWord.current = null;
             setTooltipState(s => ({ ...s, visible: false }));
-        }, 2000);
+        }, 500);
     }, []);
 
     const cancelHideTooltip = useCallback(() => {
