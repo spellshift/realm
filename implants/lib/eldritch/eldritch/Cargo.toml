@@ -8,7 +8,7 @@ spin = "0.10"
 
 eldritch-core = { workspace = true, default-features = false }
 eldritch-macros = { workspace = true }
-eldritch-agent = { workspace = true }
+eldritch-agent = { workspace = true, optional = true }
 
 # Libs
 eldritch-libagent = { workspace = true, default-features = false }
@@ -57,6 +57,7 @@ fake_sys = ["eldritch-libsys/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
 stdlib = [
     "dep:pb",
+    "dep:eldritch-agent",
     "eldritch-libagent/stdlib",
     "eldritch-libassets/stdlib",
     "eldritch-libcrypto/stdlib",
