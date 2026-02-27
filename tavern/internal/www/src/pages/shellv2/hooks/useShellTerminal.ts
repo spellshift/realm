@@ -707,7 +707,10 @@ export const useShellTerminal = (
             adapter.current?.close();
             termInstance.current?.dispose();
         };
-    }, [shellId, loading, error, shellData, setPortalId]);
+        // We only want to re-initialize if the shell ID changes or critical data is first loaded.
+        // We use JSON.stringify(shellData?.node?.id) to ensure we have a stable dependency if the object ref changes but ID is same.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shellId, loading, error, shellData?.node?.id]);
 
     return {
         termRef,

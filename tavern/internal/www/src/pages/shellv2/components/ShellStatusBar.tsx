@@ -15,24 +15,27 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
     switch (connectionStatus) {
       case "connected":
         return (
-          <div className="flex items-center gap-1 text-green-500">
-            <Wifi size={14} />
-            <span className="text-xs uppercase font-bold tracking-wider">Connected</span>
-          </div>
+          <Tooltip label="Connected to Tavern backend.">
+            <div className="flex items-center gap-1 text-green-500 cursor-help">
+              <Wifi size={14} />
+            </div>
+          </Tooltip>
         );
       case "disconnected":
         return (
-          <div className="flex items-center gap-1 text-red-500">
-            <WifiOff size={14} />
-            <span className="text-xs uppercase font-bold tracking-wider">Disconnected</span>
-          </div>
+          <Tooltip label="Disconnected from Tavern backend. Input is disabled.">
+            <div className="flex items-center gap-1 text-red-500 cursor-help">
+              <WifiOff size={14} />
+            </div>
+          </Tooltip>
         );
       case "reconnecting":
         return (
-          <div className="flex items-center gap-1 text-yellow-500">
-            <RefreshCw size={14} className="animate-spin" />
-            <span className="text-xs uppercase font-bold tracking-wider">Reconnecting</span>
-          </div>
+          <Tooltip label="Attempting to reconnect to Tavern backend...">
+            <div className="flex items-center gap-1 text-yellow-500 cursor-help">
+              <RefreshCw size={14} className="animate-spin" />
+            </div>
+          </Tooltip>
         );
     }
   };
