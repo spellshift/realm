@@ -64,6 +64,7 @@ export const useShellTerminal = (
     }>({ visible: false, x: 0, y: 0, signature: "", description: "" });
 
     const currentTooltipWord = useRef<string | null>(null);
+    const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const lastBufferHeight = useRef(0);
 
@@ -196,6 +197,19 @@ export const useShellTerminal = (
         updateCompletionsUI([], 0, false, 0);
     }, [redrawLine, updateCompletionsUI]);
 
+    const scheduleHideTooltip = useCallback(() => {
+        if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+        tooltipTimeoutRef.current = setTimeout(() => {
+            currentTooltipWord.current = null;
+            setTooltipState(s => ({ ...s, visible: false }));
+        }, 2000);
+    }, []);
+
+    const cancelHideTooltip = useCallback(() => {
+        if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+        tooltipTimeoutRef.current = null;
+    }, []);
+
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (!termInstance.current || !termRef.current) return;
 
@@ -220,7 +234,7 @@ export const useShellTerminal = (
         const row = Math.floor(y / cellHeight);
 
         if (col < 0 || col >= cols || row < 0 || row >= rows) {
-            setTooltipState(s => ({ ...s, visible: false }));
+            scheduleHideTooltip();
             return;
         }
 
@@ -230,7 +244,7 @@ export const useShellTerminal = (
         const line = buffer.getLine(bufferRowIndex);
 
         if (!line) {
-            setTooltipState(s => ({ ...s, visible: false }));
+            scheduleHideTooltip();
             return;
         }
 
@@ -238,13 +252,13 @@ export const useShellTerminal = (
 
         // Extract word
         if (col >= lineStr.length) {
-            setTooltipState(s => ({ ...s, visible: false }));
+            scheduleHideTooltip();
             return;
         }
 
         const allowedChars = /[a-zA-Z0-9_\.]/;
         if (!allowedChars.test(lineStr[col])) {
-            setTooltipState(s => ({ ...s, visible: false }));
+            scheduleHideTooltip();
             return;
         }
 
@@ -262,6 +276,7 @@ export const useShellTerminal = (
 
         // Look up in docs
         if (docs[word]) {
+            cancelHideTooltip();
             // If already showing tooltip for this word, don't update position
             if (currentTooltipWord.current === word && tooltipState.visible) {
                 return;
@@ -276,13 +291,9 @@ export const useShellTerminal = (
                 description: docs[word].description
             });
         } else {
-             currentTooltipWord.current = null;
-             setTooltipState(s => {
-                 if (!s.visible) return s;
-                 return { ...s, visible: false };
-             });
+             scheduleHideTooltip();
         }
-    }, [tooltipState.visible]);
+    }, [tooltipState.visible, scheduleHideTooltip, cancelHideTooltip]);
 
     const shellNodeId = shellData?.node?.id;
     const shellClosedAt = shellData?.node?.closedAt;
@@ -865,6 +876,8 @@ export const useShellTerminal = (
         tooltipState,
         handleCompletionSelect: applyCompletion,
         connectionStatus,
-        connectionMessage
+        connectionMessage,
+        handleTooltipMouseEnter: cancelHideTooltip,
+        handleTooltipMouseLeave: scheduleHideTooltip
     };
 };
