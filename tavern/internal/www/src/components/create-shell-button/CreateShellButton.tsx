@@ -7,7 +7,7 @@ import { add } from 'date-fns';
 
 import Button from '../tavern-base-ui/button/Button';
 import { checkIfBeaconOffline } from '../../utils/utils';
-import { PrincipalAdminTypes } from '../../utils/enums';
+import { PrincipalAdminTypes, SupportedTransports } from '../../utils/enums';
 import { CREATE_SHELL_MUTATION, GET_BEACONS_FOR_HOST_QUERY } from './queries';
 
 interface CreateShellButtonProps {
@@ -15,12 +15,64 @@ interface CreateShellButtonProps {
     beaconId?: string;
 }
 
-interface BeaconCandidate {
+export interface BeaconCandidate {
     id: string;
     principal: string;
     interval: number;
     lastSeenAt: string;
     nextSeenAt?: string;
+    transport?: string;
+}
+
+export function selectBestBeaconId(beacons: BeaconCandidate[]): string | null {
+    if (beacons.length === 0) return null;
+
+    // Sort candidates
+    // 1. Principal priority: root, administrator, system
+    // 2. gRPC over any other transport
+    // 3. Shortest interval
+    // 4. Soonest nextSeenAt (or lastSeenAt + interval)
+
+    const highPriorityPrincipals = [
+        PrincipalAdminTypes.root,
+        PrincipalAdminTypes.Administrator,
+        PrincipalAdminTypes.SYSTEM
+    ] as string[];
+
+    // Clone array before sorting to avoid mutating read-only objects from Apollo
+    return [...beacons].sort((a, b) => {
+        // 1. Principal Priority
+        const aIsHigh = highPriorityPrincipals.includes(a.principal);
+        const bIsHigh = highPriorityPrincipals.includes(b.principal);
+
+        if (aIsHigh !== bIsHigh) {
+            return aIsHigh ? -1 : 1;
+        }
+
+        // 2. Transport Priority (gRPC)
+        const aIsGrpc = a.transport === SupportedTransports.GRPC;
+        const bIsGrpc = b.transport === SupportedTransports.GRPC;
+
+        if (aIsGrpc !== bIsGrpc) {
+            return aIsGrpc ? -1 : 1;
+        }
+
+        // 3. Shortest Interval
+        if (a.interval !== b.interval) {
+            return a.interval - b.interval;
+        }
+
+        // 4. Soonest Next Check-in
+        const aNext = a.nextSeenAt
+            ? new Date(a.nextSeenAt).getTime()
+            : add(new Date(a.lastSeenAt), { seconds: a.interval }).getTime();
+
+        const bNext = b.nextSeenAt
+            ? new Date(b.nextSeenAt).getTime()
+            : add(new Date(b.lastSeenAt), { seconds: b.interval }).getTime();
+
+        return aNext - bNext;
+    })[0]?.id || null;
 }
 
 export const CreateShellButton: React.FC<CreateShellButtonProps> = ({ hostId, beaconId }) => {
@@ -62,44 +114,7 @@ export const CreateShellButton: React.FC<CreateShellButtonProps> = ({ hostId, be
             interval: beacon.interval
         }));
 
-        if (activeBeacons.length === 0) return null;
-
-        // Sort candidates
-        // 1. Principal priority: root, administrator, system
-        // 2. Shortest interval
-        // 3. Soonest nextSeenAt (or lastSeenAt + interval)
-
-        const highPriorityPrincipals = [
-            PrincipalAdminTypes.root,
-            PrincipalAdminTypes.Administrator,
-            PrincipalAdminTypes.SYSTEM
-        ] as string[];
-
-        // Clone array before sorting to avoid mutating read-only objects from Apollo
-        return [...activeBeacons].sort((a, b) => {
-            // 1. Principal Priority
-            const aIsHigh = highPriorityPrincipals.includes(a.principal);
-            const bIsHigh = highPriorityPrincipals.includes(b.principal);
-
-            if (aIsHigh && !bIsHigh) return -1;
-            if (!aIsHigh && bIsHigh) return 1;
-
-            // 2. Shortest Interval
-            if (a.interval !== b.interval) {
-                return a.interval - b.interval;
-            }
-
-            // 3. Soonest Next Check-in
-            const aNext = a.nextSeenAt
-                ? new Date(a.nextSeenAt).getTime()
-                : add(new Date(a.lastSeenAt), { seconds: a.interval }).getTime();
-
-            const bNext = b.nextSeenAt
-                ? new Date(b.nextSeenAt).getTime()
-                : add(new Date(b.lastSeenAt), { seconds: b.interval }).getTime();
-
-            return aNext - bNext;
-        })[0]?.id || null;
+        return selectBestBeaconId(activeBeacons);
 
     }, [beaconId, hostId, beaconsData]);
 
