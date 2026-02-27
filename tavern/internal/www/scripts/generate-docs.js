@@ -71,7 +71,7 @@ try {
             // If we were capturing a library description, save it
             if (inLibrarySection && currentLibrary) {
                 docs[currentLibrary] = {
-                    signature: `import ${currentLibrary}`, // Use a dummy signature or just name
+                    signature: currentLibrary, // Use a dummy signature or just name
                     description: currentDescription.join('\n').trim()
                 };
                 inLibrarySection = false;
@@ -117,7 +117,7 @@ try {
     // Add the last function or library
     if (inLibrarySection && currentLibrary) {
         docs[currentLibrary] = {
-            signature: `import ${currentLibrary}`,
+            signature: currentLibrary,
             description: currentDescription.join('\n').trim()
         };
     } else if (currentFunction) {
