@@ -48,3 +48,16 @@ export const GET_PORTAL_STATUS = gql`
     }
   }
 `;
+
+export const GET_SHELL_ACTIVE_USERS = gql`
+  query GetShellActiveUsers($id: ID!) {
+    node(id: $id) {
+      ... on Shell {
+        activeUsers {
+          id
+          name
+        }
+      }
+    }
+  }
+`;

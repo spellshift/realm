@@ -1,6 +1,6 @@
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
-import { GET_BEACON_STATUS, GET_PORTAL_STATUS, GET_SHELL } from "../graphql";
+import { GET_BEACON_STATUS, GET_PORTAL_STATUS, GET_SHELL, GET_SHELL_ACTIVE_USERS } from "../graphql";
 
 export const useShellData = (shellId: string | undefined) => {
     const [portalId, setPortalId] = useState<number | null>(null);
@@ -27,6 +27,13 @@ export const useShellData = (shellId: string | undefined) => {
         pollInterval: 2000
     });
 
+    // Fetch active users
+    const { data: activeUsersData } = useQuery(GET_SHELL_ACTIVE_USERS, {
+        variables: { id: shellId },
+        skip: !shellId,
+        pollInterval: 10000
+    });
+
     // Initialize portalId from shell data
     useEffect(() => {
         if (shellData?.node?.portals) {
@@ -51,6 +58,7 @@ export const useShellData = (shellId: string | undefined) => {
         beaconData,
         portalData,
         portalId,
-        setPortalId
+        setPortalId,
+        activeUsers: activeUsersData?.node?.activeUsers || []
     };
 };

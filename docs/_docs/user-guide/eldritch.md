@@ -400,7 +400,7 @@ The **agent.stop_task** method stops a specific background task by its ID. If th
 
 `agent.set_callback_interval(new_interval: int) -> None`
 
-The <b>agent.set_callback_interval</b> method takes an unsigned int and changes the
+The **agent.set_callback_interval** method takes an unsigned int and changes the
 running agent's callback interval to the passed value as seconds. This configuration change will
 not persist across agent reboots.
 
@@ -408,7 +408,7 @@ not persist across agent reboots.
 
 `agent.set_callback_uri(new_uri: str) -> None`
 
-The <b>agent.set_callback_uri</b> method takes an string and changes the
+The **agent.set_callback_uri** method takes an string and changes the
 running agent's callback URI to the passed value. This configuration change will
 not persist across agent reboots. NOTE: please ensure the passed URI path is correct
 for the underlying `Transport` being used, as a URI can take many forms and we make no
@@ -422,7 +422,7 @@ assumptions on `Transport` requirements no checks are applied to the passed stri
 
 `assets.copy(src: str, dst: str) -> None`
 
-The <b>assets.copy</b> method copies an embedded file from the agent to disk.
+The **assets.copy** method copies an embedded file from the agent to disk.
 The `src` variable will be the path from the `embed_files_golem_prod` as the root dir.
 For example `embed_files_golem_prod/sliver/agent-x64` can be referenced as `sliver/agent-x64`.
 If `dst` exists it will be overwritten. If it doesn't exist the function will fail.
@@ -439,19 +439,19 @@ deploy_agent()
 
 `assets.list() -> List<str>`
 
-The <b>assets.list</b> method returns a list of asset names that the agent is aware of.
+The **assets.list** method returns a list of asset names that the agent is aware of.
 
 ### assets.read_binary
 
 `assets.read_binary(src: str) -> List<int>`
 
-The <b>assets.read_binary</b> method returns a list of u32 numbers representing the asset files bytes.
+The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes.
 
 ### assets.read
 
 `assets.read(src: str) -> str`
 
-The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.
+The **assets.read** method returns a UTF-8 string representation of the asset file.
 
 ---
 
@@ -461,19 +461,19 @@ The <b>assets.read</b> method returns a UTF-8 string representation of the asset
 
 `crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 
-The <b>crypto.aes_decrypt</b> method decrypts the given data using the given key and IV (AES CBC).
+The **crypto.aes_decrypt** method decrypts the given data using the given key and IV (AES CBC).
 
 ### crypto.aes_encrypt
 
 `crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes`
 
-The <b>crypto.aes_encrypt</b> method encrypts the given data using the given key and IV (AES CBC).
+The **crypto.aes_encrypt** method encrypts the given data using the given key and IV (AES CBC).
 
 ### crypto.aes_decrypt_file
 
 `crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None`
 
-The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.
+The **crypto.aes_decrypt_file** method decrypts the given src file using the given key and writes it to disk at the dst location.
 
 Key must be 16 Bytes (Characters)
 
@@ -481,7 +481,7 @@ Key must be 16 Bytes (Characters)
 
 `crypto.aes_encrypt_file(src: str, dst: str, key: str) -> None`
 
-The <b>crypto.aes_encrypt_file</b> method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
+The **crypto.aes_encrypt_file** method encrypts the given src file, encrypts it using the given key and writes it to disk at the dst location.
 
 Key must be 16 Bytes (Characters)
 
@@ -489,7 +489,7 @@ Key must be 16 Bytes (Characters)
 
 `crypto.encode_b64(content: str, encode_type: Optional<str>) -> str`
 
-The <b>crypto.encode_b64</b> method encodes the given text using the given base64 encoding method. Valid methods include:
+The **crypto.encode_b64** method encodes the given text using the given base64 encoding method. Valid methods include:
 
 - STANDARD (default)
 - STANDARD_NO_PAD
@@ -500,7 +500,7 @@ The <b>crypto.encode_b64</b> method encodes the given text using the given base6
 
 `crypto.decode_b64(content: str, decode_type: Optional<str>) -> str`
 
-The <b>crypto.decode_b64</b> method encodes the given text using the given base64 decoding method. Valid methods include:
+The **crypto.decode_b64** method encodes the given text using the given base64 decoding method. Valid methods include:
 
 - STANDARD (default)
 - STANDARD_NO_PAD
@@ -511,7 +511,7 @@ The <b>crypto.decode_b64</b> method encodes the given text using the given base6
 
 `crypto.from_json(content: str) -> Value`
 
-The <b>crypto.from_json</b> method converts JSON text to an object of correct type.
+The **crypto.from_json** method converts JSON text to an object of correct type.
 
 ```python
 crypto.from_json("{\"foo\":\"bar\"}")
@@ -524,7 +524,7 @@ crypto.from_json("{\"foo\":\"bar\"}")
 
 `crypto.is_json(content: str) -> bool`
 
-The <b>crypto.is_json</b> tests if JSON is valid.
+The **crypto.is_json** tests if JSON is valid.
 
 ```python
 crypto.is_json("{\"foo\":\"bar\"}")
@@ -540,7 +540,7 @@ False
 
 `crypto.to_json(content: Value) -> str`
 
-The <b>crypto.to_json</b> method converts given type to JSON text.
+The **crypto.to_json** method converts given type to JSON text.
 
 ```python
 crypto.to_json({"foo": "bar"})
@@ -551,7 +551,7 @@ crypto.to_json({"foo": "bar"})
 
 `crypto.hash_file(file: str, algo: str) -> str`
 
-The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:
+The **crypto.hash_file** method will produce the hash of the given file's contents. Valid algorithms include:
 
 - MD5
 - SHA1
@@ -562,19 +562,19 @@ The <b>crypto.hash_file</b> method will produce the hash of the given file's con
 
 `crypto.md5(data: Bytes) -> str`
 
-The <b>crypto.md5</b> method calculates the MD5 hash of the provided data.
+The **crypto.md5** method calculates the MD5 hash of the provided data.
 
 ### crypto.sha1
 
 `crypto.sha1(data: Bytes) -> str`
 
-The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data.
+The **crypto.sha1** method calculates the SHA1 hash of the provided data.
 
 ### crypto.sha256
 
 `crypto.sha256(data: Bytes) -> str`
 
-The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data.
+The **crypto.sha256** method calculates the SHA256 hash of the provided data.
 
 ---
 
@@ -584,25 +584,25 @@ The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data.
 
 `file.append(path: str, content: str) -> None`
 
-The <b>file.append</b> method appends the `content` to file at `path`. If no file exists at path create the file with the content.
+The **file.append** method appends the `content` to file at `path`. If no file exists at path create the file with the content.
 
 ### file.compress
 
 `file.compress(src: str, dst: str) -> None`
 
-The <b>file.compress</b> method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
+The **file.compress** method compresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the source path is a directory the contents will be placed in a tar archive and then compressed.
 
 ### file.copy
 
 `file.copy(src: str, dst: str) -> None`
 
-The <b>file.copy</b> method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
+The **file.copy** method copies a file from `src` path to `dst` path. If `dst` file doesn't exist it will be created.
 
 ### file.decompress
 
 `file.decompress(src: str, dst: str) -> None`
 
-The <b>file.decompress</b> method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
+The **file.decompress** method decompresses a file using the gzip algorithm. If the destination file doesn't exist it will be created. If the source file doesn't exist an error will be thrown. If the output path is a tar archive, the contents will be extracted to a directory at the `dst` path. Note the original directory will also be added to the new directory.
 
 ```python
 file.compress('/home/bob/.ssh', '/tmp/bob_ssh.tar.gz')
@@ -614,13 +614,13 @@ file.decompress('/tmp/bob_ssh.tar.gz', '/tmp/bob_ssh_output')
 
 `file.exists(path: str) -> bool`
 
-The <b>file.exists</b> method checks if a file or directory exists at the path specified.
+The **file.exists** method checks if a file or directory exists at the path specified.
 
 ### file.follow
 
 `file.follow(path: str, fn: function(str)) -> None`
 
-The <b>file.follow</b> method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).
+The **file.follow** method will call `fn(line)` for any new `line` that is added to the file (such as from `bash_history` and other logs).
 
 ```python
 # Print every line added to bob's bash history
@@ -631,19 +631,19 @@ file.follow('/home/bob/.bash_history', print)
 
 `file.is_dir(path: str) -> bool`
 
-The <b>file.is_dir</b> method checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return `False`.
+The **file.is_dir** method checks if a path exists and is a directory. If it doesn't exist or is not a directory it will return `False`.
 
 ### file.is_file
 
 `file.is_file(path: str) -> bool`
 
-The <b>file.is_file</b> method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
+The **file.is_file** method checks if a path exists and is a file. If it doesn't exist or is not a file it will return `False`.
 
 ### file.list
 
 `file.list(path: str) -> List<Dict>`
 
-The <b>file.list</b> method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
+The **file.list** method returns a list of files at the specified path. The path is relative to your current working directory and can be traversed with `../`.
 This function also supports globbing with `*` for example:
 
 ```python
@@ -694,7 +694,7 @@ Here is an example of the Dict layout:
 
 `file.list_recent(path: str, limit: int) -> List<str>`
 
-The <b>file.list_recent</b> method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.
+The **file.list_recent** method returns a list of file paths in the specified directory, sorted by most recent modification time. The scan is recursive.
 
 - `path`: The directory to scan. Defaults to `/`.
 - `limit`: The maximum number of files to return. Defaults to `10`.
@@ -710,31 +710,31 @@ for log in recent_logs:
 
 `file.mkdir(path: str, parent: Option<bool>) -> None`
 
-The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
+The **file.mkdir** method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`.
 
 ### file.move
 
 `file.move(src: str, dst: str) -> None`
 
-The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
+The **file.move** method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems.
 
 ### file.parent_dir
 
 `file.parent_dir(path: str) -> str`
 
-The <b>file.parent_dir</b> method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
+The **file.parent_dir** method returns the parent directory of a give path. Eg `/etc/ssh/sshd_config` -> `/etc/ssh`
 
 ### file.pwd
 
 `file.pwd() -> Option<str>`
 
-The <b>file.pwd</b> method returns the current working directory of the process. If it could not be determined, `None` is returned.
+The **file.pwd** method returns the current working directory of the process. If it could not be determined, `None` is returned.
 
 ### file.read
 
 `file.read(path: str) -> str`
 
-The <b>file.read</b> method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
 
 ```python
@@ -747,7 +747,7 @@ file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Win
 
 `file.read(path: str) -> List<int>`
 
-The <b>file.read_binary</b> method will read the contents of a file, <b>returning as a list of bytes</b>. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
+The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
 
 ```python
@@ -760,31 +760,31 @@ file.read_binary("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file o
 
 `file.remove(path: str) -> None`
 
-The <b>file.remove</b> method deletes a file or directory (and it's contents) specified by path.
+The **file.remove** method deletes a file or directory (and it's contents) specified by path.
 
 ### file.replace
 
 `file.replace(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace</b> method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The **file.replace** method finds the first string matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.replace_all
 
 `file.replace_all(path: str, pattern: str, value: str) -> None`
 
-The <b>file.replace_all</b> method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The **file.replace_all** method finds all strings matching a regex pattern in the specified file and replaces them with the value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### file.temp_file
 
 `file.temp_file(name: Option<str>) -> str`
 
-The <b> file.temp</b> method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
-The <b>file.template</b> method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
+The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
@@ -793,14 +793,14 @@ The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 
 `file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None`
 
-The <b>file.timestomp</b> method modifies the timestamps of a file.
+The **file.timestomp** method modifies the timestamps of a file.
 It can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file.
 
 ### file.write
 
 `file.write(path: str, content: str) -> None`
 
-The <b>file.write</b> method writes to a given file path with the given content.
+The **file.write** method writes to a given file path with the given content.
 If a file already exists at this path, the method will overwite it. If a directory
 already exists at the path the method will error.
 
@@ -808,7 +808,7 @@ already exists at the path the method will error.
 
 `file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>`
 
-The <b>file.find</b> method finds all files matching the used parameters. Returns file path for all matching items.
+The **file.find** method finds all files matching the used parameters. Returns file path for all matching items.
 
 - name: Checks if file name contains provided input
 - file_type: Checks for 'file' or 'dir' for files or directories, respectively.
@@ -826,19 +826,19 @@ The HTTP library also allows the user to allow the http client to ignore TLS val
 
 `http.download(uri: str, dst: str, allow_insecure: Option<bool>) -> None`
 
-The <b>http.download</b> method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
+The **http.download** method downloads a file at the URI specified in `uri` to the path specified in `dst`. If a file already exists at that location, it will be overwritten.
 
 ### http.get
 
 `http.get(uri: str, query_params: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.get</b> method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
+The **http.get** method sends an HTTP GET request to the URI specified in `uri` with the optional query parameters specified in `query_params` and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase.
 
 ### http.post
 
 `http.post(uri: str, body: Option<str>, form: Option<Dict<str, str>>, headers: Option<Dict<str, str>>, allow_insecure: Option<bool>) -> str`
 
-The <b>http.post</b> method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
+The **http.post** method sends an HTTP POST request to the URI specified in `uri` with the optional request body specified by `body`, form parameters specified in `form`, and headers specified in `headers`, then return the response body as a string. Note: in order to conform with HTTP2+ all header names are transmuted to lowercase. Other Note: if a `body` and a `form` are supplied the value of `body` will be used.
 
 ---
 
@@ -848,7 +848,7 @@ The <b>http.post</b> method sends an HTTP POST request to the URI specified in `
 
 `pivot.arp_scan(target_cidrs: List<str>) -> List<str>`
 
-The <b>pivot.arp_scan</b> method is for enumerating hosts on the agent network without using TCP connect or ping.
+The **pivot.arp_scan** method is for enumerating hosts on the agent network without using TCP connect or ping.
 
 - `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
 - Must be running as `root` to use.
@@ -878,13 +878,13 @@ $> pivot.arp_scan(["192.168.1.1/32"])
 
 `pivot.bind_proxy(listen_address: str, listen_port: int, username: str, password: str ) -> None`
 
-The <b>pivot.bind_proxy</b> method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
+The **pivot.bind_proxy** method is being proposed to provide users another option when trying to connect and pivot within an environment. This function will start a SOCKS5 proxy on the specified port and interface, with the specified username and password (if provided).
 
 ### pivot.ncat
 
 `pivot.ncat(address: str, port: int, data: str, protocol: str ) -> str`
 
-The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
+The **pivot.ncat** method allows a user to send arbitrary data over TCP/UDP to a host. If the server responds that response will be returned.
 
 `protocol` must be `tcp`, or `udp` anything else will return an error `Protocol not supported please use: udp or tcp.`.
 
@@ -892,13 +892,13 @@ The <b>pivot.ncat</b> method allows a user to send arbitrary data over TCP/UDP t
 
 `pivot.port_forward(listen_address: str, listen_port: int, forward_address: str, forward_port:  int, str: protocol  ) -> None`
 
-The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
+The **pivot.port_forward** method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed.
 
 ### pivot.port_scan
 
 `pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>`
 
-The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.
+The **pivot.port_scan** method allows users to scan TCP/UDP ports within the eldritch language.
 Inputs:
 
 - `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.
@@ -954,13 +954,13 @@ The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell 
 
 `pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str`
 
-The <b>pivot.smb_exec</b> method is being proposed to allow users a way to move between hosts running smb.
+The **pivot.smb_exec** method is being proposed to allow users a way to move between hosts running smb.
 
 ### pivot.ssh_copy
 
 `pivot.ssh_copy(target: str, port: int, src: str, dst: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> str`
 
-The <b>pivot.ssh_copy</b> method copies a local file to a remote system.
+The **pivot.ssh_copy** method copies a local file to a remote system.
 ssh_copy will return `"Success"` if successful and `"Failed to run handle_ssh_copy: ..."` on failure.
 If the connection is successful but the copy writes a file error will be returned.
 ssh_copy will overwrite the remote file if it exists.
@@ -970,7 +970,7 @@ The file directory the `dst` file exists in must exist in order for ssh_copy to 
 
 `pivot.ssh_exec(target: str, port: int, command: str, username: str, password: Optional<str>, key: Optional<str>, key_password: Optional<str>, timeout: Optional<int>) -> List<Dict>`
 
-The <b>pivot.ssh_exec</b> method executes a command string on the remote host using the default shell.
+The **pivot.ssh_exec** method executes a command string on the remote host using the default shell.
 Stdout returns the string result from the command output.
 Stderr will return any errors from the SSH connection but not the command being executed.
 Status will be equal to the code returned by the command being run and -1 in the event that the ssh connection raises an error.
@@ -991,7 +991,7 @@ Status will be equal to the code returned by the command being run and -1 in the
 
 `process.info(pid: Optional<int>) -> Dict`
 
-The <b>process.info</b> method returns all information on a given process ID. Default is the current process.
+The **process.info** method returns all information on a given process ID. Default is the current process.
 
 ```json
 {
@@ -1037,13 +1037,13 @@ The <b>process.info</b> method returns all information on a given process ID. De
 
 `process.kill(pid: int) -> None`
 
-The <b>process.kill</b> method will kill a process using the KILL signal given its process id.
+The **process.kill** method will kill a process using the KILL signal given its process id.
 
 ### process.list
 
 `process.list() -> List<Dict>`
 
-The <b>process.list</b> method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
+The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
 
 ```json
 {
@@ -1063,13 +1063,13 @@ The <b>process.list</b> method returns a list of dictionaries that describe each
 
 `process.name(pid: int) -> str`
 
-The <b>process.name</b> method returns the name of the process from its given process ID.
+The **process.name** method returns the name of the process from its given process ID.
 
 ### process.netstat
 
 `process.netstat() -> List<Dict>`
 
-The <b>process.netstat</b> method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
+The **process.netstat** method returns all information on TCP, UDP, and Unix sockets on the system. Will also return PID and Process Name of attached process, if one exists.
 
 _Currently only shows LISTENING TCP connections_
 
@@ -1095,30 +1095,30 @@ The random library is designed to enable generation of cryptographically secure 
 
 `random.bool() -> bool`
 
-The <b>random.bool</b> method returns a randomly sourced boolean value.
+The **random.bool** method returns a randomly sourced boolean value.
 
 ### random.bytes
 
 `random.bytes(len: int) -> List<int>`
 
-The <b>random.bytes</b> method returns a list of randomly generated bytes.
+The **random.bytes** method returns a list of randomly generated bytes.
 
 ### random.int
 
 `random.int(min: i32, max: i32) -> i32`
 
-The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
+The **random.int** method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum.
 
 ### random.string
 
 `random.string(length: uint, charset: Optional<str>) -> str`
-The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
+The **random.string** method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.
 
 ### random.uuid
 
 `random.uuid() -> str`
 
-The <b>random.uuid</b> method returns a randomly generated UUID (v4).
+The **random.uuid** method returns a randomly generated UUID (v4).
 
 ---
 
@@ -1131,26 +1131,26 @@ in Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lan
 
 `regex.match_all(haystack: str, pattern: str) -> List<str>`
 
-The <b>regex.match_all</b> method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The **regex.match_all** method returns a list of capture group strings that matched the given pattern within the given haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.match
 
 `regex.match(haystack: str, pattern: str) -> str`
 
-The <b>regex.match</b> method returns the first capture group string that matched the given pattern within the given
+The **regex.match** method returns the first capture group string that matched the given pattern within the given
 haystack. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace_all
 
 `regex.replace_all(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace_all</b> method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The **regex.replace_all** method returns the given haystack with all the capture group strings that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ### regex.replace
 
 `regex.replace(haystack: str, pattern: str, value: string) -> str`
 
-The <b>regex.replace</b> method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
+The **regex.replace** method returns the given haystack with the first capture group string that matched the given pattern replaced with the given value. Please consult the [Rust Regex Docs](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html) for more information on pattern matching.
 
 ---
 
@@ -1202,13 +1202,13 @@ Reports a screenshot of all screens to Tavern.
 
 `sys.dll_inject(dll_path: str, pid: int) -> None`
 
-The <b>sys.dll_inject</b> method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
+The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
 ### sys.dll_reflect
 
 `sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
 
-The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
@@ -1217,7 +1217,7 @@ If your dll_bytes array contains a value greater than u8::MAX it will cause the 
 
 `sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict`
 
-The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.
+The **sys.exec** method executes a program specified with `path` and passes the `args` list.
 On *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.
 On Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.
 The `env_vars` will be a map of environment variables to be added to the process of the execution.
@@ -1241,7 +1241,7 @@ sys.exec("/bin/bash",["-c", "ls /nofile"])
 
 `sys.get_env() -> Dict`
 
-The <b>sys.get_env</b> method returns a dictionary that describes the current process's environment variables.
+The **sys.get_env** method returns a dictionary that describes the current process's environment variables.
 An example is below:
 
 ```json
@@ -1255,7 +1255,7 @@ An example is below:
 
 `sys.get_ip() -> List<Dict>`
 
-The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionary. An example is available below:
+The **sys.get_ip** method returns a list of network interfaces as a dictionary. An example is available below:
 
 ```json
 [
@@ -1282,7 +1282,7 @@ The <b>sys.get_ip</b> method returns a list of network interfaces as a dictionar
 
 `sys.get_os() -> Dict`
 
-The <b>sys.get_os</b> method returns a dictionary that describes the current system's OS.
+The **sys.get_os** method returns a dictionary that describes the current system's OS.
 An example is below:
 
 ```json
@@ -1298,7 +1298,7 @@ An example is below:
 
 `sys.get_pid() -> int`
 
-The <b>sys.get_pid</b> method returns the process ID of the current process.
+The **sys.get_pid** method returns the process ID of the current process.
 An example is below:
 
 ```python
@@ -1310,7 +1310,7 @@ $> sys.get_pid()
 
 `sys.get_reg(reghive: str, regpath: str) -> Dict`
 
-The <b>sys.get_reg</b> method returns the registry values at the requested registry path.
+The **sys.get_reg** method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
@@ -1334,7 +1334,7 @@ $> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersio
 
 `sys.get_user() -> Dict`
 
-The <b>sys.get_user</b> method returns a dictionary that describes the current process's running user.
+The **sys.get_user** method returns a dictionary that describes the current process's running user.
 On *Nix, will return UID, EUID, GID, EGID, and detailed user info for the UID and EUID mappings.
 For users, will return name and groups of user.
 
@@ -1361,43 +1361,43 @@ For users, will return name and groups of user.
 
 `sys.hostname() -> String`
 
-The <b>sys.hostname</b> method returns a String containing the host's hostname.
+The **sys.hostname** method returns a String containing the host's hostname.
 
 ### sys.is_bsd
 
 `sys.is_bsd() -> bool`
 
-The <b>sys.is_bsd</b> method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else.
+The **sys.is_bsd** method returns `True` if on a `freebsd`, `netbsd`, or `openbsd` system and `False` on everything else.
 
 ### sys.is_linux
 
 `sys.is_linux() -> bool`
 
-The <b>sys.is_linux</b> method returns `True` if on a linux system and `False` on everything else.
+The **sys.is_linux** method returns `True` if on a linux system and `False` on everything else.
 
 ### sys.is_macos
 
 `sys.is_macos() -> bool`
 
-The <b>sys.is_macos</b> method returns `True` if on a mac os system and `False` on everything else.
+The **sys.is_macos** method returns `True` if on a mac os system and `False` on everything else.
 
 ### sys.is_windows
 
 `sys.is_windows() -> bool`
 
-The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else.
+The **sys.is_windows** method returns `True` if on a windows system and `False` on everything else.
 
 ### sys.list_users
 
 `sys.list_users() -> List<Dict>`
 
-The <b>sys.list_users</b> method lists all user accounts on the system.
+The **sys.list_users** method lists all user accounts on the system.
 
 ### sys.shell
 
 `sys.shell(cmd: str) -> Dict`
 
-The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:
+The **sys.shell** Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:
 
 ```python
 sys.shell("whoami")
@@ -1418,7 +1418,7 @@ sys.shell("ls /nofile")
 
 `sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
-The <b>sys.write_reg_hex</b> method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.
+The **sys.write_reg_hex** method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.
 An example is below:
 
 ```python
@@ -1452,7 +1452,7 @@ True
 
 `sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool`
 
-The <b>sys.write_reg_int</b> method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.
+The **sys.write_reg_int** method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.
 An example is below:
 
 ```python
@@ -1486,7 +1486,7 @@ True
 
 `sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
 
-The <b>sys.write_reg_str</b> method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.
+The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.
 An example is below:
 
 ```python
@@ -1522,7 +1522,7 @@ True
 
 `time.format_to_epoch(input: str, format: str) -> int`
 
-The <b>time.format_to_epoch</b> method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
+The **time.format_to_epoch** method returns the seconds since epoch for the given UTC timestamp of the provided format. Input must include date and time components.
 
 Some common formatting methods are:
 
@@ -1535,7 +1535,7 @@ For reference on all available format specifiers, see <https://docs.rs/chrono/la
 
 `time.format_to_readable(input: int, format: str) -> str`
 
-The <b>time.format_to_readable</b> method returns the timestamp in the provided format of the provided UTC timestamp.
+The **time.format_to_readable** method returns the timestamp in the provided format of the provided UTC timestamp.
 
 Some common formatting methods are:
 
@@ -1548,10 +1548,10 @@ For reference on all available format specifiers, see <https://docs.rs/chrono/la
 
 `time.now() -> int`
 
-The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
+The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time.
 
 ### time.sleep
 
 `time.sleep(secs: int)`
 
-The <b>time.sleep</b> method sleeps the task for the given number of seconds.
+The **time.sleep** method sleeps the task for the given number of seconds.

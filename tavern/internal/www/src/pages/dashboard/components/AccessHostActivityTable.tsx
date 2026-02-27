@@ -10,7 +10,7 @@ import { useFilters } from "../../../context/FilterContext";
 const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, term: string }) => {
     const currentDate = new Date();
     const navigation = useNavigate();
-    const { filters, updateFilters } = useFilters();
+    const { filters, updateFilters, setIsLocked } = useFilters();
 
     const handleOnClick = (item: any) => {
         if (item?.id === "undefined") {
@@ -20,11 +20,12 @@ const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, te
             const newFilter = {
                 'label': item?.original?.tag,
                 'kind': term,
-                'name': item?.original?.tag,
+                'name': item?.original?.tagId,
                 'value': item?.original?.tagId,
                 'id': item?.original?.tagId
             };
-            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter] })
+            setIsLocked(true);
+            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter]})
         }
         navigation(`/hosts`);
     }
