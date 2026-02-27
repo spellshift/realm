@@ -55,6 +55,8 @@ impl HeadlessRepl {
         }
         self.buffer.push_str(line);
 
+        self.buffer = expand_macros(&self.buffer);
+
         let trimmed = self.buffer.trim();
         if trimmed == "exit" {
             let payload = self.buffer.clone();
@@ -167,6 +169,68 @@ impl HeadlessRepl {
     }
 }
 
+fn expand_macros(code: &str) -> String {
+    let mut expanded_code = code.to_string();
+
+    loop {
+        let tokens = Lexer::new(expanded_code.clone()).scan_tokens();
+        let first_error = tokens.iter().find_map(|t| match &t.kind {
+            TokenKind::Error(msg) => Some(msg.clone()),
+            _ => None,
+        });
+
+        if let Some(msg) = first_error {
+            if let Some(line_num_str) = msg.strip_prefix("Unexpected character: ! on line ") {
+                let line_num: usize = match line_num_str.trim().parse() {
+                    Ok(n) => n,
+                    Err(_) => break,
+                };
+
+                if line_num == 0 {
+                    break;
+                }
+
+                let lines: Vec<&str> = expanded_code.lines().collect();
+                if line_num > lines.len() {
+                    break;
+                }
+
+                let line_idx = line_num - 1;
+                let line = lines[line_idx];
+
+                let trimmed_line = line.trim_start();
+                if let Some(rest) = trimmed_line.strip_prefix('!') {
+                    let indentation = &line[..line.len() - trimmed_line.len()];
+
+                    let cmd = rest;
+                    let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
+                    let macro_var = "_nonomacroclowntown";
+                    let replacement = alloc::format!(
+                        "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
+                    );
+
+                    let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+                    new_lines[line_idx] = replacement;
+
+                    expanded_code = new_lines.join("\n");
+
+                    if code.ends_with('\n') && !expanded_code.ends_with('\n') {
+                        expanded_code.push('\n');
+                    }
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+
+    expanded_code
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -213,5 +277,33 @@ mod tests {
         let res = repl.input("print('reset')");
         assert!(res.contains("\"status\": \"complete\""));
         assert!(res.contains("print('reset')"));
+    }
+
+    #[test]
+    fn test_headless_repl_macro() {
+        let mut repl = HeadlessRepl::new();
+        let res = repl.input("!ls");
+        assert!(res.contains("\"status\": \"complete\""));
+        assert!(res.contains("sys.shell"));
+        assert!(res.contains("ls"));
+    }
+
+    #[test]
+    fn test_headless_repl_macro_indent() {
+        let mut repl = HeadlessRepl::new();
+        // Start a block
+        let _ = repl.input("def foo():");
+        // Indented macro
+        let res = repl.input("    !ls");
+
+        // It should just append to buffer, so incomplete (inside block)
+        assert!(res.contains("\"status\": \"incomplete\""));
+
+        // Finish block
+        let res = repl.input("");
+        assert!(res.contains("\"status\": \"complete\""));
+        // Payload should contain sys.shell with indentation
+        assert!(res.contains("    import sys"));
+        assert!(res.contains("sys.shell(\\\"ls\\\")"));
     }
 }

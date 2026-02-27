@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
+	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
 )
@@ -194,6 +196,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer wg.Done()
 		defer cancel()
 		h.writeMessagesFromShell(ctx, session, streamID, sh, portalCh, wsTaskOutputCh, wsTaskOtherStreamCh, wsTaskErrCh, wsControlFlowCh, wsErrCh)
+	}()
+
+	// Manage User Presence
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		h.manageUserPresence(ctx, sh, authUser)
 	}()
 
 	wg.Wait()
@@ -663,9 +672,67 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 }
 
 func truncateInput(input string) string {
+	input = truncateShellMacro(input)
 	const maxLength = 64
 	if len(input) > maxLength {
 		return input[:maxLength] + "..."
 	}
 	return input
+}
+
+// truncateShellMacro removes the macro wrapper added in eldritch to make shell output more readable in the frontend.
+// This is needed because the macro adds a lot of boilerplate that clutters the input display in the frontend.
+// See expand_macros() in eldritch-wasm/src/headless.rs for how we do this macro.
+func truncateShellMacro(input string) string {
+	expandedMacroPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
+	expandedMacroSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"
+	input = strings.TrimPrefix(input, expandedMacroPrefix)
+	input = strings.TrimSuffix(input, expandedMacroSuffix)
+	return input
+}
+
+// manageUserPresence tracks the active user on the shell.
+func (h *Handler) manageUserPresence(ctx context.Context, sh *ent.Shell, u *ent.User) {
+	if u == nil {
+		return
+	}
+
+	// Helper to add user
+	addUser := func() {
+		exists, err := sh.QueryActiveUsers().Where(user.ID(u.ID)).Exist(ctx)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to check active user presence", "error", err)
+			return
+		}
+		if !exists {
+			if err := sh.Update().AddActiveUsers(u).Exec(ctx); err != nil {
+				slog.ErrorContext(ctx, "failed to add active user", "error", err)
+			}
+		}
+	}
+
+	// Initial Add
+	addUser()
+
+	// Remove on exit
+	defer func() {
+		// Use a fresh context as the parent context is likely canceled
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := sh.Update().RemoveActiveUsers(u).Exec(ctx); err != nil {
+			slog.ErrorContext(ctx, "failed to remove active user", "error", err)
+		}
+	}()
+
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			addUser()
+		}
+	}
 }
