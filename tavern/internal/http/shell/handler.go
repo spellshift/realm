@@ -473,6 +473,7 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					shelltask.ErrorNEQ(""),
 				),
 			).
+			Order(shelltask.ByCreatedAt(sql.OrderAsc())).
 			WithCreator().
 			All(ctx)
 
@@ -509,6 +510,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			sentTasks[task.ID] = struct{}{}
 		}
 	}
+
+	// Perform an initial poll to get history
+	pollForShellTasks()
 
 	pollTimer := time.NewTicker(h.outputPollingInterval)
 	defer pollTimer.Stop()
