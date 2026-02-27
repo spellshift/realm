@@ -472,16 +472,16 @@ export const useShellTerminal = (
                         break;
                     case WebsocketMessageKind.TaskError:
                         content = msg.error;
-                        color = "\x1b[31m"; // Red
+                        color = "\x1b[38;2;255;0;0m"; // Red
                         break;
                     case WebsocketMessageKind.Error:
                         content = msg.error;
-                        color = "\x1b[31m"; // Red
+                        color = "\x1b[38;2;255;0;0m"; // Red
                         break;
                     case WebsocketMessageKind.ControlFlow:
                         if (msg.signal === WebsocketControlFlowSignal.TaskQueued && msg.message) {
                             content = msg.message + "\n";
-                            color = "\x1b[33m"; // Yellow
+                            color = "\x1b[38;5;178m"; // Purple
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
                             setPortalId(msg.portal_id);
                         }

@@ -1,3 +1,5 @@
+import docsData from "../../../assets/eldritch-docs.json";
+
 export const HISTORY_KEY = "eldritch_shell_history";
 export const MAX_HISTORY = 1000;
 
@@ -52,12 +54,42 @@ export const moveWordRight = (buffer: string, cursor: number): number => {
     return i;
 };
 
+const COLOR_STRING = "\x1b[38;2;197;148;124m";
+const COLOR_METHOD = "\x1b[38;2;220;220;175m";
+const COLOR_KEYWORD = "\x1b[38;2;188;137;189m";
+const COLOR_OPERAND = "\x1b[38;2;103;155;209m";
+const COLOR_PUNCTUATION_1 = "\x1b[38;2;249;217;73m";
+const COLOR_PUNCTUATION_2 = "\x1b[38;2;204;118;209m";
+const COLOR_COMMENT = "\x1b[90m";
+const COLOR_NUMBER = "\x1b[33m";
+const RESET = "\x1b[0m";
+
 export const highlightPythonSyntax = (input: string): string => {
-    const regex = /((["'])(?:\\.|[^\\])*?\2)|(#.*)|(\b(?:def|class|import|from|return|if|else|elif|while|for|in|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|assert|del|raise|True|False|None|and|or|not|is|print|exec|eval|open|range|len)\b)|(\b\d+\b)/g;
+    const builtins = Object.keys(docsData).map(k => k.replace(/\./g, "\\."));
+    const builtinsPattern = builtins.join("|");
+
+    // Order matters for regex capture groups
+    const regex = new RegExp([
+        // 1. Strings (single/double quoted)
+        /((["'])(?:\\.|[^\\])*?\2)/.source,
+        // 2. Comments (#...)
+        /(#.*)/.source,
+        // 3. Keywords
+        /(\b(?:def|class|import|from|return|if|else|elif|while|for|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|assert|del|raise)\b)/.source,
+        // 4. Operands
+        /(\b(?:is|not|in|and|or|True|False|None)\b)/.source,
+        // 5. Built-ins / Methods
+        `(\\b(?:${builtinsPattern})\\b)`,
+        // 6. Numbers
+        /(\b\d+\b)/.source,
+        // 7. Punctuation
+        /([()[\]{}])/.source
+    ].join("|"), "g");
 
     let lastIndex = 0;
     let result = "";
     let match;
+    let depth = 0;
 
     while ((match = regex.exec(input)) !== null) {
         // Add plain text before match
@@ -67,17 +99,35 @@ export const highlightPythonSyntax = (input: string): string => {
 
         const text = match[0];
         if (match[1]) {
-            // String (Green)
-            result += `\x1b[32m${text}\x1b[0m`;
+            // String
+            result += `${COLOR_STRING}${text}${RESET}`;
         } else if (match[3]) {
-            // Comment (Grey)
-            result += `\x1b[90m${text}\x1b[0m`;
+            // Comment
+            result += `${COLOR_COMMENT}${text}${RESET}`;
         } else if (match[4]) {
-            // Keyword (Magenta)
-            result += `\x1b[35m${text}\x1b[0m`;
+            // Keyword
+            result += `${COLOR_KEYWORD}${text}${RESET}`;
         } else if (match[5]) {
-            // Number (Yellow)
-            result += `\x1b[33m${text}\x1b[0m`;
+            // Operand
+            result += `${COLOR_OPERAND}${text}${RESET}`;
+        } else if (match[6]) {
+            // Built-in / Method
+            result += `${COLOR_METHOD}${text}${RESET}`;
+        } else if (match[7]) {
+            // Number
+            result += `${COLOR_NUMBER}${text}${RESET}`;
+        } else if (match[8]) {
+            // Punctuation
+            if (/[)\]}]/.test(text)) {
+                depth = Math.max(0, depth - 1);
+            }
+
+            const color = depth % 2 === 0 ? COLOR_PUNCTUATION_1 : COLOR_PUNCTUATION_2;
+            result += `${color}${text}${RESET}`;
+
+            if (/[[({]/.test(text)) {
+                depth++;
+            }
         } else {
             result += text;
         }

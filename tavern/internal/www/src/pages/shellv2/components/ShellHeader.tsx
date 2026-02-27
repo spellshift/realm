@@ -39,7 +39,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
             {activeUsers.map((user) => (
               <Tooltip key={user.id} label={user.name} hasArrow>
                 <div
-                  className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold border-2 border-[#1e1e1e] cursor-help"
+                  className="w-8 h-8 rounded-full bg-[#ff00ff] flex items-center justify-center text-xs font-bold border-2 border-[#1e1e1e] cursor-help"
                   title={user.name}
                 >
                   {user.name.substring(0, 2).toUpperCase()}
