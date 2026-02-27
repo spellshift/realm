@@ -2,6 +2,7 @@ package mux
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -74,7 +75,8 @@ func TestMux_InMemory(t *testing.T) {
 
 func TestMux_CreatePortal(t *testing.T) {
 	// Setup DB
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=10000", t.Name())
+	client := enttest.Open(t, "sqlite3", dsn)
 	defer client.Close()
 
 	// Setup Mux
@@ -200,7 +202,8 @@ func TestWithSubscriberBufferSize(t *testing.T) {
 
 func TestMux_CreatePortal_ShellTask(t *testing.T) {
 	// Setup DB
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=10000", t.Name())
+	client := enttest.Open(t, "sqlite3", dsn)
 	defer client.Close()
 
 	// Setup Mux

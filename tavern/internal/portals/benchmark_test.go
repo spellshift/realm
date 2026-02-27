@@ -42,7 +42,7 @@ func newBufListener(sz int) *bufListener {
 
 func BenchmarkPortalThroughput(b *testing.B) {
 	// 1. Setup DB
-	client := enttest.Open(b, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.Open(b, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1&_busy_timeout=10000")
 	defer client.Close()
 
 	ctx := context.Background()
