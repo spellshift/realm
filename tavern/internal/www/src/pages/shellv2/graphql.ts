@@ -58,6 +58,7 @@ export const GET_SHELL_ACTIVE_USERS = gql`
             node {
               id
               name
+              photoURL
             }
           }
         }
