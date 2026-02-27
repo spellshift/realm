@@ -1,8 +1,9 @@
 import { isAfter } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 
-import { getOfflineOnlineStatus } from "../../../utils/utils";
+import { getEnumKey, getOfflineOnlineStatus } from "../../../utils/utils";
 import { HostEdge, HostQueryTopLevel, TagEdge } from "../../../utils/interfacesQuery";
+import { SupportedPlatforms } from "../../../utils/enums";
 
 type UniqueCountHost = {
     tagId: string,
@@ -102,7 +103,7 @@ export const useHostData = (data: HostQueryTopLevel | undefined) => {
 
             applyUniqueTermData(groupTag?.name, groupTag?.id, uniqueGroups, host, beaconStatus);
             applyUniqueTermData(serviceTag?.name, serviceTag?.id, uniqueServices, host, beaconStatus);
-            applyUniqueTermData(host.node.platform, host.node.platform, uniquePlatform, host, beaconStatus);
+            applyUniqueTermData(getEnumKey(SupportedPlatforms, host.node.platform), host.node.platform, uniquePlatform, host, beaconStatus);
         });
 
         setHostActivity(
