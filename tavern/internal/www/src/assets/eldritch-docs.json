@@ -1,152 +1,4 @@
 {
-  "abs": {
-    "signature": "abs(x) -> Int | Float",
-    "description": "The **abs** method returns the absolute value of a number."
-  },
-  "all": {
-    "signature": "all(iterable) -> Bool",
-    "description": "The **all** method returns True if all elements of the iterable are true (or if the iterable is empty)."
-  },
-  "any": {
-    "signature": "any(iterable) -> Bool",
-    "description": "The **any** method returns True if any element of the iterable is true. If the iterable is empty, return False."
-  },
-  "assert": {
-    "signature": "assert(condition) -> None",
-    "description": "The **assert** method aborts execution if the condition is false."
-  },
-  "assert_eq": {
-    "signature": "assert_eq(a, b) -> None",
-    "description": "The **assert_eq** method aborts execution if `a` is not equal to `b`."
-  },
-  "bool": {
-    "signature": "bool(x) -> Bool",
-    "description": "The **bool** method converts a value to a Boolean. Returns True when the argument x is true, False otherwise."
-  },
-  "bytes": {
-    "signature": "bytes(source) -> Bytes",
-    "description": "The **bytes** method creates a bytes object.\n- If source is an integer, the array will have that size and will be initialized with null bytes.\n- If source is a string, it will be converted using UTF-8 encoding.\n- If source is an iterable, it must be an iterable of integers in the range 0 <= x < 256."
-  },
-  "chr": {
-    "signature": "chr(i) -> Str",
-    "description": "The **chr** method returns the string representing a character whose Unicode code point is the integer `i`."
-  },
-  "dict": {
-    "signature": "dict(**kwargs) -> Dict",
-    "description": "`dict(iterable, **kwargs) -> Dict`\nThe **dict** method creates a new dictionary."
-  },
-  "dir": {
-    "signature": "dir([object]) -> List<str>",
-    "description": "The **dir** method returns a list of valid attributes for the object. Without arguments, return the list of names in the current local scope."
-  },
-  "enumerate": {
-    "signature": "enumerate(iterable, start=0) -> List<Tuple>",
-    "description": "The **enumerate** method returns a list of tuples containing (index, value) pairs."
-  },
-  "eprint": {
-    "signature": "eprint(*args) -> None",
-    "description": "The **eprint** method prints objects to the standard error output, separated by spaces."
-  },
-  "fail": {
-    "signature": "fail(message) -> None",
-    "description": "The **fail** method aborts execution with an error message."
-  },
-  "filter": {
-    "signature": "filter(function, iterable) -> List",
-    "description": "The **filter** method constructs a list from those elements of iterable for which function returns true. If function is None, the identity function is assumed."
-  },
-  "float": {
-    "signature": "float(x) -> Float",
-    "description": "The **float** method converts a number or string to a floating point number."
-  },
-  "hex": {
-    "signature": "hex(x) -> Str",
-    "description": "The **hex** method converts an integer number to a lowercase hexadecimal string prefixed with \"0x\"."
-  },
-  "int": {
-    "signature": "int(x, base=10) -> Int",
-    "description": "The **int** method converts a number or string to an integer."
-  },
-  "len": {
-    "signature": "len(s) -> Int",
-    "description": "The **len** method returns the length of an object. The argument may be a sequence (such as a string, bytes, tuple, list, or range) or a collection (such as a dictionary or set)."
-  },
-  "libs": {
-    "signature": "libs() -> List<str>",
-    "description": "The **libs** method lists all registered libraries."
-  },
-  "list": {
-    "signature": "list([iterable]) -> List",
-    "description": "The **list** method creates a list."
-  },
-  "map": {
-    "signature": "map(function, iterable) -> List",
-    "description": "The **map** method applies function to every item of iterable and returns a list of the results."
-  },
-  "max": {
-    "signature": "max(iterable, *args) -> Any",
-    "description": "The **max** method returns the largest item in an iterable or the largest of two or more arguments."
-  },
-  "min": {
-    "signature": "min(iterable, *args) -> Any",
-    "description": "The **min** method returns the smallest item in an iterable or the smallest of two or more arguments."
-  },
-  "ord": {
-    "signature": "ord(c) -> Int",
-    "description": "The **ord** method returns an integer representing the Unicode code point of that character."
-  },
-  "pprint": {
-    "signature": "pprint(object, indent=2) -> None",
-    "description": "The **pprint** method pretty-prints an object."
-  },
-  "print": {
-    "signature": "print(*args) -> None",
-    "description": "The **print** method prints objects to the standard output, separated by spaces."
-  },
-  "range": {
-    "signature": "range(stop) -> List<Int>",
-    "description": "`range(start, stop[, step]) -> List<Int>`\nThe **range** method returns a list of arithmetic progressions."
-  },
-  "reduce": {
-    "signature": "reduce(function, iterable[, initializer]) -> Any",
-    "description": "The **reduce** method applies a function of two arguments cumulatively to the items of a sequence, from left to right, so as to reduce the sequence to a single value."
-  },
-  "repr": {
-    "signature": "repr(object) -> Str",
-    "description": "The **repr** method returns a string containing a printable representation of an object."
-  },
-  "reversed": {
-    "signature": "reversed(seq) -> List",
-    "description": "The **reversed** method returns a list with the elements of the sequence in reverse order."
-  },
-  "set": {
-    "signature": "set([iterable]) -> Set",
-    "description": "The **set** method creates a new set object."
-  },
-  "sorted": {
-    "signature": "sorted(iterable, *, key=None, reverse=False) -> List",
-    "description": "The **sorted** method returns a new sorted list from the items in iterable."
-  },
-  "str": {
-    "signature": "str(object) -> Str",
-    "description": "The **str** method returns a string containing a nicely printable representation of an object."
-  },
-  "tprint": {
-    "signature": "tprint(list_of_dicts) -> None",
-    "description": "The **tprint** method prints a list of dictionaries as a markdown table."
-  },
-  "tuple": {
-    "signature": "tuple([iterable]) -> Tuple",
-    "description": "The **tuple** method creates a tuple."
-  },
-  "type": {
-    "signature": "type(object) -> Str",
-    "description": "The **type** method returns the type of the object."
-  },
-  "zip": {
-    "signature": "zip(*iterables) -> List<Tuple>",
-    "description": "The **zip** method returns a list of tuples, where the i-th tuple contains the i-th element from each of the argument sequences or iterables.\n# Standard Library\nThe standard library is the default functionality that eldritch provides. It contains the following libraries:\n- `agent` - Used for meta-style interactions with the agent itself.\n- `assets` - Used to interact with files stored natively in the agent.\n- `crypto` - Used to encrypt/decrypt or hash data.\n- `file` - Used to interact with files on the system.\n- `http` - Used to make http(s) requests from the agent.\n- `pivot` - Used to identify and move between systems.\n- `process` - Used to interact with processes on the system.\n- `random` - Used to generate cryptographically secure random values.\n- `regex` - Regular expression capabilities for operating on strings.\n- `report` - Structured data reporting capabilities.\n- `sys` - General system capabilities can include loading libraries, or information about the current context.\n- `time` - General functions for obtaining and formatting time, also add delays into code.\n**🚨 DANGER 🚨: Name shadowing**\nDo not use the standard library names as local variables as it will prevent you from accessing library functions.\nFor example, if you do:\n```rust\nfor file in file.list(\"/home/\"):\nprint(file[\"file_name\"])\n```\nThe file library will become inaccessible.\nIt may even raise an error: `error: Local variable 'file' referenced before assignment`\nInstead we recommend using more descriptive names like:\n```rust\nfor user_home_dir in file.list(\"/home/\"):\nprint(user_home_dir[\"file_name\"])\n```\n---\n## Agent"
-  },
   "agent._terminate_this_process_clowntown": {
     "signature": "agent._terminate_this_process_clowntown() -> None",
     "description": "**🚨 DANGER 🚨:** The **agent._terminate_this_process_clowntown** method terminates the agent process immediately by calling `std::process::exit(0)`. This effectively kills the agent and should be used with extreme caution. This function does not return as the process exits."
@@ -199,14 +51,6 @@
     "signature": "assets.read(src: str) -> str",
     "description": "The <b>assets.read</b> method returns a UTF-8 string representation of the asset file.\n---\n## Crypto"
   },
-  "crypto.aes_decrypt": {
-    "signature": "crypto.aes_decrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "The <b>crypto.aes_decrypt</b> method decrypts the given data using the given key and IV (AES CBC)."
-  },
-  "crypto.aes_encrypt": {
-    "signature": "crypto.aes_encrypt(key: Bytes, iv: Bytes, data: Bytes) -> Bytes",
-    "description": "The <b>crypto.aes_encrypt</b> method encrypts the given data using the given key and IV (AES CBC)."
-  },
   "crypto.aes_decrypt_file": {
     "signature": "crypto.aes_decrypt_file(src: str, dst: str, key: str) -> None",
     "description": "The <b>crypto.aes_decrypt_file</b> method decrypts the given src file using the given key and writes it to disk at the dst location.\nKey must be 16 Bytes (Characters)"
@@ -237,19 +81,7 @@
   },
   "crypto.hash_file": {
     "signature": "crypto.hash_file(file: str, algo: str) -> str",
-    "description": "The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:\n- MD5\n- SHA1\n- SHA256\n- SHA512"
-  },
-  "crypto.md5": {
-    "signature": "crypto.md5(data: Bytes) -> str",
-    "description": "The <b>crypto.md5</b> method calculates the MD5 hash of the provided data."
-  },
-  "crypto.sha1": {
-    "signature": "crypto.sha1(data: Bytes) -> str",
-    "description": "The <b>crypto.sha1</b> method calculates the SHA1 hash of the provided data."
-  },
-  "crypto.sha256": {
-    "signature": "crypto.sha256(data: Bytes) -> str",
-    "description": "The <b>crypto.sha256</b> method calculates the SHA256 hash of the provided data.\n---\n## File"
+    "description": "The <b>crypto.hash_file</b> method will produce the hash of the given file's contents. Valid algorithms include:\n- MD5\n- SHA1\n- SHA256\n- SHA512\n---\n## File"
   },
   "file.append": {
     "signature": "file.append(path: str, content: str) -> None",
@@ -295,9 +127,9 @@
     "signature": "file.mkdir(path: str, parent: Option<bool>) -> None",
     "description": "The <b>file.mkdir</b> method will make a new directory at `path`. If the parent directory does not exist or the directory cannot be created, it will error; unless the `parent` parameter is passed as `True`."
   },
-  "file.move": {
-    "signature": "file.move(src: str, dst: str) -> None",
-    "description": "The <b>file.move</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems."
+  "file.moveto": {
+    "signature": "file.moveto(src: str, dst: str) -> None",
+    "description": "The <b>file.moveto</b> method moves a file or directory from `src` to `dst`. If the `dst` directory or file exists it will be deleted before being replaced to ensure consistency across systems."
   },
   "file.parent_dir": {
     "signature": "file.parent_dir(path: str) -> str",
@@ -336,8 +168,8 @@
     "description": "The <b>file.template</b> method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.\nIf the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.\nThe `args` dictionary currently supports values of: `int`, `str`, and `List`.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)"
   },
   "file.timestomp": {
-    "signature": "file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None",
-    "description": "The <b>file.timestomp</b> method modifies the timestamps of a file.\nIt can use specific timestamps (epoch seconds or string format) or copy timestamps from a reference file."
+    "signature": "file.timestomp(src: str, dst: str) -> None",
+    "description": "Unimplemented."
   },
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
@@ -376,20 +208,12 @@
     "description": "The <b>pivot.port_forward</b> method is being proposed to provide socat like functionality by forwarding traffic from a port on a local machine to a port on a different machine allowing traffic to be relayed."
   },
   "pivot.port_scan": {
-    "signature": "pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int, fd_limit: Option<int>) -> List<str>",
-    "description": "The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.\nInputs:\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- `ports` can be a list of any number of integers between 1 and 65535.\n- `protocol` must be: `tcp` or `udp`. These are the only supported options.\n- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`\n- `fd_limit` is the maximum concurrent file descriptors/sockets (defaults to 64).\nResults will be in the format:\n```json\n[\n{ \"ip\": \"127.0.0.1\", \"port\": 22, \"protocol\": \"tcp\", \"status\": \"open\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 21, \"protocol\": \"tcp\", \"status\": \"closed\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 80, \"protocol\": \"tcp\", \"status\": \"timeout\"},\n]\n```\nA port's status can be open, closed, or timeout:\n|**State**|**Protocol**| **Meaning**                                          |\n|---------|------------|------------------------------------------------------|\n| open    | tcp        | Connection successful.                               |\n| close   | tcp        | Connection refused.                                  |\n| timeout | tcp        | Connection dropped or didn't respond.                |\n| open    | udp        | Connection returned some data.                       |\n| timeout | udp        | Connection was refused, dropped, or didn't respond.  |\nEach IP in the specified CIDR will be returned regardless of if it returns any open ports.\nBe mindful of this when scanning large CIDRs as it may create large return objects.\nNOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely."
-  },
-  "pivot.create_portal": {
-    "signature": "pivot.create_portal() -> None",
-    "description": "The **pivot.create_portal** method opens a portal bi-directional stream."
+    "signature": "pivot.port_scan(target_cidrs: List<str>, ports: List<int>, protocol: str, timeout: int) -> List<str>",
+    "description": "The <b>pivot.port_scan</b> method allows users to scan TCP/UDP ports within the eldritch language.\nInputs:\n- `target_cidrs` must be in a CIDR format eg. `127.0.0.1/32`. Domains and single IPs `example.com` / `127.0.0.1` cannot be passed.\n- `ports` can be a list of any number of integers between 1 and 65535.\n- `protocol` must be: `tcp` or `udp`. These are the only supported options.\n- `timeout` is the number of seconds a scan will wait without a response before it's marked as `timeout`\nResults will be in the format:\n```json\n[\n{ \"ip\": \"127.0.0.1\", \"port\": 22, \"protocol\": \"tcp\", \"status\": \"open\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 21, \"protocol\": \"tcp\", \"status\": \"closed\"},\n{ \"ip\": \"127.0.0.1\", \"port\": 80, \"protocol\": \"tcp\", \"status\": \"timeout\"},\n]\n```\nA port's status can be open, closed, or timeout:\n|**State**|**Protocol**| **Meaning**                                          |\n|---------|------------|------------------------------------------------------|\n| open    | tcp        | Connection successful.                               |\n| close   | tcp        | Connection refused.                                  |\n| timeout | tcp        | Connection dropped or didn't respond.                |\n| open    | udp        | Connection returned some data.                       |\n| timeout | udp        | Connection was refused, dropped, or didn't respond.  |\nEach IP in the specified CIDR will be returned regardless of if it returns any open ports.\nBe mindful of this when scanning large CIDRs as it may create large return objects.\nNOTE: Windows scans against `localhost`/`127.0.0.1` can behave unexpectedly or even treat the action as malicious. Eg. scanning ports 1-65535 against windows localhost may cause the stack to overflow or process to hang indefinitely."
   },
   "pivot.reverse_shell_pty": {
     "signature": "pivot.reverse_shell_pty(cmd: Optional<str>) -> None",
     "description": "The **pivot.reverse_shell_pty** method spawns the provided command in a cross-platform PTY and opens a reverse shell over the agent's current transport (e.g. gRPC). If no command is provided, Windows will use `cmd.exe`. On other platforms, `/bin/bash` is used as a default, but if it does not exist then `/bin/sh` is used."
-  },
-  "pivot.reverse_shell_repl": {
-    "signature": "pivot.reverse_shell_repl() -> None",
-    "description": "The **pivot.reverse_shell_repl** method spawns a basic REPL-style reverse shell with an Eldritch interpreter."
   },
   "pivot.smb_exec": {
     "signature": "pivot.smb_exec(target: str, port: int, username: str, password: str, hash: str, command: str) -> str",
@@ -427,21 +251,13 @@
     "signature": "random.bool() -> bool",
     "description": "The <b>random.bool</b> method returns a randomly sourced boolean value."
   },
-  "random.bytes": {
-    "signature": "random.bytes(len: int) -> List<int>",
-    "description": "The <b>random.bytes</b> method returns a list of randomly generated bytes."
-  },
   "random.int": {
     "signature": "random.int(min: i32, max: i32) -> i32",
     "description": "The <b>random.int</b> method returns randomly generated integer value between a specified range. The range is inclusive on the minimum and exclusive on the maximum."
   },
   "random.string": {
     "signature": "random.string(length: uint, charset: Optional<str>) -> str",
-    "description": "The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues."
-  },
-  "random.uuid": {
-    "signature": "random.uuid() -> str",
-    "description": "The <b>random.uuid</b> method returns a randomly generated UUID (v4).\n---\n## Regex\nThe regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written\nin Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
+    "description": "The <b>random.string</b> method returns a randomly generated string of the specified length. If `charset` is not provided defaults to [Alphanumeric](https://docs.rs/rand_distr/latest/rand_distr/struct.Alphanumeric.html). Warning, the string is stored entirely in memory so exceptionally large files (multiple megabytes) can lead to performance issues.\n---\n## Regex\nThe regex library is designed to enable basic regex operations on strings. Be aware as the underlying implementation is written\nin Rust we rely on the Rust Regex Syntax as talked about [here](https://rust-lang-nursery.github.io/rust-cookbook/text/regex.html). Further, we only support a single capture group currently, defining more/less than one will cause the tome to error."
   },
   "regex.match_all": {
     "signature": "regex.match_all(haystack: str, pattern: str) -> List<str>",
@@ -477,11 +293,7 @@
   },
   "report.ntlm_hash": {
     "signature": "report.ntlm_hash(username: str, password_hash: str) -> None",
-    "description": "Reports a captured username & ntlm hash combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on."
-  },
-  "report.screenshot": {
-    "signature": "report.screenshot() -> None",
-    "description": "Reports a screenshot of all screens to Tavern.\n---\n## Sys"
+    "description": "Reports a captured username & ntlm hash combination to Tavern. It will automatically be associated with the host that the Eldritch Tome was being evaluated on.\n---\n## Sys"
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
@@ -492,7 +304,7 @@
     "description": "The <b>sys.dll_reflect</b> method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
   },
   "sys.exec": {
-    "signature": "sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict",
+    "signature": "sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>) -> Dict",
     "description": "The <b>sys.exec</b> method executes a program specified with `path` and passes the `args` list.\nOn *nix systems disown will run the process in the background disowned from the agent. This is done through double forking.\nOn Windows systems disown will run the process with detached stdin and stdout such that it won't block the tomes execution.\nThe `env_vars` will be a map of environment variables to be added to the process of the execution.\n```python\nsys.exec(\"/bin/bash\",[\"-c\", \"whoami\"])\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.exec(\"/bin/bash\",[\"-c\", \"ls /nofile\"])\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
   },
   "sys.get_env": {
@@ -539,10 +351,6 @@
     "signature": "sys.is_windows() -> bool",
     "description": "The <b>sys.is_windows</b> method returns `True` if on a windows system and `False` on everything else."
   },
-  "sys.list_users": {
-    "signature": "sys.list_users() -> List<Dict>",
-    "description": "The <b>sys.list_users</b> method lists all user accounts on the system."
-  },
   "sys.shell": {
     "signature": "sys.shell(cmd: str) -> Dict",
     "description": "The <b>sys.shell</b> Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:\n```python\nsys.shell(\"whoami\")\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.shell(\"ls /nofile\")\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
@@ -572,7 +380,7 @@
     "description": "The <b>time.now</b> method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time."
   },
   "time.sleep": {
-    "signature": "time.sleep(secs: int)",
+    "signature": "time.sleep(secs: float)",
     "description": "The <b>time.sleep</b> method sleeps the task for the given number of seconds."
   }
 }
