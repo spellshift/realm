@@ -16,6 +16,7 @@ interface ShellTerminalProps {
     signature: string;
     description: string;
   };
+  handleCompletionSelect: (completion: string) => void;
 }
 
 const ShellTerminal: React.FC<ShellTerminalProps> = ({
@@ -25,7 +26,8 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
   completionPos,
   completionIndex,
   onMouseMove,
-  tooltipState
+  tooltipState,
+  handleCompletionSelect
 }) => {
   return (
     <div className="flex-grow rounded overflow-hidden relative border border-[#333]">
@@ -39,6 +41,7 @@ const ShellTerminal: React.FC<ShellTerminalProps> = ({
         show={showCompletions}
         pos={completionPos}
         index={completionIndex}
+        onCompletionSelect={handleCompletionSelect}
       />
       <DocTooltip
           signature={tooltipState.signature}

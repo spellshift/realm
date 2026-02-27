@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
@@ -84,7 +84,114 @@ export const useShellTerminal = (
             };
         }
     }, [isLateCheckin]);
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+
+    const redrawLine = useCallback(() => {
+        const term = termInstance.current;
+        if (!term) return;
+        const state = shellState.current;
+
+        let contentToWrite = "";
+        let contentToDisplay = "";
+        let cursorIndex = 0;
+
+        if (state.isSearching) {
+            const prompt = `(reverse-i-search)'${state.searchQuery}': `;
+            let match = "";
+            if (state.searchQuery) {
+                // Simple search backwards
+                for (let i = state.history.length - 1; i >= 0; i--) {
+                    if (state.history[i].includes(state.searchQuery)) {
+                        match = state.history[i];
+                        break;
+                    }
+                }
+            }
+            contentToWrite = prompt + match;
+            contentToDisplay = contentToWrite;
+            // In search mode, cursor is typically at the end of the match
+            cursorIndex = contentToWrite.length;
+        } else {
+            contentToWrite = state.prompt + state.inputBuffer;
+            contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
+            cursorIndex = state.prompt.length + state.cursorPos;
+        }
+
+        // Calculate rows based on newlines
+        const rows = contentToWrite.split('\n').length - 1;
+
+        // Move up to start of previous rendering (regardless of mode)
+        const prevRows = lastBufferHeight.current;
+        if (prevRows > 0) {
+            term.write(`\x1b[${prevRows}A`);
+        }
+
+        // Clear everything below
+        term.write("\r\x1b[J");
+
+        // Write new content, ensuring newlines are carriage-return + newline
+        term.write(contentToDisplay.replace(/\n/g, "\r\n"));
+
+        // Update last height
+        lastBufferHeight.current = rows;
+
+        // Move cursor to correct position
+        if (!state.isSearching) {
+            // Calculate cursor position in terms of rows/cols relative to start
+            const prefix = contentToWrite.slice(0, cursorIndex);
+            const cursorRow = prefix.split('\n').length - 1;
+            const cursorCol = prefix.split('\n').pop()?.length || 0;
+
+            // Current position after write is at end of content
+            const totalRows = rows;
+            // We need to move UP from end to cursorRow
+            const moveUp = totalRows - cursorRow;
+            if (moveUp > 0) {
+                term.write(`\x1b[${moveUp}A`);
+            }
+
+            term.write("\r"); // Go to start of line
+            if (cursorCol > 0) {
+                term.write(`\x1b[${cursorCol}C`);
+            }
+        }
+    }, []);
+
+    const updateCompletionsUI = useCallback((list: string[], start: number, show: boolean, index: number) => {
+        setCompletions(list);
+        setCompletionStart(start);
+        setShowCompletions(show);
+        setCompletionIndex(index);
+        completionsRef.current = { list, start, show, index };
+
+        if (show && termInstance.current) {
+            // Calculate position
+            const cursorX = termInstance.current.buffer.active.cursorX;
+            const cursorY = termInstance.current.buffer.active.cursorY;
+            const charWidth = 9;
+            const charHeight = 17;
+            setCompletionPos({
+                x: cursorX * charWidth + 20, // + padding
+                y: cursorY * charHeight + 40 // + header/padding
+            });
+        }
+    }, []);
+
+    const applyCompletion = useCallback((completion: string) => {
+        const state = shellState.current;
+        const start = completionsRef.current.start;
+        // Replace from start to cursorPos with completion
+        // Ensure start is valid
+        if (start >= 0 && start <= state.cursorPos) {
+            const prefix = state.inputBuffer.slice(0, start);
+            const suffix = state.inputBuffer.slice(state.cursorPos);
+            state.inputBuffer = prefix + completion + suffix;
+            state.cursorPos = start + completion.length;
+            redrawLine();
+        }
+        updateCompletionsUI([], 0, false, 0);
+    }, [redrawLine, updateCompletionsUI]);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (!termInstance.current || !termRef.current) return;
 
         // Simple debounce could be added here if performance is an issue
@@ -170,7 +277,7 @@ export const useShellTerminal = (
                  return { ...s, visible: false };
              });
         }
-    };
+    }, [tooltipState.visible]);
 
     useEffect(() => {
         if (!termRef.current || loading) return;
@@ -398,41 +505,6 @@ export const useShellTerminal = (
         });
 
         adapter.current.init();
-
-        const updateCompletionsUI = (list: string[], start: number, show: boolean, index: number) => {
-            setCompletions(list);
-            setCompletionStart(start);
-            setShowCompletions(show);
-            setCompletionIndex(index);
-            completionsRef.current = { list, start, show, index };
-
-            if (show && termInstance.current) {
-                // Calculate position
-                const cursorX = termInstance.current.buffer.active.cursorX;
-                const cursorY = termInstance.current.buffer.active.cursorY;
-                const charWidth = 9;
-                const charHeight = 17;
-                setCompletionPos({
-                    x: cursorX * charWidth + 20, // + padding
-                    y: cursorY * charHeight + 40 // + header/padding
-                });
-            }
-        };
-
-        const applyCompletion = (completion: string) => {
-            const state = shellState.current;
-            const start = completionsRef.current.start;
-            // Replace from start to cursorPos with completion
-            // Ensure start is valid
-            if (start >= 0 && start <= state.cursorPos) {
-                const prefix = state.inputBuffer.slice(0, start);
-                const suffix = state.inputBuffer.slice(state.cursorPos);
-                state.inputBuffer = prefix + completion + suffix;
-                state.cursorPos = start + completion.length;
-                redrawLine();
-            }
-            updateCompletionsUI([], 0, false, 0);
-        };
 
         termInstance.current.onData((data) => {
             // Check for late checkin and block input
@@ -762,7 +834,7 @@ export const useShellTerminal = (
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
-    }, [shellId, loading, error, shellData, setPortalId]);
+    }, [shellId, loading, error, shellData, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     return {
         termRef,
@@ -772,6 +844,7 @@ export const useShellTerminal = (
         completionPos,
         completionIndex,
         handleMouseMove,
-        tooltipState
+        tooltipState,
+        handleCompletionSelect: applyCompletion
     };
 };
