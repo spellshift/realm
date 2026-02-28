@@ -31,6 +31,7 @@ interface ShellCompletionsProps {
 const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, pos, index, onCompletionSelect }) => {
   const completionsListRef = useRef<HTMLUListElement>(null);
   const [hoveredDoc, setHoveredDoc] = useState<{ sig: string, desc: string, x: number, y: number } | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setHoveredDoc(null);
@@ -84,6 +85,10 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
                     }
                 }}
                 onMouseEnter={(e) => {
+                    if (hoverTimeoutRef.current) {
+                        clearTimeout(hoverTimeoutRef.current);
+                        hoverTimeoutRef.current = null;
+                    }
                     if (doc) {
                         const rect = e.currentTarget.getBoundingClientRect();
                         setHoveredDoc({
@@ -96,7 +101,12 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
                         setHoveredDoc(null);
                     }
                 }}
-                onMouseLeave={() => setHoveredDoc(null)}
+                onMouseLeave={() => {
+                    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                    hoverTimeoutRef.current = setTimeout(() => {
+                        setHoveredDoc(null);
+                    }, 250);
+                }}
                 >
                 <span>{c}</span>
                 {doc && <Info size={14} style={{ marginLeft: 8 }} />}
@@ -112,6 +122,18 @@ const ShellCompletions: React.FC<ShellCompletionsProps> = ({ completions, show, 
               x={hoveredDoc.x}
               y={hoveredDoc.y}
               visible={true}
+              onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) {
+                      clearTimeout(hoverTimeoutRef.current);
+                      hoverTimeoutRef.current = null;
+                  }
+              }}
+              onMouseLeave={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                  hoverTimeoutRef.current = setTimeout(() => {
+                      setHoveredDoc(null);
+                  }, 250);
+              }}
           />
       )}
     </>

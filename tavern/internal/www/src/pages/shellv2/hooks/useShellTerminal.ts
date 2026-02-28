@@ -183,6 +183,11 @@ export const useShellTerminal = (
     }, []);
 
     const applyCompletion = useCallback((completion: string) => {
+        if (completion === "no suggestions") {
+            updateCompletionsUI([], 0, false, 0);
+            return;
+        }
+
         const state = shellState.current;
         const start = completionsRef.current.start;
         // Replace from start to cursorPos with completion
@@ -202,7 +207,7 @@ export const useShellTerminal = (
         tooltipTimeoutRef.current = setTimeout(() => {
             currentTooltipWord.current = null;
             setTooltipState(s => ({ ...s, visible: false }));
-        }, 500);
+        }, 250);
     }, []);
 
     const cancelHideTooltip = useCallback(() => {
@@ -754,6 +759,18 @@ export const useShellTerminal = (
                 return;
             }
 
+            if (code === 0) { // Ctrl+Space
+                const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                if (res) {
+                    if (res.suggestions.length > 0) {
+                        updateCompletionsUI(res.suggestions, res.start, true, 0);
+                    } else {
+                        updateCompletionsUI(["no suggestions"], state.cursorPos, true, 0);
+                    }
+                }
+                return;
+            }
+
             if (code === 9) { // Tab
                 // Indent if line is empty or whitespace
                 if (!state.inputBuffer.trim()) {
@@ -846,12 +863,22 @@ export const useShellTerminal = (
 
             // Trigger completion updates if needed
             if (completionsRef.current.show || code === 46 /* . */) {
-                const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
-                if (res && res.suggestions.length > 0) {
-                    updateCompletionsUI(res.suggestions, res.start, true, 0);
-                } else {
+                if (state.inputBuffer.endsWith("(") || code === 40 /* ( */) {
                     if (completionsRef.current.show) {
                         updateCompletionsUI([], 0, false, 0);
+                    }
+                } else {
+                    const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                    if (res && res.suggestions.length > 0) {
+                        if (res.suggestions.length === 1 && state.inputBuffer.slice(res.start) === res.suggestions[0]) {
+                            updateCompletionsUI([], 0, false, 0);
+                        } else {
+                            updateCompletionsUI(res.suggestions, res.start, true, 0);
+                        }
+                    } else {
+                        if (completionsRef.current.show) {
+                            updateCompletionsUI([], 0, false, 0);
+                        }
                     }
                 }
             }
