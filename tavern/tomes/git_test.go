@@ -31,7 +31,7 @@ func TestImportFromRepo(t *testing.T) {
 	// Create a dummy file and commit it
 	err = os.MkdirAll(filepath.Join(tmpDir, "example"), 0755)
 	require.NoError(t, err)
-	err = os.WriteFile(filepath.Join(tmpDir, "example", "metadata.yml"), []byte("name: example\ndescription: An example tome!\nauthor: test\ntactic: DEFENSE_EVASION\nparamdefs:\n  - name: msg\n    label: Message\n    type: string\n    placeholder: Something to print\n"), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "example", "metadata.yml"), []byte("name: example\ndescription: An example tome!\nauthor: test\ntactic: DEFENSE_EVASION\nrun_on_schedule: '* * * * *'\nparamdefs:\n  - name: msg\n    label: Message\n    type: string\n    placeholder: Something to print\n"), 0644)
 	require.NoError(t, err)
 	err = os.WriteFile(filepath.Join(tmpDir, "example", "main.eldritch"), []byte("print(input_params['msg'])"), 0644)
 	require.NoError(t, err)
@@ -85,6 +85,7 @@ func TestImportFromRepo(t *testing.T) {
 	require.NotNil(t, testTome)
 	assert.Equal(t, "print(input_params['msg'])", strings.TrimSpace(testTome.Eldritch))
 	assert.Equal(t, `An example tome!`, testTome.Description)
+	assert.Equal(t, `* * * * *`, testTome.RunOnSchedule)
 	assert.Equal(t, `[{"name":"msg","label":"Message","type":"string","placeholder":"Something to print"}]`, testTome.ParamDefs)
 	testTomeAssets, err := testTome.QueryAssets().All(ctx)
 	assert.NoError(t, err)
