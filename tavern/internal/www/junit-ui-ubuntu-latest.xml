@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="145" failures="0" errors="0" time="14.801">
+    <testsuite name="src/components/create-shell-button/CreateShellButton.test.ts" timestamp="2026-02-28T07:32:30.457Z" hostname="devbox" tests="7" failures="0" errors="0" skipped="0" time="0.006">
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should return null for empty list" time="0.002">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize high priority principal over low priority" time="0.001">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize gRPC over other transports given equal principal priority" time="0">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize shortest interval given equal principal and transport" time="0">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize soonest next check-in given everything else equal" time="0.001">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize gRPC even with worse interval" time="0">
+        </testcase>
+        <testcase classname="src/components/create-shell-button/CreateShellButton.test.ts" name="selectBestBeaconId &gt; should prioritize high priority principal over gRPC" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/FilterContext/__tests__/FilterContext.test.tsx" timestamp="2026-02-28T07:32:30.461Z" hostname="devbox" tests="18" failures="0" errors="0" skipped="0" time="0.079">
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; FilterProvider initialization &gt; should provide default filters on initial load" time="0.028">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; FilterProvider initialization &gt; should load locked filters from sessionStorage" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; FilterProvider initialization &gt; should NOT load unlocked filters from sessionStorage" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; Filter validation &gt; should return default filters if sessionStorage contains invalid JSON" time="0.003">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; Filter validation &gt; should reject data with invalid field types" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; Filter validation &gt; should reject beaconFields with missing required fields" time="0.002">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; updateFilters &gt; should update filters with partial updates" time="0.007">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; updateFilters &gt; should persist updated filters to sessionStorage" time="0.005">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; updateFilters &gt; should update array fields" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; resetFilters &gt; should reset all filters to default values" time="0.003">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; storage event listener &gt; should update filters when storage event is triggered with locked filters" time="0.005">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; storage event listener &gt; should reset to defaults when storage event contains unlocked filters" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; storage event listener &gt; should ignore storage events with different keys" time="0.002">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; calculateFilterCount &gt; should count string fields correctly" time="0">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; calculateFilterCount &gt; should count array fields by length" time="0.001">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; calculateTotalFilterCount &gt; should return 0 when all filters are empty" time="0">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; calculateTotalFilterCount &gt; should sum counts for specified fields only" time="0">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterContext.test.tsx" name="FilterContext &gt; calculateTotalFilterCount &gt; should return total count for all fields" time="0.001">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/FilterContext/__tests__/FilterControls.test.tsx" timestamp="2026-02-28T07:32:30.471Z" hostname="devbox" tests="12" failures="0" errors="0" skipped="0" time="7.472">
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter configuration by page type &gt; should render all filters for QUEST page" time="0.072">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter configuration by page type &gt; should render only beacon filter for HOST page" time="0.011">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter configuration by page type &gt; should render beacon and task output filters for TASKS page" time="0.015">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter configuration by page type &gt; should render host task filters for host detail page" time="0.014">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter configuration by page type &gt; should not render filters on non-filterable pages" time="0.004">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter label calculation &gt; should display &quot;Filters (0)&quot; when no filters are active" time="0.013">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter label calculation &gt; should count text search filters correctly" time="0.478">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter label calculation &gt; should count multiple active filters correctly" time="0.562">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter lock/unlock toggle &gt; should toggle isLocked when lock button is clicked" time="2.227">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter lock/unlock toggle &gt; should disable filter components when isLocked is true" time="2.003">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter component interactions &gt; should update filter state when inputs change" time="0.873">
+        </testcase>
+        <testcase classname="src/context/FilterContext/__tests__/FilterControls.test.tsx" name="FilterControls &gt; Filter component interactions &gt; should preserve filter values when toggling lock state" time="1.197">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/PollingContext/__tests__/PollingContext.test.tsx" timestamp="2026-02-28T07:32:30.475Z" hostname="devbox" tests="4" failures="0" errors="0" skipped="0" time="0.056">
+        <testcase classname="src/context/PollingContext/__tests__/PollingContext.test.tsx" name="PollingContext &gt; PollingProvider initialization &gt; should provide default seconds until next poll" time="0.023">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingContext.test.tsx" name="PollingContext &gt; PollingProvider initialization &gt; should throw error when usePolling is used outside PollingProvider" time="0.022">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingContext.test.tsx" name="PollingContext &gt; Provider setup &gt; should set up intervals on mount" time="0.007">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingContext.test.tsx" name="PollingContext &gt; Provider setup &gt; should clean up intervals on unmount" time="0.003">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/PollingContext/__tests__/PollingCountdown.test.tsx" timestamp="2026-02-28T07:32:30.477Z" hostname="devbox" tests="4" failures="0" errors="0" skipped="0" time="0.072">
+        <testcase classname="src/context/PollingContext/__tests__/PollingCountdown.test.tsx" name="PollingCountdown &gt; Rendering variants &gt; should render minimal variant with icon and countdown" time="0.055">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingCountdown.test.tsx" name="PollingCountdown &gt; Rendering variants &gt; should render full variant with icon, label, and countdown" time="0.007">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingCountdown.test.tsx" name="PollingCountdown &gt; Countdown display &gt; should display countdown value in minimal variant" time="0.005">
+        </testcase>
+        <testcase classname="src/context/PollingContext/__tests__/PollingCountdown.test.tsx" name="PollingCountdown &gt; Countdown display &gt; should display countdown value in full variant" time="0.004">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/SortContext/__tests__/SortContext.test.tsx" timestamp="2026-02-28T07:32:30.482Z" hostname="devbox" tests="14" failures="0" errors="0" skipped="0" time="0.167">
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; SortsProvider initialization &gt; should provide default sorts on initial load" time="0.042">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; SortsProvider initialization &gt; should load sorts from sessionStorage if available" time="0.007">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; SortsProvider initialization &gt; should throw error when useSorts is used outside SortsProvider" time="0.039">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; Sort validation &gt; should return default sorts if sessionStorage contains invalid JSON" time="0.006">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; Sort validation &gt; should reject data with missing required fields" time="0.005">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; Sort validation &gt; should reject data with invalid direction value" time="0.005">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; Sort validation &gt; should accept valid OrderByField structure" time="0.005">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; updateSorts &gt; should update sorts with partial updates" time="0.008">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; updateSorts &gt; should update multiple sort fields at once" time="0.006">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; updateSorts &gt; should persist updated sorts to sessionStorage" time="0.008">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; resetSorts &gt; should reset all sorts to default values" time="0.005">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; resetSorts &gt; should persist default sorts to sessionStorage after reset" time="0.006">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; storage event listener &gt; should update sorts when storage event is triggered" time="0.006">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortContext.test.tsx" name="SortContext &gt; storage event listener &gt; should ignore storage events with different keys" time="0.015">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/context/SortContext/__tests__/SortingControls.test.tsx" timestamp="2026-02-28T07:32:30.487Z" hostname="devbox" tests="14" failures="0" errors="0" skipped="0" time="1.125">
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Rendering for different page types &gt; should render with default host sort settings" time="0.063">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Rendering for different page types &gt; should render with default quest sort settings" time="0.01">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Rendering for different page types &gt; should render with default task sort settings" time="0.01">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Rendering for different page types &gt; should render with default process sort settings" time="0.01">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Sort field dropdown &gt; should display correct field options for hosts page" time="0.014">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Sort field dropdown &gt; should display correct field options for quests page" time="0.015">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Sort field dropdown &gt; should display correct field options for tasks page" time="0.011">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Sort direction dropdown &gt; should display ascending and descending options" time="0.009">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Sort direction dropdown &gt; should default to descending direction" time="0.009">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Updating sort settings &gt; should update sort field when field dropdown changes" time="0.45">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Updating sort settings &gt; should update sort direction when direction dropdown changes" time="0.164">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Updating sort settings &gt; should update label when field changes" time="0.109">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Updating sort settings &gt; should update icon when direction changes to ascending" time="0.123">
+        </testcase>
+        <testcase classname="src/context/SortContext/__tests__/SortingControls.test.tsx" name="SortingControls &gt; Updating sort settings &gt; should only update sorts for the current page type" time="0.126">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/shellv2/hooks/shellUtils.test.ts" timestamp="2026-02-28T07:32:30.508Z" hostname="devbox" tests="25" failures="0" errors="0" skipped="0" time="0.036">
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="History Persistence &gt; loadHistory returns empty array when storage is empty" time="0.005">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="History Persistence &gt; loadHistory returns parsed array from storage" time="0.002">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="History Persistence &gt; loadHistory returns empty array on parse error" time="0.002">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="History Persistence &gt; saveHistory saves data to localStorage" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="History Persistence &gt; saveHistory truncates history exceeding MAX_HISTORY" time="0.002">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordLeft &gt; moves to start of current word" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordLeft &gt; moves to start of previous word" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordLeft &gt; handles multiple spaces" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordLeft &gt; handles empty/single word" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordLeft &gt; handles cursor in middle of word" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordRight &gt; moves to end of current word" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordRight &gt; moves to end of next word" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordRight &gt; handles multiple spaces" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordRight &gt; handles cursor in middle of word" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="moveWordRight &gt; handles end of buffer" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights keywords" time="0.009">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights strings" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights single quoted strings" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights numbers" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights comments" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; handles mixed content" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; does not highlight keywords inside strings" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; does not highlight comments inside strings" time="0.001">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; highlights built-ins and methods" time="0">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/shellUtils.test.ts" name="highlightPythonSyntax &gt; alternates punctuation colors based on nesting depth" time="0.001">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/shellv2/hooks/useCallbackTimer.test.ts" timestamp="2026-02-28T07:32:30.526Z" hostname="devbox" tests="4" failures="0" errors="0" skipped="0" time="0.046">
+        <testcase classname="src/pages/shellv2/hooks/useCallbackTimer.test.ts" name="useCallbackTimer &gt; should return false for isMissedCallback and isLateCheckin when checkin is in the future" time="0.033">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/useCallbackTimer.test.ts" name="useCallbackTimer &gt; should return true for isMissedCallback but false for isLateCheckin when checkin is 1 minute late" time="0.004">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/useCallbackTimer.test.ts" name="useCallbackTimer &gt; should return true for isLateCheckin when checkin is over 5 minutes late" time="0.004">
+        </testcase>
+        <testcase classname="src/pages/shellv2/hooks/useCallbackTimer.test.ts" name="useCallbackTimer &gt; should handle null/undefined beaconData gracefully" time="0.002">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" timestamp="2026-02-28T07:32:30.528Z" hostname="devbox" tests="15" failures="0" errors="0" skipped="0" time="0.676">
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Table structure rendering &gt; should render table with basic structure" time="0.058">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Header rendering &gt; should render all column headers with text" time="0.022">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Column sorting &gt; should show ascending icon when column sorted asc" time="0.014">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Column sorting &gt; should show descending icon when column sorted desc" time="0.01">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Column sorting &gt; should not show sort icon when column not sorted" time="0.011">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Column sorting &gt; should call toggle sorting handler on header click" time="0.02">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Column sorting &gt; should set column width from getSize()" time="0.357">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Data row rendering &gt; should render rows with cell data" time="0.011">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row click handling &gt; should call onRowClick when row is clicked" time="0.11">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row click handling &gt; should call onRowClick on Enter key press" time="0.015">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row click handling &gt; should not call onRowClick on other key press" time="0.009">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row expansion &gt; should render sub-component when row is expanded" time="0.01">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row expansion &gt; should render sub-component in full-width cell" time="0.01">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Row expansion &gt; should not render sub-component when row not expanded" time="0.008">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/Table.test.tsx" name="Table &gt; Empty data handling &gt; should render empty tbody when no data" time="0.006">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" timestamp="2026-02-28T07:32:30.549Z" hostname="devbox" tests="10" failures="0" errors="0" skipped="0" time="0.541">
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Pagination info display &gt; should display current page number" time="0.051">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Pagination info display &gt; should display total page count" time="0.009">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Pagination info display &gt; should display total results count" time="0.007">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Button states &gt; should set button states based on page position (page: 1)" time="0.009">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Button states &gt; should set button states based on page position (page: 10)" time="0.007">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Navigation callbacks &gt; should call refetchTable with startCursor on Previous click" time="0.267">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Navigation callbacks &gt; should call refetchTable with endCursor on Next click" time="0.066">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Navigation callbacks &gt; should decrement page on Previous click" time="0.064">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Navigation callbacks &gt; should increment page on Next click" time="0.053">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TablePagination.test.tsx" name="TablePagination &gt; Page count calculation &gt; should calculate page count correctly and round up with remainder" time="0.007">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" timestamp="2026-02-28T07:32:30.564Z" hostname="devbox" tests="11" failures="0" errors="0" skipped="0" time="0.21">
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Error state rendering &gt; should render error EmptyState and hide table/pagination" time="0.093">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Loading state rendering &gt; should render loading EmptyState when loading is true and hide table/pagination" time="0.013">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Loading state rendering &gt; should render loading EmptyState when totalItems is undefined" time="0.01">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Empty state rendering &gt; should render noData EmptyState when totalItems is 0 and hide table/pagination" time="0.013">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Success state with data &gt; should render table and pagination when data exists" time="0.012">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Controls section rendering &gt; should render filter controls and sorting controls when sortType is provided" time="0.012">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Controls section rendering &gt; should not render sorting controls when sortType is not provided" time="0.01">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Controls section rendering &gt; should render custom title" time="0.012">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; Controls section rendering &gt; should render default title when not provided" time="0.012">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; State priority &gt; should prioritize error over loading" time="0.011">
+        </testcase>
+        <testcase classname="src/components/tavern-base-ui/table/__tests__/TableWrapper.test.tsx" name="TableWrapper &gt; State priority &gt; should prioritize loading over empty" time="0.009">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" timestamp="2026-02-28T07:32:30.570Z" hostname="devbox" tests="7" failures="0" errors="0" skipped="0" time="0.126">
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; renders connected status correctly" time="0.063">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; renders disconnected status correctly" time="0.009">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; renders reconnecting status correctly" time="0.009">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; displays portal active message when portalId is present" time="0.012">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; displays non-interactive message when portalId is null" time="0.01">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; displays callback timer" time="0.009">
+        </testcase>
+        <testcase classname="src/pages/shellv2/components/__tests__/ShellStatusBar.test.tsx" name="ShellStatusBar &gt; highlights missed callback" time="0.011">
+        </testcase>
+    </testsuite>
+</testsuites>
