@@ -117,7 +117,7 @@ pub mod process {
         Waking = 10,
         Parked = 11,
         LockBlocked = 12,
-        UninteruptibleDiskSleep = 13,
+        UninterruptibleDiskSleep = 13,
     }
     impl Status {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -139,7 +139,7 @@ pub mod process {
                 Self::Waking => "STATUS_WAKING",
                 Self::Parked => "STATUS_PARKED",
                 Self::LockBlocked => "STATUS_LOCK_BLOCKED",
-                Self::UninteruptibleDiskSleep => "STATUS_UNINTERUPTIBLE_DISK_SLEEP",
+                Self::UninterruptibleDiskSleep => "STATUS_UNINTERRUPTIBLE_DISK_SLEEP",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -158,7 +158,9 @@ pub mod process {
                 "STATUS_WAKING" => Some(Self::Waking),
                 "STATUS_PARKED" => Some(Self::Parked),
                 "STATUS_LOCK_BLOCKED" => Some(Self::LockBlocked),
-                "STATUS_UNINTERUPTIBLE_DISK_SLEEP" => Some(Self::UninteruptibleDiskSleep),
+                "STATUS_UNINTERRUPTIBLE_DISK_SLEEP" => {
+                    Some(Self::UninterruptibleDiskSleep)
+                }
                 _ => None,
             }
         }

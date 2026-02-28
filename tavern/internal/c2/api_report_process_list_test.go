@@ -20,7 +20,7 @@ func TestReportProcessList(t *testing.T) {
 	// Setup Dependencies
 	client, graph, close, token := c2test.New(t)
 	defer close()
-    ctx := context.Background()
+	ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
@@ -45,8 +45,8 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				Context: &c2pb.ReportProcessListRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root", Status: epb.Process_STATUS_RUN},
@@ -66,8 +66,8 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				Context: &c2pb.ReportProcessListRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},
@@ -101,8 +101,8 @@ func TestReportProcessList(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportProcessListRequest{
 				Context: &c2pb.ReportProcessListRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				List: &epb.ProcessList{
 					List: []*epb.Process{},
 				},
@@ -114,8 +114,8 @@ func TestReportProcessList(t *testing.T) {
 			name: "Not_Found",
 			req: &c2pb.ReportProcessListRequest{
 				Context: &c2pb.ReportProcessListRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+				},
 				List: &epb.ProcessList{
 					List: []*epb.Process{
 						{Pid: 1, Name: "systemd", Principal: "root"},
@@ -146,25 +146,25 @@ func TestReportProcessList(t *testing.T) {
 				t.Errorf("invalid response (-want +got): %v", diff)
 			}
 
-            if tc.task != nil {
-			    // Assert Task Processes
-			    var taskPIDs []uint64
-			    taskProcessList := tc.task.QueryReportedProcesses().AllX(ctx)
-			    for _, proc := range taskProcessList {
-				    taskPIDs = append(taskPIDs, proc.Pid)
-			    }
-			    assert.ElementsMatch(t, tc.wantTaskPIDs, taskPIDs)
-            }
+			if tc.task != nil {
+				// Assert Task Processes
+				var taskPIDs []uint64
+				taskProcessList := tc.task.QueryReportedProcesses().AllX(ctx)
+				for _, proc := range taskProcessList {
+					taskPIDs = append(taskPIDs, proc.Pid)
+				}
+				assert.ElementsMatch(t, tc.wantTaskPIDs, taskPIDs)
+			}
 
-            if tc.host != nil {
-			    // Assert Host Processes
-			    var hostPIDs []uint64
-			    hostProcessList := tc.host.QueryProcesses().AllX(ctx)
-			    for _, proc := range hostProcessList {
-				    hostPIDs = append(hostPIDs, proc.Pid)
-			    }
-			    assert.ElementsMatch(t, tc.wantHostPIDs, hostPIDs)
-            }
+			if tc.host != nil {
+				// Assert Host Processes
+				var hostPIDs []uint64
+				hostProcessList := tc.host.QueryProcesses().AllX(ctx)
+				for _, proc := range hostProcessList {
+					hostPIDs = append(hostPIDs, proc.Pid)
+				}
+				assert.ElementsMatch(t, tc.wantHostPIDs, hostPIDs)
+			}
 		})
 	}
 }

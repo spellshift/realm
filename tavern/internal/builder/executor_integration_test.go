@@ -78,9 +78,9 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
 		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
@@ -226,9 +226,9 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
 		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
@@ -379,9 +379,9 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
 		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
@@ -512,9 +512,9 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
 		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
 		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
@@ -642,9 +642,9 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build -o /app/output/binary ./...").
 		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
 		}}).
 		SetArtifactPath("/app/output/binary").
 		SetBuilderID(builders[0].ID).

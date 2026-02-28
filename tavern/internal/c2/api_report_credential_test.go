@@ -21,7 +21,7 @@ func TestReportCredential(t *testing.T) {
 	// Setup Dependencies
 	client, graph, close, token := c2test.New(t)
 	defer close()
-    ctx := context.Background()
+	ctx := context.Background()
 
 	// Test Data
 	existingBeacon := c2test.NewRandomBeacon(ctx, graph)
@@ -52,8 +52,8 @@ func TestReportCredential(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
 				Context: &c2pb.ReportCredentialRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: existingCredential.Principal,
 					Secret:    existingCredential.Secret,
@@ -81,8 +81,8 @@ func TestReportCredential(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
 				Context: &c2pb.ReportCredentialRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "changeme123",
@@ -130,8 +130,8 @@ func TestReportCredential(t *testing.T) {
 			task: existingTask,
 			req: &c2pb.ReportCredentialRequest{
 				Context: &c2pb.ReportCredentialRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: int64(existingTask.ID), Jwt: token},
+				},
 			},
 			wantResp: nil,
 			wantCode: codes.InvalidArgument,
@@ -140,8 +140,8 @@ func TestReportCredential(t *testing.T) {
 			name: "NotFound",
 			req: &c2pb.ReportCredentialRequest{
 				Context: &c2pb.ReportCredentialRequest_TaskContext{
-                    TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
-                },
+					TaskContext: &c2pb.TaskContext{TaskId: 99888777776666, Jwt: token},
+				},
 				Credential: &epb.Credential{
 					Principal: "root",
 					Secret:    "oopsies",
@@ -172,30 +172,30 @@ func TestReportCredential(t *testing.T) {
 			}
 
 			// Reload Host
-            if tc.host != nil {
-			    host := graph.Host.GetX(ctx, tc.host.ID)
+			if tc.host != nil {
+				host := graph.Host.GetX(ctx, tc.host.ID)
 
-			    // Assert Host Credentials
-			    var pbHostCreds []*epb.Credential
-			    entHostCredentials := host.QueryCredentials().AllX(ctx)
-			    for _, cred := range entHostCredentials {
-				    pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret, Kind: cred.Kind})
-			    }
+				// Assert Host Credentials
+				var pbHostCreds []*epb.Credential
+				entHostCredentials := host.QueryCredentials().AllX(ctx)
+				for _, cred := range entHostCredentials {
+					pbHostCreds = append(pbHostCreds, &epb.Credential{Principal: cred.Principal, Secret: cred.Secret, Kind: cred.Kind})
+				}
 
-			    comparer := func(x any, y any) bool {
-				    credX, okX := x.(*epb.Credential)
-				    credY, okY := y.(*epb.Credential)
-				    if !okX || !okY {
-					    return false
-				    }
+				comparer := func(x any, y any) bool {
+					credX, okX := x.(*epb.Credential)
+					credY, okY := y.(*epb.Credential)
+					if !okX || !okY {
+						return false
+					}
 
-				    return credX.Principal < credY.Principal
-			    }
-			    assert.Equal(t, len(tc.wantHostCredentials), len(pbHostCreds))
-			    if diff := cmp.Diff(tc.wantHostCredentials, pbHostCreds, protocmp.Transform(), cmpopts.SortSlices(comparer)); diff != "" {
-				    t.Errorf("invalid host credentials (-want +got): %v", diff)
-			    }
-            }
+					return credX.Principal < credY.Principal
+				}
+				assert.Equal(t, len(tc.wantHostCredentials), len(pbHostCreds))
+				if diff := cmp.Diff(tc.wantHostCredentials, pbHostCreds, protocmp.Transform(), cmpopts.SortSlices(comparer)); diff != "" {
+					t.Errorf("invalid host credentials (-want +got): %v", diff)
+				}
+			}
 		})
 	}
 }
