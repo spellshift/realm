@@ -4,7 +4,7 @@ import { getOfflineOnlineStatus } from "../../../utils/utils";
 import { useQuery } from "@apollo/client";
 import { useParams } from "react-router-dom";
 import { GET_HOST_TASK_COUNT, GET_HOST_SHELL_COUNT } from "../../../utils/queries";
-import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon } from "lucide-react";
+import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon, ImageIcon } from "lucide-react";
 
 
 const HostTabs = () => {
@@ -100,6 +100,15 @@ const HostTabs = () => {
                 </div>
                 <div>
                     {shellCountData?.totalShells?.totalCount !== undefined && `(${shellCountData.activeShells?.totalCount || 0}/${shellCountData.totalShells.totalCount})`}
+                </div>
+            </Tab>
+            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+                <ImageIcon className="w-4 h-4" />
+                <div>
+                    Screenshots
+                </div>
+                <div>
+                    {host?.screenshots?.totalCount !== undefined && `(${host.screenshots.totalCount})`}
                 </div>
             </Tab>
         </TabList>

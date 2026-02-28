@@ -134,6 +134,19 @@ func createTestData(ctx context.Context, client *ent.Client) {
 				SetSecret(newRandomCredential()).
 				SaveX(ctx)
 
+			// Create Screenshots for the first host
+			if groupNum == 1 && i == 0 {
+				dummyPNG, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+				for j := 0; j < 25; j++ {
+					client.Screenshot.Create().
+						SetHost(testHost).
+						SetName(fmt.Sprintf("screenshot_%s_%d.png", testHost.Name, j)).
+						SetContent(dummyPNG).
+						SetSize(uint64(len(dummyPNG))).
+						SaveX(ctx)
+				}
+			}
+
 			// Cycle through transports: HTTP1, GRPC, DNS
 			getTransport := func(idx int) c2pb.Transport_Type {
 				transports := []c2pb.Transport_Type{
