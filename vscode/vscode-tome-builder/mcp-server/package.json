@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "dist/index.js",
   "scripts": {
+    "prebuild": "node scripts/bundle-assets.js",
     "build": "tsc",
     "start": "node dist/index.js"
   },
