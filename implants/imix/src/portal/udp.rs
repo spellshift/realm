@@ -22,14 +22,24 @@ pub async fn handle_udp(
 
     let target_addr = format!("{}:{}", dst_addr, dst_port);
 
+    #[cfg(debug_assertions)]
+    log::debug!("Setting up UDP for {}", target_addr);
+
     // Bind to 0.0.0.0:0
     let socket = UdpSocket::bind("0.0.0.0:0")
         .await
         .context("Failed to bind UDP")?;
+
+    #[cfg(debug_assertions)]
+    log::debug!("UDP bound to {:?}", socket.local_addr());
+
     socket
         .connect(&target_addr)
         .await
         .context("Failed to connect UDP")?;
+
+    #[cfg(debug_assertions)]
+    log::info!("UDP connected to {}", target_addr);
 
     let socket = Arc::new(socket);
 
@@ -43,6 +53,9 @@ pub async fn handle_udp(
     let out_tx_clone = out_tx.clone();
     let dst_addr_clone = dst_addr.clone();
 
+    #[cfg(debug_assertions)]
+    let addr_for_read = target_addr.clone();
+
     let read_task = tokio::spawn(async move {
         let mut buf = [0u8; BUF_SIZE];
         loop {
@@ -51,12 +64,17 @@ pub async fn handle_udp(
                     let data = buf[0..n].to_vec();
                     let mote = sequencer.new_udp_mote(data, dst_addr_clone.clone(), dst_port);
                     if out_tx_clone.send(mote).await.is_err() {
+                        #[cfg(debug_assertions)]
+                        log::warn!(
+                            "Failed to send UDP mote to C2 (channel closed) for {}",
+                            addr_for_read
+                        );
                         break;
                     }
                 }
                 Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to read from udp socket: {_e:?}");
+                    log::error!("failed to read from udp socket ({}): {_e:?}", addr_for_read);
                 }
             }
         }
@@ -71,7 +89,7 @@ pub async fn handle_udp(
                 Ok(_) => {}
                 Err(_e) => {
                     #[cfg(debug_assertions)]
-                    log::error!("failed to write udp: {_e:?}");
+                    log::error!("failed to write udp to {}: {_e:?}", target_addr);
 
                     break;
                 }

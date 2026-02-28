@@ -4,15 +4,14 @@ import userEvent from '@testing-library/user-event';
 import FilterControls from '../FilterControls';
 import { FilterProvider, useFilters } from '../FilterContext';
 import { MemoryRouter } from 'react-router-dom';
-import React from 'react';
 
 // Mock the child components
 vi.mock('../../../components/beacon-filter-bar', () => ({
-  BeaconFilterBar: ({ setFiltersSelected, filtersSelected, isDisabled }: any) => (
+  BeaconFilterBar: ({ onChange, value, isDisabled }: any) => (
     <div data-testid="beacon-filter-bar">
       <span data-testid="beacon-disabled">{isDisabled ? 'disabled' : 'enabled'}</span>
-      <span data-testid="beacon-count">{filtersSelected.length}</span>
-      <button onClick={() => setFiltersSelected([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
+      <span data-testid="beacon-count">{value.length}</span>
+      <button onClick={() => onChange([{ kind: 'beacon', id: '1', name: 'Test Beacon' }])}>
         Add Beacon
       </button>
     </div>
@@ -56,8 +55,13 @@ vi.mock('../../../components/ButtonDialogPopover', () => ({
 }));
 
 function FiltersDisplay() {
-  const { filters } = useFilters();
-  return <div data-testid="filters-display">{JSON.stringify(filters)}</div>;
+  const { filters, isLocked } = useFilters();
+  return (
+    <>
+      <div data-testid="filters-display">{JSON.stringify(filters)}</div>
+      <div data-testid="is-locked-display">{String(isLocked)}</div>
+    </>
+  );
 }
 
 function TestWrapper({ path, includeDisplay = false }: { path: string; includeDisplay?: boolean }) {
@@ -139,17 +143,6 @@ describe('FilterControls', () => {
       expect(screen.getByTestId('popover-button')).toHaveTextContent('Filters (1)');
     });
 
-    it('should count beacon field filters by array length', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper path="/quests" />);
-
-      const addButton = screen.getByText('Add Beacon');
-      await user.click(addButton);
-
-      expect(screen.getByTestId('popover-button')).toHaveTextContent('Filters (1)');
-      expect(screen.getByTestId('beacon-count')).toHaveTextContent('1');
-    });
-
     it('should count multiple active filters correctly', async () => {
       const user = userEvent.setup();
       render(<TestWrapper path="/quests" />);
@@ -168,13 +161,13 @@ describe('FilterControls', () => {
       render(<TestWrapper path="/quests" includeDisplay />);
 
       const lockButton = screen.getByRole('button', { name: /lock filters/i });
-      const getFilters = () => JSON.parse(screen.getByTestId('filters-display').textContent || '{}');
+      const getIsLocked = () => screen.getByTestId('is-locked-display').textContent === 'true';
 
-      expect(getFilters().isLocked).toBe(false);
+      expect(getIsLocked()).toBe(false);
 
       await user.click(lockButton);
 
-      expect(getFilters().isLocked).toBe(true);
+      expect(getIsLocked()).toBe(true);
     });
 
     it('should disable filter components when isLocked is true', async () => {
@@ -189,16 +182,6 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-disabled')).toHaveTextContent('disabled');
       expect(screen.getByTestId('tome-disabled')).toHaveTextContent('disabled');
-    });
-
-    it('should show unlock button when filters are locked', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper path="/quests" />);
-
-      const lockButton = screen.getByRole('button', { name: /lock filters/i });
-      await user.click(lockButton);
-
-      expect(screen.getByRole('button', { name: /unlock filters/i })).toBeInTheDocument();
     });
   });
 
@@ -219,34 +202,12 @@ describe('FilterControls', () => {
       expect(getFilters().tomeMultiSearch).toBe('tome search');
     });
 
-    it('should update beaconFields and tomeFields arrays', async () => {
-      const user = userEvent.setup();
-      render(<TestWrapper path="/quests" includeDisplay />);
-
-      const getFilters = () => JSON.parse(screen.getByTestId('filters-display').textContent || '{}');
-
-      await user.click(screen.getByText('Add Beacon'));
-      expect(getFilters().beaconFields).toHaveLength(1);
-      expect(getFilters().beaconFields[0]).toEqual({
-        kind: 'beacon',
-        id: '1',
-        name: 'Test Beacon',
-      });
-
-      await user.click(screen.getByText('Add Tome'));
-      expect(getFilters().tomeFields).toHaveLength(1);
-      expect(getFilters().tomeFields[0]).toEqual({
-        kind: 'tome',
-        id: 't1',
-        name: 'Test Tome',
-      });
-    });
-
     it('should preserve filter values when toggling lock state', async () => {
       const user = userEvent.setup();
       render(<TestWrapper path="/quests" includeDisplay />);
 
       const getFilters = () => JSON.parse(screen.getByTestId('filters-display').textContent || '{}');
+      const getIsLocked = () => screen.getByTestId('is-locked-display').textContent === 'true';
 
       await user.type(screen.getByTestId('search-input-Quest name'), 'preserved');
 
@@ -257,7 +218,7 @@ describe('FilterControls', () => {
       await user.click(unlockButton); // unlock
 
       expect(getFilters().questName).toBe('preserved');
-      expect(getFilters().isLocked).toBe(false);
+      expect(getIsLocked()).toBe(false);
     });
   });
 });

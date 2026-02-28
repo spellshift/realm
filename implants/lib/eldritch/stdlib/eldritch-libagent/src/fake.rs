@@ -78,6 +78,8 @@ impl AgentLibrary for AgentLibraryFake {
 #[cfg(feature = "stdlib")]
 use super::agent::Agent;
 #[cfg(feature = "stdlib")]
+use eldritch_agent::Context;
+#[cfg(feature = "stdlib")]
 use pb::c2;
 
 #[cfg(feature = "stdlib")]
@@ -97,7 +99,10 @@ impl Agent for AgentFake {
     ) -> Result<c2::ReportCredentialResponse, String> {
         Ok(c2::ReportCredentialResponse::default())
     }
-    fn report_file(&self, _req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
+    fn report_file(
+        &self,
+        _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String> {
         Ok(c2::ReportFileResponse::default())
     }
     fn report_process_list(
@@ -106,23 +111,19 @@ impl Agent for AgentFake {
     ) -> Result<c2::ReportProcessListResponse, String> {
         Ok(c2::ReportProcessListResponse::default())
     }
-    fn report_task_output(
+    fn report_output(
         &self,
-        _req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
-        Ok(c2::ReportTaskOutputResponse::default())
+        _req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String> {
+        Ok(c2::ReportOutputResponse::default())
     }
-    fn create_portal(&self, _task_context: pb::c2::TaskContext) -> Result<(), String> {
+    fn create_portal(&self, _context: Context) -> Result<(), String> {
         Ok(())
     }
-    fn start_reverse_shell(
-        &self,
-        _task_context: pb::c2::TaskContext,
-        _cmd: Option<String>,
-    ) -> Result<(), String> {
+    fn start_reverse_shell(&self, _context: Context, _cmd: Option<String>) -> Result<(), String> {
         Ok(())
     }
-    fn start_repl_reverse_shell(&self, _task_context: pb::c2::TaskContext) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, _context: Context) -> Result<(), String> {
         Ok(())
     }
     fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {

@@ -12,7 +12,10 @@ export enum PageNavItem {
     createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
+    assets="Assets",
     admin="Admin",
+    processes="Processes",
+    files="Files"
 }
 export enum SupportedPlatforms {
     Windows="PLATFORM_WINDOWS",
@@ -37,9 +40,10 @@ export enum OnlineOfflineFilterType {
 }
 
 export enum TableRowLimit {
-    QuestRowLimit=10,
-    TaskRowLimit=10,
-    HostRowLimit=10
+    QuestRowLimit=14,
+    TaskRowLimit=14,
+    HostRowLimit=14,
+    AssetRowLimit=14
 }
 export enum PrincipalAdminTypes {
     root='root',
@@ -83,6 +87,29 @@ export enum HostOrderField {
     CreatedAt = "CREATED_AT",
     LastModifiedAt = "LAST_MODIFIED_AT",
     LastSeenAt = "LAST_SEEN_AT",
+}
+
+export enum AssetOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
+}
+
+
+export enum ProcessOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    ProcessId = "PROCESS_ID",
+    ParentProcessId= "PARENT_PROCESS_ID",
+}
+
+export enum HostFileOrderField {
+    CreatedAt = "CREATED_AT",
+    LastModifiedAt = "LAST_MODIFIED_AT",
+    Name = "NAME",
+    Size = "SIZE",
 }
 
 export enum RepositoryOrderField {

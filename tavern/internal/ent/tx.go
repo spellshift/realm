@@ -16,6 +16,10 @@ type Tx struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BuildTask is the client for interacting with the BuildTask builders.
+	BuildTask *BuildTaskClient
+	// Builder is the client for interacting with the Builder builders.
+	Builder *BuilderClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -32,8 +36,12 @@ type Tx struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// Screenshot is the client for interacting with the Screenshot builders.
+	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
+	// ShellTask is the client for interacting with the ShellTask builders.
+	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
 	Tag *TagClient
 	// Task is the client for interacting with the Task builders.
@@ -175,6 +183,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
+	tx.BuildTask = NewBuildTaskClient(tx.config)
+	tx.Builder = NewBuilderClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)
 	tx.HostFile = NewHostFileClient(tx.config)
@@ -183,7 +193,9 @@ func (tx *Tx) init() {
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
+	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
+	tx.ShellTask = NewShellTaskClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.Tome = NewTomeClient(tx.config)

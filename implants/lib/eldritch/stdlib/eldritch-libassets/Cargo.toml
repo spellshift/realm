@@ -1,13 +1,13 @@
 [package]
 name = "eldritch-libassets"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
-eldritch-agent = { workspace = true }
-pb = { workspace = true }
+eldritch-agent = { workspace = true, optional = true }
+pb = { workspace = true, optional = true }
 anyhow = { version = "1.0" }
 rust-embed = { version = "8.0" }
 
@@ -15,7 +15,7 @@ rust-embed = { version = "8.0" }
 default = ["std", "stdlib"]
 std = ["eldritch-core/std"]
 fake_bindings = []
-stdlib = []
+stdlib = ["dep:eldritch-agent", "dep:pb"]
 
 [dev-dependencies]
 tempfile = "3.3"

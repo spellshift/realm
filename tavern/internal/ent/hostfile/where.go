@@ -100,6 +100,11 @@ func Content(v []byte) predicate.HostFile {
 	return predicate.HostFile(sql.FieldEQ(FieldContent, v))
 }
 
+// Preview applies equality check predicate on the "preview" field. It's identical to PreviewEQ.
+func Preview(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldEQ(FieldPreview, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.HostFile {
 	return predicate.HostFile(sql.FieldEQ(FieldCreatedAt, v))
@@ -635,6 +640,76 @@ func ContentNotNil() predicate.HostFile {
 	return predicate.HostFile(sql.FieldNotNull(FieldContent))
 }
 
+// PreviewTypeEQ applies the EQ predicate on the "preview_type" field.
+func PreviewTypeEQ(v PreviewType) predicate.HostFile {
+	return predicate.HostFile(sql.FieldEQ(FieldPreviewType, v))
+}
+
+// PreviewTypeNEQ applies the NEQ predicate on the "preview_type" field.
+func PreviewTypeNEQ(v PreviewType) predicate.HostFile {
+	return predicate.HostFile(sql.FieldNEQ(FieldPreviewType, v))
+}
+
+// PreviewTypeIn applies the In predicate on the "preview_type" field.
+func PreviewTypeIn(vs ...PreviewType) predicate.HostFile {
+	return predicate.HostFile(sql.FieldIn(FieldPreviewType, vs...))
+}
+
+// PreviewTypeNotIn applies the NotIn predicate on the "preview_type" field.
+func PreviewTypeNotIn(vs ...PreviewType) predicate.HostFile {
+	return predicate.HostFile(sql.FieldNotIn(FieldPreviewType, vs...))
+}
+
+// PreviewEQ applies the EQ predicate on the "preview" field.
+func PreviewEQ(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldEQ(FieldPreview, v))
+}
+
+// PreviewNEQ applies the NEQ predicate on the "preview" field.
+func PreviewNEQ(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldNEQ(FieldPreview, v))
+}
+
+// PreviewIn applies the In predicate on the "preview" field.
+func PreviewIn(vs ...[]byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldIn(FieldPreview, vs...))
+}
+
+// PreviewNotIn applies the NotIn predicate on the "preview" field.
+func PreviewNotIn(vs ...[]byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldNotIn(FieldPreview, vs...))
+}
+
+// PreviewGT applies the GT predicate on the "preview" field.
+func PreviewGT(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldGT(FieldPreview, v))
+}
+
+// PreviewGTE applies the GTE predicate on the "preview" field.
+func PreviewGTE(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldGTE(FieldPreview, v))
+}
+
+// PreviewLT applies the LT predicate on the "preview" field.
+func PreviewLT(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldLT(FieldPreview, v))
+}
+
+// PreviewLTE applies the LTE predicate on the "preview" field.
+func PreviewLTE(v []byte) predicate.HostFile {
+	return predicate.HostFile(sql.FieldLTE(FieldPreview, v))
+}
+
+// PreviewIsNil applies the IsNil predicate on the "preview" field.
+func PreviewIsNil() predicate.HostFile {
+	return predicate.HostFile(sql.FieldIsNull(FieldPreview))
+}
+
+// PreviewNotNil applies the NotNil predicate on the "preview" field.
+func PreviewNotNil() predicate.HostFile {
+	return predicate.HostFile(sql.FieldNotNull(FieldPreview))
+}
+
 // HasHost applies the HasEdge predicate on the "host" edge.
 func HasHost() predicate.HostFile {
 	return predicate.HostFile(func(s *sql.Selector) {
@@ -673,6 +748,29 @@ func HasTask() predicate.HostFile {
 func HasTaskWith(preds ...predicate.Task) predicate.HostFile {
 	return predicate.HostFile(func(s *sql.Selector) {
 		step := newTaskStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasShellTask applies the HasEdge predicate on the "shell_task" edge.
+func HasShellTask() predicate.HostFile {
+	return predicate.HostFile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasShellTaskWith applies the HasEdge predicate on the "shell_task" edge with a given conditions (other predicates).
+func HasShellTaskWith(preds ...predicate.ShellTask) predicate.HostFile {
+	return predicate.HostFile(func(s *sql.Selector) {
+		step := newShellTaskStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

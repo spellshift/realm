@@ -46,7 +46,7 @@ impl ProcessLibrary for ProcessLibraryFake {
         p1.insert("pid".into(), Value::Int(1));
         p1.insert("ppid".into(), Value::Int(0));
         p1.insert("arch".into(), Value::String("x86_64".into()));
-        p1.insert("user".into(), Value::String("root".into()));
+        p1.insert("principal".into(), Value::String("root".into()));
         p1.insert("command".into(), Value::String("/sbin/init".into()));
 
         let mut p2 = BTreeMap::new();
@@ -54,7 +54,7 @@ impl ProcessLibrary for ProcessLibraryFake {
         p2.insert("pid".into(), Value::Int(1001));
         p2.insert("ppid".into(), Value::Int(1));
         p2.insert("arch".into(), Value::String("x86_64".into()));
-        p2.insert("user".into(), Value::String("user".into()));
+        p2.insert("principal".into(), Value::String("user".into()));
         p2.insert("command".into(), Value::String("/bin/bash".into()));
 
         let mut p3 = BTreeMap::new();
@@ -62,7 +62,7 @@ impl ProcessLibrary for ProcessLibraryFake {
         p3.insert("pid".into(), Value::Int(1337)); // The PID returned by netstat
         p3.insert("ppid".into(), Value::Int(1));
         p3.insert("arch".into(), Value::String("x86_64".into()));
-        p3.insert("user".into(), Value::String("user".into()));
+        p3.insert("principal".into(), Value::String("user".into()));
         p3.insert("command".into(), Value::String("./eldritch".into()));
 
         Ok(vec![p1, p2, p3])
@@ -96,6 +96,10 @@ mod tests {
         let list = lib.list().unwrap();
         assert_eq!(list.len(), 3);
         assert_eq!(list[0].get("name"), Some(&Value::String("init".into())));
+        assert_eq!(
+            list[0].get("principal"),
+            Some(&Value::String("root".into()))
+        );
         assert_eq!(list[1].get("name"), Some(&Value::String("bash".into())));
         assert_eq!(list[2].get("name"), Some(&Value::String("eldritch".into())));
     }

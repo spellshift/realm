@@ -20,7 +20,7 @@ import (
 func TestClaimTasks(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	client, graph, close := c2test.New(t)
+	client, graph, close, _ := c2test.New(t)
 	defer close()
 
 	// Test Data

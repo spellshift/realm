@@ -33,6 +33,30 @@ func (f BeaconFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, erro
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BeaconMutation", m)
 }
 
+// The BuildTaskFunc type is an adapter to allow the use of ordinary
+// function as BuildTask mutator.
+type BuildTaskFunc func(context.Context, *ent.BuildTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BuildTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BuildTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuildTaskMutation", m)
+}
+
+// The BuilderFunc type is an adapter to allow the use of ordinary
+// function as Builder mutator.
+type BuilderFunc func(context.Context, *ent.BuilderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BuilderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BuilderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuilderMutation", m)
+}
+
 // The HostFunc type is an adapter to allow the use of ordinary
 // function as Host mutator.
 type HostFunc func(context.Context, *ent.HostMutation) (ent.Value, error)
@@ -129,6 +153,18 @@ func (f RepositoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RepositoryMutation", m)
 }
 
+// The ScreenshotFunc type is an adapter to allow the use of ordinary
+// function as Screenshot mutator.
+type ScreenshotFunc func(context.Context, *ent.ScreenshotMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScreenshotFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ScreenshotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScreenshotMutation", m)
+}
+
 // The ShellFunc type is an adapter to allow the use of ordinary
 // function as Shell mutator.
 type ShellFunc func(context.Context, *ent.ShellMutation) (ent.Value, error)
@@ -139,6 +175,18 @@ func (f ShellFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ShellMutation", m)
+}
+
+// The ShellTaskFunc type is an adapter to allow the use of ordinary
+// function as ShellTask mutator.
+type ShellTaskFunc func(context.Context, *ent.ShellTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ShellTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ShellTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ShellTaskMutation", m)
 }
 
 // The TagFunc type is an adapter to allow the use of ordinary

@@ -17,10 +17,60 @@ resource "random_password" "defaultmysql" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+variable "redirector_upstream" {
+  type = string
+  description = "Upstream that redirectors should point to."
+  default = ""
+}
+
+variable "redirector_dns_ns_prefix" {
+  type = string
+  description = "Upstream that redirectors should point to."
+  default = "ns1"
+}
+
+variable "redirectors" {
+  type = list(object({
+    domain    = string
+    transport = string
+  }))
+  description = "List of redirectors domains and transpoarts to configure."
+}
+# redirectors = [{
+#   transport = "grpc",
+#   domain = "grpc.example.com"
+# },{
+#   transport = "http",
+#   domain = "http1.example.com"
+# },{
+#   transport = "dns",
+#   domain = "dns.example.com"
+# }]
+# Note: For DNS an A record for example.com and dns.example.com will be created in addition to the NS record for dns.example.com
+
+
 variable "tavern_container_image" {
   type = string
   description = "Docker container to deploy"
   default = "spellshift/tavern:latest"
+}
+
+variable "redirector_boot_disk_image" {
+  type = string
+  description = "Boot disk image for redirector compute instances"
+  default = "projects/cos-cloud/global/images/cos-stable-121-18867-294-134"
+}
+
+variable "redirector_boot_disk_size" {
+  type = number
+  description = "Boot disk size in GB for redirector compute instances"
+  default = 10
+}
+
+variable "redirector_machine_type" {
+  type = string
+  description = "Machine type for redirector compute instances"
+  default = "e2-small"
 }
 
 variable "tavern_request_timeout_seconds" {
@@ -46,6 +96,42 @@ variable "gcp_project" {
 data "google_project" "project" {
   project_id = var.gcp_project
 }
+
+data "google_dns_managed_zones" "zones" {
+  project = var.gcp_project
+}
+
+# Lookup the oauth_domain_zone if able
+locals {
+  domain_zone_map = {
+    for zone in data.google_dns_managed_zones.zones.managed_zones :
+    zone.dns_name => zone.name
+  }
+  oauth_top_domain_arr = split(".", var.oauth_domain)
+  oauth_top_domain = format("%s.", join(".", slice(local.oauth_top_domain_arr, length(local.oauth_top_domain_arr)-2, length(local.oauth_top_domain_arr))))
+  oauth_domain_zone = contains(keys(local.domain_zone_map), local.oauth_top_domain) ? local.domain_zone_map[local.oauth_top_domain] : ""
+}
+
+output "oauth_domain_configuration" {
+  value = local.oauth_domain_zone == "" ? format("Unable to find a managed DNS zone for the domain: %s. Skipping auotamatic DNS record configuration consult the documentation for manual setup https://docs.realm.pub/admin-guide/tavern", var.oauth_domain) : "DNS Zone found automatic configuration will be attempted"
+}
+
+data "google_dns_managed_zone" "oauth_dns_zone" {
+  count = local.oauth_domain_zone == "" ? 0 : 1
+  name = local.oauth_domain_zone
+}
+
+resource "google_dns_record_set" "oauth_dns_record" {
+  count = local.oauth_domain_zone == "" ? 0 : 1
+  name = format("%s.", var.oauth_domain)
+  type = "CNAME"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.oauth_dns_zone[count.index].name
+
+  rrdatas = ["ghs.googlehosted.com."]
+}
+
 
 variable "gcp_region" {
   type = string
@@ -424,6 +510,324 @@ resource "google_cloud_run_service_iam_binding" "no-auth-required" {
   ]
 }
 
+
+
+# === Redirectors ===
+# Setup redirectors svc account
+resource "google_service_account" "svctavern_redirector" {
+  account_id = "svctavern-redirector"
+  description = "The service account Realm's Tavern Redirector uses to connect to GCP based services. Managed by Terraform."
+}
+
+resource "google_project_iam_member" "redirector-metricwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+resource "google_project_iam_member" "redirector-logwriter-binding" {
+  project = var.gcp_project
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.svctavern_redirector.email}"
+}
+
+# Lookup the redirector domain if able
+locals {
+  domain_zone_map_of = {
+    for zone in data.google_dns_managed_zones.zones.managed_zones :
+    zone.dns_name => zone.name
+  }
+  redirectors_top_domains = {
+    for redir in var.redirectors : redir.domain => format("%s.", join(".", slice(split(".", redir.domain), length(split(".", redir.domain))-2, length(split(".", redir.domain)))))
+  }
+  redirector_zones_http = [
+    for redir in var.redirectors: {
+      "domain": redir.domain,
+      "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    }
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && (redir.transport == "http" || redir.transport == "grpc")
+  ]
+  redirector_zones_dns = [
+    for redir in var.redirectors: {
+      "domain": redir.domain,
+      "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    }
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "dns"
+  ]
+  redirector_zones_missing = [
+    for redir in var.redirectors: redir.domain
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") == ""
+  ]
+  http_redirectors = [
+    for redir in var.redirectors: redir
+    if redir.transport == "http" || redir.transport == "grpc"
+  ]
+  dns_redirectors = [
+    for redir in var.redirectors: redir
+    if redir.transport == "dns"
+  ]
+  dns_domain_dsn = trimsuffix(join("", [for redir in local.dns_redirectors: "domain=${redir.domain}&"]), "&")
+}
+
+output "redir_domain_configuration" {
+  value = length(local.redirector_zones_missing) == 0 ? "All domains configured automatically" : format("Unable to configure DNS for the following: %s", join(",", local.redirector_zones_missing))
+}
+
+# Setup DNS for grpc / http transports
+data "google_dns_managed_zone" "redir_dns_zone_http" {
+  count = length(local.redirector_zones_http)
+  name = local.redirector_zones_http[count.index].zone
+}
+
+resource "google_dns_record_set" "redir_dns_record" {
+  count = length(local.redirector_zones_http)
+  name = format("%s.", local.redirector_zones_http[count.index].domain)
+  type = "CNAME"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_http[count.index].name
+
+  rrdatas = ["ghs.googlehosted.com."]
+}
+
+resource "google_cloud_run_service" "redirector" {
+  count    = length(local.http_redirectors)
+  name     = "tavern-redirector-${local.http_redirectors[count.index].transport}${count.index}"
+  location = var.gcp_region
+
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  template {
+    spec {
+      service_account_name = google_service_account.svctavern_redirector.email
+      // Controls request timeout, must be long-lived to enable reverse shell support
+      timeout_seconds = var.tavern_request_timeout_seconds
+
+      containers {
+        name = local.tavern_container_name
+        image = var.tavern_container_image
+        command = ["/app/tavern", "redirector", "--transport", local.http_redirectors[count.index].transport, var.redirector_upstream]
+        env {
+          name = "ENABLE_DEBUG_LOGGING"
+          value = "true"
+        }
+        ports {
+          container_port = 8080
+        }
+      }
+    }
+
+    metadata {
+      annotations = {
+        for k, v in {
+        "autoscaling.knative.dev/minScale"      = var.min_scale
+        "autoscaling.knative.dev/maxScale"      = var.max_scale
+        "run.googleapis.com/client-name"        = "terraform"
+        "run.googleapis.com/sessionAffinity"    = true
+      }: k => v if v != ""
+      }
+    }
+  }
+  autogenerate_revision_name = true
+
+  depends_on = [
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_service.cloud_run_api
+  ]
+}
+
+
+resource "google_cloud_run_domain_mapping" "redirector-domain" {
+  count    = length(local.http_redirectors)
+  location = google_cloud_run_service.redirector[count.index].location
+  name     = local.http_redirectors[count.index].domain
+
+  metadata {
+    namespace = google_cloud_run_service.redirector[count.index].project
+  }
+
+  spec {
+    route_name = google_cloud_run_service.redirector[count.index].name
+  }
+}
+
+
+
+# Setup DNS for DNS transports
+data "google_dns_managed_zone" "redir_dns_zone_dns" {
+  count = length(local.redirector_zones_dns)
+  name = local.redirector_zones_dns[count.index].zone
+}
+locals {
+  dns_redirector_ip = length(local.redirector_zones_dns) > 0 ? google_compute_instance.dns_redirector[0].network_interface[0].access_config[0].nat_ip : "no dns redirectors set"
+  dns_locals = [for index,value in local.redirector_zones_dns : {
+    "dns_ns_domain": format("%s.%s.", var.redirector_dns_ns_prefix, join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain))-2, length(split(".", local.redirector_zones_dns[index].domain))))) # c2.example.com -> ns.example.com
+    "dns_top_domain": format("%s.", join(".", slice(split(".", local.redirector_zones_dns[index].domain), length(split(".", local.redirector_zones_dns[index].domain))-2, length(split(".", local.redirector_zones_dns[index].domain))))) # c2.example.com -> example.com
+  }]
+}
+resource "google_dns_record_set" "redir_dns_record_dns_a_subdomain" {
+  count = length(local.dns_locals)
+  name = local.dns_locals[count.index].dns_ns_domain # A record ns1.example.com -> IP
+  type = "A"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
+
+  rrdatas = [local.dns_redirector_ip]
+}
+
+resource "google_dns_record_set" "redir_dns_record_dns_a_topdomain" {
+  count = length(local.dns_locals)
+  name =  local.dns_locals[count.index].dns_top_domain # A record example.com -> IP
+  type = "A"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
+
+  rrdatas = [local.dns_redirector_ip]
+}
+
+resource "google_dns_record_set" "redir_dns_record_dns_ns" {
+  count = length(local.dns_locals)
+  name = format("%s.", local.redirector_zones_dns[count.index].domain) # NS record c2.example.com -> ns1.example.com
+  type = "NS"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_dns[count.index].name
+
+  rrdatas = [local.dns_locals[count.index].dns_ns_domain]
+}
+
+locals {
+  gce_def = yamlencode({
+    spec = {
+      containers = [{
+        image   = var.tavern_container_image
+        command = ["./tavern", "redirector", "--transport", "dns", "--listen", "0.0.0.0:53?${local.dns_domain_dsn}", var.redirector_upstream]
+        env = [
+          {
+            name  = "ENABLE_DEBUG_LOGGING"
+            value = ""
+          }
+        ]
+        ports   = [
+          {
+            containerPort = 53
+            hostPort      = 53
+            protocol      = "UDP"
+          },
+          {
+            containerPort = 53
+            hostPort      = 53
+            protocol      = "TCP"
+          }
+        ]
+      }]
+      restartPolicy = "Always"
+    }
+  })
+  user_data_def = <<EOT
+#cloud-config
+
+write_files:
+  - path: /etc/systemd/resolved.conf
+    content: |
+      [Resolve]
+      # Set DNSStubListener to no to disable the local stub resolver
+      DNSStubListener=no
+    permissions: '0644'
+runcmd:
+  - systemctl stop systemd-resolved.service
+  - systemctl disable systemd-resolved.service
+  - rm /etc/resolv.conf
+  - echo "nameserver 8.8.8.8" > /etc/resolv.conf
+  - echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+EOT
+}
+
+resource "google_compute_firewall" "dns_redirector_allow_dns" {
+  count   = length(local.dns_redirectors) > 0 ? 1 : 0
+  name    = "allow-dns-to-redirector"
+  network = "default"
+
+  allow {
+    protocol = "udp"
+    ports    = ["53"]
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["53"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_service_accounts = [google_service_account.svctavern_redirector.email]
+}
+
+# Hash the config content so we can force rebuilds on update
+resource "terraform_data" "dns_redirector_metadata_hash" {
+  count = length(local.dns_redirectors) > 0 ? 1 : 0
+  input = sha256("${local.gce_def}-${local.user_data_def}")
+}
+
+resource "google_compute_instance" "dns_redirector" {
+  count        = length(local.dns_redirectors) > 0 ? 1 : 0
+  name         = "tavern-redirector-dns${count.index}"
+  machine_type = var.redirector_machine_type
+  zone         = "${var.gcp_region}-b"
+
+  boot_disk {
+    initialize_params {
+      image = var.redirector_boot_disk_image
+      size  = var.redirector_boot_disk_size
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  metadata = {
+    gce-container-declaration = local.gce_def
+    user-data = local.user_data_def
+  }
+
+  allow_stopping_for_update = true
+
+  service_account {
+    email  = google_service_account.svctavern_redirector.email
+    scopes = ["cloud-platform"]
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      terraform_data.dns_redirector_metadata_hash[count.index]
+    ]
+  }
+
+  depends_on = [
+    google_project_iam_member.redirector-metricwriter-binding,
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_service.compute_api
+  ]
+}
+
+# Setup auth and domain mappings
+resource "google_cloud_run_service_iam_binding" "no-auth-required-redirector" {
+  count    = length(local.http_redirectors)
+  location = google_cloud_run_service.redirector[count.index].location
+  service  = google_cloud_run_service.redirector[count.index].name
+  role     = "roles/run.invoker"
+  members = [
+    "allUsers"
+  ]
+}
+
 resource "google_cloud_run_domain_mapping" "tavern-domain" {
   count = var.oauth_domain == "" ? 0 : 1 # Only create mapping if OAUTH is configured
   location = google_cloud_run_service.tavern.location
@@ -436,9 +840,4 @@ resource "google_cloud_run_domain_mapping" "tavern-domain" {
   spec {
     route_name = google_cloud_run_service.tavern.name
   }
-}
-
-
-output "pubkey" {
-  value = var.oauth_domain == "" ? "Unable to get pubkey automatically" : "bash ${path.module}/../bin/getpubkey.sh https://${google_cloud_run_domain_mapping.tavern-domain[0].name}"
 }

@@ -14,7 +14,7 @@ If you would like to help contribute to Tavern, please take a look at our [open 
 
 ## Deployment
 
-This section will walk you through deploying a production ready instance of Tavern to GCP. If you're just looking to play around with Tavern, feel free to run the [docker image (spellshift/tavern:latest)](https://hub.docker.com/r/spellshift/tavern) locally.
+This section will walk you through deploying a production-ready instance of Tavern to GCP. If you're just looking to play around with Tavern, feel free to run the [docker image (spellshift/tavern:latest)](https://hub.docker.com/r/spellshift/tavern) locally.
 
 ### 1. Create a GCP Project
 
@@ -93,7 +93,7 @@ After your certificate has successfully provisioned, it may still take a while (
 |oauth_domain|Only if OAuth is configured|The OAuth Domain that the IDP should redirect to e.g. tavern.mydomain.com (should be the domain you set a CNAME record for while configuring OAuth).|
 |min_scale|No|The minimum number of containers to run, if set to 0 you may see cold boot latency.|
 |max_scale|No|The maximum number of containers to run.|
-|tavern_container_image|No|Override the dafult tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.| 
+|tavern_container_image|No|Override the default tavern image with a custom one. You can use spellshift/tavern:edge to use the latest image.|
 
 ### Manual Deployment Tips
 
@@ -365,7 +365,7 @@ Running Tavern with the `ENABLE_PPROF` environment variable set will enable perf
 ## Tavern docker image tags explained
 
 Tavern publishes a couple different images.
-- `vX.Y.Z` is a semver style verision string. Each Realm release creates a git tag and container image .
+- `vX.Y.Z` is a semver style version string. Each Realm release creates a git tag and container image .
 - `edge` & `main` are the latest version of tavern in the git repos main branch. These two exist for developers to deploy the latest changes and coerce terraform into deploying upgrades as needed.
 - `sha-<hash>` represents the specific container per a git commit to main. The hash will match the git commit hash as well this can be verified in the docker build workflow logs.
 
@@ -399,7 +399,7 @@ terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLI
 
 ### Playground
 
-If you'd like to explore the Graph API and try out some queries, head to the `/graphiql` endpoint of your Tavern deployment. This endpoint exposes an interactive playground for you to experiment with GraphQL queries. Currently, this is used to fill gaps between developed backend functionality and in-development frontend functionality.
+If you'd like to explore the Graph API and try out some queries, head to the `/playground` endpoint of your Tavern deployment. This endpoint exposes an interactive playground for you to experiment with GraphQL queries. Currently, this is used to fill gaps between developed backend functionality and in-development frontend functionality.
 
 ![/assets/img/admin-guide/tavern/graphiql.png](/assets/img/admin-guide/tavern/graphiql.png)
 
@@ -483,10 +483,26 @@ The upload API for the Tavern CDN use forms and the POST method. The parameters 
 
 ```bash
 [$ /tmp] curl --cookie "auth-session=REDACTED" -F "fileName=test_file" -F "fileContent=@/path/to/file" https://example.com/cdn/upload
-{"data":{"file":{"id":4294967755}}}%
+{"data":{"file":{"id":4}}}%
 ```
 
-### Playground - GET /cdn/{fileName} - UNAUTHENTICATED
+### Create a link - AUTHENTICATED
+
+Once a file's been uploaded you won't be able to download it until you create a link for it through the graphql playground `/playground`
+
+```graphql
+mutation tempLink {
+  createLink(input: {expiresAt: "2026-02-02T21:33:18Z", downloadsRemaining: 10, path: "notmalware", assetID: 4}) {
+    path
+  }
+}
+```
+
+This will create a link that allows the link to be active until Feburary 2nd 2026 at 21:33:18 UTC with 10 downloads. These two conditions are or'd so if either is allowed the download will work.
+
+If no path is specified a random 6 character path will be generated. In the graphql query above we request the path back to ensure we know where to grab the file.
+
+### Playground - GET /cdn/{path} - UNAUTHENTICATED
 
 The download API is a simple GET request where the `fileName` provided as part of the upload request(or any `File` Ent) is appended to the path. Additionally the endpoint is unauthenticated so no cookie is required (and easy to use from Imix!). An example of accessing the API via eldritch is below:
 

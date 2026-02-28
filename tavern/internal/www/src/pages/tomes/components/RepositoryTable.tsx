@@ -7,7 +7,7 @@ import Table from "../../../components/tavern-base-ui/table/Table";
 import TomeAccordion from "../../../components/TomeAccordion";
 import { TomeNode } from "../../../utils/interfacesQuery";
 import { constructTomeParams } from "../../../utils/utils";
-import { useFetchRepositoryTome } from "../hooks/useFetchRepostioryTomes";
+import { useFetchRepositoryTome } from "../hooks/useFetchRepositoryTomes";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import UserImageAndName from "../../../components/UserImageAndName";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";

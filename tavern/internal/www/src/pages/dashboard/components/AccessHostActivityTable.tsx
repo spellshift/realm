@@ -10,21 +10,24 @@ import { useFilters } from "../../../context/FilterContext";
 const AccessHostActivityTable = ({ hostActivity, term }: { hostActivity: any, term: string }) => {
     const currentDate = new Date();
     const navigation = useNavigate();
-    const { filters, updateFilters } = useFilters();
+    const { filters, updateFilters, setIsLocked } = useFilters();
 
     const handleOnClick = (item: any) => {
+        console.log(item);
         if (item?.id === "undefined") {
             return null;
         }
         if (filters.beaconFields.findIndex((field) => field.id === item?.original?.tagId) === -1) {
+            const name = item?.original?.tagKind === "platform" ? item?.original?.tagId : item?.original?.tag;
             const newFilter = {
                 'label': item?.original?.tag,
                 'kind': term,
-                'name': item?.original?.tag,
+                'name': name,
                 'value': item?.original?.tagId,
                 'id': item?.original?.tagId
             };
-            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter] })
+            setIsLocked(true);
+            updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter]})
         }
         navigation(`/hosts`);
     }

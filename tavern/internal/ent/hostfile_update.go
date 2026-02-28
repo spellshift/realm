@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -163,6 +164,32 @@ func (hfu *HostFileUpdate) ClearContent() *HostFileUpdate {
 	return hfu
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (hfu *HostFileUpdate) SetPreviewType(ht hostfile.PreviewType) *HostFileUpdate {
+	hfu.mutation.SetPreviewType(ht)
+	return hfu
+}
+
+// SetNillablePreviewType sets the "preview_type" field if the given value is not nil.
+func (hfu *HostFileUpdate) SetNillablePreviewType(ht *hostfile.PreviewType) *HostFileUpdate {
+	if ht != nil {
+		hfu.SetPreviewType(*ht)
+	}
+	return hfu
+}
+
+// SetPreview sets the "preview" field.
+func (hfu *HostFileUpdate) SetPreview(b []byte) *HostFileUpdate {
+	hfu.mutation.SetPreview(b)
+	return hfu
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (hfu *HostFileUpdate) ClearPreview() *HostFileUpdate {
+	hfu.mutation.ClearPreview()
+	return hfu
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hfu *HostFileUpdate) SetHostID(id int) *HostFileUpdate {
 	hfu.mutation.SetHostID(id)
@@ -180,9 +207,36 @@ func (hfu *HostFileUpdate) SetTaskID(id int) *HostFileUpdate {
 	return hfu
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hfu *HostFileUpdate) SetNillableTaskID(id *int) *HostFileUpdate {
+	if id != nil {
+		hfu = hfu.SetTaskID(*id)
+	}
+	return hfu
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hfu *HostFileUpdate) SetTask(t *Task) *HostFileUpdate {
 	return hfu.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hfu *HostFileUpdate) SetShellTaskID(id int) *HostFileUpdate {
+	hfu.mutation.SetShellTaskID(id)
+	return hfu
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hfu *HostFileUpdate) SetNillableShellTaskID(id *int) *HostFileUpdate {
+	if id != nil {
+		hfu = hfu.SetShellTaskID(*id)
+	}
+	return hfu
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hfu *HostFileUpdate) SetShellTask(s *ShellTask) *HostFileUpdate {
+	return hfu.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostFileMutation object of the builder.
@@ -199,6 +253,12 @@ func (hfu *HostFileUpdate) ClearHost() *HostFileUpdate {
 // ClearTask clears the "task" edge to the Task entity.
 func (hfu *HostFileUpdate) ClearTask() *HostFileUpdate {
 	hfu.mutation.ClearTask()
+	return hfu
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hfu *HostFileUpdate) ClearShellTask() *HostFileUpdate {
+	hfu.mutation.ClearShellTask()
 	return hfu
 }
 
@@ -261,11 +321,13 @@ func (hfu *HostFileUpdate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
+	if v, ok := hfu.mutation.PreviewType(); ok {
+		if err := hostfile.PreviewTypeValidator(v); err != nil {
+			return &ValidationError{Name: "preview_type", err: fmt.Errorf(`ent: validator failed for field "HostFile.preview_type": %w`, err)}
+		}
+	}
 	if hfu.mutation.HostCleared() && len(hfu.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
-	}
-	if hfu.mutation.TaskCleared() && len(hfu.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostFile.task"`)
 	}
 	return nil
 }
@@ -324,6 +386,15 @@ func (hfu *HostFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if hfu.mutation.ContentCleared() {
 		_spec.ClearField(hostfile.FieldContent, field.TypeBytes)
 	}
+	if value, ok := hfu.mutation.PreviewType(); ok {
+		_spec.SetField(hostfile.FieldPreviewType, field.TypeEnum, value)
+	}
+	if value, ok := hfu.mutation.Preview(); ok {
+		_spec.SetField(hostfile.FieldPreview, field.TypeBytes, value)
+	}
+	if hfu.mutation.PreviewCleared() {
+		_spec.ClearField(hostfile.FieldPreview, field.TypeBytes)
+	}
 	if hfu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -375,6 +446,35 @@ func (hfu *HostFileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hfu.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hfu.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -535,6 +635,32 @@ func (hfuo *HostFileUpdateOne) ClearContent() *HostFileUpdateOne {
 	return hfuo
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (hfuo *HostFileUpdateOne) SetPreviewType(ht hostfile.PreviewType) *HostFileUpdateOne {
+	hfuo.mutation.SetPreviewType(ht)
+	return hfuo
+}
+
+// SetNillablePreviewType sets the "preview_type" field if the given value is not nil.
+func (hfuo *HostFileUpdateOne) SetNillablePreviewType(ht *hostfile.PreviewType) *HostFileUpdateOne {
+	if ht != nil {
+		hfuo.SetPreviewType(*ht)
+	}
+	return hfuo
+}
+
+// SetPreview sets the "preview" field.
+func (hfuo *HostFileUpdateOne) SetPreview(b []byte) *HostFileUpdateOne {
+	hfuo.mutation.SetPreview(b)
+	return hfuo
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (hfuo *HostFileUpdateOne) ClearPreview() *HostFileUpdateOne {
+	hfuo.mutation.ClearPreview()
+	return hfuo
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hfuo *HostFileUpdateOne) SetHostID(id int) *HostFileUpdateOne {
 	hfuo.mutation.SetHostID(id)
@@ -552,9 +678,36 @@ func (hfuo *HostFileUpdateOne) SetTaskID(id int) *HostFileUpdateOne {
 	return hfuo
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hfuo *HostFileUpdateOne) SetNillableTaskID(id *int) *HostFileUpdateOne {
+	if id != nil {
+		hfuo = hfuo.SetTaskID(*id)
+	}
+	return hfuo
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hfuo *HostFileUpdateOne) SetTask(t *Task) *HostFileUpdateOne {
 	return hfuo.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hfuo *HostFileUpdateOne) SetShellTaskID(id int) *HostFileUpdateOne {
+	hfuo.mutation.SetShellTaskID(id)
+	return hfuo
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hfuo *HostFileUpdateOne) SetNillableShellTaskID(id *int) *HostFileUpdateOne {
+	if id != nil {
+		hfuo = hfuo.SetShellTaskID(*id)
+	}
+	return hfuo
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hfuo *HostFileUpdateOne) SetShellTask(s *ShellTask) *HostFileUpdateOne {
+	return hfuo.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostFileMutation object of the builder.
@@ -571,6 +724,12 @@ func (hfuo *HostFileUpdateOne) ClearHost() *HostFileUpdateOne {
 // ClearTask clears the "task" edge to the Task entity.
 func (hfuo *HostFileUpdateOne) ClearTask() *HostFileUpdateOne {
 	hfuo.mutation.ClearTask()
+	return hfuo
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (hfuo *HostFileUpdateOne) ClearShellTask() *HostFileUpdateOne {
+	hfuo.mutation.ClearShellTask()
 	return hfuo
 }
 
@@ -646,11 +805,13 @@ func (hfuo *HostFileUpdateOne) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
+	if v, ok := hfuo.mutation.PreviewType(); ok {
+		if err := hostfile.PreviewTypeValidator(v); err != nil {
+			return &ValidationError{Name: "preview_type", err: fmt.Errorf(`ent: validator failed for field "HostFile.preview_type": %w`, err)}
+		}
+	}
 	if hfuo.mutation.HostCleared() && len(hfuo.mutation.HostIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "HostFile.host"`)
-	}
-	if hfuo.mutation.TaskCleared() && len(hfuo.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "HostFile.task"`)
 	}
 	return nil
 }
@@ -726,6 +887,15 @@ func (hfuo *HostFileUpdateOne) sqlSave(ctx context.Context) (_node *HostFile, er
 	if hfuo.mutation.ContentCleared() {
 		_spec.ClearField(hostfile.FieldContent, field.TypeBytes)
 	}
+	if value, ok := hfuo.mutation.PreviewType(); ok {
+		_spec.SetField(hostfile.FieldPreviewType, field.TypeEnum, value)
+	}
+	if value, ok := hfuo.mutation.Preview(); ok {
+		_spec.SetField(hostfile.FieldPreview, field.TypeBytes, value)
+	}
+	if hfuo.mutation.PreviewCleared() {
+		_spec.ClearField(hostfile.FieldPreview, field.TypeBytes)
+	}
 	if hfuo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -777,6 +947,35 @@ func (hfuo *HostFileUpdateOne) sqlSave(ctx context.Context) (_node *HostFile, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if hfuo.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hfuo.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

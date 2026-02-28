@@ -22,6 +22,8 @@ const (
 	FieldClosedAt = "closed_at"
 	// EdgeTask holds the string denoting the task edge name in mutations.
 	EdgeTask = "task"
+	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
+	EdgeShellTask = "shell_task"
 	// EdgeBeacon holds the string denoting the beacon edge name in mutations.
 	EdgeBeacon = "beacon"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
@@ -37,6 +39,13 @@ const (
 	TaskInverseTable = "tasks"
 	// TaskColumn is the table column denoting the task relation/edge.
 	TaskColumn = "portal_task"
+	// ShellTaskTable is the table that holds the shell_task relation/edge.
+	ShellTaskTable = "portals"
+	// ShellTaskInverseTable is the table name for the ShellTask entity.
+	// It exists in this package in order to avoid circular dependency with the "shelltask" package.
+	ShellTaskInverseTable = "shell_tasks"
+	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
+	ShellTaskColumn = "portal_shell_task"
 	// BeaconTable is the table that holds the beacon relation/edge.
 	BeaconTable = "portals"
 	// BeaconInverseTable is the table name for the Beacon entity.
@@ -72,8 +81,10 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"portal_task",
+	"portal_shell_task",
 	"portal_beacon",
 	"portal_owner",
+	"shell_portals",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -130,6 +141,13 @@ func ByTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByShellTaskField orders the results by shell_task field.
+func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByBeaconField orders the results by beacon field.
 func ByBeaconField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -162,6 +180,13 @@ func newTaskStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(TaskInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, TaskTable, TaskColumn),
+	)
+}
+func newShellTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellTaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ShellTaskTable, ShellTaskColumn),
 	)
 }
 func newBeaconStep() *sqlgraph.Step {

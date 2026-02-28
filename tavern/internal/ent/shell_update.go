@@ -12,8 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -69,6 +71,14 @@ func (su *ShellUpdate) SetTaskID(id int) *ShellUpdate {
 	return su
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (su *ShellUpdate) SetNillableTaskID(id *int) *ShellUpdate {
+	if id != nil {
+		su = su.SetTaskID(*id)
+	}
+	return su
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (su *ShellUpdate) SetTask(t *Task) *ShellUpdate {
 	return su.SetTaskID(t.ID)
@@ -96,6 +106,21 @@ func (su *ShellUpdate) SetOwner(u *User) *ShellUpdate {
 	return su.SetOwnerID(u.ID)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (su *ShellUpdate) AddPortalIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddPortalIDs(ids...)
+	return su
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (su *ShellUpdate) AddPortals(p ...*Portal) *ShellUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return su.AddPortalIDs(ids...)
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
 func (su *ShellUpdate) AddActiveUserIDs(ids ...int) *ShellUpdate {
 	su.mutation.AddActiveUserIDs(ids...)
@@ -109,6 +134,21 @@ func (su *ShellUpdate) AddActiveUsers(u ...*User) *ShellUpdate {
 		ids[i] = u[i].ID
 	}
 	return su.AddActiveUserIDs(ids...)
+}
+
+// AddShellTaskIDs adds the "shell_tasks" edge to the ShellTask entity by IDs.
+func (su *ShellUpdate) AddShellTaskIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddShellTaskIDs(ids...)
+	return su
+}
+
+// AddShellTasks adds the "shell_tasks" edges to the ShellTask entity.
+func (su *ShellUpdate) AddShellTasks(s ...*ShellTask) *ShellUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.AddShellTaskIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -134,6 +174,27 @@ func (su *ShellUpdate) ClearOwner() *ShellUpdate {
 	return su
 }
 
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (su *ShellUpdate) ClearPortals() *ShellUpdate {
+	su.mutation.ClearPortals()
+	return su
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (su *ShellUpdate) RemovePortalIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemovePortalIDs(ids...)
+	return su
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (su *ShellUpdate) RemovePortals(p ...*Portal) *ShellUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return su.RemovePortalIDs(ids...)
+}
+
 // ClearActiveUsers clears all "active_users" edges to the User entity.
 func (su *ShellUpdate) ClearActiveUsers() *ShellUpdate {
 	su.mutation.ClearActiveUsers()
@@ -153,6 +214,27 @@ func (su *ShellUpdate) RemoveActiveUsers(u ...*User) *ShellUpdate {
 		ids[i] = u[i].ID
 	}
 	return su.RemoveActiveUserIDs(ids...)
+}
+
+// ClearShellTasks clears all "shell_tasks" edges to the ShellTask entity.
+func (su *ShellUpdate) ClearShellTasks() *ShellUpdate {
+	su.mutation.ClearShellTasks()
+	return su
+}
+
+// RemoveShellTaskIDs removes the "shell_tasks" edge to ShellTask entities by IDs.
+func (su *ShellUpdate) RemoveShellTaskIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemoveShellTaskIDs(ids...)
+	return su
+}
+
+// RemoveShellTasks removes "shell_tasks" edges to ShellTask entities.
+func (su *ShellUpdate) RemoveShellTasks(s ...*ShellTask) *ShellUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return su.RemoveShellTaskIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -193,9 +275,6 @@ func (su *ShellUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (su *ShellUpdate) check() error {
-	if su.mutation.TaskCleared() && len(su.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
-	}
 	if su.mutation.BeaconCleared() && len(su.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
@@ -316,6 +395,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !su.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if su.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -354,6 +478,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if su.mutation.ShellTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedShellTasksIDs(); len(nodes) > 0 && !su.mutation.ShellTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.ShellTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -419,6 +588,14 @@ func (suo *ShellUpdateOne) SetTaskID(id int) *ShellUpdateOne {
 	return suo
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (suo *ShellUpdateOne) SetNillableTaskID(id *int) *ShellUpdateOne {
+	if id != nil {
+		suo = suo.SetTaskID(*id)
+	}
+	return suo
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (suo *ShellUpdateOne) SetTask(t *Task) *ShellUpdateOne {
 	return suo.SetTaskID(t.ID)
@@ -446,6 +623,21 @@ func (suo *ShellUpdateOne) SetOwner(u *User) *ShellUpdateOne {
 	return suo.SetOwnerID(u.ID)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (suo *ShellUpdateOne) AddPortalIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddPortalIDs(ids...)
+	return suo
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (suo *ShellUpdateOne) AddPortals(p ...*Portal) *ShellUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return suo.AddPortalIDs(ids...)
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
 func (suo *ShellUpdateOne) AddActiveUserIDs(ids ...int) *ShellUpdateOne {
 	suo.mutation.AddActiveUserIDs(ids...)
@@ -459,6 +651,21 @@ func (suo *ShellUpdateOne) AddActiveUsers(u ...*User) *ShellUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return suo.AddActiveUserIDs(ids...)
+}
+
+// AddShellTaskIDs adds the "shell_tasks" edge to the ShellTask entity by IDs.
+func (suo *ShellUpdateOne) AddShellTaskIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddShellTaskIDs(ids...)
+	return suo
+}
+
+// AddShellTasks adds the "shell_tasks" edges to the ShellTask entity.
+func (suo *ShellUpdateOne) AddShellTasks(s ...*ShellTask) *ShellUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.AddShellTaskIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -484,6 +691,27 @@ func (suo *ShellUpdateOne) ClearOwner() *ShellUpdateOne {
 	return suo
 }
 
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (suo *ShellUpdateOne) ClearPortals() *ShellUpdateOne {
+	suo.mutation.ClearPortals()
+	return suo
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (suo *ShellUpdateOne) RemovePortalIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemovePortalIDs(ids...)
+	return suo
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (suo *ShellUpdateOne) RemovePortals(p ...*Portal) *ShellUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return suo.RemovePortalIDs(ids...)
+}
+
 // ClearActiveUsers clears all "active_users" edges to the User entity.
 func (suo *ShellUpdateOne) ClearActiveUsers() *ShellUpdateOne {
 	suo.mutation.ClearActiveUsers()
@@ -503,6 +731,27 @@ func (suo *ShellUpdateOne) RemoveActiveUsers(u ...*User) *ShellUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return suo.RemoveActiveUserIDs(ids...)
+}
+
+// ClearShellTasks clears all "shell_tasks" edges to the ShellTask entity.
+func (suo *ShellUpdateOne) ClearShellTasks() *ShellUpdateOne {
+	suo.mutation.ClearShellTasks()
+	return suo
+}
+
+// RemoveShellTaskIDs removes the "shell_tasks" edge to ShellTask entities by IDs.
+func (suo *ShellUpdateOne) RemoveShellTaskIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemoveShellTaskIDs(ids...)
+	return suo
+}
+
+// RemoveShellTasks removes "shell_tasks" edges to ShellTask entities.
+func (suo *ShellUpdateOne) RemoveShellTasks(s ...*ShellTask) *ShellUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return suo.RemoveShellTaskIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
@@ -556,9 +805,6 @@ func (suo *ShellUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (suo *ShellUpdateOne) check() error {
-	if suo.mutation.TaskCleared() && len(suo.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Shell.task"`)
-	}
 	if suo.mutation.BeaconCleared() && len(suo.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Shell.beacon"`)
 	}
@@ -696,6 +942,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if suo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !suo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if suo.mutation.ActiveUsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -734,6 +1025,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.ShellTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedShellTasksIDs(); len(nodes) > 0 && !suo.mutation.ShellTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.ShellTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

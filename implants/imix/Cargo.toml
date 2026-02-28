@@ -1,6 +1,6 @@
 [package]
 name = "imix"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 
 [lib]
@@ -35,11 +35,13 @@ crossterm = { workspace = true }
 prost-types = { workspace = true }
 pretty_env_logger = { workspace = true }
 eldritch = { workspace = true, features = ["std", "stdlib"] }
+eldritch-agent = { workspace = true }
 transport = { workspace = true }
 pb = { workspace = true, features = ["imix"] }
 portable-pty = { workspace = true }
 rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
+rand = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }

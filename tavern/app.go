@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"crypto/ecdh"
+	"crypto/ed25519"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -22,6 +25,9 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/builder/executor"
 	"realm.pub/tavern/internal/c2"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/cdn"
@@ -31,6 +37,7 @@ import (
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
 	tavernhttp "realm.pub/tavern/internal/http"
+	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
@@ -79,12 +86,17 @@ func newApp(ctx context.Context) (app *cli.App) {
 					Usage: "Transport protocol to use for redirector",
 					Value: "grpc",
 				},
+				cli.StringFlag{
+					Name:  "tls-hostname",
+					Usage: "Enable TLS and use this hostname for certificate provisioning via ACME (e.g. redirector.example.com); falls back to self-signed if ACME fails",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				var (
-					upstream  = c.Args().First()
-					listenOn  = c.String("listen")
-					transport = c.String("transport")
+					upstream    = c.Args().First()
+					listenOn    = c.String("listen")
+					transport   = c.String("transport")
+					tlsHostname = c.String("tls-hostname")
 				)
 				if upstream == "" {
 					return fmt.Errorf("gRPC upstream address is required (first argument)")
@@ -95,8 +107,19 @@ func newApp(ctx context.Context) (app *cli.App) {
 				if transport == "" {
 					transport = "grpc"
 				}
-				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn)
-				return redirectors.Run(ctx, transport, listenOn, upstream)
+
+				var tlsCfg *tls.Config
+				if tlsHostname != "" {
+					var err error
+					tlsCfg, err = redirectors.NewTLSConfig(ctx, tlsHostname)
+					if err != nil {
+						return fmt.Errorf("failed to configure TLS: %w", err)
+					}
+					slog.InfoContext(ctx, "TLS configured for redirector", "hostname", tlsHostname)
+				}
+
+				slog.InfoContext(ctx, "starting redirector", "upstream", upstream, "transport", transport, "listen_on", listenOn, "tls_hostname", tlsHostname)
+				return redirectors.Run(ctx, transport, listenOn, upstream, tlsCfg)
 			},
 			Subcommands: cli.Commands{
 				cli.Command{
@@ -115,6 +138,39 @@ func newApp(ctx context.Context) (app *cli.App) {
 						return nil
 					},
 				},
+			},
+		},
+		{
+			Name:  "builder",
+			Usage: "Run a builder that compiles agents for target platforms",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "config",
+					Usage: "Path to the builder YAML configuration file",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				configPath := c.String("config")
+				if configPath == "" {
+					return fmt.Errorf("--config flag is required")
+				}
+
+				cfg, err := builder.ParseConfig(configPath)
+				if err != nil {
+					return fmt.Errorf("failed to parse builder config: %w", err)
+				}
+
+				slog.InfoContext(ctx, "starting builder",
+					"config", configPath,
+					"supported_targets", cfg.SupportedTargets,
+				)
+
+				exec, err := executor.NewDockerExecutorFromEnv(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to create docker executor: %w", err)
+				}
+
+				return builder.Run(ctx, cfg, exec)
 			},
 		},
 	}
@@ -210,6 +266,21 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Initialize Git Tome Importer
 	git := cfg.NewGitImporter(client)
 
+	// Initialize Builder CA
+	builderCACert, builderCAKey, err := getBuilderCA()
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize builder CA: %w", err)
+	}
+
+	// Get server X25519 public key for agent builds
+	serverX25519PubKey, err := GetPubKey()
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to get server X25519 public key: %w", err)
+	}
+	serverPubkeyB64 := base64.StdEncoding.EncodeToString(serverX25519PubKey.Bytes())
+
 	// Initialize Test Data
 	if cfg.IsTestDataEnabled() {
 		createTestData(ctx, client)
@@ -269,7 +340,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git),
+			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -280,6 +351,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/portal.Portal/": tavernhttp.Endpoint{
 			Handler: newPortalGRPCHandler(client, portalMux),
 		},
+		"/builder.Builder/": tavernhttp.Endpoint{
+			Handler:              newBuilderGRPCHandler(client, builderCACert, serverPubkeyB64),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/cdn/": tavernhttp.Endpoint{
 			Handler:              cdn.NewLinkDownloadHandler(client, "/cdn/"),
 			AllowUnauthenticated: true,
@@ -288,11 +364,20 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		"/cdn/hostfiles/": tavernhttp.Endpoint{
 			Handler: cdn.NewHostFileDownloadHandler(client, "/cdn/hostfiles/"),
 		},
+		"/cdn/screenshots/": tavernhttp.Endpoint{
+			Handler: cdn.NewScreenshotDownloadHandler(client, "/cdn/screenshots/"),
+		},
+		"/assets/download/": tavernhttp.Endpoint{
+			Handler: cdn.NewDownloadHandler(client, "/assets/download/"),
+		},
 		"/cdn/upload": tavernhttp.Endpoint{
 			Handler: cdn.NewUploadHandler(client),
 		},
 		"/shell/ws": tavernhttp.Endpoint{
 			Handler: stream.NewShellHandler(client, wsShellMux),
+		},
+		"/shellv2/ws": tavernhttp.Endpoint{
+			Handler: tavernshell.NewHandler(client, portalMux),
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
@@ -360,8 +445,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	return tSrv, nil
 }
 
-func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter) http.Handler {
-	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter))
+func newGraphQLHandler(client *ent.Client, repoImporter graphql.RepoImporter, options ...func(*graphql.Resolver)) http.Handler {
+	srv := handler.NewDefaultServer(graphql.NewSchema(client, repoImporter, options...))
 	srv.Use(entgql.Transactioner{TxOpener: client})
 
 	// Configure Raw Query Logging
@@ -477,6 +562,27 @@ func getKeyPairEd25519() (pubKey []byte, privKey []byte, err error) {
 	return pubKey, privKey, nil
 }
 
+// getBuilderCA returns the Builder CA certificate and private key for signing builder certificates.
+// It uses the existing ED25519 key from the secrets manager.
+func getBuilderCA() (caCert *x509.Certificate, caKey ed25519.PrivateKey, err error) {
+	secretsManager, err := newSecretsManager()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	caKey, err = crypto.GetPrivKeyED25519(secretsManager)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get ED25519 private key: %w", err)
+	}
+
+	caCert, err = builder.CreateCA(caKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create builder CA: %w", err)
+	}
+
+	return caCert, caKey, nil
+}
+
 func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 	portalSrv := portals.New(graph, portalMux)
 	grpcSrv := grpc.NewServer(
@@ -484,6 +590,34 @@ func newPortalGRPCHandler(graph *ent.Client, portalMux *mux.Mux) http.Handler {
 		grpc.StreamInterceptor(grpcWithStreamMetrics),
 	)
 	portalpb.RegisterPortalServer(grpcSrv, portalSrv)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ProtoMajor != 2 {
+			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)
+			return
+		}
+
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "application/grpc") {
+			http.Error(w, "must specify Content-Type application/grpc", http.StatusBadRequest)
+			return
+		}
+
+		grpcSrv.ServeHTTP(w, r)
+	})
+}
+
+func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverPubkey string) http.Handler {
+	builderSrv := builder.New(client, serverPubkey)
+	grpcSrv := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			builder.NewMTLSAuthInterceptor(caCert, client),
+			grpcWithUnaryMetrics,
+		),
+		grpc.ChainStreamInterceptor(
+			builder.NewMTLSStreamAuthInterceptor(caCert, client),
+			grpcWithStreamMetrics,
+		),
+	)
+	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor != 2 {
 			http.Error(w, "grpc requires HTTP/2", http.StatusBadRequest)

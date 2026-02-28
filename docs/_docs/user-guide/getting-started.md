@@ -51,7 +51,7 @@ The warnings you see here indicate that there are settings recommended for produ
 
 ### Tavern (Redirector)
 
-If your adventure requires you to roll for stealth Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including GRPC, HTTP1, and DNS. Out of the box tavern c2 only uses grpc but by adding a redirector you unlock any any supported protocol.
+If your adventure requires you to roll for stealth, Tavern's redirectors have your back! Redirectors allow you to forward traffic from multiple different IPs, Domains, and even protocols. Including gRPC, HTTP/1.1, and DNS. Out of the box, Tavern C2 only uses gRPC, but by adding a redirector you unlock any supported protocol.
 
 ```bash
 git clone https://github.com/spellshift/realm.git
@@ -87,7 +87,7 @@ These configurations can be controlled via Environment Variables at `imix` compi
 
 ### Quests
 
-Now it's time to provide our [Beacon](/user-guide/terminology#beacon) it's first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+Now it's time to provide our [Beacon](/user-guide/terminology#beacon) its first [Task](/user-guide/terminology#task). We do this, by creating a [Quest](/user-guide/terminology#quest) in the UI, which represents a collection of [Tasks](/user-guide/terminology#task) across one or more [Hosts](/user-guide/terminology#host). Let's open our UI, which should be available at [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
 
 #### Beacon Selection
 
@@ -97,7 +97,7 @@ Now from the left navigation menu, select "Create new quest".
 
 ![create-new-quest](/assets/img/user-guide/getting-started/create-new-quest.png)
 
-This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. You can use the "View one beacon per host" toggle to filter and display only the best beacon per host, which prioritizes beacons with admin privileges and better transport protocols (GRPC > HTTP > DNS). This is useful when you have multiple beacons on the same host and want to task only the most capable one. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
+This view will show all of our active [Beacons](/user-guide/terminology#beacon) available for tasking. You can use the "View one beacon per host" toggle to filter and display only the Best Beacon per Host, which prioritizes beacons with admin privileges and better transport protocols (gRPC > HTTP > DNS). This is useful when you have multiple beacons on the same host and want to task only the most capable one. For now, simply select your creatively-named [Beacon](/user-guide/terminology#beacon) and click "Continue".
 
 #### Tome Selection
 
@@ -115,7 +115,7 @@ Lastly, we'll be greeted with a prompt displaying a summary of the [Quest](/user
 
 #### Results
 
-Now, in your `imix` logs you'll see that when it calls back, it will obtain the [Tome](/user-guide/terminology#tome) from Tavern and evaluate it. On it's next callback, it will report the results.
+Now, in your `imix` logs you'll see that when it calls back, it will obtain the [Tome](/user-guide/terminology#tome) from Tavern and evaluate it. On its next callback, it will report the results.
 
 ![imix-tome-eval](/assets/img/user-guide/getting-started/imix-tome-eval.png)
 

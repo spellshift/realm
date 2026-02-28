@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-libreport"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 
 [dependencies]
@@ -8,9 +8,13 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
+nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+xcap = { workspace = true, optional = true }
+image = { version = "0.25", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
 fake_bindings = []

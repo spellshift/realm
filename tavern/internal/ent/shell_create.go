@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -79,6 +81,14 @@ func (sc *ShellCreate) SetTaskID(id int) *ShellCreate {
 	return sc
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (sc *ShellCreate) SetNillableTaskID(id *int) *ShellCreate {
+	if id != nil {
+		sc = sc.SetTaskID(*id)
+	}
+	return sc
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (sc *ShellCreate) SetTask(t *Task) *ShellCreate {
 	return sc.SetTaskID(t.ID)
@@ -106,6 +116,21 @@ func (sc *ShellCreate) SetOwner(u *User) *ShellCreate {
 	return sc.SetOwnerID(u.ID)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (sc *ShellCreate) AddPortalIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddPortalIDs(ids...)
+	return sc
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (sc *ShellCreate) AddPortals(p ...*Portal) *ShellCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sc.AddPortalIDs(ids...)
+}
+
 // AddActiveUserIDs adds the "active_users" edge to the User entity by IDs.
 func (sc *ShellCreate) AddActiveUserIDs(ids ...int) *ShellCreate {
 	sc.mutation.AddActiveUserIDs(ids...)
@@ -119,6 +144,21 @@ func (sc *ShellCreate) AddActiveUsers(u ...*User) *ShellCreate {
 		ids[i] = u[i].ID
 	}
 	return sc.AddActiveUserIDs(ids...)
+}
+
+// AddShellTaskIDs adds the "shell_tasks" edge to the ShellTask entity by IDs.
+func (sc *ShellCreate) AddShellTaskIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddShellTaskIDs(ids...)
+	return sc
+}
+
+// AddShellTasks adds the "shell_tasks" edges to the ShellTask entity.
+func (sc *ShellCreate) AddShellTasks(s ...*ShellTask) *ShellCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return sc.AddShellTaskIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -176,9 +216,6 @@ func (sc *ShellCreate) check() error {
 	}
 	if _, ok := sc.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`ent: missing required field "Shell.data"`)}
-	}
-	if len(sc.mutation.TaskIDs()) == 0 {
-		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "Shell.task"`)}
 	}
 	if len(sc.mutation.BeaconIDs()) == 0 {
 		return &ValidationError{Name: "beacon", err: errors.New(`ent: missing required edge "Shell.beacon"`)}
@@ -280,6 +317,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 		_node.shell_owner = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := sc.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.PortalsTable,
+			Columns: []string{shell.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := sc.mutation.ActiveUsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -289,6 +342,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ShellTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.ShellTasksTable,
+			Columns: []string{shell.ShellTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

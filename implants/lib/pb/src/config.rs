@@ -1,4 +1,5 @@
 use anyhow::Context;
+use host_unique::HostIDSelector;
 use url::Url;
 use uuid::Uuid;
 
@@ -43,12 +44,6 @@ macro_rules! callback_interval {
  */
 pub const CALLBACK_INTERVAL: &str = callback_interval!();
 
-/* Default interval value in seconds */
-const DEFAULT_INTERVAL_SECONDS: u64 = 5;
-
-/* Default extra config value */
-const DEFAULT_EXTRA_CONFIG: &str = "";
-
 macro_rules! retry_interval {
     () => {
         match option_env!("IMIX_RETRY_INTERVAL") {
@@ -74,11 +69,14 @@ macro_rules! run_once {
 macro_rules! extra {
     () => {
         match option_env!("IMIX_TRANSPORT_EXTRA") {
-            Some(extra) => extra.to_lowercase(),
-            None => String::from(""),
+            Some(extra) => extra,
+            None => "",
         }
     };
 }
+
+/* Default extra config value */
+const DEFAULT_EXTRA_CONFIG: &str = extra!();
 
 /* Compile-time constant for the agent run once flag, derived from the IMIX_RUN_ONCE environment variable during compilation.
  * Defaults to false if unset.
@@ -104,8 +102,9 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  * Supports DSN format with query parameters:
  * - interval: callback interval in seconds (overrides default)
  * - extra: extra configuration JSON (overrides default)
+ * - jitter: callback jitter float [0.0, 1.0] (overrides default 0.0)
  *
- * Example: https://example.com?interval=10&extra={"key":"value"}
+ * Example: https://example.com?interval=10&extra={"key":"value"}&jitter=0.5
  */
 fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
@@ -126,8 +125,9 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     // Parse as a URL to extract query parameters
     let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
-    let mut interval = DEFAULT_INTERVAL_SECONDS;
-    let mut extra = DEFAULT_EXTRA_CONFIG.to_string();
+    let mut interval = parse_callback_interval()?;
+    let mut extra = DEFAULT_EXTRA_CONFIG.to_lowercase();
+    let mut jitter = 0.0;
 
     // Parse query parameters
     for (key, value) in parsed_url.query_pairs() {
@@ -139,6 +139,11 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
             }
             "extra" => {
                 extra = value.to_lowercase();
+            }
+            "jitter" => {
+                jitter = value
+                    .parse::<f32>()
+                    .with_context(|| format!("Failed to parse jitter parameter '{}'", value))?;
             }
             _ => {
                 #[cfg(debug_assertions)]
@@ -156,6 +161,7 @@ fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
         interval,
         r#type: get_transport_type(uri) as i32,
         extra,
+        jitter,
     })
 }
 
@@ -171,6 +177,24 @@ fn parse_callback_interval() -> anyhow::Result<u64> {
     })
 }
 
+fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
+    let final_res = match option_env!("IMIX_UNIQUE") {
+        Some(json) => {
+            if let Some(res) = host_unique::from_imix_unique(json.to_owned()) {
+                return res;
+            } else {
+                #[cfg(debug_assertions)]
+                log::error!(
+                    "Error parsing uniqueness string (should have been caught at build time"
+                );
+                return host_unique::defaults();
+            }
+        }
+        None => host_unique::defaults(),
+    };
+    final_res
+}
+
 /*
  * Config methods.
  */
@@ -180,7 +204,7 @@ impl Config {
             identifier: format!("imix-v{}", imix_version),
         };
 
-        let selectors = host_unique::defaults();
+        let selectors = parse_host_unique_selectors();
 
         let host = crate::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
@@ -290,6 +314,8 @@ fn get_primary_ip() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const DEFAULT_INTERVAL_SECONDS: u64 = 5;
 
     #[test]
     fn test_single_uri_parsing() {
@@ -434,7 +460,7 @@ mod tests {
         assert_eq!(transports.len(), 1);
         assert_eq!(transports[0].uri, "https://example.com/");
         assert_eq!(transports[0].interval, DEFAULT_INTERVAL_SECONDS);
-        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG);
+        assert_eq!(transports[0].extra, DEFAULT_EXTRA_CONFIG.to_lowercase());
     }
 
     #[test]
@@ -475,5 +501,15 @@ mod tests {
             transports[0].extra,
             r#"{"key":"value","nested":{"foo":"bar"}}"#
         );
+    }
+
+    #[test]
+    fn test_dsn_with_jitter() {
+        let uris = "https://example.com?jitter=0.5";
+        let transports = parse_transports(uris);
+
+        assert_eq!(transports.len(), 1);
+        assert_eq!(transports[0].uri, "https://example.com/");
+        assert_eq!(transports[0].jitter, 0.5);
     }
 }

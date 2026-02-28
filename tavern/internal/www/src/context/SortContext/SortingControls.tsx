@@ -1,29 +1,10 @@
 import { BarsArrowDownIcon, BarsArrowUpIcon } from "@heroicons/react/24/outline";
 import { useSorts } from "./SortContext";
-import { HostOrderField, OrderDirection, PageNavItem, QuestOrderField, TaskOrderField } from "../../utils/enums";
+import { OrderDirection } from "../../utils/enums";
 import { ButtonDialogPopover } from "../../components/ButtonDialogPopover";
 import SingleDropdownSelector, { Option } from "../../components/tavern-base-ui/SingleDropdownSelector";
 import { ReactElement } from "react";
-import { useLocation } from "react-router-dom";
-import { getNavItemFromPath, isHostDetailPath } from "../../utils/utils";
-
-type SortPageType = PageNavItem.hosts | PageNavItem.quests | PageNavItem.tasks;
-
-const sortablePages = new Set<PageNavItem>([PageNavItem.quests, PageNavItem.tasks, PageNavItem.hosts]);
-
-function getSortPageType(pathname: string): SortPageType | null {
-    // Host detail pages sort by tasks
-    if (isHostDetailPath(pathname)) return PageNavItem.tasks;
-
-    const navItem = getNavItemFromPath(pathname);
-    return sortablePages.has(navItem) ? navItem as SortPageType : null;
-}
-
-const orderFieldOptionsMap = {
-    [PageNavItem.hosts]: createOrderFieldOptions(HostOrderField),
-    [PageNavItem.quests]: createOrderFieldOptions(QuestOrderField),
-    [PageNavItem.tasks]: createOrderFieldOptions(TaskOrderField),
-};
+import { formatEnumLabel, orderFieldOptionsMap, SortablePageNavItem } from "./sortingUtils";
 
 const directionOptions = [
     {
@@ -35,14 +16,6 @@ const directionOptions = [
         value: OrderDirection.Desc
     }
 ];
-
-
-function formatEnumLabel(enumValue: string): string {
-    return enumValue
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-}
 
 function getDirectionField(direction: OrderDirection): Option {
     if (direction === OrderDirection.Asc) {
@@ -59,24 +32,14 @@ function getDirectionIcon(direction: OrderDirection): ReactElement {
     return <BarsArrowDownIcon className="w-4" />
 }
 
-function createOrderFieldOptions<T extends QuestOrderField | TaskOrderField | HostOrderField>(
-    enumObj: Record<string, T>
-): Array<Option> {
-    return Object.values(enumObj).map((field) => ({
-        label: formatEnumLabel(field),
-        value: field,
-    }));
-}
+type SortingControlsProps = {
+    sortType: SortablePageNavItem;
+};
 
-
-export default function SortingControls() {
-    const { pathname } = useLocation();
-    const type = getSortPageType(pathname);
+export default function SortingControls({ sortType }: SortingControlsProps) {
     const { sorts, updateSorts } = useSorts();
 
-    if (!type) return null;
-
-    const sortFieldsInUse = sorts[type];
+    const sortFieldsInUse = sorts[sortType];
 
     const activeFieldSortOption = {
         label: formatEnumLabel(sortFieldsInUse.field),
@@ -85,7 +48,7 @@ export default function SortingControls() {
 
     const activeDirectionSortOption = getDirectionField(sortFieldsInUse.direction);
 
-    const orderFieldOptions = orderFieldOptionsMap[type];
+    const orderFieldOptions = orderFieldOptionsMap[sortType];
 
     const leftIcon = getDirectionIcon(sortFieldsInUse.direction)
 
@@ -99,14 +62,14 @@ export default function SortingControls() {
                     <SingleDropdownSelector
                         label="Field"
                         options={orderFieldOptions}
-                        setSelectedOption={(option: Option) => updateSorts({ [type]: { field: option.value, direction: activeDirectionSortOption.value } })}
+                        setSelectedOption={(option: Option) => updateSorts({ [sortType]: { field: option.value, direction: activeDirectionSortOption.value } })}
                         isSearchable={false}
                         defaultValue={activeFieldSortOption}
                     />
                     <SingleDropdownSelector
                         label="Direction"
                         options={directionOptions}
-                        setSelectedOption={(option: Option) => updateSorts({ [type]: { field: activeFieldSortOption.value, direction: option.value } })}
+                        setSelectedOption={(option: Option) => updateSorts({ [sortType]: { field: activeFieldSortOption.value, direction: option.value } })}
                         isSearchable={false}
                         defaultValue={activeDirectionSortOption}
                     />
