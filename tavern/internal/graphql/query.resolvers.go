@@ -222,6 +222,11 @@ func (r *queryResolver) Builders(ctx context.Context, after *entgql.Cursor[int],
 	return query.Paginate(ctx, after, first, before, last, ent.WithBuilderOrder(orderBy))
 }
 
+// Screenshots is the resolver for the screenshots field.
+func (r *queryResolver) Screenshots(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) (*ent.ScreenshotConnection, error) {
+	panic(fmt.Errorf("not implemented: Screenshots - screenshots"))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	if authUser := auth.UserFromContext(ctx); authUser != nil {
