@@ -690,10 +690,23 @@ func truncateInput(input string) string {
 // This is needed because the macro adds a lot of boilerplate that clutters the input display in the frontend.
 // See expand_macros() in eldritch-wasm/src/headless.rs for how we do this macro.
 func truncateShellMacro(input string) string {
-	expandedMacroPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
-	expandedMacroSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"
-	input = strings.TrimPrefix(input, expandedMacroPrefix)
-	input = strings.TrimSuffix(input, expandedMacroSuffix)
+	// New single-line macro format
+	newPrefix := "for _nonomacroclowntown in range(1): _nonomacroclowntown = "
+	newSuffix := "; print(_nonomacroclowntown['stdout']); print(_nonomacroclowntown['stderr'])"
+
+	if strings.HasPrefix(input, newPrefix) && strings.HasSuffix(input, newSuffix) {
+		input = strings.TrimPrefix(input, newPrefix)
+		input = strings.TrimSuffix(input, newSuffix)
+		return input
+	}
+
+	// Old multi-line macro format (backward compatibility)
+	oldPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
+	oldSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"
+	if strings.HasPrefix(input, oldPrefix) {
+		input = strings.TrimPrefix(input, oldPrefix)
+		input = strings.TrimSuffix(input, oldSuffix)
+	}
 	return input
 }
 
