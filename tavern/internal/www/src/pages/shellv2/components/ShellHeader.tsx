@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug } from "lucide-react";
+import { Bug, Laptop } from "lucide-react";
+import { FaLinux, FaApple, FaWindows, FaFreebsd } from "react-icons/fa";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Tooltip } from "@chakra-ui/react";
@@ -12,6 +13,21 @@ interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
 }
+
+const PlatformIcon = ({ platform }: { platform: string }) => {
+  switch (platform) {
+    case SupportedPlatforms.Linux:
+      return <FaLinux size={20} title="Linux" />;
+    case SupportedPlatforms.MacOS:
+      return <FaApple size={20} title="macOS" />;
+    case SupportedPlatforms.Windows:
+      return <FaWindows size={20} title="Windows" />;
+    case SupportedPlatforms.BSD:
+      return <FaFreebsd size={20} title="BSD" />;
+    default:
+      return <Laptop size={20} />;
+  }
+};
 
 const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }) => {
   const beaconName = shellData?.node?.beacon?.name;
@@ -30,7 +46,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
     <div className="flex items-center gap-4 mb-4">
       <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
       <Badge badgeStyle={{ color: "red" }}>BETA</Badge>
-      <h1 className="text-xl font-bold">
+      <h1 className="text-xl font-bold flex items-center gap-2">
+        <PlatformIcon platform={platform} />
         <Tooltip label={
           <div className="flex flex-col">
             <span>Principal: {principal}</span>
