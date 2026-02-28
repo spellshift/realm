@@ -70,19 +70,21 @@ export const highlightPythonSyntax = (input: string): string => {
 
     // Order matters for regex capture groups
     const regex = new RegExp([
-        // 1. Strings (single/double quoted)
-        /((["'])(?:\\.|[^\\])*?\2)/.source,
-        // 2. Comments (#...)
+        // 1. f-Strings (f"..." or f'...')
+        /(f(?:(["'])(?:\\.|[^\\])*?\2))/.source,
+        // 3. Strings (single/double quoted)
+        /((["'])(?:\\.|[^\\])*?\4)/.source,
+        // 5. Comments (#...)
         /(#.*)/.source,
-        // 3. Keywords
+        // 6. Keywords
         /(\b(?:def|class|import|from|return|if|else|elif|while|for|try|except|finally|with|as|pass|break|continue|lambda|yield|global|nonlocal|assert|del|raise)\b)/.source,
-        // 4. Operands
+        // 7. Operands
         /(\b(?:is|not|in|and|or|True|False|None)\b)/.source,
-        // 5. Built-ins / Methods
+        // 8. Built-ins / Methods
         `(\\b(?:${builtinsPattern})\\b)`,
-        // 6. Numbers
+        // 9. Numbers
         /(\b\d+\b)/.source,
-        // 7. Punctuation
+        // 10. Punctuation
         /([()[\]{}])/.source
     ].join("|"), "g");
 
@@ -99,24 +101,32 @@ export const highlightPythonSyntax = (input: string): string => {
 
         const text = match[0];
         if (match[1]) {
+            // f-String
+            const replaced = text.replace(/\{\{|\}\}|\{[^}]*\}/g, (m) => {
+                if (m === '{{' || m === '}}') return m;
+                const inner = m.slice(1, -1);
+                return `${RESET}${COLOR_PUNCTUATION_1}{${RESET}${highlightPythonSyntax(inner)}${COLOR_PUNCTUATION_1}}${RESET}${COLOR_STRING}`;
+            });
+            result += `${COLOR_STRING}${replaced}${RESET}`;
+        } else if (match[3]) {
             // String
             result += `${COLOR_STRING}${text}${RESET}`;
-        } else if (match[3]) {
+        } else if (match[5]) {
             // Comment
             result += `${COLOR_COMMENT}${text}${RESET}`;
-        } else if (match[4]) {
+        } else if (match[6]) {
             // Keyword
             result += `${COLOR_KEYWORD}${text}${RESET}`;
-        } else if (match[5]) {
+        } else if (match[7]) {
             // Operand
             result += `${COLOR_OPERAND}${text}${RESET}`;
-        } else if (match[6]) {
+        } else if (match[8]) {
             // Built-in / Method
             result += `${COLOR_METHOD}${text}${RESET}`;
-        } else if (match[7]) {
+        } else if (match[9]) {
             // Number
             result += `${COLOR_NUMBER}${text}${RESET}`;
-        } else if (match[8]) {
+        } else if (match[10]) {
             // Punctuation
             if (/[)\]}]/.test(text)) {
                 depth = Math.max(0, depth - 1);
