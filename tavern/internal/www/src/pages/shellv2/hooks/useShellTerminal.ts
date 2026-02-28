@@ -544,10 +544,54 @@ export const useShellTerminal = (
             // Check for connection status and block input
             if (connectionStatusRef.current !== "connected") return;
 
-            const code = data.charCodeAt(0);
             const state = shellState.current;
             const term = termInstance.current;
             if (!term) return;
+
+            // Handle multi-line paste
+            if (data.length > 1 && !data.includes("\x1b") && (data.includes("\r") || data.includes("\n"))) {
+                const parts = data.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+                for (let i = 0; i < parts.length; i++) {
+                    const part = parts[i];
+                    if (part) {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + part + state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos += part.length;
+                    }
+                    if (i < parts.length - 1) {
+                        redrawLine();
+                        term.write("\r\n");
+                        const res = adapter.current?.input(state.inputBuffer);
+                        state.currentBlock += state.inputBuffer + "\n";
+                        if (res?.status === "complete") {
+                            if (state.currentBlock.trim()) {
+                                state.history.push(state.currentBlock.trimEnd());
+                                saveHistory(state.history);
+                            }
+                            state.currentBlock = "";
+                            state.historyIndex = -1;
+                            state.inputBuffer = "";
+                            state.cursorPos = 0;
+                            state.prompt = ">>> ";
+                        } else if (res?.status === "incomplete") {
+                            state.prompt = res.prompt || ".. ";
+                            term.write(state.prompt);
+                            state.inputBuffer = "";
+                            state.cursorPos = 0;
+                        } else {
+                            term.write(`Error: ${res?.message}\r\n>>> `);
+                            state.currentBlock = "";
+                            state.inputBuffer = "";
+                            state.cursorPos = 0;
+                            state.prompt = ">>> ";
+                        }
+                        lastBufferHeight.current = 0;
+                    }
+                }
+                redrawLine();
+                return;
+            }
+
+            const code = data.charCodeAt(0);
 
             // If completions are showing, handle navigation
             if (completionsRef.current.show) {
@@ -631,6 +675,11 @@ export const useShellTerminal = (
 
             // Normal mode
             if (data === "\x03") { // Ctrl+C
+                if (term.hasSelection()) {
+                    navigator.clipboard.writeText(term.getSelection());
+                    term.clearSelection();
+                    return;
+                }
                 adapter.current?.reset();
                 term.write("^C\r\n");
                 state.inputBuffer = "";
