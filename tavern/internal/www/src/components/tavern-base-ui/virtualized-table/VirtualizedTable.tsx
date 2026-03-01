@@ -20,6 +20,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     overscan = 5,
     height = "calc(100vh - 180px)",
     minHeight = "400px",
+    headerVisible = true
 }: VirtualizedTableProps<TData, TResponse>) {
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const useDynamicSizing = expandable !== undefined;
@@ -132,23 +133,25 @@ export function VirtualizedTable<TData, TResponse = unknown>({
             }}
         >
             {/* Header */}
-            <div
-                className='bg-gray-50 sticky top-0 grid gap-4 px-6 py-3 border-b border-gray-200'
-                style={{
-                    gridTemplateColumns: headerGridTemplateColumns,
-                    minWidth,
-                }}
-            >
-                {expandable && <div />}
-                {columns.map((column) => (
-                    <div
-                        key={column.key}
-                        className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                        {column.label}
-                    </div>
-                ))}
-            </div>
+            {headerVisible && 
+                <div
+                    className='bg-gray-50 sticky top-0 grid gap-4 px-6 py-3 border-b border-gray-200'
+                    style={{
+                        gridTemplateColumns: headerGridTemplateColumns,
+                        minWidth,
+                    }}
+                >
+                    {expandable && <div />}
+                    {columns.map((column) => (
+                        <div
+                            key={column.key}
+                            className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                            {column.label}
+                        </div>
+                    ))}
+                </div>
+            }
 
             {/* Virtualized rows */}
             <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>

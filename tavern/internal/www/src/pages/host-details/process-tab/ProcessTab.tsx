@@ -7,7 +7,7 @@ import { useProcessIds } from "./useProcessIds";
 import { useNavigate, useParams } from "react-router-dom";
 import { PageNavItem } from "../../../utils/enums";
 
-const ProcessTab = () => {
+const ProcessTab = ({handleOpenCreateQuest}:{handleOpenCreateQuest: () => void}) => {
     const { hostId } = useParams();
     const nav = useNavigate();
 
@@ -65,7 +65,7 @@ const ProcessTab = () => {
                         label="No process list reported"
                     >
                        <Button
-                            onClick={()=> nav("/createQuest")}
+                            onClick={handleOpenCreateQuest}
                             buttonVariant="solid"
                             buttonStyle={{ color: "purple", size: "md" }}
                         >
