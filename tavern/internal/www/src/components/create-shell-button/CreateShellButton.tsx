@@ -2,7 +2,6 @@ import React, { useMemo, useCallback } from 'react';
 import { useMutation, useQuery } from '@apollo/client';
 import { Tooltip, useToast } from '@chakra-ui/react';
 import { Terminal } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { add } from 'date-fns';
 
 import Button from '../tavern-base-ui/button/Button';
@@ -76,7 +75,6 @@ export function selectBestBeaconId(beacons: BeaconCandidate[]): string | null {
 }
 
 export const CreateShellButton: React.FC<CreateShellButtonProps> = ({ hostId, beaconId }) => {
-    const navigate = useNavigate();
     const toast = useToast();
 
     // If hostId is provided, fetch beacons
@@ -89,7 +87,7 @@ export const CreateShellButton: React.FC<CreateShellButtonProps> = ({ hostId, be
     const [createShell, { loading: mutationLoading }] = useMutation(CREATE_SHELL_MUTATION, {
         onCompleted: (data) => {
             const shellId = data.createShell.id;
-            navigate(`/shellv2/${shellId}`);
+            window.open(`/shellv2/${shellId}`, '_blank');
         },
         onError: (error) => {
             toast({

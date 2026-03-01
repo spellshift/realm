@@ -5,7 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import { HeadlessWasmAdapter, ConnectionStatus } from "../../../lib/headless-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
-import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory } from "./shellUtils";
+import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -538,7 +538,7 @@ export const useShellTerminal = (
 
         adapter.current.init();
 
-        termInstance.current.onData((data) => {
+        const handleData = (data: string) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
             // Check for connection status and block input
@@ -551,9 +551,11 @@ export const useShellTerminal = (
 
             // If completions are showing, handle navigation
             if (completionsRef.current.show) {
-                if (code === 9) { // Tab: cycle
+                if (code === 9) { // Tab: cycle or apply if single
                     const list = completionsRef.current.list;
-                    if (list.length > 0) {
+                    if (list.length === 1) {
+                        applyCompletion(list[0]);
+                    } else if (list.length > 1) {
                         const next = (completionsRef.current.index + 1) % list.length;
                         updateCompletionsUI(list, completionsRef.current.start, true, next);
                     }
@@ -772,8 +774,8 @@ export const useShellTerminal = (
             }
 
             if (code === 9) { // Tab
-                // Indent if line is empty or whitespace
-                if (!state.inputBuffer.trim()) {
+                // Indent if line is empty or whitespace or inside a string
+                if (!state.inputBuffer.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
                     const indent = "    ";
                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
                     state.cursorPos += 4;
@@ -786,16 +788,9 @@ export const useShellTerminal = (
                 if (res && res.suggestions.length > 0) {
                     if (res.suggestions.length === 1) {
                         // Auto complete
-                        // Use applyCompletion logic but locally
-                        const completion = res.suggestions[0];
-                        const start = res.start;
-                        if (start >= 0 && start <= state.cursorPos) {
-                            const prefix = state.inputBuffer.slice(0, start);
-                            const suffix = state.inputBuffer.slice(state.cursorPos);
-                            state.inputBuffer = prefix + completion + suffix;
-                            state.cursorPos = start + completion.length;
-                            redrawLine();
-                        }
+                        // We must setup completionsRef.current first so applyCompletion has context
+                        updateCompletionsUI(res.suggestions, res.start, true, 0);
+                        applyCompletion(res.suggestions[0]);
                     } else {
                         // Show dropdown
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
@@ -881,6 +876,19 @@ export const useShellTerminal = (
                         }
                     }
                 }
+            }
+        };
+
+        termInstance.current.onData((data) => {
+            // Check if this is a paste or multi-character sequence (not starting with ESC)
+            if (data.length > 1 && data.charCodeAt(0) !== 27) {
+                // Normalize newlines to \r so they trigger the "Enter" key code (13)
+                const normalized = data.replace(/\r\n/g, "\r").replace(/\n/g, "\r");
+                for (const char of normalized) {
+                    handleData(char);
+                }
+            } else {
+                handleData(data);
             }
         });
 
