@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
+use config::Config;
 use pb::c2::transport::Type as TransportType;
-use pb::{c2::*, config::Config};
+use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(any(feature = "grpc", feature = "http1"))]

@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
-use pb::config::Config;
+use config::Config;
 use transport::{ActiveTransport, Transport};
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);

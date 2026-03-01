@@ -12,6 +12,7 @@ dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 mock = ["dep:mockall"]
 
 [dependencies]
+config = { workspace = true }
 pb = { workspace = true }
 serde_json = { workspace = true }
 

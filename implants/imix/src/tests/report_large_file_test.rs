@@ -1,5 +1,6 @@
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
+use config::Config;
 use eldritch::report::std::file_impl;
 use eldritch_agent::{Agent, Context};
 use pb::c2::{
@@ -9,7 +10,6 @@ use pb::c2::{
     ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, ReverseShellRequest,
     ReverseShellResponse, TaskContext, Transport as C2Transport,
 };
-use pb::config::Config;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use transport::Transport;

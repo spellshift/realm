@@ -17,6 +17,7 @@ install = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
+config = { workspace = true }
 tokio = { workspace = true, features = [
     "rt-multi-thread",
     "macros",

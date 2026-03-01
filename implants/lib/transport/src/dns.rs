@@ -1,8 +1,8 @@
 use crate::Transport;
 use anyhow::{Context, Result};
+use config::Config;
 use hickory_resolver::system_conf::read_system_conf;
 use pb::c2::*;
-use pb::config::Config;
 use pb::dns::*;
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};

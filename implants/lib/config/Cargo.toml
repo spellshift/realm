@@ -1,0 +1,15 @@
+[package]
+name = "config"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+pb = { workspace = true }
+anyhow = { workspace = true }
+host_unique = { workspace = true }
+log = { workspace = true }
+netdev = { workspace = true }
+prost = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
+whoami = { workspace = true }

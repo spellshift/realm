@@ -1,5 +1,6 @@
 use anyhow::Result;
-use pb::{c2::*, config::Config};
+use config::Config;
+use pb::c2::*;
 use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 

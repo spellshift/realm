@@ -375,8 +375,8 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
 mod tests {
     use super::*;
     use crate::task::TaskRegistry;
+    use config::Config;
     use pb::c2::{ReportOutputResponse, ShellTask};
-    use pb::config::Config;
     use transport::MockTransport;
 
     #[tokio::test]
