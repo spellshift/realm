@@ -99,6 +99,9 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
 
     /** Minimum height in pixels */
     minHeight?: string;
+
+    /** Should header be hidden */
+    headerVisible?: boolean;
 }
 
 /**
