@@ -538,7 +538,7 @@ export const useShellTerminal = (
 
         adapter.current.init();
 
-        termInstance.current.onData((data) => {
+        const handleData = (data: string) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
             // Check for connection status and block input
@@ -876,6 +876,19 @@ export const useShellTerminal = (
                         }
                     }
                 }
+            }
+        };
+
+        termInstance.current.onData((data) => {
+            // Check if this is a paste or multi-character sequence (not starting with ESC)
+            if (data.length > 1 && data.charCodeAt(0) !== 27) {
+                // Normalize newlines to \r so they trigger the "Enter" key code (13)
+                const normalized = data.replace(/\r\n/g, "\r").replace(/\n/g, "\r");
+                for (const char of normalized) {
+                    handleData(char);
+                }
+            } else {
+                handleData(data);
             }
         });
 
