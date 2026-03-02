@@ -33,6 +33,8 @@ mod version;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    pb::xchacha::init_server_pubkey(config::SERVER_PUBKEY);
+
     #[cfg(all(debug_assertions, feature = "tokio-console"))]
     {
         console_subscriber::init();
