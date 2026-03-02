@@ -203,7 +203,13 @@ impl FileLibrary for FileLibraryFake {
 
     fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         let mut root = self.root.lock();
-        let path_str = path.unwrap_or_else(|| "/".to_string());
+        let path_str = path.unwrap_or_else(|| {
+            if cfg!(windows) {
+                "C:\\".to_string()
+            } else {
+                "/".to_string()
+            }
+        });
         let limit_val = limit.unwrap_or(10);
         let parts = Self::normalize_path(&path_str);
         let mut files = Vec::new();
@@ -252,7 +258,7 @@ impl FileLibrary for FileLibraryFake {
         }
 
         // Since we don't have timestamps, we just return the first `limit`
-        let limit_usize = if limit_val < 0 { 0 } else { limit_val as usize };
+        let limit_usize = if limit_val < 1 { 1 } else { limit_val as usize };
         Ok(files.into_iter().take(limit_usize).collect())
     }
 

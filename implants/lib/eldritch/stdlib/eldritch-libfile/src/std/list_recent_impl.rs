@@ -16,7 +16,13 @@ struct FileEntry {
 #[cfg(feature = "stdlib")]
 pub fn list_recent(path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
     let mut entries = Vec::new();
-    let path_str = path.unwrap_or_else(|| "/".to_string());
+    let path_str = path.unwrap_or_else(|| {
+        if cfg!(windows) {
+            "C:\\".to_string()
+        } else {
+            "/".to_string()
+        }
+    });
     let limit_val = limit.unwrap_or(10);
     let root = Path::new(&path_str);
 
@@ -30,7 +36,7 @@ pub fn list_recent(path: Option<String>, limit: Option<i64>) -> Result<Vec<Strin
     entries.sort_by(|a, b| b.modified.cmp(&a.modified));
 
     // Take limit
-    let limit_usize = if limit_val < 0 { 0 } else { limit_val as usize };
+    let limit_usize = if limit_val < 1 { 1 } else { limit_val as usize };
     let result = entries
         .into_iter()
         .take(limit_usize)
