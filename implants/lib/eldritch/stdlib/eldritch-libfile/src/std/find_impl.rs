@@ -147,7 +147,7 @@ fn check_path(
     // Note: Permissions check on V1 was strict (==).
     #[cfg(unix)]
     if let Some(p) = _permissions {
-        use ::std::os::unix::fs::PermissionsExt;
+        use std::os::unix::fs::PermissionsExt;
         let meta = path.metadata()?;
         if (meta.permissions().mode() & 0o777) as i64 != p {
             return Ok(false);

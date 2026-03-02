@@ -1,5 +1,5 @@
-use ::std::path::Path;
 use alloc::string::String;
+use std::path::Path;
 
 pub fn is_dir(path: String) -> Result<bool, String> {
     Ok(Path::new(&path).is_dir())

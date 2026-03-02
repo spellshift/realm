@@ -28,8 +28,8 @@ pub mod replace_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
 pub mod timestomp_impl;
-pub mod write_impl;
 pub mod write_binary_impl;
+pub mod write_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]

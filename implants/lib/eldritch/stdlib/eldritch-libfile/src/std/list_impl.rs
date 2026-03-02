@@ -94,7 +94,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
 
     // Permissions (simplified)
     #[cfg(unix)]
-    use ::std::os::unix::fs::PermissionsExt;
+    use std::os::unix::fs::PermissionsExt;
     #[cfg(unix)]
     let perms = format!("{:o}", metadata.permissions().mode());
     #[cfg(not(unix))]
@@ -110,7 +110,7 @@ fn create_dict_from_file(path: &Path) -> AnyhowResult<BTreeMap<String, Value>> {
     // Owner and Group
     #[cfg(unix)]
     {
-        use ::std::os::unix::fs::MetadataExt;
+        use std::os::unix::fs::MetadataExt;
         let uid = metadata.uid();
         let gid = metadata.gid();
 

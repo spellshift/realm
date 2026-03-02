@@ -1,7 +1,7 @@
-use ::std::fs;
-use ::std::path::Path;
 use alloc::format;
 use alloc::string::String;
+use std::fs;
+use std::path::Path;
 
 pub fn remove(path: String) -> Result<(), String> {
     let p = Path::new(&path);
