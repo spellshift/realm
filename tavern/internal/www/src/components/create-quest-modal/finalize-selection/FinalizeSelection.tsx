@@ -23,7 +23,6 @@ export const FinalizeSelection = ({
     const selectedTomeId = formik.values.tomeId;
     const params = formik.values.params;
 
-    // Fetch tome data by ID to display tome details
     const { tome: displayTome, loading: tomeLoading } = useTomeById(selectedTomeId);
 
     const isContinueDisabled = formik.values.name === "" || loading;

@@ -1,7 +1,6 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo} from "react";
 import { sub } from "date-fns";
-import { BeaconEdge, Cursor } from "../../../utils/interfacesQuery";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { getBeaconFilterNameByTypes } from "../../../utils/utils";
 import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
@@ -26,15 +25,13 @@ export function useOnlineBeaconIds({
     viewOnlySelected = false,
     viewOnePerHost = false,
 }: UseOnlineBeaconIdsProps = {}): UseOnlineBeaconIdsResult {
-    const selectedIdsKey = viewOnlySelected ? [...selectedBeaconIds].sort().join(",") : "";
-
     const queryVariables = useMemo(
         () =>
             buildBeaconIdsQuery({
                 typeFilters,
                 selectedBeaconIds: viewOnlySelected ? selectedBeaconIds : undefined,
             }),
-        [typeFilters, viewOnlySelected, selectedIdsKey]
+        [typeFilters, viewOnlySelected, selectedBeaconIds]
     );
 
     const { data, previousData, error, networkStatus, refetch } =
@@ -46,7 +43,6 @@ export function useOnlineBeaconIds({
     
     const currentData = data ?? previousData;
 
-    // Apply one-per-host filter on the frontend
     const filteredBeaconIds = useMemo(() => {
         if (!viewOnePerHost) {
             return currentData?.beacons?.edges.map((edge) => edge?.node?.id) || [];
@@ -136,15 +132,12 @@ function buildBeaconIdsQuery({
 }: BuildBeaconIdsQueryParams): GetBeaconIdsQueryVariables {
     const currentTimestamp = new Date();
 
-    // Base filter: only online beacons (nextSeenAt >= now - 15 seconds)
     const onlineFilter = {
         nextSeenAtGTE: sub(currentTimestamp, { seconds: 30 }).toISOString(),
     };
 
-    // Build additional filters from typeFilters
     const additionalFilters = buildFiltersFromTypeFilters(typeFilters);
 
-    // Build selected beacon filter if viewOnlySelected
     const selectedFilter = selectedBeaconIds?.length
         ? { idIn: selectedBeaconIds }
         : {};

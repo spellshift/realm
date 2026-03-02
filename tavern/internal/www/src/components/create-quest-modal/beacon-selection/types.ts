@@ -3,6 +3,7 @@ import { FilterBarOption } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
 
 export interface BeaconSelectionStepProps {
+    setOpen: (state: boolean) => any;
     setCurrStep: (step: number) => void;
     formik: ModalQuestFormikProps;
 }

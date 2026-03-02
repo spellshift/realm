@@ -23,6 +23,7 @@ interface StepConfig {
         setCurrStep: (step: number) => void;
         formik: ModalQuestFormikProps;
         loading?: boolean;
+        setOpen: (arg: any) => any;
     }>;
 }
 
@@ -64,14 +65,14 @@ const CreateQuestModal = ({ isOpen, setOpen, initialBeacons = [] }: CreateQuestM
     const StepComponent = currentStep?.component;
 
     return (
-        <Modal isOpen={isOpen} setOpen={setOpen} size="lg">
+        <Modal isOpen={isOpen} setOpen={setOpen} size="xl">
             <form
                 id="create-quest-modal-form"
                 className="flex flex-col gap-4"
                 onSubmit={formik.handleSubmit}
             >
                 <div className="flex flex-row gap-6">
-                    <div className="flex-shrink-0 mt-2">
+                    <div className="flex-shrink-0 mt-2 lg:block hidden">
                         <FormSteps steps={stepsMeta} currStep={currStep} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -80,6 +81,7 @@ const CreateQuestModal = ({ isOpen, setOpen, initialBeacons = [] }: CreateQuestM
                                 setCurrStep={setCurrStep}
                                 formik={formik}
                                 loading={loading}
+                                setOpen={setOpen}
                             />
                         )}
                     </div>
