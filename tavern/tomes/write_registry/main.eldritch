@@ -1,0 +1,21 @@
+def write_registry(hive, path, key_name, key_type, key_value):
+    if sys.is_linux():
+        eprint("windows registry is unsupported on linux")
+        return
+
+    if key_type == "REG_DWORD" or key_type == "REG_QWORD":
+        val = int(key_value)
+        res = sys.write_reg_int(hive, path, key_name, key_type, val)
+    elif key_type == "REG_BINARY":
+        res = sys.write_reg_hex(hive, path, key_name, key_type, key_value)
+    else:
+        res = sys.write_reg_str(hive, path, key_name, key_type, key_value)
+
+    if res:
+        print(f"Successfully wrote {key_value} to {hive}\\{path}\\{key_name}")
+    else:
+        eprint(f"Failed to write to {hive}\\{path}\\{key_name}")
+
+
+write_registry(input_params['hive'], input_params['path'], input_params['key_name'], input_params['key_type'], input_params['key_value'])
+print()

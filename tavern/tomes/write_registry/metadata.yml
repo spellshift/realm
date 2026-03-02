@@ -1,0 +1,26 @@
+name: Write Registry
+description: Set a registry subkey value at a provided hive and path.
+author: jules
+support_model: FIRST_PARTY
+tactic: IMPACT
+paramdefs:
+- name: hive
+  type: string
+  label: Registry hive
+  placeholder: "HKEY_LOCAL_MACHINE"
+- name: path
+  type: string
+  label: Registry key path
+  placeholder: "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" # Single backslash can be used too but you may encounter issues if you specify "\x64" as that's hex.
+- name: key_name
+  type: string
+  label: Registry key name
+  placeholder: "MyKey"
+- name: key_type
+  type: string
+  label: Registry key type (e.g. REG_SZ, REG_DWORD)
+  placeholder: "REG_SZ"
+- name: key_value
+  type: string
+  label: Registry key value
+  placeholder: "MyValue"
