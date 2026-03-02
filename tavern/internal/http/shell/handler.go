@@ -688,7 +688,7 @@ func truncateInput(input string) string {
 
 // truncateShellMacro removes the macro wrapper added in eldritch to make shell output more readable in the frontend.
 // This is needed because the macro adds a lot of boilerplate that clutters the input display in the frontend.
-// See expand_macros() in eldritch-wasm/src/headless.rs for how we do this macro.
+// See expand_macros() in eldritch-wasm/src/browser.rs for how we do this macro.
 func truncateShellMacro(input string) string {
 	expandedMacroPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
 	expandedMacroSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"

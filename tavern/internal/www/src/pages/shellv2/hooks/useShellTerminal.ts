@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { HeadlessWasmAdapter, ConnectionStatus } from "../../../lib/headless-adapter";
+import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
 import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
@@ -30,7 +30,7 @@ export const useShellTerminal = (
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
-    const adapter = useRef<HeadlessWasmAdapter | null>(null);
+    const adapter = useRef<BrowserWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
@@ -466,7 +466,7 @@ export const useShellTerminal = (
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
 
-        adapter.current = new HeadlessWasmAdapter(
+        adapter.current = new BrowserWasmAdapter(
             url,
             (msg: WebsocketMessage) => {
                 const term = termInstance.current;
