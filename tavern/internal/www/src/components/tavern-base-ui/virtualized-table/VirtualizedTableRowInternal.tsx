@@ -64,7 +64,7 @@ export function VirtualizedTableRowInternal<TData, TResponse>({
             <div
                 className={`${rowClassName} ${onRowClick ? "cursor-pointer" : ""}`}
                 style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
-                onClick={() => onRowClick?.(itemId)}
+                onClick={() => onRowClick?.(itemId, itemData)}
             >
                 {supportsExpand && (
                     canExpand ? (

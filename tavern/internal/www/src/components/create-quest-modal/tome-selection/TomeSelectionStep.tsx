@@ -7,29 +7,43 @@ import FreeTextSearch from "../../tavern-base-ui/FreeTextSearch";
 import { VirtualizedTable } from "../../tavern-base-ui/virtualized-table/VirtualizedTable";
 import { ExpandableConfig, VirtualizedTableColumn } from "../../tavern-base-ui/virtualized-table/types";
 import { TomeNode } from "../../../utils/interfacesQuery";
-import { FilterBarOption } from "../../../utils/interfacesUI";
+import { FilterBarOption, FieldInputParams } from "../../../utils/interfacesUI";
+import { TomeTactic } from "../../../utils/enums";
 import { safelyJsonParse } from "../../../utils/utils";
 import { useTomes } from "./useTomes";
 import { GET_TOME_DETAIL_QUERY } from "./queries";
 import { TomeSelectionStepProps, TomeDetailQueryResponse } from "./types";
-import TomeDetails from "../../TomeComponents";
 import { ConfigureParams } from "./ConfigureParams";
 import { StepControls } from "./StepControls";
 import { TomeFilterBar } from "../../TomeFilterBar";
 
-const SelectionIndicator = ({ isSelected }: {isSelected: boolean}) => {
+const SelectionIndicator = ({ isSelected }: { isSelected: boolean }) => {
     if (isSelected) {
         return (
-            <div className="shrink-0 text-purple-800 mt-2">
-                <CheckCircleIcon className="w-7" />
+            <div className="shrink-0 text-purple-800">
+                <CheckCircleIcon className="w-6 h-6" />
             </div>
         );
     }
     return (
         <span
             aria-hidden="true"
-            className="w-5 h-5 rounded-full border-2 border-black border-opacity-10 mt-2"
+            className="w-5 h-5 rounded-full border-2 border-black border-opacity-10"
         />
+    );
+};
+
+const ParamLabelsDisplay = ({ params }: { params: FieldInputParams[] }) => {
+    if (!params || params.length === 0) return <span className="text-gray-400">-</span>;
+    return (
+        <div className="flex flex-row flex-wrap gap-1 text-sm">
+            {params.map((element: FieldInputParams, index: number) => (
+                <span key={`${index}_${element.name}`}>
+                    {element.label || element.name}
+                    {index < params.length - 1 && ","}
+                </span>
+            ))}
+        </div>
     );
 };
 
@@ -44,7 +58,8 @@ export const TomeSelectionStep = ({ setCurrStep, formik }: TomeSelectionStepProp
     } = useTomes(tomeFields, tomeMultiSearch);
 
     const handleSelectTome = useCallback(
-        (tome: TomeNode) => {
+        (_tomeId: string, tome: TomeNode | null) => {
+            if (!tome) return;
             const { params: tomeParams } = safelyJsonParse(tome.paramDefs || "");
             formik.setFieldValue("tomeId", tome.id);
             formik.setFieldValue("params", tomeParams || []);
@@ -76,43 +91,58 @@ export const TomeSelectionStep = ({ setCurrStep, formik }: TomeSelectionStepProp
     const columns: VirtualizedTableColumn<TomeNode>[] = useMemo(
         () => [
             {
-                key: "tome-details",
-                label: "Tomes",
-                width: "minmax(300px, 1fr)",
+                key: "name",
+                label: "Name",
+                width: "minmax(150px, 1fr)",
+                render: (tome) => (
+                    <div className="flex flex-col">
+                        <div className="break-all text-base">
+                            {tome.name}
+                        </div>
+                        {tome.description && (
+                            <div className="line-clamp-2 break-all">
+                                {tome.description}
+                            </div>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                key: "parameters",
+                label: "Parameters",
+                width: "minmax(120px, 1fr)",
                 render: (tome) => {
-                    const isSelected = selectedTomeId === tome.id;
                     const { params: tomeParams } = safelyJsonParse(tome.paramDefs || "");
-
+                    return <ParamLabelsDisplay params={tomeParams || []} />;
+                },
+            },
+            {
+                key: "tactic",
+                label: "Tactic",
+                width: "minmax(100px, 150px)",
+                render: (tome) => {
+                    const tacticLabel = tome.tactic && tome.tactic !== "UNSPECIFIED"
+                        ? TomeTactic[tome.tactic as keyof typeof TomeTactic]
+                        : null;
                     return (
-                        <div
-                            className="flex flex-row gap-2 p-2 cursor-pointer items-center justify-between"
-                            onClick={() => handleSelectTome(tome)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    handleSelectTome(tome);
-                                }
-                            }}
-                            aria-pressed={isSelected}
-                            aria-label={`Select tome ${tome.name}`}
-                        >
-                            <TomeDetails tome={tome} params={tomeParams} showParamValues={false}/>
-                            <SelectionIndicator isSelected={isSelected} />
+                        <div className="text-gray-600">
+                            {tacticLabel || <span className="text-gray-400">-</span>}
                         </div>
                     );
                 },
-                renderSkeleton: () => (
-                    <div className="flex flex-col min-w-0 space-y-2 p-3">
-                        <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+            },
+            {
+                key: "selection",
+                label: "",
+                width: "minmax(24px,30px)",
+                render: (tome) => (
+                    <div className="flex items-center justify-center h-full items-center">
+                        <SelectionIndicator isSelected={selectedTomeId === tome.id} />
                     </div>
                 ),
             },
         ],
-        [selectedTomeId, handleSelectTome]
+        [selectedTomeId]
     );
 
     const hasActiveFilters = tomeFields.length > 0 || tomeMultiSearch;
@@ -164,11 +194,12 @@ export const TomeSelectionStep = ({ setCurrStep, formik }: TomeSelectionStepProp
                         getVariables={getVariables}
                         extractData={extractData}
                         expandable={expandable}
-                        estimateRowSize={120}
+                        onItemClick={handleSelectTome}
+                        estimateRowSize={60}
                         height="500px"
                         minHeight="200px"
-                        minWidth="400px"
-                        headerVisible={false}
+                        minWidth="600px"
+                        headerVisible={true}
                     />
                 )}
             </div>

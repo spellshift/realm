@@ -22,7 +22,7 @@ export const ButtonDialogPopover = ({ children, label, leftIcon }: {
 
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768) // md breakpoint
+            setIsMobile(window.innerWidth < 1024) // lg breakpoint
         }
 
         checkMobile()

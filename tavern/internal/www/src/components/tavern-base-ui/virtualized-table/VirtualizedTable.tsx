@@ -47,9 +47,9 @@ export function VirtualizedTable<TData, TResponse = unknown>({
         return query;
     }, [query]);
 
-    const handleItemClick = useCallback((itemId: string) => {
+    const handleItemClick = useCallback((itemId: string, data: TData | null) => {
         if (onItemClick) {
-            onItemClick(itemId);
+            onItemClick(itemId, data);
         }
     }, [onItemClick]);
 
