@@ -5,6 +5,7 @@ use lru::LruCache;
 use prost::Message;
 use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
+use std::sync::OnceLock;
 use std::{
     io::{Read, Write},
     marker::PhantomData,
@@ -16,7 +17,6 @@ use tonic::{
     Status,
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
-use std::sync::OnceLock;
 // ------------
 
 static SERVER_PUBKEY: OnceLock<[u8; 32]> = OnceLock::new();
