@@ -29,6 +29,7 @@ pub mod temp_file_impl;
 pub mod template_impl;
 pub mod timestomp_impl;
 pub mod write_impl;
+pub mod write_binary_impl;
 
 #[derive(Debug, Default)]
 #[eldritch_library_impl(FileLibrary)]
@@ -144,6 +145,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn write(&self, path: String, content: String) -> Result<(), String> {
         write_impl::write(path, content)
+    }
+
+    fn write_binary(&self, path: String, content: Vec<u8>) -> Result<(), String> {
+        write_binary_impl::write_binary(path, content)
     }
 
     fn find(
