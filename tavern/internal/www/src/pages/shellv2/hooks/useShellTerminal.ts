@@ -659,13 +659,13 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH") { // Ctrl+A / Home
+            if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH" || data === "\x1b[1~" || data === "\x1b[7~") { // Ctrl+A / Home
                 state.cursorPos = 0;
                 redrawLine();
                 return;
             }
 
-            if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF") { // Ctrl+E / End
+            if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF" || data === "\x1b[4~" || data === "\x1b[8~") { // Ctrl+E / End
                 state.cursorPos = state.inputBuffer.length;
                 redrawLine();
                 return;
@@ -705,6 +705,14 @@ export const useShellTerminal = (
                 state.inputBuffer = state.inputBuffer.slice(0, newPos) + afterCursor;
                 state.cursorPos = newPos;
                 redrawLine();
+                return;
+            }
+
+            if (data === "\x1b[3~") { // Delete (Forward Delete / Fn+Backspace)
+                if (state.cursorPos < state.inputBuffer.length) {
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + state.inputBuffer.slice(state.cursorPos + 1);
+                    redrawLine();
+                }
                 return;
             }
 
