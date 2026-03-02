@@ -1,36 +1,29 @@
 use anyhow::{Context, Result};
 use bytes::{Buf, BufMut};
 use chacha20poly1305::{aead::generic_array::GenericArray, aead::Aead, AeadCore, KeyInit};
-#[cfg(feature = "imix")]
-use const_decoder::Decoder as const_decode;
 use lru::LruCache;
 use prost::Message;
 use rand::rngs::OsRng;
 use rand_chacha::rand_core::SeedableRng;
+use std::sync::OnceLock;
 use std::{
     io::{Read, Write},
     marker::PhantomData,
     num::NonZeroUsize,
-    sync::{Mutex, OnceLock},
+    sync::Mutex,
 };
 use tonic::{
     codec::{Codec, DecodeBuf, Decoder, EncodeBuf, Encoder},
     Status,
 };
 use x25519_dalek::{EphemeralSecret, PublicKey};
-
-/* Compile-time constant for the server pubkey, derived from the IMIX_SERVER_PUBKEY environment variable during compilation.
- * To find the servers pubkey check the startup messages on the server look for `[INFO] Public key: <SERVER_PUBKEY>`
- */
-#[cfg(feature = "imix")]
-static SERVER_PUBKEY: [u8; 32] = const_decode::Base64.decode(env!("IMIX_SERVER_PUBKEY").as_bytes());
-
-#[cfg(not(feature = "imix"))]
-static SERVER_PUBKEY: [u8; 32] = [
-    165, 30, 122, 188, 50, 89, 111, 214, 247, 4, 189, 217, 188, 37, 200, 190, 2, 180, 175, 107,
-    194, 147, 177, 98, 103, 84, 99, 120, 72, 73, 87, 37,
-];
 // ------------
+
+static SERVER_PUBKEY: OnceLock<[u8; 32]> = OnceLock::new();
+
+pub fn init_server_pubkey(key: [u8; 32]) {
+    let _ = SERVER_PUBKEY.set(key);
+}
 
 const KEY_CACHE_SIZE: usize = 1024;
 const PUBKEY_LEN: usize = 32;
@@ -60,7 +53,8 @@ fn get_key(pub_key: [u8; 32]) -> Result<[u8; 32]> {
 
 fn encrypt_impl(pt_vec: Vec<u8>) -> Result<Vec<u8>> {
     // Store server pubkey
-    let server_public: PublicKey = PublicKey::from(SERVER_PUBKEY);
+    let server_pubkey = SERVER_PUBKEY.get().expect("SERVER_PUBKEY not initialized");
+    let server_public: PublicKey = PublicKey::from(*server_pubkey);
 
     // Generate ephemeral keys
     let rng = rand_chacha::ChaCha20Rng::from_entropy();

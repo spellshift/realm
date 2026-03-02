@@ -1,9 +1,10 @@
 use crate::Transport;
 use anyhow::{Context, Result};
 use bytes::BytesMut;
+use config::Config;
 use hyper_legacy::body::HttpBody;
 use hyper_legacy::{StatusCode, Uri};
-use pb::{c2::*, config::Config};
+use pb::c2::*;
 use prost::Message;
 use std::sync::{
     mpsc::{Receiver, Sender},

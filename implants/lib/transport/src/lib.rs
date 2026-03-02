@@ -1,7 +1,13 @@
 use anyhow::{anyhow, Result};
+use config::Config;
 use pb::c2::transport::Type as TransportType;
-use pb::{c2::*, config::Config};
+use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
+
+#[cfg(test)]
+pub fn ensure_test_pubkey() {
+    pb::xchacha::init_server_pubkey([0u8; 32]);
+}
 
 #[cfg(any(feature = "grpc", feature = "http1"))]
 mod tls_utils;

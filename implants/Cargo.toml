@@ -24,7 +24,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
-    "lib/portals/portal-stream",
+    "lib/portals/portal-stream", "lib/config",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -35,6 +35,7 @@ resolver = "2"
 transport = { path = "./lib/transport" }
 host_unique = { path = "./lib/host_unique" }
 pb = { path = "./lib/pb" }
+config = { path = "./lib/config" }
 netstat = { path = "./lib/netstat" }
 
 # Eldritch V2

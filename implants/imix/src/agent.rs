@@ -1,4 +1,5 @@
 use anyhow::{Context as AnyhowContext, Result};
+use config::Config;
 use eldritch::agent::agent::Agent;
 use eldritch_agent::Context;
 use pb::c2::host::Platform;
@@ -8,7 +9,6 @@ use pb::c2::{
     ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
     report_output_request,
 };
-use pb::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

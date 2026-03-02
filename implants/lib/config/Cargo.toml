@@ -1,0 +1,27 @@
+[package]
+name = "config"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+imix = []
+
+[dependencies]
+pb = { workspace = true }
+anyhow = { workspace = true }
+host_unique = { workspace = true }
+log = { workspace = true }
+netdev = { workspace = true }
+prost = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
+whoami = { workspace = true }
+const-decoder = { workspace = true }
+
+[build-dependencies]
+reqwest = { workspace = true, features = ["blocking", "json", "rustls-tls", "http2"] }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+urlencoding = { workspace = true }

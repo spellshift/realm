@@ -1,7 +1,7 @@
 use anyhow::Result;
+use config::Config;
 use http::Uri;
 use pb::c2::*;
-use pb::config::Config;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
