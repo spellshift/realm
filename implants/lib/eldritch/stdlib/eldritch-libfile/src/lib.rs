@@ -236,11 +236,11 @@ pub trait FileLibrary {
     /// - `path` (`str`): The file path.
     ///
     /// **Returns**
-    /// - `List<int>`: The file content as a list of bytes (u8).
+    /// - `Bytes`: The file content as a bytes object.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, path: String) -> Result<Value, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.

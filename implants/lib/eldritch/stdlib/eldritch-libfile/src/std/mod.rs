@@ -97,8 +97,8 @@ impl FileLibrary for StdFileLibrary {
         read_impl::read(path)
     }
 
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
-        read_binary_impl::read_binary(path)
+    fn read_binary(&self, path: String) -> Result<Value, String> {
+        read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {

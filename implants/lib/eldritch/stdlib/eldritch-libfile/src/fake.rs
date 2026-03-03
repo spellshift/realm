@@ -300,12 +300,12 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
+    fn read_binary(&self, path: String) -> Result<Value, String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-            Ok(data.clone())
+            Ok(Value::Bytes(data.clone()))
         } else {
             Err("File not found".to_string())
         }
