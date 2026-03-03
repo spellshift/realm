@@ -390,3 +390,79 @@ export interface ProcessNode {
 export interface ProcessEdge {
     node: ProcessNode;
 }
+
+// Beacon ID query types (minimal data for filtering)
+export interface BeaconIdNode {
+    id: string;
+    principal?: string;
+    transport?: string;
+    host?: {
+        id: string;
+    };
+}
+
+export interface BeaconIdEdge {
+    node: BeaconIdNode;
+}
+
+export interface BeaconIdsQueryResponse {
+    totalCount: number;
+    pageInfo: QueryPageInfo;
+    edges: BeaconIdEdge[];
+}
+
+export interface BeaconIdsQueryTopLevel {
+    beacons: BeaconIdsQueryResponse;
+}
+
+export interface BeaconDetailQueryResponse {
+    beacons: {
+        edges: { node: BeaconNode }[];
+    };
+}
+
+export interface GetBeaconIdsQueryVariables {
+    where?: Record<string, unknown>;
+    first?: number;
+    last?: number;
+    after?: Cursor;
+    before?: Cursor;
+    orderBy?: OrderByField[];
+}
+
+export interface GetBeaconDetailQueryVariables {
+    id: string;
+}
+
+// Tome ID query types (minimal data for listing)
+export interface TomeIdNode {
+    id: string;
+    name: string;
+    paramDefs: string | null;
+}
+
+export interface TomeIdEdge {
+    node: TomeIdNode;
+}
+
+export interface TomeIdsQueryResponse {
+    edges: TomeIdEdge[];
+}
+
+export interface TomeIdsQueryTopLevel {
+    tomes: TomeIdsQueryResponse;
+}
+
+export interface TomeDetailQueryResponse {
+    tomes: {
+        edges: { node: TomeNode }[];
+    };
+}
+
+export interface GetTomeIdsQueryVariables {
+    where?: Record<string, unknown>;
+}
+
+export interface GetTomeDetailQueryVariables {
+    id: string;
+}

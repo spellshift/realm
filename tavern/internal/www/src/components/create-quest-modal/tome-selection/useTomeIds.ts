@@ -1,11 +1,11 @@
 import { useQuery, NetworkStatus } from "@apollo/client";
 import { useMemo} from "react";
-import { GET_TOME_IDS_QUERY } from "./queries";
+import { GET_TOME_IDS_QUERY } from "../../../utils/queries";
 import {
     TomeIdsQueryTopLevel,
     GetTomeIdsQueryVariables,
-    UseTomesResult,
-} from "./types";
+} from "../../../utils/interfacesQuery";
+import { UseTomesResult } from "./types";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { getTomeFilterNameByTypes } from "../../../utils/utils";
 
