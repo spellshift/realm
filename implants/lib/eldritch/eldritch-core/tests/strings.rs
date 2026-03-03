@@ -130,6 +130,21 @@ fn test_byte_strings() {
 }
 
 #[test]
+fn test_encode_decode() {
+    assert::pass(
+        r#"
+        s = "hello"
+        b = s.encode()
+        assert_eq(b, b"hello")
+        assert_eq(type(b), "bytes")
+        s2 = b.decode()
+        assert_eq(s2, "hello")
+        assert_eq(type(s2), "string")
+    "#,
+    );
+}
+
+#[test]
 fn test_doc_strings() {
     assert::pass(
         r#"
