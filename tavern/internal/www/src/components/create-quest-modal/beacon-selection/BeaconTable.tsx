@@ -5,20 +5,23 @@ import { VirtualizedTableColumn } from "../../tavern-base-ui/virtualized-table/t
 import BeaconTile from "../../BeaconTile";
 import { BeaconNode } from "../../../utils/interfacesQuery";
 import { GET_BEACON_DETAIL_QUERY } from "./queries";
-import { BeaconDetailQueryResponse } from "./types";
+import { BeaconDetailQueryResponse, BeaconTableProps } from "./types";
 
-interface BeaconSelectionTableProps {
-    beaconIds: string[];
-    selectedBeaconIds: string[];
-    onToggle: (beaconId: string) => void;
-}
-
-export const BeaconSelectionTable = ({
+export const BeaconTable = ({
     beaconIds,
-    selectedBeaconIds,
+    selectable = false,
+    selectedBeaconIds = [],
     onToggle,
-}: BeaconSelectionTableProps) => {
-    const selectionKey = selectedBeaconIds.join(",");
+    emptyMessage = "No beacons found",
+}: BeaconTableProps) => {
+    const selectionKey = selectable ? selectedBeaconIds.join(",") : "";
+
+    const rowSize = 80;
+    const maxRows = 5;
+    const maxHeight = maxRows * rowSize;
+    const calculatedHeight = beaconIds.length > maxRows
+        ? `${maxHeight}px`
+        : `${beaconIds.length * rowSize}px`;
 
     const selectedSetRef = useRef(new Set(selectedBeaconIds));
     selectedSetRef.current = new Set(selectedBeaconIds);
@@ -35,7 +38,6 @@ export const BeaconSelectionTable = ({
         []
     );
 
-    // Columns are stable - they use refs to access latest state
     const columns: VirtualizedTableColumn<BeaconNode>[] = useMemo(
         () => [
             {
@@ -43,6 +45,9 @@ export const BeaconSelectionTable = ({
                 label: "Beacons",
                 width: "minmax(300px, 1fr)",
                 render: (beacon) => {
+                    if (!selectable) {
+                        return <BeaconTile beacon={beacon} className="text-sm" />;
+                    }
                     const isSelected = selectedSetRef.current.has(beacon.id);
                     return (
                         <div className="flex flex-col min-w-0">
@@ -51,12 +56,12 @@ export const BeaconSelectionTable = ({
                                 size="lg"
                                 isChecked={isSelected}
                                 aria-label={`Select beacon ${beacon.name}`}
-                                onChange={() => onToggle(beacon.id)}
-                                >
+                                onChange={() => onToggleRef.current?.(beacon.id)}
+                            >
                                 <BeaconTile beacon={beacon} className="text-sm" />
                             </Checkbox>
                         </div>
-                    )
+                    );
                 },
                 renderSkeleton: () => (
                     <div className="flex flex-col min-w-0 space-y-2">
@@ -66,13 +71,13 @@ export const BeaconSelectionTable = ({
                 ),
             },
         ],
-        [selectionKey]
+        [selectable, selectionKey]
     );
 
     if (beaconIds.length === 0) {
         return (
             <div className="flex items-center justify-center py-8 text-gray-500 h-[400px]">
-                No online beacons found. Try adjusting filters.
+                {emptyMessage}
             </div>
         );
     }
@@ -84,11 +89,13 @@ export const BeaconSelectionTable = ({
             query={GET_BEACON_DETAIL_QUERY}
             getVariables={getVariables}
             extractData={extractData}
-            estimateRowSize={80}
-            height="440px"
-            minHeight="200px"
-            minWidth="400px"
+            estimateRowSize={rowSize}
+            height={calculatedHeight}
+            minHeight={calculatedHeight}
+            minWidth="200px"
             headerVisible={false}
         />
     );
 };
+
+export default BeaconTable;

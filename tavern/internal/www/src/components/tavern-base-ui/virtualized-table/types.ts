@@ -102,6 +102,9 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
 
     /** Should header be hidden */
     headerVisible?: boolean;
+
+    /** When true, container grows with content up to max height (uses maxHeight instead of fixed height) */
+    growWithContent?: boolean;
 }
 
 /**

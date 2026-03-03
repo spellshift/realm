@@ -20,7 +20,8 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     overscan = 5,
     height = "calc(100vh - 180px)",
     minHeight = "400px",
-    headerVisible = true
+    headerVisible = true,
+    growWithContent = false
 }: VirtualizedTableProps<TData, TResponse>) {
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const useDynamicSizing = expandable !== undefined;
@@ -32,7 +33,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
         () => columns.map(col => col.width).join(' '),
         [columns]
     );
-
+    
     // Compute header grid (with expand column if needed)
     const headerGridTemplateColumns = useMemo(
         () => expandable ? `32px ${gridTemplateColumns}` : gridTemplateColumns,
@@ -127,7 +128,8 @@ export function VirtualizedTable<TData, TResponse = unknown>({
             ref={parentRef}
             className="overflow-auto border border-gray-200 rounded-lg"
             style={{
-                height: height,
+                height: growWithContent ? 'auto' : height,
+                maxHeight: growWithContent ? height : undefined,
                 minHeight,
                 width: '100%'
             }}
