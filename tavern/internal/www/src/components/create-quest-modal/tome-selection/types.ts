@@ -2,6 +2,15 @@ import { TomeNode } from "../../../utils/interfacesQuery";
 import { FieldInputParams } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
 
+export interface TomeTableProps {
+    tomeIds?: string[];
+    selectable?: boolean;
+    selectedTomeId?: string | null;
+    onSelectTome?: (tome: TomeNode) => void;
+    showFilters?: boolean;
+    emptyMessage?: string;
+}
+
 export interface TomeSelectionStepProps {
     setCurrStep: (step: number) => void;
     formik: ModalQuestFormikProps;

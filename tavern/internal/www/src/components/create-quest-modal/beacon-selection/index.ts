@@ -1,4 +1,4 @@
 export { BeaconSelectionStep } from "./BeaconSelectionStep";
-export { BeaconSelectionTable } from "./BeaconSelectionTable";
+export { BeaconTable } from "./BeaconTable";
 export { useOnlineBeaconIds } from "./useOnlineBeaconIds";
 export * from "./types";

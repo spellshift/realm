@@ -2,6 +2,14 @@ import { BeaconNode, QueryPageInfo, Cursor, OrderByField } from "../../../utils/
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
 
+export interface BeaconTableProps {
+    beaconIds: string[];
+    selectable?: boolean;
+    selectedBeaconIds?: string[];
+    onToggle?: (beaconId: string) => void;
+    emptyMessage?: string;
+}
+
 export interface BeaconSelectionStepProps {
     setOpen: (state: boolean) => any;
     setCurrStep: (step: number) => void;

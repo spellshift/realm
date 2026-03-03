@@ -1,12 +1,11 @@
 import { Heading } from "@chakra-ui/react";
 
 import Button from "../../tavern-base-ui/button/Button";
-import { EmptyState, EmptyStateType } from "../../tavern-base-ui/EmptyState";
 import FormTextField from "../../tavern-base-ui/FormTextField";
-import TomeAccordion from "../../TomeAccordion";
-import { useTomeById } from "./useTomeById";
 import { ModalQuestFormikProps } from "../types";
-import { BeaconTable } from "./BeaconTable";
+import { BeaconTable } from "../beacon-selection/BeaconTable";
+import { TomeTable } from "../tome-selection/TomeTable";
+import { CopyableKeyValues } from "../../copyable-key-values";
 
 interface FinalizeSelectionProps {
     setCurrStep: (step: number) => void;
@@ -21,9 +20,6 @@ export const FinalizeSelection = ({
 }: FinalizeSelectionProps) => {
     const selectedBeaconIds = formik.values.beacons;
     const selectedTomeId = formik.values.tomeId;
-    const params = formik.values.params;
-
-    const { tome: displayTome, loading: tomeLoading } = useTomeById(selectedTomeId);
 
     const isContinueDisabled = formik.values.name === "" || loading;
 
@@ -31,20 +27,7 @@ export const FinalizeSelection = ({
         formik.setFieldValue("name", name);
     };
 
-    const isLoading = tomeLoading;
-
-    if (isLoading) {
-        return (
-            <div className="flex flex-col gap-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                    Confirm quest details
-                </h2>
-                <EmptyState type={EmptyStateType.loading} label="Loading quest details..." />
-            </div>
-        );
-    }
-
-    const hasNoTome = !displayTome;
+    const tomeIds = selectedTomeId ? [selectedTomeId] : [];
 
     return (
         <div className="flex flex-col gap-6">
@@ -55,22 +38,21 @@ export const FinalizeSelection = ({
             {/* Beacons Section */}
             <div className="flex flex-col gap-3">
                 <Heading size="sm">Beacons ({selectedBeaconIds.length})</Heading>
-                <BeaconTable beaconIds={selectedBeaconIds} />
+                <BeaconTable beaconIds={selectedBeaconIds} emptyMessage="Unable to find beacons" />
             </div>
 
             {/* Tome Section */}
             <div className="flex flex-col gap-3">
                 <Heading size="sm">Tome</Heading>
-                {hasNoTome ? (
-                    <div className="flex items-center justify-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-md">
-                        <p className="text-sm">No tome selected</p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-1">
-                        <TomeAccordion tome={displayTome} params={params} />
-                    </div>
-                )}
+                <TomeTable
+                    tomeIds={tomeIds}
+                    showFilters={false}
+                    emptyMessage="No tome selected"
+                />
             </div>
+
+            {/* Parameters Section */}
+            <CopyableKeyValues params={formik.values.params} heading="Tome parameters"/>
 
             {/* Quest Name Input */}
             <FormTextField

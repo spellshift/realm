@@ -11,7 +11,7 @@ import Button from "../../tavern-base-ui/button/Button";
 import { EmptyState, EmptyStateType } from "../../tavern-base-ui/EmptyState";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { useOnlineBeaconIds } from "./useOnlineBeaconIds";
-import { BeaconSelectionTable } from "./BeaconSelectionTable";
+import { BeaconTable } from "./BeaconTable";
 import { BeaconSelectionStepProps } from "./types";
 import { MinusIcon, PlusIcon } from "lucide-react";
 
@@ -152,10 +152,12 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen }: BeaconSele
                             Deselect visible
                         </Button>
                     </div>
-                    <BeaconSelectionTable
+                    <BeaconTable
                         beaconIds={beaconIds}
+                        selectable={true}
                         selectedBeaconIds={selectedBeaconIds}
                         onToggle={toggleBeacon}
+                        emptyMessage="No online beacons found. Try adjusting filters."
                     />
                 </div>
                 <div className="flex flex-row items-center justify-end w-full">
