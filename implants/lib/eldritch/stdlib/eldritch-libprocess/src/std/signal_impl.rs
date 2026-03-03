@@ -20,10 +20,12 @@ pub fn signal(pid: i64, signal: i64) -> Result<(), String> {
     use sysinfo::{Pid, ProcessExt, Signal, System, SystemExt};
 
     let sig = match signal {
-        2 => Signal::Interrupt,
         9 => Signal::Kill,
-        15 => Signal::Term,
-        _ => return Err(format!("Signal {signal} is not supported on Windows")),
+        _ => {
+            return Err(format!(
+                "Signal {signal} is not supported on Windows. Only signal 9 (Kill) is supported."
+            ));
+        }
     };
 
     if !System::IS_SUPPORTED {
@@ -69,8 +71,8 @@ mod tests {
             // Verify the process exists
             assert!(lib.name(pid).is_ok());
 
-            // Send SIGTERM (15) to stop the process
-            lib.signal(pid, 15).unwrap();
+            // Send SIGKILL (9) to stop the process
+            lib.signal(pid, 9).unwrap();
 
             // Wait for the process to terminate
             let _ = child.wait();
