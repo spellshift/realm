@@ -1,16 +1,17 @@
 use aes::Aes128;
 use aes::cipher::{BlockEncrypt, KeyInit, generic_array::GenericArray};
 use alloc::vec::Vec;
+use bytes::Bytes;
 
-pub fn aes_encrypt(key: Vec<u8>, _iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
+pub fn aes_encrypt(key: Bytes, _iv: Bytes, data: Bytes) -> Result<Bytes, String> {
     if key.len() != 16 {
         return Err("Key size must be 16 bytes (characters)".into());
     }
-    let key_bytes: [u8; 16] = key.as_slice().try_into().map_err(|_| "Key size mismatch")?;
+    let key_bytes: [u8; 16] = key.as_ref().try_into().map_err(|_| "Key size mismatch")?;
     let key_arr = GenericArray::from(key_bytes);
 
     // Pad data (PKCS#7)
-    let mut padded_data = data.clone();
+    let mut padded_data = data.to_vec();
     let padding_needed = 16 - (padded_data.len() % 16);
     for _ in 0..padding_needed {
         padded_data.push(padding_needed as u8);
@@ -26,7 +27,7 @@ pub fn aes_encrypt(key: Vec<u8>, _iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>,
         output.extend_from_slice(block.as_slice());
     }
 
-    Ok(output)
+    Ok(Bytes::from(output))
 }
 
 #[cfg(test)]
@@ -35,29 +36,29 @@ mod tests {
 
     #[test]
     fn test_aes_encrypt_invalid_key_length() {
-        let key = b"short".to_vec();
-        let data = b"data".to_vec();
-        let res = aes_encrypt(key, vec![], data);
+        let key = Bytes::from_static(b"short");
+        let data = Bytes::from_static(b"data");
+        let res = aes_encrypt(key, Bytes::new(), data);
         assert!(res.is_err());
     }
 
     #[test]
     fn test_aes_padding_logic() {
-        let key = b"TESTINGPASSWORD!".to_vec();
+        let key = Bytes::from_static(b"TESTINGPASSWORD!");
         // Exact block size
-        let data = b"1234567890123456".to_vec();
+        let data = Bytes::from_static(b"1234567890123456");
 
-        let encrypted = aes_encrypt(key.clone(), vec![], data.clone()).unwrap();
+        let encrypted = aes_encrypt(key.clone(), Bytes::new(), data.clone()).unwrap();
         // Should produce 2 blocks (32 bytes) because PKCS#7 adds a full block of padding if input is multiple of block size
         assert_eq!(encrypted.len(), 32);
     }
 
     #[test]
     fn test_aes_vectors() {
-        let data = b"Lorem ipsum dolor sit amet".to_vec();
-        let key = b"TESTINGPASSWORD!".to_vec();
+        let data = Bytes::from_static(b"Lorem ipsum dolor sit amet");
+        let key = Bytes::from_static(b"TESTINGPASSWORD!");
 
-        let encrypted = aes_encrypt(key.clone(), vec![], data.clone()).unwrap();
+        let encrypted = aes_encrypt(key.clone(), Bytes::new(), data.clone()).unwrap();
         assert!(!encrypted.is_empty());
         assert_eq!(encrypted.len() % 16, 0);
     }

@@ -1,6 +1,6 @@
 use super::RandomLibrary;
 use alloc::string::String;
-use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_macros::eldritch_library_impl;
 
 pub mod bool_impl;
@@ -18,7 +18,7 @@ impl RandomLibrary for StdRandomLibrary {
         bool_impl::bool()
     }
 
-    fn bytes(&self, len: i64) -> Result<Vec<u8>, String> {
+    fn bytes(&self, len: i64) -> Result<Bytes, String> {
         bytes_impl::bytes(len)
     }
 

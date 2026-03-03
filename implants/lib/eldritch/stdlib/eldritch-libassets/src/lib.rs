@@ -1,6 +1,7 @@
 extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
@@ -19,17 +20,17 @@ pub mod std;
 /// **Note**: Asset paths are typically relative to the embedding root (e.g., `sliver/agent-x64`).
 pub trait AssetsLibrary {
     #[eldritch_method]
-    /// Reads the content of an embedded asset as a list of bytes.
+    /// Reads the content of an embedded asset as binary data.
     ///
     /// **Parameters**
     /// - `name` (`str`): The name/path of the asset to read.
     ///
     /// **Returns**
-    /// - `List<int>`: The asset content as a list of bytes (u8).
+    /// - `bytes`: The asset content as binary data.
     ///
     /// **Errors**
     /// - Returns an error string if the asset does not exist.
-    fn read_binary(&self, name: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, name: String) -> Result<Bytes, String>;
 
     #[eldritch_method]
     /// Reads the content of an embedded asset as a UTF-8 string.

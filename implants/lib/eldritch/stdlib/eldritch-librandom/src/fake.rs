@@ -1,6 +1,8 @@
 use super::RandomLibrary;
 use alloc::string::String;
+use alloc::vec;
 use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -12,8 +14,8 @@ impl RandomLibrary for RandomLibraryFake {
         Ok(true)
     }
 
-    fn bytes(&self, len: i64) -> Result<Vec<u8>, String> {
-        Ok(vec![0; len as usize])
+    fn bytes(&self, len: i64) -> Result<Bytes, String> {
+        Ok(Bytes::from(vec![0u8; len as usize]))
     }
 
     fn int(&self, min: i64, _max: i64) -> Result<i64, String> {
@@ -45,7 +47,7 @@ mod tests {
         let rnd = RandomLibraryFake;
         let b = rnd.bytes(5).unwrap();
         assert_eq!(b.len(), 5);
-        assert_eq!(b, vec![0, 0, 0, 0, 0]);
+        assert_eq!(b.as_ref(), &[0u8, 0, 0, 0, 0]);
     }
 
     #[test]

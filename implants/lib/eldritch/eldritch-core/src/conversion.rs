@@ -4,6 +4,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use bytes::Bytes;
 use spin::RwLock;
 
 pub trait FromValue: Sized {
@@ -56,6 +57,15 @@ impl FromValue for Vec<u8> {
     fn from_value(v: &Value) -> Result<Self, String> {
         match v {
             Value::Bytes(b) => Ok(b.clone()),
+            _ => Err(format!("Expected Bytes, got {}", get_type_name(v))),
+        }
+    }
+}
+
+impl FromValue for Bytes {
+    fn from_value(v: &Value) -> Result<Self, String> {
+        match v {
+            Value::Bytes(b) => Ok(Bytes::copy_from_slice(b)),
             _ => Err(format!("Expected Bytes, got {}", get_type_name(v))),
         }
     }
@@ -155,6 +165,12 @@ impl ToValue for bool {
 impl ToValue for Vec<u8> {
     fn to_value(self) -> Value {
         Value::Bytes(self)
+    }
+}
+
+impl ToValue for Bytes {
+    fn to_value(self) -> Value {
+        Value::Bytes(self.to_vec())
     }
 }
 

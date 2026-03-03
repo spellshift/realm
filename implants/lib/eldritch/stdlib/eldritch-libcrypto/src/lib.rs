@@ -1,6 +1,6 @@
 extern crate alloc;
 use alloc::string::String;
-use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
@@ -32,7 +32,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if decryption fails (e.g., invalid padding, incorrect key length).
-    fn aes_decrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String>;
+    fn aes_decrypt(&self, key: Bytes, iv: Bytes, data: Bytes) -> Result<Bytes, String>;
 
     #[eldritch_method]
     /// Encrypts data using AES (CBC mode).
@@ -47,7 +47,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if encryption fails (e.g., incorrect key length).
-    fn aes_encrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String>;
+    fn aes_encrypt(&self, key: Bytes, iv: Bytes, data: Bytes) -> Result<Bytes, String>;
 
     #[eldritch_method]
     /// Decrypts a file using AES.
@@ -90,7 +90,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if hashing fails.
-    fn md5(&self, data: Vec<u8>) -> Result<String, String>;
+    fn md5(&self, data: Bytes) -> Result<String, String>;
 
     #[eldritch_method]
     /// Calculates the SHA1 hash of the provided data.
@@ -103,7 +103,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if hashing fails.
-    fn sha1(&self, data: Vec<u8>) -> Result<String, String>;
+    fn sha1(&self, data: Bytes) -> Result<String, String>;
 
     #[eldritch_method]
     /// Calculates the SHA256 hash of the provided data.
@@ -116,7 +116,7 @@ pub trait CryptoLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if hashing fails.
-    fn sha256(&self, data: Vec<u8>) -> Result<String, String>;
+    fn sha256(&self, data: Bytes) -> Result<String, String>;
 
     #[eldritch_method]
     /// Calculates the hash of a file on disk.

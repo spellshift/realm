@@ -18,6 +18,7 @@ stdlib = [
 fake_bindings = []
 
 [dependencies]
+bytes = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 spin = { version = "0.10.0", features = ["rwlock"] }

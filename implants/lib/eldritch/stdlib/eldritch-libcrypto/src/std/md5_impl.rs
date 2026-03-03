@@ -1,8 +1,8 @@
 use alloc::format;
-use alloc::vec::Vec;
+use bytes::Bytes;
 
-pub fn md5(data: Vec<u8>) -> Result<String, String> {
-    Ok(format!("{:02x}", md5::compute(data)))
+pub fn md5(data: Bytes) -> Result<String, String> {
+    Ok(format!("{:02x}", md5::compute(data.as_ref())))
 }
 
 #[cfg(test)]
@@ -11,7 +11,7 @@ mod tests {
 
     #[test]
     fn test_md5() {
-        let data = b"hello world".to_vec();
+        let data = Bytes::from_static(b"hello world");
         let hash = md5(data).unwrap();
         assert_eq!(hash, "5eb63bbbe01eeed093cb22bb8f5acdc3");
     }

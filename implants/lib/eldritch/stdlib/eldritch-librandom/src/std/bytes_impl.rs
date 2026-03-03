@@ -1,17 +1,17 @@
 use alloc::string::ToString;
 use alloc::vec;
-use alloc::vec::Vec;
+use bytes::Bytes;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 
-pub fn bytes(len: i64) -> Result<Vec<u8>, String> {
+pub fn bytes(len: i64) -> Result<Bytes, String> {
     if len < 0 {
         return Err("Length cannot be negative".to_string());
     }
     let mut rng = rand_chacha::ChaCha20Rng::from_entropy();
-    let mut bytes = vec![0u8; len as usize];
-    rng.fill(&mut bytes[..]);
-    Ok(bytes)
+    let mut buf = vec![0u8; len as usize];
+    rng.fill(&mut buf[..]);
+    Ok(Bytes::from(buf))
 }
 
 #[cfg(test)]

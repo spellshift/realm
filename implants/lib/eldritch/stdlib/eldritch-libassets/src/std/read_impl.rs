@@ -4,7 +4,7 @@ use alloc::string::String;
 impl StdAssetsLibrary {
     pub fn read_impl(&self, name: String) -> Result<String, String> {
         let bytes = self.read_binary_impl(&name).map_err(|e| e.to_string())?;
-        String::from_utf8(bytes).map_err(|e| e.to_string())
+        String::from_utf8(bytes.to_vec()).map_err(|e| e.to_string())
     }
 }
 

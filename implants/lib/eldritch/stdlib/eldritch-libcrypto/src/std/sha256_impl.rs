@@ -1,10 +1,10 @@
 use alloc::format;
-use alloc::vec::Vec;
+use bytes::Bytes;
 use sha2::{Digest, Sha256};
 
-pub fn sha256(data: Vec<u8>) -> Result<String, String> {
+pub fn sha256(data: Bytes) -> Result<String, String> {
     let mut hasher = Sha256::new();
-    hasher.update(&data);
+    hasher.update(data.as_ref());
     Ok(format!("{:02x}", hasher.finalize()))
 }
 
@@ -14,7 +14,7 @@ mod tests {
 
     #[test]
     fn test_sha256() {
-        let data = b"hello world".to_vec();
+        let data = Bytes::from_static(b"hello world");
         let hash = sha256(data).unwrap();
         assert_eq!(
             hash,

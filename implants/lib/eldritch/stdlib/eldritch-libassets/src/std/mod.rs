@@ -4,6 +4,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
+use bytes::Bytes;
 use core::marker::PhantomData;
 use eldritch_agent::{Agent, Context};
 use eldritch_macros::eldritch_library_impl;
@@ -168,7 +169,7 @@ impl StdAssetsLibrary {
 }
 
 impl AssetsLibrary for StdAssetsLibrary {
-    fn read_binary(&self, name: String) -> Result<Vec<u8>, String> {
+    fn read_binary(&self, name: String) -> Result<Bytes, String> {
         self.read_binary_impl(&name).map_err(|e| e.to_string())
     }
 

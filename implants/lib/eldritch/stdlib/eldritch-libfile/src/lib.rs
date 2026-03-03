@@ -2,6 +2,7 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
@@ -236,11 +237,11 @@ pub trait FileLibrary {
     /// - `path` (`str`): The file path.
     ///
     /// **Returns**
-    /// - `List<int>`: The file content as a list of bytes (u8).
+    /// - `bytes`: The file content as binary data.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, path: String) -> Result<Bytes, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.

@@ -1,10 +1,12 @@
 use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use alloc::vec::Vec;
+use bytes::Bytes;
 
-pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
-    fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
+pub fn read_binary(path: String) -> Result<Bytes, String> {
+    fs::read(&path)
+        .map(Bytes::from)
+        .map_err(|e| format!("Failed to read file {path}: {e}"))
 }
 
 #[cfg(test)]
@@ -21,6 +23,6 @@ mod tests {
         fs::write(&path, &data).unwrap();
 
         let read_data = read_binary(path).unwrap();
-        assert_eq!(read_data, data);
+        assert_eq!(read_data.as_ref(), data.as_slice());
     }
 }

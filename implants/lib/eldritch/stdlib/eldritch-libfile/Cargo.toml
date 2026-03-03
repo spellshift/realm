@@ -20,6 +20,7 @@ stdlib = [
 fake_bindings = []
 
 [dependencies]
+bytes = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 flate2 = { workspace = true, optional = true, features = ["rust_backend"] }

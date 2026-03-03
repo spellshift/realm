@@ -4,6 +4,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 use spin::Mutex;
@@ -300,12 +301,12 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
+    fn read_binary(&self, path: String) -> Result<Bytes, String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-            Ok(data.clone())
+            Ok(Bytes::copy_from_slice(data))
         } else {
             Err("File not found".to_string())
         }

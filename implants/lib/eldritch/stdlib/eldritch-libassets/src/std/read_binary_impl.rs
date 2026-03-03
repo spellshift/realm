@@ -1,14 +1,14 @@
 use crate::std::StdAssetsLibrary;
-use alloc::vec::Vec;
 use anyhow::Result;
+use bytes::Bytes;
 
 impl StdAssetsLibrary {
-    pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
+    pub fn read_binary_impl(&self, name: &str) -> Result<Bytes> {
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
             if let Ok(file) = backend.get(name) {
                 // Return immediately upon the first match
-                return Ok(file);
+                return Ok(Bytes::from(file));
             }
         }
         Err(anyhow::anyhow!("asset not found: {}", name))
@@ -178,7 +178,7 @@ pub mod tests {
         let content = content.unwrap();
         assert!(!content.is_empty());
         assert_eq!(
-            std::str::from_utf8(&content).unwrap().trim(),
+            std::str::from_utf8(content.as_ref()).unwrap().trim(),
             "print(\"This script just prints\")"
         );
         Ok(())
@@ -206,7 +206,7 @@ pub mod tests {
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
-        assert_eq!(content.unwrap(), b"remote content");
+        assert_eq!(content.unwrap().as_ref(), b"remote content");
         Ok(())
     }
 

@@ -1,6 +1,6 @@
 use super::CryptoLibrary;
 use alloc::string::String;
-use alloc::vec::Vec;
+use bytes::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
@@ -23,11 +23,11 @@ pub mod to_json_impl;
 pub struct StdCryptoLibrary;
 
 impl CryptoLibrary for StdCryptoLibrary {
-    fn aes_encrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
+    fn aes_encrypt(&self, key: Bytes, iv: Bytes, data: Bytes) -> Result<Bytes, String> {
         aes_encrypt_impl::aes_encrypt(key, iv, data)
     }
 
-    fn aes_decrypt(&self, key: Vec<u8>, iv: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>, String> {
+    fn aes_decrypt(&self, key: Bytes, iv: Bytes, data: Bytes) -> Result<Bytes, String> {
         aes_decrypt_impl::aes_decrypt(key, iv, data)
     }
 
@@ -39,15 +39,15 @@ impl CryptoLibrary for StdCryptoLibrary {
         aes_encrypt_file_impl::aes_encrypt_file(src, dst, key)
     }
 
-    fn md5(&self, data: Vec<u8>) -> Result<String, String> {
+    fn md5(&self, data: Bytes) -> Result<String, String> {
         md5_impl::md5(data)
     }
 
-    fn sha1(&self, data: Vec<u8>) -> Result<String, String> {
+    fn sha1(&self, data: Bytes) -> Result<String, String> {
         sha1_impl::sha1(data)
     }
 
-    fn sha256(&self, data: Vec<u8>) -> Result<String, String> {
+    fn sha256(&self, data: Bytes) -> Result<String, String> {
         sha256_impl::sha256(data)
     }
 
