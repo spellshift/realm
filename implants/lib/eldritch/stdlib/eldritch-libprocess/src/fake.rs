@@ -84,6 +84,10 @@ impl ProcessLibrary for ProcessLibraryFake {
         conn.insert("socket_type".into(), Value::String("STREAM".into()));
         Ok(vec![conn])
     }
+
+    fn signal(&self, _pid: i64, _signal: i64) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -124,6 +128,13 @@ mod tests {
         let lib = ProcessLibraryFake;
         // Should always succeed
         assert!(lib.kill(123).is_ok());
+    }
+
+    #[test]
+    fn test_fake_process_signal() {
+        let lib = ProcessLibraryFake;
+        assert!(lib.signal(123, 15).is_ok());
+        assert!(lib.signal(123, 9).is_ok());
     }
 
     #[test]

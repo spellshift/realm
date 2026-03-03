@@ -9,6 +9,7 @@ pub mod kill_impl;
 pub mod list_impl;
 pub mod name_impl;
 pub mod netstat_impl;
+pub mod signal_impl;
 
 #[derive(Default, Debug)]
 #[eldritch_library_impl(ProcessLibrary)]
@@ -33,5 +34,9 @@ impl ProcessLibrary for StdProcessLibrary {
 
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
         netstat_impl::netstat()
+    }
+
+    fn signal(&self, pid: i64, signal: i64) -> Result<(), String> {
+        signal_impl::signal(pid, signal)
     }
 }
