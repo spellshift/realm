@@ -387,6 +387,31 @@ impl FileLibrary for FileLibraryFake {
         Err("Parent path not found".to_string())
     }
 
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
+        let bytes = match content {
+            Value::Bytes(b) => b,
+            _ => return Err("content must be of type Bytes".into()),
+        };
+
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+        if parts.is_empty() {
+            return Err("Invalid path".to_string());
+        }
+
+        let (parent_parts, name) = parts.split_at(parts.len() - 1);
+        let name = &name[0];
+
+        if let Some(parent) = Self::traverse(&mut root, parent_parts) {
+            if let FsEntry::Dir(map) = parent {
+                map.insert(name.clone(), FsEntry::File(bytes));
+                return Ok(());
+            }
+            return Err("Parent is not a directory".to_string());
+        }
+        Err("Parent path not found".to_string())
+    }
+
     fn find(
         &self,
         _path: String,

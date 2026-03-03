@@ -369,6 +369,20 @@ pub trait FileLibrary {
     fn write(&self, path: String, content: String) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Writes binary content to a file, overwriting it if it exists.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file path.
+    /// - `content` (`Bytes`): The binary content to write.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if writing fails.
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String>;
+
+    #[eldritch_method]
     /// Finds files matching specific criteria.
     ///
     /// **Parameters**
