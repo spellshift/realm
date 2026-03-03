@@ -1,4 +1,4 @@
 export { TomeSelectionStep } from "./TomeSelectionStep";
 export { TomeTable } from "./TomeTable";
-export { useTomes } from "./useTomes";
+export { useTomeIds as useTomes } from "./useTomeIds";
 export * from "./types";

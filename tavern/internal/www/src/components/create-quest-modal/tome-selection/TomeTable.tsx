@@ -10,7 +10,7 @@ import { TomeNode } from "../../../utils/interfacesQuery";
 import { FilterBarOption, FieldInputParams } from "../../../utils/interfacesUI";
 import { TomeTactic } from "../../../utils/enums";
 import { safelyJsonParse } from "../../../utils/utils";
-import { useTomes } from "./useTomes";
+import { useTomeIds } from "./useTomeIds";
 import { GET_TOME_DETAIL_QUERY } from "./queries";
 import { TomeDetailQueryResponse, TomeTableProps } from "./types";
 import { TomeFilterBar } from "../../TomeFilterBar";
@@ -40,7 +40,7 @@ export const TomeTable = ({
     const [tomeMultiSearch, setTomeMultiSearch] = useState("");
     const [tomeFields, setTomeFields] = useState<FilterBarOption[]>([]);
 
-    const { tomeIds: fetchedTomeIds, initialLoading } = useTomes(
+    const { tomeIds: fetchedTomeIds, initialLoading } = useTomeIds(
         showFilters ? tomeFields : [],
         showFilters ? tomeMultiSearch : ""
     );

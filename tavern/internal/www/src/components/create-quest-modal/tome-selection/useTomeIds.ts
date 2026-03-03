@@ -9,7 +9,7 @@ import {
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { getTomeFilterNameByTypes } from "../../../utils/utils";
 
-export function useTomes(tomeFields: FilterBarOption[], tomeMultiSearch: string): UseTomesResult {
+export function useTomeIds(tomeFields: FilterBarOption[], tomeMultiSearch: string): UseTomesResult {
 
     const queryVariables = useMemo(
         () => buildTomeIdsQuery(tomeFields, tomeMultiSearch),
