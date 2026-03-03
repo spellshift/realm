@@ -198,3 +198,31 @@ fn test_string_slicing() {
     "#,
     );
 }
+
+#[test]
+fn test_bytes_subscript() {
+    // Index: bytes[i] returns int (the byte value)
+    assert::pass(
+        r#"
+        b = b"ABC"
+        assert_eq(b[0], 65)
+        assert_eq(b[1], 66)
+        assert_eq(b[2], 67)
+        assert_eq(b[-1], 67)
+        assert_eq(b[-3], 65)
+        assert_eq(type(b[0]), "int")
+    "#,
+    );
+
+    // Slice: bytes[i:j] returns bytes
+    assert::pass(
+        r#"
+        b = b"hello"
+        assert_eq(b[1:4], b"ell")
+        assert_eq(b[:3], b"hel")
+        assert_eq(b[3:], b"lo")
+        assert_eq(b[::-1], b"olleh")
+        assert_eq(type(b[1:3]), "bytes")
+    "#,
+    );
+}
