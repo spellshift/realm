@@ -1,7 +1,7 @@
 use aes::Aes128;
 use aes::cipher::{BlockDecrypt, KeyInit, generic_array::GenericArray};
 use alloc::vec::Vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 
 pub fn aes_decrypt(key: Bytes, _iv: Bytes, data: Bytes) -> Result<Bytes, String> {
     if key.len() != 16 {
@@ -59,9 +59,9 @@ mod tests {
 
     #[test]
     fn test_aes_roundtrip() {
-        let key = Bytes::from_static(b"TESTINGPASSWORD!");
+        let key = Bytes::from(b"TESTINGPASSWORD!");
         let iv = Bytes::from(vec![0u8; 16]); // Ignored
-        let data = Bytes::from_static(b"Hello World!");
+        let data = Bytes::from(b"Hello World!");
 
         let encrypted = aes_encrypt(key.clone(), iv.clone(), data.clone()).expect("encrypt failed");
         assert_ne!(encrypted.as_ref(), data.as_ref());
@@ -73,24 +73,24 @@ mod tests {
 
     #[test]
     fn test_aes_decrypt_invalid_key_length() {
-        let key = Bytes::from_static(b"short");
-        let data = Bytes::from_static(b"data");
+        let key = Bytes::from(b"short");
+        let data = Bytes::from(b"data");
         let res = aes_decrypt(key, Bytes::new(), data);
         assert!(res.is_err());
     }
 
     #[test]
     fn test_aes_decrypt_invalid_data_length() {
-        let key = Bytes::from_static(b"TESTINGPASSWORD!");
-        let data = Bytes::from_static(b"not_multiple_16");
+        let key = Bytes::from(b"TESTINGPASSWORD!");
+        let data = Bytes::from(b"not_multiple_16");
         let res = aes_decrypt(key, Bytes::new(), data);
         assert!(res.is_err());
     }
 
     #[test]
     fn test_aes_decrypt_invalid_padding() {
-        let key = Bytes::from_static(b"TESTINGPASSWORD!");
-        let data = Bytes::from_static(b"data");
+        let key = Bytes::from(b"TESTINGPASSWORD!");
+        let data = Bytes::from(b"data");
         let mut encrypted = aes_encrypt(key.clone(), Bytes::new(), data).unwrap().to_vec();
 
         // Modify last byte to make padding invalid

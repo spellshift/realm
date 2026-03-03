@@ -1,7 +1,7 @@
 use super::CryptoLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::eldritch_library_impl;
 
@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn test_crypto_fake() {
         let crypto = CryptoLibraryFake;
-        let data = Bytes::from_static(&[1, 2, 3]);
+        let data = Bytes::from(&[1, 2, 3]);
         let enc = crypto
             .aes_encrypt(Bytes::new(), Bytes::new(), data.clone())
             .unwrap();

@@ -14,7 +14,6 @@ std = []
 [dependencies]
 spin = { workspace = true, features = ["mutex", "spin_mutex", "rwlock"] }
 libm = { workspace = true }
-bytes = { version = "1.6.0", default-features = false }
 
 [dev-dependencies]
 criterion = { workspace = true }

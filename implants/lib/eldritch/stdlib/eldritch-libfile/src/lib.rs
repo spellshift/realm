@@ -2,7 +2,7 @@ extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 

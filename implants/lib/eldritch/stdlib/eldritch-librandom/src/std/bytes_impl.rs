@@ -1,6 +1,6 @@
 use alloc::string::ToString;
 use alloc::vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 

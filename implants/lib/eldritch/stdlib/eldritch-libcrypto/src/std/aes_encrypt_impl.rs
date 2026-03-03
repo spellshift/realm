@@ -1,7 +1,7 @@
 use aes::Aes128;
 use aes::cipher::{BlockEncrypt, KeyInit, generic_array::GenericArray};
 use alloc::vec::Vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 
 pub fn aes_encrypt(key: Bytes, _iv: Bytes, data: Bytes) -> Result<Bytes, String> {
     if key.len() != 16 {
@@ -36,17 +36,17 @@ mod tests {
 
     #[test]
     fn test_aes_encrypt_invalid_key_length() {
-        let key = Bytes::from_static(b"short");
-        let data = Bytes::from_static(b"data");
+        let key = Bytes::from(b"short");
+        let data = Bytes::from(b"data");
         let res = aes_encrypt(key, Bytes::new(), data);
         assert!(res.is_err());
     }
 
     #[test]
     fn test_aes_padding_logic() {
-        let key = Bytes::from_static(b"TESTINGPASSWORD!");
+        let key = Bytes::from(b"TESTINGPASSWORD!");
         // Exact block size
-        let data = Bytes::from_static(b"1234567890123456");
+        let data = Bytes::from(b"1234567890123456");
 
         let encrypted = aes_encrypt(key.clone(), Bytes::new(), data.clone()).unwrap();
         // Should produce 2 blocks (32 bytes) because PKCS#7 adds a full block of padding if input is multiple of block size
@@ -55,8 +55,8 @@ mod tests {
 
     #[test]
     fn test_aes_vectors() {
-        let data = Bytes::from_static(b"Lorem ipsum dolor sit amet");
-        let key = Bytes::from_static(b"TESTINGPASSWORD!");
+        let data = Bytes::from(b"Lorem ipsum dolor sit amet");
+        let key = Bytes::from(b"TESTINGPASSWORD!");
 
         let encrypted = aes_encrypt(key.clone(), Bytes::new(), data.clone()).unwrap();
         assert!(!encrypted.is_empty());

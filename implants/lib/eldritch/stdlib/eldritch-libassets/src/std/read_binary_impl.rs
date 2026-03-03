@@ -1,6 +1,6 @@
 use crate::std::StdAssetsLibrary;
 use anyhow::Result;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Bytes> {

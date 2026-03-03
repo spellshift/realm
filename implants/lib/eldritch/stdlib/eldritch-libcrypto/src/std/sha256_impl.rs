@@ -1,5 +1,5 @@
 use alloc::format;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use sha2::{Digest, Sha256};
 
 pub fn sha256(data: Bytes) -> Result<String, String> {
@@ -14,7 +14,7 @@ mod tests {
 
     #[test]
     fn test_sha256() {
-        let data = Bytes::from_static(b"hello world");
+        let data = Bytes::from(b"hello world");
         let hash = sha256(data).unwrap();
         assert_eq!(
             hash,

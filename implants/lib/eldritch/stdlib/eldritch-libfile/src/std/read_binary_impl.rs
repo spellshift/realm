@@ -1,7 +1,7 @@
 use ::std::fs;
 use alloc::format;
 use alloc::string::String;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 
 pub fn read_binary(path: String) -> Result<Bytes, String> {
     fs::read(&path)

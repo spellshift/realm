@@ -4,7 +4,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use anyhow::Result;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use core::marker::PhantomData;
 use eldritch_agent::{Agent, Context};
 use eldritch_macros::eldritch_library_impl;

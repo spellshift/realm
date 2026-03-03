@@ -1,7 +1,7 @@
 use super::AssetsLibrary;
 use alloc::string::String;
 use alloc::vec::Vec;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use eldritch_macros::eldritch_library_impl;
 
 #[derive(Default, Debug)]
@@ -10,7 +10,7 @@ pub struct FakeAssetsLibrary;
 
 impl AssetsLibrary for FakeAssetsLibrary {
     fn read_binary(&self, _name: String) -> Result<Bytes, String> {
-        Ok(Bytes::from_static(b"fake_binary_content"))
+        Ok(Bytes::from(b"fake_binary_content"))
     }
 
     fn read(&self, _name: String) -> Result<String, String> {

@@ -4,7 +4,6 @@ version = "0.3.2"
 edition = "2024"
 
 [dependencies]
-bytes = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 rand = { workspace = true, optional = true }

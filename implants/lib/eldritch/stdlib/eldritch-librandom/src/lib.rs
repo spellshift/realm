@@ -1,6 +1,6 @@
 extern crate alloc;
 use alloc::string::String;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]

@@ -1,5 +1,5 @@
 use alloc::format;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use sha1::Sha1;
 use sha2::Digest;
 
@@ -15,7 +15,7 @@ mod tests {
 
     #[test]
     fn test_sha1() {
-        let data = Bytes::from_static(b"hello world");
+        let data = Bytes::from(b"hello world");
         let hash = sha1(data).unwrap();
         assert_eq!(hash, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
     }

@@ -1,10 +1,10 @@
 use super::ast::Value;
+use super::bytes::Bytes;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use bytes::Bytes;
 use spin::RwLock;
 
 pub trait FromValue: Sized {

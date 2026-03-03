@@ -1,6 +1,6 @@
 use super::RandomLibrary;
 use alloc::string::String;
-use bytes::Bytes;
+use eldritch_core::Bytes;
 use eldritch_macros::eldritch_library_impl;
 
 pub mod bool_impl;
