@@ -16,38 +16,6 @@ export interface TomeSelectionStepProps {
     formik: ModalQuestFormikProps;
 }
 
-export interface TomeIdNode {
-    id: string;
-    name: string;
-    paramDefs: string | null;
-}
-
-export interface TomeIdEdge {
-    node: TomeIdNode;
-}
-
-export interface TomeIdsQueryResponse {
-    edges: TomeIdEdge[];
-}
-
-export interface TomeIdsQueryTopLevel {
-    tomes: TomeIdsQueryResponse;
-}
-
-export interface TomeDetailQueryResponse {
-    tomes: {
-        edges: { node: TomeNode }[];
-    };
-}
-
-export interface GetTomeIdsQueryVariables {
-    where?: Record<string, unknown>;
-}
-
-export interface GetTomeDetailQueryVariables {
-    id: string;
-}
-
 export interface UseTomesResult {
     tomeIds: string[];
     initialLoading: boolean;

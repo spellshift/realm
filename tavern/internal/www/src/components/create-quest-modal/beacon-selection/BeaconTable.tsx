@@ -3,9 +3,9 @@ import { Checkbox } from "@chakra-ui/react";
 import { VirtualizedTable } from "../../tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../tavern-base-ui/virtualized-table/types";
 import BeaconTile from "../../BeaconTile";
-import { BeaconNode } from "../../../utils/interfacesQuery";
-import { GET_BEACON_DETAIL_QUERY } from "./queries";
-import { BeaconDetailQueryResponse, BeaconTableProps } from "./types";
+import { BeaconNode, BeaconDetailQueryResponse } from "../../../utils/interfacesQuery";
+import { GET_BEACON_DETAIL_QUERY } from "../../../utils/queries";
+import { BeaconTableProps } from "./types";
 
 export const BeaconTable = ({
     beaconIds,
@@ -14,8 +14,6 @@ export const BeaconTable = ({
     onToggle,
     emptyMessage = "No beacons found",
 }: BeaconTableProps) => {
-    const selectionKey = selectable ? selectedBeaconIds.join(",") : "";
-
     const rowSize = 80;
     const maxRows = 5;
     const maxHeight = maxRows * rowSize;
@@ -71,7 +69,7 @@ export const BeaconTable = ({
                 ),
             },
         ],
-        [selectable, selectionKey]
+        [selectable]
     );
 
     if (beaconIds.length === 0) {

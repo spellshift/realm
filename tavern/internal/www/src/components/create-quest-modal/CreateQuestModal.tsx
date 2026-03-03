@@ -55,8 +55,8 @@ const CreateQuestModal = ({ isOpen, setOpen, initialBeacons = [] }: CreateQuestM
             beacons: initialBeacons,
         },
         validationSchema: modalQuestSchema,
-        validateOnChange: false,
-        validateOnBlur: false,
+        validateOnChange: true,
+        validateOnBlur: true,
         onSubmit: (values: ModalQuestFormValues) => submitQuest(values),
     });
 

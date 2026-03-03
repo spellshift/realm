@@ -6,13 +6,13 @@ import { EmptyState, EmptyStateType } from "../../tavern-base-ui/EmptyState";
 import FreeTextSearch from "../../tavern-base-ui/FreeTextSearch";
 import { VirtualizedTable } from "../../tavern-base-ui/virtualized-table/VirtualizedTable";
 import { ExpandableConfig, VirtualizedTableColumn } from "../../tavern-base-ui/virtualized-table/types";
-import { TomeNode } from "../../../utils/interfacesQuery";
+import { TomeNode, TomeDetailQueryResponse } from "../../../utils/interfacesQuery";
 import { FilterBarOption, FieldInputParams } from "../../../utils/interfacesUI";
 import { TomeTactic } from "../../../utils/enums";
 import { safelyJsonParse } from "../../../utils/utils";
+import { GET_TOME_DETAIL_QUERY } from "../../../utils/queries";
 import { useTomeIds } from "./useTomeIds";
-import { GET_TOME_DETAIL_QUERY } from "./queries";
-import { TomeDetailQueryResponse, TomeTableProps } from "./types";
+import { TomeTableProps } from "./types";
 import { TomeFilterBar } from "../../TomeFilterBar";
 
 const ParamLabelsDisplay = ({ params }: { params: FieldInputParams[] }) => {

@@ -4,13 +4,13 @@ import { sub } from "date-fns";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { getBeaconFilterNameByTypes } from "../../../utils/utils";
 import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
-import { GET_BEACON_IDS_QUERY } from "./queries";
+import { GET_BEACON_IDS_QUERY } from "../../../utils/queries";
 import {
     BeaconIdNode,
     BeaconIdsQueryTopLevel,
     GetBeaconIdsQueryVariables,
-    UseOnlineBeaconIdsResult,
-} from "./types";
+} from "../../../utils/interfacesQuery";
+import { UseOnlineBeaconIdsResult } from "./types";
 
 interface UseOnlineBeaconIdsProps {
     typeFilters?: FilterBarOption[];
