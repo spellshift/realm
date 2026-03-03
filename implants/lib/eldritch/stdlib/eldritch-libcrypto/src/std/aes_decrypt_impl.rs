@@ -91,7 +91,9 @@ mod tests {
     fn test_aes_decrypt_invalid_padding() {
         let key = Bytes::from(b"TESTINGPASSWORD!");
         let data = Bytes::from(b"data");
-        let mut encrypted = aes_encrypt(key.clone(), Bytes::new(), data).unwrap().to_vec();
+        let mut encrypted = aes_encrypt(key.clone(), Bytes::new(), data)
+            .unwrap()
+            .to_vec();
 
         // Modify last byte to make padding invalid
         if let Some(last) = encrypted.last_mut() {

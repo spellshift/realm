@@ -86,9 +86,7 @@ mod tests {
         let enc = crypto
             .aes_encrypt(Bytes::new(), Bytes::new(), data.clone())
             .unwrap();
-        let dec = crypto
-            .aes_decrypt(Bytes::new(), Bytes::new(), enc)
-            .unwrap();
+        let dec = crypto.aes_decrypt(Bytes::new(), Bytes::new(), enc).unwrap();
         assert_eq!(data.as_ref(), dec.as_ref());
     }
 }
