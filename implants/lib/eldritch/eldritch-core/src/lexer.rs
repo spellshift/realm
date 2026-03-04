@@ -222,6 +222,30 @@ impl Lexer {
                         '\n' => {
                             self.line += 1;
                         }
+                        'x' => {
+                            // \xHH: parse two hex digits
+                            let mut hex = String::new();
+                            for _ in 0..2 {
+                                if !self.is_at_end() && self.peek().is_ascii_hexdigit() {
+                                    hex.push(self.advance());
+                                }
+                            }
+                            if hex.len() == 2 {
+                                if let Ok(byte_val) = u8::from_str_radix(&hex, 16) {
+                                    current_literal.push(byte_val as char);
+                                } else {
+                                    current_literal.push('x');
+                                    for h in hex.chars() {
+                                        current_literal.push(h);
+                                    }
+                                }
+                            } else {
+                                current_literal.push('x');
+                                for h in hex.chars() {
+                                    current_literal.push(h);
+                                }
+                            }
+                        }
                         c => current_literal.push(c),
                     }
                 }

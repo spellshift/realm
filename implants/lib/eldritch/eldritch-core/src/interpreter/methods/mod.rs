@@ -5,11 +5,13 @@ use alloc::string::{String, ToString};
 use alloc::vec;
 use alloc::vec::Vec;
 
+mod bytes;
 mod dict;
 mod list;
 mod set;
 mod str;
 
+use bytes::handle_bytes_methods;
 use dict::handle_dict_methods;
 use list::handle_list_methods;
 use set::handle_set_methods;
@@ -118,7 +120,9 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
             "isupper".to_string(),
             "isspace".to_string(),
             "istitle".to_string(),
+            "encode".to_string(),
         ],
+        Value::Bytes(_) => vec!["decode".to_string()],
         _ => Vec::new(),
     }
 }
@@ -129,6 +133,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
         Value::Dictionary(d) => handle_dict_methods(d, method, args),
         Value::Set(s) => handle_set_methods(s, method, args),
         Value::String(s) => handle_string_methods(s, method, args),
+        Value::Bytes(b) => handle_bytes_methods(b, method, args),
         _ => None,
     };
 

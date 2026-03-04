@@ -28,6 +28,7 @@ pub mod replace_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
 pub mod timestomp_impl;
+pub mod write_binary_impl;
 pub mod write_impl;
 
 #[derive(Debug, Default)]
@@ -97,8 +98,8 @@ impl FileLibrary for StdFileLibrary {
         read_impl::read(path)
     }
 
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
-        read_binary_impl::read_binary(path)
+    fn read_binary(&self, path: String) -> Result<Value, String> {
+        read_binary_impl::read_binary(path).map(Value::Bytes)
     }
 
     fn pwd(&self) -> Result<Option<String>, String> {
@@ -144,6 +145,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn write(&self, path: String, content: String) -> Result<(), String> {
         write_impl::write(path, content)
+    }
+
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
+        write_binary_impl::write_binary(path, content)
     }
 
     fn find(

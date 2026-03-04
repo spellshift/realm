@@ -54,6 +54,32 @@ export const moveWordRight = (buffer: string, cursor: number): number => {
     return i;
 };
 
+export const isInsideString = (buffer: string, cursor: number): boolean => {
+    let insideSingle = false;
+    let insideDouble = false;
+    let escape = false;
+
+    for (let i = 0; i < cursor; i++) {
+        const char = buffer[i];
+
+        if (escape) {
+            escape = false;
+        } else if (char === '\\') {
+            escape = true;
+        } else if (char === "'") {
+            if (!insideDouble) {
+                insideSingle = !insideSingle;
+            }
+        } else if (char === '"') {
+            if (!insideSingle) {
+                insideDouble = !insideDouble;
+            }
+        }
+    }
+
+    return insideSingle || insideDouble;
+};
+
 const COLOR_STRING = "\x1b[38;2;197;148;124m";
 const COLOR_METHOD = "\x1b[38;2;220;220;175m";
 const COLOR_KEYWORD = "\x1b[38;2;188;137;189m";

@@ -236,11 +236,11 @@ pub trait FileLibrary {
     /// - `path` (`str`): The file path.
     ///
     /// **Returns**
-    /// - `List<int>`: The file content as a list of bytes (u8).
+    /// - `Bytes`: The file content as a bytes object.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, path: String) -> Result<Value, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.
@@ -367,6 +367,20 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if writing fails.
     fn write(&self, path: String, content: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Writes binary content to a file, overwriting it if it exists.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file path.
+    /// - `content` (`Bytes`): The binary content to write.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if writing fails.
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String>;
 
     #[eldritch_method]
     /// Finds files matching specific criteria.
