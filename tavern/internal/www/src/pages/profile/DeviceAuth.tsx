@@ -5,6 +5,7 @@ import Button from '../../components/tavern-base-ui/button/Button';
 import Table from '../../components/tavern-base-ui/table/Table';
 import { EmptyState, EmptyStateType } from '../../components/tavern-base-ui/EmptyState';
 import { DeviceAuthNode } from './Profile';
+import { Trash2 } from 'lucide-react';
 
 interface DeviceAuthProps {
     devices: { node: DeviceAuthNode }[];
@@ -78,7 +79,9 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
                 if (node.status === 'PENDING' || node.status === 'APPROVED') {
                     return (
                         <div className="flex justify-end">
-                            <Button buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.id)}>Revoke</Button>
+                            <Button buttonVariant="outline" buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.id)}>
+                                <Trash2 size={16} />
+                            </Button>
                         </div>
                     );
                 }
