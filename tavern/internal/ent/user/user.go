@@ -30,6 +30,8 @@ const (
 	EdgeTomes = "tomes"
 	// EdgeActiveShells holds the string denoting the active_shells edge name in mutations.
 	EdgeActiveShells = "active_shells"
+	// EdgeDeviceAuths holds the string denoting the device_auths edge name in mutations.
+	EdgeDeviceAuths = "device_auths"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// TomesTable is the table that holds the tomes relation/edge.
@@ -44,6 +46,13 @@ const (
 	// ActiveShellsInverseTable is the table name for the Shell entity.
 	// It exists in this package in order to avoid circular dependency with the "shell" package.
 	ActiveShellsInverseTable = "shells"
+	// DeviceAuthsTable is the table that holds the device_auths relation/edge.
+	DeviceAuthsTable = "device_auths"
+	// DeviceAuthsInverseTable is the table name for the DeviceAuth entity.
+	// It exists in this package in order to avoid circular dependency with the "deviceauth" package.
+	DeviceAuthsInverseTable = "device_auths"
+	// DeviceAuthsColumn is the table column denoting the device_auths relation/edge.
+	DeviceAuthsColumn = "device_auth_user"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -172,6 +181,20 @@ func ByActiveShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newActiveShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByDeviceAuthsCount orders the results by device_auths count.
+func ByDeviceAuthsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDeviceAuthsStep(), opts...)
+	}
+}
+
+// ByDeviceAuths orders the results by device_auths terms.
+func ByDeviceAuths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDeviceAuthsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -184,5 +207,12 @@ func newActiveShellsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActiveShellsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, ActiveShellsTable, ActiveShellsPrimaryKey...),
+	)
+}
+func newDeviceAuthsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DeviceAuthsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, DeviceAuthsTable, DeviceAuthsColumn),
 	)
 }

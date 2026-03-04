@@ -133,6 +133,9 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 // ShellTask returns generated.ShellTaskResolver implementation.
 func (r *Resolver) ShellTask() generated.ShellTaskResolver { return &shellTaskResolver{r} }
 
+// User returns generated.UserResolver implementation.
+func (r *Resolver) User() generated.UserResolver { return &userResolver{r} }
+
 // ShellTaskWhereInput returns generated.ShellTaskWhereInputResolver implementation.
 func (r *Resolver) ShellTaskWhereInput() generated.ShellTaskWhereInputResolver {
 	return &shellTaskWhereInputResolver{r}
@@ -141,4 +144,5 @@ func (r *Resolver) ShellTaskWhereInput() generated.ShellTaskWhereInputResolver {
 type hostFileResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type shellTaskResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }
 type shellTaskWhereInputResolver struct{ *Resolver }

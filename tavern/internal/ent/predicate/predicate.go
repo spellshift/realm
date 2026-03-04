@@ -18,6 +18,9 @@ type BuildTask func(*sql.Selector)
 // Builder is the predicate function for builder builders.
 type Builder func(*sql.Selector)
 
+// DeviceAuth is the predicate function for deviceauth builders.
+type DeviceAuth func(*sql.Selector)
+
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 

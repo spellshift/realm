@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -49,6 +50,8 @@ type Client struct {
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
 	Builder *BuilderClient
+	// DeviceAuth is the client for interacting with the DeviceAuth builders.
+	DeviceAuth *DeviceAuthClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -96,6 +99,7 @@ func (c *Client) init() {
 	c.Beacon = NewBeaconClient(c.config)
 	c.BuildTask = NewBuildTaskClient(c.config)
 	c.Builder = NewBuilderClient(c.config)
+	c.DeviceAuth = NewDeviceAuthClient(c.config)
 	c.Host = NewHostClient(c.config)
 	c.HostCredential = NewHostCredentialClient(c.config)
 	c.HostFile = NewHostFileClient(c.config)
@@ -207,6 +211,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Beacon:         NewBeaconClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
+		DeviceAuth:     NewDeviceAuthClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -245,6 +250,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Beacon:         NewBeaconClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
+		DeviceAuth:     NewDeviceAuthClient(cfg),
 		Host:           NewHostClient(cfg),
 		HostCredential: NewHostCredentialClient(cfg),
 		HostFile:       NewHostFileClient(cfg),
@@ -289,9 +295,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Screenshot, c.Shell,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
+		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
+		c.Repository, c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome,
+		c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -301,9 +308,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.Screenshot, c.Shell,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
+		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
+		c.Repository, c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome,
+		c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -320,6 +328,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BuildTask.mutate(ctx, m)
 	case *BuilderMutation:
 		return c.Builder.mutate(ctx, m)
+	case *DeviceAuthMutation:
+		return c.DeviceAuth.mutate(ctx, m)
 	case *HostMutation:
 		return c.Host.mutate(ctx, m)
 	case *HostCredentialMutation:
@@ -1030,6 +1040,155 @@ func (c *BuilderClient) mutate(ctx context.Context, m *BuilderMutation) (Value, 
 		return (&BuilderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Builder mutation op: %q", m.Op())
+	}
+}
+
+// DeviceAuthClient is a client for the DeviceAuth schema.
+type DeviceAuthClient struct {
+	config
+}
+
+// NewDeviceAuthClient returns a client for the DeviceAuth from the given config.
+func NewDeviceAuthClient(c config) *DeviceAuthClient {
+	return &DeviceAuthClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `deviceauth.Hooks(f(g(h())))`.
+func (c *DeviceAuthClient) Use(hooks ...Hook) {
+	c.hooks.DeviceAuth = append(c.hooks.DeviceAuth, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `deviceauth.Intercept(f(g(h())))`.
+func (c *DeviceAuthClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DeviceAuth = append(c.inters.DeviceAuth, interceptors...)
+}
+
+// Create returns a builder for creating a DeviceAuth entity.
+func (c *DeviceAuthClient) Create() *DeviceAuthCreate {
+	mutation := newDeviceAuthMutation(c.config, OpCreate)
+	return &DeviceAuthCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DeviceAuth entities.
+func (c *DeviceAuthClient) CreateBulk(builders ...*DeviceAuthCreate) *DeviceAuthCreateBulk {
+	return &DeviceAuthCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DeviceAuthClient) MapCreateBulk(slice any, setFunc func(*DeviceAuthCreate, int)) *DeviceAuthCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DeviceAuthCreateBulk{err: fmt.Errorf("calling to DeviceAuthClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DeviceAuthCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DeviceAuthCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DeviceAuth.
+func (c *DeviceAuthClient) Update() *DeviceAuthUpdate {
+	mutation := newDeviceAuthMutation(c.config, OpUpdate)
+	return &DeviceAuthUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DeviceAuthClient) UpdateOne(da *DeviceAuth) *DeviceAuthUpdateOne {
+	mutation := newDeviceAuthMutation(c.config, OpUpdateOne, withDeviceAuth(da))
+	return &DeviceAuthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DeviceAuthClient) UpdateOneID(id int) *DeviceAuthUpdateOne {
+	mutation := newDeviceAuthMutation(c.config, OpUpdateOne, withDeviceAuthID(id))
+	return &DeviceAuthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DeviceAuth.
+func (c *DeviceAuthClient) Delete() *DeviceAuthDelete {
+	mutation := newDeviceAuthMutation(c.config, OpDelete)
+	return &DeviceAuthDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DeviceAuthClient) DeleteOne(da *DeviceAuth) *DeviceAuthDeleteOne {
+	return c.DeleteOneID(da.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DeviceAuthClient) DeleteOneID(id int) *DeviceAuthDeleteOne {
+	builder := c.Delete().Where(deviceauth.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DeviceAuthDeleteOne{builder}
+}
+
+// Query returns a query builder for DeviceAuth.
+func (c *DeviceAuthClient) Query() *DeviceAuthQuery {
+	return &DeviceAuthQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDeviceAuth},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DeviceAuth entity by its id.
+func (c *DeviceAuthClient) Get(ctx context.Context, id int) (*DeviceAuth, error) {
+	return c.Query().Where(deviceauth.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DeviceAuthClient) GetX(ctx context.Context, id int) *DeviceAuth {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a DeviceAuth.
+func (c *DeviceAuthClient) QueryUser(da *DeviceAuth) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := da.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deviceauth.Table, deviceauth.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, deviceauth.UserTable, deviceauth.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(da.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DeviceAuthClient) Hooks() []Hook {
+	return c.hooks.DeviceAuth
+}
+
+// Interceptors returns the client interceptors.
+func (c *DeviceAuthClient) Interceptors() []Interceptor {
+	return c.inters.DeviceAuth
+}
+
+func (c *DeviceAuthClient) mutate(ctx context.Context, m *DeviceAuthMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DeviceAuthCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DeviceAuthUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DeviceAuthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DeviceAuthDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DeviceAuth mutation op: %q", m.Op())
 	}
 }
 
@@ -3920,6 +4079,22 @@ func (c *UserClient) QueryActiveShells(u *User) *ShellQuery {
 	return query
 }
 
+// QueryDeviceAuths queries the device_auths edge of a User.
+func (c *UserClient) QueryDeviceAuths(u *User) *DeviceAuthQuery {
+	query := (&DeviceAuthClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(deviceauth.Table, deviceauth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.DeviceAuthsTable, user.DeviceAuthsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -3948,13 +4123,13 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask, Tag, Task, Tome,
-		User []ent.Hook
+		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
+		HostProcess, Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask,
+		Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Asset, Beacon, BuildTask, Builder, Host, HostCredential, HostFile, HostProcess,
-		Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask, Tag, Task, Tome,
-		User []ent.Interceptor
+		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
+		HostProcess, Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask,
+		Tag, Task, Tome, User []ent.Interceptor
 	}
 )

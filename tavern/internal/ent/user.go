@@ -43,14 +43,17 @@ type UserEdges struct {
 	Tomes []*Tome `json:"tomes,omitempty"`
 	// Shells actively used by the user
 	ActiveShells []*Shell `json:"active_shells,omitempty"`
+	// Device auths approved by the user.
+	DeviceAuths []*DeviceAuth `json:"device_auths,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
 	namedTomes        map[string][]*Tome
 	namedActiveShells map[string][]*Shell
+	namedDeviceAuths  map[string][]*DeviceAuth
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -69,6 +72,15 @@ func (e UserEdges) ActiveShellsOrErr() ([]*Shell, error) {
 		return e.ActiveShells, nil
 	}
 	return nil, &NotLoadedError{edge: "active_shells"}
+}
+
+// DeviceAuthsOrErr returns the DeviceAuths value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) DeviceAuthsOrErr() ([]*DeviceAuth, error) {
+	if e.loadedTypes[2] {
+		return e.DeviceAuths, nil
+	}
+	return nil, &NotLoadedError{edge: "device_auths"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -177,6 +189,11 @@ func (u *User) QueryActiveShells() *ShellQuery {
 	return NewUserClient(u.config).QueryActiveShells(u)
 }
 
+// QueryDeviceAuths queries the "device_auths" edge of the User entity.
+func (u *User) QueryDeviceAuths() *DeviceAuthQuery {
+	return NewUserClient(u.config).QueryDeviceAuths(u)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -266,6 +283,30 @@ func (u *User) appendNamedActiveShells(name string, edges ...*Shell) {
 		u.Edges.namedActiveShells[name] = []*Shell{}
 	} else {
 		u.Edges.namedActiveShells[name] = append(u.Edges.namedActiveShells[name], edges...)
+	}
+}
+
+// NamedDeviceAuths returns the DeviceAuths named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedDeviceAuths(name string) ([]*DeviceAuth, error) {
+	if u.Edges.namedDeviceAuths == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedDeviceAuths[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedDeviceAuths(name string, edges ...*DeviceAuth) {
+	if u.Edges.namedDeviceAuths == nil {
+		u.Edges.namedDeviceAuths = make(map[string][]*DeviceAuth)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedDeviceAuths[name] = []*DeviceAuth{}
+	} else {
+		u.Edges.namedDeviceAuths[name] = append(u.Edges.namedDeviceAuths[name], edges...)
 	}
 }
 
