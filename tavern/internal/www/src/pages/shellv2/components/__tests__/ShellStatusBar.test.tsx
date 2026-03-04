@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ShellStatusBar from "../ShellStatusBar";
-import { ConnectionStatus } from "../../../../lib/headless-adapter";
+import { ConnectionStatus } from "../../../../lib/browser-adapter";
 import React from "react";
 import { expect, describe, it } from "vitest";
 import "@testing-library/jest-dom";
