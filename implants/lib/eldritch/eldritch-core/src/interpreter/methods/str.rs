@@ -280,6 +280,10 @@ pub fn handle_string_methods(
             let chars: Vec<Value> = s.chars().map(|c| Value::String(c.to_string())).collect();
             Ok(Value::List(Arc::new(RwLock::new(chars))))
         })()),
+        "encode" => Some((|| {
+            args.require(0, "encode")?;
+            Ok(Value::Bytes(s.as_bytes().to_vec()))
+        })()),
         "isalnum" => Some((|| {
             args.require(0, "isalnum")?;
             Ok(Value::Bool(

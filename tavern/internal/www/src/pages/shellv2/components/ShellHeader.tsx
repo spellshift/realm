@@ -25,6 +25,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
   const primaryIP = shellData?.node?.beacon?.host?.primaryIP;
   const externalIP = shellData?.node?.beacon?.host?.externalIP;
   const platform = shellData?.node?.beacon?.host?.platform;
+  const tags = shellData?.node?.beacon?.host?.tags?.edges?.map((edge: any) => edge.node) || [];
 
   return (
     <div className="flex items-center gap-4 mb-4">
@@ -47,6 +48,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
             <span>Primary IP: {primaryIP}</span>
             <span>External IP: {externalIP}</span>
             <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
+            {tags.length > 0 && (
+              <span>Tags: {tags.map((t: any) => t.name).join(', ')}</span>
+            )}
           </div>
         }>
           <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>

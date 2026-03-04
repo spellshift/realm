@@ -176,9 +176,14 @@ pub mod tests {
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
-        assert!(!content.is_empty());
+        let bytes = if let eldritch_core::Value::Bytes(b) = content {
+            b
+        } else {
+            panic!("Expected Bytes")
+        };
+        assert!(!bytes.is_empty());
         assert_eq!(
-            std::str::from_utf8(&content).unwrap().trim(),
+            std::str::from_utf8(&bytes).unwrap().trim(),
             "print(\"This script just prints\")"
         );
         Ok(())
@@ -206,7 +211,12 @@ pub mod tests {
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
-        assert_eq!(content.unwrap(), b"remote content");
+        let bytes = if let eldritch_core::Value::Bytes(b) = content.unwrap() {
+            b
+        } else {
+            panic!("Expected Bytes")
+        };
+        assert_eq!(bytes, b"remote content");
         Ok(())
     }
 
