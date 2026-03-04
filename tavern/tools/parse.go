@@ -39,14 +39,23 @@ func UploadTools(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 
 		// Check if asset already exists
 		exists, err := tx.Asset.Query().
-			Where(asset.Name(path)).
+			Where(asset.NameEQ(path)).
 			Exist(ctx)
 		if err != nil {
 			return rollback(tx, fmt.Errorf("failed to check if asset already exists: %w", err))
 		}
 
-		// Create new assets, don't update existing assets
-		if !exists {
+		if exists {
+			// Update existing
+			_, err = tx.Asset.Update().
+				Where(asset.NameEQ(path)).
+				SetContent(content).
+				Save(ctx)
+			if err != nil {
+				return rollback(tx, fmt.Errorf("failed to update tool asset %q: %w", path, err))
+			}
+		} else {
+			// Create new
 			_, err = tx.Asset.Create().
 				SetName(path).
 				SetContent(content).
