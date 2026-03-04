@@ -568,9 +568,17 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			}
 
 			// If stream_id matches, we send standard output
-			// We check for bytes payload as it indicates output.
-			bytesPayload := mote.GetBytes()
-			if bytesPayload != nil {
+			// We check for bytes payload or shell payload as they indicate output.
+			var outputData string
+			var errorData string
+			if bytesPayload := mote.GetBytes(); bytesPayload != nil {
+				outputData = string(bytesPayload.Data)
+			} else if shellPayload := mote.GetShell(); shellPayload != nil {
+				outputData = shellPayload.Output
+				errorData = shellPayload.Error
+			}
+
+			if outputData != "" || errorData != "" {
 				// It's output.
 				task, err := h.graph.ShellTask.Query().
 					Where(
@@ -585,37 +593,52 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 					continue
 				}
 
-				if mote.StreamId == streamID {
-					// Local stream output
-					outputMsg := NewWebsocketTaskOutputMessage(task)
-					if _, sent := sentTasks[task.ID]; !sent {
-						outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), string(bytesPayload.Data))
-						sentTasks[task.ID] = struct{}{}
-					} else {
-						outputMsg.Output = string(bytesPayload.Data) // Use real-time chunk
-					}
-					taskOutputCh <- outputMsg
-				} else {
-					// Other stream output
-					if _, sent := sentTasks[task.ID]; !sent {
-						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
-						// Custom formatting
-						creatorName := "Unknown"
-						if task.Edges.Creator != nil {
-							creatorName = task.Edges.Creator.Name
+				if outputData != "" {
+					if mote.StreamId == streamID {
+						// Local stream output
+						outputMsg := NewWebsocketTaskOutputMessage(task)
+						if _, sent := sentTasks[task.ID]; !sent {
+							outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), outputData)
+							sentTasks[task.ID] = struct{}{}
+						} else {
+							outputMsg.Output = outputData // Use real-time chunk
 						}
-
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
-						otherStreamMsg.Output += string(bytesPayload.Data)
-
-						otherStreamCh <- otherStreamMsg
-						sentTasks[task.ID] = struct{}{}
+						taskOutputCh <- outputMsg
 					} else {
-						// Already sent header. Send additional data.
-						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
-						otherStreamMsg.Output = string(bytesPayload.Data)
-						otherStreamCh <- otherStreamMsg
+						// Other stream output
+						if _, sent := sentTasks[task.ID]; !sent {
+							otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+							// Custom formatting
+							creatorName := "Unknown"
+							if task.Edges.Creator != nil {
+								creatorName = task.Edges.Creator.Name
+							}
+
+							otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
+							otherStreamMsg.Output += outputData
+
+							otherStreamCh <- otherStreamMsg
+							sentTasks[task.ID] = struct{}{}
+						} else {
+							// Already sent header. Send additional data.
+							otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+							otherStreamMsg.Output = outputData
+							otherStreamCh <- otherStreamMsg
+						}
 					}
+				}
+
+				if errorData != "" {
+					msg := NewWebsocketTaskErrorMessage(task)
+					if _, sent := sentTasks[task.ID]; !sent {
+						msg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), errorData)
+						// Notice we aren't setting sentTasks[task.ID] here intentionally,
+						// so we don't accidentally suppress an output header.
+						// The output block above will handle its own header properly.
+					} else {
+						msg.Error = errorData
+					}
+					taskErrCh <- msg
 				}
 			}
 

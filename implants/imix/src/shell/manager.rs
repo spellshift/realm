@@ -87,11 +87,9 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
         } => {
             let payload = ShellPayload {
                 shell_id,
-                input: if is_error {
-                    format!("Error: {}", output)
-                } else {
-                    output
-                },
+                input: String::new(), // Input is meant for sending to the shell
+                output: if !is_error { output.clone() } else { String::new() },
+                error: if is_error { output } else { String::new() },
             };
             let mote = Mote {
                 stream_id: stream_id.clone(),
