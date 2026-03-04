@@ -5,6 +5,10 @@ export class BrowserRepl {
     free(): void;
     [Symbol.dispose](): void;
     complete(line: string, cursor: number): string;
+    get_suggestions(): Array<any> | undefined;
+    get_suggestions_index(): number | undefined;
+    get_suggestions_start(): number | undefined;
+    handle_key(key: string, ctrl: boolean, alt: boolean, meta: boolean, shift: boolean): ReplState;
     input(line: string): string;
     constructor();
     reset(): void;
@@ -30,6 +34,23 @@ export class RenderState {
     readonly suggestions: any[] | undefined;
 }
 
+export class ReplState {
+    private constructor();
+    free(): void;
+    [Symbol.dispose](): void;
+    get args(): string[] | undefined;
+    set args(value: string[] | null | undefined);
+    buffer: string;
+    cursor_pos: number;
+    get function(): string | undefined;
+    set function(value: string | null | undefined);
+    is_running: boolean;
+    get payload(): string | undefined;
+    set payload(value: string | null | undefined);
+    prompt: string;
+    status: string;
+}
+
 export class WasmRepl {
     free(): void;
     [Symbol.dispose](): void;
@@ -47,9 +68,30 @@ export interface InitOutput {
     readonly memory: WebAssembly.Memory;
     readonly __wbg_browserrepl_free: (a: number, b: number) => void;
     readonly __wbg_executionresult_free: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_args: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_buffer: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_cursor_pos: (a: number) => number;
+    readonly __wbg_get_replstate_function: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_is_running: (a: number) => number;
+    readonly __wbg_get_replstate_payload: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_prompt: (a: number, b: number) => void;
+    readonly __wbg_get_replstate_status: (a: number, b: number) => void;
     readonly __wbg_renderstate_free: (a: number, b: number) => void;
+    readonly __wbg_replstate_free: (a: number, b: number) => void;
+    readonly __wbg_set_replstate_args: (a: number, b: number, c: number) => void;
+    readonly __wbg_set_replstate_buffer: (a: number, b: number, c: number) => void;
+    readonly __wbg_set_replstate_cursor_pos: (a: number, b: number) => void;
+    readonly __wbg_set_replstate_function: (a: number, b: number, c: number) => void;
+    readonly __wbg_set_replstate_is_running: (a: number, b: number) => void;
+    readonly __wbg_set_replstate_payload: (a: number, b: number, c: number) => void;
+    readonly __wbg_set_replstate_prompt: (a: number, b: number, c: number) => void;
+    readonly __wbg_set_replstate_status: (a: number, b: number, c: number) => void;
     readonly __wbg_wasmrepl_free: (a: number, b: number) => void;
     readonly browserrepl_complete: (a: number, b: number, c: number, d: number, e: number) => void;
+    readonly browserrepl_get_suggestions: (a: number) => number;
+    readonly browserrepl_get_suggestions_index: (a: number) => number;
+    readonly browserrepl_get_suggestions_start: (a: number) => number;
+    readonly browserrepl_handle_key: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => number;
     readonly browserrepl_input: (a: number, b: number, c: number, d: number) => void;
     readonly browserrepl_new: () => number;
     readonly browserrepl_reset: (a: number) => void;

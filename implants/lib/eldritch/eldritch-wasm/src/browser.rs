@@ -3,6 +3,7 @@ use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use eldritch_core::{BufferPrinter, Interpreter, Lexer, TokenKind};
+use eldritch_repl::{Input, Repl, ReplAction};
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
@@ -14,9 +15,36 @@ use eldritch::{
     report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
 };
 
+#[wasm_bindgen(getter_with_clone)]
+pub struct ReplState {
+    pub status: String,
+    pub prompt: String,
+    pub buffer: String,
+    pub cursor_pos: usize,
+    pub payload: Option<String>,
+    pub function: Option<String>,
+    pub args: Option<Vec<String>>,
+    pub is_running: bool,
+}
+
+impl Default for ReplState {
+    fn default() -> Self {
+        Self {
+            status: String::from("render"),
+            prompt: String::from(">>> "),
+            buffer: String::new(),
+            cursor_pos: 0,
+            payload: None,
+            function: None,
+            args: None,
+            is_running: false,
+        }
+    }
+}
+
 #[wasm_bindgen]
 pub struct BrowserRepl {
-    buffer: String,
+    repl: Repl,
     interpreter: Interpreter,
 }
 
@@ -44,115 +72,215 @@ impl BrowserRepl {
         }
 
         BrowserRepl {
-            buffer: String::new(),
+            repl: Repl::new(),
             interpreter: interp,
         }
     }
 
-    pub fn input(&mut self, line: &str) -> String {
-        if !self.buffer.is_empty() {
-            self.buffer.push('\n');
-        }
-        self.buffer.push_str(line);
+    pub fn handle_key(
+        &mut self,
+        key: &str,
+        ctrl: bool,
+        alt: bool,
+        meta: bool,
+        shift: bool,
+    ) -> ReplState {
+        // Map DOM key to Input
+        let input = match key {
+            "Enter" => {
+                if shift {
+                    Input::ForceEnter
+                } else {
+                    Input::Enter
+                }
+            }
+            "Backspace" => {
+                if alt || ctrl {
+                    Input::WordBackspace
+                } else {
+                    Input::Backspace
+                }
+            }
+            "Delete" => Input::Delete,
+            "ArrowLeft" => Input::Left,
+            "ArrowRight" => Input::Right,
+            "ArrowUp" => Input::Up,
+            "ArrowDown" => Input::Down,
+            "Home" => Input::Home,
+            "End" => Input::End,
+            "Tab" => Input::Tab,
+            "Escape" => Input::Cancel,
+            "a" if ctrl => Input::Home,
+            "e" if ctrl => Input::End,
+            "k" if ctrl => Input::KillToEnd,
+            "u" if ctrl => Input::KillLine,
+            "l" if ctrl => Input::ClearScreen,
+            "c" if ctrl => Input::Cancel,
+            "d" if ctrl => Input::EOF,
+            "r" if ctrl => Input::HistorySearch,
+            " " if ctrl => Input::ForceComplete,
+            "b" if alt => Input::Left,
+            "f" if alt => Input::Right,
+            "d" if alt => Input::WordBackspace, // Note: alt+d is forward delete in some shells, mapping to word backspace for simplicity or you can change
+            _ if key.chars().count() == 1 && !ctrl && !meta => {
+                Input::Char(key.chars().next().unwrap())
+            }
+            _ => return self.build_state("render", None, None, None), // Unhandled key
+        };
 
-        self.buffer = expand_macros(&self.buffer);
+        let action = self.repl.handle_input(input);
 
-        let trimmed = self.buffer.trim();
-        if trimmed == "exit" {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
-        }
-
-        // Check for completeness
-        let mut balance = 0;
-        let mut is_incomplete_string = false;
-        let mut has_error = false;
-        let mut error_msg = String::new();
-
-        let tokens = Lexer::new(self.buffer.clone()).scan_tokens();
-        for t in tokens {
-            match t.kind {
-                TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
-                TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
-                    if balance > 0 {
-                        balance -= 1;
+        match action {
+            ReplAction::None => self.build_state("render", None, None, None),
+            ReplAction::Render => self.build_state("render", None, None, None),
+            ReplAction::ClearScreen => {
+                self.build_state("clear", None, None, None)
+            }
+            ReplAction::Complete => {
+                let state = self.repl.get_render_state();
+                let (start, candidates) = self.interpreter.complete(&state.buffer, state.cursor);
+                self.repl.set_suggestions(candidates, start);
+                self.build_state("render", None, None, None)
+            }
+            ReplAction::Submit { code, last_line: _, prompt: _ } => {
+                // Parse code for meta functionalities
+                // Only if the code is structured like `ssh("some-host")`
+                if let Some((func, args)) = self.parse_meta_command(&code) {
+                    if func == "ssh" {
+                        return self.build_state("meta", None, Some(func), Some(args));
                     }
                 }
-                TokenKind::Error(ref msg) => {
-                    if msg.contains("Unterminated string literal") && !msg.contains("(newline)") {
-                        is_incomplete_string = true;
-                    } else {
-                        // Genuine error
-                        has_error = true;
-                        error_msg = msg.clone();
-                    }
+
+                // If code is exit, we can return status exit, but browser currently checks payload == exit
+                self.build_state("complete", Some(code), None, None)
+            }
+            ReplAction::AcceptLine { line: _, prompt: _ } => {
+                self.build_state("render", None, None, None)
+            }
+            ReplAction::Quit => self.build_state("quit", None, None, None),
+        }
+    }
+
+    fn build_state(&self, status: &str, payload: Option<String>, function: Option<String>, args: Option<Vec<String>>) -> ReplState {
+        let rs = self.repl.get_render_state();
+        ReplState {
+            status: status.to_string(),
+            prompt: rs.prompt.clone(),
+            buffer: rs.buffer.clone(),
+            cursor_pos: rs.cursor,
+            payload,
+            function,
+            args,
+            is_running: false, // Update as needed if we add running states
+        }
+    }
+
+    fn parse_meta_command(&self, code: &str) -> Option<(String, Vec<String>)> {
+        // Very basic manual parser for `ssh(...)` to avoid bringing in the full AST matching here if simple
+        // Alternatively, use eldritch_core::Parser.
+        let tokens = Lexer::new(code.to_string()).scan_tokens();
+        
+        let mut tokens_iter = tokens.iter();
+        
+        // ssh Token
+        let first = tokens_iter.next()?;
+        if let TokenKind::Identifier(id) = &first.kind {
+            if id != "ssh" {
+                return None;
+            }
+        } else {
+            return None;
+        }
+
+        // Left Paren
+        let second = tokens_iter.next()?;
+        if !matches!(second.kind, TokenKind::LParen) {
+            return None;
+        }
+
+        let mut args = Vec::new();
+        let mut closed = false;
+
+        loop {
+            let t = tokens_iter.next();
+            if t.is_none() {
+                break;
+            }
+            let t = t.unwrap();
+            
+            match &t.kind {
+                TokenKind::RParen => {
+                    closed = true;
+                    break;
                 }
-                _ => {}
+                TokenKind::String(s) => {
+                    args.push(s.clone());
+                }
+                TokenKind::Comma => continue,
+                _ => return None, // Only strings allowed for now
             }
         }
 
-        // If we have an open bracket/paren/brace or incomplete string, it's definitely incomplete.
-        if balance > 0 || is_incomplete_string {
-            return String::from("{ \"status\": \"incomplete\", \"prompt\": \".. \" }");
+        if closed {
+            // Check if there are trailing tokens other than EOF/Newline
+            for t in tokens_iter {
+                match &t.kind {
+                    TokenKind::Eof | TokenKind::Newline => continue,
+                    _ => return None,
+                }
+            }
+
+            Some(("ssh".to_string(), args))
+        } else {
+            None
         }
+    }
 
-        // If there's a syntax error that isn't just "incomplete string", it might be a real error,
-        // OR it might be incomplete code that looks like an error (e.g. `def foo`).
-        // However, `eldritch-repl` logic is: if balance > 0 || incomplete_string -> incomplete.
-        // Otherwise, check for colon at end of line or if it's a single line.
-
-        // If we have a hard error from lexer (like bad char), we might return error.
-        // But let's follow the REPL logic:
-        // logic from repl:
-        // if balance > 0 || is_incomplete_string -> false (incomplete)
-        // ends_with_colon -> false (incomplete)
-        // line_count == 1 && !ends_with_colon -> true (complete)
-        // line_count > 1 && is_empty_last -> true (complete)
-
-        if has_error {
-            // If we have a lexer error that is NOT incomplete string, report error
-            // Unless it's something that could be fixed by typing more?
-            // Unexpected char is usually fatal.
-            self.buffer.clear();
-            return format!("{{ \"status\": \"error\", \"message\": {:?} }}", error_msg);
+    pub fn input(&mut self, line: &str) -> String {
+        // Legacy method, can just inject the characters then send enter
+        for c in line.chars() {
+            self.repl.handle_input(Input::Char(c));
         }
-
-        let ends_with_colon = trimmed.ends_with(':');
-        let lines: Vec<&str> = self.buffer.lines().collect();
-        let line_count = lines.len();
-        let last_line_empty =
-            self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
-
-        // If single line and doesn't end with colon, it's complete.
-        if line_count == 1 && !ends_with_colon {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+        let action = self.repl.handle_input(Input::Enter);
+        
+        match action {
+            ReplAction::Submit { code, .. } => {
+                format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", code)
+            }
+            ReplAction::AcceptLine { prompt, .. } => {
+                format!("{{ \"status\": \"incomplete\", \"prompt\": {:?} }}", prompt)
+            }
+            _ => String::from("{ \"status\": \"error\", \"message\": \"invalid state\" }"),
         }
+    }
 
-        // If multi-line (or ends with colon), we need an empty line to finish.
-        // Wait, if line_count == 1 and ends with colon, we need more.
-        // If line_count > 1, check if last line is empty.
-        // Note: `lines()` iterator doesn't include the final empty string if string ends with \n.
-        // We need to check if the input `line` was empty (user pressed enter on empty line).
-
-        if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+    pub fn get_suggestions(&mut self) -> Option<js_sys::Array> {
+        let state = self.repl.get_render_state();
+        if let Some(suggestions) = state.suggestions {
+            let js_array = js_sys::Array::new();
+            for s in suggestions {
+                js_array.push(&JsValue::from_str(&s));
+            }
+            Some(js_array)
+        } else {
+            None
         }
+    }
 
-        // Otherwise incomplete
-        String::from("{ \"status\": \"incomplete\", \"prompt\": \".. \" }")
+    pub fn get_suggestions_start(&self) -> Option<usize> {
+        let state = self.repl.get_render_state();
+        state.completion_start
+    }
+
+    pub fn get_suggestions_index(&self) -> Option<usize> {
+        let state = self.repl.get_render_state();
+        state.suggestion_idx
     }
 
     pub fn complete(&self, line: &str, cursor: usize) -> String {
-        // We use the internal interpreter to get completions.
-        // The interpreter has builtins loaded.
+        // We use the internal interpreter to get completions (Legacy JSON return)
         let (start, candidates) = self.interpreter.complete(line, cursor);
 
-        // Return JSON object with suggestions and start index
         let mut json = String::from("{ \"suggestions\": [");
         for (i, c) in candidates.iter().enumerate() {
             if i > 0 {
@@ -165,71 +293,10 @@ impl BrowserRepl {
     }
 
     pub fn reset(&mut self) {
-        self.buffer.clear();
+        self.repl = Repl::new();
     }
 }
 
-fn expand_macros(code: &str) -> String {
-    let mut expanded_code = code.to_string();
-
-    loop {
-        let tokens = Lexer::new(expanded_code.clone()).scan_tokens();
-        let first_error = tokens.iter().find_map(|t| match &t.kind {
-            TokenKind::Error(msg) => Some(msg.clone()),
-            _ => None,
-        });
-
-        if let Some(msg) = first_error {
-            if let Some(line_num_str) = msg.strip_prefix("Unexpected character: ! on line ") {
-                let line_num: usize = match line_num_str.trim().parse() {
-                    Ok(n) => n,
-                    Err(_) => break,
-                };
-
-                if line_num == 0 {
-                    break;
-                }
-
-                let lines: Vec<&str> = expanded_code.lines().collect();
-                if line_num > lines.len() {
-                    break;
-                }
-
-                let line_idx = line_num - 1;
-                let line = lines[line_idx];
-
-                let trimmed_line = line.trim_start();
-                if let Some(rest) = trimmed_line.strip_prefix('!') {
-                    let indentation = &line[..line.len() - trimmed_line.len()];
-
-                    let cmd = rest;
-                    let escaped_cmd = cmd.replace('\\', "\\\\").replace('"', "\\\"");
-                    let macro_var = "_nonomacroclowntown";
-                    let replacement = alloc::format!(
-                        "{indentation}for {macro_var} in range(1):\n{indentation}\t{macro_var} = sys.shell(\"{escaped_cmd}\")\n{indentation}\tprint({macro_var}['stdout']);print({macro_var}['stderr'])"
-                    );
-
-                    let mut new_lines: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
-                    new_lines[line_idx] = replacement;
-
-                    expanded_code = new_lines.join("\n");
-
-                    if code.ends_with('\n') && !expanded_code.ends_with('\n') {
-                        expanded_code.push('\n');
-                    }
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        } else {
-            break;
-        }
-    }
-
-    expanded_code
-}
 
 #[cfg(test)]
 mod tests {

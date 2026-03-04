@@ -586,6 +586,10 @@ type BeaconWhereInput struct {
 	// "shells" edge predicates.
 	HasShells     *bool              `json:"hasShells,omitempty"`
 	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
+
+	// "portals" edge predicates.
+	HasPortals     *bool               `json:"hasPortals,omitempty"`
+	HasPortalsWith []*PortalWhereInput `json:"hasPortalsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1055,6 +1059,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, beacon.HasShellsWith(with...))
+	}
+	if i.HasPortals != nil {
+		p := beacon.HasPortals()
+		if !*i.HasPortals {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPortalsWith) > 0 {
+		with := make([]predicate.Portal, 0, len(i.HasPortalsWith))
+		for _, w := range i.HasPortalsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPortalsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasPortalsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6713,10 +6735,6 @@ type ShellWhereInput struct {
 	HasOwner     *bool             `json:"hasOwner,omitempty"`
 	HasOwnerWith []*UserWhereInput `json:"hasOwnerWith,omitempty"`
 
-	// "portals" edge predicates.
-	HasPortals     *bool               `json:"hasPortals,omitempty"`
-	HasPortalsWith []*PortalWhereInput `json:"hasPortalsWith,omitempty"`
-
 	// "active_users" edge predicates.
 	HasActiveUsers     *bool             `json:"hasActiveUsers,omitempty"`
 	HasActiveUsersWith []*UserWhereInput `json:"hasActiveUsersWith,omitempty"`
@@ -6953,24 +6971,6 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shell.HasOwnerWith(with...))
-	}
-	if i.HasPortals != nil {
-		p := shell.HasPortals()
-		if !*i.HasPortals {
-			p = shell.Not(p)
-		}
-		predicates = append(predicates, p)
-	}
-	if len(i.HasPortalsWith) > 0 {
-		with := make([]predicate.Portal, 0, len(i.HasPortalsWith))
-		for _, w := range i.HasPortalsWith {
-			p, err := w.P()
-			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasPortalsWith'", err)
-			}
-			with = append(with, p)
-		}
-		predicates = append(predicates, shell.HasPortalsWith(with...))
 	}
 	if i.HasActiveUsers != nil {
 		p := shell.HasActiveUsers()

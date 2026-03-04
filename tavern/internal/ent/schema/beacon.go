@@ -109,6 +109,14 @@ func (Beacon) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Shells that have been created by the beacon."),
+		edge.From("portals", Portal.Type).
+			Ref("beacon").
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Portals that have been created by the beacon."),
 	}
 }
 

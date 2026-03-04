@@ -167,17 +167,12 @@ func TestInteractiveShell(t *testing.T) {
 	require.NoError(t, err)
 	defer agentCleanup()
 
-	// We need to fetch the portal to associate it with the Shell
-	// (CreatePortal saves it to DB)
-	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
 
-	// Associate Portal with Shell
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
-	require.NoError(t, err)
+
+	// Associate Portal with Beacon (already done in CreatePortal via Task/Beacon)
 
 	// Subscribe to IN topic (User -> Agent)
-	agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(p.ID))
+	agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(portalID))
 	defer agentSubCleanup()
 
 	// 2. Connect via WebSocket (User side)
@@ -204,7 +199,7 @@ func TestInteractiveShell(t *testing.T) {
 			}
 		}
 	}
-	require.Equal(t, p.ID, msg.PortalID)
+	require.Equal(t, portalID, msg.PortalID)
 
 	// 4. Send Input
 	inputCmd := "ls -la"
@@ -244,7 +239,7 @@ func TestInteractiveShell(t *testing.T) {
 		},
 	}
 	// We publish to TopicOut. User subscribes to TopicOut.
-	err = env.Mux.Publish(ctx, env.Mux.TopicOut(p.ID), outMote)
+	err = env.Mux.Publish(ctx, env.Mux.TopicOut(portalID), outMote)
 	require.NoError(t, err)
 
 	// 7. Verify Output on WebSocket
@@ -373,8 +368,7 @@ func TestOtherStreamOutput(t *testing.T) {
 	p, err := env.EntClient.Portal.Get(ctx, portalID)
 	require.NoError(t, err)
 
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
-	require.NoError(t, err)
+
 
 	// 2. Connect User 1
 	url := fmt.Sprintf("%s?shell_id=%d", env.WSURL, env.Shell.ID)
@@ -655,18 +649,10 @@ func TestShellHistory_Interactive(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Create Portal (Agent side)
-	portalID, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
+	_, agentCleanup, err := env.Mux.CreatePortal(ctx, env.EntClient, env.Task.ID, 0)
 	require.NoError(t, err)
 	defer agentCleanup()
-
-	p, err := env.EntClient.Portal.Get(ctx, portalID)
-	require.NoError(t, err)
-
-	err = env.Shell.Update().AddPortals(p).Exec(ctx)
-	require.NoError(t, err)
-
-	// Subscribe to verify connection
-	// agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(p.ID))
+	// agentInCh, agentSubCleanup := env.Mux.Subscribe(env.Mux.TopicIn(portalID))
 	// defer agentSubCleanup()
 
 	// 2. Create ShellTask history *before* WebSocket connects

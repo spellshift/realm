@@ -34,10 +34,6 @@ export const GET_SHELL = gql`
             }
           }
         }
-        portals {
-          id
-          closedAt
-        }
       }
     }
   }

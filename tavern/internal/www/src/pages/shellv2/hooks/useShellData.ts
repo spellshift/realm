@@ -34,16 +34,6 @@ export const useShellData = (shellId: string | undefined) => {
         pollInterval: 10000
     });
 
-    // Initialize portalId from shell data
-    useEffect(() => {
-        if (shellData?.node?.portals) {
-            const activePortal = shellData.node.portals.find((p: any) => !p.closedAt);
-            if (activePortal) {
-                setPortalId(parseInt(activePortal.id));
-            }
-        }
-    }, [shellData]);
-
     // Check if portal closed
     useEffect(() => {
         if (portalData?.node?.closedAt) {

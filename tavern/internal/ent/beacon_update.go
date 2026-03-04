@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
@@ -214,6 +215,21 @@ func (bu *BeaconUpdate) AddShells(s ...*Shell) *BeaconUpdate {
 	return bu.AddShellIDs(ids...)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (bu *BeaconUpdate) AddPortalIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.AddPortalIDs(ids...)
+	return bu
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (bu *BeaconUpdate) AddPortals(p ...*Portal) *BeaconUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return bu.AddPortalIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (bu *BeaconUpdate) Mutation() *BeaconMutation {
 	return bu.mutation
@@ -265,6 +281,27 @@ func (bu *BeaconUpdate) RemoveShells(s ...*Shell) *BeaconUpdate {
 		ids[i] = s[i].ID
 	}
 	return bu.RemoveShellIDs(ids...)
+}
+
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (bu *BeaconUpdate) ClearPortals() *BeaconUpdate {
+	bu.mutation.ClearPortals()
+	return bu
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (bu *BeaconUpdate) RemovePortalIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.RemovePortalIDs(ids...)
+	return bu
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (bu *BeaconUpdate) RemovePortals(p ...*Portal) *BeaconUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return bu.RemovePortalIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -504,6 +541,51 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if bu.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !bu.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{beacon.Label}
@@ -706,6 +788,21 @@ func (buo *BeaconUpdateOne) AddShells(s ...*Shell) *BeaconUpdateOne {
 	return buo.AddShellIDs(ids...)
 }
 
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (buo *BeaconUpdateOne) AddPortalIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.AddPortalIDs(ids...)
+	return buo
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (buo *BeaconUpdateOne) AddPortals(p ...*Portal) *BeaconUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return buo.AddPortalIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
 	return buo.mutation
@@ -757,6 +854,27 @@ func (buo *BeaconUpdateOne) RemoveShells(s ...*Shell) *BeaconUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return buo.RemoveShellIDs(ids...)
+}
+
+// ClearPortals clears all "portals" edges to the Portal entity.
+func (buo *BeaconUpdateOne) ClearPortals() *BeaconUpdateOne {
+	buo.mutation.ClearPortals()
+	return buo
+}
+
+// RemovePortalIDs removes the "portals" edge to Portal entities by IDs.
+func (buo *BeaconUpdateOne) RemovePortalIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.RemovePortalIDs(ids...)
+	return buo
+}
+
+// RemovePortals removes "portals" edges to Portal entities.
+func (buo *BeaconUpdateOne) RemovePortals(p ...*Portal) *BeaconUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return buo.RemovePortalIDs(ids...)
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
@@ -1019,6 +1137,51 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if buo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.RemovedPortalsIDs(); len(nodes) > 0 && !buo.mutation.PortalsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

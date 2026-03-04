@@ -249,7 +249,7 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalCh chan<- *ent.Portal, errCh chan<- *WebsocketErrorMessage) {
 	// Closure to poll a single time for open portals
 	poll := func() {
-		portal, err := sh.QueryPortals().
+		portal, err := sh.QueryBeacon().QueryPortals().
 			Where(portal.ClosedAtIsNil()).
 			Order(portal.ByCreatedAt(sql.OrderDesc())).
 			First(ctx)

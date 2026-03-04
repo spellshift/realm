@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 		LastSeenAt      func(childComplexity int) int
 		Name            func(childComplexity int) int
 		NextSeenAt      func(childComplexity int) int
+		Portals         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
 		Principal       func(childComplexity int) int
 		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
@@ -449,7 +450,6 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
-		Portals        func(childComplexity int) int
 		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
 		Task           func(childComplexity int) int
 	}
@@ -793,6 +793,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Beacon.NextSeenAt(childComplexity), true
+
+	case "Beacon.portals":
+		if e.complexity.Beacon.Portals == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_portals_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Beacon.Portals(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.PortalOrder), args["where"].(*ent.PortalWhereInput)), true
 
 	case "Beacon.principal":
 		if e.complexity.Beacon.Principal == nil {
@@ -2744,13 +2756,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Shell.Owner(childComplexity), true
 
-	case "Shell.portals":
-		if e.complexity.Shell.Portals == nil {
-			break
-		}
-
-		return e.complexity.Shell.Portals(childComplexity), true
-
 	case "Shell.shellTasks":
 		if e.complexity.Shell.ShellTasks == nil {
 			break
@@ -3976,6 +3981,37 @@ type Beacon implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+  portals(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Portals returned from the connection.
+    """
+    orderBy: [PortalOrder!]
+
+    """
+    Filtering options for Portals returned from the connection.
+    """
+    where: PortalWhereInput
+  ): PortalConnection!
 }
 """
 A connection to a list of items.
@@ -4209,6 +4245,11 @@ input BeaconWhereInput {
   """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
+  """
+  portals edge predicates
+  """
+  hasPortals: Boolean
+  hasPortalsWith: [PortalWhereInput!]
 }
 type BuildTask implements Node {
   id: ID!
@@ -7311,10 +7352,6 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
-  """
-  Portals associated with this shell
-  """
-  portals: [Portal!]
   activeUsers(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -7808,11 +7845,6 @@ input ShellWhereInput {
   """
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
-  """
-  portals edge predicates
-  """
-  hasPortals: Boolean
-  hasPortalsWith: [PortalWhereInput!]
   """
   active_users edge predicates
   """

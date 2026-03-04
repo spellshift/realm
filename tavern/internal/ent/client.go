@@ -693,6 +693,22 @@ func (c *BeaconClient) QueryShells(b *Beacon) *ShellQuery {
 	return query
 }
 
+// QueryPortals queries the portals edge of a Beacon.
+func (c *BeaconClient) QueryPortals(b *Beacon) *PortalQuery {
+	query := (&PortalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(portal.Table, portal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.PortalsTable, beacon.PortalsColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BeaconClient) Hooks() []Hook {
 	return c.hooks.Beacon
@@ -2878,22 +2894,6 @@ func (c *ShellClient) QueryOwner(s *Shell) *UserQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, shell.OwnerTable, shell.OwnerColumn),
-		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryPortals queries the portals edge of a Shell.
-func (c *ShellClient) QueryPortals(s *Shell) *PortalQuery {
-	query := (&PortalClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(shell.Table, shell.FieldID, id),
-			sqlgraph.To(portal.Table, portal.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, shell.PortalsTable, shell.PortalsColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil

@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -197,6 +198,21 @@ func (bc *BeaconCreate) AddShells(s ...*Shell) *BeaconCreate {
 		ids[i] = s[i].ID
 	}
 	return bc.AddShellIDs(ids...)
+}
+
+// AddPortalIDs adds the "portals" edge to the Portal entity by IDs.
+func (bc *BeaconCreate) AddPortalIDs(ids ...int) *BeaconCreate {
+	bc.mutation.AddPortalIDs(ids...)
+	return bc
+}
+
+// AddPortals adds the "portals" edges to the Portal entity.
+func (bc *BeaconCreate) AddPortals(p ...*Portal) *BeaconCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return bc.AddPortalIDs(ids...)
 }
 
 // Mutation returns the BeaconMutation object of the builder.
@@ -406,6 +422,22 @@ func (bc *BeaconCreate) createSpec() (*Beacon, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.PortalsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.PortalsTable,
+			Columns: []string{beacon.PortalsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(portal.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -108,6 +108,27 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (b *Beacon) Portals(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*PortalOrder, where *PortalWhereInput,
+) (*PortalConnection, error) {
+	opts := []PortalPaginateOption{
+		WithPortalOrder(orderBy),
+		WithPortalFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := b.Edges.totalCount[3][alias]
+	if nodes, err := b.NamedPortals(alias); err == nil || hasTotalCount {
+		pager, err := newPortalPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &PortalConnection{Edges: []*PortalEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return b.QueryPortals().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	result, err := bt.Edges.BuilderOrErr()
 	if IsNotLoaded(err) {
@@ -534,18 +555,6 @@ func (s *Shell) Owner(ctx context.Context) (*User, error) {
 	return result, err
 }
 
-func (s *Shell) Portals(ctx context.Context) (result []*Portal, err error) {
-	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = s.NamedPortals(graphql.GetFieldContext(ctx).Field.Alias)
-	} else {
-		result, err = s.Edges.PortalsOrErr()
-	}
-	if IsNotLoaded(err) {
-		result, err = s.QueryPortals().All(ctx)
-	}
-	return result, err
-}
-
 func (s *Shell) ActiveUsers(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
 ) (*UserConnection, error) {
@@ -554,7 +563,7 @@ func (s *Shell) ActiveUsers(
 		WithUserFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := s.Edges.totalCount[4][alias]
+	totalCount, hasTotalCount := s.Edges.totalCount[3][alias]
 	if nodes, err := s.NamedActiveUsers(alias); err == nil || hasTotalCount {
 		pager, err := newUserPager(opts, last != nil)
 		if err != nil {
@@ -575,7 +584,7 @@ func (s *Shell) ShellTasks(
 		WithShellTaskFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := s.Edges.totalCount[5][alias]
+	totalCount, hasTotalCount := s.Edges.totalCount[4][alias]
 	if nodes, err := s.NamedShellTasks(alias); err == nil || hasTotalCount {
 		pager, err := newShellTaskPager(opts, last != nil)
 		if err != nil {

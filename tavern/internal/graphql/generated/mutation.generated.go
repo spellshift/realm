@@ -502,6 +502,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "portals":
+				return ec.fieldContext_Beacon_portals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -577,8 +579,6 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_beacon(ctx, field)
 			case "owner":
 				return ec.fieldContext_Shell_owner(ctx, field)
-			case "portals":
-				return ec.fieldContext_Shell_portals(ctx, field)
 			case "activeUsers":
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":

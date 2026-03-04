@@ -1,9 +1,14 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
 
-export interface ExecutionResult {
-    status: "complete" | "incomplete" | "error";
-    prompt?: string;
-    message?: string;
+export interface ReplState {
+    status: string;
+    prompt: string;
+    buffer: string;
+    cursor_pos: number;
+    payload?: string;
+    function?: string;
+    args?: string[];
+    is_running: boolean;
 }
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
@@ -61,8 +66,8 @@ export class BrowserWasmAdapter {
             this.isWsOpen = false;
             const reason = event.reason;
             if (this.isClosedExplicitly) {
-                 this.onStatusChangeCallback?.("disconnected", reason);
-                 return;
+                this.onStatusChangeCallback?.("disconnected", reason);
+                return;
             }
 
             this.onStatusChangeCallback?.("disconnected", reason);
@@ -111,30 +116,43 @@ export class BrowserWasmAdapter {
         }
     }
 
-    input(line: string): ExecutionResult {
+    handleKey(key: string, ctrl: boolean, alt: boolean, metaKey: boolean, shift: boolean): ReplState | null {
+        if (!this.repl) return null;
+
+        try {
+            return this.repl.handle_key(key, ctrl, alt, metaKey, shift);
+        } catch (e) {
+            console.error("Failed to handle key in WASM REPL", e);
+            return null;
+        }
+    }
+
+    getSuggestions(): string[] | null {
+        if (!this.repl) return null;
+        const sugs = this.repl.get_suggestions();
+        return sugs ? Array.from(sugs) : null;
+    }
+
+    getSuggestionsStart(): number | null {
+        if (!this.repl) return null;
+        const start = this.repl.get_suggestions_start();
+        return start !== undefined ? start : null;
+    }
+
+    getSuggestionsIndex(): number | null {
+        if (!this.repl) return null;
+        const idx = this.repl.get_suggestions_index();
+        return idx !== undefined ? idx : null;
+    }
+
+    input(line: string): any {
         if (!this.repl) {
             return { status: "error", message: "REPL not initialized" };
         }
 
         const resultJson = this.repl.input(line);
         try {
-            const result = JSON.parse(resultJson);
-
-            if (result.status === "complete") {
-                if (this.isWsOpen && this.ws) {
-                    this.ws.send(JSON.stringify({
-                        kind: WebsocketMessageKind.Input,
-                        input: result.payload
-                    }));
-                } else {
-                    return { status: "error", message: "WebSocket not connected" };
-                }
-                return { status: "complete" };
-            } else if (result.status === "incomplete") {
-                return { status: "incomplete", prompt: result.prompt };
-            } else {
-                return { status: "error", message: result.message };
-            }
+            return JSON.parse(resultJson);
         } catch (e) {
             console.error("Failed to parse REPL result", e);
             return { status: "error", message: "Internal REPL error" };

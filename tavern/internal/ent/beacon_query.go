@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/task"
@@ -22,18 +23,20 @@ import (
 // BeaconQuery is the builder for querying Beacon entities.
 type BeaconQuery struct {
 	config
-	ctx             *QueryContext
-	order           []beacon.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Beacon
-	withHost        *HostQuery
-	withTasks       *TaskQuery
-	withShells      *ShellQuery
-	withFKs         bool
-	modifiers       []func(*sql.Selector)
-	loadTotal       []func(context.Context, []*Beacon) error
-	withNamedTasks  map[string]*TaskQuery
-	withNamedShells map[string]*ShellQuery
+	ctx              *QueryContext
+	order            []beacon.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Beacon
+	withHost         *HostQuery
+	withTasks        *TaskQuery
+	withShells       *ShellQuery
+	withPortals      *PortalQuery
+	withFKs          bool
+	modifiers        []func(*sql.Selector)
+	loadTotal        []func(context.Context, []*Beacon) error
+	withNamedTasks   map[string]*TaskQuery
+	withNamedShells  map[string]*ShellQuery
+	withNamedPortals map[string]*PortalQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -129,6 +132,28 @@ func (bq *BeaconQuery) QueryShells() *ShellQuery {
 			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, beacon.ShellsTable, beacon.ShellsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPortals chains the current query on the "portals" edge.
+func (bq *BeaconQuery) QueryPortals() *PortalQuery {
+	query := (&PortalClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
+			sqlgraph.To(portal.Table, portal.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.PortalsTable, beacon.PortalsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -323,14 +348,15 @@ func (bq *BeaconQuery) Clone() *BeaconQuery {
 		return nil
 	}
 	return &BeaconQuery{
-		config:     bq.config,
-		ctx:        bq.ctx.Clone(),
-		order:      append([]beacon.OrderOption{}, bq.order...),
-		inters:     append([]Interceptor{}, bq.inters...),
-		predicates: append([]predicate.Beacon{}, bq.predicates...),
-		withHost:   bq.withHost.Clone(),
-		withTasks:  bq.withTasks.Clone(),
-		withShells: bq.withShells.Clone(),
+		config:      bq.config,
+		ctx:         bq.ctx.Clone(),
+		order:       append([]beacon.OrderOption{}, bq.order...),
+		inters:      append([]Interceptor{}, bq.inters...),
+		predicates:  append([]predicate.Beacon{}, bq.predicates...),
+		withHost:    bq.withHost.Clone(),
+		withTasks:   bq.withTasks.Clone(),
+		withShells:  bq.withShells.Clone(),
+		withPortals: bq.withPortals.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
@@ -367,6 +393,17 @@ func (bq *BeaconQuery) WithShells(opts ...func(*ShellQuery)) *BeaconQuery {
 		opt(query)
 	}
 	bq.withShells = query
+	return bq
+}
+
+// WithPortals tells the query-builder to eager-load the nodes that are connected to
+// the "portals" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithPortals(opts ...func(*PortalQuery)) *BeaconQuery {
+	query := (&PortalClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withPortals = query
 	return bq
 }
 
@@ -449,10 +486,11 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 		nodes       = []*Beacon{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			bq.withHost != nil,
 			bq.withTasks != nil,
 			bq.withShells != nil,
+			bq.withPortals != nil,
 		}
 	)
 	if bq.withHost != nil {
@@ -502,6 +540,13 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 			return nil, err
 		}
 	}
+	if query := bq.withPortals; query != nil {
+		if err := bq.loadPortals(ctx, query, nodes,
+			func(n *Beacon) { n.Edges.Portals = []*Portal{} },
+			func(n *Beacon, e *Portal) { n.Edges.Portals = append(n.Edges.Portals, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range bq.withNamedTasks {
 		if err := bq.loadTasks(ctx, query, nodes,
 			func(n *Beacon) { n.appendNamedTasks(name) },
@@ -513,6 +558,13 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 		if err := bq.loadShells(ctx, query, nodes,
 			func(n *Beacon) { n.appendNamedShells(name) },
 			func(n *Beacon, e *Shell) { n.appendNamedShells(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range bq.withNamedPortals {
+		if err := bq.loadPortals(ctx, query, nodes,
+			func(n *Beacon) { n.appendNamedPortals(name) },
+			func(n *Beacon, e *Portal) { n.appendNamedPortals(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -613,6 +665,37 @@ func (bq *BeaconQuery) loadShells(ctx context.Context, query *ShellQuery, nodes 
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "shell_beacon" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (bq *BeaconQuery) loadPortals(ctx context.Context, query *PortalQuery, nodes []*Beacon, init func(*Beacon), assign func(*Beacon, *Portal)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Beacon)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Portal(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(beacon.PortalsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.portal_beacon
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "portal_beacon" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "portal_beacon" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -728,6 +811,20 @@ func (bq *BeaconQuery) WithNamedShells(name string, opts ...func(*ShellQuery)) *
 		bq.withNamedShells = make(map[string]*ShellQuery)
 	}
 	bq.withNamedShells[name] = query
+	return bq
+}
+
+// WithNamedPortals tells the query-builder to eager-load the nodes that are connected to the "portals"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithNamedPortals(name string, opts ...func(*PortalQuery)) *BeaconQuery {
+	query := (&PortalClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if bq.withNamedPortals == nil {
+		bq.withNamedPortals = make(map[string]*PortalQuery)
+	}
+	bq.withNamedPortals[name] = query
 	return bq
 }
 

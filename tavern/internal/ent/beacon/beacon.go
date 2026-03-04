@@ -43,6 +43,8 @@ const (
 	EdgeTasks = "tasks"
 	// EdgeShells holds the string denoting the shells edge name in mutations.
 	EdgeShells = "shells"
+	// EdgePortals holds the string denoting the portals edge name in mutations.
+	EdgePortals = "portals"
 	// Table holds the table name of the beacon in the database.
 	Table = "beacons"
 	// HostTable is the table that holds the host relation/edge.
@@ -66,6 +68,13 @@ const (
 	ShellsInverseTable = "shells"
 	// ShellsColumn is the table column denoting the shells relation/edge.
 	ShellsColumn = "shell_beacon"
+	// PortalsTable is the table that holds the portals relation/edge.
+	PortalsTable = "portals"
+	// PortalsInverseTable is the table name for the Portal entity.
+	// It exists in this package in order to avoid circular dependency with the "portal" package.
+	PortalsInverseTable = "portals"
+	// PortalsColumn is the table column denoting the portals relation/edge.
+	PortalsColumn = "portal_beacon"
 )
 
 // Columns holds all SQL columns for beacon fields.
@@ -227,6 +236,20 @@ func ByShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByPortalsCount orders the results by portals count.
+func ByPortalsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPortalsStep(), opts...)
+	}
+}
+
+// ByPortals orders the results by portals terms.
+func ByPortals(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPortalsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newHostStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -246,6 +269,13 @@ func newShellsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ShellsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ShellsTable, ShellsColumn),
+	)
+}
+func newPortalsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PortalsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, PortalsTable, PortalsColumn),
 	)
 }
 

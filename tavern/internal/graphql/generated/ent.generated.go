@@ -136,6 +136,42 @@ func (ec *executionContext) field_Asset_tomes_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
+func (ec *executionContext) field_Beacon_portals_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOPortalOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOPortalWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_Beacon_shells_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2487,6 +2523,55 @@ func (ec *executionContext) fieldContext_Beacon_shells(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Beacon_portals(ctx context.Context, field graphql.CollectedField, obj *ent.Beacon) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Beacon_portals,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Portals(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
+		},
+		nil,
+		ec.marshalNPortalConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Beacon_portals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Beacon",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_PortalConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_PortalConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_PortalConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PortalConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Beacon_portals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BeaconConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BeaconConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2642,6 +2727,8 @@ func (ec *executionContext) fieldContext_BeaconEdge_node(_ context.Context, fiel
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "portals":
+				return ec.fieldContext_Beacon_portals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -7557,6 +7644,8 @@ func (ec *executionContext) fieldContext_Portal_beacon(_ context.Context, field 
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "portals":
+				return ec.fieldContext_Beacon_portals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -10765,6 +10854,8 @@ func (ec *executionContext) fieldContext_Shell_beacon(_ context.Context, field g
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "portals":
+				return ec.fieldContext_Beacon_portals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -10812,55 +10903,6 @@ func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field gr
 				return ec.fieldContext_User_activeShells(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Shell_portals(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Shell_portals,
-		func(ctx context.Context) (any, error) {
-			return obj.Portals(ctx)
-		},
-		nil,
-		ec.marshalOPortal2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Shell_portals(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Shell",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Portal_id(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Portal_createdAt(ctx, field)
-			case "lastModifiedAt":
-				return ec.fieldContext_Portal_lastModifiedAt(ctx, field)
-			case "closedAt":
-				return ec.fieldContext_Portal_closedAt(ctx, field)
-			case "task":
-				return ec.fieldContext_Portal_task(ctx, field)
-			case "shellTask":
-				return ec.fieldContext_Portal_shellTask(ctx, field)
-			case "beacon":
-				return ec.fieldContext_Portal_beacon(ctx, field)
-			case "owner":
-				return ec.fieldContext_Portal_owner(ctx, field)
-			case "activeUsers":
-				return ec.fieldContext_Portal_activeUsers(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Portal", field.Name)
 		},
 	}
 	return fc, nil
@@ -11105,8 +11147,6 @@ func (ec *executionContext) fieldContext_ShellEdge_node(_ context.Context, field
 				return ec.fieldContext_Shell_beacon(ctx, field)
 			case "owner":
 				return ec.fieldContext_Shell_owner(ctx, field)
-			case "portals":
-				return ec.fieldContext_Shell_portals(ctx, field)
 			case "activeUsers":
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":
@@ -11504,8 +11544,6 @@ func (ec *executionContext) fieldContext_ShellTask_shell(_ context.Context, fiel
 				return ec.fieldContext_Shell_beacon(ctx, field)
 			case "owner":
 				return ec.fieldContext_Shell_owner(ctx, field)
-			case "portals":
-				return ec.fieldContext_Shell_portals(ctx, field)
 			case "activeUsers":
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":
@@ -12650,6 +12688,8 @@ func (ec *executionContext) fieldContext_Task_beacon(_ context.Context, field gr
 				return ec.fieldContext_Beacon_tasks(ctx, field)
 			case "shells":
 				return ec.fieldContext_Beacon_shells(ctx, field)
+			case "portals":
+				return ec.fieldContext_Beacon_portals(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -14857,7 +14897,7 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "transport", "transportNEQ", "transportIn", "transportNotIn", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalIsNil", "principalNotNil", "principalEqualFold", "principalContainsFold", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "agentIdentifier", "agentIdentifierNEQ", "agentIdentifierIn", "agentIdentifierNotIn", "agentIdentifierGT", "agentIdentifierGTE", "agentIdentifierLT", "agentIdentifierLTE", "agentIdentifierContains", "agentIdentifierHasPrefix", "agentIdentifierHasSuffix", "agentIdentifierIsNil", "agentIdentifierNotNil", "agentIdentifierEqualFold", "agentIdentifierContainsFold", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "interval", "intervalNEQ", "intervalIn", "intervalNotIn", "intervalGT", "intervalGTE", "intervalLT", "intervalLTE", "intervalIsNil", "intervalNotNil", "transport", "transportNEQ", "transportIn", "transportNotIn", "hasHost", "hasHostWith", "hasTasks", "hasTasksWith", "hasShells", "hasShellsWith", "hasPortals", "hasPortalsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15725,6 +15765,20 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 				return it, err
 			}
 			it.HasShellsWith = data
+		case "hasPortals":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPortals"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasPortals = data
+		case "hasPortalsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPortalsWith"))
+			data, err := ec.unmarshalOPortalWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasPortalsWith = data
 		}
 	}
 
@@ -24936,7 +24990,7 @@ func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "hasTask", "hasTaskWith", "hasBeacon", "hasBeaconWith", "hasOwner", "hasOwnerWith", "hasPortals", "hasPortalsWith", "hasActiveUsers", "hasActiveUsersWith", "hasShellTasks", "hasShellTasksWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "hasTask", "hasTaskWith", "hasBeacon", "hasBeaconWith", "hasOwner", "hasOwnerWith", "hasActiveUsers", "hasActiveUsersWith", "hasShellTasks", "hasShellTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25244,20 +25298,6 @@ func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasOwnerWith = data
-		case "hasPortals":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPortals"))
-			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasPortals = data
-		case "hasPortalsWith":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasPortalsWith"))
-			data, err := ec.unmarshalOPortalWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalWhereInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.HasPortalsWith = data
 		case "hasActiveUsers":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasActiveUsers"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -28774,6 +28814,42 @@ func (ec *executionContext) _Beacon(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Beacon_shells(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "portals":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Beacon_portals(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -32409,39 +32485,6 @@ func (ec *executionContext) _Shell(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "portals":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Shell_portals(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "activeUsers":
 			field := field
 
@@ -34813,16 +34856,6 @@ func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPag
 	return ec._PageInfo(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx context.Context, sel ast.SelectionSet, v *ent.Portal) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Portal(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNPortalConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐPortalConnection(ctx context.Context, sel ast.SelectionSet, v ent.PortalConnection) graphql.Marshaler {
 	return ec._PortalConnection(ctx, sel, &v)
 }
@@ -36904,53 +36937,6 @@ func (ec *executionContext) marshalONode2realmᚗpubᚋtavernᚋinternalᚋent�
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOPortal2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Portal) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalOPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx context.Context, sel ast.SelectionSet, v *ent.Portal) graphql.Marshaler {

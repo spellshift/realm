@@ -354,6 +354,37 @@ type Beacon implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+  portals(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Portals returned from the connection.
+    """
+    orderBy: [PortalOrder!]
+
+    """
+    Filtering options for Portals returned from the connection.
+    """
+    where: PortalWhereInput
+  ): PortalConnection!
 }
 """
 A connection to a list of items.
@@ -587,6 +618,11 @@ input BeaconWhereInput {
   """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
+  """
+  portals edge predicates
+  """
+  hasPortals: Boolean
+  hasPortalsWith: [PortalWhereInput!]
 }
 type BuildTask implements Node {
   id: ID!
@@ -3689,10 +3725,6 @@ type Shell implements Node {
   User that created the shell
   """
   owner: User!
-  """
-  Portals associated with this shell
-  """
-  portals: [Portal!]
   activeUsers(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -4186,11 +4218,6 @@ input ShellWhereInput {
   """
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
-  """
-  portals edge predicates
-  """
-  hasPortals: Boolean
-  hasPortalsWith: [PortalWhereInput!]
   """
   active_users edge predicates
   """

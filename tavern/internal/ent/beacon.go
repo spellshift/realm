@@ -54,14 +54,17 @@ type BeaconEdges struct {
 	Tasks []*Task `json:"tasks,omitempty"`
 	// Shells that have been created by the beacon.
 	Shells []*Shell `json:"shells,omitempty"`
+	// Portals that have been created by the beacon.
+	Portals []*Portal `json:"portals,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
-	namedTasks  map[string][]*Task
-	namedShells map[string][]*Shell
+	namedTasks   map[string][]*Task
+	namedShells  map[string][]*Shell
+	namedPortals map[string][]*Portal
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -91,6 +94,15 @@ func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
+}
+
+// PortalsOrErr returns the Portals value or an error if the edge
+// was not loaded in eager-loading.
+func (e BeaconEdges) PortalsOrErr() ([]*Portal, error) {
+	if e.loadedTypes[3] {
+		return e.Portals, nil
+	}
+	return nil, &NotLoadedError{edge: "portals"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -224,6 +236,11 @@ func (b *Beacon) QueryShells() *ShellQuery {
 	return NewBeaconClient(b.config).QueryShells(b)
 }
 
+// QueryPortals queries the "portals" edge of the Beacon entity.
+func (b *Beacon) QueryPortals() *PortalQuery {
+	return NewBeaconClient(b.config).QueryPortals(b)
+}
+
 // Update returns a builder for updating this Beacon.
 // Note that you need to call Beacon.Unwrap() before calling this method if this Beacon
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -325,6 +342,30 @@ func (b *Beacon) appendNamedShells(name string, edges ...*Shell) {
 		b.Edges.namedShells[name] = []*Shell{}
 	} else {
 		b.Edges.namedShells[name] = append(b.Edges.namedShells[name], edges...)
+	}
+}
+
+// NamedPortals returns the Portals named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (b *Beacon) NamedPortals(name string) ([]*Portal, error) {
+	if b.Edges.namedPortals == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := b.Edges.namedPortals[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (b *Beacon) appendNamedPortals(name string, edges ...*Portal) {
+	if b.Edges.namedPortals == nil {
+		b.Edges.namedPortals = make(map[string][]*Portal)
+	}
+	if len(edges) == 0 {
+		b.Edges.namedPortals[name] = []*Portal{}
+	} else {
+		b.Edges.namedPortals[name] = append(b.Edges.namedPortals[name], edges...)
 	}
 }
 

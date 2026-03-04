@@ -34,7 +34,6 @@ type Portal struct {
 	portal_shell_task *int
 	portal_beacon     *int
 	portal_owner      *int
-	shell_portals     *int
 	selectValues      sql.SelectValues
 }
 
@@ -129,8 +128,6 @@ func (*Portal) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case portal.ForeignKeys[3]: // portal_owner
 			values[i] = new(sql.NullInt64)
-		case portal.ForeignKeys[4]: // shell_portals
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -197,13 +194,6 @@ func (po *Portal) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				po.portal_owner = new(int)
 				*po.portal_owner = int(value.Int64)
-			}
-		case portal.ForeignKeys[4]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field shell_portals", value)
-			} else if value.Valid {
-				po.shell_portals = new(int)
-				*po.shell_portals = int(value.Int64)
 			}
 		default:
 			po.selectValues.Set(columns[i], values[i])
