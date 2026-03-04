@@ -9,9 +9,13 @@ RUN go mod download
 # Build Cache
 FROM base as build-cache
 COPY ./tavern /app/tavern
+COPY ./bin /app/bin
+COPY ./portals /app/portals
+COPY ./internal /app/internal
 
 # Production Build
 FROM build-cache as prod-build
+RUN CGO_ENABLED=0 go build -ldflags='-w -s -extldflags "-static"' -o /app/tavern/tools/socks5 ./bin/socks5
 RUN go build -ldflags='-w -extldflags "-static"' -o /app/build/tavern ./tavern
 
 # Production
