@@ -13,7 +13,7 @@ use pb::c2::{
     ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask, ShellTaskContext,
     ShellTaskOutput, TaskError, report_output_request,
 };
-use pb::portal::{self, Mote, ShellPayload};
+use pb::portal::{self, BytesPayload, BytesPayloadKind, Mote};
 use transport::Transport;
 
 use crate::agent::ImixAgent;
@@ -85,18 +85,21 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
             stream_id,
             seq_id,
         } => {
-            let payload = ShellPayload {
-                shell_id,
-                input: if is_error {
-                    format!("Error: {}", output)
-                } else {
-                    output
-                },
+            let _shell_id = shell_id;
+            let data = if is_error {
+                format!("Error: {}", output).into_bytes()
+            } else {
+                output.into_bytes()
+            };
+
+            let payload = BytesPayload {
+                data,
+                kind: BytesPayloadKind::Data as i32,
             };
             let mote = Mote {
                 stream_id: stream_id.clone(),
                 seq_id: *seq_id,
-                payload: Some(portal::mote::Payload::Shell(payload)),
+                payload: Some(portal::mote::Payload::Bytes(payload)),
             };
             let tx = tx.clone();
             tokio::spawn(async move {
