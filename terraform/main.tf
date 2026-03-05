@@ -244,10 +244,10 @@ resource "google_sql_database_instance" "tavern-sql-instance" {
   settings {
     tier = var.mysql_tier
 
-    # database_flags {
-    #   name  = "default_authentication_plugin"
-    #   value = "caching_sha2_password"
-    # }
+    database_flags {
+      name  = "max_allowed_packet"
+      value = "1073741824"
+    }
   }
 
   depends_on = [
