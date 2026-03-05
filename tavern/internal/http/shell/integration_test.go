@@ -236,10 +236,9 @@ func TestInteractiveShell(t *testing.T) {
 	outMote := &portalpb.Mote{
 		StreamId: task.StreamID,
 		SeqId:    task.SequenceID,
-		Payload: &portalpb.Mote_Bytes{
-			Bytes: &portalpb.BytesPayload{
-				Data: []byte(outputData),
-				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA,
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Output: outputData,
 			},
 		},
 	}
@@ -421,13 +420,13 @@ func TestOtherStreamOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4. Inject Output
+	outputData := "rebooting..."
 	outMote := &portalpb.Mote{
 		StreamId: otherStreamID,
 		SeqId:    1,
-		Payload: &portalpb.Mote_Bytes{
-			Bytes: &portalpb.BytesPayload{
-				Data: []byte("rebooting..."),
-				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA,
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Output: outputData,
 			},
 		},
 	}
