@@ -9,7 +9,9 @@ mock! {
     impl Clone for Transport {
         fn clone(&self) -> Self;
     }
+    #[async_trait::async_trait]
     impl super::Transport for Transport {
+        fn clone_box(&self) -> Box<dyn super::Transport + Send + Sync>;
         fn init() -> Self;
 
         fn new(config: pb::config::Config) -> Result<Self>;

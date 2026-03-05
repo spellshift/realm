@@ -25,7 +25,7 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["tls-webpki-roots"] }
 rustls = { workspace = true, features = ["ring"] }
-trait-variant = { workspace = true }
+async-trait = { workspace = true }
 http = { workspace = true }
 tower = { workspace = true }
 # Use hyper 1.x for grpc

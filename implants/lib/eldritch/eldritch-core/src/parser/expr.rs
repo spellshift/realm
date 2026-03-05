@@ -4,6 +4,7 @@ use super::super::token::{Span, Token, TokenKind};
 use super::Parser;
 use alloc::boxed::Box;
 use alloc::format;
+use alloc::string::String;
 
 use alloc::vec;
 use alloc::vec::Vec;

@@ -19,6 +19,7 @@ use self::literals::{
 };
 use self::ops::{apply_binary_op, apply_logical_op, apply_unary_op};
 use self::strings::evaluate_fstring;
+use alloc::format;
 
 // Re-export for exec.rs
 pub(crate) use self::ops::apply_binary_op as apply_binary_op_pub;

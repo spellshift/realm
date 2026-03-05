@@ -7,7 +7,7 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
 use pb::config::Config;
-use transport::{ActiveTransport, Transport};
+use transport;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 const MAX_BUF_SHELL_MESSAGES: usize = 65535;
@@ -23,7 +23,7 @@ pub async fn run_agent() -> Result<()> {
     let run_once = config.run_once;
 
     // Initial transport is just a placeholder, we create active ones in the loop
-    let transport = ActiveTransport::init();
+    let transport = transport::empty_transport();
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
@@ -92,14 +92,14 @@ pub fn init_logger() {
     }
 }
 
-async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<TaskRegistry>) {
+async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     // Refresh IP
     agent.refresh_ip().await;
 
     // Create new active transport
     let config = agent.get_transport_config().await;
 
-    let transport = match ActiveTransport::new(config) {
+    let transport = match transport::create_transport(config) {
         Ok(t) => t,
         Err(_e) => {
             #[cfg(debug_assertions)]
@@ -119,10 +119,10 @@ async fn run_agent_cycle(agent: Arc<ImixAgent<ActiveTransport>>, registry: Arc<T
     agent.flush_outputs().await;
 
     // Disconnect (drop transport)
-    agent.update_transport(ActiveTransport::init()).await;
+    agent.update_transport(transport::empty_transport()).await;
 }
 
-async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegistry) {
+async fn process_tasks(agent: &ImixAgent, _registry: &TaskRegistry) {
     match agent.process_job_request().await {
         Ok(_) => {
             #[cfg(debug_assertions)]
@@ -136,7 +136,7 @@ async fn process_tasks(agent: &ImixAgent<ActiveTransport>, _registry: &TaskRegis
     }
 }
 
-async fn sleep_until_next_cycle(agent: &ImixAgent<ActiveTransport>, start: Instant) -> Result<()> {
+async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()> {
     let interval = agent.get_callback_interval_u64()?;
     let jitter = agent.get_callback_jitter().unwrap_or(0.0).clamp(0.0, 1.0);
 

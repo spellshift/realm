@@ -14,7 +14,6 @@ use pb::c2::{
     ShellTaskOutput, TaskError, report_output_request,
 };
 use pb::portal::{self, Mote, ShellPayload};
-use transport::Transport;
 
 use crate::agent::ImixAgent;
 
@@ -37,8 +36,8 @@ pub enum ExecutionContext {
     None,
 }
 
-fn dispatch_output<T: Transport + Send + Sync + 'static>(
-    agent: &Arc<ImixAgent<T>>,
+fn dispatch_output(
+    agent: &Arc<ImixAgent>,
     shell_id: i64,
     context: &ExecutionContext,
     output: String,
@@ -110,13 +109,13 @@ fn dispatch_output<T: Transport + Send + Sync + 'static>(
     }
 }
 
-struct ShellPrinter<T: Transport> {
-    agent: Arc<ImixAgent<T>>,
+struct ShellPrinter {
+    agent: Arc<ImixAgent>,
     shell_id: i64,
     context: Arc<Mutex<ExecutionContext>>,
 }
 
-impl<T: Transport> fmt::Debug for ShellPrinter<T> {
+impl fmt::Debug for ShellPrinter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ShellPrinter")
             .field("shell_id", &self.shell_id)
@@ -124,7 +123,7 @@ impl<T: Transport> fmt::Debug for ShellPrinter<T> {
     }
 }
 
-impl<T: Transport + Send + Sync + 'static> Printer for ShellPrinter<T> {
+impl Printer for ShellPrinter {
     fn print_out(&self, _span: &Span, s: &str) {
         let ctx = self.context.lock().unwrap().clone();
         dispatch_output(&self.agent, self.shell_id, &ctx, format!("{}\n", s), false);
@@ -156,14 +155,14 @@ struct InterpreterHandle {
     last_activity: Instant,
 }
 
-pub struct ShellManager<T: Transport + Send + Sync + 'static> {
-    agent: Arc<ImixAgent<T>>,
+pub struct ShellManager {
+    agent: Arc<ImixAgent>,
     interpreters: HashMap<i64, InterpreterHandle>,
     rx: mpsc::Receiver<ShellManagerMessage>,
 }
 
-impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
-    pub fn new(agent: Arc<ImixAgent<T>>, rx: mpsc::Receiver<ShellManagerMessage>) -> Self {
+impl ShellManager {
+    pub fn new(agent: Arc<ImixAgent>, rx: mpsc::Receiver<ShellManagerMessage>) -> Self {
         Self {
             agent,
             interpreters: HashMap::new(),
@@ -240,7 +239,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
     }
 
     fn run_interpreter_loop(
-        agent: Arc<ImixAgent<T>>,
+        agent: Arc<ImixAgent>,
         shell_id: i64,
         mut rx: mpsc::Receiver<InterpreterCommand>,
     ) {
@@ -316,7 +315,7 @@ impl<T: Transport + Send + Sync + 'static> ShellManager<T> {
     fn execute_interpret(
         interpreter: &mut Interpreter,
         input: &str,
-        agent: &Arc<ImixAgent<T>>,
+        agent: &Arc<ImixAgent>,
         context: &Arc<Mutex<ExecutionContext>>,
         shell_id: i64,
     ) {
@@ -377,7 +376,7 @@ mod tests {
     use crate::task::TaskRegistry;
     use pb::c2::{ReportOutputResponse, ShellTask};
     use pb::config::Config;
-    use transport::MockTransport;
+    use transport::{MockTransport, Transport};
 
     #[tokio::test]
     async fn test_shell_manager_normal_execution() {
@@ -386,26 +385,28 @@ mod tests {
 
         let config = Config::default();
         let mut transport = MockTransport::default();
-        // We expect report_output to be called with the result "2\n" for input "1+1"
-        transport
-            .expect_report_output()
-            .withf(|req| {
-                if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message {
-                    if let Some(out) = &m.output {
-                        return out.output.contains("2");
+        transport.expect_clone_box().returning(|| {
+            let mut t = MockTransport::default();
+            t.expect_report_output()
+                .withf(|req| {
+                    if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message {
+                        if let Some(out) = &m.output {
+                            return out.output.contains("2");
+                        }
                     }
-                }
-                false
-            })
-            .times(1)
-            .returning(|_| Ok(ReportOutputResponse::default()));
+                    false
+                })
+                .times(1)
+                .returning(|_| Ok(ReportOutputResponse::default()));
+            Box::new(t)
+        });
 
         let task_registry = Arc::new(TaskRegistry::new());
 
         let (shell_tx, _shell_rx) = mpsc::channel(1);
         let agent = Arc::new(ImixAgent::new(
             config,
-            transport,
+            transport.clone_box(),
             runtime_handle,
             task_registry,
             shell_tx,

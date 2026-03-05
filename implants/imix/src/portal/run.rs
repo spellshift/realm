@@ -20,9 +20,9 @@ struct StreamContext {
     tx: mpsc::Sender<Mote>,
 }
 
-pub async fn run<T: Transport + Send + Sync + 'static>(
+pub async fn run(
     context: Context,
-    mut transport: T,
+    mut transport: Box<dyn Transport + Send + Sync>,
     shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     let (req_tx, req_rx) = mpsc::channel::<CreatePortalRequest>(100);

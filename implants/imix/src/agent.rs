@@ -23,9 +23,9 @@ use crate::task::TaskRegistry;
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 #[derive(Clone)]
-pub struct ImixAgent<T: Transport> {
+pub struct ImixAgent {
     config: Arc<RwLock<Config>>,
-    transport: Arc<RwLock<T>>,
+    transport: Arc<RwLock<Box<dyn Transport + Send + Sync>>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
@@ -34,10 +34,10 @@ pub struct ImixAgent<T: Transport> {
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
 }
 
-impl<T: Transport + Sync + 'static> ImixAgent<T> {
+impl ImixAgent {
     pub fn new(
         config: Config,
-        transport: T,
+        transport: Box<dyn Transport + Send + Sync>,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
@@ -56,7 +56,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
         }
     }
 
-    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager<T>) {
+    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager) {
         self.runtime_handle.spawn(manager.run());
     }
 
@@ -121,7 +121,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Updates the shared transport with a new instance
-    pub async fn update_transport(&self, t: T) {
+    pub async fn update_transport(&self, t: Box<dyn Transport + Send + Sync>) {
         let mut transport = self.transport.write().await;
         *transport = t;
     }
@@ -266,18 +266,19 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to get a usable transport.
     // If the shared transport is active, returns a clone of it.
     // If not, creates a new one from config.
-    async fn get_usable_transport(&self) -> Result<T> {
+    async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
         // 1. Check shared transport
         {
             let guard = self.transport.read().await;
             if guard.is_active() {
-                return Ok(guard.clone());
+                return Ok(guard.clone_box());
             }
         }
 
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t = T::new(config).context("Failed to create on-demand transport")?;
+        let t =
+            transport::create_transport(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -343,7 +344,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to execute an async action with a usable transport, handling setup and errors.
     fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
     where
-        F: FnOnce(T) -> Fut,
+        F: FnOnce(Box<dyn Transport + Send + Sync>) -> Fut,
         Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
     {
         self.block_on(async {
@@ -358,7 +359,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to spawn a background subtask (like a reverse shell)
     fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
     where
-        F: FnOnce(T) -> Fut + Send + 'static,
+        F: FnOnce(Box<dyn Transport + Send + Sync>) -> Fut + Send + 'static,
         Fut: std::future::Future<Output = Result<()>> + Send + 'static,
     {
         let subtasks = self.subtasks.clone();
@@ -389,7 +390,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 }
 
 // Implement the Eldritch Agent Trait
-impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
+impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Sender for fetch_asset
