@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { v4 as uuidv4 } from "uuid";
 
 interface SshTerminalProps {
     portalId: number;
+    initialCommand?: string;
 }
 
-const SshTerminal = ({ portalId }: SshTerminalProps) => {
+const SshTerminal = ({ portalId, initialCommand }: SshTerminalProps) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
-    const streamIdRef = useRef<string>(uuidv4());
+    const streamIdRef = useRef<string>(crypto.randomUUID());
     const sequenceIdRef = useRef<number>(0);
 
     const [status, setStatus] = useState("Connecting...");
@@ -30,11 +30,25 @@ const SshTerminal = ({ portalId }: SshTerminalProps) => {
         const fitAddon = new FitAddon();
         term.loadAddon(fitAddon);
         term.open(termRef.current);
-        fitAddon.fit();
-        termInstance.current = term;
 
-        const handleResize = () => fitAddon.fit();
-        window.addEventListener("resize", handleResize);
+        try {
+            fitAddon.fit();
+        } catch (e) {
+            console.warn("fitAddon.fit failed in SshTerminal", e);
+        }
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (termRef.current && termRef.current.clientWidth > 0) {
+                try {
+                    fitAddon.fit();
+                } catch (e) {
+                    // Ignore if it still fails
+                }
+            }
+        });
+        resizeObserver.observe(termRef.current);
+
+        termInstance.current = term;
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const ws = new WebSocket(`${scheme}://${window.location.host}/portal/ws`);
@@ -47,6 +61,25 @@ const SshTerminal = ({ portalId }: SshTerminalProps) => {
             }));
             setStatus("Connected");
             term.focus();
+
+            if (initialCommand) {
+                // Delay sending the initial command slightly to ensure the portal pty is ready
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        sequenceIdRef.current++;
+                        ws.send(JSON.stringify({
+                            mote: {
+                                streamId: streamIdRef.current,
+                                seqId: sequenceIdRef.current,
+                                bytes: {
+                                    kind: "BYTES_PAYLOAD_KIND_PTY",
+                                    data: btoa(initialCommand)
+                                }
+                            }
+                        }));
+                    }
+                }, 500);
+            }
         };
 
         ws.onmessage = async (e) => {
@@ -91,7 +124,7 @@ const SshTerminal = ({ portalId }: SshTerminalProps) => {
         });
 
         return () => {
-            window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
             ws.close();
             term.dispose();
         };

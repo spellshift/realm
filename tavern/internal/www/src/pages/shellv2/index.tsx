@@ -7,7 +7,7 @@ import { useShellTerminal } from "./hooks/useShellTerminal";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, IconButton } from "@chakra-ui/react";
 import { CloseIcon } from "@chakra-ui/icons";
 import SshTerminal from "./components/SshTerminal";
@@ -44,6 +44,55 @@ const ShellV2 = () => {
         handleTooltipMouseLeave
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
 
+    const [sshTabs, setSshTabs] = useState<{ id: string, portalId: number, title: string, initialCommand?: string }[]>([]);
+    const [tabIndex, setTabIndex] = useState(0);
+
+    const [pendingSshRequests, setPendingSshRequests] = useState<{ host: string, id: string }[]>([]);
+    const hasAutoOpenedPortal = useRef<boolean>(false);
+
+    useEffect(() => {
+        const handleMeta = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            if (detail.command === "ssh") {
+                setPendingSshRequests(prev => [...prev, { host: detail.args[0] || "Unknown Host", id: crypto.randomUUID() }]);
+            }
+        };
+        window.addEventListener("ELD_META_COMMAND", handleMeta);
+        return () => window.removeEventListener("ELD_META_COMMAND", handleMeta);
+    }, []);
+
+    useEffect(() => {
+        if (!portalId) return;
+
+        let addedTabs = 0;
+
+        if (!hasAutoOpenedPortal.current) {
+            hasAutoOpenedPortal.current = true;
+            if (pendingSshRequests.length === 0) {
+                setSshTabs(prev => [...prev, { id: String(portalId), portalId, title: `Portal ${portalId}` }]);
+                addedTabs++;
+            }
+        }
+
+        if (pendingSshRequests.length > 0) {
+            setSshTabs(prev => {
+                const newTabs = pendingSshRequests.map(req => ({
+                    id: req.id,
+                    portalId,
+                    title: `SSH: ${req.host}`,
+                    initialCommand: `ssh ${req.host}\r`
+                }));
+                addedTabs += newTabs.length;
+                return [...prev, ...newTabs];
+            });
+            setPendingSshRequests([]);
+        }
+
+        if (addedTabs > 0) {
+            setTabIndex(prev => prev + addedTabs);
+        }
+    }, [portalId, pendingSshRequests]);
+
     if (connectionError) {
         return (
             <div style={{ padding: "20px" }}>
@@ -55,30 +104,6 @@ const ShellV2 = () => {
     if (loading) {
         return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
     }
-
-    const [sshTabs, setSshTabs] = useState<{ id: string, portalId: number, title: string }[]>([]);
-    const [tabIndex, setTabIndex] = useState(0);
-    const [pendingSsh, setPendingSsh] = useState<string | null>(null);
-
-    useEffect(() => {
-        const handleMeta = (e: Event) => {
-            const detail = (e as CustomEvent).detail;
-            if (detail.command === "ssh") {
-                setPendingSsh(detail.args[0] || "Unknown Host");
-            }
-        };
-        window.addEventListener("ELD_META_COMMAND", handleMeta);
-        return () => window.removeEventListener("ELD_META_COMMAND", handleMeta);
-    }, []);
-
-    useEffect(() => {
-        if (portalId && !sshTabs.find(t => t.portalId === portalId)) {
-            const title = pendingSsh ? `SSH: ${pendingSsh}` : `Portal ${portalId}`;
-            setSshTabs(prev => [...prev, { id: String(portalId), portalId, title }]);
-            setTabIndex(sshTabs.length + 1); // switch to the new tab
-            setPendingSsh(null);
-        }
-    }, [portalId, sshTabs, pendingSsh]);
 
     const handleCloseTab = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -137,7 +162,7 @@ const ShellV2 = () => {
                         </TabPanel>
                         {sshTabs.map(tab => (
                             <TabPanel key={tab.id} p={0} h="100%" className="absolute inset-0 pt-2">
-                                <SshTerminal portalId={tab.portalId} />
+                                <SshTerminal portalId={tab.portalId} initialCommand={tab.initialCommand} />
                             </TabPanel>
                         ))}
                     </TabPanels>

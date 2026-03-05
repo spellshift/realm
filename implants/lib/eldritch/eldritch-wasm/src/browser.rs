@@ -155,7 +155,7 @@ impl BrowserRepl {
                 self.build_state("complete", Some(code), None, None)
             }
             ReplAction::AcceptLine { line: _, prompt: _ } => {
-                self.build_state("render", None, None, None)
+                self.build_state("incomplete", None, None, None)
             }
             ReplAction::Quit => self.build_state("quit", None, None, None),
         }

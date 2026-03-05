@@ -1,0 +1,15 @@
+--- a/tavern/internal/www/src/pages/shellv2/hooks/useShellTerminal.ts
++++ b/tavern/internal/www/src/pages/shellv2/hooks/useShellTerminal.ts
+@@ -342,7 +342,11 @@ export const useShellTerminal = (
+         const fitAddon = new FitAddon();
+         termInstance.current.loadAddon(fitAddon);
+         termInstance.current.open(termRef.current);
+-        fitAddon.fit();
++        try {
++            fitAddon.fit();
++        } catch (e) {
++            console.warn("fitAddon.fit failed", e);
++        }
+ 
+         const handleResize = () => {
+             fitAddon.fit();

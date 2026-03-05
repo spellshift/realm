@@ -341,12 +341,23 @@ export const useShellTerminal = (
         const fitAddon = new FitAddon();
         termInstance.current.loadAddon(fitAddon);
         termInstance.current.open(termRef.current);
-        fitAddon.fit();
 
-        const handleResize = () => {
+        try {
             fitAddon.fit();
-        };
-        window.addEventListener("resize", handleResize);
+        } catch (e) {
+            console.warn("fitAddon.fit failed", e);
+        }
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (termRef.current && termRef.current.clientWidth > 0) {
+                try {
+                    fitAddon.fit();
+                } catch (e) {
+                    // Ignore if it still fails
+                }
+            }
+        });
+        resizeObserver.observe(termRef.current);
 
         termInstance.current.write("Eldritch v0.3.0\r\n");
 
@@ -611,6 +622,7 @@ export const useShellTerminal = (
                 } else if (result.status === "render" || result.status === "incomplete") {
                     if (result.status === "incomplete") {
                         term.write("\r\n");
+                        lastBufferHeight.current = 0;
                     }
                 }
 
@@ -634,7 +646,7 @@ export const useShellTerminal = (
         const disposeKeyHandler = setupKeys();
 
         return () => {
-            window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
             adapter.current?.close();
             disposeKeyHandler();
             termInstance.current?.dispose();
