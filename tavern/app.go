@@ -46,6 +46,7 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/tomes"
+	"realm.pub/tavern/tools"
 
 	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
@@ -257,6 +258,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Load Default Tomes
+	// Load Tools
+	if err := tools.UploadTools(ctx, client, tools.FileSystem); err != nil {
+		slog.ErrorContext(ctx, "failed to upload tools", "err", err)
+	}
+
 	if cfg.IsDefaultTomeImportEnabled() {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
 			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
