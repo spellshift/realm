@@ -225,4 +225,24 @@ describe('highlightPythonSyntax', () => {
 
         expect(output).toBe(expected);
     });
+
+    it('highlights f-strings and variables', () => {
+        const input = 'f"hello {name}"';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain(`${COLOR_STRING}f"hello `);
+        expect(output).toContain(`${RESET}${COLOR_PUNCTUATION_1}{${RESET}name${COLOR_PUNCTUATION_1}}${RESET}${COLOR_STRING}`);
+    });
+
+    it('highlights numbers in f-strings', () => {
+        const input = 'f"age is {age + 1}"';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain(`${RESET}${COLOR_PUNCTUATION_1}{${RESET}age + ${COLOR_NUMBER}1${RESET}${COLOR_PUNCTUATION_1}}${RESET}${COLOR_STRING}`);
+    });
+
+    it('handles escaped braces in f-strings', () => {
+        const input = 'f"{{escaped}}"';
+        const output = highlightPythonSyntax(input);
+        expect(output).toContain(`${COLOR_STRING}f"{{escaped}}"${RESET}`);
+        expect(output).not.toContain(`${COLOR_PUNCTUATION_1}{`);
+    });
 });

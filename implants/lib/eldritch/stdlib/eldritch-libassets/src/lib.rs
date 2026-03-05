@@ -1,6 +1,7 @@
 extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
+use eldritch_core::Value;
 use eldritch_macros::{eldritch_library, eldritch_method};
 
 #[cfg(feature = "fake_bindings")]
@@ -25,11 +26,11 @@ pub trait AssetsLibrary {
     /// - `name` (`str`): The name/path of the asset to read.
     ///
     /// **Returns**
-    /// - `List<int>`: The asset content as a list of bytes (u8).
+    /// - `Bytes`: The asset content as a bytes object.
     ///
     /// **Errors**
     /// - Returns an error string if the asset does not exist.
-    fn read_binary(&self, name: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, name: String) -> Result<Value, String>;
 
     #[eldritch_method]
     /// Reads the content of an embedded asset as a UTF-8 string.

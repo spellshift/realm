@@ -23,6 +23,15 @@ export const GET_SHELL = gql`
             primaryIP
             externalIP
             platform
+            tags {
+              edges {
+                node {
+                  id
+                  name
+                  kind
+                }
+              }
+            }
           }
         }
         portals {

@@ -200,8 +200,8 @@
     "description": "The **assets.list** method returns a list of asset names that the agent is aware of."
   },
   "assets.read_binary": {
-    "signature": "assets.read_binary(src: str) -> List<int>",
-    "description": "The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes."
+    "signature": "assets.read_binary(src: str) -> Bytes",
+    "description": "The **assets.read_binary** method returns a list of bytes representing the asset files bytes."
   },
   "assets.read": {
     "signature": "assets.read(src: str) -> str",
@@ -328,7 +328,7 @@
     "description": "The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.read_binary": {
-    "signature": "file.read(path: str) -> List<int>",
+    "signature": "file.read_binary(path: str) -> Bytes",
     "description": "The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read_binary(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read_binary(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read_binary(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.remove": {
@@ -358,6 +358,10 @@
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
     "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
+  },
+  "file.write_binary": {
+    "signature": "file.write_binary(path: str, content: Bytes) -> None",
+    "description": "The **file.write_binary** method writes binary content to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n```python\n# Write bytes returned from file.read_binary to another file\ndata = file.read_binary(\"/etc/passwd\")\nfile.write_binary(\"/tmp/passwd_copy\", data)\n```"
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",
