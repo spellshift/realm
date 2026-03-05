@@ -31,6 +31,12 @@ uuid = { workspace = true, features = ["js"] }
 eldritch = { workspace = true, default-features = false, features = [
     "fake_bindings",
 ] }
+russh = "0.51.1"
+tokio = { version = "1.49.0", features = ["io-util", "sync", "rt", "time"] }
+wasm-bindgen-futures = "0.4"
+futures = "0.3"
+async-trait = "0.1"
+web-sys = { version = "0.3", features = ["console", "Window"] }
 
 [dependencies]
 eldritch-core = { workspace = true }

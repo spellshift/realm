@@ -8,10 +8,21 @@ interface SshTerminalProps {
     initialCommand?: string;
 }
 
+/** Parse "ssh user@host" or "ssh host", defaulting user to "root" */
+function parseSshTarget(cmd?: string): { user: string; host: string } {
+    if (!cmd) return { user: "root", host: "localhost" };
+    const stripped = cmd.startsWith("ssh ") ? cmd.slice(4).trim() : cmd.trim();
+    if (stripped.includes("@")) {
+        const [user, host] = stripped.split("@", 2);
+        return { user: user || "root", host: host || "localhost" };
+    }
+    return { user: "root", host: stripped || "localhost" };
+}
+
 const SshTerminal = ({ portalId, initialCommand }: SshTerminalProps) => {
     const termRef = useRef<HTMLDivElement>(null);
-    const termInstance = useRef<Terminal | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
+    const wasmSshRef = useRef<any>(null);
     const streamIdRef = useRef<string>(crypto.randomUUID());
     const sequenceIdRef = useRef<number>(0);
 
@@ -41,60 +52,109 @@ const SshTerminal = ({ portalId, initialCommand }: SshTerminalProps) => {
             if (termRef.current && termRef.current.clientWidth > 0) {
                 try {
                     fitAddon.fit();
-                } catch (e) {
-                    // Ignore if it still fails
+                    if (wasmSshRef.current) {
+                        wasmSshRef.current.resize_pty(term.cols, term.rows);
+                    }
+                } catch (_) {
+                    // ignore
                 }
             }
         });
         resizeObserver.observe(termRef.current);
 
-        termInstance.current = term;
-
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const ws = new WebSocket(`${scheme}://${window.location.host}/portal/ws`);
         wsRef.current = ws;
 
-        ws.onopen = () => {
-            // Send Registration
-            ws.send(JSON.stringify({
-                portalId: portalId
-            }));
-            setStatus("Connected");
+        const { user, host } = parseSshTarget(initialCommand);
+
+        ws.onopen = async () => {
+            ws.send(JSON.stringify({ portalId }));
+            setStatus(`Connecting SSH to ${user}@${host}…`);
             term.focus();
 
-            if (initialCommand) {
-                // Delay sending the initial command slightly to ensure the portal pty is ready
-                setTimeout(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        sequenceIdRef.current++;
-                        ws.send(JSON.stringify({
-                            mote: {
-                                streamId: streamIdRef.current,
-                                seqId: sequenceIdRef.current,
-                                bytes: {
-                                    kind: "BYTES_PAYLOAD_KIND_PTY",
-                                    data: btoa(initialCommand)
-                                }
-                            }
-                        }));
+            try {
+                // @ts-ignore
+                const wasmModule = await import(/* webpackIgnore: true */ "/wasm/eldritch_wasm.js");
+                await wasmModule.default("/wasm/eldritch_wasm_bg.wasm");
+
+                /** Called by russh to write TCP bytes — proxy them to the Portal WebSocket as TCP motes */
+                const onTcpSend = (data: Uint8Array) => {
+                    console.log("[SshTerminal] onTcpSend called, bytes:", data.length, "ws state:", ws.readyState);
+                    if (ws.readyState !== WebSocket.OPEN) {
+                        console.warn("[SshTerminal] onTcpSend: WS not open, dropping", data.length, "bytes");
+                        return;
                     }
-                }, 500);
+                    sequenceIdRef.current++;
+                    let binary = "";
+                    for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+                    const msg = JSON.stringify({
+                        mote: {
+                            streamId: streamIdRef.current,
+                            seqId: sequenceIdRef.current,
+                            tcp: {
+                                data: btoa(binary),
+                                dstAddr: host,
+                                dstPort: 22,
+                            }
+                        }
+                    });
+                    console.log("[SshTerminal] sending TCP mote:", msg.slice(0, 200));
+                    ws.send(msg);
+                };
+
+                const onStdout = (data: Uint8Array) => { term.write(data); };
+                const onStderr = (data: Uint8Array) => { term.write(data); };
+                const onDisconnect = (message?: string) => {
+                    const reason = message || "SSH session ended";
+                    setStatus(`Disconnected: ${reason}`);
+                    term.write(`\r\n\x1b[31m[${reason}]\x1b[0m\r\n`);
+                };
+
+                const wasmSsh = new wasmModule.WasmSsh(
+                    user, onTcpSend, onStdout, onStderr, onDisconnect,
+                    term.cols, term.rows,
+                );
+                wasmSshRef.current = wasmSsh;
+                setStatus(`SSH: ${user}@${host}`);
+
+                // Catch async WASM RuntimeError panics (they propagate as unhandled rejections)
+                const panicHandler = (ev: PromiseRejectionEvent) => {
+                    const msg = ev.reason?.message || String(ev.reason);
+                    if (msg.includes("unreachable") || msg.includes("RuntimeError")) {
+                        console.error("[SshTerminal] WASM panic:", msg);
+                        term.write(`\r\n\x1b[31m[SSH internal error: ${msg}]\x1b[0m\r\n`);
+                        setStatus("Error");
+                        ev.preventDefault();
+                    }
+                };
+                window.addEventListener("unhandledrejection", panicHandler);
+                // Clean up the handler when the component unmounts (handled in cleanup below)
+            } catch (e) {
+                console.error("Failed to initialize WasmSsh", e);
+                term.write(`\r\n\x1b[31m[Failed to initialize SSH WASM: ${e}]\x1b[0m\r\n`);
+                setStatus("Error");
             }
         };
 
         ws.onmessage = async (e) => {
-            let data = e.data;
-            if (data instanceof Blob) {
-                data = await data.text();
-            }
+            let raw = e.data;
+            if (raw instanceof Blob) raw = await raw.text();
             try {
-                const resp = JSON.parse(data);
-                const mote = resp.mote;
-                if (mote && mote.bytes) {
-                    if (mote.bytes.data) {
-                        const binaryString = atob(mote.bytes.data);
-                        term.write(binaryString);
+                const resp = JSON.parse(raw);
+                const mote = resp?.mote;
+                console.log("[SshTerminal] ws.onmessage mote keys:", mote ? Object.keys(mote) : "no mote", "wasmReady:", !!wasmSshRef.current);
+                if (mote?.tcp?.data && wasmSshRef.current) {
+                    console.log("[SshTerminal] feeding TCP mote, b64 len:", mote.tcp.data.length);
+                    // TCP response from portal — feed raw bytes into the SSH WASM parser
+                    const binaryString = atob(mote.tcp.data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
                     }
+                    wasmSshRef.current.on_tcp_recv(bytes);
+                } else if (mote && !mote.tcp) {
+                    console.log("[SshTerminal] non-TCP mote received (bytes/shell?):", JSON.stringify(mote).slice(0, 200));
                 }
             } catch (err) {
                 console.error("Failed to parse portal message", err);
@@ -106,20 +166,10 @@ const SshTerminal = ({ portalId, initialCommand }: SshTerminalProps) => {
             term.write("\r\n\x1b[31m[Disconnected from Portal]\x1b[0m\r\n");
         };
 
+        // Forward xterm user input to SSH stdin
         term.onData((data) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                sequenceIdRef.current++;
-                const req = {
-                    mote: {
-                        streamId: streamIdRef.current,
-                        seqId: sequenceIdRef.current,
-                        bytes: {
-                            kind: "BYTES_PAYLOAD_KIND_PTY",
-                            data: btoa(data)
-                        }
-                    }
-                };
-                ws.send(JSON.stringify(req));
+            if (wasmSshRef.current) {
+                wasmSshRef.current.on_stdin(new TextEncoder().encode(data));
             }
         });
 

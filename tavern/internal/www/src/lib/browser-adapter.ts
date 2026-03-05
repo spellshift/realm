@@ -1,20 +1,9 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
 
-export interface ReplState {
-    status: string;
-    prompt: string;
-    buffer: string;
-    cursor_pos: number;
-    payload?: string;
-    function?: string;
-    args?: string[];
-    is_running: boolean;
-}
-
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
 export class BrowserWasmAdapter {
-    private repl: any; // BrowserRepl instance
+    private repl: any; // BrowserRepl instance (used for tab-completion only)
     private ws: WebSocket | null = null;
     private url: string;
     private onMessageCallback: (msg: WebsocketMessage) => void;
@@ -92,7 +81,7 @@ export class BrowserWasmAdapter {
 
     async init() {
         try {
-            // Load the WASM module dynamically from public folder
+            // Load the WASM module dynamically from public folder (used for tab-completion)
             // @ts-ignore
             const module = await import(/* webpackIgnore: true */ "/wasm/eldritch_wasm.js");
             await module.default("/wasm/eldritch_wasm_bg.wasm");
@@ -106,73 +95,19 @@ export class BrowserWasmAdapter {
     private checkReady() {
         if (this.repl && this.isWsOpen && this.onReadyCallback) {
             this.onReadyCallback();
-            // We don't clear onReadyCallback because we might need it again on reconnect?
-            // The original code cleared it. If the WASM REPL is already initialized,
-            // we probably want to signal "ready" again if we reconnect so the UI can perhaps re-print the prompt or status.
-            // But usually "ready" means "initial load done".
-            // Let's keep the original behavior of calling it once for now,
-            // assuming the UI handles reconnection status separately.
             this.onReadyCallback = undefined;
         }
     }
 
-    handleKey(key: string, ctrl: boolean, alt: boolean, metaKey: boolean, shift: boolean): ReplState | null {
-        if (!this.repl) return null;
-
-        try {
-            return this.repl.handle_key(key, ctrl, alt, metaKey, shift);
-        } catch (e) {
-            console.error("Failed to handle key in WASM REPL", e);
-            return null;
-        }
-    }
-
-    getSuggestions(): string[] | null {
-        if (!this.repl) return null;
-        const sugs = this.repl.get_suggestions();
-        return sugs ? Array.from(sugs) : null;
-    }
-
-    getSuggestionsStart(): number | null {
-        if (!this.repl) return null;
-        const start = this.repl.get_suggestions_start();
-        return start !== undefined ? start : null;
-    }
-
-    getSuggestionsIndex(): number | null {
-        if (!this.repl) return null;
-        const idx = this.repl.get_suggestions_index();
-        return idx !== undefined ? idx : null;
-    }
-
-    input(line: string): any {
-        if (!this.repl) {
-            return { status: "error", message: "REPL not initialized" };
-        }
-
-        const resultJson = this.repl.input(line);
-        try {
-            return JSON.parse(resultJson);
-        } catch (e) {
-            console.error("Failed to parse REPL result", e);
-            return { status: "error", message: "Internal REPL error" };
-        }
-    }
-
+    /** Request tab-completions from the WASM REPL for the given line/cursor position. */
     complete(line: string, cursor: number): { suggestions: string[], start: number } {
         if (!this.repl) return { suggestions: [], start: cursor };
-        const resultJson = this.repl.complete(line, cursor);
         try {
+            const resultJson = this.repl.complete(line, cursor);
             return JSON.parse(resultJson);
         } catch (e) {
             console.error("Failed to parse completion result", e);
             return { suggestions: [], start: cursor };
-        }
-    }
-
-    reset() {
-        if (this.repl) {
-            this.repl.reset();
         }
     }
 

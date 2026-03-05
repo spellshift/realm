@@ -7,6 +7,7 @@ use eldritch_repl::{Input, Repl, ReplAction};
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
+
 use eldritch::{
     agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
     crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,

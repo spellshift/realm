@@ -361,7 +361,7 @@ export const useShellTerminal = (
 
         termInstance.current.write("Eldritch v0.3.0\r\n");
 
-        // Define redrawLine early so it can be used by adapter callback
+        // Define redrawLine locally for use inside closures (adapter callback + key handler)
         const redrawLine = () => {
             const term = termInstance.current;
             if (!term) return;
@@ -375,7 +375,6 @@ export const useShellTerminal = (
                 const prompt = `(reverse-i-search)'${state.searchQuery}': `;
                 let match = "";
                 if (state.searchQuery) {
-                    // Simple search backwards
                     for (let i = state.history.length - 1; i >= 0; i--) {
                         if (state.history[i].includes(state.searchQuery)) {
                             match = state.history[i];
@@ -385,7 +384,6 @@ export const useShellTerminal = (
                 }
                 contentToWrite = prompt + match;
                 contentToDisplay = contentToWrite;
-                // In search mode, cursor is typically at the end of the match
                 cursorIndex = contentToWrite.length;
             } else {
                 contentToWrite = state.prompt + state.inputBuffer;
@@ -401,24 +399,16 @@ export const useShellTerminal = (
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
                     if (i > 0) count++; // Newline character
-                    // Calculate wrapped lines for this segment
-                    // Even an empty line takes 1 row if explicitly split
-                    // But here, split('\n') gives empty string for consecutive newlines
-
                     if (line.length > 0) {
                         count += Math.floor((line.length - 1) / cols);
                     }
-                    // If line is exactly cols length, it doesn't wrap to next line unless another char comes
-                    // But we are counting *visual* rows.
-                    // xterm wraps: if I write 80 chars on 80 col terminal, cursor is at (80, y)
-                    // if I write 81 chars, cursor is at (1, y+1)
                 }
                 return count;
             };
 
             const rows = getVisualLineCount(contentToWrite, termCols);
 
-            // Move up to start of previous rendering (regardless of mode)
+            // Move up to start of previous rendering
             const prevRows = lastBufferHeight.current;
             if (prevRows > 0) {
                 term.write(`\x1b[${prevRows}A`);
@@ -427,7 +417,7 @@ export const useShellTerminal = (
             // Clear everything below
             term.write("\r\x1b[J");
 
-            // Write new content, ensuring newlines are carriage-return + newline
+            // Write new content
             term.write(contentToDisplay.replace(/\n/g, "\r\n"));
 
             // Update last height
@@ -435,23 +425,10 @@ export const useShellTerminal = (
 
             // Move cursor to correct position
             if (!state.isSearching) {
-                // Calculate cursor position in terms of rows/cols relative to start
                 const prefix = contentToWrite.slice(0, cursorIndex);
-                // Calculate rows occupied by prefix
                 const cursorRow = getVisualLineCount(prefix, termCols);
-
-                // Calculate cursor column
                 const lastLine = prefix.split('\n').pop() || "";
-                let cursorCol = lastLine.length % termCols;
-                // If we are exactly at end of line (and not empty), it might be tricky
-                // But xterm handles cursor positioning
-                // If length is multiple of cols, cursor is effectively at index 0 of next line physically?
-                // Actually, if we write 80 chars, cursor is at 80. Writing next char moves it.
-                // We use relative movement.
-
-                // We moved up `prevRows`. We wrote `rows` lines.
-                // We are now at the end of the content.
-                // We want to be at `cursorRow`.
+                const cursorCol = lastLine.length % termCols;
 
                 const moveUp = rows - cursorRow;
                 if (moveUp > 0) {
@@ -463,15 +440,6 @@ export const useShellTerminal = (
                     term.write(`\x1b[${cursorCol}C`);
                 }
             }
-        };
-
-        const scheduleRedraw = () => {
-            if (redrawTimeoutRef.current) {
-                clearTimeout(redrawTimeoutRef.current);
-            }
-            redrawTimeoutRef.current = setTimeout(() => {
-                redrawLine();
-            }, 50);
         };
 
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -513,7 +481,6 @@ export const useShellTerminal = (
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
                             setPortalId(msg.portal_id);
                         }
-                        // Handle other control signals if needed
                         break;
                     case WebsocketMessageKind.OutputFromOtherStream:
                         content = msg.output;
@@ -549,98 +516,434 @@ export const useShellTerminal = (
 
         adapter.current.init();
 
+        // ─────────────────────────────────────────────────────────────────
+        // Pure-TypeScript key handling via xterm's onData
+        // ─────────────────────────────────────────────────────────────────
         const setupKeys = () => {
-            const handleKey = (e: { key: string; domEvent: KeyboardEvent }) => {
+            // Helper: check whether an input line closes an open Python block
+            const needsContinuation = (line: string): boolean => {
+                const trimmed = line.trimEnd();
+                return trimmed.endsWith(":") || trimmed.endsWith("\\") || trimmed.endsWith(",");
+            };
+
+            // Helper: detect SSH meta command pattern ssh(...) or ssh "host"
+            const detectSshCommand = (input: string): string[] | null => {
+                // Match: ssh(...) or ssh("...") or ssh 'host' or ssh user@host etc.
+                const sshMatch = input.match(/^\s*ssh\s*\(\s*(.*)\s*\)\s*$/) ||
+                    input.match(/^\s*ssh\s+(.+)\s*$/);
+                if (sshMatch) {
+                    const args = sshMatch[1].trim().replace(/^["']|["']$/g, "");
+                    return [args];
+                }
+                return null;
+            };
+
+            // Helper: send line over WebSocket
+            const sendLine = (line: string) => {
+                const ws = (adapter.current as any)?.ws;
+                const isOpen = (adapter.current as any)?.isWsOpen;
+                const term = termInstance.current;
+                if (isOpen && ws) {
+                    ws.send(JSON.stringify({
+                        kind: WebsocketMessageKind.Input,
+                        input: line
+                    }));
+                } else {
+                    term?.write("Error: WebSocket not connected\r\n");
+                }
+            };
+
+            const handleData = (data: string) => {
                 if (isLateCheckinRef.current) return;
                 if (connectionStatusRef.current !== "connected") return;
-
-                const domEvent = e.domEvent;
 
                 const state = shellState.current;
                 const term = termInstance.current;
                 if (!term) return;
 
-                const result = adapter.current?.handleKey(
-                    domEvent.key,
-                    domEvent.ctrlKey,
-                    domEvent.altKey,
-                    domEvent.metaKey,
-                    domEvent.shiftKey
-                );
+                // ── ANSI escape sequences (arrow keys, etc.) ──────────────
+                if (data.startsWith("\x1b[") || data.startsWith("\x1bO")) {
+                    const seq = data.slice(2) || data.slice(2);
+                    const code = data.startsWith("\x1b[") ? data.slice(2) : data.slice(2);
 
-                if (!result) return;
+                    // Arrow keys
+                    if (data === "\x1b[D" || data === "\x1bOD") {
+                        // Left arrow
+                        if (state.cursorPos > 0) {
+                            state.cursorPos--;
+                            redrawLine();
+                        }
+                        return;
+                    }
+                    if (data === "\x1b[C" || data === "\x1bOC") {
+                        // Right arrow
+                        if (state.cursorPos < state.inputBuffer.length) {
+                            state.cursorPos++;
+                            redrawLine();
+                        }
+                        return;
+                    }
+                    if (data === "\x1b[A" || data === "\x1bOA") {
+                        // Up arrow — history previous
+                        if (state.history.length === 0) return;
+                        if (state.historyIndex === -1) {
+                            state.historyIndex = state.history.length - 1;
+                        } else if (state.historyIndex > 0) {
+                            state.historyIndex--;
+                        }
+                        state.inputBuffer = state.history[state.historyIndex];
+                        state.cursorPos = state.inputBuffer.length;
+                        redrawLine();
+                        return;
+                    }
+                    if (data === "\x1b[B" || data === "\x1bOB") {
+                        // Down arrow — history next
+                        if (state.historyIndex === -1) return;
+                        if (state.historyIndex < state.history.length - 1) {
+                            state.historyIndex++;
+                            state.inputBuffer = state.history[state.historyIndex];
+                        } else {
+                            state.historyIndex = -1;
+                            state.inputBuffer = "";
+                        }
+                        state.cursorPos = state.inputBuffer.length;
+                        redrawLine();
+                        return;
+                    }
 
-                // Sync the state
-                state.inputBuffer = result.buffer;
-                state.cursorPos = result.cursor_pos;
-                state.prompt = result.prompt;
+                    // Home / End
+                    if (data === "\x1b[H" || data === "\x1b[1~") {
+                        state.cursorPos = 0;
+                        redrawLine();
+                        return;
+                    }
+                    if (data === "\x1b[F" || data === "\x1b[4~") {
+                        state.cursorPos = state.inputBuffer.length;
+                        redrawLine();
+                        return;
+                    }
 
-                if (result.status === "complete") {
-                    term.write("\r\n");
-                    if (result.payload) {
-                        const payloadStr = result.payload.trim();
-                        if (payloadStr) {
-                            state.history.push(payloadStr);
+                    // Delete key
+                    if (data === "\x1b[3~") {
+                        if (state.cursorPos < state.inputBuffer.length) {
+                            state.inputBuffer =
+                                state.inputBuffer.slice(0, state.cursorPos) +
+                                state.inputBuffer.slice(state.cursorPos + 1);
+                            redrawLine();
+                        }
+                        return;
+                    }
+
+                    // Alt+Left (word jump left) — various terminals send different codes
+                    if (data === "\x1b[1;3D" || data === "\x1bb" || data === "\x1b\x1b[D") {
+                        state.cursorPos = moveWordLeft(state.inputBuffer, state.cursorPos);
+                        redrawLine();
+                        return;
+                    }
+                    // Alt+Right (word jump right)
+                    if (data === "\x1b[1;3C" || data === "\x1bf" || data === "\x1b\x1b[C") {
+                        state.cursorPos = moveWordRight(state.inputBuffer, state.cursorPos);
+                        redrawLine();
+                        return;
+                    }
+
+                    // Alt+Backspace — delete word backwards (some terminals)
+                    if (data === "\x1b\x7f" || data === "\x1b\b") {
+                        const newPos = moveWordLeft(state.inputBuffer, state.cursorPos);
+                        state.inputBuffer =
+                            state.inputBuffer.slice(0, newPos) +
+                            state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos = newPos;
+                        redrawLine();
+                        return;
+                    }
+
+                    // Ignore other escape sequences
+                    return;
+                }
+
+                // ── Control characters ────────────────────────────────────
+                if (data.length === 1) {
+                    const code = data.charCodeAt(0);
+
+                    // Ctrl+A — go to start of line
+                    if (code === 1) {
+                        state.cursorPos = 0;
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+E — go to end of line
+                    if (code === 5) {
+                        state.cursorPos = state.inputBuffer.length;
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+B — move one char left
+                    if (code === 2) {
+                        if (state.cursorPos > 0) {
+                            state.cursorPos--;
+                            redrawLine();
+                        }
+                        return;
+                    }
+                    // Ctrl+F — move one char right
+                    if (code === 6) {
+                        if (state.cursorPos < state.inputBuffer.length) {
+                            state.cursorPos++;
+                            redrawLine();
+                        }
+                        return;
+                    }
+                    // Ctrl+K — kill to end of line
+                    if (code === 11) {
+                        state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos);
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+U — kill to start of line
+                    if (code === 21) {
+                        state.inputBuffer = state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos = 0;
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+W — delete word backwards
+                    if (code === 23) {
+                        const newPos = moveWordLeft(state.inputBuffer, state.cursorPos);
+                        state.inputBuffer =
+                            state.inputBuffer.slice(0, newPos) +
+                            state.inputBuffer.slice(state.cursorPos);
+                        state.cursorPos = newPos;
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+C — interrupt / clear line
+                    if (code === 3) {
+                        if (state.isSearching) {
+                            state.isSearching = false;
+                            state.searchQuery = "";
+                        }
+                        term.write("^C\r\n");
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                        state.historyIndex = -1;
+                        state.currentBlock = "";
+                        state.prompt = ">>> ";
+                        lastBufferHeight.current = 0;
+                        redrawLine();
+                        updateCompletionsUI([], 0, false, 0);
+                        return;
+                    }
+                    // Ctrl+L — clear screen
+                    if (code === 12) {
+                        term.write('\x1b[2J\x1b[H');
+                        lastBufferHeight.current = 0;
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+R — toggle reverse search
+                    if (code === 18) {
+                        state.isSearching = !state.isSearching;
+                        state.searchQuery = "";
+                        redrawLine();
+                        return;
+                    }
+                    // Ctrl+D — EOF / exit (only if buffer is empty)
+                    if (code === 4) {
+                        if (state.inputBuffer === "" && state.currentBlock === "") {
+                            term.write("\r\nSession closed locally via exit.\r\n");
+                        }
+                        return;
+                    }
+
+                    // TAB — completion
+                    if (code === 9) {
+                        const cRef = completionsRef.current;
+                        if (cRef.show && cRef.list.length > 0) {
+                            // Cycle through completions
+                            const nextIdx = (cRef.index + 1) % cRef.list.length;
+                            updateCompletionsUI(cRef.list, cRef.start, true, nextIdx);
+                            applyCompletion(cRef.list[nextIdx]);
+                        } else {
+                            // Request completions from WASM
+                            const result = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                            if (result && result.suggestions.length > 0) {
+                                if (result.suggestions.length === 1) {
+                                    applyCompletion(result.suggestions[0]);
+                                } else {
+                                    updateCompletionsUI(result.suggestions, result.start, true, 0);
+                                    applyCompletion(result.suggestions[0]);
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    // ENTER — submit line
+                    if (code === 13) {
+                        if (state.isSearching) {
+                            // Accept search result
+                            let match = "";
+                            for (let i = state.history.length - 1; i >= 0; i--) {
+                                if (state.history[i].includes(state.searchQuery)) {
+                                    match = state.history[i];
+                                    break;
+                                }
+                            }
+                            state.isSearching = false;
+                            state.searchQuery = "";
+                            state.inputBuffer = match;
+                            state.cursorPos = match.length;
+                            redrawLine();
+                            return;
+                        }
+
+                        const line = state.inputBuffer;
+                        term.write("\r\n");
+                        lastBufferHeight.current = 0;
+                        state.historyIndex = -1;
+                        updateCompletionsUI([], 0, false, 0);
+
+                        // Blank line: if in block, submit; otherwise just re-prompt
+                        if (line.trim() === "") {
+                            if (state.currentBlock !== "") {
+                                // Submit the accumulated block
+                                const fullBlock = state.currentBlock;
+                                state.currentBlock = "";
+                                state.prompt = ">>> ";
+                                state.inputBuffer = "";
+                                state.cursorPos = 0;
+
+                                if (fullBlock.trim()) {
+                                    state.history.push(fullBlock.trim());
+                                    saveHistory(state.history);
+                                }
+
+                                // Check for SSH meta command in single-line blocks
+                                const sshArgs = detectSshCommand(fullBlock);
+                                if (sshArgs) {
+                                    window.dispatchEvent(new CustomEvent("ELD_META_COMMAND", {
+                                        detail: {
+                                            shellId,
+                                            command: "ssh",
+                                            args: sshArgs
+                                        }
+                                    }));
+                                    redrawLine();
+                                    return;
+                                }
+
+                                sendLine(fullBlock);
+                                redrawLine();
+                            } else {
+                                state.inputBuffer = "";
+                                state.cursorPos = 0;
+                                redrawLine();
+                            }
+                            return;
+                        }
+
+                        // Check for SSH meta command (single line, no block)
+                        if (state.currentBlock === "") {
+                            const sshArgs = detectSshCommand(line);
+                            if (sshArgs) {
+                                state.inputBuffer = "";
+                                state.cursorPos = 0;
+
+                                window.dispatchEvent(new CustomEvent("ELD_META_COMMAND", {
+                                    detail: {
+                                        shellId,
+                                        command: "ssh",
+                                        args: sshArgs
+                                    }
+                                }));
+                                redrawLine();
+                                return;
+                            }
+                        }
+
+                        // Multi-line block accumulation
+                        if (needsContinuation(line) || state.currentBlock !== "") {
+                            // Append current line to block
+                            const indent = state.inputBuffer.match(/^(\s*)/)?.[1] ?? "";
+                            const newIndent = needsContinuation(line) ? indent + "    " : indent;
+                            if (state.currentBlock === "") {
+                                state.currentBlock = line + "\n";
+                            } else {
+                                state.currentBlock += line + "\n";
+                            }
+
+                            // If the line ends a block (blank terminator handled above), we already submitted
+                            state.prompt = "... ";
+                            state.inputBuffer = newIndent;
+                            state.cursorPos = newIndent.length;
+                            redrawLine();
+                            return;
+                        }
+
+                        // Plain single-line command — submit immediately
+                        const trimmed = line.trim();
+                        if (trimmed) {
+                            state.history.push(trimmed);
                             saveHistory(state.history);
                         }
 
-                        // Send via websocket
-                        if (adapter.current && (adapter.current as any).isWsOpen && (adapter.current as any).ws) {
-                            (adapter.current as any).ws.send(JSON.stringify({
-                                kind: WebsocketMessageKind.Input,
-                                input: result.payload
-                            }));
-                        } else {
-                            term.write("Error: WebSocket not connected\r\n" + state.prompt);
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+
+                        if (trimmed === "exit" || trimmed === "quit()") {
+                            term.write("Session closed locally via exit.\r\n");
+                            return;
                         }
-                    } else {
-                        term.write(state.prompt);
+
+                        sendLine(line);
+                        redrawLine();
+                        return;
                     }
-                } else if (result.status === "meta") {
-                    term.write("\r\n");
-                    if (result.function === "ssh") {
-                        // The user requested SSH meta function
-                        // We will broadcast or handle this meta command up to the parent component
-                        // However, we can also dispatch a window event since useShellTerminal has no setMetaCommand prop right now
-                        // We'll dispatch a custom event
-                        window.dispatchEvent(new CustomEvent("ELD_META_COMMAND", {
-                            detail: {
-                                shellId,
-                                command: "ssh",
-                                args: result.args
-                            }
-                        }));
+
+                    // BACKSPACE (DEL char)
+                    if (code === 127 || code === 8) {
+                        if (state.isSearching) {
+                            state.searchQuery = state.searchQuery.slice(0, -1);
+                            redrawLine();
+                            return;
+                        }
+                        if (state.cursorPos > 0) {
+                            state.inputBuffer =
+                                state.inputBuffer.slice(0, state.cursorPos - 1) +
+                                state.inputBuffer.slice(state.cursorPos);
+                            state.cursorPos--;
+                            redrawLine();
+                        }
+                        return;
                     }
-                    term.write(state.prompt);
-                } else if (result.status === "quit") {
-                    term.write("\r\nSession closed locally via exit.\r\n");
-                } else if (result.status === "error") {
-                    term.write(`\r\nError from REPL\r\n${state.prompt}`);
-                } else if (result.status === "clear") {
-                    term.write('\x1b[2J\x1b[H');
-                    lastBufferHeight.current = 0;
-                } else if (result.status === "render" || result.status === "incomplete") {
-                    if (result.status === "incomplete") {
-                        term.write("\r\n");
-                        lastBufferHeight.current = 0;
-                    }
+
+                    // Filter out remaining control characters
+                    if (code < 32) return;
                 }
 
-                // Update suggestions
-                const sugs = adapter.current?.getSuggestions();
-                if (sugs && sugs.length > 0) {
-                    const start = adapter.current?.getSuggestionsStart() ?? state.cursorPos;
-                    const idx = adapter.current?.getSuggestionsIndex() ?? 0;
-                    updateCompletionsUI(sugs, start, true, idx);
-                } else {
-                    updateCompletionsUI([], 0, false, 0);
+                // ── Printable characters (including multi-byte paste) ──────
+                if (state.isSearching) {
+                    state.searchQuery += data;
+                    redrawLine();
+                    return;
                 }
+
+                // Insert data at cursor position
+                state.inputBuffer =
+                    state.inputBuffer.slice(0, state.cursorPos) +
+                    data +
+                    state.inputBuffer.slice(state.cursorPos);
+                state.cursorPos += data.length;
+
+                // Clear completions on any text input
+                updateCompletionsUI([], 0, false, 0);
 
                 redrawLine();
             };
 
-            const keyDispose = termInstance.current!.onKey(handleKey);
-            return () => keyDispose.dispose();
+            const dataDispose = termInstance.current!.onData(handleData);
+            return () => dataDispose.dispose();
         };
 
         const disposeKeyHandler = setupKeys();

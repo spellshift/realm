@@ -48,7 +48,6 @@ const ShellV2 = () => {
     const [tabIndex, setTabIndex] = useState(0);
 
     const [pendingSshRequests, setPendingSshRequests] = useState<{ host: string, id: string }[]>([]);
-    const hasAutoOpenedPortal = useRef<boolean>(false);
 
     useEffect(() => {
         const handleMeta = (e: Event) => {
@@ -65,14 +64,6 @@ const ShellV2 = () => {
         if (!portalId) return;
 
         let addedTabs = 0;
-
-        if (!hasAutoOpenedPortal.current) {
-            hasAutoOpenedPortal.current = true;
-            if (pendingSshRequests.length === 0) {
-                setSshTabs(prev => [...prev, { id: String(portalId), portalId, title: `Portal ${portalId}` }]);
-                addedTabs++;
-            }
-        }
 
         if (pendingSshRequests.length > 0) {
             setSshTabs(prev => {
