@@ -121,6 +121,31 @@ var (
 		Columns:    BuildersColumns,
 		PrimaryKey: []*schema.Column{BuildersColumns[0]},
 	}
+	// DeviceAuthsColumns holds the columns for the "device_auths" table.
+	DeviceAuthsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "user_code", Type: field.TypeString, Unique: true},
+		{Name: "device_code", Type: field.TypeString, Unique: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"PENDING", "APPROVED", "DENIED"}, Default: "PENDING"},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "device_auth_user", Type: field.TypeInt, Nullable: true},
+	}
+	// DeviceAuthsTable holds the schema information for the "device_auths" table.
+	DeviceAuthsTable = &schema.Table{
+		Name:       "device_auths",
+		Columns:    DeviceAuthsColumns,
+		PrimaryKey: []*schema.Column{DeviceAuthsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "device_auths_users_user",
+				Columns:    []*schema.Column{DeviceAuthsColumns[7]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -739,6 +764,7 @@ var (
 		BeaconsTable,
 		BuildTasksTable,
 		BuildersTable,
+		DeviceAuthsTable,
 		HostsTable,
 		HostCredentialsTable,
 		HostFilesTable,
@@ -775,6 +801,10 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	BuildersTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	DeviceAuthsTable.ForeignKeys[0].RefTable = UsersTable
+	DeviceAuthsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostsTable.ForeignKeys[0].RefTable = TomesTable

@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -49,6 +50,7 @@ const (
 	TypeBeacon         = "Beacon"
 	TypeBuildTask      = "BuildTask"
 	TypeBuilder        = "Builder"
+	TypeDeviceAuth     = "DeviceAuth"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
 	TypeHostFile       = "HostFile"
@@ -4357,6 +4359,669 @@ func (m *BuilderMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Builder edge %s", name)
+}
+
+// DeviceAuthMutation represents an operation that mutates the DeviceAuth nodes in the graph.
+type DeviceAuthMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	user_code        *string
+	device_code      *string
+	status           *deviceauth.Status
+	expires_at       *time.Time
+	clearedFields    map[string]struct{}
+	user             *int
+	cleareduser      bool
+	done             bool
+	oldValue         func(context.Context) (*DeviceAuth, error)
+	predicates       []predicate.DeviceAuth
+}
+
+var _ ent.Mutation = (*DeviceAuthMutation)(nil)
+
+// deviceauthOption allows management of the mutation configuration using functional options.
+type deviceauthOption func(*DeviceAuthMutation)
+
+// newDeviceAuthMutation creates new mutation for the DeviceAuth entity.
+func newDeviceAuthMutation(c config, op Op, opts ...deviceauthOption) *DeviceAuthMutation {
+	m := &DeviceAuthMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDeviceAuth,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDeviceAuthID sets the ID field of the mutation.
+func withDeviceAuthID(id int) deviceauthOption {
+	return func(m *DeviceAuthMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *DeviceAuth
+		)
+		m.oldValue = func(ctx context.Context) (*DeviceAuth, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().DeviceAuth.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDeviceAuth sets the old DeviceAuth of the mutation.
+func withDeviceAuth(node *DeviceAuth) deviceauthOption {
+	return func(m *DeviceAuthMutation) {
+		m.oldValue = func(context.Context) (*DeviceAuth, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DeviceAuthMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DeviceAuthMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DeviceAuthMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DeviceAuthMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().DeviceAuth.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DeviceAuthMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DeviceAuthMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DeviceAuthMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *DeviceAuthMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *DeviceAuthMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *DeviceAuthMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetUserCode sets the "user_code" field.
+func (m *DeviceAuthMutation) SetUserCode(s string) {
+	m.user_code = &s
+}
+
+// UserCode returns the value of the "user_code" field in the mutation.
+func (m *DeviceAuthMutation) UserCode() (r string, exists bool) {
+	v := m.user_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserCode returns the old "user_code" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldUserCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserCode: %w", err)
+	}
+	return oldValue.UserCode, nil
+}
+
+// ResetUserCode resets all changes to the "user_code" field.
+func (m *DeviceAuthMutation) ResetUserCode() {
+	m.user_code = nil
+}
+
+// SetDeviceCode sets the "device_code" field.
+func (m *DeviceAuthMutation) SetDeviceCode(s string) {
+	m.device_code = &s
+}
+
+// DeviceCode returns the value of the "device_code" field in the mutation.
+func (m *DeviceAuthMutation) DeviceCode() (r string, exists bool) {
+	v := m.device_code
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeviceCode returns the old "device_code" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldDeviceCode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeviceCode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeviceCode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeviceCode: %w", err)
+	}
+	return oldValue.DeviceCode, nil
+}
+
+// ResetDeviceCode resets all changes to the "device_code" field.
+func (m *DeviceAuthMutation) ResetDeviceCode() {
+	m.device_code = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *DeviceAuthMutation) SetStatus(d deviceauth.Status) {
+	m.status = &d
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *DeviceAuthMutation) Status() (r deviceauth.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldStatus(ctx context.Context) (v deviceauth.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *DeviceAuthMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *DeviceAuthMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *DeviceAuthMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the DeviceAuth entity.
+// If the DeviceAuth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeviceAuthMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *DeviceAuthMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *DeviceAuthMutation) SetUserID(id int) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *DeviceAuthMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *DeviceAuthMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *DeviceAuthMutation) UserID() (id int, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *DeviceAuthMutation) UserIDs() (ids []int) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *DeviceAuthMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the DeviceAuthMutation builder.
+func (m *DeviceAuthMutation) Where(ps ...predicate.DeviceAuth) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DeviceAuthMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DeviceAuthMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DeviceAuth, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DeviceAuthMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DeviceAuthMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (DeviceAuth).
+func (m *DeviceAuthMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DeviceAuthMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, deviceauth.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, deviceauth.FieldLastModifiedAt)
+	}
+	if m.user_code != nil {
+		fields = append(fields, deviceauth.FieldUserCode)
+	}
+	if m.device_code != nil {
+		fields = append(fields, deviceauth.FieldDeviceCode)
+	}
+	if m.status != nil {
+		fields = append(fields, deviceauth.FieldStatus)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, deviceauth.FieldExpiresAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DeviceAuthMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case deviceauth.FieldCreatedAt:
+		return m.CreatedAt()
+	case deviceauth.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case deviceauth.FieldUserCode:
+		return m.UserCode()
+	case deviceauth.FieldDeviceCode:
+		return m.DeviceCode()
+	case deviceauth.FieldStatus:
+		return m.Status()
+	case deviceauth.FieldExpiresAt:
+		return m.ExpiresAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DeviceAuthMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case deviceauth.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case deviceauth.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case deviceauth.FieldUserCode:
+		return m.OldUserCode(ctx)
+	case deviceauth.FieldDeviceCode:
+		return m.OldDeviceCode(ctx)
+	case deviceauth.FieldStatus:
+		return m.OldStatus(ctx)
+	case deviceauth.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown DeviceAuth field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DeviceAuthMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case deviceauth.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case deviceauth.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case deviceauth.FieldUserCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserCode(v)
+		return nil
+	case deviceauth.FieldDeviceCode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeviceCode(v)
+		return nil
+	case deviceauth.FieldStatus:
+		v, ok := value.(deviceauth.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case deviceauth.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DeviceAuth field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DeviceAuthMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DeviceAuthMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DeviceAuthMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown DeviceAuth numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DeviceAuthMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DeviceAuthMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DeviceAuthMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown DeviceAuth nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DeviceAuthMutation) ResetField(name string) error {
+	switch name {
+	case deviceauth.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case deviceauth.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case deviceauth.FieldUserCode:
+		m.ResetUserCode()
+		return nil
+	case deviceauth.FieldDeviceCode:
+		m.ResetDeviceCode()
+		return nil
+	case deviceauth.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case deviceauth.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	}
+	return fmt.Errorf("unknown DeviceAuth field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DeviceAuthMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, deviceauth.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DeviceAuthMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case deviceauth.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DeviceAuthMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DeviceAuthMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DeviceAuthMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, deviceauth.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DeviceAuthMutation) EdgeCleared(name string) bool {
+	switch name {
+	case deviceauth.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DeviceAuthMutation) ClearEdge(name string) error {
+	switch name {
+	case deviceauth.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown DeviceAuth unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DeviceAuthMutation) ResetEdge(name string) error {
+	switch name {
+	case deviceauth.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown DeviceAuth edge %s", name)
 }
 
 // HostMutation represents an operation that mutates the Host nodes in the graph.
@@ -18522,6 +19187,9 @@ type UserMutation struct {
 	active_shells        map[int]struct{}
 	removedactive_shells map[int]struct{}
 	clearedactive_shells bool
+	device_auths         map[int]struct{}
+	removeddevice_auths  map[int]struct{}
+	cleareddevice_auths  bool
 	done                 bool
 	oldValue             func(context.Context) (*User, error)
 	predicates           []predicate.User
@@ -18985,6 +19653,60 @@ func (m *UserMutation) ResetActiveShells() {
 	m.removedactive_shells = nil
 }
 
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by ids.
+func (m *UserMutation) AddDeviceAuthIDs(ids ...int) {
+	if m.device_auths == nil {
+		m.device_auths = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.device_auths[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDeviceAuths clears the "device_auths" edge to the DeviceAuth entity.
+func (m *UserMutation) ClearDeviceAuths() {
+	m.cleareddevice_auths = true
+}
+
+// DeviceAuthsCleared reports if the "device_auths" edge to the DeviceAuth entity was cleared.
+func (m *UserMutation) DeviceAuthsCleared() bool {
+	return m.cleareddevice_auths
+}
+
+// RemoveDeviceAuthIDs removes the "device_auths" edge to the DeviceAuth entity by IDs.
+func (m *UserMutation) RemoveDeviceAuthIDs(ids ...int) {
+	if m.removeddevice_auths == nil {
+		m.removeddevice_auths = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.device_auths, ids[i])
+		m.removeddevice_auths[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDeviceAuths returns the removed IDs of the "device_auths" edge to the DeviceAuth entity.
+func (m *UserMutation) RemovedDeviceAuthsIDs() (ids []int) {
+	for id := range m.removeddevice_auths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DeviceAuthsIDs returns the "device_auths" edge IDs in the mutation.
+func (m *UserMutation) DeviceAuthsIDs() (ids []int) {
+	for id := range m.device_auths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDeviceAuths resets all changes to the "device_auths" edge.
+func (m *UserMutation) ResetDeviceAuths() {
+	m.device_auths = nil
+	m.cleareddevice_auths = false
+	m.removeddevice_auths = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -19220,12 +19942,15 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.active_shells != nil {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.device_auths != nil {
+		edges = append(edges, user.EdgeDeviceAuths)
 	}
 	return edges
 }
@@ -19246,18 +19971,27 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeDeviceAuths:
+		ids := make([]ent.Value, 0, len(m.device_auths))
+		for id := range m.device_auths {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.removedactive_shells != nil {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.removeddevice_auths != nil {
+		edges = append(edges, user.EdgeDeviceAuths)
 	}
 	return edges
 }
@@ -19278,18 +20012,27 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeDeviceAuths:
+		ids := make([]ent.Value, 0, len(m.removeddevice_auths))
+		for id := range m.removeddevice_auths {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
 	}
 	if m.clearedactive_shells {
 		edges = append(edges, user.EdgeActiveShells)
+	}
+	if m.cleareddevice_auths {
+		edges = append(edges, user.EdgeDeviceAuths)
 	}
 	return edges
 }
@@ -19302,6 +20045,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedtomes
 	case user.EdgeActiveShells:
 		return m.clearedactive_shells
+	case user.EdgeDeviceAuths:
+		return m.cleareddevice_auths
 	}
 	return false
 }
@@ -19323,6 +20068,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeActiveShells:
 		m.ResetActiveShells()
+		return nil
+	case user.EdgeDeviceAuths:
+		m.ResetDeviceAuths()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

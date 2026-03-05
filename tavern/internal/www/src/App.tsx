@@ -21,6 +21,7 @@ import Quests from "./pages/quests";
 import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
+import Profile from "./pages/profile/Profile";
 
 
 const router = createBrowserRouter([
@@ -76,7 +77,10 @@ const router = createBrowserRouter([
         path: "admin",
         element: <AdminPortal />,
       },
-
+      {
+        path: "profile",
+        element: <Profile />,
+      },
     ]
   },
   {
@@ -90,9 +94,9 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
+        <UserPreferencesContextProvider>
+          <RouterProvider router={router} />
+        </UserPreferencesContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

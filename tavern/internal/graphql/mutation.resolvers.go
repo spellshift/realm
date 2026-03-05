@@ -7,8 +7,11 @@ package graphql
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
-	"math/rand"
+	"io"
+	mathrand "math/rand"
 	"strings"
 	"time"
 
@@ -278,6 +281,22 @@ func (r *mutationResolver) ImportRepository(ctx context.Context, repoID int, inp
 	return repo.Update().SetLastImportedAt(time.Now()).Save(ctx)
 }
 
+// ResetUserAPIKey is the resolver for the resetUserAPIKey field.
+func (r *mutationResolver) ResetUserAPIKey(ctx context.Context) (*ent.User, error) {
+	authUser := auth.UserFromContext(ctx)
+	if authUser == nil {
+		return nil, fmt.Errorf("unauthenticated")
+	}
+
+	buf := make([]byte, 64)
+	if _, err := io.ReadFull(rand.Reader, buf); err != nil {
+		return nil, fmt.Errorf("failed to generate new token: %w", err)
+	}
+	newToken := base64.StdEncoding.EncodeToString(buf)
+
+	return r.client.User.UpdateOneID(authUser.ID).SetAccessToken(newToken).Save(ctx)
+}
+
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error) {
 	return r.client.User.UpdateOneID(userID).SetInput(input).Save(ctx)
@@ -298,6 +317,15 @@ func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkI
 		SetNillableCreatorID(creatorID).
 		SetInput(input).
 		Save(ctx)
+}
+
+// APIKey is the resolver for the apiKey field.
+func (r *userResolver) APIKey(ctx context.Context, obj *ent.User) (*string, error) {
+	authUser := auth.UserFromContext(ctx)
+	if authUser != nil && authUser.ID == obj.ID {
+		return &obj.AccessToken, nil
+	}
+	return nil, nil
 }
 
 // UpdateLink is the resolver for the updateLink field.
@@ -446,7 +474,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	// 6. Randomly select one builder
-	selected := candidates[rand.Intn(len(candidates))]
+	selected := candidates[mathrand.Intn(len(candidates))]
 
 	// 7. Create the build task
 	create := r.client.BuildTask.Create().

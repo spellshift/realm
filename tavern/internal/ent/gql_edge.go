@@ -145,6 +145,14 @@ func (b *Builder) BuildTasks(
 	return b.QueryBuildTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (da *DeviceAuth) User(ctx context.Context) (*User, error) {
+	result, err := da.Edges.UserOrErr()
+	if IsNotLoaded(err) {
+		result, err = da.QueryUser().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (h *Host) Tags(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TagOrder, where *TagWhereInput,
 ) (*TagConnection, error) {
@@ -892,4 +900,25 @@ func (u *User) ActiveShells(
 		return conn, nil
 	}
 	return u.QueryActiveShells().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) DeviceAuths(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*DeviceAuthOrder, where *DeviceAuthWhereInput,
+) (*DeviceAuthConnection, error) {
+	opts := []DeviceAuthPaginateOption{
+		WithDeviceAuthOrder(orderBy),
+		WithDeviceAuthFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[2][alias]
+	if nodes, err := u.NamedDeviceAuths(alias); err == nil || hasTotalCount {
+		pager, err := newDeviceAuthPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &DeviceAuthConnection{Edges: []*DeviceAuthEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryDeviceAuths().Paginate(ctx, after, first, before, last, opts...)
 }

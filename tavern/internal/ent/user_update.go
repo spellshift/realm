@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -143,6 +144,21 @@ func (uu *UserUpdate) AddActiveShells(s ...*Shell) *UserUpdate {
 	return uu.AddActiveShellIDs(ids...)
 }
 
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by IDs.
+func (uu *UserUpdate) AddDeviceAuthIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddDeviceAuthIDs(ids...)
+	return uu
+}
+
+// AddDeviceAuths adds the "device_auths" edges to the DeviceAuth entity.
+func (uu *UserUpdate) AddDeviceAuths(d ...*DeviceAuth) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.AddDeviceAuthIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -188,6 +204,27 @@ func (uu *UserUpdate) RemoveActiveShells(s ...*Shell) *UserUpdate {
 		ids[i] = s[i].ID
 	}
 	return uu.RemoveActiveShellIDs(ids...)
+}
+
+// ClearDeviceAuths clears all "device_auths" edges to the DeviceAuth entity.
+func (uu *UserUpdate) ClearDeviceAuths() *UserUpdate {
+	uu.mutation.ClearDeviceAuths()
+	return uu
+}
+
+// RemoveDeviceAuthIDs removes the "device_auths" edge to DeviceAuth entities by IDs.
+func (uu *UserUpdate) RemoveDeviceAuthIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveDeviceAuthIDs(ids...)
+	return uu
+}
+
+// RemoveDeviceAuths removes "device_auths" edges to DeviceAuth entities.
+func (uu *UserUpdate) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.RemoveDeviceAuthIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -357,6 +394,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedDeviceAuthsIDs(); len(nodes) > 0 && !uu.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.DeviceAuthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -491,6 +573,21 @@ func (uuo *UserUpdateOne) AddActiveShells(s ...*Shell) *UserUpdateOne {
 	return uuo.AddActiveShellIDs(ids...)
 }
 
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by IDs.
+func (uuo *UserUpdateOne) AddDeviceAuthIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddDeviceAuthIDs(ids...)
+	return uuo
+}
+
+// AddDeviceAuths adds the "device_auths" edges to the DeviceAuth entity.
+func (uuo *UserUpdateOne) AddDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.AddDeviceAuthIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -536,6 +633,27 @@ func (uuo *UserUpdateOne) RemoveActiveShells(s ...*Shell) *UserUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return uuo.RemoveActiveShellIDs(ids...)
+}
+
+// ClearDeviceAuths clears all "device_auths" edges to the DeviceAuth entity.
+func (uuo *UserUpdateOne) ClearDeviceAuths() *UserUpdateOne {
+	uuo.mutation.ClearDeviceAuths()
+	return uuo
+}
+
+// RemoveDeviceAuthIDs removes the "device_auths" edge to DeviceAuth entities by IDs.
+func (uuo *UserUpdateOne) RemoveDeviceAuthIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveDeviceAuthIDs(ids...)
+	return uuo
+}
+
+// RemoveDeviceAuths removes "device_auths" edges to DeviceAuth entities.
+func (uuo *UserUpdateOne) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.RemoveDeviceAuthIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -728,6 +846,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedDeviceAuthsIDs(); len(nodes) > 0 && !uuo.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.DeviceAuthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -326,6 +326,27 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
+		"/auth/rda/code": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDACodeHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/rda/token": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDATokenHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/rda/approve": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDAApproveHandler(client),
+		},
+		"/auth/rda/revoke": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDARevokeHandler(client),
+		},
+		"/api/auth/signout": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewSignoutHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/access_token/redirect": tavernhttp.Endpoint{
 			Handler:          auth.NewTokenRedirectHandler(),
 			LoginRedirectURI: "/oauth/login",
