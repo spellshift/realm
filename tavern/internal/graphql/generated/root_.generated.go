@@ -39,6 +39,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	ShellTask() ShellTaskResolver
+	User() UserResolver
 	ShellTaskWhereInput() ShellTaskWhereInputResolver
 }
 
@@ -156,6 +157,27 @@ type ComplexityRoot struct {
 	}
 
 	BuilderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	DeviceAuth struct {
+		CreatedAt      func(childComplexity int) int
+		ExpiresAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Status         func(childComplexity int) int
+		User           func(childComplexity int) int
+		UserCode       func(childComplexity int) int
+	}
+
+	DeviceAuthConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	DeviceAuthEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -308,6 +330,7 @@ type ComplexityRoot struct {
 		DropAllData      func(childComplexity int) int
 		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		RegisterBuilder  func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey  func(childComplexity int) int
 		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
@@ -576,7 +599,9 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		APIKey       func(childComplexity int) int
 		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		DeviceAuths  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
 		ID           func(childComplexity int) int
 		IsActivated  func(childComplexity int) int
 		IsAdmin      func(childComplexity int) int
@@ -1158,6 +1183,90 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuilderEdge.Node(childComplexity), true
+
+	case "DeviceAuth.createdAt":
+		if e.complexity.DeviceAuth.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.CreatedAt(childComplexity), true
+
+	case "DeviceAuth.expiresAt":
+		if e.complexity.DeviceAuth.ExpiresAt == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.ExpiresAt(childComplexity), true
+
+	case "DeviceAuth.id":
+		if e.complexity.DeviceAuth.ID == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.ID(childComplexity), true
+
+	case "DeviceAuth.lastModifiedAt":
+		if e.complexity.DeviceAuth.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.LastModifiedAt(childComplexity), true
+
+	case "DeviceAuth.status":
+		if e.complexity.DeviceAuth.Status == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.Status(childComplexity), true
+
+	case "DeviceAuth.user":
+		if e.complexity.DeviceAuth.User == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.User(childComplexity), true
+
+	case "DeviceAuth.userCode":
+		if e.complexity.DeviceAuth.UserCode == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuth.UserCode(childComplexity), true
+
+	case "DeviceAuthConnection.edges":
+		if e.complexity.DeviceAuthConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuthConnection.Edges(childComplexity), true
+
+	case "DeviceAuthConnection.pageInfo":
+		if e.complexity.DeviceAuthConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuthConnection.PageInfo(childComplexity), true
+
+	case "DeviceAuthConnection.totalCount":
+		if e.complexity.DeviceAuthConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuthConnection.TotalCount(childComplexity), true
+
+	case "DeviceAuthEdge.cursor":
+		if e.complexity.DeviceAuthEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuthEdge.Cursor(childComplexity), true
+
+	case "DeviceAuthEdge.node":
+		if e.complexity.DeviceAuthEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.DeviceAuthEdge.Node(childComplexity), true
 
 	case "Host.beacons":
 		if e.complexity.Host.Beacons == nil {
@@ -1967,6 +2076,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RegisterBuilder(childComplexity, args["input"].(ent.CreateBuilderInput)), true
+
+	case "Mutation.resetUserAPIKey":
+		if e.complexity.Mutation.ResetUserAPIKey == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ResetUserAPIKey(childComplexity), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -3363,6 +3479,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.TomeEdge.Node(childComplexity), true
 
+	case "User.apiKey":
+		if e.complexity.User.APIKey == nil {
+			break
+		}
+
+		return e.complexity.User.APIKey(childComplexity), true
+
 	case "User.activeShells":
 		if e.complexity.User.ActiveShells == nil {
 			break
@@ -3374,6 +3497,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.ActiveShells(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellOrder), args["where"].(*ent.ShellWhereInput)), true
+
+	case "User.deviceAuths":
+		if e.complexity.User.DeviceAuths == nil {
+			break
+		}
+
+		args, err := ec.field_User_deviceAuths_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.DeviceAuths(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.DeviceAuthOrder), args["where"].(*ent.DeviceAuthWhereInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -3477,6 +3612,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateBuildTaskInput,
 		ec.unmarshalInputCreateBuilderInput,
+		ec.unmarshalInputCreateDeviceAuthInput,
 		ec.unmarshalInputCreateHostCredentialInput,
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
@@ -3484,6 +3620,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateShellInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
+		ec.unmarshalInputDeviceAuthOrder,
+		ec.unmarshalInputDeviceAuthWhereInput,
 		ec.unmarshalInputHostCredentialOrder,
 		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
@@ -3515,6 +3653,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateBeaconInput,
+		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
 		ec.unmarshalInputUpdateTagInput,
@@ -4793,6 +4932,28 @@ input CreateBuilderInput {
   upstream: String
 }
 """
+CreateDeviceAuthInput is used for create DeviceAuth object.
+Input was generated by ent.
+"""
+input CreateDeviceAuthInput {
+  """
+  Short code displayed to the user for auth.
+  """
+  userCode: String!
+  """
+  Long code used by the device to poll for auth status.
+  """
+  deviceCode: String!
+  """
+  Status of the device authentication request.
+  """
+  status: DeviceAuthStatus
+  """
+  When this device auth request expires.
+  """
+  expiresAt: Time!
+}
+"""
 CreateHostCredentialInput is used for create HostCredential object.
 Input was generated by ent.
 """
@@ -4936,6 +5097,173 @@ Define a Relay Cursor type:
 https://relay.dev/graphql/connections.htm#sec-Cursor
 """
 scalar Cursor
+type DeviceAuth implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Short code displayed to the user for auth.
+  """
+  userCode: String!
+  """
+  Status of the device authentication request.
+  """
+  status: DeviceAuthStatus!
+  """
+  When this device auth request expires.
+  """
+  expiresAt: Time!
+  """
+  User who approved the device auth (may be null if pending).
+  """
+  user: User
+}
+"""
+A connection to a list of items.
+"""
+type DeviceAuthConnection {
+  """
+  A list of edges.
+  """
+  edges: [DeviceAuthEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type DeviceAuthEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: DeviceAuth
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for DeviceAuth connections
+"""
+input DeviceAuthOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order DeviceAuths.
+  """
+  field: DeviceAuthOrderField!
+}
+"""
+Properties by which DeviceAuth connections can be ordered.
+"""
+enum DeviceAuthOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  USER_CODE
+}
+"""
+DeviceAuthStatus is enum for the field status
+"""
+enum DeviceAuthStatus @goModel(model: "realm.pub/tavern/internal/ent/deviceauth.Status") {
+  PENDING
+  APPROVED
+  DENIED
+}
+"""
+DeviceAuthWhereInput is used for filtering DeviceAuth objects.
+Input was generated by ent.
+"""
+input DeviceAuthWhereInput {
+  not: DeviceAuthWhereInput
+  and: [DeviceAuthWhereInput!]
+  or: [DeviceAuthWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  user_code field predicates
+  """
+  userCode: String
+  userCodeNEQ: String
+  userCodeIn: [String!]
+  userCodeNotIn: [String!]
+  userCodeGT: String
+  userCodeGTE: String
+  userCodeLT: String
+  userCodeLTE: String
+  userCodeContains: String
+  userCodeHasPrefix: String
+  userCodeHasSuffix: String
+  userCodeEqualFold: String
+  userCodeContainsFold: String
+  """
+  status field predicates
+  """
+  status: DeviceAuthStatus
+  statusNEQ: DeviceAuthStatus
+  statusIn: [DeviceAuthStatus!]
+  statusNotIn: [DeviceAuthStatus!]
+  """
+  expires_at field predicates
+  """
+  expiresAt: Time
+  expiresAtNEQ: Time
+  expiresAtIn: [Time!]
+  expiresAtNotIn: [Time!]
+  expiresAtGT: Time
+  expiresAtGTE: Time
+  expiresAtLT: Time
+  expiresAtLTE: Time
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
+}
 type Host implements Node {
   id: ID!
   """
@@ -8775,6 +9103,32 @@ input UpdateBeaconInput {
   hostID: ID
 }
 """
+UpdateDeviceAuthInput is used for update DeviceAuth object.
+Input was generated by ent.
+"""
+input UpdateDeviceAuthInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Short code displayed to the user for auth.
+  """
+  userCode: String
+  """
+  Long code used by the device to poll for auth status.
+  """
+  deviceCode: String
+  """
+  Status of the device authentication request.
+  """
+  status: DeviceAuthStatus
+  """
+  When this device auth request expires.
+  """
+  expiresAt: Time
+}
+"""
 UpdateHostInput is used for update Host object.
 Input was generated by ent.
 """
@@ -8937,6 +9291,9 @@ input UpdateUserInput {
   addActiveShellIDs: [ID!]
   removeActiveShellIDs: [ID!]
   clearActiveShells: Boolean
+  addDeviceAuthIDs: [ID!]
+  removeDeviceAuthIDs: [ID!]
+  clearDeviceAuths: Boolean
 }
 type User implements Node {
   id: ID!
@@ -9018,6 +9375,37 @@ type User implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+  deviceAuths(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for DeviceAuths returned from the connection.
+    """
+    orderBy: [DeviceAuthOrder!]
+
+    """
+    Filtering options for DeviceAuths returned from the connection.
+    """
+    where: DeviceAuthWhereInput
+  ): DeviceAuthConnection!
 }
 """
 A connection to a list of items.
@@ -9139,6 +9527,11 @@ input UserWhereInput {
   """
   hasActiveShells: Boolean
   hasActiveShellsWith: [ShellWhereInput!]
+  """
+  device_auths edge predicates
+  """
+  hasDeviceAuths: Boolean
+  hasDeviceAuthsWith: [DeviceAuthWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -9443,6 +9836,7 @@ scalar Uint64
     ###
     # User
     ###
+    resetUserAPIKey: User! @requireRole(role: USER)
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 
     ###
@@ -9577,6 +9971,10 @@ type RegisterBuilderOutput {
 
   """YAML-formatted configuration for the builder."""
   config: String!
+}
+`, BuiltIn: false},
+	{Name: "../schema/user.graphql", Input: `extend type User {
+  apiKey: String
 }
 `, BuiltIn: false},
 }

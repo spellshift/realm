@@ -46,6 +46,7 @@ type Mutation {
     ###
     # User
     ###
+    resetUserAPIKey: User! @requireRole(role: USER)
     updateUser(userID: ID!, input: UpdateUserInput!): User @requireRole(role: ADMIN)
 
     ###

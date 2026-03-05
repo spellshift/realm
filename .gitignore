@@ -50,3 +50,4 @@ node_modules/
 
 .env
 .envrc
+bin/socks5/socks5-cli

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -27,11 +28,13 @@ type UserQuery struct {
 	predicates            []predicate.User
 	withTomes             *TomeQuery
 	withActiveShells      *ShellQuery
+	withDeviceAuths       *DeviceAuthQuery
 	withFKs               bool
 	modifiers             []func(*sql.Selector)
 	loadTotal             []func(context.Context, []*User) error
 	withNamedTomes        map[string]*TomeQuery
 	withNamedActiveShells map[string]*ShellQuery
+	withNamedDeviceAuths  map[string]*DeviceAuthQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -105,6 +108,28 @@ func (uq *UserQuery) QueryActiveShells() *ShellQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDeviceAuths chains the current query on the "device_auths" edge.
+func (uq *UserQuery) QueryDeviceAuths() *DeviceAuthQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(deviceauth.Table, deviceauth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.DeviceAuthsTable, user.DeviceAuthsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -306,6 +331,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		predicates:       append([]predicate.User{}, uq.predicates...),
 		withTomes:        uq.withTomes.Clone(),
 		withActiveShells: uq.withActiveShells.Clone(),
+		withDeviceAuths:  uq.withDeviceAuths.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -331,6 +357,17 @@ func (uq *UserQuery) WithActiveShells(opts ...func(*ShellQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withActiveShells = query
+	return uq
+}
+
+// WithDeviceAuths tells the query-builder to eager-load the nodes that are connected to
+// the "device_auths" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithDeviceAuths(opts ...func(*DeviceAuthQuery)) *UserQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withDeviceAuths = query
 	return uq
 }
 
@@ -413,9 +450,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
+			uq.withDeviceAuths != nil,
 		}
 	)
 	if withFKs {
@@ -456,6 +494,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withDeviceAuths; query != nil {
+		if err := uq.loadDeviceAuths(ctx, query, nodes,
+			func(n *User) { n.Edges.DeviceAuths = []*DeviceAuth{} },
+			func(n *User, e *DeviceAuth) { n.Edges.DeviceAuths = append(n.Edges.DeviceAuths, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedTomes {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.appendNamedTomes(name) },
@@ -467,6 +512,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadActiveShells(ctx, query, nodes,
 			func(n *User) { n.appendNamedActiveShells(name) },
 			func(n *User, e *Shell) { n.appendNamedActiveShells(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedDeviceAuths {
+		if err := uq.loadDeviceAuths(ctx, query, nodes,
+			func(n *User) { n.appendNamedDeviceAuths(name) },
+			func(n *User, e *DeviceAuth) { n.appendNamedDeviceAuths(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -567,6 +619,37 @@ func (uq *UserQuery) loadActiveShells(ctx context.Context, query *ShellQuery, no
 		for kn := range nodes {
 			assign(kn, n)
 		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadDeviceAuths(ctx context.Context, query *DeviceAuthQuery, nodes []*User, init func(*User), assign func(*User, *DeviceAuth)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.DeviceAuth(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.DeviceAuthsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.device_auth_user
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "device_auth_user" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "device_auth_user" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }
@@ -680,6 +763,20 @@ func (uq *UserQuery) WithNamedActiveShells(name string, opts ...func(*ShellQuery
 		uq.withNamedActiveShells = make(map[string]*ShellQuery)
 	}
 	uq.withNamedActiveShells[name] = query
+	return uq
+}
+
+// WithNamedDeviceAuths tells the query-builder to eager-load the nodes that are connected to the "device_auths"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedDeviceAuths(name string, opts ...func(*DeviceAuthQuery)) *UserQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedDeviceAuths == nil {
+		uq.withNamedDeviceAuths = make(map[string]*DeviceAuthQuery)
+	}
+	uq.withNamedDeviceAuths[name] = query
 	return uq
 }
 

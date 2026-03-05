@@ -9,6 +9,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -159,6 +160,29 @@ func init() {
 	builderDescUpstream := builderFields[2].Descriptor()
 	// builder.DefaultUpstream holds the default value on creation for the upstream field.
 	builder.DefaultUpstream = builderDescUpstream.Default.(string)
+	deviceauthMixin := schema.DeviceAuth{}.Mixin()
+	deviceauthMixinFields0 := deviceauthMixin[0].Fields()
+	_ = deviceauthMixinFields0
+	deviceauthFields := schema.DeviceAuth{}.Fields()
+	_ = deviceauthFields
+	// deviceauthDescCreatedAt is the schema descriptor for created_at field.
+	deviceauthDescCreatedAt := deviceauthMixinFields0[0].Descriptor()
+	// deviceauth.DefaultCreatedAt holds the default value on creation for the created_at field.
+	deviceauth.DefaultCreatedAt = deviceauthDescCreatedAt.Default.(func() time.Time)
+	// deviceauthDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	deviceauthDescLastModifiedAt := deviceauthMixinFields0[1].Descriptor()
+	// deviceauth.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	deviceauth.DefaultLastModifiedAt = deviceauthDescLastModifiedAt.Default.(func() time.Time)
+	// deviceauth.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	deviceauth.UpdateDefaultLastModifiedAt = deviceauthDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// deviceauthDescUserCode is the schema descriptor for user_code field.
+	deviceauthDescUserCode := deviceauthFields[0].Descriptor()
+	// deviceauth.UserCodeValidator is a validator for the "user_code" field. It is called by the builders before save.
+	deviceauth.UserCodeValidator = deviceauthDescUserCode.Validators[0].(func(string) error)
+	// deviceauthDescDeviceCode is the schema descriptor for device_code field.
+	deviceauthDescDeviceCode := deviceauthFields[1].Descriptor()
+	// deviceauth.DeviceCodeValidator is a validator for the "device_code" field. It is called by the builders before save.
+	deviceauth.DeviceCodeValidator = deviceauthDescDeviceCode.Validators[0].(func(string) error)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0

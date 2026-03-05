@@ -7,6 +7,7 @@ import (
 
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -57,6 +58,70 @@ func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
 
 // SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.
 func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateDeviceAuthInput represents a mutation input for creating deviceauths.
+type CreateDeviceAuthInput struct {
+	UserCode   string
+	DeviceCode string
+	Status     *deviceauth.Status
+	ExpiresAt  time.Time
+}
+
+// Mutate applies the CreateDeviceAuthInput on the DeviceAuthMutation builder.
+func (i *CreateDeviceAuthInput) Mutate(m *DeviceAuthMutation) {
+	m.SetUserCode(i.UserCode)
+	m.SetDeviceCode(i.DeviceCode)
+	if v := i.Status; v != nil {
+		m.SetStatus(*v)
+	}
+	m.SetExpiresAt(i.ExpiresAt)
+}
+
+// SetInput applies the change-set in the CreateDeviceAuthInput on the DeviceAuthCreate builder.
+func (c *DeviceAuthCreate) SetInput(i CreateDeviceAuthInput) *DeviceAuthCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateDeviceAuthInput represents a mutation input for updating deviceauths.
+type UpdateDeviceAuthInput struct {
+	LastModifiedAt *time.Time
+	UserCode       *string
+	DeviceCode     *string
+	Status         *deviceauth.Status
+	ExpiresAt      *time.Time
+}
+
+// Mutate applies the UpdateDeviceAuthInput on the DeviceAuthMutation builder.
+func (i *UpdateDeviceAuthInput) Mutate(m *DeviceAuthMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.UserCode; v != nil {
+		m.SetUserCode(*v)
+	}
+	if v := i.DeviceCode; v != nil {
+		m.SetDeviceCode(*v)
+	}
+	if v := i.Status; v != nil {
+		m.SetStatus(*v)
+	}
+	if v := i.ExpiresAt; v != nil {
+		m.SetExpiresAt(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateDeviceAuthInput on the DeviceAuthUpdate builder.
+func (c *DeviceAuthUpdate) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateDeviceAuthInput on the DeviceAuthUpdateOne builder.
+func (c *DeviceAuthUpdateOne) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -553,6 +618,9 @@ type UpdateUserInput struct {
 	ClearActiveShells    bool
 	AddActiveShellIDs    []int
 	RemoveActiveShellIDs []int
+	ClearDeviceAuths     bool
+	AddDeviceAuthIDs     []int
+	RemoveDeviceAuthIDs  []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -586,6 +654,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveActiveShellIDs; len(v) > 0 {
 		m.RemoveActiveShellIDs(v...)
+	}
+	if i.ClearDeviceAuths {
+		m.ClearDeviceAuths()
+	}
+	if v := i.AddDeviceAuthIDs; len(v) > 0 {
+		m.AddDeviceAuthIDs(v...)
+	}
+	if v := i.RemoveDeviceAuthIDs; len(v) > 0 {
+		m.RemoveDeviceAuthIDs(v...)
 	}
 }
 

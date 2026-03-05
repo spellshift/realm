@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -2229,6 +2230,380 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 		return predicates[0], nil
 	default:
 		return builder.And(predicates...), nil
+	}
+}
+
+// DeviceAuthWhereInput represents a where input for filtering DeviceAuth queries.
+type DeviceAuthWhereInput struct {
+	Predicates []predicate.DeviceAuth  `json:"-"`
+	Not        *DeviceAuthWhereInput   `json:"not,omitempty"`
+	Or         []*DeviceAuthWhereInput `json:"or,omitempty"`
+	And        []*DeviceAuthWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "user_code" field predicates.
+	UserCode             *string  `json:"userCode,omitempty"`
+	UserCodeNEQ          *string  `json:"userCodeNEQ,omitempty"`
+	UserCodeIn           []string `json:"userCodeIn,omitempty"`
+	UserCodeNotIn        []string `json:"userCodeNotIn,omitempty"`
+	UserCodeGT           *string  `json:"userCodeGT,omitempty"`
+	UserCodeGTE          *string  `json:"userCodeGTE,omitempty"`
+	UserCodeLT           *string  `json:"userCodeLT,omitempty"`
+	UserCodeLTE          *string  `json:"userCodeLTE,omitempty"`
+	UserCodeContains     *string  `json:"userCodeContains,omitempty"`
+	UserCodeHasPrefix    *string  `json:"userCodeHasPrefix,omitempty"`
+	UserCodeHasSuffix    *string  `json:"userCodeHasSuffix,omitempty"`
+	UserCodeEqualFold    *string  `json:"userCodeEqualFold,omitempty"`
+	UserCodeContainsFold *string  `json:"userCodeContainsFold,omitempty"`
+
+	// "device_code" field predicates.
+	DeviceCode             *string  `json:"deviceCode,omitempty"`
+	DeviceCodeNEQ          *string  `json:"deviceCodeNEQ,omitempty"`
+	DeviceCodeIn           []string `json:"deviceCodeIn,omitempty"`
+	DeviceCodeNotIn        []string `json:"deviceCodeNotIn,omitempty"`
+	DeviceCodeGT           *string  `json:"deviceCodeGT,omitempty"`
+	DeviceCodeGTE          *string  `json:"deviceCodeGTE,omitempty"`
+	DeviceCodeLT           *string  `json:"deviceCodeLT,omitempty"`
+	DeviceCodeLTE          *string  `json:"deviceCodeLTE,omitempty"`
+	DeviceCodeContains     *string  `json:"deviceCodeContains,omitempty"`
+	DeviceCodeHasPrefix    *string  `json:"deviceCodeHasPrefix,omitempty"`
+	DeviceCodeHasSuffix    *string  `json:"deviceCodeHasSuffix,omitempty"`
+	DeviceCodeEqualFold    *string  `json:"deviceCodeEqualFold,omitempty"`
+	DeviceCodeContainsFold *string  `json:"deviceCodeContainsFold,omitempty"`
+
+	// "status" field predicates.
+	Status      *deviceauth.Status  `json:"status,omitempty"`
+	StatusNEQ   *deviceauth.Status  `json:"statusNEQ,omitempty"`
+	StatusIn    []deviceauth.Status `json:"statusIn,omitempty"`
+	StatusNotIn []deviceauth.Status `json:"statusNotIn,omitempty"`
+
+	// "expires_at" field predicates.
+	ExpiresAt      *time.Time  `json:"expiresAt,omitempty"`
+	ExpiresAtNEQ   *time.Time  `json:"expiresAtNEQ,omitempty"`
+	ExpiresAtIn    []time.Time `json:"expiresAtIn,omitempty"`
+	ExpiresAtNotIn []time.Time `json:"expiresAtNotIn,omitempty"`
+	ExpiresAtGT    *time.Time  `json:"expiresAtGT,omitempty"`
+	ExpiresAtGTE   *time.Time  `json:"expiresAtGTE,omitempty"`
+	ExpiresAtLT    *time.Time  `json:"expiresAtLT,omitempty"`
+	ExpiresAtLTE   *time.Time  `json:"expiresAtLTE,omitempty"`
+
+	// "user" edge predicates.
+	HasUser     *bool             `json:"hasUser,omitempty"`
+	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *DeviceAuthWhereInput) AddPredicates(predicates ...predicate.DeviceAuth) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the DeviceAuthWhereInput filter on the DeviceAuthQuery builder.
+func (i *DeviceAuthWhereInput) Filter(q *DeviceAuthQuery) (*DeviceAuthQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyDeviceAuthWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyDeviceAuthWhereInput is returned in case the DeviceAuthWhereInput is empty.
+var ErrEmptyDeviceAuthWhereInput = errors.New("ent: empty predicate DeviceAuthWhereInput")
+
+// P returns a predicate for filtering deviceauths.
+// An error is returned if the input is empty or invalid.
+func (i *DeviceAuthWhereInput) P() (predicate.DeviceAuth, error) {
+	var predicates []predicate.DeviceAuth
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, deviceauth.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.DeviceAuth, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, deviceauth.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.DeviceAuth, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, deviceauth.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, deviceauth.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, deviceauth.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, deviceauth.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, deviceauth.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, deviceauth.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, deviceauth.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, deviceauth.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, deviceauth.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, deviceauth.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, deviceauth.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, deviceauth.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, deviceauth.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, deviceauth.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, deviceauth.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, deviceauth.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, deviceauth.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, deviceauth.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, deviceauth.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, deviceauth.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.UserCode != nil {
+		predicates = append(predicates, deviceauth.UserCodeEQ(*i.UserCode))
+	}
+	if i.UserCodeNEQ != nil {
+		predicates = append(predicates, deviceauth.UserCodeNEQ(*i.UserCodeNEQ))
+	}
+	if len(i.UserCodeIn) > 0 {
+		predicates = append(predicates, deviceauth.UserCodeIn(i.UserCodeIn...))
+	}
+	if len(i.UserCodeNotIn) > 0 {
+		predicates = append(predicates, deviceauth.UserCodeNotIn(i.UserCodeNotIn...))
+	}
+	if i.UserCodeGT != nil {
+		predicates = append(predicates, deviceauth.UserCodeGT(*i.UserCodeGT))
+	}
+	if i.UserCodeGTE != nil {
+		predicates = append(predicates, deviceauth.UserCodeGTE(*i.UserCodeGTE))
+	}
+	if i.UserCodeLT != nil {
+		predicates = append(predicates, deviceauth.UserCodeLT(*i.UserCodeLT))
+	}
+	if i.UserCodeLTE != nil {
+		predicates = append(predicates, deviceauth.UserCodeLTE(*i.UserCodeLTE))
+	}
+	if i.UserCodeContains != nil {
+		predicates = append(predicates, deviceauth.UserCodeContains(*i.UserCodeContains))
+	}
+	if i.UserCodeHasPrefix != nil {
+		predicates = append(predicates, deviceauth.UserCodeHasPrefix(*i.UserCodeHasPrefix))
+	}
+	if i.UserCodeHasSuffix != nil {
+		predicates = append(predicates, deviceauth.UserCodeHasSuffix(*i.UserCodeHasSuffix))
+	}
+	if i.UserCodeEqualFold != nil {
+		predicates = append(predicates, deviceauth.UserCodeEqualFold(*i.UserCodeEqualFold))
+	}
+	if i.UserCodeContainsFold != nil {
+		predicates = append(predicates, deviceauth.UserCodeContainsFold(*i.UserCodeContainsFold))
+	}
+	if i.DeviceCode != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeEQ(*i.DeviceCode))
+	}
+	if i.DeviceCodeNEQ != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeNEQ(*i.DeviceCodeNEQ))
+	}
+	if len(i.DeviceCodeIn) > 0 {
+		predicates = append(predicates, deviceauth.DeviceCodeIn(i.DeviceCodeIn...))
+	}
+	if len(i.DeviceCodeNotIn) > 0 {
+		predicates = append(predicates, deviceauth.DeviceCodeNotIn(i.DeviceCodeNotIn...))
+	}
+	if i.DeviceCodeGT != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeGT(*i.DeviceCodeGT))
+	}
+	if i.DeviceCodeGTE != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeGTE(*i.DeviceCodeGTE))
+	}
+	if i.DeviceCodeLT != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeLT(*i.DeviceCodeLT))
+	}
+	if i.DeviceCodeLTE != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeLTE(*i.DeviceCodeLTE))
+	}
+	if i.DeviceCodeContains != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeContains(*i.DeviceCodeContains))
+	}
+	if i.DeviceCodeHasPrefix != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeHasPrefix(*i.DeviceCodeHasPrefix))
+	}
+	if i.DeviceCodeHasSuffix != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeHasSuffix(*i.DeviceCodeHasSuffix))
+	}
+	if i.DeviceCodeEqualFold != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeEqualFold(*i.DeviceCodeEqualFold))
+	}
+	if i.DeviceCodeContainsFold != nil {
+		predicates = append(predicates, deviceauth.DeviceCodeContainsFold(*i.DeviceCodeContainsFold))
+	}
+	if i.Status != nil {
+		predicates = append(predicates, deviceauth.StatusEQ(*i.Status))
+	}
+	if i.StatusNEQ != nil {
+		predicates = append(predicates, deviceauth.StatusNEQ(*i.StatusNEQ))
+	}
+	if len(i.StatusIn) > 0 {
+		predicates = append(predicates, deviceauth.StatusIn(i.StatusIn...))
+	}
+	if len(i.StatusNotIn) > 0 {
+		predicates = append(predicates, deviceauth.StatusNotIn(i.StatusNotIn...))
+	}
+	if i.ExpiresAt != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtEQ(*i.ExpiresAt))
+	}
+	if i.ExpiresAtNEQ != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtNEQ(*i.ExpiresAtNEQ))
+	}
+	if len(i.ExpiresAtIn) > 0 {
+		predicates = append(predicates, deviceauth.ExpiresAtIn(i.ExpiresAtIn...))
+	}
+	if len(i.ExpiresAtNotIn) > 0 {
+		predicates = append(predicates, deviceauth.ExpiresAtNotIn(i.ExpiresAtNotIn...))
+	}
+	if i.ExpiresAtGT != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtGT(*i.ExpiresAtGT))
+	}
+	if i.ExpiresAtGTE != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtGTE(*i.ExpiresAtGTE))
+	}
+	if i.ExpiresAtLT != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtLT(*i.ExpiresAtLT))
+	}
+	if i.ExpiresAtLTE != nil {
+		predicates = append(predicates, deviceauth.ExpiresAtLTE(*i.ExpiresAtLTE))
+	}
+
+	if i.HasUser != nil {
+		p := deviceauth.HasUser()
+		if !*i.HasUser {
+			p = deviceauth.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUserWith))
+		for _, w := range i.HasUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, deviceauth.HasUserWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyDeviceAuthWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return deviceauth.And(predicates...), nil
 	}
 }
 
@@ -9327,6 +9702,10 @@ type UserWhereInput struct {
 	// "active_shells" edge predicates.
 	HasActiveShells     *bool              `json:"hasActiveShells,omitempty"`
 	HasActiveShellsWith []*ShellWhereInput `json:"hasActiveShellsWith,omitempty"`
+
+	// "device_auths" edge predicates.
+	HasDeviceAuths     *bool                   `json:"hasDeviceAuths,omitempty"`
+	HasDeviceAuthsWith []*DeviceAuthWhereInput `json:"hasDeviceAuthsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -9589,6 +9968,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasActiveShellsWith(with...))
+	}
+	if i.HasDeviceAuths != nil {
+		p := user.HasDeviceAuths()
+		if !*i.HasDeviceAuths {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasDeviceAuthsWith) > 0 {
+		with := make([]predicate.DeviceAuth, 0, len(i.HasDeviceAuthsWith))
+		for _, w := range i.HasDeviceAuthsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasDeviceAuthsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasDeviceAuthsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

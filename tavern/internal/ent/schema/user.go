@@ -82,6 +82,13 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Shells actively used by the user"),
+		edge.From("device_auths", DeviceAuth.Type).
+			Ref("user").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Device auths approved by the user."),
 	}
 }
 
