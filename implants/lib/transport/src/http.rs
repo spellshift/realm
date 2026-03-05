@@ -358,7 +358,12 @@ impl HTTP {
     }
 }
 
+#[async_trait::async_trait]
 impl Transport for HTTP {
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync> {
+        Box::new(self.clone())
+    }
+
     fn init() -> Self {
         let mut connector = hyper_legacy::client::HttpConnector::new();
         connector.enforce_http(false);

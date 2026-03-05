@@ -68,7 +68,12 @@ pub struct GRPC {
     grpc: Option<tonic::client::Grpc<tonic::transport::Channel>>,
 }
 
+#[async_trait::async_trait]
 impl Transport for GRPC {
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync> {
+        Box::new(self.clone())
+    }
+
     fn init() -> Self {
         GRPC { grpc: None }
     }

@@ -49,16 +49,22 @@ pub fn extract_extra_from_config(config: &Config) -> HashMap<String, String> {
     HashMap::new()
 }
 
-#[trait_variant::make(Transport: Send)]
-pub trait UnsafeTransport: Clone + Send {
+#[async_trait::async_trait]
+pub trait Transport: Send + Sync {
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync>;
+
     // Init will initialize a new instance of the transport with no active connections.
     #[allow(dead_code)]
-    fn init() -> Self;
+    fn init() -> Self
+    where
+        Self: Sized;
 
     // New will create a new instance of the transport using the Config.
     // The URI is extracted from config.info.available_transports at the active_index.
     #[allow(dead_code)]
-    fn new(config: Config) -> Result<Self>;
+    fn new(config: Config) -> Result<Self>
+    where
+        Self: Sized;
 
     ///
     /// Contact the server for new tasks to execute.

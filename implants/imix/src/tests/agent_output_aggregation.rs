@@ -37,7 +37,7 @@ async fn test_agent_output_aggregation() {
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = Arc::new(ImixAgent::new(
         Config::default(),
-        transport,
+        Box::new(transport),
         handle,
         task_registry,
         tx,

@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use core::char;
 use spin::RwLock;

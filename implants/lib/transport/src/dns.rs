@@ -951,7 +951,12 @@ impl DNS {
     }
 }
 
+#[async_trait::async_trait]
 impl Transport for DNS {
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync> {
+        Box::new(self.clone())
+    }
+
     fn init() -> Self {
         DNS {
             base_domain: String::new(),

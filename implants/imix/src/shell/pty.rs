@@ -8,10 +8,10 @@ use transport::Transport;
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
 
-pub async fn run_reverse_shell_pty<T: Transport>(
+pub async fn run_reverse_shell_pty(
     context: Context,
     cmd: Option<String>,
-    mut transport: T,
+    mut transport: Box<dyn Transport + Send + Sync>,
 ) -> Result<()> {
     // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(1);

@@ -9,9 +9,9 @@ pub mod run;
 pub mod tcp;
 pub mod udp;
 
-pub async fn run_create_portal<T: Transport + Send + Sync + 'static>(
+pub async fn run_create_portal(
     context: Context,
-    transport: T,
+    transport: Box<dyn Transport + Send + Sync>,
     shell_manager_tx: mpsc::Sender<ShellManagerMessage>,
 ) -> Result<()> {
     run::run(context, transport, shell_manager_tx).await
