@@ -30,6 +30,10 @@ pub struct ShellPayload {
     pub input: ::prost::alloc::string::String,
     #[prost(int64, tag = "2")]
     pub shell_id: i64,
+    #[prost(string, tag = "3")]
+    pub output: ::prost::alloc::string::String,
+    #[prost(string, tag = "4")]
+    pub error: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct Mote {
