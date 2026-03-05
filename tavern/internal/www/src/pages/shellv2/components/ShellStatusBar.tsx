@@ -52,9 +52,19 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
         <div className="flex items-center gap-2">
           {portalId ? (
             <div className="flex items-center gap-1 group relative cursor-help">
-              <span className="text-green-500 font-semibold">Portal Active (ID: {portalId})</span>
-              <Tooltip label="This shell is currently leverage an established portal connection for low-latency i/o. You may utilize this portal for SOCKS5 proxying or pivoting (e.g. with SSH)">
-                <span><Info size={14} className="text-green-500" /></span>
+              <span className={`font-semibold ${
+                connectionStatus === "connected" ? "text-green-500" :
+                connectionStatus === "reconnecting" ? "text-yellow-500" :
+                "text-gray-500"
+              }`}>
+                Portal Active (ID: {portalId})
+              </span>
+              <Tooltip label="This shell is currently using an established portal connection for low-latency i/o. You may utilize this portal for SOCKS5 proxying or pivoting (e.g. with SSH)">
+                <span><Info size={14} className={
+                  connectionStatus === "connected" ? "text-green-500" :
+                  connectionStatus === "reconnecting" ? "text-yellow-500" :
+                  "text-gray-500"
+                } /></span>
               </Tooltip>
             </div>
           ) : (
