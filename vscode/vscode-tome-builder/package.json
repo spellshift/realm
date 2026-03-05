@@ -1,0 +1,81 @@
+{
+  "name": "tome-builder",
+  "displayName": "Realm Tome Builder",
+  "description": "AI-powered assistant for creating Realm Tomes",
+  "version": "0.0.1",
+  "publisher": "realm",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tomeBuilder.openChat",
+        "title": "Open Tome Builder Chat"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tome-builder-view",
+          "title": "Tome Builder",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "tome-builder-view": [
+        {
+          "id": "tome-builder-chat",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Tome Builder",
+      "properties": {
+        "tomeBuilder.llm.provider": {
+          "type": "string",
+          "enum": [
+            "gemini",
+            "openai",
+            "anthropic"
+          ],
+          "default": "gemini",
+          "description": "The LLM provider to use."
+        },
+        "tomeBuilder.llm.model": {
+          "type": "string",
+          "default": "gemini-2.0-flash-exp",
+          "description": "The model ID to use."
+        },
+        "tomeBuilder.llm.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for the LLM provider."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^0.6.1",
+    "zod": "^3.25.76"
+  }
+}
