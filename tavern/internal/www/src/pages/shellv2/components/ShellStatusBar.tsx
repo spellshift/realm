@@ -1,7 +1,7 @@
 import React from "react";
 import { Info, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
-import { ConnectionStatus } from "../../../lib/headless-adapter";
+import { ConnectionStatus } from "../../../lib/browser-adapter";
 
 interface ShellStatusBarProps {
   portalId: number | null;

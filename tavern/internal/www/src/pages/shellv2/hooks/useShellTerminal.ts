@@ -2,10 +2,10 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { HeadlessWasmAdapter, ConnectionStatus } from "../../../lib/headless-adapter";
+import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
-import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory } from "./shellUtils";
+import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
@@ -30,7 +30,7 @@ export const useShellTerminal = (
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
-    const adapter = useRef<HeadlessWasmAdapter | null>(null);
+    const adapter = useRef<BrowserWasmAdapter | null>(null);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
@@ -466,7 +466,7 @@ export const useShellTerminal = (
         const scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const url = `${scheme}://${window.location.host}/shellv2/ws?shell_id=${shellId}`;
 
-        adapter.current = new HeadlessWasmAdapter(
+        adapter.current = new BrowserWasmAdapter(
             url,
             (msg: WebsocketMessage) => {
                 const term = termInstance.current;
@@ -538,7 +538,7 @@ export const useShellTerminal = (
 
         adapter.current.init();
 
-        termInstance.current.onData((data) => {
+        const handleData = (data: string) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
             // Check for connection status and block input
@@ -551,9 +551,11 @@ export const useShellTerminal = (
 
             // If completions are showing, handle navigation
             if (completionsRef.current.show) {
-                if (code === 9) { // Tab: cycle
+                if (code === 9) { // Tab: cycle or apply if single
                     const list = completionsRef.current.list;
-                    if (list.length > 0) {
+                    if (list.length === 1) {
+                        applyCompletion(list[0]);
+                    } else if (list.length > 1) {
                         const next = (completionsRef.current.index + 1) % list.length;
                         updateCompletionsUI(list, completionsRef.current.start, true, next);
                     }
@@ -657,13 +659,13 @@ export const useShellTerminal = (
                 return;
             }
 
-            if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH") { // Ctrl+A / Home
+            if (data === "\x01" || data === "\x1b[H" || data === "\x1bOH" || data === "\x1b[1~" || data === "\x1b[7~") { // Ctrl+A / Home
                 state.cursorPos = 0;
                 redrawLine();
                 return;
             }
 
-            if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF") { // Ctrl+E / End
+            if (data === "\x05" || data === "\x1b[F" || data === "\x1bOF" || data === "\x1b[4~" || data === "\x1b[8~") { // Ctrl+E / End
                 state.cursorPos = state.inputBuffer.length;
                 redrawLine();
                 return;
@@ -703,6 +705,14 @@ export const useShellTerminal = (
                 state.inputBuffer = state.inputBuffer.slice(0, newPos) + afterCursor;
                 state.cursorPos = newPos;
                 redrawLine();
+                return;
+            }
+
+            if (data === "\x1b[3~") { // Delete (Forward Delete / Fn+Backspace)
+                if (state.cursorPos < state.inputBuffer.length) {
+                    state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + state.inputBuffer.slice(state.cursorPos + 1);
+                    redrawLine();
+                }
                 return;
             }
 
@@ -772,8 +782,8 @@ export const useShellTerminal = (
             }
 
             if (code === 9) { // Tab
-                // Indent if line is empty or whitespace
-                if (!state.inputBuffer.trim()) {
+                // Indent if line is empty or whitespace or inside a string
+                if (!state.inputBuffer.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
                     const indent = "    ";
                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
                     state.cursorPos += 4;
@@ -786,16 +796,9 @@ export const useShellTerminal = (
                 if (res && res.suggestions.length > 0) {
                     if (res.suggestions.length === 1) {
                         // Auto complete
-                        // Use applyCompletion logic but locally
-                        const completion = res.suggestions[0];
-                        const start = res.start;
-                        if (start >= 0 && start <= state.cursorPos) {
-                            const prefix = state.inputBuffer.slice(0, start);
-                            const suffix = state.inputBuffer.slice(state.cursorPos);
-                            state.inputBuffer = prefix + completion + suffix;
-                            state.cursorPos = start + completion.length;
-                            redrawLine();
-                        }
+                        // We must setup completionsRef.current first so applyCompletion has context
+                        updateCompletionsUI(res.suggestions, res.start, true, 0);
+                        applyCompletion(res.suggestions[0]);
                     } else {
                         // Show dropdown
                         updateCompletionsUI(res.suggestions, res.start, true, 0);
@@ -881,6 +884,19 @@ export const useShellTerminal = (
                         }
                     }
                 }
+            }
+        };
+
+        termInstance.current.onData((data) => {
+            // Check if this is a paste or multi-character sequence (not starting with ESC)
+            if (data.length > 1 && data.charCodeAt(0) !== 27) {
+                // Normalize newlines to \r so they trigger the "Enter" key code (13)
+                const normalized = data.replace(/\r\n/g, "\r").replace(/\n/g, "\r");
+                for (const char of normalized) {
+                    handleData(char);
+                }
+            } else {
+                handleData(data);
             }
         });
 

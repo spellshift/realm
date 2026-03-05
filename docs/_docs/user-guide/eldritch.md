@@ -447,9 +447,9 @@ The **assets.list** method returns a list of asset names that the agent is aware
 
 ### assets.read_binary
 
-`assets.read_binary(src: str) -> List<int>`
+`assets.read_binary(src: str) -> Bytes`
 
-The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes.
+The **assets.read_binary** method returns a list of bytes representing the asset files bytes.
 
 ### assets.read
 
@@ -753,7 +753,7 @@ file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Win
 
 ### file.read_binary
 
-`file.read(path: str) -> List<int>`
+`file.read_binary(path: str) -> Bytes`
 
 The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
@@ -811,6 +811,20 @@ It can use specific timestamps (epoch seconds or string format) or copy timestam
 The **file.write** method writes to a given file path with the given content.
 If a file already exists at this path, the method will overwite it. If a directory
 already exists at the path the method will error.
+
+### file.write_binary
+
+`file.write_binary(path: str, content: Bytes) -> None`
+
+The **file.write_binary** method writes binary content to a given file path.
+If a file already exists at this path, the method will overwrite it. If a directory
+already exists at the path the method will error.
+
+```python
+# Write bytes returned from file.read_binary to another file
+data = file.read_binary("/etc/passwd")
+file.write_binary("/tmp/passwd_copy", data)
+```
 
 ### file.find
 
