@@ -79,7 +79,7 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
                 if (node.status === 'PENDING' || node.status === 'APPROVED') {
                     return (
                         <div className="flex justify-end">
-                            <Button buttonVariant="outline" buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.id)}>
+                            <Button buttonVariant="outline" buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.userCode)}>
                                 <Trash2 size={16} />
                             </Button>
                         </div>
