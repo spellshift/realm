@@ -1,7 +1,5 @@
 use anyhow::{anyhow, Result};
 use pb::c2::transport::Type as TransportType;
-use pb::c2::*;
-use std::sync::mpsc::{Receiver, Sender};
 
 #[cfg(any(feature = "grpc", feature = "http1"))]
 mod tls_utils;
@@ -67,7 +65,6 @@ pub fn empty_transport() -> Box<dyn Transport + Send + Sync> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pb::c2::{AvailableTransports, Beacon};
 
     // Helper to create a test transport with a specific URI, transport type, and extra params
     fn create_test_transport(uri: &str, transport_type: i32, extra: &str) -> pb::c2::Transport {

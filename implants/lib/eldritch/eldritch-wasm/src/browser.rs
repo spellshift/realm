@@ -25,6 +25,7 @@ impl BrowserRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> BrowserRepl {
         let printer = Arc::new(BufferPrinter::new());
+        #[allow(unused_mut)]
         let mut interp = Interpreter::new_with_printer(printer);
 
         #[cfg(feature = "fake_bindings")]
@@ -121,6 +122,7 @@ impl BrowserRepl {
         let ends_with_colon = trimmed.ends_with(':');
         let lines: Vec<&str> = self.buffer.lines().collect();
         let line_count = lines.len();
+        #[allow(unused_variables)]
         let last_line_empty =
             self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
 

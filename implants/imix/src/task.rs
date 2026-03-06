@@ -17,6 +17,7 @@ use tokio::sync::mpsc;
 use crate::printer::StreamPrinter;
 
 struct SubtaskHandle {
+    #[allow(dead_code)]
     name: String,
     _handle: tokio::task::JoinHandle<()>,
 }
@@ -96,6 +97,7 @@ impl TaskRegistry {
         true
     }
 
+    #[allow(dead_code)]
     pub fn register_subtask(
         &self,
         task_id: i64,

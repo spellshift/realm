@@ -7,6 +7,7 @@ use eldritch::repl::Repl;
 use eldritch_agent::Context;
 use pb::c2::{ReverseShellMessageKind, ReverseShellRequest, reverse_shell_request};
 
+#[allow(dead_code)]
 pub struct VtWriter {
     pub tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     pub context: Context,
@@ -52,6 +53,7 @@ impl std::io::Write for VtWriter {
     }
 }
 
+#[allow(dead_code)]
 pub fn render<W: std::io::Write>(
     stdout: &mut W,
     repl: &Repl,

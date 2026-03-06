@@ -1,6 +1,5 @@
 use anyhow::Result;
 use pb::c2::*;
-use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 
 #[async_trait::async_trait]
