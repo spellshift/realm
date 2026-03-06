@@ -932,6 +932,10 @@ export const useShellTerminal = (
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
+    // Specifically NOT including `shellData` because it causes infinite loops when GraphQL polls.
+    // Also, we intentionally exclude `onSshConnect` from dependencies to prevent recreating the entire
+    // terminal when the parent callback reference changes (we use a ref inside to combat stale closures).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     return {

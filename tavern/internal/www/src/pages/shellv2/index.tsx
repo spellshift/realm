@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { AccessGate } from "../../components/access-gate";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, Box } from "@chakra-ui/react";
@@ -21,15 +21,17 @@ const ShellV2 = () => {
     const [sshSessions, setSshSessions] = useState<SshSession[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
 
-    const handleSshConnect = (target: string, portalId: number) => {
+    const handleSshConnect = useCallback((target: string, portalId: number) => {
         const newSession = {
             id: Math.random().toString(36).substring(7),
             target,
             portalId
         };
-        setSshSessions(prev => [...prev, newSession]);
-        setSelectedIndex(sshSessions.length + 1);
-    };
+        setSshSessions(prev => {
+            setSelectedIndex(prev.length + 1);
+            return [...prev, newSession];
+        });
+    }, []);
 
     const handleCloseSsh = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -54,7 +56,7 @@ const ShellV2 = () => {
         };
         window.addEventListener('simulateSshConnect', handler);
         return () => window.removeEventListener('simulateSshConnect', handler);
-    }, [sshSessions, selectedIndex]);
+    }, [handleSshConnect]);
 
     return (
         <AccessGate>
