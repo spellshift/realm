@@ -75,7 +75,7 @@ export const useShellTerminal = (
 
     const redrawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Ref for late checkin to access in event handlers
+    // Ref for late check in to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
 
@@ -539,7 +539,7 @@ export const useShellTerminal = (
         adapter.current.init();
 
         const handleData = (data: string) => {
-            // Check for late checkin and block input
+            // Check for late check in and block input
             if (isLateCheckinRef.current) return;
             // Check for connection status and block input
             if (connectionStatusRef.current !== "connected") return;

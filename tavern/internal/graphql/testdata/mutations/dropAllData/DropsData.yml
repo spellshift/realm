@@ -29,7 +29,7 @@ state: |
     VALUES (10000, 9000, 1337, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
   INSERT INTO `portals` (id, portal_beacon, portal_task, portal_owner, created_at, last_modified_at)
     VALUES (8000, 1337, 10000, 5, "2024-01-22 14:51:13", "2024-01-22 14:51:13");
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation DropAllData {
