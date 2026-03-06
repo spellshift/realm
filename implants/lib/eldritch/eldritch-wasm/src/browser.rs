@@ -2,7 +2,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use eldritch_core::{BufferPrinter, Interpreter, Lexer, TokenKind};
+use eldritch_core::{BufferPrinter, Interpreter, Lexer, Parser, TokenKind};
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "fake_bindings")]
@@ -127,6 +127,32 @@ impl BrowserRepl {
         // If single line and doesn't end with colon, it's complete.
         if line_count == 1 && !ends_with_colon {
             let payload = self.buffer.clone();
+
+            // Check for meta functions using AST
+            let ast_tokens = Lexer::new(payload.clone()).scan_tokens();
+            let mut parser = Parser::new(ast_tokens);
+            let (stmts, errors) = parser.parse();
+
+            if errors.is_empty() && stmts.len() == 1 {
+                if let eldritch_core::StmtKind::Expression(expr) = &stmts[0].kind {
+                    if let eldritch_core::ExprKind::Call(callee, args) = &expr.kind {
+                        if let eldritch_core::ExprKind::Identifier(name) = &callee.kind {
+                            if name == "ssh" && args.len() == 1 {
+                                if let eldritch_core::Argument::Positional(arg_expr) = &args[0] {
+                                    if let eldritch_core::ExprKind::Literal(eldritch_core::Value::String(ssh_arg)) = &arg_expr.kind {
+                                        self.buffer.clear();
+                                        return format!(
+                                            "{{ \"status\": \"complete\", \"meta\": {{ \"command\": \"ssh\", \"args\": [{:?}] }} }}",
+                                            ssh_arg
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             self.buffer.clear();
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
         }

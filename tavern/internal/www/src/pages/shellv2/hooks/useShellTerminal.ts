@@ -5,9 +5,13 @@ import "@xterm/xterm/css/xterm.css";
 import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
+import metaData from "../../../assets/meta.json";
 import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
 
-const docs = docsData as Record<string, { signature: string; description: string }>;
+const docs = {
+    ...docsData as Record<string, { signature: string; description: string }>,
+    ...metaData as Record<string, { signature: string; description: string }>
+};
 
 interface ShellState {
     inputBuffer: string;
@@ -26,7 +30,9 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onSshConnect?: (target: string, portalId: number) => void,
+    activePortalId?: number | null
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -830,11 +836,27 @@ export const useShellTerminal = (
                         state.history.push(state.currentBlock.trimEnd());
                         saveHistory(state.history);
                     }
+
+                    if (res.meta && res.meta.command === "ssh") {
+                        if (!activePortalId) {
+                            term.write(`\x1b[38;2;255;0;0mError: ssh requires an active portal connection.\x1b[0m\r\n`);
+                        } else if (res.meta.args.length > 0) {
+                            if (onSshConnect) {
+                                onSshConnect(res.meta.args[0], activePortalId);
+                            }
+                        }
+                    }
+
                     state.currentBlock = "";
                     state.historyIndex = -1;
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+
+                    // We only write a new prompt immediately if there's no normal backend execution happening.
+                    if (res.meta) {
+                        term.write(state.prompt);
+                    }
                 } else if (res?.status === "incomplete") {
                     state.prompt = res.prompt || ".. ";
                     term.write(state.prompt);

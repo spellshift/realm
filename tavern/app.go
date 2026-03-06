@@ -41,6 +41,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	portalssh "realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -337,10 +338,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/auth/rda/approve": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDAApproveHandler(client),
+			Handler: tavernhttp.NewRDAApproveHandler(client),
 		},
 		"/auth/rda/revoke": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDARevokeHandler(client),
+			Handler: tavernhttp.NewRDARevokeHandler(client),
 		},
 		"/api/auth/signout": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewSignoutHandler(),
@@ -408,6 +409,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
+		},
+		"/portal/ssh": tavernhttp.Endpoint{
+			Handler: portalssh.NewHandler(client, portalMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),

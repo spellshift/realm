@@ -22,7 +22,7 @@ func TestReportFile(t *testing.T) {
 	// Setup Dependencies
 	client, graph, close, token := c2test.New(t)
 	defer close()
-    ctx := context.Background()
+	ctx := context.Background()
 
 	// Test Data
 	existingBeacons := []*ent.Beacon{
@@ -103,8 +103,8 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-                        TaskContext: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
-                    },
+						TaskContext: &c2pb.TaskContext{TaskId: 1234, Jwt: token},
+					},
 				},
 			},
 			wantCode: codes.InvalidArgument,
@@ -114,8 +114,8 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
-                    },
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path:         "/new/file",
@@ -152,8 +152,8 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
-                    },
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -176,7 +176,7 @@ func TestReportFile(t *testing.T) {
 				"/new/file",
 				"/another/new/file",
 			},
-			wantPath:    "/another/new/file",
+			wantPath:        "/another/new/file",
 			wantSize:        9,
 			wantHash:        "a89332a42f5fbfcda0711dd7615aee897a9977f2b6adf12bb2db41a1b9f79a90",
 			wantContent:     []byte("deathnote"),
@@ -188,8 +188,8 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
-                    },
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[2].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/another/new/file",
@@ -207,7 +207,7 @@ func TestReportFile(t *testing.T) {
 				"/new/file",
 				"/another/new/file",
 			},
-			wantPath:    "/another/new/file",
+			wantPath:        "/another/new/file",
 			wantSize:        8,
 			wantHash:        "e0f00440c4d0ee2fd0b63b59402faf9a9d6b6c26a41c2353141328ae8df80832",
 			wantContent:     []byte("replaced"),
@@ -219,8 +219,8 @@ func TestReportFile(t *testing.T) {
 			reqs: []*c2pb.ReportFileRequest{
 				{
 					Context: &c2pb.ReportFileRequest_TaskContext{
-                        TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
-                    },
+						TaskContext: &c2pb.TaskContext{TaskId: int64(existingTasks[3].ID), Jwt: token},
+					},
 					Chunk: &epb.File{
 						Metadata: &epb.FileMetadata{
 							Path: "/no/other/files",
@@ -229,11 +229,11 @@ func TestReportFile(t *testing.T) {
 					},
 				},
 			},
-			host:          existingHosts[1],
-			wantCode:      codes.OK,
-			wantResp:      &c2pb.ReportFileResponse{},
-			wantHostFiles: []string{"/no/other/files"},
-			wantPath:      "/no/other/files",
+			host:            existingHosts[1],
+			wantCode:        codes.OK,
+			wantResp:        &c2pb.ReportFileResponse{},
+			wantHostFiles:   []string{"/no/other/files"},
+			wantPath:        "/no/other/files",
 			wantSize:        4,
 			wantHash:        "ecb287a944d62ba58b7e7310529172a9c121957c2edea47a948919c342ca9467",
 			wantContent:     []byte("meow"),
@@ -391,36 +391,36 @@ func TestReportFile(t *testing.T) {
 				t.Errorf("invalid response (-want +got): %v", diff)
 			}
 
-            if tc.host != nil {
-			    // Load Files
-			    testHost := graph.Host.GetX(ctx, tc.host.ID)
-			    testHostFiles := testHost.QueryFiles().AllX(ctx)
-			    testHostFilePaths := make([]string, 0, len(testHostFiles))
-			    var testFile *ent.HostFile
-			    for _, f := range testHostFiles {
-				    testHostFilePaths = append(testHostFilePaths, f.Path)
-				    if f.Path == tc.wantPath {
-					    testFile = f
-				    }
-			    }
-			    require.NotNil(t, testFile, "%q file was not associated with host", tc.wantPath)
+			if tc.host != nil {
+				// Load Files
+				testHost := graph.Host.GetX(ctx, tc.host.ID)
+				testHostFiles := testHost.QueryFiles().AllX(ctx)
+				testHostFilePaths := make([]string, 0, len(testHostFiles))
+				var testFile *ent.HostFile
+				for _, f := range testHostFiles {
+					testHostFilePaths = append(testHostFilePaths, f.Path)
+					if f.Path == tc.wantPath {
+						testFile = f
+					}
+				}
+				require.NotNil(t, testFile, "%q file was not associated with host", tc.wantPath)
 
-			    // Assert Files
-			    sorter := func(a, b string) bool { return a < b }
-			    if diff := cmp.Diff(tc.wantHostFiles, testHostFilePaths, cmpopts.SortSlices(sorter)); diff != "" {
-				    t.Errorf("invalid host file associations (-want +got): %v", diff)
-			    }
-			    assert.Equal(t, tc.wantPath, testFile.Path)
-			    assert.Equal(t, tc.wantOwner, testFile.Owner)
-			    assert.Equal(t, tc.wantGroup, testFile.Group)
-			    assert.Equal(t, tc.wantPermissions, testFile.Permissions)
-			    assert.Equal(t, tc.wantSize, testFile.Size)
-			    if tc.wantHash != "" {
-				    assert.Equal(t, tc.wantHash, testFile.Hash)
-			    }
-			    assert.Equal(t, tc.wantPreviewType, testFile.PreviewType)
-			    assert.Equal(t, tc.wantPreview, testFile.Preview)
-            }
+				// Assert Files
+				sorter := func(a, b string) bool { return a < b }
+				if diff := cmp.Diff(tc.wantHostFiles, testHostFilePaths, cmpopts.SortSlices(sorter)); diff != "" {
+					t.Errorf("invalid host file associations (-want +got): %v", diff)
+				}
+				assert.Equal(t, tc.wantPath, testFile.Path)
+				assert.Equal(t, tc.wantOwner, testFile.Owner)
+				assert.Equal(t, tc.wantGroup, testFile.Group)
+				assert.Equal(t, tc.wantPermissions, testFile.Permissions)
+				assert.Equal(t, tc.wantSize, testFile.Size)
+				if tc.wantHash != "" {
+					assert.Equal(t, tc.wantHash, testFile.Hash)
+				}
+				assert.Equal(t, tc.wantPreviewType, testFile.PreviewType)
+				assert.Equal(t, tc.wantPreview, testFile.Preview)
+			}
 		})
 	}
 

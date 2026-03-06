@@ -1,0 +1,6 @@
+{
+  "ssh": {
+    "signature": "ssh(target: str)",
+    "description": "Opens an interactive SSH session over the active portal. `target` should be formatted as `user:password@host:port`."
+  }
+}
