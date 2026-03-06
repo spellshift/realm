@@ -84,10 +84,12 @@ export const useShellTerminal = (
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
+    const activePortalIdRef = useRef(activePortalId);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
+        activePortalIdRef.current = activePortalId;
         if (termInstance.current) {
             const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
@@ -838,11 +840,11 @@ export const useShellTerminal = (
                     }
 
                     if (res.meta && res.meta.command === "ssh") {
-                        if (!activePortalId) {
+                        if (!activePortalIdRef.current) {
                             term.write(`\x1b[38;2;255;0;0mError: ssh requires an active portal connection.\x1b[0m\r\n`);
                         } else if (res.meta.args.length > 0) {
                             if (onSshConnect) {
-                                onSshConnect(res.meta.args[0], activePortalId);
+                                onSshConnect(res.meta.args[0], activePortalIdRef.current);
                             }
                         }
                     }
