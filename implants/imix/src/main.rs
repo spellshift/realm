@@ -21,6 +21,7 @@ pub use transport::Transport;
 
 mod agent;
 mod assets;
+pub mod config;
 mod install;
 mod portal;
 mod printer;
@@ -30,7 +31,6 @@ mod task;
 #[cfg(test)]
 mod tests;
 mod version;
-pub mod config;
 
 #[tokio::main]
 async fn main() -> Result<()> {

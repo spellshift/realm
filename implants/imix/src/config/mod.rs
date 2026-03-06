@@ -330,9 +330,11 @@ mod tests {
         assert_eq!(available.transports.len(), 1);
         assert_eq!(available.active_index, 0);
         // The URL crate normalizes URIs, potentially adding trailing slashes
-        assert!(available.transports[0]
-            .uri
-            .starts_with("http://127.0.0.1:8000"));
+        assert!(
+            available.transports[0]
+                .uri
+                .starts_with("http://127.0.0.1:8000")
+        );
     }
 
     #[test]
@@ -362,10 +364,7 @@ mod tests {
     #[test]
     fn test_transport_type_detection_unspecified() {
         let unknown_type = get_transport_type("ftp://example.com");
-        assert_eq!(
-            unknown_type,
-            pb::c2::transport::Type::TransportUnspecified
-        );
+        assert_eq!(unknown_type, pb::c2::transport::Type::TransportUnspecified);
     }
 
     #[test]

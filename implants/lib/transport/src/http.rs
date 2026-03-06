@@ -5,11 +5,11 @@ use hyper_legacy::body::HttpBody;
 use hyper_legacy::{StatusCode, Uri};
 use pb::c2::*;
 use prost::Message;
+use std::collections::HashMap;
 use std::sync::{
     mpsc::{Receiver, Sender},
     Arc,
 };
-use std::collections::HashMap;
 
 #[cfg(feature = "doh")]
 use crate::dns_resolver::doh::DohProvider;
@@ -381,7 +381,8 @@ impl Transport for HTTP {
         let callback = uri
             .replace("http1s://", "https://")
             .replace("http1://", "http://");
-        let extra_map = serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
+        let extra_map =
+            serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");

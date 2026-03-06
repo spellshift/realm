@@ -3,8 +3,8 @@ use anyhow::{Context, Result};
 use hickory_resolver::system_conf::read_system_conf;
 use pb::c2::*;
 use pb::dns::*;
-use std::collections::HashMap;
 use prost::Message;
+use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio::net::UdpSocket;
 
@@ -966,8 +966,14 @@ impl Transport for DNS {
     }
 
     fn new(transport: &pb::c2::Transport) -> Result<Self> {
-        let uri = transport.uri.split('?').next().unwrap_or(&transport.uri).to_string();
-        let extra_map = serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
+        let uri = transport
+            .uri
+            .split('?')
+            .next()
+            .unwrap_or(&transport.uri)
+            .to_string();
+        let extra_map =
+            serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         let dns_server = if uri == "dns://*" {
             // Use system DNS resolver

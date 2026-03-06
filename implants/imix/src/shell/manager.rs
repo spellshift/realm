@@ -373,9 +373,9 @@ impl ShellManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Config;
     use crate::task::TaskRegistry;
     use pb::c2::{ReportOutputResponse, ShellTask};
-    use crate::config::Config;
     use transport::{MockTransport, Transport};
 
     #[tokio::test]
