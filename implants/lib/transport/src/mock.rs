@@ -14,7 +14,7 @@ mock! {
         fn clone_box(&self) -> Box<dyn super::Transport + Send + Sync>;
         fn init() -> Self;
 
-        fn new(config: pb::config::Config) -> Result<Self>;
+        fn new(transport: &pb::c2::Transport) -> Result<Self>;
 
         async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse>;
 

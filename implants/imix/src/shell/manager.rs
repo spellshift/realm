@@ -375,7 +375,7 @@ mod tests {
     use super::*;
     use crate::task::TaskRegistry;
     use pb::c2::{ReportOutputResponse, ShellTask};
-    use pb::config::Config;
+    use crate::config::Config;
     use transport::{MockTransport, Transport};
 
     #[tokio::test]

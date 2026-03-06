@@ -43,12 +43,22 @@ rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
 async-trait = { workspace = true }
+host_unique = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+whoami = { workspace = true }
+netdev = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
+
+
+
+
+
 
 [dev-dependencies]
 transport = { workspace = true, features = ["mock", "grpc"] }

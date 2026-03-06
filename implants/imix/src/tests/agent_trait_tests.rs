@@ -3,7 +3,7 @@ use super::super::task::TaskRegistry;
 use eldritch::agent::agent::Agent;
 use pb::c2::host::Platform;
 use pb::c2::{self, Host, report_file_request, report_output_request};
-use pb::config::Config;
+use crate::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
 

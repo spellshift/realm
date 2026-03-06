@@ -2,8 +2,8 @@ use crate::Transport;
 use anyhow::{Context, Result};
 use hickory_resolver::system_conf::read_system_conf;
 use pb::c2::*;
-use pb::config::Config;
 use pb::dns::*;
+use std::collections::HashMap;
 use prost::Message;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio::net::UdpSocket;
@@ -965,9 +965,9 @@ impl Transport for DNS {
         }
     }
 
-    fn new(config: Config) -> Result<Self> {
-        // Extract URI (dns_server address) and extra config from config
-        let uri = crate::transport::extract_uri_from_config(&config)?;
+    fn new(transport: &pb::c2::Transport) -> Result<Self> {
+        let uri = transport.uri.split('?').next().unwrap_or(&transport.uri).to_string();
+        let extra_map = serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         let dns_server = if uri == "dns://*" {
             // Use system DNS resolver
@@ -995,10 +995,8 @@ impl Transport for DNS {
                 format!("{}:53", host_port)
             }
         };
-        let extra = crate::transport::extract_extra_from_config(&config);
-
         // Extract base_domain from extra field (required)
-        let base_domain = extra
+        let base_domain = extra_map
             .get("domain")
             .ok_or_else(|| anyhow::anyhow!("domain parameter is required in extra config"))?
             .to_string();
@@ -1008,7 +1006,7 @@ impl Transport for DNS {
         }
 
         // Extract record_type from extra field (default: TXT)
-        let record_type = extra
+        let record_type = extra_map
             .get("type")
             .map(|v| match v.to_lowercase().as_str() {
                 "a" => DnsRecordType::A,

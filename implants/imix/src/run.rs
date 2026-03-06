@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
-use pb::config::Config;
+use crate::config::Config;
 use transport;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
@@ -98,8 +98,9 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
 
     // Create new active transport
     let config = agent.get_transport_config().await;
+    let active_transport = crate::agent::extract_transport_from_config(&config).expect("Failed to extract transport");
 
-    let transport = match transport::create_transport(config) {
+    let transport = match transport::create_transport(&active_transport) {
         Ok(t) => t,
         Err(_e) => {
             #[cfg(debug_assertions)]

@@ -8,7 +8,7 @@ use pb::c2::{
     ReportTaskOutputMessage, ShellTaskContext, ShellTaskOutput, TaskContext, TaskOutput,
     report_output_request,
 };
-use pb::config::Config;
+use crate::config::Config;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -277,8 +277,9 @@ impl ImixAgent {
 
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
+        let active_transport = extract_transport_from_config(&config).context("Failed to extract transport")?;
         let t =
-            transport::create_transport(config).context("Failed to create on-demand transport")?;
+            transport::create_transport(&active_transport).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -790,4 +791,20 @@ impl Agent for ImixAgent {
         }
         Ok(())
     }
+}
+
+pub fn extract_transport_from_config(config: &crate::config::Config) -> anyhow::Result<pb::c2::Transport> {
+    if let Some(info) = &config.info {
+        if let Some(available_transports) = &info.available_transports {
+            let active_idx = available_transports.active_index as usize;
+            if let Some(transport) = available_transports
+                .transports
+                .get(active_idx)
+                .or_else(|| available_transports.transports.first())
+            {
+                return Ok(transport.clone());
+            }
+        }
+    }
+    anyhow::bail!("No available transports found in config");
 }
