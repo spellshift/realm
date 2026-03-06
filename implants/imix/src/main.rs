@@ -16,11 +16,12 @@ mod win_service;
 #[cfg(all(debug_assertions, feature = "tokio-console"))]
 use console_subscriber;
 
-pub use pb::config::Config;
+pub use crate::config::Config;
 pub use transport::Transport;
 
 mod agent;
 mod assets;
+pub mod config;
 mod install;
 mod portal;
 mod printer;

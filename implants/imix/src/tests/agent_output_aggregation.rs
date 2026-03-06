@@ -1,10 +1,10 @@
 use crate::agent::ImixAgent;
+use crate::config::Config;
 use crate::task::TaskRegistry;
 use pb::c2::{
     ReportOutputRequest, ReportShellTaskOutputMessage, ReportTaskOutputMessage, ShellTaskContext,
     ShellTaskOutput, TaskContext, TaskOutput, report_output_request,
 };
-use pb::config::Config;
 use std::sync::{Arc, Mutex};
 use transport::MockTransport;
 

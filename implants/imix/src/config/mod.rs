@@ -3,7 +3,7 @@ use host_unique::HostIDSelector;
 use url::Url;
 use uuid::Uuid;
 
-use crate::c2::{AvailableTransports, Transport};
+use pb::c2::{AvailableTransports, Transport};
 
 //TODO: Can this struct be removed?
 /// Config holds values necessary to configure an Agent.
@@ -11,7 +11,7 @@ use crate::c2::{AvailableTransports, Transport};
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Config {
     #[prost(message, optional, tag = "1")]
-    pub info: ::core::option::Option<crate::c2::Beacon>,
+    pub info: ::core::option::Option<pb::c2::Beacon>,
     #[prost(bool, tag = "2")]
     pub run_once: bool,
 }
@@ -86,14 +86,14 @@ pub const RUN_ONCE: bool = run_once!();
 /*
  * Helper function to determine transport type from URI scheme
  */
-fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
+fn get_transport_type(uri: &str) -> pb::c2::transport::Type {
     match uri.split(":").next().unwrap_or("unspecified") {
-        "dns" => crate::c2::transport::Type::TransportDns,
-        "http1" => crate::c2::transport::Type::TransportHttp1,
-        "https1" => crate::c2::transport::Type::TransportHttp1,
-        "https" => crate::c2::transport::Type::TransportGrpc,
-        "http" => crate::c2::transport::Type::TransportGrpc,
-        _ => crate::c2::transport::Type::TransportUnspecified,
+        "dns" => pb::c2::transport::Type::TransportDns,
+        "http1" => pb::c2::transport::Type::TransportHttp1,
+        "https1" => pb::c2::transport::Type::TransportHttp1,
+        "https" => pb::c2::transport::Type::TransportGrpc,
+        "http" => pb::c2::transport::Type::TransportGrpc,
+        _ => pb::c2::transport::Type::TransportUnspecified,
     }
 }
 
@@ -200,13 +200,13 @@ fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
  */
 impl Config {
     pub fn default_with_imix_version(imix_version: &str) -> Self {
-        let agent = crate::c2::Agent {
+        let agent = pb::c2::Agent {
             identifier: format!("imix-v{}", imix_version),
         };
 
         let selectors = parse_host_unique_selectors();
 
-        let host = crate::c2::Host {
+        let host = pb::c2::Host {
             name: whoami::fallible::hostname().unwrap_or(String::from("")),
             identifier: host_unique::get_id_with_selectors(selectors).to_string(),
             platform: get_host_platform() as i32,
@@ -226,7 +226,7 @@ impl Config {
             active_index: 0,
         };
 
-        let info = crate::c2::Beacon {
+        let info = pb::c2::Beacon {
             identifier: beacon_id,
             principal: whoami::username(),
             available_transports: Some(available_transports),
@@ -268,18 +268,18 @@ impl Config {
 /*
  * Returns which Platform imix has been compiled for.
  */
-fn get_host_platform() -> crate::c2::host::Platform {
+fn get_host_platform() -> pb::c2::host::Platform {
     #[cfg(target_os = "linux")]
-    return crate::c2::host::Platform::Linux;
+    return pb::c2::host::Platform::Linux;
 
     #[cfg(target_os = "macos")]
-    return crate::c2::host::Platform::Macos;
+    return pb::c2::host::Platform::Macos;
 
     #[cfg(target_os = "windows")]
-    return crate::c2::host::Platform::Windows;
+    return pb::c2::host::Platform::Windows;
 
     #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    return crate::c2::host::Platform::Bsd;
+    return pb::c2::host::Platform::Bsd;
 
     #[cfg(all(
         not(target_os = "linux"),
@@ -289,7 +289,7 @@ fn get_host_platform() -> crate::c2::host::Platform {
         not(target_os = "netbsd"),
         not(target_os = "openbsd"),
     ))]
-    return crate::c2::host::Platform::Unspecified;
+    return pb::c2::host::Platform::Unspecified;
 }
 
 /*
@@ -330,42 +330,41 @@ mod tests {
         assert_eq!(available.transports.len(), 1);
         assert_eq!(available.active_index, 0);
         // The URL crate normalizes URIs, potentially adding trailing slashes
-        assert!(available.transports[0]
-            .uri
-            .starts_with("http://127.0.0.1:8000"));
+        assert!(
+            available.transports[0]
+                .uri
+                .starts_with("http://127.0.0.1:8000")
+        );
     }
 
     #[test]
     fn test_transport_type_detection_grpc() {
         let grpc_type = get_transport_type("http://example.com");
-        assert_eq!(grpc_type, crate::c2::transport::Type::TransportGrpc);
+        assert_eq!(grpc_type, pb::c2::transport::Type::TransportGrpc);
 
         let grpcs_type = get_transport_type("https://example.com");
-        assert_eq!(grpcs_type, crate::c2::transport::Type::TransportGrpc);
+        assert_eq!(grpcs_type, pb::c2::transport::Type::TransportGrpc);
     }
 
     #[test]
     fn test_transport_type_detection_http1() {
         let http1_type = get_transport_type("http1://example.com");
-        assert_eq!(http1_type, crate::c2::transport::Type::TransportHttp1);
+        assert_eq!(http1_type, pb::c2::transport::Type::TransportHttp1);
 
         let https1_type = get_transport_type("https1://example.com");
-        assert_eq!(https1_type, crate::c2::transport::Type::TransportHttp1);
+        assert_eq!(https1_type, pb::c2::transport::Type::TransportHttp1);
     }
 
     #[test]
     fn test_transport_type_detection_dns() {
         let dns_type = get_transport_type("dns://8.8.8.8");
-        assert_eq!(dns_type, crate::c2::transport::Type::TransportDns);
+        assert_eq!(dns_type, pb::c2::transport::Type::TransportDns);
     }
 
     #[test]
     fn test_transport_type_detection_unspecified() {
         let unknown_type = get_transport_type("ftp://example.com");
-        assert_eq!(
-            unknown_type,
-            crate::c2::transport::Type::TransportUnspecified
-        );
+        assert_eq!(unknown_type, pb::c2::transport::Type::TransportUnspecified);
     }
 
     #[test]

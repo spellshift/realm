@@ -185,6 +185,7 @@ impl Interpreter {
         self
     }
 
+    #[allow(unused_mut)]
     pub fn with_fake_agent(mut self) -> Self {
         #[cfg(feature = "fake_agent")]
         self.inner.register_lib(AgentLibraryFake);

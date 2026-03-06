@@ -2,9 +2,9 @@ use crate::Transport;
 use anyhow::{Context, Result};
 use hickory_resolver::system_conf::read_system_conf;
 use pb::c2::*;
-use pb::config::Config;
 use pb::dns::*;
 use prost::Message;
+use std::collections::HashMap;
 use std::sync::mpsc::{Receiver, Sender};
 use tokio::net::UdpSocket;
 
@@ -965,9 +965,15 @@ impl Transport for DNS {
         }
     }
 
-    fn new(config: Config) -> Result<Self> {
-        // Extract URI (dns_server address) and extra config from config
-        let uri = crate::transport::extract_uri_from_config(&config)?;
+    fn new(transport: &pb::c2::Transport) -> Result<Self> {
+        let uri = transport
+            .uri
+            .split('?')
+            .next()
+            .unwrap_or(&transport.uri)
+            .to_string();
+        let extra_map =
+            serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         let dns_server = if uri == "dns://*" {
             // Use system DNS resolver
@@ -995,10 +1001,8 @@ impl Transport for DNS {
                 format!("{}:53", host_port)
             }
         };
-        let extra = crate::transport::extract_extra_from_config(&config);
-
         // Extract base_domain from extra field (required)
-        let base_domain = extra
+        let base_domain = extra_map
             .get("domain")
             .ok_or_else(|| anyhow::anyhow!("domain parameter is required in extra config"))?
             .to_string();
@@ -1008,7 +1012,7 @@ impl Transport for DNS {
         }
 
         // Extract record_type from extra field (default: TXT)
-        let record_type = extra
+        let record_type = extra_map
             .get("type")
             .map(|v| match v.to_lowercase().as_str() {
                 "a" => DnsRecordType::A,
@@ -1275,30 +1279,21 @@ mod tests {
     // ============================================================
 
     // Helper function to create a test config with DNS URI and extra params
-    fn create_dns_test_config(uri: &str, extra: &str) -> Config {
-        use pb::c2::{AvailableTransports, Beacon, Transport};
-        Config {
-            info: Some(Beacon {
-                available_transports: Some(AvailableTransports {
-                    transports: vec![Transport {
-                        uri: uri.to_string(),
-                        interval: 5,
-                        r#type: TransportType::TransportDns as i32,
-                        extra: extra.to_string(),
-                        jitter: 0.0,
-                    }],
-                    active_index: 0,
-                }),
-                ..Default::default()
-            }),
-            ..Default::default()
+    fn create_dns_test_transport(uri: &str, extra: &str) -> pb::c2::Transport {
+        pb::c2::Transport {
+            uri: uri.to_string(),
+            interval: 5,
+            r#type: TransportType::TransportDns as i32,
+            extra: extra.to_string(),
+            jitter: 0.0,
         }
     }
 
     #[test]
     fn test_new_single_server() {
-        let config = create_dns_test_config("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
-        let dns = DNS::new(config).expect("should parse");
+        let transport =
+            create_dns_test_transport("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
+        let dns = DNS::new(&transport).expect("should parse");
 
         assert_eq!(dns.base_domain, "dnsc2.realm.pub");
         assert_eq!(dns.dns_server, "8.8.8.8:53");
@@ -1307,35 +1302,36 @@ mod tests {
 
     #[test]
     fn test_new_record_type_a() {
-        let config = create_dns_test_config(
+        let transport = create_dns_test_transport(
             "dns://8.8.8.8:53",
             r#"{"domain": "dnsc2.realm.pub", "type": "a"}"#,
         );
-        let dns = DNS::new(config).expect("should parse");
+        let dns = DNS::new(&transport).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::A);
     }
 
     #[test]
     fn test_new_record_type_aaaa() {
-        let config = create_dns_test_config(
+        let transport = create_dns_test_transport(
             "dns://8.8.8.8:53",
             r#"{"domain": "dnsc2.realm.pub", "type": "aaaa"}"#,
         );
-        let dns = DNS::new(config).expect("should parse");
+        let dns = DNS::new(&transport).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::AAAA);
     }
 
     #[test]
     fn test_new_record_type_txt_default() {
-        let config = create_dns_test_config("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
-        let dns = DNS::new(config).expect("should parse");
+        let transport =
+            create_dns_test_transport("dns://8.8.8.8:53", r#"{"domain": "dnsc2.realm.pub"}"#);
+        let dns = DNS::new(&transport).expect("should parse");
         assert_eq!(dns.record_type, DnsRecordType::TXT);
     }
 
     #[test]
     fn test_new_missing_domain() {
-        let config = create_dns_test_config("dns://8.8.8.8:53", "{}");
-        let result = DNS::new(config);
+        let transport = create_dns_test_transport("dns://8.8.8.8:53", "{}");
+        let result = DNS::new(&transport);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()

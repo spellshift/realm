@@ -1,7 +1,7 @@
 use anyhow::Result;
 use http::Uri;
 use pb::c2::*;
-use pb::config::Config;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::mpsc::{Receiver, Sender};
 use tonic::GrpcMethod;
@@ -78,10 +78,15 @@ impl Transport for GRPC {
         GRPC { grpc: None }
     }
 
-    fn new(config: Config) -> Result<Self> {
-        // Extract URI and EXTRA from config using helper functions
-        let callback = crate::transport::extract_uri_from_config(&config)?;
-        let extra_map = crate::transport::extract_extra_from_config(&config);
+    fn new(transport: &pb::c2::Transport) -> Result<Self> {
+        let callback = transport
+            .uri
+            .split('?')
+            .next()
+            .unwrap_or(&transport.uri)
+            .to_string();
+        let extra_map =
+            serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         // Tonic 0.14+ might fail with "Connecting to HTTPS without TLS enabled" if we use https:// scheme
         // even if we provide a TLS-enabled connector. We workaround this by using http:// scheme

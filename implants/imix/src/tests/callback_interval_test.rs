@@ -1,7 +1,7 @@
 use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
+use crate::config::Config;
 use eldritch::agent::agent::Agent;
-use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
 

@@ -1,4 +1,5 @@
 use crate::agent::ImixAgent;
+use crate::config::Config;
 use crate::task::TaskRegistry;
 use eldritch::report::std::file_impl;
 use eldritch_agent::Context;
@@ -9,7 +10,6 @@ use pb::c2::{
     ReportOutputResponse, ReportProcessListRequest, ReportProcessListResponse, ReverseShellRequest,
     ReverseShellResponse, TaskContext, Transport as C2Transport,
 };
-use pb::config::Config;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use transport::Transport;
@@ -33,7 +33,7 @@ impl Transport for FakeTransport {
         FakeTransport::new()
     }
 
-    fn new(_config: Config) -> anyhow::Result<Self> {
+    fn new(_config: &pb::c2::Transport) -> anyhow::Result<Self> {
         Ok(FakeTransport::new())
     }
 

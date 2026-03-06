@@ -2,6 +2,7 @@ extern crate alloc;
 
 pub mod agent;
 pub mod assets;
+pub mod config;
 pub mod portal;
 pub mod printer;
 pub mod run;

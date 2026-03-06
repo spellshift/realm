@@ -13,5 +13,4 @@ pub mod portal {
 pub mod trace {
     include!("generated/trace.rs");
 }
-pub mod config;
 pub mod xchacha;

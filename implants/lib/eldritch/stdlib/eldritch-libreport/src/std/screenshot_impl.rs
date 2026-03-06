@@ -14,6 +14,7 @@ use {
     xcap::Monitor,
 };
 
+#[cfg(not(target_os = "linux"))]
 #[cfg(all(unix, feature = "stdlib"))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
@@ -21,23 +22,26 @@ fn get_hostname() -> String {
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
+#[cfg(not(target_os = "linux"))]
 #[cfg(all(unix, not(feature = "stdlib")))]
 fn get_hostname() -> String {
     std::env::var("HOSTNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
+#[cfg(not(target_os = "linux"))]
 #[cfg(windows)]
 fn get_hostname() -> String {
     std::env::var("COMPUTERNAME").unwrap_or_else(|_| "unknown".to_string())
 }
 
+#[cfg(not(target_os = "linux"))]
 #[cfg(not(any(unix, windows)))]
 fn get_hostname() -> String {
     "unknown".to_string()
 }
 
 #[cfg(target_os = "linux")]
-pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
+pub fn screenshot(_agent: Arc<dyn Agent>, _context: Context) -> Result<(), String> {
     return Err(
         "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
     );

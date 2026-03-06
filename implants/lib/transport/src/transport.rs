@@ -1,53 +1,6 @@
 use anyhow::Result;
-use pb::{c2::*, config::Config};
-use std::collections::HashMap;
+use pb::c2::*;
 use std::sync::mpsc::{Receiver, Sender};
-
-/// Helper function to extract the active URI from config.
-/// Strips query parameters from the URI.
-pub fn extract_uri_from_config(config: &Config) -> Result<String> {
-    if let Some(info) = &config.info {
-        if let Some(available_transports) = &info.available_transports {
-            let active_idx = available_transports.active_index as usize;
-            let transport = available_transports
-                .transports
-                .get(active_idx)
-                .or_else(|| available_transports.transports.first())
-                .ok_or_else(|| anyhow::anyhow!("No transports configured"))?;
-
-            let uri = transport
-                .uri
-                .split('?')
-                .next()
-                .unwrap_or(&transport.uri)
-                .to_string();
-            Ok(uri)
-        } else {
-            Err(anyhow::anyhow!("No available_transports in config"))
-        }
-    } else {
-        Err(anyhow::anyhow!("No beacon info in config"))
-    }
-}
-
-/// Helper function to extract the extra configuration as a HashMap from config.
-/// Returns an empty HashMap if parsing fails or no extra is configured.
-pub fn extract_extra_from_config(config: &Config) -> HashMap<String, String> {
-    if let Some(info) = &config.info {
-        if let Some(available_transports) = &info.available_transports {
-            let active_idx = available_transports.active_index as usize;
-            if let Some(transport) = available_transports
-                .transports
-                .get(active_idx)
-                .or_else(|| available_transports.transports.first())
-            {
-                return serde_json::from_str::<HashMap<String, String>>(&transport.extra)
-                    .unwrap_or_else(|_| HashMap::new());
-            }
-        }
-    }
-    HashMap::new()
-}
 
 #[async_trait::async_trait]
 pub trait Transport: Send + Sync {
@@ -62,7 +15,7 @@ pub trait Transport: Send + Sync {
     // New will create a new instance of the transport using the Config.
     // The URI is extracted from config.info.available_transports at the active_index.
     #[allow(dead_code)]
-    fn new(config: Config) -> Result<Self>
+    fn new(transport: &pb::c2::Transport) -> Result<Self>
     where
         Self: Sized;
 

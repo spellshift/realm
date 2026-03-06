@@ -3,8 +3,9 @@ use anyhow::{Context, Result};
 use bytes::BytesMut;
 use hyper_legacy::body::HttpBody;
 use hyper_legacy::{StatusCode, Uri};
-use pb::{c2::*, config::Config};
+use pb::c2::*;
 use prost::Message;
+use std::collections::HashMap;
 use std::sync::{
     mpsc::{Receiver, Sender},
     Arc,
@@ -375,13 +376,13 @@ impl Transport for HTTP {
         }
     }
 
-    fn new(config: Config) -> Result<Self> {
-        // Extract URI and EXTRA from config using helper functions
-        let c = crate::transport::extract_uri_from_config(&config)?;
-        let callback = c
+    fn new(transport: &pb::c2::Transport) -> Result<Self> {
+        let uri = transport.uri.split('?').next().unwrap_or(&transport.uri);
+        let callback = uri
             .replace("http1s://", "https://")
             .replace("http1://", "http://");
-        let extra_map = crate::transport::extract_extra_from_config(&config);
+        let extra_map =
+            serde_json::from_str::<HashMap<String, String>>(&transport.extra).unwrap_or_default();
 
         #[cfg(feature = "doh")]
         let doh: Option<&String> = extra_map.get("doh");
