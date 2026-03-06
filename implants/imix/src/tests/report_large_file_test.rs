@@ -157,6 +157,7 @@ async fn test_report_large_file_via_eldritch() {
     let agent = ImixAgent::new(
         config,
         fake_transport.clone_box(),
+        std::sync::Arc::new(transport::TransportRegistry::with_defaults()),
         tokio::runtime::Handle::current(),
         task_registry,
         shell_tx,

@@ -38,6 +38,7 @@ async fn test_agent_output_aggregation() {
     let agent = Arc::new(ImixAgent::new(
         Config::default(),
         Box::new(transport),
+        std::sync::Arc::new(transport::TransportRegistry::with_defaults()),
         handle,
         task_registry,
         tx,
