@@ -31,10 +31,7 @@ fn test_sorted_coverage() {
 
 #[test]
 fn test_sorted_errors() {
-    assert::fail(
-        "sorted()",
-        "missing 1 required positional argument",
-    );
+    assert::fail("sorted()", "missing 1 required positional argument");
 
     assert::fail(
         "sorted([1, 2], [3, 4])",
