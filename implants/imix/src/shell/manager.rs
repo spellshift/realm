@@ -407,6 +407,7 @@ mod tests {
         let agent = Arc::new(ImixAgent::new(
             config,
             transport.clone_box(),
+            std::sync::Arc::new(transport::TransportRegistry::with_defaults()),
             runtime_handle,
             task_registry,
             shell_tx,

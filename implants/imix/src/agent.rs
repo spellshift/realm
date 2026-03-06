@@ -32,12 +32,14 @@ pub struct ImixAgent {
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    pub transport_registry: Arc<transport::TransportRegistry>,
 }
 
 impl ImixAgent {
     pub fn new(
         config: Config,
         transport: Box<dyn Transport + Send + Sync>,
+        transport_registry: Arc<transport::TransportRegistry>,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
@@ -53,6 +55,7 @@ impl ImixAgent {
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
             shell_manager_tx,
+            transport_registry,
         }
     }
 
@@ -278,7 +281,7 @@ impl ImixAgent {
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
         let t =
-            transport::create_transport(config).context("Failed to create on-demand transport")?;
+            self.transport_registry.create_transport(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");

@@ -35,13 +35,7 @@ async fn test_agent_output_aggregation() {
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
-    let agent = Arc::new(ImixAgent::new(
-        Config::default(),
-        Box::new(transport),
-        handle,
-        task_registry,
-        tx,
-    ));
+    let agent = Arc::new(ImixAgent::new(Config::default(), Box::new(transport), std::sync::Arc::new(transport::TransportRegistry::with_defaults()), handle, task_registry, tx,));
 
     // 3. Send outputs
 

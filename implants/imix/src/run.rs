@@ -23,7 +23,8 @@ pub async fn run_agent() -> Result<()> {
     let run_once = config.run_once;
 
     // Initial transport is just a placeholder, we create active ones in the loop
-    let transport = transport::empty_transport();
+    let registry = Arc::new(transport::TransportRegistry::with_defaults());
+    let transport = registry.empty_transport();
 
     let handle = tokio::runtime::Handle::current();
     let task_registry = Arc::new(TaskRegistry::new());
@@ -33,6 +34,7 @@ pub async fn run_agent() -> Result<()> {
     let agent = Arc::new(ImixAgent::new(
         config,
         transport,
+        registry.clone(),
         handle,
         task_registry.clone(),
         shell_manager_tx,
@@ -99,7 +101,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     // Create new active transport
     let config = agent.get_transport_config().await;
 
-    let transport = match transport::create_transport(config) {
+    let transport = match agent.transport_registry.create_transport(config) {
         Ok(t) => t,
         Err(_e) => {
             #[cfg(debug_assertions)]
@@ -119,7 +121,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     agent.flush_outputs().await;
 
     // Disconnect (drop transport)
-    agent.update_transport(transport::empty_transport()).await;
+    agent.update_transport(agent.transport_registry.empty_transport()).await;
 }
 
 async fn process_tasks(agent: &ImixAgent, _registry: &TaskRegistry) {

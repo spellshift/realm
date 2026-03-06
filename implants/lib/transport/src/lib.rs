@@ -26,61 +26,88 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
-pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Sync>> {
-    // Extract transport type from config
-    let transport_type = config
-        .info
-        .as_ref()
-        .and_then(|info| info.available_transports.as_ref())
-        .and_then(|at| {
-            let active_idx = at.active_index as usize;
-            at.transports
-                .get(active_idx)
-                .or_else(|| at.transports.first())
-        })
-        .map(|t| t.r#type)
-        .ok_or_else(|| anyhow!("No transports configured"))?;
+pub type TransportFactory = Box<dyn Fn(Config) -> Result<Box<dyn Transport + Send + Sync>> + Send + Sync>;
 
-    // Match on the transport type enum
-    match TransportType::try_from(transport_type) {
-        Ok(TransportType::TransportGrpc) => {
-            #[cfg(feature = "grpc")]
-            return Ok(Box::new(grpc::GRPC::new(config)?));
-            #[cfg(not(feature = "grpc"))]
-            return Err(anyhow!("gRPC transport not enabled"));
-        }
-        Ok(TransportType::TransportHttp1) => {
-            #[cfg(feature = "http1")]
-            return Ok(Box::new(http::HTTP::new(config)?));
-            #[cfg(not(feature = "http1"))]
-            return Err(anyhow!("http1 transport not enabled"));
-        }
-        Ok(TransportType::TransportDns) => {
-            #[cfg(feature = "dns")]
-            return Ok(Box::new(dns::DNS::new(config)?));
-            #[cfg(not(feature = "dns"))]
-            return Err(anyhow!("DNS transport not enabled"));
-        }
-        Ok(TransportType::TransportUnspecified) | Err(_) => {
-            Err(anyhow!("Invalid or unspecified transport type"))
-        }
-    }
+#[derive(Default)]
+pub struct TransportRegistry {
+    factories: std::collections::HashMap<i32, TransportFactory>,
 }
 
-pub fn empty_transport() -> Box<dyn Transport + Send + Sync> {
-    let mut config = Config::default();
-    config.info = Some(pb::c2::Beacon {
-        available_transports: Some(pb::c2::AvailableTransports {
-            transports: vec![pb::c2::Transport {
-                uri: "http://127.0.0.1".to_string(),
-                r#type: TransportType::TransportHttp1 as i32,
-                ..Default::default()
-            }],
-            active_index: 0,
-        }),
-        ..Default::default()
-    });
-    create_transport(config).expect("Failed to create empty transport")
+impl TransportRegistry {
+    pub fn new() -> Self {
+        Self {
+            factories: std::collections::HashMap::new(),
+        }
+    }
+
+    pub fn with_defaults() -> Self {
+        let mut registry = Self::new();
+
+        #[cfg(feature = "grpc")]
+        registry.add_transport(TransportType::TransportGrpc as i32, Box::new(|config| {
+            Ok(Box::new(grpc::GRPC::new(config)?))
+        }));
+
+        #[cfg(feature = "http1")]
+        registry.add_transport(TransportType::TransportHttp1 as i32, Box::new(|config| {
+            Ok(Box::new(http::HTTP::new(config)?))
+        }));
+
+        #[cfg(feature = "dns")]
+        registry.add_transport(TransportType::TransportDns as i32, Box::new(|config| {
+            Ok(Box::new(dns::DNS::new(config)?))
+        }));
+
+        registry
+    }
+
+    pub fn add_transport(&mut self, transport_type: i32, factory: TransportFactory) {
+        self.factories.insert(transport_type, factory);
+    }
+
+    pub fn create_transport(&self, config: Config) -> Result<Box<dyn Transport + Send + Sync>> {
+        let transport_type = config
+            .info
+            .as_ref()
+            .and_then(|info| info.available_transports.as_ref())
+            .and_then(|at| {
+                let active_idx = at.active_index as usize;
+                at.transports
+                    .get(active_idx)
+                    .or_else(|| at.transports.first())
+            })
+            .map(|t| t.r#type)
+            .ok_or_else(|| anyhow!("No transports configured"))?;
+
+        if let Some(factory) = self.factories.get(&transport_type) {
+            factory(config)
+        } else {
+            match TransportType::try_from(transport_type) {
+                Ok(TransportType::TransportUnspecified) | Err(_) => {
+                    Err(anyhow!("Invalid or unspecified transport type"))
+                }
+                _ => Err(anyhow!("Transport type not enabled or not found in registry"))
+            }
+        }
+    }
+
+    pub fn empty_transport(&self) -> Box<dyn Transport + Send + Sync> {
+        let mut config = Config::default();
+        config.info = Some(pb::c2::Beacon {
+            available_transports: Some(pb::c2::AvailableTransports {
+                transports: vec![pb::c2::Transport {
+                    uri: "http://127.0.0.1".to_string(),
+                    r#type: TransportType::TransportHttp1 as i32,
+                    ..Default::default()
+                }],
+                active_index: 0,
+            }),
+            ..Default::default()
+        });
+        // Note: For empty_transport, we must ensure the required factory is registered.
+        // It uses HTTP1 by default. If HTTP1 is disabled, this will panic unless configured.
+        self.create_transport(config).expect("Failed to create empty transport")
+    }
 }
 
 #[cfg(test)]
@@ -123,7 +150,8 @@ mod tests {
 
         for uri in inputs {
             let config = create_test_config(uri, TransportType::TransportGrpc as i32, "{}");
-            let result = create_transport(config);
+            let registry = TransportRegistry::with_defaults();
+            let result = registry.create_transport(config);
 
             // 1. Assert strictly on the Variant type
             assert!(result.is_ok(), "URI '{}' did not resolve to Grpc", uri);
@@ -139,7 +167,8 @@ mod tests {
 
         for uri in inputs {
             let config = create_test_config(uri, TransportType::TransportHttp1 as i32, "{}");
-            let result = create_transport(config);
+            let registry = TransportRegistry::with_defaults();
+            let result = registry.create_transport(config);
 
             assert!(result.is_ok(), "URI '{}' did not resolve to Http", uri);
             assert_eq!(result.unwrap().name(), "http");
@@ -161,7 +190,8 @@ mod tests {
 
         for (uri, extra) in inputs {
             let config = create_test_config(uri, TransportType::TransportDns as i32, extra);
-            let result = create_transport(config);
+            let registry = TransportRegistry::with_defaults();
+            let result = registry.create_transport(config);
 
             assert!(
                 result.is_ok(),
@@ -180,7 +210,8 @@ mod tests {
         let inputs = vec!["grpc://foo", "grpcs://foo", "http://foo"];
         for uri in inputs {
             let config = create_test_config(uri, TransportType::TransportGrpc as i32, "{}");
-            let result = create_transport(config);
+            let registry = TransportRegistry::with_defaults();
+            let result = registry.create_transport(config);
             assert!(
                 result.is_err(),
                 "Expected error for '{}' when gRPC feature is disabled",
@@ -197,7 +228,8 @@ mod tests {
             TransportType::TransportUnspecified as i32,
             "{}",
         );
-        let result = create_transport(config);
+        let registry = TransportRegistry::with_defaults();
+            let result = registry.create_transport(config);
         assert!(result.is_err(), "Expected error for unknown transport type");
     }
 }
