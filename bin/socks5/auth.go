@@ -10,15 +10,15 @@ import (
 	"realm.pub/tavern/cli/auth"
 )
 
-// EnvAPIToken is the name of the environment variable to optionally provide an API token
-const EnvAPIToken = "TAVERN_API_TOKEN"
+// EnvAPIKey is the name of the environment variable to optionally provide an API key
+const EnvAPIKey = "TAVERN_API_KEY"
 
 func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token, error) {
 	return auth.Authenticate(
 		ctx,
 		auth.DefaultBrowser{},
 		tavernURL,
-		auth.WithAPIKeyFromEnv(EnvAPIToken),
+		auth.WithAPIKeyFromEnv(EnvAPIKey),
 		auth.WithCacheFile(cachePath),
 	)
 }
