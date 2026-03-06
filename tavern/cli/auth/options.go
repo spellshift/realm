@@ -1,7 +1,5 @@
 package auth
 
-
-
 type AuthOptions struct {
 	EnvAPIKeyName string
 	CachePath     string
