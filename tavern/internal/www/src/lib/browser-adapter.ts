@@ -4,6 +4,10 @@ export interface ExecutionResult {
     status: "complete" | "incomplete" | "error";
     prompt?: string;
     message?: string;
+    meta?: {
+        command: string;
+        args: string[];
+    };
 }
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
@@ -121,6 +125,9 @@ export class BrowserWasmAdapter {
             const result = JSON.parse(resultJson);
 
             if (result.status === "complete") {
+                if (result.meta) {
+                    return { status: "complete", meta: result.meta };
+                }
                 if (this.isWsOpen && this.ws) {
                     this.ws.send(JSON.stringify({
                         kind: WebsocketMessageKind.Input,

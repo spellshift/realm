@@ -1,4 +1,5 @@
 import docsData from "../../../assets/eldritch-docs.json";
+import metaData from "../../../assets/meta.json";
 
 export const HISTORY_KEY = "eldritch_shell_history";
 export const MAX_HISTORY = 1000;
@@ -91,7 +92,7 @@ const COLOR_NUMBER = "\x1b[33m";
 const RESET = "\x1b[0m";
 
 export const highlightPythonSyntax = (input: string): string => {
-    const builtins = Object.keys(docsData).sort((a, b) => b.length - a.length).map(k => k.replace(/\./g, "\\."));
+    const builtins = Object.keys({ ...docsData, ...metaData }).sort((a, b) => b.length - a.length).map(k => k.replace(/\./g, "\\."));
     const builtinsPattern = builtins.join("|");
 
     // Order matters for regex capture groups

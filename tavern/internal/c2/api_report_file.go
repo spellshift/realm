@@ -153,14 +153,14 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			SetHash(hash).
 			SetContent(content)
 
-    if task != nil {
-      builder.SetTaskID(task.ID)
-    }
-    if shellTask != nil {
-      builder.SetShellTaskID(shellTask.ID)
-    }
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
 
-    if task != nil {
+		if task != nil {
 			builder.SetTaskID(task.ID)
 		}
 		if shellTask != nil {
@@ -172,27 +172,26 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 			return rollback(tx, fmt.Errorf("failed to create screenshot: %w", err))
 		}
 	} else {
-    // Create File
-    builder := client.HostFile.Create().
-      SetHostID(host.ID).
-      SetPath(path).
-      SetOwner(owner).
-      SetGroup(group).
-      SetPermissions(permissions).
-      SetSize(size).
-      SetHash(hash).
-      SetContent(content)
+		// Create File
+		builder := client.HostFile.Create().
+			SetHostID(host.ID).
+			SetPath(path).
+			SetOwner(owner).
+			SetGroup(group).
+			SetPermissions(permissions).
+			SetSize(size).
+			SetHash(hash).
+			SetContent(content)
 
-    // Derive Preview
-    const maxPreviewSize = 100 * 1024
-    if len(content) > 0 && utf8.Valid(content){
-      builder.SetPreviewType(hostfile.PreviewTypeTEXT)
-      builder.SetPreview(content[:min(len(content), maxPreviewSize)])
-    } else {
-      builder.SetPreviewType(hostfile.PreviewTypeNONE)
-    }
-    
-    
+		// Derive Preview
+		const maxPreviewSize = 100 * 1024
+		if len(content) > 0 && utf8.Valid(content) {
+			builder.SetPreviewType(hostfile.PreviewTypeTEXT)
+			builder.SetPreview(content[:min(len(content), maxPreviewSize)])
+		} else {
+			builder.SetPreviewType(hostfile.PreviewTypeNONE)
+		}
+
 		if task != nil {
 			builder.SetTaskID(task.ID)
 		}

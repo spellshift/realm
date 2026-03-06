@@ -1,0 +1,8 @@
+
+> www@0.1.0 start
+> node scripts/generate-docs.js && react-scripts start
+
+Reading from: /app/docs/_docs/user-guide/eldritch.md
+Writing to: /app/tavern/internal/www/src/assets/eldritch-docs.json
+Successfully generated docs for 157 items.
+Something is already running on port 3000.

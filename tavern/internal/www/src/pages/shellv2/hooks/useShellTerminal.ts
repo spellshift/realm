@@ -5,9 +5,13 @@ import "@xterm/xterm/css/xterm.css";
 import { BrowserWasmAdapter, ConnectionStatus } from "../../../lib/browser-adapter";
 import { WebsocketControlFlowSignal, WebsocketMessage, WebsocketMessageKind } from "../websocket";
 import docsData from "../../../assets/eldritch-docs.json";
+import metaData from "../../../assets/meta.json";
 import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHistory, isInsideString } from "./shellUtils";
 
-const docs = docsData as Record<string, { signature: string; description: string }>;
+const docs = {
+    ...docsData as Record<string, { signature: string; description: string }>,
+    ...metaData as Record<string, { signature: string; description: string }>
+};
 
 interface ShellState {
     inputBuffer: string;
@@ -26,7 +30,9 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onSshConnect?: (target: string, portalId: number) => void,
+    activePortalId?: number | null
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -78,10 +84,14 @@ export const useShellTerminal = (
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
+    const activePortalIdRef = useRef(activePortalId);
+    const onSshConnectRef = useRef(onSshConnect);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
+        activePortalIdRef.current = activePortalId;
+        onSshConnectRef.current = onSshConnect;
         if (termInstance.current) {
             const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
@@ -89,7 +99,7 @@ export const useShellTerminal = (
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin, connectionStatus]);
+    }, [isLateCheckin, connectionStatus, activePortalId, onSshConnect]);
 
     const redrawLine = useCallback(() => {
         const term = termInstance.current;
@@ -830,11 +840,27 @@ export const useShellTerminal = (
                         state.history.push(state.currentBlock.trimEnd());
                         saveHistory(state.history);
                     }
+
+                    if (res.meta && res.meta.command === "ssh") {
+                        if (!activePortalIdRef.current) {
+                            term.write(`\x1b[38;2;255;0;0mError: ssh requires an active portal connection.\x1b[0m\r\n`);
+                        } else if (res.meta.args.length > 0) {
+                            if (onSshConnectRef.current) {
+                                onSshConnectRef.current(res.meta.args[0], activePortalIdRef.current);
+                            }
+                        }
+                    }
+
                     state.currentBlock = "";
                     state.historyIndex = -1;
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+
+                    // We only write a new prompt immediately if there's no normal backend execution happening.
+                    if (res.meta) {
+                        term.write(state.prompt);
+                    }
                 } else if (res?.status === "incomplete") {
                     state.prompt = res.prompt || ".. ";
                     term.write(state.prompt);
@@ -906,6 +932,10 @@ export const useShellTerminal = (
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
         };
+    // Specifically NOT including `shellData` because it causes infinite loops when GraphQL polls.
+    // Also, we intentionally exclude `onSshConnect` from dependencies to prevent recreating the entire
+    // terminal when the parent callback reference changes (we use a ref inside to combat stale closures).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
     return {
