@@ -47,20 +47,25 @@ pub fn process_list(
         let cwd = d.get("cwd").map(|v| v.to_string()).unwrap_or_default();
         let env = d.get("env").map(|v| v.to_string()).unwrap_or_default();
 
-        let status = match d.get("status").map(|v| v.to_string()).as_deref() {
-            Some("Idle") => eldritch::process::Status::Idle as i32,
-            Some("Run") => eldritch::process::Status::Run as i32,
-            Some("Sleep") => eldritch::process::Status::Sleep as i32,
-            Some("Stop") => eldritch::process::Status::Stop as i32,
-            Some("Zombie") => eldritch::process::Status::Zombie as i32,
-            Some("Tracing") => eldritch::process::Status::Tracing as i32,
-            Some("Dead") => eldritch::process::Status::Dead as i32,
-            Some("WakeKill") => eldritch::process::Status::WakeKill as i32,
-            Some("Waking") => eldritch::process::Status::Waking as i32,
-            Some("Parked") => eldritch::process::Status::Parked as i32,
-            Some("LockBlocked") => eldritch::process::Status::LockBlocked as i32,
-            Some("UninteruptibleDiskSleep") => eldritch::process::Status::UninteruptibleDiskSleep as i32,
-            Some("Unknown") => eldritch::process::Status::Unknown as i32,
+        let status = match d.get("status") {
+            Some(Value::String(s)) => match s.as_str() {
+                "Idle" => eldritch::process::Status::Idle as i32,
+                "Run" => eldritch::process::Status::Run as i32,
+                "Sleep" => eldritch::process::Status::Sleep as i32,
+                "Stop" => eldritch::process::Status::Stop as i32,
+                "Zombie" => eldritch::process::Status::Zombie as i32,
+                "Tracing" => eldritch::process::Status::Tracing as i32,
+                "Dead" => eldritch::process::Status::Dead as i32,
+                "WakeKill" | "Wakekill" => eldritch::process::Status::WakeKill as i32,
+                "Waking" => eldritch::process::Status::Waking as i32,
+                "Parked" => eldritch::process::Status::Parked as i32,
+                "LockBlocked" => eldritch::process::Status::LockBlocked as i32,
+                "UninterruptibleDiskSleep" | "UninteruptibleDiskSleep" => {
+                    eldritch::process::Status::UninteruptibleDiskSleep as i32
+                }
+                "Unknown" => eldritch::process::Status::Unknown as i32,
+                _ => eldritch::process::Status::Unspecified as i32,
+            },
             _ => eldritch::process::Status::Unspecified as i32,
         };
 
