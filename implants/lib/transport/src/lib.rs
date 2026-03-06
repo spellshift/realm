@@ -26,7 +26,8 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
-pub type TransportFactory = Box<dyn Fn(Config) -> Result<Box<dyn Transport + Send + Sync>> + Send + Sync>;
+pub type TransportFactory =
+    Box<dyn Fn(Config) -> Result<Box<dyn Transport + Send + Sync>> + Send + Sync>;
 
 #[derive(Default)]
 pub struct TransportRegistry {
@@ -44,19 +45,22 @@ impl TransportRegistry {
         let mut registry = Self::new();
 
         #[cfg(feature = "grpc")]
-        registry.add_transport(TransportType::TransportGrpc as i32, Box::new(|config| {
-            Ok(Box::new(grpc::GRPC::new(config)?))
-        }));
+        registry.add_transport(
+            TransportType::TransportGrpc as i32,
+            Box::new(|config| Ok(Box::new(grpc::GRPC::new(config)?))),
+        );
 
         #[cfg(feature = "http1")]
-        registry.add_transport(TransportType::TransportHttp1 as i32, Box::new(|config| {
-            Ok(Box::new(http::HTTP::new(config)?))
-        }));
+        registry.add_transport(
+            TransportType::TransportHttp1 as i32,
+            Box::new(|config| Ok(Box::new(http::HTTP::new(config)?))),
+        );
 
         #[cfg(feature = "dns")]
-        registry.add_transport(TransportType::TransportDns as i32, Box::new(|config| {
-            Ok(Box::new(dns::DNS::new(config)?))
-        }));
+        registry.add_transport(
+            TransportType::TransportDns as i32,
+            Box::new(|config| Ok(Box::new(dns::DNS::new(config)?))),
+        );
 
         registry
     }
@@ -86,7 +90,9 @@ impl TransportRegistry {
                 Ok(TransportType::TransportUnspecified) | Err(_) => {
                     Err(anyhow!("Invalid or unspecified transport type"))
                 }
-                _ => Err(anyhow!("Transport type not enabled or not found in registry"))
+                _ => Err(anyhow!(
+                    "Transport type not enabled or not found in registry"
+                )),
             }
         }
     }
@@ -106,7 +112,8 @@ impl TransportRegistry {
         });
         // Note: For empty_transport, we must ensure the required factory is registered.
         // It uses HTTP1 by default. If HTTP1 is disabled, this will panic unless configured.
-        self.create_transport(config).expect("Failed to create empty transport")
+        self.create_transport(config)
+            .expect("Failed to create empty transport")
     }
 }
 
@@ -229,7 +236,7 @@ mod tests {
             "{}",
         );
         let registry = TransportRegistry::with_defaults();
-            let result = registry.create_transport(config);
+        let result = registry.create_transport(config);
         assert!(result.is_err(), "Expected error for unknown transport type");
     }
 }

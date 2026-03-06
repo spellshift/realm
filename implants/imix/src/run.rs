@@ -121,7 +121,9 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     agent.flush_outputs().await;
 
     // Disconnect (drop transport)
-    agent.update_transport(agent.transport_registry.empty_transport()).await;
+    agent
+        .update_transport(agent.transport_registry.empty_transport())
+        .await;
 }
 
 async fn process_tasks(agent: &ImixAgent, _registry: &TaskRegistry) {

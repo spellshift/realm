@@ -28,7 +28,14 @@ async fn test_start_reverse_shell() {
 
     let task_registry = Arc::new(TaskRegistry::new());
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
-    let agent = Arc::new(ImixAgent::new(Config::default(), Box::new(transport), std::sync::Arc::new(transport::TransportRegistry::with_defaults()), handle, task_registry, tx,));
+    let agent = Arc::new(ImixAgent::new(
+        Config::default(),
+        Box::new(transport),
+        std::sync::Arc::new(transport::TransportRegistry::with_defaults()),
+        handle,
+        task_registry,
+        tx,
+    ));
 
     // Execution must happen in a separate thread to allow block_on
     let agent_clone = agent.clone();

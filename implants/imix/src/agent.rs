@@ -280,8 +280,10 @@ impl ImixAgent {
 
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t =
-            self.transport_registry.create_transport(config).context("Failed to create on-demand transport")?;
+        let t = self
+            .transport_registry
+            .create_transport(config)
+            .context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
