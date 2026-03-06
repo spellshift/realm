@@ -87,7 +87,11 @@ fn dispatch_output(
             let payload = ShellPayload {
                 shell_id,
                 input: String::new(),
-                output: if is_error { String::new() } else { output.clone() },
+                output: if is_error {
+                    String::new()
+                } else {
+                    output.clone()
+                },
                 error: if is_error { output } else { String::new() },
             };
             let mote = Mote {
