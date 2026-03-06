@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -123,7 +124,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Since we need to bridge a generic net.Conn with x/crypto/ssh, we will use an in-memory pipe
 	// and send/recv Motes.
 
-	p1, p2 := net.Pipe()
+	p1, p2 := newBufferedPipe()
 
 	// The goroutine below will read from p2 and send TCP motes over the portal
 	streamID := "ssh-" + strconv.FormatInt(time.Now().UnixNano(), 10)
@@ -323,4 +324,59 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	wg.Wait()
+}
+
+// bufferedConn is a net.Conn that wraps an io.Reader and io.Writer
+// This avoids the synchronous deadlock of net.Pipe when one side is doing full-duplex non-blocking I/O.
+type bufferedConn struct {
+	r io.Reader
+	w io.Writer
+}
+
+func (c *bufferedConn) Read(b []byte) (n int, err error) {
+	return c.r.Read(b)
+}
+
+func (c *bufferedConn) Write(b []byte) (n int, err error) {
+	return c.w.Write(b)
+}
+
+func (c *bufferedConn) Close() error {
+	var err1, err2 error
+	if closer, ok := c.r.(io.Closer); ok {
+		err1 = closer.Close()
+	}
+	if closer, ok := c.w.(io.Closer); ok {
+		err2 = closer.Close()
+	}
+	if err1 != nil {
+		return err1
+	}
+	return err2
+}
+
+func (c *bufferedConn) LocalAddr() net.Addr {
+	return nil
+}
+
+func (c *bufferedConn) RemoteAddr() net.Addr {
+	return nil
+}
+
+func (c *bufferedConn) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *bufferedConn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *bufferedConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
+
+func newBufferedPipe() (net.Conn, net.Conn) {
+	r1, w1 := io.Pipe()
+	r2, w2 := io.Pipe()
+	return &bufferedConn{r: r1, w: w2}, &bufferedConn{r: r2, w: w1}
 }
