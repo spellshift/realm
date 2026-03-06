@@ -249,6 +249,7 @@ type portalMuxConn struct {
 	sessionID      string
 	hostPort       string
 	seqID          uint64
+	seqMu          sync.Mutex
 	expectedSeqOut uint64
 	readBuffer     []byte
 	recv           <-chan *portalpb.Mote
@@ -311,6 +312,8 @@ func (c *portalMuxConn) Read(b []byte) (n int, err error) {
 }
 
 func (c *portalMuxConn) Write(b []byte) (n int, err error) {
+	c.seqMu.Lock()
+	defer c.seqMu.Unlock()
 	hostPortParts := strings.Split(c.hostPort, ":")
 	host := hostPortParts[0]
 	port := uint32(22)
@@ -346,6 +349,8 @@ func (c *portalMuxConn) Write(b []byte) (n int, err error) {
 }
 
 func (c *portalMuxConn) Close() error {
+	c.seqMu.Lock()
+	defer c.seqMu.Unlock()
 	// Send close mote
 	closeMote := &portalpb.Mote{
 		StreamId: c.sessionID,
