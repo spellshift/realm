@@ -85,11 +85,13 @@ export const useShellTerminal = (
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
     const activePortalIdRef = useRef(activePortalId);
+    const onSshConnectRef = useRef(onSshConnect);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
         activePortalIdRef.current = activePortalId;
+        onSshConnectRef.current = onSshConnect;
         if (termInstance.current) {
             const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
@@ -97,7 +99,7 @@ export const useShellTerminal = (
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin, connectionStatus]);
+    }, [isLateCheckin, connectionStatus, activePortalId, onSshConnect]);
 
     const redrawLine = useCallback(() => {
         const term = termInstance.current;
@@ -843,8 +845,8 @@ export const useShellTerminal = (
                         if (!activePortalIdRef.current) {
                             term.write(`\x1b[38;2;255;0;0mError: ssh requires an active portal connection.\x1b[0m\r\n`);
                         } else if (res.meta.args.length > 0) {
-                            if (onSshConnect) {
-                                onSshConnect(res.meta.args[0], activePortalIdRef.current);
+                            if (onSshConnectRef.current) {
+                                onSshConnectRef.current(res.meta.args[0], activePortalIdRef.current);
                             }
                         }
                     }
