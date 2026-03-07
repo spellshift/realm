@@ -236,7 +236,7 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 	client.Quest.Delete().ExecX(ctx)
 
 	// 2. Second Check-in at 3:02:56 PM. Interval 120s.
-	// Next checkin: 3:04:56.
+	// Next check in: 3:04:56.
 	// Schedule 3:01:00 (tomorrow) is NOT in window.
 	nextCheckin := now.Add(2 * time.Minute) // 3:02:56
 	srv.handleTomeAutomation(ctx, b.ID, h.ID, false, false, nextCheckin, 120*time.Second)

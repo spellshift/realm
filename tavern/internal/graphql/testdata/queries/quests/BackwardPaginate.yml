@@ -11,7 +11,7 @@ state: |
     VALUES (7000,2000,"Test Quest","2023-03-04 14:51:13","2023-03-04 14:51:13");
   INSERT INTO `quests` (id, quest_tome, name, created_at, last_modified_at)
     VALUES (7001,2000,"Test Quest 2","2023-03-04 14:51:13","2023-03-04 14:51:13");
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Quests {

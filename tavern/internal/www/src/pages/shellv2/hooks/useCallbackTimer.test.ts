@@ -12,7 +12,7 @@ describe("useCallbackTimer", () => {
         vi.useRealTimers();
     });
 
-    it("should return false for isMissedCallback and isLateCheckin when checkin is in the future", () => {
+    it("should return false for isMissedCallback and isLateCheckin when check in is in the future", () => {
         const futureTime = moment().add(10, "minutes").toISOString();
         const beaconData = { node: { nextSeenAt: futureTime } };
 
@@ -23,7 +23,7 @@ describe("useCallbackTimer", () => {
         expect(result.current.isLateCheckin).toBe(false);
     });
 
-    it("should return true for isMissedCallback but false for isLateCheckin when checkin is 1 minute late", () => {
+    it("should return true for isMissedCallback but false for isLateCheckin when check in is 1 minute late", () => {
         const pastTime = moment().subtract(1, "minute").subtract(10, "seconds").toISOString();
         const beaconData = { node: { nextSeenAt: pastTime } };
 
@@ -34,7 +34,7 @@ describe("useCallbackTimer", () => {
         expect(result.current.isLateCheckin).toBe(false);
     });
 
-    it("should return true for isLateCheckin when checkin is over 5 minutes late", () => {
+    it("should return true for isLateCheckin when check in is over 5 minutes late", () => {
         const pastTime = moment().subtract(5, "minutes").subtract(10, "seconds").toISOString();
         const beaconData = { node: { nextSeenAt: pastTime } };
 

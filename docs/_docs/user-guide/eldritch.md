@@ -809,7 +809,7 @@ It can use specific timestamps (epoch seconds or string format) or copy timestam
 `file.write(path: str, content: str) -> None`
 
 The **file.write** method writes to a given file path with the given content.
-If a file already exists at this path, the method will overwite it. If a directory
+If a file already exists at this path, the method will overwrite it. If a directory
 already exists at the path the method will error.
 
 ### file.write_binary

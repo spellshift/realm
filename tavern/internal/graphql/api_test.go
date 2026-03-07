@@ -28,9 +28,9 @@ import (
 
 type testCase struct {
 	State     string `yaml:"state"`
-	Requestor struct {
+	Requester struct {
 		SessionToken string `yaml:"session_token"`
-	} `yaml:"requestor"`
+	} `yaml:"requester"`
 	Query         string         `yaml:"query"`
 	Variables     map[string]any `yaml:"variables"`
 	Expected      map[string]any `yaml:"expected"`
@@ -107,11 +107,11 @@ func runTestCase(t *testing.T, path string) {
 		opts = append(opts, client.Var(key, val))
 	}
 
-	// Requestor
-	if tc.Requestor.SessionToken != "" {
+	// Requester
+	if tc.Requester.SessionToken != "" {
 		opts = append(opts, client.AddCookie(&http.Cookie{
 			Name:    auth.SessionCookieName,
-			Value:   tc.Requestor.SessionToken,
+			Value:   tc.Requester.SessionToken,
 			Expires: time.Now().Add(24 * time.Hour),
 		}))
 	}
