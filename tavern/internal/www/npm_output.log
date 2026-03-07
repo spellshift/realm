@@ -1,0 +1,303 @@
+
+> www@0.1.0 start
+> node scripts/generate-docs.js && react-scripts start
+
+Reading from: /app/docs/_docs/user-guide/eldritch.md
+Writing to: /app/tavern/internal/www/src/assets/eldritch-docs.json
+Successfully generated docs for 157 items.
+(node:22374) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:22374) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 89:45:  The ref value 'reconnectTimer.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'reconnectTimer.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  Line 266:42:  Unnecessary escape character: \.                                                                                                                                                                                                                    no-useless-escape
+  Line 927:8:   React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array. If 'onMetaSSH' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 89:45:  The ref value 'reconnectTimer.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'reconnectTimer.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  Line 266:42:  Unnecessary escape character: \.                                                                                                                                                                                                                    no-useless-escape
+  Line 927:8:   React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array. If 'onMetaSSH' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 89:45:  The ref value 'reconnectTimer.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'reconnectTimer.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 89:45:  The ref value 'reconnectTimer.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'reconnectTimer.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                               no-useless-escape
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+[eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array                                                                                                                                  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                                                                                                                                                               no-useless-escape
+  Line 937:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint]
+src/components/form-steps/FormSteps.tsx
+  Line 25:7:  The element ol has an implicit role of list. Defining this explicitly is redundant and should be avoided  jsx-a11y/no-redundant-roles
+
+src/pages/profile/DeviceAuth.tsx
+  Line 91:8:  React Hook useMemo has a missing dependency: 'handleRevokeDevice'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shell/Shell.tsx
+  Line 73:8:  React Hook useEffect has a missing dependency: 'toast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/shellv2/components/SSHTerminal.tsx
+  Line 108:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/hooks/useShellTerminal.ts
+  Line 54:12:   'completionStart' is assigned a value but never used                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  Line 98:8:    React Hook useEffect has missing dependencies: 'onMetaSSH' and 'portalId'. Either include them or remove the dependency array                                                                                                                                  react-hooks/exhaustive-deps
+  Line 270:42:  Unnecessary escape character: \.                                                                                                                                                                                                                               no-useless-escape
+  Line 937:50:  The ref value 'termRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'termRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src/pages/shellv2/index.tsx
+  Line 35:9:  'portalData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+src/utils/utils.ts
+  Line 43:50:    Unexpected use of comma operator  no-sequences
+  Line 130:118:  Unexpected use of comma operator  no-sequences
+
+webpack compiled with 1 warning
+No issues found.

@@ -25,8 +25,10 @@ export const useShellTerminal = (
     loading: boolean,
     error: any,
     shellData: any,
+    portalId: number | null,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onMetaSSH: (target: string) => void
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -78,10 +80,14 @@ export const useShellTerminal = (
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
+    const portalIdRef = useRef(portalId);
+    const onMetaSSHRef = useRef(onMetaSSH);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
+        portalIdRef.current = portalId;
+        onMetaSSHRef.current = onMetaSSH;
         if (termInstance.current) {
             const isDimmed = isLateCheckin || connectionStatus !== "connected";
             termInstance.current.options.theme = {
@@ -347,6 +353,15 @@ export const useShellTerminal = (
             fitAddon.fit();
         };
         window.addEventListener("resize", handleResize);
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (termRef.current && termRef.current.clientWidth > 0 && termRef.current.clientHeight > 0) {
+                handleResize();
+            }
+        });
+        if (termRef.current) {
+            resizeObserver.observe(termRef.current);
+        }
 
         termInstance.current.write("Eldritch v0.3.0\r\n");
 
@@ -825,7 +840,23 @@ export const useShellTerminal = (
 
                 state.currentBlock += state.inputBuffer + "\n";
 
-                if (res?.status === "complete") {
+                if (res?.status === "meta") {
+                    if (res.function === "ssh" && res.arguments && res.arguments.length > 0) {
+                        const target = res.arguments[0];
+                        if (portalIdRef.current === null) {
+                            term.write(`Error: Cannot open SSH session without an active portal connection.\r\n>>> `);
+                        } else {
+                            onMetaSSHRef.current(target);
+                            term.write(`>>> `);
+                        }
+                    } else {
+                        term.write(`Error: Unknown meta function or invalid arguments.\r\n>>> `);
+                    }
+                    state.currentBlock = "";
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                } else if (res?.status === "complete") {
                     if (state.currentBlock.trim()) {
                         state.history.push(state.currentBlock.trimEnd());
                         saveHistory(state.history);
@@ -902,6 +933,10 @@ export const useShellTerminal = (
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            if (termRef.current) {
+                resizeObserver.unobserve(termRef.current);
+            }
+            resizeObserver.disconnect();
             adapter.current?.close();
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
