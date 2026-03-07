@@ -110,13 +110,11 @@ pub trait SysLibrary {
     /// Reads values from the Windows Registry.
     ///
     /// **Parameters**
-    /// - `reghive` (`str`): The registry hive (e.g., "HKEY_LOCAL_MACHINE").
-    /// - `regpath` (`str`): The registry path.
+    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
     ///
     /// **Returns**
     /// - `Dict<str, str>`: A dictionary of registry keys and values.
-    fn get_reg(&self, reghive: String, regpath: String)
-    -> Result<BTreeMap<String, String>, String>;
+    fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String>;
 
     #[eldritch_method]
     /// Returns information about the current user.
@@ -181,8 +179,7 @@ pub trait SysLibrary {
     /// Writes a hex value to the Windows Registry.
     ///
     /// **Parameters**
-    /// - `reghive` (`str`)
-    /// - `regpath` (`str`)
+    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
     /// - `regname` (`str`)
     /// - `regtype` (`str`): e.g., "REG_BINARY".
     /// - `regvalue` (`str`): Hex string.
@@ -191,8 +188,7 @@ pub trait SysLibrary {
     /// - `bool`: True on success.
     fn write_reg_hex(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: String,
@@ -202,8 +198,7 @@ pub trait SysLibrary {
     /// Writes an integer value to the Windows Registry.
     ///
     /// **Parameters**
-    /// - `reghive` (`str`)
-    /// - `regpath` (`str`)
+    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
     /// - `regname` (`str`)
     /// - `regtype` (`str`): e.g., "REG_DWORD".
     /// - `regvalue` (`int`)
@@ -212,8 +207,7 @@ pub trait SysLibrary {
     /// - `bool`: True on success.
     fn write_reg_int(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: i64,
@@ -223,8 +217,7 @@ pub trait SysLibrary {
     /// Writes a string value to the Windows Registry.
     ///
     /// **Parameters**
-    /// - `reghive` (`str`)
-    /// - `regpath` (`str`)
+    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
     /// - `regname` (`str`)
     /// - `regtype` (`str`): e.g., "REG_SZ".
     /// - `regvalue` (`str`)
@@ -233,8 +226,7 @@ pub trait SysLibrary {
     /// - `bool`: True on success.
     fn write_reg_str(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: String,

@@ -1,17 +1,16 @@
 def enable_rdp_registry():
-    hive = "HKEY_LOCAL_MACHINE"
-    path = "SYSTEM\\CurrentControlSet\\Control\\Terminal Server"
+    path = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server"
     key = "fDenyTSConnections"
 
-    print(f"Setting {hive}\\{path}\\{key} to 0")
-    if sys.write_reg_int(hive, path, key, "REG_DWORD", 0):
+    print(f"Setting {path}\\{key} to 0")
+    if sys.write_reg_int(path, key, "REG_DWORD", 0):
         print("Registry write successful.")
     else:
         print("Registry write failed. Are you running as Administrator?")
         return False
 
     # Verify
-    reg_vals = sys.get_reg(hive, path)
+    reg_vals = sys.get_reg(path)
     if key in reg_vals:
         val = reg_vals[key]
         if val == 0:
@@ -21,7 +20,7 @@ def enable_rdp_registry():
             print(f"Verification failed: fDenyTSConnections is {val}.")
             return False
     else:
-        print(f"Verification failed: Key {key} not found in {hive}\\{path}")
+        print(f"Verification failed: Key {key} not found in {path}")
         return False
 
 def enable_rdp_firewall():

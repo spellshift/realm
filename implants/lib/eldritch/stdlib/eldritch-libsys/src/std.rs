@@ -20,6 +20,7 @@ mod is_linux_impl;
 mod is_macos_impl;
 mod is_windows_impl;
 mod list_users_impl;
+mod reg_utils;
 mod shell_impl;
 mod write_reg_hex_impl;
 mod write_reg_int_impl;
@@ -73,12 +74,8 @@ impl SysLibrary for StdSysLibrary {
             .map_err(|e| e.to_string())
     }
 
-    fn get_reg(
-        &self,
-        reghive: String,
-        regpath: String,
-    ) -> Result<BTreeMap<String, String>, String> {
-        get_reg_impl::get_reg(reghive, regpath).map_err(|e| e.to_string())
+    fn get_reg(&self, path: String) -> Result<BTreeMap<String, String>, String> {
+        get_reg_impl::get_reg(path).map_err(|e| e.to_string())
     }
 
     fn get_user(&self) -> Result<BTreeMap<String, Value>, String> {
@@ -115,37 +112,34 @@ impl SysLibrary for StdSysLibrary {
 
     fn write_reg_hex(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: String,
     ) -> Result<bool, String> {
-        write_reg_hex_impl::write_reg_hex(reghive, regpath, regname, regtype, regvalue)
+        write_reg_hex_impl::write_reg_hex(path, regname, regtype, regvalue)
             .map_err(|e| e.to_string())
     }
 
     fn write_reg_int(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: i64,
     ) -> Result<bool, String> {
-        write_reg_int_impl::write_reg_int(reghive, regpath, regname, regtype, regvalue as u32)
+        write_reg_int_impl::write_reg_int(path, regname, regtype, regvalue as u32)
             .map_err(|e| e.to_string())
     }
 
     fn write_reg_str(
         &self,
-        reghive: String,
-        regpath: String,
+        path: String,
         regname: String,
         regtype: String,
         regvalue: String,
     ) -> Result<bool, String> {
-        write_reg_str_impl::write_reg_str(reghive, regpath, regname, regtype, regvalue)
+        write_reg_str_impl::write_reg_str(path, regname, regtype, regvalue)
             .map_err(|e| e.to_string())
     }
 }
