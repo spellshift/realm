@@ -277,6 +277,7 @@ var (
 		{Name: "env", Type: field.TypeString, Nullable: true},
 		{Name: "cwd", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"STATUS_DEAD", "STATUS_IDLE", "STATUS_LOCK_BLOCKED", "STATUS_PARKED", "STATUS_RUN", "STATUS_SLEEP", "STATUS_STOP", "STATUS_TRACING", "STATUS_UNINTERUPTIBLE_DISK_SLEEP", "STATUS_UNKNOWN", "STATUS_UNSPECIFIED", "STATUS_WAKE_KILL", "STATUS_WAKING", "STATUS_ZOMBIE"}},
+		{Name: "start_time", Type: field.TypeUint64, Nullable: true},
 		{Name: "host_processes", Type: field.TypeInt, Nullable: true},
 		{Name: "host_process_host", Type: field.TypeInt},
 		{Name: "shell_task_reported_processes", Type: field.TypeInt, Nullable: true},
@@ -290,25 +291,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "host_processes_hosts_processes",
-				Columns:    []*schema.Column{HostProcessesColumns[12]},
+				Columns:    []*schema.Column{HostProcessesColumns[13]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "host_processes_hosts_host",
-				Columns:    []*schema.Column{HostProcessesColumns[13]},
+				Columns:    []*schema.Column{HostProcessesColumns[14]},
 				RefColumns: []*schema.Column{HostsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_processes_shell_tasks_reported_processes",
-				Columns:    []*schema.Column{HostProcessesColumns[14]},
+				Columns:    []*schema.Column{HostProcessesColumns[15]},
 				RefColumns: []*schema.Column{ShellTasksColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "host_processes_tasks_reported_processes",
-				Columns:    []*schema.Column{HostProcessesColumns[15]},
+				Columns:    []*schema.Column{HostProcessesColumns[16]},
 				RefColumns: []*schema.Column{TasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

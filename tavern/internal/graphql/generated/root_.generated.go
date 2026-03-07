@@ -277,6 +277,7 @@ type ComplexityRoot struct {
 		Ppid           func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
+		StartTime      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -1766,6 +1767,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.HostProcess.ShellTask(childComplexity), true
+
+	case "HostProcess.startTime":
+		if e.complexity.HostProcess.StartTime == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.StartTime(childComplexity), true
 
 	case "HostProcess.status":
 		if e.complexity.HostProcess.Status == nil {
@@ -6066,6 +6074,10 @@ type HostProcess implements Node {
   """
   status: HostProcessStatus!
   """
+  Process start time as a unix timestamp.
+  """
+  startTime: Uint64
+  """
   Host the process was reported on.
   """
   host: Host!
@@ -6130,6 +6142,7 @@ enum HostProcessOrderField {
   PROCESS_ID
   PARENT_PROCESS_ID
   NAME
+  START_TIME
 }
 """
 HostProcessStatus is enum for the field status
@@ -6324,6 +6337,19 @@ input HostProcessWhereInput {
   statusNEQ: HostProcessStatus
   statusIn: [HostProcessStatus!]
   statusNotIn: [HostProcessStatus!]
+  """
+  start_time field predicates
+  """
+  startTime: Uint64
+  startTimeNEQ: Uint64
+  startTimeIn: [Uint64!]
+  startTimeNotIn: [Uint64!]
+  startTimeGT: Uint64
+  startTimeGTE: Uint64
+  startTimeLT: Uint64
+  startTimeLTE: Uint64
+  startTimeIsNil: Boolean
+  startTimeNotNil: Boolean
   """
   host edge predicates
   """

@@ -173,9 +173,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
 			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      10,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 10,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
@@ -233,9 +233,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
 			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
@@ -293,9 +293,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
 			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
@@ -375,9 +375,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
 			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 5,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SetBuilderID(secondBuilder).
 			SaveX(ctx)

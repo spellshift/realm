@@ -8338,6 +8338,8 @@ type HostProcessMutation struct {
 	env               *string
 	cwd               *string
 	status            *epb.Process_Status
+	start_time        *uint64
+	addstart_time     *int64
 	clearedFields     map[string]struct{}
 	host              *int
 	clearedhost       bool
@@ -8936,6 +8938,76 @@ func (m *HostProcessMutation) ResetStatus() {
 	m.status = nil
 }
 
+// SetStartTime sets the "start_time" field.
+func (m *HostProcessMutation) SetStartTime(u uint64) {
+	m.start_time = &u
+	m.addstart_time = nil
+}
+
+// StartTime returns the value of the "start_time" field in the mutation.
+func (m *HostProcessMutation) StartTime() (r uint64, exists bool) {
+	v := m.start_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartTime returns the old "start_time" field's value of the HostProcess entity.
+// If the HostProcess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *HostProcessMutation) OldStartTime(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartTime: %w", err)
+	}
+	return oldValue.StartTime, nil
+}
+
+// AddStartTime adds u to the "start_time" field.
+func (m *HostProcessMutation) AddStartTime(u int64) {
+	if m.addstart_time != nil {
+		*m.addstart_time += u
+	} else {
+		m.addstart_time = &u
+	}
+}
+
+// AddedStartTime returns the value that was added to the "start_time" field in this mutation.
+func (m *HostProcessMutation) AddedStartTime() (r int64, exists bool) {
+	v := m.addstart_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearStartTime clears the value of the "start_time" field.
+func (m *HostProcessMutation) ClearStartTime() {
+	m.start_time = nil
+	m.addstart_time = nil
+	m.clearedFields[hostprocess.FieldStartTime] = struct{}{}
+}
+
+// StartTimeCleared returns if the "start_time" field was cleared in this mutation.
+func (m *HostProcessMutation) StartTimeCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldStartTime]
+	return ok
+}
+
+// ResetStartTime resets all changes to the "start_time" field.
+func (m *HostProcessMutation) ResetStartTime() {
+	m.start_time = nil
+	m.addstart_time = nil
+	delete(m.clearedFields, hostprocess.FieldStartTime)
+}
+
 // SetHostID sets the "host" edge to the Host entity by id.
 func (m *HostProcessMutation) SetHostID(id int) {
 	m.host = &id
@@ -9087,7 +9159,7 @@ func (m *HostProcessMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *HostProcessMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, hostprocess.FieldCreatedAt)
 	}
@@ -9121,6 +9193,9 @@ func (m *HostProcessMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, hostprocess.FieldStatus)
 	}
+	if m.start_time != nil {
+		fields = append(fields, hostprocess.FieldStartTime)
+	}
 	return fields
 }
 
@@ -9151,6 +9226,8 @@ func (m *HostProcessMutation) Field(name string) (ent.Value, bool) {
 		return m.Cwd()
 	case hostprocess.FieldStatus:
 		return m.Status()
+	case hostprocess.FieldStartTime:
+		return m.StartTime()
 	}
 	return nil, false
 }
@@ -9182,6 +9259,8 @@ func (m *HostProcessMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldCwd(ctx)
 	case hostprocess.FieldStatus:
 		return m.OldStatus(ctx)
+	case hostprocess.FieldStartTime:
+		return m.OldStartTime(ctx)
 	}
 	return nil, fmt.Errorf("unknown HostProcess field %s", name)
 }
@@ -9268,6 +9347,13 @@ func (m *HostProcessMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatus(v)
 		return nil
+	case hostprocess.FieldStartTime:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartTime(v)
+		return nil
 	}
 	return fmt.Errorf("unknown HostProcess field %s", name)
 }
@@ -9282,6 +9368,9 @@ func (m *HostProcessMutation) AddedFields() []string {
 	if m.addppid != nil {
 		fields = append(fields, hostprocess.FieldPpid)
 	}
+	if m.addstart_time != nil {
+		fields = append(fields, hostprocess.FieldStartTime)
+	}
 	return fields
 }
 
@@ -9294,6 +9383,8 @@ func (m *HostProcessMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedPid()
 	case hostprocess.FieldPpid:
 		return m.AddedPpid()
+	case hostprocess.FieldStartTime:
+		return m.AddedStartTime()
 	}
 	return nil, false
 }
@@ -9317,6 +9408,13 @@ func (m *HostProcessMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddPpid(v)
 		return nil
+	case hostprocess.FieldStartTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStartTime(v)
+		return nil
 	}
 	return fmt.Errorf("unknown HostProcess numeric field %s", name)
 }
@@ -9336,6 +9434,9 @@ func (m *HostProcessMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(hostprocess.FieldCwd) {
 		fields = append(fields, hostprocess.FieldCwd)
+	}
+	if m.FieldCleared(hostprocess.FieldStartTime) {
+		fields = append(fields, hostprocess.FieldStartTime)
 	}
 	return fields
 }
@@ -9362,6 +9463,9 @@ func (m *HostProcessMutation) ClearField(name string) error {
 		return nil
 	case hostprocess.FieldCwd:
 		m.ClearCwd()
+		return nil
+	case hostprocess.FieldStartTime:
+		m.ClearStartTime()
 		return nil
 	}
 	return fmt.Errorf("unknown HostProcess nullable field %s", name)
@@ -9403,6 +9507,9 @@ func (m *HostProcessMutation) ResetField(name string) error {
 		return nil
 	case hostprocess.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case hostprocess.FieldStartTime:
+		m.ResetStartTime()
 		return nil
 	}
 	return fmt.Errorf("unknown HostProcess field %s", name)

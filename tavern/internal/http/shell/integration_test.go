@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"database/sql"
 	"github.com/stretchr/testify/require"
 	_ "gocloud.dev/pubsub/mempubsub"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"

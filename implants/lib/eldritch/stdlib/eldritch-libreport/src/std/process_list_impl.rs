@@ -46,6 +46,13 @@ pub fn process_list(
             .unwrap_or_default();
         let cwd = d.get("cwd").map(|v| v.to_string()).unwrap_or_default();
         let env = d.get("env").map(|v| v.to_string()).unwrap_or_default();
+        let start_time = d
+            .get("start_time")
+            .and_then(|v| match v {
+                Value::Int(i) => Some(*i as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
         // Ignoring status for now as mapping is not trivial without string-to-enum logic
 
         processes.push(eldritch::Process {
@@ -58,6 +65,7 @@ pub fn process_list(
             env,
             cwd,
             status: 0, // UNSPECIFIED
+            start_time,
         });
     }
 
