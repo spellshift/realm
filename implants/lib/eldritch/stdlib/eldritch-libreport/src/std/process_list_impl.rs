@@ -10,7 +10,7 @@ use pb::{c2, eldritch};
 pub fn map_status(status_str: &str) -> i32 {
     match status_str {
         "Idle" | "Idle " => eldritch::process::Status::Idle as i32,
-        "Run" | "Running" => eldritch::process::Status::Run as i32,
+        "Run" | "Running" | "Runnable" => eldritch::process::Status::Run as i32,
         "Sleep" | "Sleeping" => eldritch::process::Status::Sleep as i32,
         "Stop" | "Stopped" => eldritch::process::Status::Stop as i32,
         "Zombie" | "Defunct" => eldritch::process::Status::Zombie as i32,
