@@ -62,7 +62,7 @@ def process_tree():
 
         current_proc_pid = str(proc['pid'])
         current_proc_ppid = str(proc['ppid'])
-        current_proc_username = proc['username']
+        current_proc_username = proc.get('username', 'unknown')
 
         current_process_content = {
             "ppid": current_proc_ppid,
