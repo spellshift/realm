@@ -75,8 +75,7 @@ const SSHTerminal: React.FC<SSHTerminalProps> = ({ portalId, sessionId, target }
                 // Even though the backend currently streams raw bytes, the prompt states:
                 // "Reconnections should maintain the same session_id and seq_id."
                 // In our current design, we start seq_id=0 and the connection is preserved over the portal mux.
-                // We'll increment seq_id by the number of bytes received as a best effort.
-                seqIdRef.current += text.length;
+                seqIdRef.current += 1;
             };
 
             ws.onclose = (event) => {
