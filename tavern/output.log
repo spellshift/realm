@@ -1,0 +1,1533 @@
+2026/03/07 16:06:49 WARN missing configuration, using default value env_var=ENABLE_DEBUG_LOGGING type=bool default=false
+2026/03/07 16:06:49 WARN missing configuration, using default value env_var=ENABLE_JSON_LOGGING type=bool default=false
+2026/03/07 16:06:49 WARN missing configuration, using default value env_var=ENABLE_INSTANCE_ID_LOGGING type=bool default=false
+=== RUN   TestConfigureMySQLFromEnv
+=== RUN   TestConfigureMySQLFromEnv/SQLLite
+time=2026-03-07T16:06:49.923Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-03-07T16:06:49.923Z level=WARN msg="mysql is not configured, using sqlite"
+=== RUN   TestConfigureMySQLFromEnv/Defaults
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-03-07T16:06:49.924Z level=WARN msg="mysql is not configured, using sqlite"
+=== RUN   TestConfigureMySQLFromEnv/MissingAddr
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-03-07T16:06:49.924Z level=WARN msg="mysql is not configured, using sqlite"
+=== RUN   TestConfigureMySQLFromEnv/ValuesWithAddr
+=== RUN   TestConfigureMySQLFromEnv/DefaultsWithAddr
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_NET type=string default=tcp
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_USER type=string default=root
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_PASSWD type=string default=""
+time=2026-03-07T16:06:49.924Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_DB type=string default=tavern
+=== RUN   TestConfigureMySQLFromEnv/SQLLite#01
+time=2026-03-07T16:06:49.925Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-03-07T16:06:49.925Z level=WARN msg="mysql is not configured, using sqlite"
+--- PASS: TestConfigureMySQLFromEnv (0.02s)
+    --- PASS: TestConfigureMySQLFromEnv/SQLLite (0.00s)
+    --- PASS: TestConfigureMySQLFromEnv/Defaults (0.00s)
+    --- PASS: TestConfigureMySQLFromEnv/MissingAddr (0.00s)
+    --- PASS: TestConfigureMySQLFromEnv/ValuesWithAddr (0.00s)
+    --- PASS: TestConfigureMySQLFromEnv/DefaultsWithAddr (0.00s)
+    --- PASS: TestConfigureMySQLFromEnv/SQLLite#01 (0.02s)
+=== RUN   TestConfigureOAuthFromEnv
+=== RUN   TestConfigureOAuthFromEnv/NoEnvVarsSet
+time=2026-03-07T16:06:49.942Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_ID type=string default=""
+time=2026-03-07T16:06:49.942Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_SECRET type=string default=""
+time=2026-03-07T16:06:49.942Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_DOMAIN type=string default=""
+time=2026-03-07T16:06:49.942Z level=WARN msg="oauth is not configured, authentication disabled"
+=== RUN   TestConfigureOAuthFromEnv/WithoutDomainSchema
+time=2026-03-07T16:06:49.943Z level=WARN msg="domain not prefixed with scheme (http:// or https://), defaulting to https://" oauth_domain=domain.com
+=== RUN   TestConfigureOAuthFromEnv/Enabled
+--- PASS: TestConfigureOAuthFromEnv (0.00s)
+    --- PASS: TestConfigureOAuthFromEnv/NoEnvVarsSet (0.00s)
+    --- PASS: TestConfigureOAuthFromEnv/WithoutDomainSchema (0.00s)
+    --- PASS: TestConfigureOAuthFromEnv/Enabled (0.00s)
+=== RUN   TestConfigurePubSubFromEnv
+=== RUN   TestConfigurePubSubFromEnv/Default
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED type=int default=15625
+=== RUN   TestConfigurePubSubFromEnv/Set
+--- PASS: TestConfigurePubSubFromEnv (0.00s)
+    --- PASS: TestConfigurePubSubFromEnv/Default (0.00s)
+    --- PASS: TestConfigurePubSubFromEnv/Set (0.00s)
+=== RUN   TestEnvBool
+=== RUN   TestEnvBool/Set
+=== RUN   TestEnvBool/Unset
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+=== RUN   TestEnvBool/Default
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=bool default=false
+--- PASS: TestEnvBool (0.00s)
+    --- PASS: TestEnvBool/Set (0.00s)
+    --- PASS: TestEnvBool/Unset (0.00s)
+    --- PASS: TestEnvBool/Default (0.00s)
+=== RUN   TestEnvString
+=== RUN   TestEnvString/Set
+=== RUN   TestEnvString/Unset
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=string default=""
+=== RUN   TestEnvString/Default
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_STRING type=string default=BLAH_BLAH
+--- PASS: TestEnvString (0.00s)
+    --- PASS: TestEnvString/Set (0.00s)
+    --- PASS: TestEnvString/Unset (0.00s)
+    --- PASS: TestEnvString/Default (0.00s)
+=== RUN   TestEnvInteger
+=== RUN   TestEnvInteger/Set
+=== RUN   TestEnvInteger/Unset
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_INT type=int default=0
+=== RUN   TestEnvInteger/Default
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=TEST_ENV_INT type=int default=456
+--- PASS: TestEnvInteger (0.00s)
+    --- PASS: TestEnvInteger/Set (0.00s)
+    --- PASS: TestEnvInteger/Unset (0.00s)
+    --- PASS: TestEnvInteger/Default (0.00s)
+=== RUN   TestMainFunc
+time=2026-03-07T16:06:49.943Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:49.943Z level=ERROR msg="failed to open secrets file /tmp/TestMainFunc556054457/001/secrets.yaml: open /tmp/TestMainFunc556054457/001/secrets.yaml: no such file or directory"
+time=2026-03-07T16:06:49.943Z level=ERROR msg="failed to parse YAML file /tmp/TestMainFunc556054457/001/secrets.yaml: open /tmp/TestMainFunc556054457/001/secrets.yaml: no such file or directory"
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=MYSQL_ADDR type=string default=""
+time=2026-03-07T16:06:49.950Z level=WARN msg="mysql is not configured, using sqlite"
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_ID type=string default=""
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_CLIENT_SECRET type=string default=""
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=OAUTH_DOMAIN type=string default=""
+time=2026-03-07T16:06:49.950Z level=WARN msg="oauth is not configured, authentication disabled"
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_IDLE_CONNS type=int default=10
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_OPEN_CONNS type=int default=100
+time=2026-03-07T16:06:49.950Z level=WARN msg="missing configuration, using default value" env_var=DB_MAX_CONN_LIFETIME type=int default=3600
+time=2026-03-07T16:06:49.970Z level=WARN msg="missing configuration, using default value" env_var=DISABLE_DEFAULT_TOMES type=bool default=false
+time=2026-03-07T16:06:49.987Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.140Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_TEST_DATA type=bool default=false
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_TOPIC_SHELL_INPUT type=string default=mem://shell_input
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_TOPIC_SHELL_OUTPUT type=string default=mem://shell_output
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIPTION_SHELL_INPUT type=string default=mem://shell_input
+time=2026-03-07T16:06:50.289Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIPTION_SHELL_OUTPUT type=string default=mem://shell_output
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_SUBSCRIBER_MAX_MESSAGES_BUFFERED type=int default=15625
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_DELAY_THRESHOLD_MS type=int default=10
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_COUNT_THRESHOLD type=int default=100
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_BYTE_THRESHOLD type=int default=1000000
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_NUM_GOROUTINES type=int default=25
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_TIMEOUT_MS type=int default=1000
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_FLOW_CONTROL_MAX_OUTSTANDING_MESSAGES type=int default=1000
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_FLOW_CONTROL_MAX_OUTSTANDING_BYTES type=int default=-1
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_FLOW_CONTROL_LIMIT_EXCEEDED_BEHAVIOR type=string default=ignore
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_MAX_EXTENSION_MS type=int default=0
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_MAX_DURATION_PER_ACK_EXTENSION_MS type=int default=0
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_MIN_DURATION_PER_ACK_EXTENSION_MS type=int default=0
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_MESSAGES type=int default=1000
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_MAX_OUTSTANDING_BYTES type=int default=-1
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_RECEIVE_NUM_GOROUTINES type=int default=10
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_SUBSCRIPTION_TTL_HOURS type=int default=24
+time=2026-03-07T16:06:50.290Z level=WARN msg="missing configuration, using default value" env_var=PUBSUB_GCP_PUBLISH_READY_TIMEOUT_MS type=int default=0
+time=2026-03-07T16:06:50.294Z level=WARN msg="missing configuration, using default value" env_var=ENABLE_GRAPHQL_RAW_QUERY_LOGGING type=bool default=false
+time=2026-03-07T16:06:50.294Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.356Z level=INFO msg="public key: 7DEvPjERRUj6s3nGpi0KNyUbvYQZ6IyI9K0WHBMwjCk="
+time=2026-03-07T16:06:50.356Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.567Z level=WARN msg="performance profiling is enabled, do not use in production as this may leak sensitive information"
+time=2026-03-07T16:06:50.567Z level=WARN msg="metrics reporting is enabled, unauthenticated /metrics endpoint will be available" metrics_addr=127.0.0.1:8081
+time=2026-03-07T16:06:50.568Z level=INFO msg="http server started" http_addr=127.0.0.1:8080
+time=2026-03-07T16:06:50.568Z level=INFO msg="metrics http server started" metrics_addr=127.0.0.1:8081
+time=2026-03-07T16:06:50.568Z level=WARN msg="metrics http server stopped" err="http: Server closed"
+time=2026-03-07T16:06:50.568Z level=ERROR msg="http server stopped" err="http: Server closed"
+--- PASS: TestMainFunc (0.63s)
+=== RUN   TestStatusHandler
+time=2026-03-07T16:06:50.569Z level=WARN msg="missing configuration, using default value" env_var=GCP_PROJECT_ID type=string default=""
+time=2026-03-07T16:06:50.569Z level=ERROR msg="failed to open secrets file /tmp/TestMainFunc556054457/001/secrets.yaml: open /tmp/TestMainFunc556054457/001/secrets.yaml: no such file or directory"
+time=2026-03-07T16:06:50.569Z level=ERROR msg="failed to parse YAML file /tmp/TestMainFunc556054457/001/secrets.yaml: open /tmp/TestMainFunc556054457/001/secrets.yaml: no such file or directory"
+time=2026-03-07T16:06:50.569Z level=ERROR msg="failed to create file /tmp/TestMainFunc556054457/001/secrets.yaml"
+time=2026-03-07T16:06:50.569Z level=ERROR msg="failed to create secrets file /tmp/TestMainFunc556054457/001/secrets.yaml: open /tmp/TestMainFunc556054457/001/secrets.yaml: no such file or directory"
+--- PASS: TestStatusHandler (0.00s)
+=== RUN   TestCreateTestData
+time=2026-03-07T16:06:50.574Z level=WARN msg="test data is enabled"
+=== RUN   TestCreateTestData/ParamDefsTest
+=== RUN   TestCreateTestData/ProcessListTest
+--- PASS: TestCreateTestData (0.67s)
+    --- PASS: TestCreateTestData/ParamDefsTest (0.00s)
+    --- PASS: TestCreateTestData/ProcessListTest (0.00s)
+PASS
+ok  	realm.pub/tavern	(cached)
+=== RUN   TestTokenAuthenticate
+--- PASS: TestTokenAuthenticate (0.00s)
+=== RUN   TestAuthenticate
+=== RUN   TestAuthenticate/Admin
+2026/03/07 16:06:49 WARN using insecure access token url (http), this may leak sensitive information
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=test_admin auth_user_name=test_admin auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr="" http_method=GET http_url="http://127.0.0.1/access_token/redirect?redir_port=40803"
+=== RUN   TestAuthenticate/User
+2026/03/07 16:06:49 WARN using insecure access token url (http), this may leak sensitive information
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=test_user auth_user_name=test_user auth_user_id=2 is_admin=false is_activated=true is_authenticated=true remote_addr="" http_method=GET http_url="http://127.0.0.1/access_token/redirect?redir_port=37481"
+=== RUN   TestAuthenticate/InvalidURL
+--- PASS: TestAuthenticate (0.04s)
+    --- PASS: TestAuthenticate/Admin (0.02s)
+    --- PASS: TestAuthenticate/User (0.00s)
+    --- PASS: TestAuthenticate/InvalidURL (0.00s)
+PASS
+ok  	realm.pub/tavern/cli/auth	(cached)
+=== RUN   TestContextFromTokens_Invalid
+=== RUN   TestContextFromTokens_Invalid/ContextFromSessionToken_NotFound
+=== RUN   TestContextFromTokens_Invalid/ContextFromAccessToken_NotFound
+--- PASS: TestContextFromTokens_Invalid (0.01s)
+    --- PASS: TestContextFromTokens_Invalid/ContextFromSessionToken_NotFound (0.00s)
+    --- PASS: TestContextFromTokens_Invalid/ContextFromAccessToken_NotFound (0.00s)
+=== RUN   TestContextHelpers_EdgeCases
+=== RUN   TestContextHelpers_EdgeCases/EmptyContext
+--- PASS: TestContextHelpers_EdgeCases (0.00s)
+    --- PASS: TestContextHelpers_EdgeCases/EmptyContext (0.00s)
+=== RUN   TestContextFromSessionToken
+=== RUN   TestContextFromSessionToken/InactiveUser
+=== RUN   TestContextFromSessionToken/User
+=== RUN   TestContextFromSessionToken/Admin
+--- PASS: TestContextFromSessionToken (0.01s)
+    --- PASS: TestContextFromSessionToken/InactiveUser (0.00s)
+    --- PASS: TestContextFromSessionToken/User (0.00s)
+    --- PASS: TestContextFromSessionToken/Admin (0.00s)
+=== RUN   TestContextFromAccessToken
+=== RUN   TestContextFromAccessToken/InactiveUser
+=== RUN   TestContextFromAccessToken/User
+=== RUN   TestContextFromAccessToken/Admin
+--- PASS: TestContextFromAccessToken (0.00s)
+    --- PASS: TestContextFromAccessToken/InactiveUser (0.00s)
+    --- PASS: TestContextFromAccessToken/User (0.00s)
+    --- PASS: TestContextFromAccessToken/Admin (0.00s)
+=== RUN   TestNewOAuthLoginHandler
+2026/03/07 16:06:49 INFO oauth: starting flow for new login
+--- PASS: TestNewOAuthLoginHandler (0.00s)
+=== RUN   TestNewOAuthAuthorizationHandler
+2026/03/07 16:06:49 INFO oauth registered new user %q user_id=1 user_name="Mr. Goober" is_admin=true is_activated=true
+2026/03/07 16:06:49 INFO oauth new login user_id=1 user_name="Mr. Goober" is_admin=true is_activated=true
+2026/03/07 16:06:49 INFO oauth registered new user %q user_id=2 user_name="1337 hax0r" is_admin=false is_activated=false
+--- PASS: TestNewOAuthAuthorizationHandler (0.02s)
+=== RUN   TestNewOAuthAuthorizationHandler_DBError
+2026/03/07 16:06:49 ERROR oauth failed to lookup user profile err="sql: database is closed"
+--- PASS: TestNewOAuthAuthorizationHandler_DBError (0.01s)
+=== RUN   TestNewTokenRedirectHandler
+=== RUN   TestNewTokenRedirectHandler/Redirect
+=== RUN   TestNewTokenRedirectHandler/Unauthenticated
+=== RUN   TestNewTokenRedirectHandler/InvalidPortRange
+=== RUN   TestNewTokenRedirectHandler/InvalidPortType
+=== RUN   TestNewTokenRedirectHandler/NoPort
+--- PASS: TestNewTokenRedirectHandler (0.01s)
+    --- PASS: TestNewTokenRedirectHandler/Redirect (0.00s)
+    --- PASS: TestNewTokenRedirectHandler/Unauthenticated (0.00s)
+    --- PASS: TestNewTokenRedirectHandler/InvalidPortRange (0.00s)
+    --- PASS: TestNewTokenRedirectHandler/InvalidPortType (0.00s)
+    --- PASS: TestNewTokenRedirectHandler/NoPort (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/auth	(cached)
+=== RUN   TestExecutorIntegration_ClaimAndExecuteWithMock
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=bypass-2c82 auth_user_name=bypass-2c82 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=fe094e1f-3958-4264-a029-9fdd21a3eaf9
+2026/03/07 16:06:49 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=fe094e1f-3958-4264-a029-9fdd21a3eaf9
+2026/03/07 16:06:49 INFO build task stream completed task_id=1 builder_id=1 finished=true
+--- PASS: TestExecutorIntegration_ClaimAndExecuteWithMock (0.03s)
+=== RUN   TestExecutorIntegration_ClaimAndExecuteWithMockError
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=bypass-ac0cc auth_user_name=bypass-ac0cc auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=9b360b2f-8c6b-431b-9b38-5bee1ea38567
+2026/03/07 16:06:49 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=9b360b2f-8c6b-431b-9b38-5bee1ea38567
+2026/03/07 16:06:49 INFO build task stream completed task_id=1 builder_id=1 finished=true
+--- PASS: TestExecutorIntegration_ClaimAndExecuteWithMockError (0.02s)
+=== RUN   TestExecutorIntegration_StreamBuildOutput
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=bypass-c0faa auth_user_name=bypass-c0faa auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=1e663220-de2d-4fc4-854d-10d972cc8603
+2026/03/07 16:06:49 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=1e663220-de2d-4fc4-854d-10d972cc8603
+2026/03/07 16:06:49 INFO build task stream completed task_id=1 builder_id=1 finished=true
+--- PASS: TestExecutorIntegration_StreamBuildOutput (0.01s)
+=== RUN   TestExecutorIntegration_StreamBuildOutputWithError
+2026/03/07 16:06:49 INFO tavern http request auth_generic_id=bypass-d71a4 auth_user_name=bypass-d71a4 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=9a6faaaa-cae1-40b0-a67e-884f99f91609
+2026/03/07 16:06:49 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:49 INFO builder authenticated builder_id=1 identifier=9a6faaaa-cae1-40b0-a67e-884f99f91609
+2026/03/07 16:06:50 INFO build task stream completed task_id=1 builder_id=1 finished=true
+--- PASS: TestExecutorIntegration_StreamBuildOutputWithError (0.01s)
+=== RUN   TestExecutorIntegration_UploadBuildArtifact
+2026/03/07 16:06:50 INFO tavern http request auth_generic_id=bypass-46373 auth_user_name=bypass-46373 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=e366ce47-2bba-40af-bbe1-789b9486c316
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=e366ce47-2bba-40af-bbe1-789b9486c316
+2026/03/07 16:06:50 INFO build task stream completed task_id=1 builder_id=1 finished=true
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=e366ce47-2bba-40af-bbe1-789b9486c316
+2026/03/07 16:06:50 INFO build artifact uploaded task_id=1 builder_id=1 asset_id=1 size=31
+--- PASS: TestExecutorIntegration_UploadBuildArtifact (0.02s)
+=== RUN   TestBuilderE2E
+2026/03/07 16:06:50 INFO tavern http request auth_generic_id=bypass-e3fa0 auth_user_name=bypass-e3fa0 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestBuilderE2E/unauthenticated_request_rejected
+=== RUN   TestBuilderE2E/authenticated_request_succeeds
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=0
+=== RUN   TestBuilderE2E/ClaimBuildTasks
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=0
+=== RUN   TestBuilderE2E/StreamBuildTaskOutput
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO build task stream completed task_id=2 builder_id=1 finished=true
+=== RUN   TestBuilderE2E/StreamBuildTaskOutputWithError
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO builder claimed build tasks builder_id=1 task_count=1
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+2026/03/07 16:06:50 INFO build task stream completed task_id=3 builder_id=1 finished=true
+=== RUN   TestBuilderE2E/StreamBuildTaskOutputWrongBuilder
+2026/03/07 16:06:50 INFO tavern http request auth_generic_id=bypass-e3fa0 auth_user_name=bypass-e3fa0 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:06:50 INFO builder authenticated builder_id=1 identifier=52dd508a-dc8e-4fee-8e83-03d90e18ae4c
+--- PASS: TestBuilderE2E (0.03s)
+    --- PASS: TestBuilderE2E/unauthenticated_request_rejected (0.00s)
+    --- PASS: TestBuilderE2E/authenticated_request_succeeds (0.00s)
+    --- PASS: TestBuilderE2E/ClaimBuildTasks (0.00s)
+    --- PASS: TestBuilderE2E/StreamBuildTaskOutput (0.01s)
+    --- PASS: TestBuilderE2E/StreamBuildTaskOutputWithError (0.01s)
+    --- PASS: TestBuilderE2E/StreamBuildTaskOutputWrongBuilder (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/builder	(cached)
+?   	realm.pub/tavern/internal/builder/builderpb	[no test files]
+=== RUN   TestDockerExecutor_ImplementsInterface
+--- PASS: TestDockerExecutor_ImplementsInterface (0.00s)
+=== RUN   TestDockerExecutor_Build_SimpleEcho
+2026/03/07 16:06:50 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:53 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:55: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount3657484457: mount source: "overlay", target: "/tmp/containerd-mount3657484457", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/8/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/8/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_SimpleEcho (2.79s)
+=== RUN   TestDockerExecutor_Build_MultiLineOutput
+2026/03/07 16:06:53 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:54 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:82: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount1357184428: mount source: "overlay", target: "/tmp/containerd-mount1357184428", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/9/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_MultiLineOutput (0.68s)
+=== RUN   TestDockerExecutor_Build_StderrOutput
+2026/03/07 16:06:54 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:54 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:109: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount1678161598: mount source: "overlay", target: "/tmp/containerd-mount1678161598", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/10/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/10/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_StderrOutput (0.65s)
+=== RUN   TestDockerExecutor_Build_NonZeroExit
+2026/03/07 16:06:54 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:55 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:142: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount3605172915: mount source: "overlay", target: "/tmp/containerd-mount3605172915", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/11/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/11/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_NonZeroExit (0.60s)
+=== RUN   TestDockerExecutor_Build_ContextCancellation
+2026/03/07 16:06:55 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:55 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:170: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount850771903: mount source: "overlay", target: "/tmp/containerd-mount850771903", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/12/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/12/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_ContextCancellation (0.59s)
+=== RUN   TestDockerExecutor_Build_StreamsOutputInRealTime
+2026/03/07 16:06:55 INFO pulling docker image image=alpine:latest task_id=999
+2026/03/07 16:06:56 INFO creating container image=alpine:latest task_id=999
+    docker_test.go:201: skipping docker test: docker functional check failed: failed to create container: Error response from daemon: failed to mount /tmp/containerd-mount243866169: mount source: "overlay", target: "/tmp/containerd-mount243866169", fstype: overlay, flags: 0, data: "workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/13/work,upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/13/fs,lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/1/fs,index=off", err: invalid argument
+--- SKIP: TestDockerExecutor_Build_StreamsOutputInRealTime (0.54s)
+=== RUN   TestMockExecutor_DefaultBehavior
+--- PASS: TestMockExecutor_DefaultBehavior (0.00s)
+=== RUN   TestMockExecutor_RecordsMultipleCalls
+--- PASS: TestMockExecutor_RecordsMultipleCalls (0.00s)
+=== RUN   TestMockExecutor_CustomBuildFn_StreamsOutput
+--- PASS: TestMockExecutor_CustomBuildFn_StreamsOutput (0.00s)
+=== RUN   TestMockExecutor_CustomBuildFn_StreamsErrors
+--- PASS: TestMockExecutor_CustomBuildFn_StreamsErrors (0.00s)
+=== RUN   TestMockExecutor_CustomBuildFn_ContextCancellation
+--- PASS: TestMockExecutor_CustomBuildFn_ContextCancellation (0.00s)
+=== RUN   TestMockExecutor_CustomBuildFn_InterleavedOutputAndErrors
+--- PASS: TestMockExecutor_CustomBuildFn_InterleavedOutputAndErrors (0.00s)
+=== RUN   TestMockExecutor_ImplementsInterface
+--- PASS: TestMockExecutor_ImplementsInterface (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/builder/executor	(cached)
+=== RUN   TestGetClientIP
+=== RUN   TestGetClientIP/X-Forwarded-For_Only
+=== RUN   TestGetClientIP/X-Redirected-For_With_X-Forwarded-For
+=== RUN   TestGetClientIP/Neither_Header_Set_Uses_Peer_IP
+=== RUN   TestGetClientIP/X-Forwarded-For_With_Multiple_IPs
+=== RUN   TestGetClientIP/X-Forwarded-For_With_Whitespace
+=== RUN   TestGetClientIP/X-Redirected-For_Precedence_Over_Peer
+=== RUN   TestGetClientIP/Invalid_X-Forwarded-For_Fallback_To_Peer
+2026/03/07 16:06:53 ERROR bad x-forwarded-for ip ip=invalid-ip-address
+=== RUN   TestGetClientIP/No_Metadata_No_Peer_Returns_Unknown
+=== RUN   TestGetClientIP/Malformed_X-Redirected-For_Returns_As_Is
+2026/03/07 16:06:53 ERROR bad x-redirected-for ip ip=not-an-ip
+=== RUN   TestGetClientIP/Malformed_X-Forwarded-For_Without_Peer_Returns_Unknown
+2026/03/07 16:06:53 ERROR bad x-forwarded-for ip ip=not-an-ip
+--- PASS: TestGetClientIP (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Only (0.00s)
+    --- PASS: TestGetClientIP/X-Redirected-For_With_X-Forwarded-For (0.00s)
+    --- PASS: TestGetClientIP/Neither_Header_Set_Uses_Peer_IP (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_With_Multiple_IPs (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_With_Whitespace (0.00s)
+    --- PASS: TestGetClientIP/X-Redirected-For_Precedence_Over_Peer (0.00s)
+    --- PASS: TestGetClientIP/Invalid_X-Forwarded-For_Fallback_To_Peer (0.00s)
+    --- PASS: TestGetClientIP/No_Metadata_No_Peer_Returns_Unknown (0.00s)
+    --- PASS: TestGetClientIP/Malformed_X-Redirected-For_Returns_As_Is (0.00s)
+    --- PASS: TestGetClientIP/Malformed_X-Forwarded-For_Without_Peer_Returns_Unknown (0.00s)
+=== RUN   TestJWTValidate
+2026/03/07 16:06:53 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxMywidGFza19pZCI6MTIzNH0.zmRr7Mk_qtgrpjbuablDvbot8EQyP3TfslBmnfmjAZRFSw0Xhwu6a3NXCgwgbhxX_HNV1Fxqm2rgL-_ZZP9DAQ
+<nil>
+--- PASS: TestJWTValidate (0.00s)
+=== RUN   TestHandleTomeAutomation
+=== RUN   TestHandleTomeAutomation/New_Beacon_Only
+=== RUN   TestHandleTomeAutomation/New_Host_Only
+=== RUN   TestHandleTomeAutomation/Both_New
+=== RUN   TestHandleTomeAutomation/Neither_New
+--- PASS: TestHandleTomeAutomation (0.02s)
+    --- PASS: TestHandleTomeAutomation/New_Beacon_Only (0.00s)
+    --- PASS: TestHandleTomeAutomation/New_Host_Only (0.00s)
+    --- PASS: TestHandleTomeAutomation/Both_New (0.00s)
+    --- PASS: TestHandleTomeAutomation/Neither_New (0.00s)
+=== RUN   TestHandleTomeAutomation_Deduplication
+--- PASS: TestHandleTomeAutomation_Deduplication (0.01s)
+=== RUN   TestHandleTomeAutomation_IntervalWindow
+--- PASS: TestHandleTomeAutomation_IntervalWindow (0.01s)
+=== RUN   TestHandleTomeAutomation_CronRange
+--- PASS: TestHandleTomeAutomation_CronRange (0.00s)
+=== RUN   TestClaimTasks
+=== RUN   TestClaimTasks/First_Callback
+=== RUN   TestClaimTasks/Second_Callback
+=== RUN   TestClaimTasks/Existing_Beacon
+--- PASS: TestClaimTasks (0.03s)
+    --- PASS: TestClaimTasks/First_Callback (0.00s)
+    --- PASS: TestClaimTasks/Second_Callback (0.00s)
+    --- PASS: TestClaimTasks/Existing_Beacon (0.01s)
+=== RUN   TestFetchAsset
+=== RUN   TestFetchAsset/Small_File
+2026/03/07 16:06:53 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.uC81AUz8cmIdGXwpOoAb-Ap24s9Le_qk4dwjj0A4kuZsrFZySO7h3AZ4Vc5ZJGdtNSmbgujO-Z5cGJHlTMWCCw
+=== RUN   TestFetchAsset/Large_File
+2026/03/07 16:06:53 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.uC81AUz8cmIdGXwpOoAb-Ap24s9Le_qk4dwjj0A4kuZsrFZySO7h3AZ4Vc5ZJGdtNSmbgujO-Z5cGJHlTMWCCw
+=== RUN   TestFetchAsset/File_Not_Found
+2026/03/07 16:06:53 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.uC81AUz8cmIdGXwpOoAb-Ap24s9Le_qk4dwjj0A4kuZsrFZySO7h3AZ4Vc5ZJGdtNSmbgujO-Z5cGJHlTMWCCw
+--- PASS: TestFetchAsset (0.34s)
+    --- PASS: TestFetchAsset/Small_File (0.01s)
+    --- PASS: TestFetchAsset/Large_File (0.32s)
+    --- PASS: TestFetchAsset/File_Not_Found (0.00s)
+=== RUN   TestReportCredential
+=== RUN   TestReportCredential/DuplicateCredential
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.yCcoQcuMx2ydPVebFI5iGprwAIbeoGnVWDeNRVcJ9EfdmvLNtk5EF1DJy2g8IBw4XdbhMbyNt4T1gfh1uUKWBw
+=== RUN   TestReportCredential/NewCredential
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.yCcoQcuMx2ydPVebFI5iGprwAIbeoGnVWDeNRVcJ9EfdmvLNtk5EF1DJy2g8IBw4XdbhMbyNt4T1gfh1uUKWBw
+=== RUN   TestReportCredential/NoTaskID
+=== RUN   TestReportCredential/NoCredential
+=== RUN   TestReportCredential/NotFound
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTMsImlhdCI6MTc3Mjg5OTYxM30.yCcoQcuMx2ydPVebFI5iGprwAIbeoGnVWDeNRVcJ9EfdmvLNtk5EF1DJy2g8IBw4XdbhMbyNt4T1gfh1uUKWBw
+--- PASS: TestReportCredential (0.04s)
+    --- PASS: TestReportCredential/DuplicateCredential (0.02s)
+    --- PASS: TestReportCredential/NewCredential (0.00s)
+    --- PASS: TestReportCredential/NoTaskID (0.00s)
+    --- PASS: TestReportCredential/NoCredential (0.00s)
+    --- PASS: TestReportCredential/NotFound (0.00s)
+=== RUN   TestReportFile
+=== RUN   TestReportFile/MissingTaskID
+=== RUN   TestReportFile/MissingPath
+=== RUN   TestReportFile/NewFile_Single
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/NewFile_MultiChunk
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/Replace_File
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/No_Prexisting_Files
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/SmallImage
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/LargeTextFile
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/LargeImageFile
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+=== RUN   TestReportFile/BinaryFile
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.41JaUog87F_n-nw_RPc66iMUlLN0SJIspCAmcS1QTMfcE8CJBlEwgBvvZ7cwGO-REF_2C_vWW34ffP9HrXawAA
+--- PASS: TestReportFile (0.08s)
+    --- PASS: TestReportFile/MissingTaskID (0.00s)
+    --- PASS: TestReportFile/MissingPath (0.00s)
+    --- PASS: TestReportFile/NewFile_Single (0.00s)
+    --- PASS: TestReportFile/NewFile_MultiChunk (0.01s)
+    --- PASS: TestReportFile/Replace_File (0.01s)
+    --- PASS: TestReportFile/No_Prexisting_Files (0.00s)
+    --- PASS: TestReportFile/SmallImage (0.00s)
+    --- PASS: TestReportFile/LargeTextFile (0.01s)
+    --- PASS: TestReportFile/LargeImageFile (0.01s)
+    --- PASS: TestReportFile/BinaryFile (0.00s)
+=== RUN   TestReportOutput
+=== RUN   TestReportOutput/First_Output
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0._QR5u8He9dXqICectYt2CKqiBIJSSv1sQO88Bb_GtARo-5mIkuFbZwHrH7bo3S9loE8CWTao3tbfIGI711HsDg
+=== RUN   TestReportOutput/First_error
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0._QR5u8He9dXqICectYt2CKqiBIJSSv1sQO88Bb_GtARo-5mIkuFbZwHrH7bo3S9loE8CWTao3tbfIGI711HsDg
+=== RUN   TestReportOutput/Append_Output
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0._QR5u8He9dXqICectYt2CKqiBIJSSv1sQO88Bb_GtARo-5mIkuFbZwHrH7bo3S9loE8CWTao3tbfIGI711HsDg
+=== RUN   TestReportOutput/Exec_Finished
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0._QR5u8He9dXqICectYt2CKqiBIJSSv1sQO88Bb_GtARo-5mIkuFbZwHrH7bo3S9loE8CWTao3tbfIGI711HsDg
+=== RUN   TestReportOutput/Not_Found
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0._QR5u8He9dXqICectYt2CKqiBIJSSv1sQO88Bb_GtARo-5mIkuFbZwHrH7bo3S9loE8CWTao3tbfIGI711HsDg
+=== RUN   TestReportOutput/Invalid_Argument
+--- PASS: TestReportOutput (0.03s)
+    --- PASS: TestReportOutput/First_Output (0.01s)
+    --- PASS: TestReportOutput/First_error (0.00s)
+    --- PASS: TestReportOutput/Append_Output (0.00s)
+    --- PASS: TestReportOutput/Exec_Finished (0.00s)
+    --- PASS: TestReportOutput/Not_Found (0.00s)
+    --- PASS: TestReportOutput/Invalid_Argument (0.00s)
+=== RUN   TestReportProcessList
+=== RUN   TestReportProcessList/New_List
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.FsGtc2Ag7lRxIOsiJA-4-sP_Fx7ftigP756xpnIKrcFX7ttAHeVAjVyJl9Z4D64Rpspu66QvPOftTODGjwMcCw
+=== RUN   TestReportProcessList/Updated_List
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.FsGtc2Ag7lRxIOsiJA-4-sP_Fx7ftigP756xpnIKrcFX7ttAHeVAjVyJl9Z4D64Rpspu66QvPOftTODGjwMcCw
+=== RUN   TestReportProcessList/No_TaskID
+=== RUN   TestReportProcessList/No_Processes
+=== RUN   TestReportProcessList/Not_Found
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.FsGtc2Ag7lRxIOsiJA-4-sP_Fx7ftigP756xpnIKrcFX7ttAHeVAjVyJl9Z4D64Rpspu66QvPOftTODGjwMcCw
+--- PASS: TestReportProcessList (0.03s)
+    --- PASS: TestReportProcessList/New_List (0.01s)
+    --- PASS: TestReportProcessList/Updated_List (0.00s)
+    --- PASS: TestReportProcessList/No_TaskID (0.00s)
+    --- PASS: TestReportProcessList/No_Processes (0.00s)
+    --- PASS: TestReportProcessList/Not_Found (0.00s)
+=== RUN   TestReverseShell_E2E
+2026/03/07 16:06:54 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMTQsImlhdCI6MTc3Mjg5OTYxNH0.tUt4yYrwID1MBUwlGLfTxKSoSXQYIukrOzbhbMdQ8Jfw9R5wyn9Ni0RVYGNgyyPZkLTxRPfhbgRPLA0LpR5xAw
+2026/03/07 16:06:54 INFO started gRPC reverse shell shell_id=1 task_id=1 creator_id=1
+2026/03/07 16:06:54 INFO new shell websocket connection shell_id=1 user_id=0 user_name=unknown
+--- PASS: TestReverseShell_E2E (0.51s)
+PASS
+ok  	realm.pub/tavern/internal/c2	(cached)
+=== RUN   TestHostPlatformValues
+--- PASS: TestHostPlatformValues (0.00s)
+=== RUN   TestHostPlatformValue
+--- PASS: TestHostPlatformValue (0.00s)
+=== RUN   TestHostPlatformMarshalGraphQL
+--- PASS: TestHostPlatformMarshalGraphQL (0.00s)
+=== RUN   TestHostPlatformUnmarshalGraphQL
+--- PASS: TestHostPlatformUnmarshalGraphQL (0.00s)
+=== RUN   TestHostPlatformScan
+=== RUN   TestHostPlatformScan/Linux_String
+=== RUN   TestHostPlatformScan/Windows_[]uint8
+=== RUN   TestHostPlatformScan/Invalid
+=== RUN   TestHostPlatformScan/Empty
+=== RUN   TestHostPlatformScan/Nil
+--- PASS: TestHostPlatformScan (0.00s)
+    --- PASS: TestHostPlatformScan/Linux_String (0.00s)
+    --- PASS: TestHostPlatformScan/Windows_[]uint8 (0.00s)
+    --- PASS: TestHostPlatformScan/Invalid (0.00s)
+    --- PASS: TestHostPlatformScan/Empty (0.00s)
+    --- PASS: TestHostPlatformScan/Nil (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/c2/c2pb	(cached)
+?   	realm.pub/tavern/internal/c2/c2test	[no test files]
+?   	realm.pub/tavern/internal/c2/dnspb	[no test files]
+=== RUN   TestCredentialKindValues
+--- PASS: TestCredentialKindValues (0.00s)
+=== RUN   TestCredentialKindValue
+--- PASS: TestCredentialKindValue (0.00s)
+=== RUN   TestCredentialKindMarshalGraphQL
+--- PASS: TestCredentialKindMarshalGraphQL (0.00s)
+=== RUN   TestCredentialKindUnmarshalGraphQL
+--- PASS: TestCredentialKindUnmarshalGraphQL (0.00s)
+=== RUN   TestCredentialKindScan
+=== RUN   TestCredentialKindScan/PASSWORD_String
+=== RUN   TestCredentialKindScan/SSH_KEY_[]uint8
+=== RUN   TestCredentialKindScan/Invalid
+=== RUN   TestCredentialKindScan/Empty
+=== RUN   TestCredentialKindScan/Nil
+--- PASS: TestCredentialKindScan (0.00s)
+    --- PASS: TestCredentialKindScan/PASSWORD_String (0.00s)
+    --- PASS: TestCredentialKindScan/SSH_KEY_[]uint8 (0.00s)
+    --- PASS: TestCredentialKindScan/Invalid (0.00s)
+    --- PASS: TestCredentialKindScan/Empty (0.00s)
+    --- PASS: TestCredentialKindScan/Nil (0.00s)
+=== RUN   TestProcessStatusValues
+--- PASS: TestProcessStatusValues (0.00s)
+=== RUN   TestProcessStatusValue
+--- PASS: TestProcessStatusValue (0.00s)
+=== RUN   TestProcessStatusMarshalGraphQL
+--- PASS: TestProcessStatusMarshalGraphQL (0.00s)
+=== RUN   TestProcessStatusUnmarshalGraphQL
+--- PASS: TestProcessStatusUnmarshalGraphQL (0.00s)
+=== RUN   TestProcessStatusScan
+=== RUN   TestProcessStatusScan/RUN_String
+=== RUN   TestProcessStatusScan/IDLE_[]uint8
+=== RUN   TestProcessStatusScan/Invalid
+=== RUN   TestProcessStatusScan/Empty
+=== RUN   TestProcessStatusScan/Nil
+--- PASS: TestProcessStatusScan (0.00s)
+    --- PASS: TestProcessStatusScan/RUN_String (0.00s)
+    --- PASS: TestProcessStatusScan/IDLE_[]uint8 (0.00s)
+    --- PASS: TestProcessStatusScan/Invalid (0.00s)
+    --- PASS: TestProcessStatusScan/Empty (0.00s)
+    --- PASS: TestProcessStatusScan/Nil (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/c2/epb	(cached)
+=== RUN   TestDownloadHostFile
+=== RUN   TestDownloadHostFile/Valid
+=== RUN   TestDownloadHostFile/NotFound
+=== RUN   TestDownloadHostFile/InvalidID/Alphabet
+=== RUN   TestDownloadHostFile/InvalidID/Empty
+=== RUN   TestDownloadHostFile/Cached
+--- PASS: TestDownloadHostFile (0.01s)
+    --- PASS: TestDownloadHostFile/Valid (0.00s)
+    --- PASS: TestDownloadHostFile/NotFound (0.00s)
+    --- PASS: TestDownloadHostFile/InvalidID/Alphabet (0.00s)
+    --- PASS: TestDownloadHostFile/InvalidID/Empty (0.00s)
+    --- PASS: TestDownloadHostFile/Cached (0.00s)
+=== RUN   TestDownload
+=== RUN   TestDownload/Asset
+=== RUN   TestDownload/CachedAsset
+=== RUN   TestDownload/NonExistentFile
+--- PASS: TestDownload (0.01s)
+    --- PASS: TestDownload/Asset (0.00s)
+    --- PASS: TestDownload/CachedAsset (0.00s)
+    --- PASS: TestDownload/NonExistentFile (0.00s)
+=== RUN   TestUpload
+=== RUN   TestUpload/NewAsset
+=== RUN   TestUpload/ExistingAsset
+--- PASS: TestUpload (0.01s)
+    --- PASS: TestUpload/NewAsset (0.00s)
+    --- PASS: TestUpload/ExistingAsset (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/cdn	(cached)
+?   	realm.pub/tavern/internal/crypto	[no test files]
+=== RUN   TestLRUCache
+--- PASS: TestLRUCache (0.00s)
+=== RUN   TestNewSyncMap
+--- PASS: TestNewSyncMap (0.00s)
+=== RUN   TestSyncMap_StoreLoad
+--- PASS: TestSyncMap_StoreLoad (0.00s)
+=== RUN   TestSyncMap_String
+--- PASS: TestSyncMap_String (0.00s)
+=== RUN   TestGenerateSharedKey
+--- PASS: TestGenerateSharedKey (0.00s)
+=== RUN   TestGenerateSharedKey_InvalidKey
+2026/03/07 16:06:56 ERROR failed to create public key crypto/ecdh: invalid public key
+--- PASS: TestGenerateSharedKey_InvalidKey (0.00s)
+=== RUN   TestDecrypt
+--- PASS: TestDecrypt (0.00s)
+=== RUN   TestDecrypt_ShortInput
+2026/03/07 16:06:56 ERROR input bytes too short 1 expected at least 32
+--- PASS: TestDecrypt_ShortInput (0.00s)
+=== RUN   TestDecrypt_ShortInputAfterKey
+2026/03/07 16:06:56 ERROR failed to get shared secret crypto/ecdh: bad X25519 remote ECDH input: low order point
+2026/03/07 16:06:56 ERROR failed to create xchacha key chacha20poly1305: bad key length
+--- PASS: TestDecrypt_ShortInputAfterKey (0.00s)
+=== RUN   TestGoAllIds
+--- PASS: TestGoAllIds (0.00s)
+=== RUN   TestCastBytesToBufSlice
+--- PASS: TestCastBytesToBufSlice (0.00s)
+=== RUN   TestCryptoSvc_Encrypt_NoSession
+2026/03/07 16:06:56 ERROR public key not found for id: 0
+--- PASS: TestCryptoSvc_Encrypt_NoSession (0.00s)
+=== RUN   TestCryptoSvc_Encrypt_WithSession
+--- PASS: TestCryptoSvc_Encrypt_WithSession (0.00s)
+=== RUN   TestNewStreamDecryptCodec
+--- PASS: TestNewStreamDecryptCodec (0.00s)
+=== RUN   TestStreamDecryptCodec_Marshal_Unmarshal_Error
+--- PASS: TestStreamDecryptCodec_Marshal_Unmarshal_Error (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/cryptocodec	(cached)
+?   	realm.pub/tavern/internal/ent	[no test files]
+?   	realm.pub/tavern/internal/ent/asset	[no test files]
+?   	realm.pub/tavern/internal/ent/beacon	[no test files]
+?   	realm.pub/tavern/internal/ent/builder	[no test files]
+?   	realm.pub/tavern/internal/ent/buildtask	[no test files]
+?   	realm.pub/tavern/internal/ent/deviceauth	[no test files]
+?   	realm.pub/tavern/internal/ent/enttest	[no test files]
+?   	realm.pub/tavern/internal/ent/hook	[no test files]
+?   	realm.pub/tavern/internal/ent/host	[no test files]
+?   	realm.pub/tavern/internal/ent/hostcredential	[no test files]
+?   	realm.pub/tavern/internal/ent/hostfile	[no test files]
+?   	realm.pub/tavern/internal/ent/hostprocess	[no test files]
+?   	realm.pub/tavern/internal/ent/link	[no test files]
+?   	realm.pub/tavern/internal/ent/migrate	[no test files]
+?   	realm.pub/tavern/internal/ent/portal	[no test files]
+?   	realm.pub/tavern/internal/ent/predicate	[no test files]
+?   	realm.pub/tavern/internal/ent/privacy	[no test files]
+?   	realm.pub/tavern/internal/ent/quest	[no test files]
+?   	realm.pub/tavern/internal/ent/repository	[no test files]
+?   	realm.pub/tavern/internal/ent/runtime	[no test files]
+=== RUN   TestAssetHooks
+--- PASS: TestAssetHooks (0.01s)
+=== RUN   TestMultipleTomes
+--- PASS: TestMultipleTomes (0.01s)
+=== RUN   TestHostFileHooks
+--- PASS: TestHostFileHooks (0.01s)
+=== RUN   TestCreateLinkWithExplicitExpiresAt
+--- PASS: TestCreateLinkWithExplicitExpiresAt (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/ent/schema	(cached)
+=== RUN   TestNewJSONStringString
+=== RUN   TestNewJSONStringString/Empty
+=== RUN   TestNewJSONStringString/Valid
+=== RUN   TestNewJSONStringString/Invalid
+=== RUN   TestNewJSONStringString/Partial
+--- PASS: TestNewJSONStringString (0.00s)
+    --- PASS: TestNewJSONStringString/Empty (0.00s)
+    --- PASS: TestNewJSONStringString/Valid (0.00s)
+    --- PASS: TestNewJSONStringString/Invalid (0.00s)
+    --- PASS: TestNewJSONStringString/Partial (0.00s)
+=== RUN   TestNewTomeParameterDefinitions
+=== RUN   TestNewTomeParameterDefinitions/Empty
+=== RUN   TestNewTomeParameterDefinitions/Int32
+=== RUN   TestNewTomeParameterDefinitions/Multiple
+=== RUN   TestNewTomeParameterDefinitions/Valid
+=== RUN   TestNewTomeParameterDefinitions/Invalid
+=== RUN   TestNewTomeParameterDefinitions/Partial
+--- PASS: TestNewTomeParameterDefinitions (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Empty (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Int32 (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Multiple (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Valid (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Invalid (0.00s)
+    --- PASS: TestNewTomeParameterDefinitions/Partial (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/ent/schema/validators	(cached)
+?   	realm.pub/tavern/internal/ent/screenshot	[no test files]
+?   	realm.pub/tavern/internal/ent/shell	[no test files]
+?   	realm.pub/tavern/internal/ent/shelltask	[no test files]
+?   	realm.pub/tavern/internal/ent/tag	[no test files]
+?   	realm.pub/tavern/internal/ent/task	[no test files]
+?   	realm.pub/tavern/internal/ent/tome	[no test files]
+?   	realm.pub/tavern/internal/ent/user	[no test files]
+=== RUN   TestWrapHandler
+=== RUN   TestWrapHandler/BasicError
+=== RUN   TestWrapHandler/NoError
+=== RUN   TestWrapHandler/UnhandledError
+--- PASS: TestWrapHandler (0.00s)
+    --- PASS: TestWrapHandler/BasicError (0.00s)
+    --- PASS: TestWrapHandler/NoError (0.00s)
+    --- PASS: TestWrapHandler/UnhandledError (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/errors	(cached)
+=== RUN   TestAPI
+=== RUN   TestAPI/example
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations
+=== RUN   TestAPI/mutations/createCredential
+=== RUN   TestAPI/mutations/createCredential/Host
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createCredential/HostAndTask
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createLink
+=== RUN   TestAPI/mutations/createLink/WithDownloadsRemaining
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createQuest
+=== RUN   TestAPI/mutations/createQuest/NoBeacons
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createQuest/NoFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createQuest/WithFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository
+=== RUN   TestAPI/mutations/createRepository/SCPURL
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/SCPURLWIthSSH
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/SCPURLWithoutUser
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/SSHURLWithUser
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/URLWithHTTP
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/URLWithHTTPS
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/URLWithoutSchema
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createRepository/ValidURL
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createTag
+=== RUN   TestAPI/mutations/createTag/Group
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createTag/MultipleHosts
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createTag/Service
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createTome
+=== RUN   TestAPI/mutations/createTome/NoFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/createTome/WithFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/deleteTome
+=== RUN   TestAPI/mutations/deleteTome/PermissionDenied
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/deleteTome/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/dropAllData
+=== RUN   TestAPI/mutations/dropAllData/DropsData
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/dropAllData/PermissionDenied
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/dropAllData/ReproConstraintError
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id="Test User" auth_user_name="Test User" auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/dropAllData/foreign_key
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=Alice auth_user_name=Alice auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/importRepository
+=== RUN   TestAPI/mutations/importRepository/ExistingTomes
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/importRepository/NoExistingTomes
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateBeacon
+=== RUN   TestAPI/mutations/updateBeacon/ChangeNameError
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateHost
+=== RUN   TestAPI/mutations/updateHost/AddTag
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateHost/ChangeHostname
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateHost/RemoveTag
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateTag
+=== RUN   TestAPI/mutations/updateTag/ChangeName
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateTome
+=== RUN   TestAPI/mutations/updateTome/PermissionDenied
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateTome/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateUser
+=== RUN   TestAPI/mutations/updateUser/ChangeUsername
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/mutations/updateUser/PermissionDenied
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries
+=== RUN   TestAPI/queries/assets
+=== RUN   TestAPI/queries/assets/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/assets/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/beacons
+=== RUN   TestAPI/queries/beacons/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/beacons/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/hosts
+=== RUN   TestAPI/queries/hosts/Multiple
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/hosts/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests
+=== RUN   TestAPI/queries/quests/BackwardPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests/ForwardPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests/Multiple
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests/OrderByPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/quests/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/repositories
+=== RUN   TestAPI/queries/repositories/WithTomes
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tags
+=== RUN   TestAPI/queries/tags/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tags/FilterByKind
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tags/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks
+=== RUN   TestAPI/queries/tasks/BackwardPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks/ForwardPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks/Multiple
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks/OrderByPaginate
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tasks/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tomes
+=== RUN   TestAPI/queries/tomes/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/tomes/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users
+=== RUN   TestAPI/queries/users/FilterByID
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users/Me
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users/MeUnauthenticated
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=unknown auth_user_name="" auth_user_id=0 is_admin=false is_activated=false is_authenticated=false remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users/MeWithUnactivatedUser
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=false is_activated=false is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users/Singular
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestAPI/queries/users/UploadedTomes
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test auth_user_name=test auth_user_id=5 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+--- PASS: TestAPI (0.55s)
+    --- PASS: TestAPI/example (0.01s)
+    --- PASS: TestAPI/mutations (0.32s)
+        --- PASS: TestAPI/mutations/createCredential (0.01s)
+            --- PASS: TestAPI/mutations/createCredential/Host (0.01s)
+            --- PASS: TestAPI/mutations/createCredential/HostAndTask (0.01s)
+        --- PASS: TestAPI/mutations/createLink (0.01s)
+            --- PASS: TestAPI/mutations/createLink/WithDownloadsRemaining (0.01s)
+        --- PASS: TestAPI/mutations/createQuest (0.03s)
+            --- PASS: TestAPI/mutations/createQuest/NoBeacons (0.01s)
+            --- PASS: TestAPI/mutations/createQuest/NoFiles (0.01s)
+            --- PASS: TestAPI/mutations/createQuest/WithFiles (0.01s)
+        --- PASS: TestAPI/mutations/createRepository (0.06s)
+            --- PASS: TestAPI/mutations/createRepository/SCPURL (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/SCPURLWIthSSH (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/SCPURLWithoutUser (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/SSHURLWithUser (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/URLWithHTTP (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/URLWithHTTPS (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/URLWithoutSchema (0.01s)
+            --- PASS: TestAPI/mutations/createRepository/ValidURL (0.01s)
+        --- PASS: TestAPI/mutations/createTag (0.03s)
+            --- PASS: TestAPI/mutations/createTag/Group (0.00s)
+            --- PASS: TestAPI/mutations/createTag/MultipleHosts (0.01s)
+            --- PASS: TestAPI/mutations/createTag/Service (0.01s)
+        --- PASS: TestAPI/mutations/createTome (0.01s)
+            --- PASS: TestAPI/mutations/createTome/NoFiles (0.01s)
+            --- PASS: TestAPI/mutations/createTome/WithFiles (0.01s)
+        --- PASS: TestAPI/mutations/deleteTome (0.02s)
+            --- PASS: TestAPI/mutations/deleteTome/PermissionDenied (0.01s)
+            --- PASS: TestAPI/mutations/deleteTome/Singular (0.01s)
+        --- PASS: TestAPI/mutations/dropAllData (0.04s)
+            --- PASS: TestAPI/mutations/dropAllData/DropsData (0.01s)
+            --- PASS: TestAPI/mutations/dropAllData/PermissionDenied (0.01s)
+            --- PASS: TestAPI/mutations/dropAllData/ReproConstraintError (0.01s)
+            --- PASS: TestAPI/mutations/dropAllData/foreign_key (0.01s)
+        --- PASS: TestAPI/mutations/importRepository (0.02s)
+            --- PASS: TestAPI/mutations/importRepository/ExistingTomes (0.01s)
+            --- PASS: TestAPI/mutations/importRepository/NoExistingTomes (0.01s)
+        --- PASS: TestAPI/mutations/updateBeacon (0.01s)
+            --- PASS: TestAPI/mutations/updateBeacon/ChangeNameError (0.01s)
+        --- PASS: TestAPI/mutations/updateHost (0.03s)
+            --- PASS: TestAPI/mutations/updateHost/AddTag (0.01s)
+            --- PASS: TestAPI/mutations/updateHost/ChangeHostname (0.01s)
+            --- PASS: TestAPI/mutations/updateHost/RemoveTag (0.01s)
+        --- PASS: TestAPI/mutations/updateTag (0.01s)
+            --- PASS: TestAPI/mutations/updateTag/ChangeName (0.01s)
+        --- PASS: TestAPI/mutations/updateTome (0.01s)
+            --- PASS: TestAPI/mutations/updateTome/PermissionDenied (0.01s)
+            --- PASS: TestAPI/mutations/updateTome/Singular (0.01s)
+        --- PASS: TestAPI/mutations/updateUser (0.02s)
+            --- PASS: TestAPI/mutations/updateUser/ChangeUsername (0.01s)
+            --- PASS: TestAPI/mutations/updateUser/PermissionDenied (0.01s)
+    --- PASS: TestAPI/queries (0.23s)
+        --- PASS: TestAPI/queries/assets (0.02s)
+            --- PASS: TestAPI/queries/assets/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/assets/Singular (0.01s)
+        --- PASS: TestAPI/queries/beacons (0.01s)
+            --- PASS: TestAPI/queries/beacons/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/beacons/Singular (0.01s)
+        --- PASS: TestAPI/queries/hosts (0.01s)
+            --- PASS: TestAPI/queries/hosts/Multiple (0.01s)
+            --- PASS: TestAPI/queries/hosts/Singular (0.01s)
+        --- PASS: TestAPI/queries/quests (0.05s)
+            --- PASS: TestAPI/queries/quests/BackwardPaginate (0.01s)
+            --- PASS: TestAPI/queries/quests/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/quests/ForwardPaginate (0.01s)
+            --- PASS: TestAPI/queries/quests/Multiple (0.01s)
+            --- PASS: TestAPI/queries/quests/OrderByPaginate (0.01s)
+            --- PASS: TestAPI/queries/quests/Singular (0.01s)
+        --- PASS: TestAPI/queries/repositories (0.01s)
+            --- PASS: TestAPI/queries/repositories/WithTomes (0.01s)
+        --- PASS: TestAPI/queries/tags (0.02s)
+            --- PASS: TestAPI/queries/tags/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/tags/FilterByKind (0.01s)
+            --- PASS: TestAPI/queries/tags/Singular (0.01s)
+        --- PASS: TestAPI/queries/tasks (0.04s)
+            --- PASS: TestAPI/queries/tasks/BackwardPaginate (0.01s)
+            --- PASS: TestAPI/queries/tasks/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/tasks/ForwardPaginate (0.01s)
+            --- PASS: TestAPI/queries/tasks/Multiple (0.01s)
+            --- PASS: TestAPI/queries/tasks/OrderByPaginate (0.01s)
+            --- PASS: TestAPI/queries/tasks/Singular (0.01s)
+        --- PASS: TestAPI/queries/tomes (0.01s)
+            --- PASS: TestAPI/queries/tomes/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/tomes/Singular (0.01s)
+        --- PASS: TestAPI/queries/users (0.05s)
+            --- PASS: TestAPI/queries/users/FilterByID (0.01s)
+            --- PASS: TestAPI/queries/users/Me (0.01s)
+            --- PASS: TestAPI/queries/users/MeUnauthenticated (0.01s)
+            --- PASS: TestAPI/queries/users/MeWithUnactivatedUser (0.01s)
+            --- PASS: TestAPI/queries/users/Singular (0.01s)
+            --- PASS: TestAPI/queries/users/UploadedTomes (0.01s)
+=== RUN   TestCreateBuildTask
+=== RUN   TestCreateBuildTask/NoBuilders
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/NoMatchingBuilder
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/SingleMatchingBuilder
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/DefaultsApplied
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/CustomArtifactPath
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/MultipleMatchingBuilders
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/InvalidTargetFormat
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateBuildTask/WindowsServiceFormat
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-2aade auth_user_name=bypass-2aade auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+--- PASS: TestCreateBuildTask (0.03s)
+    --- PASS: TestCreateBuildTask/NoBuilders (0.00s)
+    --- PASS: TestCreateBuildTask/NoMatchingBuilder (0.00s)
+    --- PASS: TestCreateBuildTask/SingleMatchingBuilder (0.00s)
+    --- PASS: TestCreateBuildTask/DefaultsApplied (0.00s)
+    --- PASS: TestCreateBuildTask/CustomArtifactPath (0.00s)
+    --- PASS: TestCreateBuildTask/MultipleMatchingBuilders (0.01s)
+    --- PASS: TestCreateBuildTask/InvalidTargetFormat (0.00s)
+    --- PASS: TestCreateBuildTask/WindowsServiceFormat (0.00s)
+=== RUN   TestCreateQuest
+=== RUN   TestCreateQuest/CreateWithoutFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-723e1 auth_user_name=bypass-723e1 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestCreateQuest/CreateWithAssets
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-723e1 auth_user_name=bypass-723e1 auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+--- PASS: TestCreateQuest (0.04s)
+    --- PASS: TestCreateQuest/CreateWithoutFiles (0.02s)
+    --- PASS: TestCreateQuest/CreateWithAssets (0.01s)
+=== RUN   TestTomeMutations
+=== RUN   TestTomeMutations/CreateTome
+=== RUN   TestTomeMutations/CreateTome/WithoutFiles
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-d427d auth_user_name=bypass-d427d auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+=== RUN   TestTomeMutations/CreateTome/WithAssets
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bypass-d427d auth_user_name=bypass-d427d auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+--- PASS: TestTomeMutations (0.01s)
+    --- PASS: TestTomeMutations/CreateTome (0.00s)
+        --- PASS: TestTomeMutations/CreateTome/WithoutFiles (0.00s)
+        --- PASS: TestTomeMutations/CreateTome/WithAssets (0.00s)
+=== RUN   TestUserMutations
+=== RUN   TestUserMutations/Update
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=bobdylan auth_user_name=bobdylan auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=POST http_url=/graphql
+--- PASS: TestUserMutations (0.00s)
+    --- PASS: TestUserMutations/Update (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/graphql	(cached)
+?   	realm.pub/tavern/internal/graphql/generated	[no test files]
+?   	realm.pub/tavern/internal/graphql/models	[no test files]
+=== RUN   TestRequestAuthenticator
+=== RUN   TestRequestAuthenticator/SessionCookie
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test_admin auth_user_name=test_admin auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=GET http_url=/test
+=== RUN   TestRequestAuthenticator/AccessToken
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=test_admin auth_user_name=test_admin auth_user_id=1 is_admin=true is_activated=true is_authenticated=true remote_addr=192.0.2.1:1234 http_method=GET http_url=/test
+=== RUN   TestRequestAuthenticator/Unauthenticated
+2026/03/07 16:07:02 INFO tavern http request auth_generic_id=unknown auth_user_name="" auth_user_id=0 is_admin=false is_activated=false is_authenticated=false remote_addr=192.0.2.1:1234 http_method=GET http_url=/test
+=== RUN   TestRequestAuthenticator/InvalidSessionCookie
+2026/03/07 16:07:02 ERROR failed to create session from auth cookie err="ent: user not found"
+=== RUN   TestRequestAuthenticator/InvalidAccessToken
+2026/03/07 16:07:02 ERROR failed to authenticate access token from header err="ent: user not found"
+=== RUN   TestRequestAuthenticator/InvalidAccessTokenWithValidSession
+2026/03/07 16:07:02 ERROR failed to authenticate access token from header err="ent: user not found"
+--- PASS: TestRequestAuthenticator (0.01s)
+    --- PASS: TestRequestAuthenticator/SessionCookie (0.00s)
+    --- PASS: TestRequestAuthenticator/AccessToken (0.00s)
+    --- PASS: TestRequestAuthenticator/Unauthenticated (0.00s)
+    --- PASS: TestRequestAuthenticator/InvalidSessionCookie (0.00s)
+    --- PASS: TestRequestAuthenticator/InvalidAccessToken (0.00s)
+    --- PASS: TestRequestAuthenticator/InvalidAccessTokenWithValidSession (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/http	(cached)
+=== RUN   TestInteractiveShell
+2026/03/07 16:07:05 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:05 INFO New subscription topic=PORTAL_IN_1
+2026/03/07 16:07:05 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:05 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:10 INFO New subscription topic=PORTAL_OUT_1
+2026/03/07 16:07:10 INFO Starting receive loop topic=PORTAL_OUT_1
+2026/03/07 16:07:10 INFO publishing to portal portal_id=1 stream_id=9cb75ae1-4db1-417b-8743-cad62192739a
+2026/03/07 16:07:10 INFO Subscription canceled topic=PORTAL_IN_1
+2026/03/07 16:07:10 INFO Subscription canceled topic=PORTAL_OUT_1
+2026/03/07 16:07:10 INFO Receive loop exited topic=PORTAL_OUT_1
+--- PASS: TestInteractiveShell (5.07s)
+=== RUN   TestNonInteractiveShell
+2026/03/07 16:07:10 INFO Receive loop exited topic=PORTAL_IN_1
+2026/03/07 16:07:10 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:10 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:10 INFO no active portal, queuing task shell_id=1 shell_input=whoami
+--- PASS: TestNonInteractiveShell (1.07s)
+=== RUN   TestOtherStreamOutput
+2026/03/07 16:07:11 ERROR failed to remove active user error="sql: database is closed"
+2026/03/07 16:07:11 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:11 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:11 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:16 INFO New subscription topic=PORTAL_OUT_1
+2026/03/07 16:07:16 INFO Starting receive loop topic=PORTAL_OUT_1
+2026/03/07 16:07:16 INFO Subscription canceled topic=PORTAL_OUT_1
+2026/03/07 16:07:16 INFO Receive loop exited topic=PORTAL_OUT_1
+2026/03/07 16:07:16 INFO Receive loop exited topic=PORTAL_IN_1
+--- PASS: TestOtherStreamOutput (5.05s)
+=== RUN   TestOtherStreamOutput_Polling
+2026/03/07 16:07:16 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:16 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:16 ERROR failed to remove active user error="sql: database is closed"
+--- PASS: TestOtherStreamOutput_Polling (0.01s)
+=== RUN   TestTruncation
+2026/03/07 16:07:16 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:16 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:16 INFO no active portal, queuing task shell_id=1 shell_input=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+--- PASS: TestTruncation (1.02s)
+2026/03/07 16:07:17 ERROR failed to remove active user error="sql: database is closed"
+=== RUN   TestLargeShellTask
+--- PASS: TestLargeShellTask (0.01s)
+=== RUN   TestShellHistory_Interactive
+2026/03/07 16:07:17 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:17 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:17 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+2026/03/07 16:07:17 INFO Receive loop exited topic=PORTAL_IN_1
+--- PASS: TestShellHistory_Interactive (0.03s)
+=== RUN   TestShellActiveUsers
+2026/03/07 16:07:17 INFO starting new shell session user_id=1 user_name="Test User"
+2026/03/07 16:07:17 INFO new shell websocket connection shell_id=1 user_id=1 user_name="Test User"
+--- PASS: TestShellActiveUsers (0.21s)
+PASS
+ok  	realm.pub/tavern/internal/http/shell	(cached)
+=== RUN   TestCircularBuffer
+--- PASS: TestCircularBuffer (0.00s)
+=== RUN   TestStream_SendMessage
+=== PAUSE TestStream_SendMessage
+=== RUN   TestStream_MessageOrdering
+=== PAUSE TestStream_MessageOrdering
+=== RUN   TestStream_LateJoin
+=== PAUSE TestStream_LateJoin
+=== RUN   TestStream_Close
+=== PAUSE TestStream_Close
+=== RUN   TestPreventPubSubColdStarts_ValidInterval
+--- PASS: TestPreventPubSubColdStarts_ValidInterval (0.25s)
+=== RUN   TestPreventPubSubColdStarts_ZeroInterval
+2026/03/07 16:07:05 WARN gcppubsub cold-start polling disabled due to 0ms interval, this may impact shell latency
+--- PASS: TestPreventPubSubColdStarts_ZeroInterval (1.00s)
+=== RUN   TestPreventPubSubColdStarts_SubMillisecondInterval
+2026/03/07 16:07:06 WARN gcppubsub cold-start polling interval less than minimum, setting to 1 millisecond
+--- PASS: TestPreventPubSubColdStarts_SubMillisecondInterval (0.25s)
+=== RUN   TestMux
+=== PAUSE TestMux
+=== RUN   TestMuxHistory
+=== PAUSE TestMuxHistory
+=== RUN   TestMuxHistoryOrdering
+=== PAUSE TestMuxHistoryOrdering
+=== RUN   TestNewShellHandler
+2026/03/07 16:07:07 INFO new shell websocket connection shell_id=1 user_id=0 user_name=unknown
+--- PASS: TestNewShellHandler (0.26s)
+=== CONT  TestStream_SendMessage
+=== CONT  TestStream_LateJoin
+=== CONT  TestStream_MessageOrdering
+--- PASS: TestStream_LateJoin (0.00s)
+=== CONT  TestStream_Close
+=== CONT  TestMux
+--- PASS: TestStream_SendMessage (0.00s)
+--- PASS: TestStream_MessageOrdering (0.00s)
+=== CONT  TestMuxHistoryOrdering
+=== CONT  TestMuxHistory
+--- PASS: TestStream_Close (0.01s)
+--- PASS: TestMuxHistoryOrdering (0.25s)
+--- PASS: TestMux (0.25s)
+--- PASS: TestMuxHistory (0.50s)
+PASS
+ok  	realm.pub/tavern/internal/http/stream	(cached)
+=== RUN   TestGetRandomName
+=== RUN   TestGetRandomName/BasicName
+=== RUN   TestGetRandomName/NoDuplicates
+--- PASS: TestGetRandomName (0.89s)
+    --- PASS: TestGetRandomName/BasicName (0.00s)
+    --- PASS: TestGetRandomName/NoDuplicates (0.89s)
+=== RUN   TestBeaconnameinstring
+=== RUN   TestBeaconnameinstring/String_matches_a_beacon_name
+=== RUN   TestBeaconnameinstring/String_does_not_match_any_beacon_name
+--- PASS: TestBeaconnameinstring (0.00s)
+    --- PASS: TestBeaconnameinstring/String_matches_a_beacon_name (0.00s)
+    --- PASS: TestBeaconnameinstring/String_does_not_match_any_beacon_name (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/namegen	(cached)
+=== RUN   TestPortalIntegration
+2026/03/07 16:07:06 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMjYsImlhdCI6MTc3Mjg5OTYyNn0.ek9PL6Twz2XtcFItIKKGhMAJnoQDhv5Gpw7mJLwcQUMeMLZY7XDH05qL-bQaphBmV2OQcDu-QZo0Aw1ZXk7eDw
+2026/03/07 16:07:06 INFO New subscription topic=PORTAL_IN_1
+2026/03/07 16:07:06 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:06 INFO New subscription topic=PORTAL_OUT_1
+2026/03/07 16:07:06 INFO Starting receive loop topic=PORTAL_OUT_1
+=== RUN   TestPortalIntegration/AgentToUser_Ordered
+=== RUN   TestPortalIntegration/UserToAgent_Ordered
+=== RUN   TestPortalIntegration/AgentToUser_OutOfOrder
+=== RUN   TestPortalIntegration/Integrity_TCP
+2026/03/07 16:07:06 INFO Subscription canceled topic=PORTAL_OUT_1
+2026/03/07 16:07:06 INFO portal output loop context done portal_id=1 error="context canceled"
+2026/03/07 16:07:06 INFO Receive loop exited topic=PORTAL_OUT_1
+2026/03/07 16:07:06 INFO portal gRPC stream closed portal_id=1 error="rpc error: code = Canceled desc = context canceled"
+2026/03/07 16:07:06 INFO Subscription canceled topic=PORTAL_IN_1
+2026/03/07 16:07:06 INFO Receive loop exited topic=PORTAL_IN_1
+--- PASS: TestPortalIntegration (0.52s)
+    --- PASS: TestPortalIntegration/AgentToUser_Ordered (0.00s)
+    --- PASS: TestPortalIntegration/UserToAgent_Ordered (0.00s)
+    --- PASS: TestPortalIntegration/AgentToUser_OutOfOrder (0.00s)
+    --- PASS: TestPortalIntegration/Integrity_TCP (0.00s)
+=== RUN   TestPortalClose
+2026/03/07 16:07:06 INFO portal gRPC stream canceled portal_id=1
+2026/03/07 16:07:06 INFO received valid JWT: eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzI5MDMyMjYsImlhdCI6MTc3Mjg5OTYyNn0.1bNQ_LHqfDVtNrLTi_C29Cqxvw_OaUwSCVQZrgVGH8PkuGVqdm-mNnOWHp4lRdKFgpsEiTF3HMliAxZhspK9Dw
+2026/03/07 16:07:06 INFO New subscription topic=PORTAL_IN_1
+2026/03/07 16:07:06 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:07 INFO New subscription topic=PORTAL_OUT_1
+2026/03/07 16:07:07 INFO Starting receive loop topic=PORTAL_OUT_1
+2026/03/07 16:07:07 INFO portal gRPC stream closed portal_id=1 error=EOF
+2026/03/07 16:07:07 INFO received portal close, disconnecting client portal_id=1 reason="portal closed"
+2026/03/07 16:07:07 INFO Subscription canceled topic=PORTAL_OUT_1
+2026/03/07 16:07:07 ERROR failed to publish mote to portal input topic portal_id=1 error="failed to open topic PORTAL_IN_1: failed to create topic: rpc error: code = Canceled desc = context canceled"
+2026/03/07 16:07:07 INFO Receive loop exited topic=PORTAL_OUT_1
+2026/03/07 16:07:07 ERROR failed to notify subscribers that portal closed portal_id=1 error="failed to open topic PORTAL_OUT_1: failed to create topic: rpc error: code = Canceled desc = context canceled"
+2026/03/07 16:07:07 INFO Subscription canceled topic=PORTAL_IN_1
+2026/03/07 16:07:07 INFO Receive loop exited topic=PORTAL_IN_1
+--- PASS: TestPortalClose (0.11s)
+PASS
+ok  	realm.pub/tavern/internal/portals	(cached)
+=== RUN   TestMux_InMemory
+2026/03/07 16:07:09 INFO New subscription topic=test-topic
+2026/03/07 16:07:09 INFO New subscription topic=test-topic
+2026/03/07 16:07:09 INFO Subscription canceled topic=test-topic
+2026/03/07 16:07:09 INFO Subscription canceled topic=test-topic
+--- PASS: TestMux_InMemory (0.01s)
+=== RUN   TestMux_CreatePortal
+2026/03/07 16:07:09 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:09 INFO New subscription topic=PORTAL_IN_1
+2026/03/07 16:07:09 INFO Subscription canceled topic=PORTAL_IN_1
+--- PASS: TestMux_CreatePortal (0.02s)
+=== RUN   TestMux_OpenPortal
+2026/03/07 16:07:09 INFO Receive loop exited topic=PORTAL_IN_1
+2026/03/07 16:07:09 INFO Starting receive loop topic=PORTAL_OUT_456
+2026/03/07 16:07:09 INFO New subscription topic=PORTAL_OUT_456
+2026/03/07 16:07:09 INFO Subscription canceled topic=PORTAL_OUT_456
+--- PASS: TestMux_OpenPortal (0.01s)
+=== RUN   TestWithSubscriberBufferSize
+--- PASS: TestWithSubscriberBufferSize (0.00s)
+=== RUN   TestMux_CreatePortal_ShellTask
+2026/03/07 16:07:09 INFO Receive loop exited topic=PORTAL_OUT_456
+--- PASS: TestMux_CreatePortal_ShellTask (0.02s)
+=== RUN   TestMux_DispatchTimeout_Drop
+2026/03/07 16:07:09 INFO Starting receive loop topic=PORTAL_IN_1
+2026/03/07 16:07:09 INFO Receive loop exited topic=PORTAL_IN_1
+2026/03/07 16:07:09 INFO New subscription topic=test-timeout-drop
+2026/03/07 16:07:10 WARN Dropping message for slow subscriber topic=test-timeout-drop queue_len=1 queue_cap=1
+2026/03/07 16:07:10 INFO Subscription canceled topic=test-timeout-drop
+--- PASS: TestMux_DispatchTimeout_Drop (0.11s)
+=== RUN   TestMux_DispatchTimeout_Success
+2026/03/07 16:07:10 INFO New subscription topic=test-timeout-success
+2026/03/07 16:07:10 INFO Subscription canceled topic=test-timeout-success
+--- PASS: TestMux_DispatchTimeout_Success (0.06s)
+PASS
+ok  	realm.pub/tavern/internal/portals/mux	(cached)
+=== RUN   TestGCPDriver
+    gcp_test.go:86: Receive stopped: rpc error: code = Canceled desc = grpc: the client connection is closing
+--- PASS: TestGCPDriver (0.02s)
+=== RUN   TestGCPDriver_Failure
+2026/03/07 16:07:09 testutil.Server.Start: grpc: the server has been stopped
+--- PASS: TestGCPDriver_Failure (1.00s)
+=== RUN   TestInMemoryDriver
+    mem_test.go:59: Receive stopped: rpc error: code = Canceled desc = grpc: the client connection is closing
+--- PASS: TestInMemoryDriver (0.11s)
+PASS
+ok  	realm.pub/tavern/internal/portals/pubsub	(cached)
+?   	realm.pub/tavern/internal/redirectors	[no test files]
+=== RUN   TestParseListenAddr
+=== RUN   TestParseListenAddr/default_port_with_multiple_domains
+=== RUN   TestParseListenAddr/custom_port_with_single_domain
+=== RUN   TestParseListenAddr/no_query_params
+=== RUN   TestParseListenAddr/empty_domain_value
+=== RUN   TestParseListenAddr/mixed_valid_and_empty_domains
+=== RUN   TestParseListenAddr/malformed_URL_encoding
+--- PASS: TestParseListenAddr (0.00s)
+    --- PASS: TestParseListenAddr/default_port_with_multiple_domains (0.00s)
+    --- PASS: TestParseListenAddr/custom_port_with_single_domain (0.00s)
+    --- PASS: TestParseListenAddr/no_query_params (0.00s)
+    --- PASS: TestParseListenAddr/empty_domain_value (0.00s)
+    --- PASS: TestParseListenAddr/mixed_valid_and_empty_domains (0.00s)
+    --- PASS: TestParseListenAddr/malformed_URL_encoding (0.00s)
+=== RUN   TestExtractSubdomain
+=== RUN   TestExtractSubdomain/simple_subdomain
+=== RUN   TestExtractSubdomain/multi-label_subdomain
+=== RUN   TestExtractSubdomain/subdomain_with_longer_base_domain
+=== RUN   TestExtractSubdomain/no_matching_base_domain
+=== RUN   TestExtractSubdomain/only_base_domain_(no_subdomain)
+=== RUN   TestExtractSubdomain/case_insensitive_match
+--- PASS: TestExtractSubdomain (0.00s)
+    --- PASS: TestExtractSubdomain/simple_subdomain (0.00s)
+    --- PASS: TestExtractSubdomain/multi-label_subdomain (0.00s)
+    --- PASS: TestExtractSubdomain/subdomain_with_longer_base_domain (0.00s)
+    --- PASS: TestExtractSubdomain/no_matching_base_domain (0.00s)
+    --- PASS: TestExtractSubdomain/only_base_domain_(no_subdomain) (0.00s)
+    --- PASS: TestExtractSubdomain/case_insensitive_match (0.00s)
+=== RUN   TestDecodePacket
+=== RUN   TestDecodePacket/valid_INIT_packet
+=== RUN   TestDecodePacket/valid_DATA_packet_with_CRC
+=== RUN   TestDecodePacket/DATA_packet_with_invalid_CRC
+=== RUN   TestDecodePacket/invalid_Base32
+=== RUN   TestDecodePacket/invalid_protobuf
+=== RUN   TestDecodePacket/packet_with_labels_(dots)
+--- PASS: TestDecodePacket (0.00s)
+    --- PASS: TestDecodePacket/valid_INIT_packet (0.00s)
+    --- PASS: TestDecodePacket/valid_DATA_packet_with_CRC (0.00s)
+    --- PASS: TestDecodePacket/DATA_packet_with_invalid_CRC (0.00s)
+    --- PASS: TestDecodePacket/invalid_Base32 (0.00s)
+    --- PASS: TestDecodePacket/invalid_protobuf (0.00s)
+    --- PASS: TestDecodePacket/packet_with_labels_(dots) (0.00s)
+=== RUN   TestComputeAcksNacks
+=== RUN   TestComputeAcksNacks/empty_chunks
+=== RUN   TestComputeAcksNacks/single_chunk
+=== RUN   TestComputeAcksNacks/consecutive_chunks
+=== RUN   TestComputeAcksNacks/gap_in_middle
+=== RUN   TestComputeAcksNacks/multiple_gaps
+--- PASS: TestComputeAcksNacks (0.00s)
+    --- PASS: TestComputeAcksNacks/empty_chunks (0.00s)
+    --- PASS: TestComputeAcksNacks/single_chunk (0.00s)
+    --- PASS: TestComputeAcksNacks/consecutive_chunks (0.00s)
+    --- PASS: TestComputeAcksNacks/gap_in_middle (0.00s)
+    --- PASS: TestComputeAcksNacks/multiple_gaps (0.00s)
+=== RUN   TestHandleInitPacket
+=== RUN   TestHandleInitPacket/valid_init_packet
+=== RUN   TestHandleInitPacket/invalid_init_payload
+=== RUN   TestHandleInitPacket/data_size_exceeds_maximum
+=== RUN   TestHandleInitPacket/max_conversations_triggers_LRU_eviction
+2026/03/07 16:07:10 WARN INIT packet missing file_size field conv_id=conv0 total_chunks=1
+2026/03/07 16:07:10 WARN INIT packet missing file_size field conv_id=conv1 total_chunks=1
+2026/03/07 16:07:10 WARN INIT packet missing file_size field conv_id=conv2 total_chunks=1
+=== RUN   TestHandleInitPacket/duplicate_INIT_returns_status_without_leaking_state
+=== RUN   TestHandleInitPacket/concurrent_duplicate_INITs_from_resolvers
+--- PASS: TestHandleInitPacket (0.00s)
+    --- PASS: TestHandleInitPacket/valid_init_packet (0.00s)
+    --- PASS: TestHandleInitPacket/invalid_init_payload (0.00s)
+    --- PASS: TestHandleInitPacket/data_size_exceeds_maximum (0.00s)
+    --- PASS: TestHandleInitPacket/max_conversations_triggers_LRU_eviction (0.00s)
+    --- PASS: TestHandleInitPacket/duplicate_INIT_returns_status_without_leaking_state (0.00s)
+    --- PASS: TestHandleInitPacket/concurrent_duplicate_INITs_from_resolvers (0.00s)
+=== RUN   TestHandleFetchPacket
+=== RUN   TestHandleFetchPacket/fetch_single_response
+=== RUN   TestHandleFetchPacket/fetch_chunked_response_metadata
+=== RUN   TestHandleFetchPacket/fetch_specific_chunk
+=== RUN   TestHandleFetchPacket/fetch_unknown_conversation
+=== RUN   TestHandleFetchPacket/fetch_on_failed_conversation_returns_not_found
+=== RUN   TestHandleFetchPacket/fetch_after_failure_returns_not_found_consistently
+=== RUN   TestHandleFetchPacket/fetch_with_no_response_ready_returns_empty_(upstream_in_progress)
+=== RUN   TestHandleFetchPacket/fetch_chunk_out_of_bounds
+--- PASS: TestHandleFetchPacket (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_single_response (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_chunked_response_metadata (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_specific_chunk (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_unknown_conversation (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_on_failed_conversation_returns_not_found (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_after_failure_returns_not_found_consistently (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_with_no_response_ready_returns_empty_(upstream_in_progress) (0.00s)
+    --- PASS: TestHandleFetchPacket/fetch_chunk_out_of_bounds (0.00s)
+=== RUN   TestHandleCompletePacket
+=== RUN   TestHandleCompletePacket/complete_returns_status
+=== RUN   TestHandleCompletePacket/duplicate_COMPLETE_returns_success_idempotently
+=== RUN   TestHandleCompletePacket/COMPLETE_for_never-existed_conversation_returns_success
+=== RUN   TestHandleCompletePacket/concurrent_COMPLETEs_from_resolvers
+--- PASS: TestHandleCompletePacket (0.00s)
+    --- PASS: TestHandleCompletePacket/complete_returns_status (0.00s)
+    --- PASS: TestHandleCompletePacket/duplicate_COMPLETE_returns_success_idempotently (0.00s)
+    --- PASS: TestHandleCompletePacket/COMPLETE_for_never-existed_conversation_returns_success (0.00s)
+    --- PASS: TestHandleCompletePacket/concurrent_COMPLETEs_from_resolvers (0.00s)
+=== RUN   TestParseDomainNameAndType
+=== RUN   TestParseDomainNameAndType/valid_TXT_query
+=== RUN   TestParseDomainNameAndType/valid_A_query
+=== RUN   TestParseDomainNameAndType/valid_AAAA_query
+=== RUN   TestParseDomainNameAndType/truncated_query
+=== RUN   TestParseDomainNameAndType/query_too_short_for_type
+--- PASS: TestParseDomainNameAndType (0.00s)
+    --- PASS: TestParseDomainNameAndType/valid_TXT_query (0.00s)
+    --- PASS: TestParseDomainNameAndType/valid_A_query (0.00s)
+    --- PASS: TestParseDomainNameAndType/valid_AAAA_query (0.00s)
+    --- PASS: TestParseDomainNameAndType/truncated_query (0.00s)
+    --- PASS: TestParseDomainNameAndType/query_too_short_for_type (0.00s)
+=== RUN   TestConcurrentConversationAccess
+2026/03/07 16:07:10 WARN INIT packet missing file_size field conv_id=concurrent total_chunks=100
+--- PASS: TestConcurrentConversationAccess (0.00s)
+=== RUN   TestBuildDNSResponse
+=== RUN   TestBuildDNSResponse/TXT_record_response
+--- PASS: TestBuildDNSResponse (0.00s)
+    --- PASS: TestBuildDNSResponse/TXT_record_response (0.00s)
+=== RUN   TestHandleDataPacket
+=== RUN   TestHandleDataPacket/store_single_chunk
+=== RUN   TestHandleDataPacket/store_multiple_chunks_with_gaps
+=== RUN   TestHandleDataPacket/unknown_conversation
+=== RUN   TestHandleDataPacket/sequence_out_of_bounds
+2026/03/07 16:07:10 WARN INIT packet missing file_size field conv_id=bounds1234 total_chunks=3
+=== RUN   TestHandleDataPacket/short-circuit_for_completed_conversation
+=== RUN   TestHandleDataPacket/data_packet_for_removed_conversation_returns_not_found
+--- PASS: TestHandleDataPacket (0.00s)
+    --- PASS: TestHandleDataPacket/store_single_chunk (0.00s)
+    --- PASS: TestHandleDataPacket/store_multiple_chunks_with_gaps (0.00s)
+    --- PASS: TestHandleDataPacket/unknown_conversation (0.00s)
+    --- PASS: TestHandleDataPacket/sequence_out_of_bounds (0.00s)
+    --- PASS: TestHandleDataPacket/short-circuit_for_completed_conversation (0.00s)
+    --- PASS: TestHandleDataPacket/data_packet_for_removed_conversation_returns_not_found (0.00s)
+=== RUN   TestProcessCompletedConversation
+=== RUN   TestProcessCompletedConversation/successful_reassembly_and_CRC_validation
+=== RUN   TestProcessCompletedConversation/CRC_mismatch_detection
+--- PASS: TestProcessCompletedConversation (0.00s)
+    --- PASS: TestProcessCompletedConversation/successful_reassembly_and_CRC_validation (0.00s)
+    --- PASS: TestProcessCompletedConversation/CRC_mismatch_detection (0.00s)
+=== RUN   TestConversationNotFoundError
+=== RUN   TestConversationNotFoundError/DATA_returns_conversation_not_found_error
+=== RUN   TestConversationNotFoundError/FETCH_returns_conversation_not_found_error
+--- PASS: TestConversationNotFoundError (0.00s)
+    --- PASS: TestConversationNotFoundError/DATA_returns_conversation_not_found_error (0.00s)
+    --- PASS: TestConversationNotFoundError/FETCH_returns_conversation_not_found_error (0.00s)
+=== RUN   TestLRUEvictionBehavior
+=== RUN   TestLRUEvictionBehavior/evicts_oldest_when_at_capacity
+=== RUN   TestLRUEvictionBehavior/Get_refreshes_recency
+--- PASS: TestLRUEvictionBehavior (0.00s)
+    --- PASS: TestLRUEvictionBehavior/evicts_oldest_when_at_capacity (0.00s)
+    --- PASS: TestLRUEvictionBehavior/Get_refreshes_recency (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/redirectors/dns	(cached)
+=== RUN   TestRedirector_FullDuplexCall
+2026/03/07 16:07:13 INFO grpc redirector: started listen_on=127.0.0.1:33621
+2026/03/07 16:07:13 INFO grpc redirector: request source=127.0.0.1 destination=/grpc.testing.TestService/FullDuplexCall
+--- PASS: TestRedirector_FullDuplexCall (0.01s)
+=== RUN   TestRedirector_ContextCancellation
+2026/03/07 16:07:13 INFO grpc redirector: started listen_on=127.0.0.1:34023
+--- PASS: TestRedirector_ContextCancellation (0.00s)
+=== RUN   TestRedirector_UpstreamFailure
+2026/03/07 16:07:13 INFO grpc redirector: started listen_on=127.0.0.1:35251
+2026/03/07 16:07:13 INFO grpc redirector: request source=127.0.0.1 destination=/grpc.testing.TestService/FullDuplexCall
+2026/03/07 16:07:13 ERROR grpc redirector: upstream request failed, could not create client stream method=/grpc.testing.TestService/FullDuplexCall source=127.0.0.1 error="rpc error: code = Unavailable desc = connection error: desc = \"transport: Error while dialing: dial tcp [::1]:1: connect: connection refused\""
+--- PASS: TestRedirector_UpstreamFailure (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/redirectors/grpc	(cached)
+=== RUN   TestFrameHeaderNew
+--- PASS: TestFrameHeaderNew (0.00s)
+=== RUN   TestFrameHeaderEncode
+--- PASS: TestFrameHeaderEncode (0.00s)
+=== RUN   TestTryDecodeSuccess
+--- PASS: TestTryDecodeSuccess (0.00s)
+=== RUN   TestTryDecodeInsufficientData
+--- PASS: TestTryDecodeInsufficientData (0.00s)
+=== RUN   TestExtractFrameSuccess
+--- PASS: TestExtractFrameSuccess (0.00s)
+=== RUN   TestExtractFrameIncomplete
+--- PASS: TestExtractFrameIncomplete (0.00s)
+=== RUN   TestExtractFrameMultiple
+--- PASS: TestExtractFrameMultiple (0.00s)
+=== RUN   TestExtractFrameZeroLength
+--- PASS: TestExtractFrameZeroLength (0.00s)
+=== RUN   TestFrameHeaderMaxLength
+--- PASS: TestFrameHeaderMaxLength (0.00s)
+=== RUN   TestFrameHeaderCompressionFlag
+--- PASS: TestFrameHeaderCompressionFlag (0.00s)
+=== RUN   TestFrameHeaderPartialFrameAcrossReads
+--- PASS: TestFrameHeaderPartialFrameAcrossReads (0.00s)
+=== RUN   TestFrameHeaderRoundtrip
+--- PASS: TestFrameHeaderRoundtrip (0.00s)
+=== RUN   TestExtractFrameWithTrailingData
+--- PASS: TestExtractFrameWithTrailingData (0.00s)
+=== RUN   TestStreamConfigFetchAsset
+--- PASS: TestStreamConfigFetchAsset (0.00s)
+=== RUN   TestStreamConfigReportFile
+--- PASS: TestStreamConfigReportFile (0.00s)
+=== RUN   TestCreateStreamWithContext
+--- PASS: TestCreateStreamWithContext (0.01s)
+=== RUN   TestStreamConfigProperties
+=== RUN   TestStreamConfigProperties/FetchAsset
+=== RUN   TestStreamConfigProperties/ReportFile
+--- PASS: TestStreamConfigProperties (0.00s)
+    --- PASS: TestStreamConfigProperties/FetchAsset (0.00s)
+    --- PASS: TestStreamConfigProperties/ReportFile (0.00s)
+=== RUN   TestGetClientIP
+=== RUN   TestGetClientIP/X-Forwarded-For_Set
+=== RUN   TestGetClientIP/X-Forwarded-For_Not_Set_IPv4
+=== RUN   TestGetClientIP/X-Forwarded-For_Not_Set_IPv6
+=== RUN   TestGetClientIP/X-Forwarded-For_Not_Set_IPv6_Localhost
+=== RUN   TestGetClientIP/X-Forwarded-For_Empty_Falls_Back_To_RemoteAddr
+=== RUN   TestGetClientIP/X-Forwarded-For_With_Multiple_IPs
+=== RUN   TestGetClientIP/X-Forwarded-For_Malformed_IP
+2026/03/07 16:07:13 ERROR bad forwarded for ip ip=not-an-ip
+2026/03/07 16:07:13 ERROR failed to parse remote addr ip=1.1.1.1
+2026/03/07 16:07:13 ERROR bad remote ip ip=""
+=== RUN   TestGetClientIP/RemoteAddr_Without_Port
+2026/03/07 16:07:13 ERROR failed to parse remote addr ip=1.1.1.1
+2026/03/07 16:07:13 ERROR bad remote ip ip=""
+=== RUN   TestGetClientIP/RemoteAddr_Multiple_Colons_IPv6_With_Port
+--- PASS: TestGetClientIP (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Set (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Not_Set_IPv4 (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Not_Set_IPv6 (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Not_Set_IPv6_Localhost (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Empty_Falls_Back_To_RemoteAddr (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_With_Multiple_IPs (0.00s)
+    --- PASS: TestGetClientIP/X-Forwarded-For_Malformed_IP (0.00s)
+    --- PASS: TestGetClientIP/RemoteAddr_Without_Port (0.00s)
+    --- PASS: TestGetClientIP/RemoteAddr_Multiple_Colons_IPv6_With_Port (0.00s)
+=== RUN   TestRequirePOST
+=== RUN   TestRequirePOST/POST
+=== RUN   TestRequirePOST/GET
+=== RUN   TestRequirePOST/PUT
+--- PASS: TestRequirePOST (0.00s)
+    --- PASS: TestRequirePOST/POST (0.00s)
+    --- PASS: TestRequirePOST/GET (0.00s)
+    --- PASS: TestRequirePOST/PUT (0.00s)
+=== RUN   TestReadRequestBody
+=== RUN   TestReadRequestBody/Valid_body
+=== RUN   TestReadRequestBody/Error_reading_body
+--- PASS: TestReadRequestBody (0.00s)
+    --- PASS: TestReadRequestBody/Valid_body (0.00s)
+    --- PASS: TestReadRequestBody/Error_reading_body (0.00s)
+=== RUN   TestSetGRPCResponseHeaders
+--- PASS: TestSetGRPCResponseHeaders (0.00s)
+=== RUN   TestGetFlusher
+=== RUN   TestGetFlusher/Supports_Flusher
+=== RUN   TestGetFlusher/Does_Not_Support_Flusher
+--- PASS: TestGetFlusher (0.00s)
+    --- PASS: TestGetFlusher/Supports_Flusher (0.00s)
+    --- PASS: TestGetFlusher/Does_Not_Support_Flusher (0.00s)
+=== RUN   TestHandleStreamError
+2026/03/07 16:07:13 ERROR [gRPC Stream Error] stream failed: unexpected EOF
+--- PASS: TestHandleStreamError (0.00s)
+=== RUN   TestCreateRequestContext
+--- PASS: TestCreateRequestContext (0.00s)
+PASS
+ok  	realm.pub/tavern/internal/redirectors/http1	(cached)
+=== RUN   TestGetSecretsFile
+--- PASS: TestGetSecretsFile (0.01s)
+=== RUN   TestSetSecretsAddFile
+--- PASS: TestSetSecretsAddFile (0.33s)
+=== RUN   TestSetSecretsNewFile
+2026/03/07 16:07:13 ERROR failed to open secrets file /tmp/TestSetSecretsNewFile3098269894/001/secrets.yaml: open /tmp/TestSetSecretsNewFile3098269894/001/secrets.yaml: no such file or directory
+2026/03/07 16:07:13 ERROR failed to parse YAML file /tmp/TestSetSecretsNewFile3098269894/001/secrets.yaml: open /tmp/TestSetSecretsNewFile3098269894/001/secrets.yaml: no such file or directory
+--- PASS: TestSetSecretsNewFile (0.05s)
+PASS
+ok  	realm.pub/tavern/internal/secrets	(cached)
+?   	realm.pub/tavern/internal/www	[no test files]
+?   	realm.pub/tavern/portals	[no test files]
+?   	realm.pub/tavern/portals/portalpb	[no test files]
+=== RUN   TestSequencer
+--- PASS: TestSequencer (0.00s)
+=== RUN   TestOrderedWriter
+--- PASS: TestOrderedWriter (0.00s)
+=== RUN   TestOrderedReader_Ordered
+--- PASS: TestOrderedReader_Ordered (0.00s)
+=== RUN   TestOrderedReader_OutOfOrder
+--- PASS: TestOrderedReader_OutOfOrder (0.00s)
+=== RUN   TestOrderedReader_StaleTimeout
+--- PASS: TestOrderedReader_StaleTimeout (0.07s)
+=== RUN   TestOrderedReader_BufferLimit
+--- PASS: TestOrderedReader_BufferLimit (0.00s)
+=== RUN   TestOrderedReader_DuplicateHandling
+--- PASS: TestOrderedReader_DuplicateHandling (0.00s)
+PASS
+ok  	realm.pub/tavern/portals/stream	(cached)
+?   	realm.pub/tavern/portals/tracepb	[no test files]
+=== RUN   TestImportFromRepo
+--- PASS: TestImportFromRepo (0.20s)
+=== RUN   TestUploadTomes
+--- PASS: TestUploadTomes (0.01s)
+PASS
+ok  	realm.pub/tavern/tomes	(cached)
+?   	realm.pub/tavern/tools	[no test files]
