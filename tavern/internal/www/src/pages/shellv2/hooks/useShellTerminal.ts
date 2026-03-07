@@ -26,7 +26,8 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onMetaSsh: (target: string) => string | null
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -835,6 +836,20 @@ export const useShellTerminal = (
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+                } else if (res?.status === "meta") {
+                    if (res.function === "ssh" && res.args && res.args.length > 0) {
+                        const err = onMetaSsh(res.args[0]);
+                        if (err) {
+                            term.write(`Error: ${err}\r\n`);
+                        }
+                    } else {
+                        term.write(`Error: Unknown meta function or invalid arguments.\r\n`);
+                    }
+                    state.currentBlock = "";
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                    term.write(state.prompt);
                 } else if (res?.status === "incomplete") {
                     state.prompt = res.prompt || ".. ";
                     term.write(state.prompt);
