@@ -1,9 +1,11 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
 
 export interface ExecutionResult {
-    status: "complete" | "incomplete" | "error";
+    status: "complete" | "incomplete" | "error" | "meta";
     prompt?: string;
     message?: string;
+    function?: string;
+    args?: string[];
 }
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
@@ -130,6 +132,8 @@ export class BrowserWasmAdapter {
                     return { status: "error", message: "WebSocket not connected" };
                 }
                 return { status: "complete" };
+            } else if (result.status === "meta") {
+                return { status: "meta", function: result.function, args: result.args };
             } else if (result.status === "incomplete") {
                 return { status: "incomplete", prompt: result.prompt };
             } else {

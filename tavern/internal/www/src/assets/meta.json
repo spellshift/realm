@@ -1,0 +1,6 @@
+{
+  "ssh": {
+    "signature": "ssh(target: str)",
+    "description": "The **ssh** method is a meta function that interacts directly with the browser. It opens a new tab and establishes an interactive SSH session to the specified `target` (formatted as `user:password@host:port`) via an active portal connection."
+  }
+}

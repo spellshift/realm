@@ -61,7 +61,7 @@ impl BrowserRepl {
         if trimmed == "exit" {
             let payload = self.buffer.clone();
             self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+            return format!("{{ \"status\": \"complete\", \"payload\": {} }}", format!("{:?}", payload));
         }
 
         // Check for completeness
@@ -121,14 +121,14 @@ impl BrowserRepl {
         let ends_with_colon = trimmed.ends_with(':');
         let lines: Vec<&str> = self.buffer.lines().collect();
         let line_count = lines.len();
-        let last_line_empty =
+        let _last_line_empty =
             self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
+
+        let mut is_complete = false;
 
         // If single line and doesn't end with colon, it's complete.
         if line_count == 1 && !ends_with_colon {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+            is_complete = true;
         }
 
         // If multi-line (or ends with colon), we need an empty line to finish.
@@ -138,9 +138,40 @@ impl BrowserRepl {
         // We need to check if the input `line` was empty (user pressed enter on empty line).
 
         if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
+            is_complete = true;
+        }
+
+        if is_complete {
             let payload = self.buffer.clone();
+
+            // Check for meta function
+            let parse_tokens = Lexer::new(payload.clone()).scan_tokens();
+            let mut parser = eldritch_core::Parser::new(parse_tokens);
+            let stmts = parser.parse();
+
+            if stmts.0.len() == 1 {
+                if let eldritch_core::StmtKind::Expression(expr) = &stmts.0[0].kind {
+                    if let eldritch_core::ExprKind::Call(callee, args) = &expr.kind {
+                        if let eldritch_core::ExprKind::Identifier(name) = &callee.kind {
+                            if name == "ssh" && args.len() == 1 {
+                                if let eldritch_core::Argument::Positional(arg_expr) = &args[0] {
+                                    if let eldritch_core::ExprKind::Literal(eldritch_core::Value::String(val)) = &arg_expr.kind {
+                                        // It's a single literal string argument
+                                        self.buffer.clear();
+                                        return format!(
+                                            "{{ \"status\": \"meta\", \"function\": \"ssh\", \"args\": [{}] }}",
+                                            format!("{:?}", val)
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+            return format!("{{ \"status\": \"complete\", \"payload\": {} }}", format!("{:?}", payload));
         }
 
         // Otherwise incomplete

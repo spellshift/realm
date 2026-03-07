@@ -25,3 +25,6 @@ harness = false
 [[bench]]
 name = "builtins"
 harness = false
+[[bin]]
+name = "test_parse"
+path = "src/bin.rs"
