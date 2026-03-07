@@ -59,7 +59,8 @@ mod tests {
     #[test]
     #[cfg(target_os = "windows")]
     fn test_parse_registry_path_mixed_backslash() {
-        let (hive, subkey) = parse_registry_path("HKEY_CURRENT_USER\\\\SOFTWARE\\Microsoft").unwrap();
+        let (hive, subkey) =
+            parse_registry_path("HKEY_CURRENT_USER\\\\SOFTWARE\\Microsoft").unwrap();
         assert_eq!(hive, HKEY_CURRENT_USER);
         assert_eq!(subkey, "SOFTWARE\\Microsoft");
     }
