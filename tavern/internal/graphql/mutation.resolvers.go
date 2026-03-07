@@ -319,15 +319,6 @@ func (r *mutationResolver) CreateLink(ctx context.Context, input ent.CreateLinkI
 		Save(ctx)
 }
 
-// APIKey is the resolver for the apiKey field.
-func (r *userResolver) APIKey(ctx context.Context, obj *ent.User) (*string, error) {
-	authUser := auth.UserFromContext(ctx)
-	if authUser != nil && authUser.ID == obj.ID {
-		return &obj.AccessToken, nil
-	}
-	return nil, nil
-}
-
 // UpdateLink is the resolver for the updateLink field.
 func (r *mutationResolver) UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error) {
 	return r.client.Link.UpdateOneID(linkID).SetInput(input).Save(ctx)
