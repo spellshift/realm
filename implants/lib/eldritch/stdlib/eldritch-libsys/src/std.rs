@@ -115,7 +115,6 @@ impl SysLibrary for StdSysLibrary {
         regtype: String,
         regvalue: Value,
     ) -> Result<bool, String> {
-        write_reg_impl::write_reg(path, regname, regtype, regvalue)
-            .map_err(|e| e.to_string())
+        write_reg_impl::write_reg(path, regname, regtype, regvalue).map_err(|e| e.to_string())
     }
 }

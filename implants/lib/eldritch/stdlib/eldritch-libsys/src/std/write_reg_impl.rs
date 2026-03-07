@@ -16,7 +16,7 @@ pub fn write_reg(path: String, regname: String, regtype: String, regvalue: Value
 
     #[cfg(target_os = "windows")]
     {
-        use winreg::{enums::*, RegKey, RegValue};
+        use winreg::{RegKey, RegValue, enums::*};
 
         let (ihive, subkey_str) = parse_registry_path(&path)?;
 
@@ -132,7 +132,7 @@ mod tests {
         use alloc::format;
         use std::str;
         use uuid::Uuid;
-        use winreg::{enums::*, RegKey};
+        use winreg::{RegKey, enums::*};
 
         let id = Uuid::new_v4();
 
@@ -228,7 +228,10 @@ fn get_u32_val(val: Value, expected_type: &str) -> Result<u32> {
             } else if let Ok(num) = s.parse::<u32>() {
                 Ok(num)
             } else {
-                Err(anyhow::anyhow!("Failed to parse string to u32 for {}", expected_type))
+                Err(anyhow::anyhow!(
+                    "Failed to parse string to u32 for {}",
+                    expected_type
+                ))
             }
         }
         _ => Err(anyhow::anyhow!(
@@ -249,7 +252,10 @@ fn get_u64_val(val: Value, expected_type: &str) -> Result<u64> {
             } else if let Ok(num) = s.parse::<u64>() {
                 Ok(num)
             } else {
-                Err(anyhow::anyhow!("Failed to parse string to u64 for {}", expected_type))
+                Err(anyhow::anyhow!(
+                    "Failed to parse string to u64 for {}",
+                    expected_type
+                ))
             }
         }
         _ => Err(anyhow::anyhow!(
