@@ -63,10 +63,7 @@ impl SysLibrary for SysLibraryFake {
         Ok(1337)
     }
 
-    fn get_reg(
-        &self,
-        _path: String,
-    ) -> Result<BTreeMap<String, String>, String> {
+    fn get_reg(&self, _path: String) -> Result<BTreeMap<String, String>, String> {
         Ok(BTreeMap::new())
     }
 
@@ -116,32 +113,12 @@ impl SysLibrary for SysLibraryFake {
         Ok(map)
     }
 
-    fn write_reg_hex(
+    fn write_reg(
         &self,
         _path: String,
         _regname: String,
         _regtype: String,
-        _regvalue: String,
-    ) -> Result<bool, String> {
-        Ok(true)
-    }
-
-    fn write_reg_int(
-        &self,
-        _path: String,
-        _regname: String,
-        _regtype: String,
-        _regvalue: i64,
-    ) -> Result<bool, String> {
-        Ok(true)
-    }
-
-    fn write_reg_str(
-        &self,
-        _path: String,
-        _regname: String,
-        _regtype: String,
-        _regvalue: String,
+        _regvalue: Value,
     ) -> Result<bool, String> {
         Ok(true)
     }

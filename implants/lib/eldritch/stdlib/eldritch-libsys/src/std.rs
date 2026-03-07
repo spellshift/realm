@@ -22,9 +22,7 @@ mod is_windows_impl;
 mod list_users_impl;
 mod reg_utils;
 mod shell_impl;
-mod write_reg_hex_impl;
-mod write_reg_int_impl;
-mod write_reg_str_impl;
+mod write_reg_impl;
 
 #[derive(Debug)]
 #[eldritch_library_impl(SysLibrary)]
@@ -110,36 +108,14 @@ impl SysLibrary for StdSysLibrary {
         shell_impl::shell(cmd).map_err(|e| e.to_string())
     }
 
-    fn write_reg_hex(
+    fn write_reg(
         &self,
         path: String,
         regname: String,
         regtype: String,
-        regvalue: String,
+        regvalue: Value,
     ) -> Result<bool, String> {
-        write_reg_hex_impl::write_reg_hex(path, regname, regtype, regvalue)
-            .map_err(|e| e.to_string())
-    }
-
-    fn write_reg_int(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: i64,
-    ) -> Result<bool, String> {
-        write_reg_int_impl::write_reg_int(path, regname, regtype, regvalue as u32)
-            .map_err(|e| e.to_string())
-    }
-
-    fn write_reg_str(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: String,
-    ) -> Result<bool, String> {
-        write_reg_str_impl::write_reg_str(path, regname, regtype, regvalue)
+        write_reg_impl::write_reg(path, regname, regtype, regvalue)
             .map_err(|e| e.to_string())
     }
 }

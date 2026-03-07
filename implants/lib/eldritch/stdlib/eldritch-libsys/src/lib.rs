@@ -176,59 +176,21 @@ pub trait SysLibrary {
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String>;
 
     #[eldritch_method]
-    /// Writes a hex value to the Windows Registry.
+    /// Writes a value to the Windows Registry.
     ///
     /// **Parameters**
     /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
     /// - `regname` (`str`)
-    /// - `regtype` (`str`): e.g., "REG_BINARY".
-    /// - `regvalue` (`str`): Hex string.
+    /// - `regtype` (`str`): e.g., "REG_SZ", "REG_DWORD", "REG_BINARY".
+    /// - `regvalue` (`any`): The value to write.
     ///
     /// **Returns**
     /// - `bool`: True on success.
-    fn write_reg_hex(
+    fn write_reg(
         &self,
         path: String,
         regname: String,
         regtype: String,
-        regvalue: String,
-    ) -> Result<bool, String>;
-
-    #[eldritch_method]
-    /// Writes an integer value to the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    /// - `regname` (`str`)
-    /// - `regtype` (`str`): e.g., "REG_DWORD".
-    /// - `regvalue` (`int`)
-    ///
-    /// **Returns**
-    /// - `bool`: True on success.
-    fn write_reg_int(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: i64,
-    ) -> Result<bool, String>;
-
-    #[eldritch_method]
-    /// Writes a string value to the Windows Registry.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The registry path (e.g., "HKEY_LOCAL_MACHINE\\SOFTWARE" or "HKLM\\SOFTWARE").
-    /// - `regname` (`str`)
-    /// - `regtype` (`str`): e.g., "REG_SZ".
-    /// - `regvalue` (`str`)
-    ///
-    /// **Returns**
-    /// - `bool`: True on success.
-    fn write_reg_str(
-        &self,
-        path: String,
-        regname: String,
-        regtype: String,
-        regvalue: String,
+        regvalue: Value,
     ) -> Result<bool, String>;
 }
