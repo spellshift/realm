@@ -3,7 +3,8 @@ dist/
 node_modules/
 .vscode-test/
 *.vsix
-<<<<<<< HEAD
-=======
 mcp-server/src/assets.ts
->>>>>>> 08809fe2782ce8d0f927507c6c4c63a116c19522
+
+# Ignore auto-generated MCP configurations
+.vscode/cline_mcp_settings.json
+.vscode/mcp.json

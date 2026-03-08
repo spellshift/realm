@@ -23,11 +23,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libsys",
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
-<<<<<<< HEAD
-    "lib/eldritch/eldritch-lsp",
-=======
     "lib/eldritch/eldritch-wasm",
->>>>>>> 08809fe2782ce8d0f927507c6c4c63a116c19522
     "lib/portals/portal-stream",
 ]
 exclude = [
