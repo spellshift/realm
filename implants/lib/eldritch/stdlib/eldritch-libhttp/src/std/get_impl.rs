@@ -10,11 +10,15 @@ use reqwest::{
 use spin::RwLock;
 
 pub fn get(
-    uri: String,
+    mut uri: String,
     query_params: Option<BTreeMap<String, String>>,
     headers: Option<BTreeMap<String, String>>,
     allow_insecure: Option<bool>,
 ) -> Result<BTreeMap<String, Value>, String> {
+    if !uri.starts_with("http://") && !uri.starts_with("https://") {
+        uri = format!("https://{}", uri);
+    }
+
     let client = Client::builder()
         .danger_accept_invalid_certs(allow_insecure.unwrap_or(false))
         .build()
@@ -97,6 +101,23 @@ mod tests {
         } else {
             panic!("Body should be bytes");
         }
+    }
+
+    #[test]
+    fn test_get_default_https() {
+        // If we provide an unroutable domain, it will fail to connect but should try https.
+        let res = get(
+            "this-domain-will-not-exist-ever-123.com".to_string(),
+            None,
+            None,
+            None,
+        );
+        let err = res.unwrap_err();
+        assert!(
+            err.contains("https://this-domain-will-not-exist-ever-123.com"),
+            "Error message should indicate it tried https://this-domain-will-not-exist-ever-123.com, but was: {}",
+            err
+        );
     }
 
     #[test]

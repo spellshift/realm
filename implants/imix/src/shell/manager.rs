@@ -86,11 +86,13 @@ fn dispatch_output(
         } => {
             let payload = ShellPayload {
                 shell_id,
-                input: if is_error {
-                    format!("Error: {}", output)
+                input: String::new(),
+                output: if is_error {
+                    String::new()
                 } else {
-                    output
+                    output.clone()
                 },
+                error: if is_error { output } else { String::new() },
             };
             let mote = Mote {
                 stream_id: stream_id.clone(),
