@@ -102,18 +102,7 @@ impl BrowserRepl {
         // However, `eldritch-repl` logic is: if balance > 0 || incomplete_string -> incomplete.
         // Otherwise, check for colon at end of line or if it's a single line.
 
-        // If we have a hard error from lexer (like bad char), we might return error.
-        // But let's follow the REPL logic:
-        // logic from repl:
-        // if balance > 0 || is_incomplete_string -> false (incomplete)
-        // ends_with_colon -> false (incomplete)
-        // line_count == 1 && !ends_with_colon -> true (complete)
-        // line_count > 1 && is_empty_last -> true (complete)
-
         if has_error {
-            // If we have a lexer error that is NOT incomplete string, report error
-            // Unless it's something that could be fixed by typing more?
-            // Unexpected char is usually fatal.
             self.buffer.clear();
             return format!("{{ \"status\": \"error\", \"message\": {:?} }}", error_msg);
         }
@@ -121,25 +110,39 @@ impl BrowserRepl {
         let ends_with_colon = trimmed.ends_with(':');
         let lines: Vec<&str> = self.buffer.lines().collect();
         let line_count = lines.len();
-        let last_line_empty =
-            self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
 
-        // If single line and doesn't end with colon, it's complete.
-        if line_count == 1 && !ends_with_colon {
+        let is_complete = if line_count == 1 && !ends_with_colon {
+            true
+        } else if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
+            true
+        } else {
+            false
+        };
+
+        if is_complete {
             let payload = self.buffer.clone();
             self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
-        }
 
-        // If multi-line (or ends with colon), we need an empty line to finish.
-        // Wait, if line_count == 1 and ends with colon, we need more.
-        // If line_count > 1, check if last line is empty.
-        // Note: `lines()` iterator doesn't include the final empty string if string ends with \n.
-        // We need to check if the input `line` was empty (user pressed enter on empty line).
+            // Check for meta function
+            let parsed_tokens = Lexer::new(payload.clone()).scan_tokens();
+            let mut parser = eldritch_core::Parser::new(parsed_tokens);
+            let (stmts, errs) = parser.parse();
+            if errs.is_empty() && stmts.len() == 1 {
+                if let eldritch_core::StmtKind::Expression(expr) = &stmts[0].kind {
+                    if let eldritch_core::ExprKind::Call(callee, args) = &expr.kind {
+                        if let eldritch_core::ExprKind::Identifier(name) = &callee.kind {
+                            if name == "ssh" && args.len() == 1 {
+                                if let eldritch_core::Argument::Positional(arg_expr) = &args[0] {
+                                    if let eldritch_core::ExprKind::Literal(eldritch_core::Value::String(val)) = &arg_expr.kind {
+                                        return format!("{{ \"status\": \"meta\", \"function\": \"ssh\", \"arguments\": [{:?}] }}", val);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-        if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
         }
 
@@ -148,11 +151,8 @@ impl BrowserRepl {
     }
 
     pub fn complete(&self, line: &str, cursor: usize) -> String {
-        // We use the internal interpreter to get completions.
-        // The interpreter has builtins loaded.
         let (start, candidates) = self.interpreter.complete(line, cursor);
 
-        // Return JSON object with suggestions and start index
         let mut json = String::from("{ \"suggestions\": [");
         for (i, c) in candidates.iter().enumerate() {
             if i > 0 {
@@ -254,7 +254,6 @@ mod tests {
 
         let res = repl.input("");
         assert!(res.contains("\"status\": \"complete\""));
-        // Payload check: depends on formatting, check substring
         assert!(res.contains("def foo():"));
         assert!(res.contains("pass"));
     }
@@ -291,18 +290,19 @@ mod tests {
     #[test]
     fn test_browser_repl_macro_indent() {
         let mut repl = BrowserRepl::new();
-        // Start a block
         let _ = repl.input("def foo():");
-        // Indented macro
         let res = repl.input("    !ls");
-
-        // It should just append to buffer, so incomplete (inside block)
         assert!(res.contains("\"status\": \"incomplete\""));
-
-        // Finish block
         let res = repl.input("");
         assert!(res.contains("\"status\": \"complete\""));
-        // Payload should contain sys.shell with indentation
         assert!(res.contains("sys.shell(\\\"ls\\\")"));
+    }
+
+    #[test]
+    fn test_meta_ssh() {
+        let mut repl = BrowserRepl::new();
+        let res = repl.input("ssh('user:pass@host:22')");
+        println!("{}", res);
+        assert!(res.contains("\"status\": \"meta\""));
     }
 }
