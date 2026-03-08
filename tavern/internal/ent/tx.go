@@ -20,6 +20,8 @@ type Tx struct {
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
 	Builder *BuilderClient
+	// BuilderProfile is the client for interacting with the BuilderProfile builders.
+	BuilderProfile *BuilderProfileClient
 	// DeviceAuth is the client for interacting with the DeviceAuth builders.
 	DeviceAuth *DeviceAuthClient
 	// Host is the client for interacting with the Host builders.
@@ -187,6 +189,7 @@ func (tx *Tx) init() {
 	tx.Beacon = NewBeaconClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
+	tx.BuilderProfile = NewBuilderProfileClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)

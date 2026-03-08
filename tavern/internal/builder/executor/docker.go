@@ -4,10 +4,12 @@ import (
 	"archive/tar"
 	"bufio"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log/slog"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -60,10 +62,85 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
 
+	// Execute the pre-build script, build, and post-build script within the container.
+	var finalScript string
+	finalScript += "set -e\n"
+
+	if spec.PreBuildScript != "" {
+		finalScript += "echo 'Running Pre-Build Script'\n"
+		finalScript += spec.PreBuildScript + "\n"
+	}
+
+	finalScript += "echo 'Running Main Build Script'\n"
+	// Replace the final build command with just downloading and moving the files.
+	// Wait, `spec.BuildScript` already contains the download and the build command (e.g. `cd ... && git clone ... && cargo build ...`)
+	// We want to run `spec.BuildScript` but *intercept* the build to insert tomes into the correct directory.
+	// `spec.BuildScript` looks like: `cd /home/vscode && git clone ... && cd realm/implants/imix && cargo build ...`
+	// If we just run the build script, the tomes won't be copied.
+	// We can instead replace `cargo build` inside `spec.BuildScript` with a setup step, or we can just let `spec.BuildScript` run as is?
+	// Wait! `spec.BuildScript` will just clone the code, we need to inject the tomes *before* it gets compiled!
+	// It's much easier to just run `spec.BuildScript` as two parts, or modify the string.
+	// Or we can just create a `wrapper_script.sh` that clones the repo, modifies it, and then compiles.
+
+	// Let's modify `GenerateBuildScript` to return the individual parts instead of a single string. But since it's already in the DB... we can just string replace `&& cargo` with our injection script `&& <INJECT> && cargo`.
+
+	// Or, actually, since `spec.BuildScript` comes from `BuildTask`, and `BuildTask` is only created *now* with the new schema, let's just modify `GenerateBuildScript` so we can use its output. Wait, `GenerateBuildScript` doesn't include the tomes because they are passed separately. Let's just modify `GenerateBuildScript` to NOT include the `cargo build`, and we add it here?
+	// No, the `BuildScript` is useful to see in the UI exactly what ran. We should inject it there!
+
+	// Wait, if the prompt says: "Update the builders build command to first: Delete the default install_scripts and place the selected tomes in it."
+	// That implies the builder itself (the client pulling tasks) should do it. Which is here in the executor!
+	// If we look at the executor:
+
+	// Let's just create a script that runs everything.
+	// But `spec.BuildScript` already has `cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && cargo build ...`
+	// We can split it by `&& cargo build`!
+
+	parts := strings.Split(spec.BuildScript, " && cargo ")
+	if len(parts) == 2 {
+		setupCmd := parts[0]
+		buildCmd := "cargo " + parts[1]
+
+		finalScript += setupCmd + "\n"
+
+		finalScript += `rm -rf install_scripts/*` + "\n"
+
+		for i, tome := range spec.Tomes {
+			tomeDir := fmt.Sprintf("install_scripts/tome_%d", i)
+			finalScript += fmt.Sprintf("mkdir -p %s\n", tomeDir)
+
+			// Escape quotes in params and script
+			var tomeScript string
+			tomeScript += `input_params = {` + "\n"
+			for k, v := range tome.Params {
+				tomeScript += fmt.Sprintf(`  "%s": "%s",`+"\n", strings.ReplaceAll(k, `"`, `\"`), strings.ReplaceAll(v, `"`, `\"`))
+			}
+			tomeScript += `}` + "\n"
+			tomeScript += tome.Script
+
+			tomeScriptB64 := base64.StdEncoding.EncodeToString([]byte(tomeScript))
+			finalScript += fmt.Sprintf("echo '%s' | base64 -d > %s/main.eldritch\n", tomeScriptB64, tomeDir)
+
+			// Copy assets
+			for _, asset := range tome.Assets {
+				assetB64 := base64.StdEncoding.EncodeToString(asset.Content)
+				finalScript += fmt.Sprintf("echo '%s' | base64 -d > %s/%s\n", assetB64, tomeDir, asset.Name)
+			}
+		}
+
+		finalScript += buildCmd + "\n"
+	} else {
+		finalScript += spec.BuildScript + "\n"
+	}
+
+	if spec.PostBuildScript != "" {
+		finalScript += "echo 'Running Post-Build Script'\n"
+		finalScript += spec.PostBuildScript + "\n"
+	}
+
 	resp, err := d.client.ContainerCreate(ctx,
 		&container.Config{
 			Image:      spec.BuildImage,
-			Entrypoint: []string{"/bin/sh", "-c", spec.BuildScript},
+			Entrypoint: []string{"/bin/sh", "-c", finalScript},
 			Env:        spec.Env,
 		},
 		nil, // host config

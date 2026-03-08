@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -104,6 +105,24 @@ func (btu *BuildTaskUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *B
 // AppendTransports appends btt to the "transports" field.
 func (btu *BuildTaskUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
 	btu.mutation.AppendTransports(btt)
+	return btu
+}
+
+// SetTomes sets the "tomes" field.
+func (btu *BuildTaskUpdate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdate {
+	btu.mutation.SetTomes(bttc)
+	return btu
+}
+
+// AppendTomes appends bttc to the "tomes" field.
+func (btu *BuildTaskUpdate) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdate {
+	btu.mutation.AppendTomes(bttc)
+	return btu
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (btu *BuildTaskUpdate) ClearTomes() *BuildTaskUpdate {
+	btu.mutation.ClearTomes()
 	return btu
 }
 
@@ -296,6 +315,25 @@ func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
 	return btu
 }
 
+// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
+func (btu *BuildTaskUpdate) SetBuilderProfileID(id int) *BuildTaskUpdate {
+	btu.mutation.SetBuilderProfileID(id)
+	return btu
+}
+
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableBuilderProfileID(id *int) *BuildTaskUpdate {
+	if id != nil {
+		btu = btu.SetBuilderProfileID(*id)
+	}
+	return btu
+}
+
+// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
+func (btu *BuildTaskUpdate) SetBuilderProfile(b *BuilderProfile) *BuildTaskUpdate {
+	return btu.SetBuilderProfileID(b.ID)
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -329,6 +367,12 @@ func (btu *BuildTaskUpdate) SetArtifact(a *Asset) *BuildTaskUpdate {
 // Mutation returns the BuildTaskMutation object of the builder.
 func (btu *BuildTaskUpdate) Mutation() *BuildTaskMutation {
 	return btu.mutation
+}
+
+// ClearBuilderProfile clears the "builder_profile" edge to the BuilderProfile entity.
+func (btu *BuildTaskUpdate) ClearBuilderProfile() *BuildTaskUpdate {
+	btu.mutation.ClearBuilderProfile()
+	return btu
 }
 
 // ClearBuilder clears the "builder" edge to the Builder entity.
@@ -458,6 +502,17 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			sqljson.Append(u, buildtask.FieldTransports, value)
 		})
 	}
+	if value, ok := btu.mutation.Tomes(); ok {
+		_spec.SetField(buildtask.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := btu.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildtask.FieldTomes, value)
+		})
+	}
+	if btu.mutation.TomesCleared() {
+		_spec.ClearField(buildtask.FieldTomes, field.TypeJSON)
+	}
 	if value, ok := btu.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
 	}
@@ -514,6 +569,35 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if btu.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
+	if btu.mutation.BuilderProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.BuilderProfileTable,
+			Columns: []string{buildtask.BuilderProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btu.mutation.BuilderProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.BuilderProfileTable,
+			Columns: []string{buildtask.BuilderProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -664,6 +748,24 @@ func (btuo *BuildTaskUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport
 // AppendTransports appends btt to the "transports" field.
 func (btuo *BuildTaskUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
 	btuo.mutation.AppendTransports(btt)
+	return btuo
+}
+
+// SetTomes sets the "tomes" field.
+func (btuo *BuildTaskUpdateOne) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdateOne {
+	btuo.mutation.SetTomes(bttc)
+	return btuo
+}
+
+// AppendTomes appends bttc to the "tomes" field.
+func (btuo *BuildTaskUpdateOne) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdateOne {
+	btuo.mutation.AppendTomes(bttc)
+	return btuo
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (btuo *BuildTaskUpdateOne) ClearTomes() *BuildTaskUpdateOne {
+	btuo.mutation.ClearTomes()
 	return btuo
 }
 
@@ -856,6 +958,25 @@ func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
+func (btuo *BuildTaskUpdateOne) SetBuilderProfileID(id int) *BuildTaskUpdateOne {
+	btuo.mutation.SetBuilderProfileID(id)
+	return btuo
+}
+
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableBuilderProfileID(id *int) *BuildTaskUpdateOne {
+	if id != nil {
+		btuo = btuo.SetBuilderProfileID(*id)
+	}
+	return btuo
+}
+
+// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
+func (btuo *BuildTaskUpdateOne) SetBuilderProfile(b *BuilderProfile) *BuildTaskUpdateOne {
+	return btuo.SetBuilderProfileID(b.ID)
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -889,6 +1010,12 @@ func (btuo *BuildTaskUpdateOne) SetArtifact(a *Asset) *BuildTaskUpdateOne {
 // Mutation returns the BuildTaskMutation object of the builder.
 func (btuo *BuildTaskUpdateOne) Mutation() *BuildTaskMutation {
 	return btuo.mutation
+}
+
+// ClearBuilderProfile clears the "builder_profile" edge to the BuilderProfile entity.
+func (btuo *BuildTaskUpdateOne) ClearBuilderProfile() *BuildTaskUpdateOne {
+	btuo.mutation.ClearBuilderProfile()
+	return btuo
 }
 
 // ClearBuilder clears the "builder" edge to the Builder entity.
@@ -1048,6 +1175,17 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 			sqljson.Append(u, buildtask.FieldTransports, value)
 		})
 	}
+	if value, ok := btuo.mutation.Tomes(); ok {
+		_spec.SetField(buildtask.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := btuo.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildtask.FieldTomes, value)
+		})
+	}
+	if btuo.mutation.TomesCleared() {
+		_spec.ClearField(buildtask.FieldTomes, field.TypeJSON)
+	}
 	if value, ok := btuo.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
 	}
@@ -1104,6 +1242,35 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if btuo.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
+	if btuo.mutation.BuilderProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.BuilderProfileTable,
+			Columns: []string{buildtask.BuilderProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btuo.mutation.BuilderProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.BuilderProfileTable,
+			Columns: []string{buildtask.BuilderProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{

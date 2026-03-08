@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -1265,6 +1266,10 @@ type BuildTaskWhereInput struct {
 	ArtifactPathEqualFold    *string  `json:"artifactPathEqualFold,omitempty"`
 	ArtifactPathContainsFold *string  `json:"artifactPathContainsFold,omitempty"`
 
+	// "builder_profile" edge predicates.
+	HasBuilderProfile     *bool                       `json:"hasBuilderProfile,omitempty"`
+	HasBuilderProfileWith []*BuilderProfileWhereInput `json:"hasBuilderProfileWith,omitempty"`
+
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
 	HasBuilderWith []*BuilderWhereInput `json:"hasBuilderWith,omitempty"`
@@ -1823,6 +1828,24 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 		predicates = append(predicates, buildtask.ArtifactPathContainsFold(*i.ArtifactPathContainsFold))
 	}
 
+	if i.HasBuilderProfile != nil {
+		p := buildtask.HasBuilderProfile()
+		if !*i.HasBuilderProfile {
+			p = buildtask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBuilderProfileWith) > 0 {
+		with := make([]predicate.BuilderProfile, 0, len(i.HasBuilderProfileWith))
+		for _, w := range i.HasBuilderProfileWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBuilderProfileWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, buildtask.HasBuilderProfileWith(with...))
+	}
 	if i.HasBuilder != nil {
 		p := buildtask.HasBuilder()
 		if !*i.HasBuilder {
@@ -2230,6 +2253,438 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 		return predicates[0], nil
 	default:
 		return builder.And(predicates...), nil
+	}
+}
+
+// BuilderProfileWhereInput represents a where input for filtering BuilderProfile queries.
+type BuilderProfileWhereInput struct {
+	Predicates []predicate.BuilderProfile  `json:"-"`
+	Not        *BuilderProfileWhereInput   `json:"not,omitempty"`
+	Or         []*BuilderProfileWhereInput `json:"or,omitempty"`
+	And        []*BuilderProfileWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionIsNil        bool     `json:"descriptionIsNil,omitempty"`
+	DescriptionNotNil       bool     `json:"descriptionNotNil,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "pre_build_script" field predicates.
+	PreBuildScript             *string  `json:"preBuildScript,omitempty"`
+	PreBuildScriptNEQ          *string  `json:"preBuildScriptNEQ,omitempty"`
+	PreBuildScriptIn           []string `json:"preBuildScriptIn,omitempty"`
+	PreBuildScriptNotIn        []string `json:"preBuildScriptNotIn,omitempty"`
+	PreBuildScriptGT           *string  `json:"preBuildScriptGT,omitempty"`
+	PreBuildScriptGTE          *string  `json:"preBuildScriptGTE,omitempty"`
+	PreBuildScriptLT           *string  `json:"preBuildScriptLT,omitempty"`
+	PreBuildScriptLTE          *string  `json:"preBuildScriptLTE,omitempty"`
+	PreBuildScriptContains     *string  `json:"preBuildScriptContains,omitempty"`
+	PreBuildScriptHasPrefix    *string  `json:"preBuildScriptHasPrefix,omitempty"`
+	PreBuildScriptHasSuffix    *string  `json:"preBuildScriptHasSuffix,omitempty"`
+	PreBuildScriptIsNil        bool     `json:"preBuildScriptIsNil,omitempty"`
+	PreBuildScriptNotNil       bool     `json:"preBuildScriptNotNil,omitempty"`
+	PreBuildScriptEqualFold    *string  `json:"preBuildScriptEqualFold,omitempty"`
+	PreBuildScriptContainsFold *string  `json:"preBuildScriptContainsFold,omitempty"`
+
+	// "post_build_script" field predicates.
+	PostBuildScript             *string  `json:"postBuildScript,omitempty"`
+	PostBuildScriptNEQ          *string  `json:"postBuildScriptNEQ,omitempty"`
+	PostBuildScriptIn           []string `json:"postBuildScriptIn,omitempty"`
+	PostBuildScriptNotIn        []string `json:"postBuildScriptNotIn,omitempty"`
+	PostBuildScriptGT           *string  `json:"postBuildScriptGT,omitempty"`
+	PostBuildScriptGTE          *string  `json:"postBuildScriptGTE,omitempty"`
+	PostBuildScriptLT           *string  `json:"postBuildScriptLT,omitempty"`
+	PostBuildScriptLTE          *string  `json:"postBuildScriptLTE,omitempty"`
+	PostBuildScriptContains     *string  `json:"postBuildScriptContains,omitempty"`
+	PostBuildScriptHasPrefix    *string  `json:"postBuildScriptHasPrefix,omitempty"`
+	PostBuildScriptHasSuffix    *string  `json:"postBuildScriptHasSuffix,omitempty"`
+	PostBuildScriptIsNil        bool     `json:"postBuildScriptIsNil,omitempty"`
+	PostBuildScriptNotNil       bool     `json:"postBuildScriptNotNil,omitempty"`
+	PostBuildScriptEqualFold    *string  `json:"postBuildScriptEqualFold,omitempty"`
+	PostBuildScriptContainsFold *string  `json:"postBuildScriptContainsFold,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BuilderProfileWhereInput) AddPredicates(predicates ...predicate.BuilderProfile) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BuilderProfileWhereInput filter on the BuilderProfileQuery builder.
+func (i *BuilderProfileWhereInput) Filter(q *BuilderProfileQuery) (*BuilderProfileQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBuilderProfileWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBuilderProfileWhereInput is returned in case the BuilderProfileWhereInput is empty.
+var ErrEmptyBuilderProfileWhereInput = errors.New("ent: empty predicate BuilderProfileWhereInput")
+
+// P returns a predicate for filtering builderprofiles.
+// An error is returned if the input is empty or invalid.
+func (i *BuilderProfileWhereInput) P() (predicate.BuilderProfile, error) {
+	var predicates []predicate.BuilderProfile
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, builderprofile.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.BuilderProfile, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, builderprofile.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.BuilderProfile, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, builderprofile.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, builderprofile.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, builderprofile.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, builderprofile.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, builderprofile.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, builderprofile.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, builderprofile.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, builderprofile.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, builderprofile.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, builderprofile.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, builderprofile.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, builderprofile.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, builderprofile.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, builderprofile.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, builderprofile.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, builderprofile.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, builderprofile.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, builderprofile.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, builderprofile.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, builderprofile.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, builderprofile.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, builderprofile.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, builderprofile.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, builderprofile.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, builderprofile.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, builderprofile.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, builderprofile.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, builderprofile.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, builderprofile.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, builderprofile.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, builderprofile.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, builderprofile.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, builderprofile.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, builderprofile.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, builderprofile.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, builderprofile.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, builderprofile.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, builderprofile.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, builderprofile.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, builderprofile.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, builderprofile.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, builderprofile.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, builderprofile.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, builderprofile.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionIsNil {
+		predicates = append(predicates, builderprofile.DescriptionIsNil())
+	}
+	if i.DescriptionNotNil {
+		predicates = append(predicates, builderprofile.DescriptionNotNil())
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, builderprofile.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, builderprofile.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+	if i.PreBuildScript != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptEQ(*i.PreBuildScript))
+	}
+	if i.PreBuildScriptNEQ != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptNEQ(*i.PreBuildScriptNEQ))
+	}
+	if len(i.PreBuildScriptIn) > 0 {
+		predicates = append(predicates, builderprofile.PreBuildScriptIn(i.PreBuildScriptIn...))
+	}
+	if len(i.PreBuildScriptNotIn) > 0 {
+		predicates = append(predicates, builderprofile.PreBuildScriptNotIn(i.PreBuildScriptNotIn...))
+	}
+	if i.PreBuildScriptGT != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptGT(*i.PreBuildScriptGT))
+	}
+	if i.PreBuildScriptGTE != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptGTE(*i.PreBuildScriptGTE))
+	}
+	if i.PreBuildScriptLT != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptLT(*i.PreBuildScriptLT))
+	}
+	if i.PreBuildScriptLTE != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptLTE(*i.PreBuildScriptLTE))
+	}
+	if i.PreBuildScriptContains != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptContains(*i.PreBuildScriptContains))
+	}
+	if i.PreBuildScriptHasPrefix != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptHasPrefix(*i.PreBuildScriptHasPrefix))
+	}
+	if i.PreBuildScriptHasSuffix != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptHasSuffix(*i.PreBuildScriptHasSuffix))
+	}
+	if i.PreBuildScriptIsNil {
+		predicates = append(predicates, builderprofile.PreBuildScriptIsNil())
+	}
+	if i.PreBuildScriptNotNil {
+		predicates = append(predicates, builderprofile.PreBuildScriptNotNil())
+	}
+	if i.PreBuildScriptEqualFold != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptEqualFold(*i.PreBuildScriptEqualFold))
+	}
+	if i.PreBuildScriptContainsFold != nil {
+		predicates = append(predicates, builderprofile.PreBuildScriptContainsFold(*i.PreBuildScriptContainsFold))
+	}
+	if i.PostBuildScript != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptEQ(*i.PostBuildScript))
+	}
+	if i.PostBuildScriptNEQ != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptNEQ(*i.PostBuildScriptNEQ))
+	}
+	if len(i.PostBuildScriptIn) > 0 {
+		predicates = append(predicates, builderprofile.PostBuildScriptIn(i.PostBuildScriptIn...))
+	}
+	if len(i.PostBuildScriptNotIn) > 0 {
+		predicates = append(predicates, builderprofile.PostBuildScriptNotIn(i.PostBuildScriptNotIn...))
+	}
+	if i.PostBuildScriptGT != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptGT(*i.PostBuildScriptGT))
+	}
+	if i.PostBuildScriptGTE != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptGTE(*i.PostBuildScriptGTE))
+	}
+	if i.PostBuildScriptLT != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptLT(*i.PostBuildScriptLT))
+	}
+	if i.PostBuildScriptLTE != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptLTE(*i.PostBuildScriptLTE))
+	}
+	if i.PostBuildScriptContains != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptContains(*i.PostBuildScriptContains))
+	}
+	if i.PostBuildScriptHasPrefix != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptHasPrefix(*i.PostBuildScriptHasPrefix))
+	}
+	if i.PostBuildScriptHasSuffix != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptHasSuffix(*i.PostBuildScriptHasSuffix))
+	}
+	if i.PostBuildScriptIsNil {
+		predicates = append(predicates, builderprofile.PostBuildScriptIsNil())
+	}
+	if i.PostBuildScriptNotNil {
+		predicates = append(predicates, builderprofile.PostBuildScriptNotNil())
+	}
+	if i.PostBuildScriptEqualFold != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptEqualFold(*i.PostBuildScriptEqualFold))
+	}
+	if i.PostBuildScriptContainsFold != nil {
+		predicates = append(predicates, builderprofile.PostBuildScriptContainsFold(*i.PostBuildScriptContainsFold))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBuilderProfileWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return builderprofile.And(predicates...), nil
 	}
 }
 

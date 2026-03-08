@@ -108,6 +108,14 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (bt *BuildTask) BuilderProfile(ctx context.Context) (*BuilderProfile, error) {
+	result, err := bt.Edges.BuilderProfileOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryBuilderProfile().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	result, err := bt.Edges.BuilderOrErr()
 	if IsNotLoaded(err) {

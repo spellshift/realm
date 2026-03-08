@@ -2,6 +2,8 @@ package executor
 
 import (
 	"context"
+
+	"realm.pub/tavern/internal/builder/builderpb"
 )
 
 const (
@@ -23,6 +25,10 @@ type BuildSpec struct {
 	// Env is a list of environment variables to set in the build container,
 	// in the form "KEY=VALUE".
 	Env []string
+
+	PreBuildScript  string
+	PostBuildScript string
+	Tomes           []*builderpb.BuildTaskTome
 }
 
 // BuildResult holds the results of a build execution, including any extracted artifacts.

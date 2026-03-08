@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -20,15 +21,16 @@ import (
 // BuildTaskQuery is the builder for querying BuildTask entities.
 type BuildTaskQuery struct {
 	config
-	ctx          *QueryContext
-	order        []buildtask.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.BuildTask
-	withBuilder  *BuilderQuery
-	withArtifact *AssetQuery
-	withFKs      bool
-	modifiers    []func(*sql.Selector)
-	loadTotal    []func(context.Context, []*BuildTask) error
+	ctx                *QueryContext
+	order              []buildtask.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.BuildTask
+	withBuilderProfile *BuilderProfileQuery
+	withBuilder        *BuilderQuery
+	withArtifact       *AssetQuery
+	withFKs            bool
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*BuildTask) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,6 +65,28 @@ func (btq *BuildTaskQuery) Unique(unique bool) *BuildTaskQuery {
 func (btq *BuildTaskQuery) Order(o ...buildtask.OrderOption) *BuildTaskQuery {
 	btq.order = append(btq.order, o...)
 	return btq
+}
+
+// QueryBuilderProfile chains the current query on the "builder_profile" edge.
+func (btq *BuildTaskQuery) QueryBuilderProfile() *BuilderProfileQuery {
+	query := (&BuilderProfileClient{config: btq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := btq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := btq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
+			sqlgraph.To(builderprofile.Table, builderprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BuilderProfileTable, buildtask.BuilderProfileColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryBuilder chains the current query on the "builder" edge.
@@ -296,17 +320,29 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 		return nil
 	}
 	return &BuildTaskQuery{
-		config:       btq.config,
-		ctx:          btq.ctx.Clone(),
-		order:        append([]buildtask.OrderOption{}, btq.order...),
-		inters:       append([]Interceptor{}, btq.inters...),
-		predicates:   append([]predicate.BuildTask{}, btq.predicates...),
-		withBuilder:  btq.withBuilder.Clone(),
-		withArtifact: btq.withArtifact.Clone(),
+		config:             btq.config,
+		ctx:                btq.ctx.Clone(),
+		order:              append([]buildtask.OrderOption{}, btq.order...),
+		inters:             append([]Interceptor{}, btq.inters...),
+		predicates:         append([]predicate.BuildTask{}, btq.predicates...),
+		withBuilderProfile: btq.withBuilderProfile.Clone(),
+		withBuilder:        btq.withBuilder.Clone(),
+		withArtifact:       btq.withArtifact.Clone(),
 		// clone intermediate query.
 		sql:  btq.sql.Clone(),
 		path: btq.path,
 	}
+}
+
+// WithBuilderProfile tells the query-builder to eager-load the nodes that are connected to
+// the "builder_profile" edge. The optional arguments are used to configure the query builder of the edge.
+func (btq *BuildTaskQuery) WithBuilderProfile(opts ...func(*BuilderProfileQuery)) *BuildTaskQuery {
+	query := (&BuilderProfileClient{config: btq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	btq.withBuilderProfile = query
+	return btq
 }
 
 // WithBuilder tells the query-builder to eager-load the nodes that are connected to
@@ -410,12 +446,13 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 		nodes       = []*BuildTask{}
 		withFKs     = btq.withFKs
 		_spec       = btq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
+			btq.withBuilderProfile != nil,
 			btq.withBuilder != nil,
 			btq.withArtifact != nil,
 		}
 	)
-	if btq.withBuilder != nil || btq.withArtifact != nil {
+	if btq.withBuilderProfile != nil || btq.withBuilder != nil || btq.withArtifact != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -442,6 +479,12 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := btq.withBuilderProfile; query != nil {
+		if err := btq.loadBuilderProfile(ctx, query, nodes, nil,
+			func(n *BuildTask, e *BuilderProfile) { n.Edges.BuilderProfile = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := btq.withBuilder; query != nil {
 		if err := btq.loadBuilder(ctx, query, nodes, nil,
 			func(n *BuildTask, e *Builder) { n.Edges.Builder = e }); err != nil {
@@ -462,6 +505,38 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	return nodes, nil
 }
 
+func (btq *BuildTaskQuery) loadBuilderProfile(ctx context.Context, query *BuilderProfileQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *BuilderProfile)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*BuildTask)
+	for i := range nodes {
+		if nodes[i].build_task_builder_profile == nil {
+			continue
+		}
+		fk := *nodes[i].build_task_builder_profile
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(builderprofile.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "build_task_builder_profile" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (btq *BuildTaskQuery) loadBuilder(ctx context.Context, query *BuilderQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *Builder)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*BuildTask)

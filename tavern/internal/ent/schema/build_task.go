@@ -51,6 +51,9 @@ func (BuildTask) Fields() []ent.Field {
 			Comment("The derived script to execute inside the build container."),
 		field.JSON("transports", []builderpb.BuildTaskTransport{}).
 			Comment("List of transport configurations for the IMIX agent."),
+		field.JSON("tomes", []builderpb.BuildTaskTomeConfig{}).
+			Optional().
+			Comment("List of tomes to include in the build."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(
@@ -114,6 +117,9 @@ func (BuildTask) Fields() []ent.Field {
 // Edges of the BuildTask.
 func (BuildTask) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("builder_profile", BuilderProfile.Type).
+			Unique().
+			Comment("The profile specifying pre/post build scripts."),
 		edge.To("builder", Builder.Type).
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),

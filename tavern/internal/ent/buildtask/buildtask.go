@@ -33,6 +33,8 @@ const (
 	FieldBuildScript = "build_script"
 	// FieldTransports holds the string denoting the transports field in the database.
 	FieldTransports = "transports"
+	// FieldTomes holds the string denoting the tomes field in the database.
+	FieldTomes = "tomes"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -51,12 +53,21 @@ const (
 	FieldExitCode = "exit_code"
 	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
 	FieldArtifactPath = "artifact_path"
+	// EdgeBuilderProfile holds the string denoting the builder_profile edge name in mutations.
+	EdgeBuilderProfile = "builder_profile"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
 	// EdgeArtifact holds the string denoting the artifact edge name in mutations.
 	EdgeArtifact = "artifact"
 	// Table holds the table name of the buildtask in the database.
 	Table = "build_tasks"
+	// BuilderProfileTable is the table that holds the builder_profile relation/edge.
+	BuilderProfileTable = "build_tasks"
+	// BuilderProfileInverseTable is the table name for the BuilderProfile entity.
+	// It exists in this package in order to avoid circular dependency with the "builderprofile" package.
+	BuilderProfileInverseTable = "builder_profiles"
+	// BuilderProfileColumn is the table column denoting the builder_profile relation/edge.
+	BuilderProfileColumn = "build_task_builder_profile"
 	// BuilderTable is the table that holds the builder relation/edge.
 	BuilderTable = "build_tasks"
 	// BuilderInverseTable is the table name for the Builder entity.
@@ -83,6 +94,7 @@ var Columns = []string{
 	FieldBuildImage,
 	FieldBuildScript,
 	FieldTransports,
+	FieldTomes,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,
@@ -97,6 +109,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"build_task_builder_profile",
 	"build_task_builder",
 	"build_task_artifact",
 }
@@ -246,6 +259,13 @@ func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
 }
 
+// ByBuilderProfileField orders the results by builder_profile field.
+func ByBuilderProfileField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBuilderProfileStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByBuilderField orders the results by builder field.
 func ByBuilderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -258,6 +278,13 @@ func ByArtifactField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newArtifactStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newBuilderProfileStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BuilderProfileInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, BuilderProfileTable, BuilderProfileColumn),
+	)
 }
 func newBuilderStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

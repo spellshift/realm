@@ -62,6 +62,86 @@ func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
 	return c
 }
 
+// CreateBuilderProfileInput represents a mutation input for creating builderprofiles.
+type CreateBuilderProfileInput struct {
+	Name            string
+	Description     *string
+	PreBuildScript  *string
+	PostBuildScript *string
+}
+
+// Mutate applies the CreateBuilderProfileInput on the BuilderProfileMutation builder.
+func (i *CreateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
+	m.SetName(i.Name)
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if v := i.PreBuildScript; v != nil {
+		m.SetPreBuildScript(*v)
+	}
+	if v := i.PostBuildScript; v != nil {
+		m.SetPostBuildScript(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateBuilderProfileInput on the BuilderProfileCreate builder.
+func (c *BuilderProfileCreate) SetInput(i CreateBuilderProfileInput) *BuilderProfileCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateBuilderProfileInput represents a mutation input for updating builderprofiles.
+type UpdateBuilderProfileInput struct {
+	LastModifiedAt       *time.Time
+	Name                 *string
+	ClearDescription     bool
+	Description          *string
+	ClearPreBuildScript  bool
+	PreBuildScript       *string
+	ClearPostBuildScript bool
+	PostBuildScript      *string
+}
+
+// Mutate applies the UpdateBuilderProfileInput on the BuilderProfileMutation builder.
+func (i *UpdateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if i.ClearDescription {
+		m.ClearDescription()
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if i.ClearPreBuildScript {
+		m.ClearPreBuildScript()
+	}
+	if v := i.PreBuildScript; v != nil {
+		m.SetPreBuildScript(*v)
+	}
+	if i.ClearPostBuildScript {
+		m.ClearPostBuildScript()
+	}
+	if v := i.PostBuildScript; v != nil {
+		m.SetPostBuildScript(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateBuilderProfileInput on the BuilderProfileUpdate builder.
+func (c *BuilderProfileUpdate) SetInput(i UpdateBuilderProfileInput) *BuilderProfileUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateBuilderProfileInput on the BuilderProfileUpdateOne builder.
+func (c *BuilderProfileUpdateOne) SetInput(i UpdateBuilderProfileInput) *BuilderProfileUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateDeviceAuthInput represents a mutation input for creating deviceauths.
 type CreateDeviceAuthInput struct {
 	UserCode   string

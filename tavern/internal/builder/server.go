@@ -130,13 +130,57 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			return nil, status.Errorf(codes.Internal, "failed to marshal IMIX config for task %d: %v", taskID, err)
 		}
 
+		var preBuildScript, postBuildScript string
+		profile, err := claimedTask.QueryBuilderProfile().Only(ctx)
+		if err == nil && profile != nil {
+			preBuildScript = profile.PreBuildScript
+			postBuildScript = profile.PostBuildScript
+		}
+
+		tomesProto := make([]*builderpb.BuildTaskTome, 0, len(claimedTask.Tomes))
+		for _, btTome := range claimedTask.Tomes {
+			// Find actual tome
+			var tomeEntity *ent.Tome
+			tomeEntity, err = s.graph.Tome.Get(ctx, int(btTome.TomeID))
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to load tome for build task", "tome_id", btTome.TomeID, "error", err)
+				continue
+			}
+
+			// Load associated assets for this tome
+			tomeAssets, err := tomeEntity.QueryAssets().All(ctx)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to load tome assets for build task", "tome_id", btTome.TomeID, "error", err)
+				continue
+			}
+
+			assetsProto := make([]*builderpb.BuildTaskTomeAsset, 0, len(tomeAssets))
+			for _, asset := range tomeAssets {
+				assetsProto = append(assetsProto, &builderpb.BuildTaskTomeAsset{
+					Name:    asset.Name,
+					Content: asset.Content,
+				})
+			}
+
+			tomesProto = append(tomesProto, &builderpb.BuildTaskTome{
+				Id:     int64(tomeEntity.ID),
+				Name:   tomeEntity.Name,
+				Script: tomeEntity.Eldritch,
+				Params: btTome.Params,
+				Assets: assetsProto,
+			})
+		}
+
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
-			Id:           int64(claimedTask.ID),
-			TargetOs:     claimedTask.TargetOs.String(),
-			BuildImage:   claimedTask.BuildImage,
-			BuildScript:  claimedTask.BuildScript,
-			ArtifactPath: claimedTask.ArtifactPath,
-			Env:          []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
+			Id:              int64(claimedTask.ID),
+			TargetOs:        claimedTask.TargetOs.String(),
+			BuildImage:      claimedTask.BuildImage,
+			BuildScript:     claimedTask.BuildScript,
+			ArtifactPath:    claimedTask.ArtifactPath,
+			Env:             []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
+			Tomes:           tomesProto,
+			PreBuildScript:  preBuildScript,
+			PostBuildScript: postBuildScript,
 		})
 	}
 

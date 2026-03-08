@@ -13,6 +13,19 @@ enum TargetFormat {
 
 message ClaimBuildTasksRequest {}
 
+message BuildTaskTomeAsset {
+    string name = 1;
+    bytes content = 2;
+}
+
+message BuildTaskTome {
+    int64 id = 1;
+    string name = 2;
+    string script = 3;
+    map<string, string> params = 4;
+    repeated BuildTaskTomeAsset assets = 5;
+}
+
 message BuildTaskSpec {
     int64 id = 1;
     string target_os = 2;
@@ -20,6 +33,9 @@ message BuildTaskSpec {
     string build_script = 4;
     string artifact_path = 6;
     repeated string env = 7;
+    repeated BuildTaskTome tomes = 8;
+    string pre_build_script = 9;
+    string post_build_script = 10;
 }
 
 message ClaimBuildTasksResponse {

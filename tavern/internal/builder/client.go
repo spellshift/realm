@@ -264,12 +264,15 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 	// Run the build through the executor.
 	// The executor closes both channels when done.
 	result, buildErr := exec.Build(ctx, executor.BuildSpec{
-		TaskID:       task.Id,
-		TargetOS:     task.TargetOs,
-		BuildImage:   task.BuildImage,
-		BuildScript:  task.BuildScript,
-		ArtifactPath: task.ArtifactPath,
-		Env:          task.Env,
+		TaskID:          task.Id,
+		TargetOS:        task.TargetOs,
+		BuildImage:      task.BuildImage,
+		BuildScript:     task.BuildScript,
+		ArtifactPath:    task.ArtifactPath,
+		Env:             task.Env,
+		PreBuildScript:  task.PreBuildScript,
+		PostBuildScript: task.PostBuildScript,
+		Tomes:           task.Tomes,
 	}, outputCh, errorCh)
 
 	// Wait for the collector goroutine to drain remaining channel data.

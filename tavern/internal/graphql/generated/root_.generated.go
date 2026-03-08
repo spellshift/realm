@@ -35,6 +35,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	BuildTaskTomeConfig() BuildTaskTomeConfigResolver
 	HostFile() HostFileResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -105,6 +106,7 @@ type ComplexityRoot struct {
 		BuildImage     func(childComplexity int) int
 		BuildScript    func(childComplexity int) int
 		Builder        func(childComplexity int) int
+		BuilderProfile func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
 		Error          func(childComplexity int) int
@@ -118,6 +120,7 @@ type ComplexityRoot struct {
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
+		Tomes          func(childComplexity int) int
 		Transports     func(childComplexity int) int
 	}
 
@@ -130,6 +133,11 @@ type ComplexityRoot struct {
 	BuildTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	BuildTaskTomeConfig struct {
+		Params func(childComplexity int) int
+		TomeID func(childComplexity int) int
 	}
 
 	BuildTaskTransport struct {
@@ -157,6 +165,27 @@ type ComplexityRoot struct {
 	}
 
 	BuilderEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	BuilderProfile struct {
+		CreatedAt       func(childComplexity int) int
+		Description     func(childComplexity int) int
+		ID              func(childComplexity int) int
+		LastModifiedAt  func(childComplexity int) int
+		Name            func(childComplexity int) int
+		PostBuildScript func(childComplexity int) int
+		PreBuildScript  func(childComplexity int) int
+	}
+
+	BuilderProfileConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BuilderProfileEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -316,27 +345,29 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask  func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateShell      func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder    func(childComplexity int, builderID int) int
-		DeleteTome       func(childComplexity int, tomeID int) int
-		DisableLink      func(childComplexity int, linkID int) int
-		DropAllData      func(childComplexity int) int
-		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder  func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey  func(childComplexity int) int
-		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateBuilderProfile func(childComplexity int, input ent.CreateBuilderProfileInput) int
+		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag            func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome           func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder        func(childComplexity int, builderID int) int
+		DeleteTome           func(childComplexity int, tomeID int) int
+		DisableLink          func(childComplexity int, linkID int) int
+		DropAllData          func(childComplexity int) int
+		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey      func(childComplexity int) int
+		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateBuilderProfile func(childComplexity int, id int, input ent.UpdateBuilderProfileInput) int
+		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome           func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser           func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -927,6 +958,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.Builder(childComplexity), true
 
+	case "BuildTask.builderProfile":
+		if e.complexity.BuildTask.BuilderProfile == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.BuilderProfile(childComplexity), true
+
 	case "BuildTask.claimedAt":
 		if e.complexity.BuildTask.ClaimedAt == nil {
 			break
@@ -1018,6 +1056,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
 
+	case "BuildTask.tomes":
+		if e.complexity.BuildTask.Tomes == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Tomes(childComplexity), true
+
 	case "BuildTask.transports":
 		if e.complexity.BuildTask.Transports == nil {
 			break
@@ -1059,6 +1104,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
+
+	case "BuildTaskTomeConfig.params":
+		if e.complexity.BuildTaskTomeConfig.Params == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTomeConfig.Params(childComplexity), true
+
+	case "BuildTaskTomeConfig.tomeID":
+		if e.complexity.BuildTaskTomeConfig.TomeID == nil {
+			break
+		}
+
+		return e.complexity.BuildTaskTomeConfig.TomeID(childComplexity), true
 
 	case "BuildTaskTransport.extra":
 		if e.complexity.BuildTaskTransport.Extra == nil {
@@ -1183,6 +1242,90 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuilderEdge.Node(childComplexity), true
+
+	case "BuilderProfile.createdAt":
+		if e.complexity.BuilderProfile.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.CreatedAt(childComplexity), true
+
+	case "BuilderProfile.description":
+		if e.complexity.BuilderProfile.Description == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.Description(childComplexity), true
+
+	case "BuilderProfile.id":
+		if e.complexity.BuilderProfile.ID == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.ID(childComplexity), true
+
+	case "BuilderProfile.lastModifiedAt":
+		if e.complexity.BuilderProfile.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.LastModifiedAt(childComplexity), true
+
+	case "BuilderProfile.name":
+		if e.complexity.BuilderProfile.Name == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.Name(childComplexity), true
+
+	case "BuilderProfile.postBuildScript":
+		if e.complexity.BuilderProfile.PostBuildScript == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.PostBuildScript(childComplexity), true
+
+	case "BuilderProfile.preBuildScript":
+		if e.complexity.BuilderProfile.PreBuildScript == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.PreBuildScript(childComplexity), true
+
+	case "BuilderProfileConnection.edges":
+		if e.complexity.BuilderProfileConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfileConnection.Edges(childComplexity), true
+
+	case "BuilderProfileConnection.pageInfo":
+		if e.complexity.BuilderProfileConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfileConnection.PageInfo(childComplexity), true
+
+	case "BuilderProfileConnection.totalCount":
+		if e.complexity.BuilderProfileConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfileConnection.TotalCount(childComplexity), true
+
+	case "BuilderProfileEdge.cursor":
+		if e.complexity.BuilderProfileEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfileEdge.Cursor(childComplexity), true
+
+	case "BuilderProfileEdge.node":
+		if e.complexity.BuilderProfileEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfileEdge.Node(childComplexity), true
 
 	case "DeviceAuth.createdAt":
 		if e.complexity.DeviceAuth.CreatedAt == nil {
@@ -1926,6 +2069,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateBuildTask(childComplexity, args["input"].(models.CreateBuildTaskInput)), true
 
+	case "Mutation.createBuilderProfile":
+		if e.complexity.Mutation.CreateBuilderProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBuilderProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateBuilderProfile(childComplexity, args["input"].(ent.CreateBuilderProfileInput)), true
+
 	case "Mutation.createCredential":
 		if e.complexity.Mutation.CreateCredential == nil {
 			break
@@ -2095,6 +2250,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.UpdateBeacon(childComplexity, args["beaconID"].(int), args["input"].(ent.UpdateBeaconInput)), true
+
+	case "Mutation.updateBuilderProfile":
+		if e.complexity.Mutation.UpdateBuilderProfile == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateBuilderProfile_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateBuilderProfile(childComplexity, args["id"].(int), args["input"].(ent.UpdateBuilderProfileInput)), true
 
 	case "Mutation.updateHost":
 		if e.complexity.Mutation.UpdateHost == nil {
@@ -3605,13 +3772,17 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
+		ec.unmarshalInputBuildTaskTomeConfigInput,
 		ec.unmarshalInputBuildTaskTransportInput,
 		ec.unmarshalInputBuildTaskWhereInput,
 		ec.unmarshalInputBuilderOrder,
+		ec.unmarshalInputBuilderProfileOrder,
+		ec.unmarshalInputBuilderProfileWhereInput,
 		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateBuildTaskInput,
 		ec.unmarshalInputCreateBuilderInput,
+		ec.unmarshalInputCreateBuilderProfileInput,
 		ec.unmarshalInputCreateDeviceAuthInput,
 		ec.unmarshalInputCreateHostCredentialInput,
 		ec.unmarshalInputCreateLinkInput,
@@ -3653,6 +3824,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputTomeOrder,
 		ec.unmarshalInputTomeWhereInput,
 		ec.unmarshalInputUpdateBeaconInput,
+		ec.unmarshalInputUpdateBuilderProfileInput,
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
@@ -4380,6 +4552,10 @@ type BuildTask implements Node {
   """
   transports: [BuildTaskTransport!]!
   """
+  List of tomes to include in the build.
+  """
+  tomes: [BuildTaskTomeConfig!]
+  """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
   claimedAt: Time
@@ -4415,6 +4591,10 @@ type BuildTask implements Node {
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
+  """
+  The profile specifying pre/post build scripts.
+  """
+  builderProfile: BuilderProfile
   """
   The builder assigned to execute this build task.
   """
@@ -4706,6 +4886,11 @@ input BuildTaskWhereInput {
   artifactPathEqualFold: String
   artifactPathContainsFold: String
   """
+  builder_profile edge predicates
+  """
+  hasBuilderProfile: Boolean
+  hasBuilderProfileWith: [BuilderProfileWhereInput!]
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
@@ -4825,6 +5010,196 @@ enum BuilderOrderField {
   LAST_MODIFIED_AT
   LAST_SEEN_AT
 }
+type BuilderProfile implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Name of the builder profile.
+  """
+  name: String!
+  """
+  Description of the builder profile.
+  """
+  description: String
+  """
+  Bash script to run before compilation.
+  """
+  preBuildScript: String
+  """
+  Bash script to run after build is complete.
+  """
+  postBuildScript: String
+}
+"""
+A connection to a list of items.
+"""
+type BuilderProfileConnection {
+  """
+  A list of edges.
+  """
+  edges: [BuilderProfileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BuilderProfileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: BuilderProfile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for BuilderProfile connections
+"""
+input BuilderProfileOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order BuilderProfiles.
+  """
+  field: BuilderProfileOrderField!
+}
+"""
+Properties by which BuilderProfile connections can be ordered.
+"""
+enum BuilderProfileOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+}
+"""
+BuilderProfileWhereInput is used for filtering BuilderProfile objects.
+Input was generated by ent.
+"""
+input BuilderProfileWhereInput {
+  not: BuilderProfileWhereInput
+  and: [BuilderProfileWhereInput!]
+  or: [BuilderProfileWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionIsNil: Boolean
+  descriptionNotNil: Boolean
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  pre_build_script field predicates
+  """
+  preBuildScript: String
+  preBuildScriptNEQ: String
+  preBuildScriptIn: [String!]
+  preBuildScriptNotIn: [String!]
+  preBuildScriptGT: String
+  preBuildScriptGTE: String
+  preBuildScriptLT: String
+  preBuildScriptLTE: String
+  preBuildScriptContains: String
+  preBuildScriptHasPrefix: String
+  preBuildScriptHasSuffix: String
+  preBuildScriptIsNil: Boolean
+  preBuildScriptNotNil: Boolean
+  preBuildScriptEqualFold: String
+  preBuildScriptContainsFold: String
+  """
+  post_build_script field predicates
+  """
+  postBuildScript: String
+  postBuildScriptNEQ: String
+  postBuildScriptIn: [String!]
+  postBuildScriptNotIn: [String!]
+  postBuildScriptGT: String
+  postBuildScriptGTE: String
+  postBuildScriptLT: String
+  postBuildScriptLTE: String
+  postBuildScriptContains: String
+  postBuildScriptHasPrefix: String
+  postBuildScriptHasSuffix: String
+  postBuildScriptIsNil: Boolean
+  postBuildScriptNotNil: Boolean
+  postBuildScriptEqualFold: String
+  postBuildScriptContainsFold: String
+}
 """
 BuilderWhereInput is used for filtering Builder objects.
 Input was generated by ent.
@@ -4930,6 +5305,28 @@ input CreateBuilderInput {
   The server address that the builder should connect to.
   """
   upstream: String
+}
+"""
+CreateBuilderProfileInput is used for create BuilderProfile object.
+Input was generated by ent.
+"""
+input CreateBuilderProfileInput {
+  """
+  Name of the builder profile.
+  """
+  name: String!
+  """
+  Description of the builder profile.
+  """
+  description: String
+  """
+  Bash script to run before compilation.
+  """
+  preBuildScript: String
+  """
+  Bash script to run after build is complete.
+  """
+  postBuildScript: String
 }
 """
 CreateDeviceAuthInput is used for create DeviceAuth object.
@@ -9103,6 +9500,35 @@ input UpdateBeaconInput {
   hostID: ID
 }
 """
+UpdateBuilderProfileInput is used for update BuilderProfile object.
+Input was generated by ent.
+"""
+input UpdateBuilderProfileInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Name of the builder profile.
+  """
+  name: String
+  """
+  Description of the builder profile.
+  """
+  description: String
+  clearDescription: Boolean
+  """
+  Bash script to run before compilation.
+  """
+  preBuildScript: String
+  clearPreBuildScript: Boolean
+  """
+  Bash script to run after build is complete.
+  """
+  postBuildScript: String
+  clearPostBuildScript: Boolean
+}
+"""
 UpdateDeviceAuthInput is used for update DeviceAuth object.
 Input was generated by ent.
 """
@@ -9861,6 +10287,12 @@ scalar Uint64
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # BuilderProfile
+    ###
+    createBuilderProfile(input: CreateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
+    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
@@ -9943,6 +10375,24 @@ input BuildTaskTransportInput {
   extra: String
 }
 
+"""A single tome configuration for a build task."""
+type BuildTaskTomeConfig @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTomeConfig") {
+  """The ID of the tome."""
+  tomeID: Int!
+
+  """The parameters for the tome."""
+  params: String!
+}
+
+"""Input for a single tome configuration."""
+input BuildTaskTomeConfigInput {
+  """The ID of the tome."""
+  tomeID: Int!
+
+  """The parameters for the tome in JSON format."""
+  params: String!
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -9959,6 +10409,12 @@ input CreateBuildTaskInput {
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
+
+  """List of tomes to include in the build."""
+  tomes: [BuildTaskTomeConfigInput!]
+
+  """The builder profile to use for the build."""
+  builderProfileID: Int
 }
 
 """Output returned when registering a new builder."""

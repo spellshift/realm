@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	mathrand "math/rand"
@@ -467,6 +468,21 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// 6. Randomly select one builder
 	selected := candidates[mathrand.Intn(len(candidates))]
 
+	// Resolve tomes
+	var tomes []builderpb.BuildTaskTomeConfig
+	if len(input.Tomes) > 0 {
+		for _, t := range input.Tomes {
+			var params map[string]string
+			if err := json.Unmarshal([]byte(t.Params), &params); err != nil {
+				return nil, fmt.Errorf("failed to parse params for tome %d: %w", t.TomeID, err)
+			}
+			tomes = append(tomes, builderpb.BuildTaskTomeConfig{
+				TomeID: int64(t.TomeID),
+				Params: params,
+			})
+		}
+	}
+
 	// 7. Create the build task
 	create := r.client.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
@@ -477,12 +493,30 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
 
+	if len(tomes) > 0 {
+		create.SetTomes(tomes)
+	}
+
+	if input.BuilderProfileID != nil {
+		create.SetBuilderProfileID(*input.BuilderProfileID)
+	}
+
 	bt, err := create.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create build task: %w", err)
 	}
 
 	return bt, nil
+}
+
+// CreateBuilderProfile is the resolver for the createBuilderProfile field.
+func (r *mutationResolver) CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput) (*ent.BuilderProfile, error) {
+	return r.client.BuilderProfile.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateBuilderProfile is the resolver for the updateBuilderProfile field.
+func (r *mutationResolver) UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput) (*ent.BuilderProfile, error) {
+	return r.client.BuilderProfile.UpdateOneID(id).SetInput(input).Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

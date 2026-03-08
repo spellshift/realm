@@ -71,4 +71,10 @@ type Mutation {
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # BuilderProfile
+    ###
+    createBuilderProfile(input: CreateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
+    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
 }

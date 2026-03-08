@@ -14,6 +14,14 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
+// Input for a single tome configuration.
+type BuildTaskTomeConfigInput struct {
+	// The ID of the tome.
+	TomeID int `json:"tomeID"`
+	// The parameters for the tome in JSON format.
+	Params string `json:"params"`
+}
+
 // Input for a single transport configuration.
 type BuildTaskTransportInput struct {
 	// The URI for the IMIX agent.
@@ -55,6 +63,10 @@ type CreateBuildTaskInput struct {
 	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
+	// List of tomes to include in the build.
+	Tomes []*BuildTaskTomeConfigInput `json:"tomes,omitempty"`
+	// The builder profile to use for the build.
+	BuilderProfileID *int `json:"builderProfileID,omitempty"`
 }
 
 type ImportRepositoryInput struct {

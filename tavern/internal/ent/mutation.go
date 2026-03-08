@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -50,6 +51,7 @@ const (
 	TypeBeacon         = "Beacon"
 	TypeBuildTask      = "BuildTask"
 	TypeBuilder        = "Builder"
+	TypeBuilderProfile = "BuilderProfile"
 	TypeDeviceAuth     = "DeviceAuth"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
@@ -2120,37 +2122,41 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 // BuildTaskMutation represents an operation that mutates the BuildTask nodes in the graph.
 type BuildTaskMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int
-	created_at       *time.Time
-	last_modified_at *time.Time
-	target_os        *c2pb.Host_Platform
-	target_format    *builderpb.TargetFormat
-	build_image      *string
-	build_script     *string
-	transports       *[]builderpb.BuildTaskTransport
-	appendtransports []builderpb.BuildTaskTransport
-	claimed_at       *time.Time
-	started_at       *time.Time
-	finished_at      *time.Time
-	output           *string
-	output_size      *int
-	addoutput_size   *int
-	error            *string
-	error_size       *int
-	adderror_size    *int
-	exit_code        *int
-	addexit_code     *int
-	artifact_path    *string
-	clearedFields    map[string]struct{}
-	builder          *int
-	clearedbuilder   bool
-	artifact         *int
-	clearedartifact  bool
-	done             bool
-	oldValue         func(context.Context) (*BuildTask, error)
-	predicates       []predicate.BuildTask
+	op                     Op
+	typ                    string
+	id                     *int
+	created_at             *time.Time
+	last_modified_at       *time.Time
+	target_os              *c2pb.Host_Platform
+	target_format          *builderpb.TargetFormat
+	build_image            *string
+	build_script           *string
+	transports             *[]builderpb.BuildTaskTransport
+	appendtransports       []builderpb.BuildTaskTransport
+	tomes                  *[]builderpb.BuildTaskTomeConfig
+	appendtomes            []builderpb.BuildTaskTomeConfig
+	claimed_at             *time.Time
+	started_at             *time.Time
+	finished_at            *time.Time
+	output                 *string
+	output_size            *int
+	addoutput_size         *int
+	error                  *string
+	error_size             *int
+	adderror_size          *int
+	exit_code              *int
+	addexit_code           *int
+	artifact_path          *string
+	clearedFields          map[string]struct{}
+	builder_profile        *int
+	clearedbuilder_profile bool
+	builder                *int
+	clearedbuilder         bool
+	artifact               *int
+	clearedartifact        bool
+	done                   bool
+	oldValue               func(context.Context) (*BuildTask, error)
+	predicates             []predicate.BuildTask
 }
 
 var _ ent.Mutation = (*BuildTaskMutation)(nil)
@@ -2516,6 +2522,71 @@ func (m *BuildTaskMutation) AppendedTransports() ([]builderpb.BuildTaskTransport
 func (m *BuildTaskMutation) ResetTransports() {
 	m.transports = nil
 	m.appendtransports = nil
+}
+
+// SetTomes sets the "tomes" field.
+func (m *BuildTaskMutation) SetTomes(bttc []builderpb.BuildTaskTomeConfig) {
+	m.tomes = &bttc
+	m.appendtomes = nil
+}
+
+// Tomes returns the value of the "tomes" field in the mutation.
+func (m *BuildTaskMutation) Tomes() (r []builderpb.BuildTaskTomeConfig, exists bool) {
+	v := m.tomes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTomes returns the old "tomes" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldTomes(ctx context.Context) (v []builderpb.BuildTaskTomeConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTomes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTomes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTomes: %w", err)
+	}
+	return oldValue.Tomes, nil
+}
+
+// AppendTomes adds bttc to the "tomes" field.
+func (m *BuildTaskMutation) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) {
+	m.appendtomes = append(m.appendtomes, bttc...)
+}
+
+// AppendedTomes returns the list of values that were appended to the "tomes" field in this mutation.
+func (m *BuildTaskMutation) AppendedTomes() ([]builderpb.BuildTaskTomeConfig, bool) {
+	if len(m.appendtomes) == 0 {
+		return nil, false
+	}
+	return m.appendtomes, true
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (m *BuildTaskMutation) ClearTomes() {
+	m.tomes = nil
+	m.appendtomes = nil
+	m.clearedFields[buildtask.FieldTomes] = struct{}{}
+}
+
+// TomesCleared returns if the "tomes" field was cleared in this mutation.
+func (m *BuildTaskMutation) TomesCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldTomes]
+	return ok
+}
+
+// ResetTomes resets all changes to the "tomes" field.
+func (m *BuildTaskMutation) ResetTomes() {
+	m.tomes = nil
+	m.appendtomes = nil
+	delete(m.clearedFields, buildtask.FieldTomes)
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -2994,6 +3065,45 @@ func (m *BuildTaskMutation) ResetArtifactPath() {
 	delete(m.clearedFields, buildtask.FieldArtifactPath)
 }
 
+// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by id.
+func (m *BuildTaskMutation) SetBuilderProfileID(id int) {
+	m.builder_profile = &id
+}
+
+// ClearBuilderProfile clears the "builder_profile" edge to the BuilderProfile entity.
+func (m *BuildTaskMutation) ClearBuilderProfile() {
+	m.clearedbuilder_profile = true
+}
+
+// BuilderProfileCleared reports if the "builder_profile" edge to the BuilderProfile entity was cleared.
+func (m *BuildTaskMutation) BuilderProfileCleared() bool {
+	return m.clearedbuilder_profile
+}
+
+// BuilderProfileID returns the "builder_profile" edge ID in the mutation.
+func (m *BuildTaskMutation) BuilderProfileID() (id int, exists bool) {
+	if m.builder_profile != nil {
+		return *m.builder_profile, true
+	}
+	return
+}
+
+// BuilderProfileIDs returns the "builder_profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BuilderProfileID instead. It exists only for internal usage by the builders.
+func (m *BuildTaskMutation) BuilderProfileIDs() (ids []int) {
+	if id := m.builder_profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBuilderProfile resets all changes to the "builder_profile" edge.
+func (m *BuildTaskMutation) ResetBuilderProfile() {
+	m.builder_profile = nil
+	m.clearedbuilder_profile = false
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by id.
 func (m *BuildTaskMutation) SetBuilderID(id int) {
 	m.builder = &id
@@ -3106,7 +3216,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -3127,6 +3237,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	}
 	if m.transports != nil {
 		fields = append(fields, buildtask.FieldTransports)
+	}
+	if m.tomes != nil {
+		fields = append(fields, buildtask.FieldTomes)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, buildtask.FieldClaimedAt)
@@ -3177,6 +3290,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildScript()
 	case buildtask.FieldTransports:
 		return m.Transports()
+	case buildtask.FieldTomes:
+		return m.Tomes()
 	case buildtask.FieldClaimedAt:
 		return m.ClaimedAt()
 	case buildtask.FieldStartedAt:
@@ -3218,6 +3333,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldBuildScript(ctx)
 	case buildtask.FieldTransports:
 		return m.OldTransports(ctx)
+	case buildtask.FieldTomes:
+		return m.OldTomes(ctx)
 	case buildtask.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case buildtask.FieldStartedAt:
@@ -3293,6 +3410,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTransports(v)
+		return nil
+	case buildtask.FieldTomes:
+		v, ok := value.([]builderpb.BuildTaskTomeConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTomes(v)
 		return nil
 	case buildtask.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -3426,6 +3550,9 @@ func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuildTaskMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(buildtask.FieldTomes) {
+		fields = append(fields, buildtask.FieldTomes)
+	}
 	if m.FieldCleared(buildtask.FieldClaimedAt) {
 		fields = append(fields, buildtask.FieldClaimedAt)
 	}
@@ -3461,6 +3588,9 @@ func (m *BuildTaskMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuildTaskMutation) ClearField(name string) error {
 	switch name {
+	case buildtask.FieldTomes:
+		m.ClearTomes()
+		return nil
 	case buildtask.FieldClaimedAt:
 		m.ClearClaimedAt()
 		return nil
@@ -3511,6 +3641,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 	case buildtask.FieldTransports:
 		m.ResetTransports()
 		return nil
+	case buildtask.FieldTomes:
+		m.ResetTomes()
+		return nil
 	case buildtask.FieldClaimedAt:
 		m.ResetClaimedAt()
 		return nil
@@ -3544,7 +3677,10 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BuildTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.builder_profile != nil {
+		edges = append(edges, buildtask.EdgeBuilderProfile)
+	}
 	if m.builder != nil {
 		edges = append(edges, buildtask.EdgeBuilder)
 	}
@@ -3558,6 +3694,10 @@ func (m *BuildTaskMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *BuildTaskMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case buildtask.EdgeBuilderProfile:
+		if id := m.builder_profile; id != nil {
+			return []ent.Value{*id}
+		}
 	case buildtask.EdgeBuilder:
 		if id := m.builder; id != nil {
 			return []ent.Value{*id}
@@ -3572,7 +3712,7 @@ func (m *BuildTaskMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BuildTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -3584,7 +3724,10 @@ func (m *BuildTaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BuildTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.clearedbuilder_profile {
+		edges = append(edges, buildtask.EdgeBuilderProfile)
+	}
 	if m.clearedbuilder {
 		edges = append(edges, buildtask.EdgeBuilder)
 	}
@@ -3598,6 +3741,8 @@ func (m *BuildTaskMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *BuildTaskMutation) EdgeCleared(name string) bool {
 	switch name {
+	case buildtask.EdgeBuilderProfile:
+		return m.clearedbuilder_profile
 	case buildtask.EdgeBuilder:
 		return m.clearedbuilder
 	case buildtask.EdgeArtifact:
@@ -3610,6 +3755,9 @@ func (m *BuildTaskMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *BuildTaskMutation) ClearEdge(name string) error {
 	switch name {
+	case buildtask.EdgeBuilderProfile:
+		m.ClearBuilderProfile()
+		return nil
 	case buildtask.EdgeBuilder:
 		m.ClearBuilder()
 		return nil
@@ -3624,6 +3772,9 @@ func (m *BuildTaskMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *BuildTaskMutation) ResetEdge(name string) error {
 	switch name {
+	case buildtask.EdgeBuilderProfile:
+		m.ResetBuilderProfile()
+		return nil
 	case buildtask.EdgeBuilder:
 		m.ResetBuilder()
 		return nil
@@ -4359,6 +4510,662 @@ func (m *BuilderMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Builder edge %s", name)
+}
+
+// BuilderProfileMutation represents an operation that mutates the BuilderProfile nodes in the graph.
+type BuilderProfileMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	name              *string
+	description       *string
+	pre_build_script  *string
+	post_build_script *string
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*BuilderProfile, error)
+	predicates        []predicate.BuilderProfile
+}
+
+var _ ent.Mutation = (*BuilderProfileMutation)(nil)
+
+// builderprofileOption allows management of the mutation configuration using functional options.
+type builderprofileOption func(*BuilderProfileMutation)
+
+// newBuilderProfileMutation creates new mutation for the BuilderProfile entity.
+func newBuilderProfileMutation(c config, op Op, opts ...builderprofileOption) *BuilderProfileMutation {
+	m := &BuilderProfileMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBuilderProfile,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBuilderProfileID sets the ID field of the mutation.
+func withBuilderProfileID(id int) builderprofileOption {
+	return func(m *BuilderProfileMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BuilderProfile
+		)
+		m.oldValue = func(ctx context.Context) (*BuilderProfile, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BuilderProfile.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBuilderProfile sets the old BuilderProfile of the mutation.
+func withBuilderProfile(node *BuilderProfile) builderprofileOption {
+	return func(m *BuilderProfileMutation) {
+		m.oldValue = func(context.Context) (*BuilderProfile, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BuilderProfileMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BuilderProfileMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BuilderProfileMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BuilderProfileMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BuilderProfile.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BuilderProfileMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BuilderProfileMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BuilderProfileMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *BuilderProfileMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *BuilderProfileMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *BuilderProfileMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *BuilderProfileMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *BuilderProfileMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *BuilderProfileMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *BuilderProfileMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *BuilderProfileMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *BuilderProfileMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[builderprofile.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *BuilderProfileMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[builderprofile.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *BuilderProfileMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, builderprofile.FieldDescription)
+}
+
+// SetPreBuildScript sets the "pre_build_script" field.
+func (m *BuilderProfileMutation) SetPreBuildScript(s string) {
+	m.pre_build_script = &s
+}
+
+// PreBuildScript returns the value of the "pre_build_script" field in the mutation.
+func (m *BuilderProfileMutation) PreBuildScript() (r string, exists bool) {
+	v := m.pre_build_script
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPreBuildScript returns the old "pre_build_script" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldPreBuildScript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPreBuildScript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPreBuildScript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPreBuildScript: %w", err)
+	}
+	return oldValue.PreBuildScript, nil
+}
+
+// ClearPreBuildScript clears the value of the "pre_build_script" field.
+func (m *BuilderProfileMutation) ClearPreBuildScript() {
+	m.pre_build_script = nil
+	m.clearedFields[builderprofile.FieldPreBuildScript] = struct{}{}
+}
+
+// PreBuildScriptCleared returns if the "pre_build_script" field was cleared in this mutation.
+func (m *BuilderProfileMutation) PreBuildScriptCleared() bool {
+	_, ok := m.clearedFields[builderprofile.FieldPreBuildScript]
+	return ok
+}
+
+// ResetPreBuildScript resets all changes to the "pre_build_script" field.
+func (m *BuilderProfileMutation) ResetPreBuildScript() {
+	m.pre_build_script = nil
+	delete(m.clearedFields, builderprofile.FieldPreBuildScript)
+}
+
+// SetPostBuildScript sets the "post_build_script" field.
+func (m *BuilderProfileMutation) SetPostBuildScript(s string) {
+	m.post_build_script = &s
+}
+
+// PostBuildScript returns the value of the "post_build_script" field in the mutation.
+func (m *BuilderProfileMutation) PostBuildScript() (r string, exists bool) {
+	v := m.post_build_script
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostBuildScript returns the old "post_build_script" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldPostBuildScript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostBuildScript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostBuildScript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostBuildScript: %w", err)
+	}
+	return oldValue.PostBuildScript, nil
+}
+
+// ClearPostBuildScript clears the value of the "post_build_script" field.
+func (m *BuilderProfileMutation) ClearPostBuildScript() {
+	m.post_build_script = nil
+	m.clearedFields[builderprofile.FieldPostBuildScript] = struct{}{}
+}
+
+// PostBuildScriptCleared returns if the "post_build_script" field was cleared in this mutation.
+func (m *BuilderProfileMutation) PostBuildScriptCleared() bool {
+	_, ok := m.clearedFields[builderprofile.FieldPostBuildScript]
+	return ok
+}
+
+// ResetPostBuildScript resets all changes to the "post_build_script" field.
+func (m *BuilderProfileMutation) ResetPostBuildScript() {
+	m.post_build_script = nil
+	delete(m.clearedFields, builderprofile.FieldPostBuildScript)
+}
+
+// Where appends a list predicates to the BuilderProfileMutation builder.
+func (m *BuilderProfileMutation) Where(ps ...predicate.BuilderProfile) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BuilderProfileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BuilderProfileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BuilderProfile, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BuilderProfileMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BuilderProfileMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BuilderProfile).
+func (m *BuilderProfileMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BuilderProfileMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, builderprofile.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, builderprofile.FieldLastModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, builderprofile.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, builderprofile.FieldDescription)
+	}
+	if m.pre_build_script != nil {
+		fields = append(fields, builderprofile.FieldPreBuildScript)
+	}
+	if m.post_build_script != nil {
+		fields = append(fields, builderprofile.FieldPostBuildScript)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BuilderProfileMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case builderprofile.FieldCreatedAt:
+		return m.CreatedAt()
+	case builderprofile.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case builderprofile.FieldName:
+		return m.Name()
+	case builderprofile.FieldDescription:
+		return m.Description()
+	case builderprofile.FieldPreBuildScript:
+		return m.PreBuildScript()
+	case builderprofile.FieldPostBuildScript:
+		return m.PostBuildScript()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BuilderProfileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case builderprofile.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case builderprofile.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case builderprofile.FieldName:
+		return m.OldName(ctx)
+	case builderprofile.FieldDescription:
+		return m.OldDescription(ctx)
+	case builderprofile.FieldPreBuildScript:
+		return m.OldPreBuildScript(ctx)
+	case builderprofile.FieldPostBuildScript:
+		return m.OldPostBuildScript(ctx)
+	}
+	return nil, fmt.Errorf("unknown BuilderProfile field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuilderProfileMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case builderprofile.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case builderprofile.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case builderprofile.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case builderprofile.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case builderprofile.FieldPreBuildScript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPreBuildScript(v)
+		return nil
+	case builderprofile.FieldPostBuildScript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostBuildScript(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BuilderProfile field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BuilderProfileMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BuilderProfileMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BuilderProfileMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown BuilderProfile numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BuilderProfileMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(builderprofile.FieldDescription) {
+		fields = append(fields, builderprofile.FieldDescription)
+	}
+	if m.FieldCleared(builderprofile.FieldPreBuildScript) {
+		fields = append(fields, builderprofile.FieldPreBuildScript)
+	}
+	if m.FieldCleared(builderprofile.FieldPostBuildScript) {
+		fields = append(fields, builderprofile.FieldPostBuildScript)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BuilderProfileMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BuilderProfileMutation) ClearField(name string) error {
+	switch name {
+	case builderprofile.FieldDescription:
+		m.ClearDescription()
+		return nil
+	case builderprofile.FieldPreBuildScript:
+		m.ClearPreBuildScript()
+		return nil
+	case builderprofile.FieldPostBuildScript:
+		m.ClearPostBuildScript()
+		return nil
+	}
+	return fmt.Errorf("unknown BuilderProfile nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BuilderProfileMutation) ResetField(name string) error {
+	switch name {
+	case builderprofile.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case builderprofile.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case builderprofile.FieldName:
+		m.ResetName()
+		return nil
+	case builderprofile.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case builderprofile.FieldPreBuildScript:
+		m.ResetPreBuildScript()
+		return nil
+	case builderprofile.FieldPostBuildScript:
+		m.ResetPostBuildScript()
+		return nil
+	}
+	return fmt.Errorf("unknown BuilderProfile field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BuilderProfileMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BuilderProfileMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BuilderProfileMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BuilderProfileMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BuilderProfileMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BuilderProfileMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BuilderProfileMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown BuilderProfile unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BuilderProfileMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown BuilderProfile edge %s", name)
 }
 
 // DeviceAuthMutation represents an operation that mutates the DeviceAuth nodes in the graph.

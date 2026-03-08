@@ -57,6 +57,18 @@ func (f BuilderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuilderMutation", m)
 }
 
+// The BuilderProfileFunc type is an adapter to allow the use of ordinary
+// function as BuilderProfile mutator.
+type BuilderProfileFunc func(context.Context, *ent.BuilderProfileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BuilderProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BuilderProfileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BuilderProfileMutation", m)
+}
+
 // The DeviceAuthFunc type is an adapter to allow the use of ordinary
 // function as DeviceAuth mutator.
 type DeviceAuthFunc func(context.Context, *ent.DeviceAuthMutation) (ent.Value, error)

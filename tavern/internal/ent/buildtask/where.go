@@ -372,6 +372,16 @@ func BuildScriptContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldBuildScript, v))
 }
 
+// TomesIsNil applies the IsNil predicate on the "tomes" field.
+func TomesIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldTomes))
+}
+
+// TomesNotNil applies the NotNil predicate on the "tomes" field.
+func TomesNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldTomes))
+}
+
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.
 func ClaimedAtEQ(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldClaimedAt, v))
@@ -875,6 +885,29 @@ func ArtifactPathEqualFold(v string) predicate.BuildTask {
 // ArtifactPathContainsFold applies the ContainsFold predicate on the "artifact_path" field.
 func ArtifactPathContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldArtifactPath, v))
+}
+
+// HasBuilderProfile applies the HasEdge predicate on the "builder_profile" edge.
+func HasBuilderProfile() predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, BuilderProfileTable, BuilderProfileColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBuilderProfileWith applies the HasEdge predicate on the "builder_profile" edge with a given conditions (other predicates).
+func HasBuilderProfileWith(preds ...predicate.BuilderProfile) predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := newBuilderProfileStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasBuilder applies the HasEdge predicate on the "builder" edge.

@@ -78,6 +78,24 @@ input BuildTaskTransportInput {
   extra: String
 }
 
+"""A single tome configuration for a build task."""
+type BuildTaskTomeConfig @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTomeConfig") {
+  """The ID of the tome."""
+  tomeID: Int!
+
+  """The parameters for the tome."""
+  params: String!
+}
+
+"""Input for a single tome configuration."""
+input BuildTaskTomeConfigInput {
+  """The ID of the tome."""
+  tomeID: Int!
+
+  """The parameters for the tome in JSON format."""
+  params: String!
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -94,6 +112,12 @@ input CreateBuildTaskInput {
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
+
+  """List of tomes to include in the build."""
+  tomes: [BuildTaskTomeConfigInput!]
+
+  """The builder profile to use for the build."""
+  builderProfileID: Int
 }
 
 """Output returned when registering a new builder."""

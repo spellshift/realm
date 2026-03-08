@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -36,6 +37,8 @@ type BuildTask struct {
 	BuildScript string `json:"build_script,omitempty"`
 	// List of transport configurations for the IMIX agent.
 	Transports []builderpb.BuildTaskTransport `json:"transports,omitempty"`
+	// List of tomes to include in the build.
+	Tomes []builderpb.BuildTaskTomeConfig `json:"tomes,omitempty"`
 	// Timestamp of when a builder claimed this task, null if unclaimed.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// Timestamp of when the build execution started, null if not yet started.
@@ -56,23 +59,37 @@ type BuildTask struct {
 	ArtifactPath string `json:"artifact_path,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildTaskQuery when eager-loading is set.
-	Edges               BuildTaskEdges `json:"edges"`
-	build_task_builder  *int
-	build_task_artifact *int
-	selectValues        sql.SelectValues
+	Edges                      BuildTaskEdges `json:"edges"`
+	build_task_builder_profile *int
+	build_task_builder         *int
+	build_task_artifact        *int
+	selectValues               sql.SelectValues
 }
 
 // BuildTaskEdges holds the relations/edges for other nodes in the graph.
 type BuildTaskEdges struct {
+	// The profile specifying pre/post build scripts.
+	BuilderProfile *BuilderProfile `json:"builder_profile,omitempty"`
 	// The builder assigned to execute this build task.
 	Builder *Builder `json:"builder,omitempty"`
 	// The compiled artifact produced by this build task, stored as an Asset.
 	Artifact *Asset `json:"artifact,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
+}
+
+// BuilderProfileOrErr returns the BuilderProfile value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BuildTaskEdges) BuilderProfileOrErr() (*BuilderProfile, error) {
+	if e.BuilderProfile != nil {
+		return e.BuilderProfile, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: builderprofile.Label}
+	}
+	return nil, &NotLoadedError{edge: "builder_profile"}
 }
 
 // BuilderOrErr returns the Builder value or an error if the edge
@@ -80,7 +97,7 @@ type BuildTaskEdges struct {
 func (e BuildTaskEdges) BuilderOrErr() (*Builder, error) {
 	if e.Builder != nil {
 		return e.Builder, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: builder.Label}
 	}
 	return nil, &NotLoadedError{edge: "builder"}
@@ -91,7 +108,7 @@ func (e BuildTaskEdges) BuilderOrErr() (*Builder, error) {
 func (e BuildTaskEdges) ArtifactOrErr() (*Asset, error) {
 	if e.Artifact != nil {
 		return e.Artifact, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: asset.Label}
 	}
 	return nil, &NotLoadedError{edge: "artifact"}
@@ -102,7 +119,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case buildtask.FieldTransports:
+		case buildtask.FieldTransports, buildtask.FieldTomes:
 			values[i] = new([]byte)
 		case buildtask.FieldTargetFormat:
 			values[i] = new(builderpb.TargetFormat)
@@ -114,9 +131,11 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
-		case buildtask.ForeignKeys[0]: // build_task_builder
+		case buildtask.ForeignKeys[0]: // build_task_builder_profile
 			values[i] = new(sql.NullInt64)
-		case buildtask.ForeignKeys[1]: // build_task_artifact
+		case buildtask.ForeignKeys[1]: // build_task_builder
+			values[i] = new(sql.NullInt64)
+		case buildtask.ForeignKeys[2]: // build_task_artifact
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -183,6 +202,14 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field transports: %w", err)
 				}
 			}
+		case buildtask.FieldTomes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tomes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bt.Tomes); err != nil {
+					return fmt.Errorf("unmarshal field tomes: %w", err)
+				}
+			}
 		case buildtask.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field claimed_at", values[i])
@@ -240,12 +267,19 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			}
 		case buildtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field build_task_builder_profile", value)
+			} else if value.Valid {
+				bt.build_task_builder_profile = new(int)
+				*bt.build_task_builder_profile = int(value.Int64)
+			}
+		case buildtask.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_builder", value)
 			} else if value.Valid {
 				bt.build_task_builder = new(int)
 				*bt.build_task_builder = int(value.Int64)
 			}
-		case buildtask.ForeignKeys[1]:
+		case buildtask.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_artifact", value)
 			} else if value.Valid {
@@ -263,6 +297,11 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (bt *BuildTask) Value(name string) (ent.Value, error) {
 	return bt.selectValues.Get(name)
+}
+
+// QueryBuilderProfile queries the "builder_profile" edge of the BuildTask entity.
+func (bt *BuildTask) QueryBuilderProfile() *BuilderProfileQuery {
+	return NewBuildTaskClient(bt.config).QueryBuilderProfile(bt)
 }
 
 // QueryBuilder queries the "builder" edge of the BuildTask entity.
@@ -318,6 +357,9 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("transports=")
 	builder.WriteString(fmt.Sprintf("%v", bt.Transports))
+	builder.WriteString(", ")
+	builder.WriteString("tomes=")
+	builder.WriteString(fmt.Sprintf("%v", bt.Tomes))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(bt.ClaimedAt.Format(time.ANSIC))
