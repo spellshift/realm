@@ -1,10 +1,15 @@
-#![no_std]
 extern crate alloc;
 
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::string::String;
 use alloc::vec::Vec;
-use pb::c2::{self, TaskContext};
+use pb::c2::{self, ShellTaskContext, TaskContext};
+
+#[derive(Clone, Debug)]
+pub enum Context {
+    Task(TaskContext),
+    ShellTask(ShellTaskContext),
+}
 
 pub trait Agent: Send + Sync {
     // Interactivity
@@ -13,22 +18,21 @@ pub trait Agent: Send + Sync {
         &self,
         req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String>;
-    fn report_file(&self, req: c2::ReportFileRequest) -> Result<c2::ReportFileResponse, String>;
+    fn report_file(
+        &self,
+        req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+    ) -> Result<c2::ReportFileResponse, String>;
     fn report_process_list(
         &self,
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String>;
-    fn report_task_output(
+    fn report_output(
         &self,
-        req: c2::ReportTaskOutputRequest,
-    ) -> Result<c2::ReportTaskOutputResponse, String>;
-    fn start_reverse_shell(
-        &self,
-        task_context: TaskContext,
-        cmd: Option<String>,
-    ) -> Result<(), String>;
-    fn create_portal(&self, task_context: TaskContext) -> Result<(), String>;
-    fn start_repl_reverse_shell(&self, task_context: TaskContext) -> Result<(), String>;
+        req: c2::ReportOutputRequest,
+    ) -> Result<c2::ReportOutputResponse, String>;
+    fn start_reverse_shell(&self, context: Context, cmd: Option<String>) -> Result<(), String>;
+    fn create_portal(&self, context: Context) -> Result<(), String>;
+    fn start_repl_reverse_shell(&self, context: Context) -> Result<(), String>;
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String>;
 
     // Agent Configuration

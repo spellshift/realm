@@ -4,17 +4,15 @@ use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ptr;
 
-use super::{ConnectionState, NetstatEntry, SocketType};
+use super::{ConnectionState, InterfaceEntry, NetstatEntry, SocketType};
 
-use windows_sys::Win32::Foundation::{
-    CloseHandle, ERROR_INSUFFICIENT_BUFFER, INVALID_HANDLE_VALUE, NO_ERROR,
-};
+use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE, NO_ERROR};
 use windows_sys::Win32::NetworkManagement::IpHelper::{
-    GetExtendedTcpTable, GetExtendedUdpTable, MIB_TCP6ROW_OWNER_PID, MIB_TCP6TABLE_OWNER_PID,
-    MIB_TCPROW_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6ROW_OWNER_PID, MIB_UDP6TABLE_OWNER_PID,
-    MIB_UDPROW_OWNER_PID, MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
+    GetAdaptersAddresses, GetExtendedTcpTable, GetExtendedUdpTable, IP_ADAPTER_ADDRESSES_LH,
+    MIB_TCP6TABLE_OWNER_PID, MIB_TCPTABLE_OWNER_PID, MIB_UDP6TABLE_OWNER_PID,
+    MIB_UDPTABLE_OWNER_PID, TCP_TABLE_OWNER_PID_ALL, UDP_TABLE_OWNER_PID,
 };
-use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6};
+use windows_sys::Win32::Networking::WinSock::{AF_INET, AF_INET6, AF_UNSPEC};
 use windows_sys::Win32::System::Diagnostics::ToolHelp::{
     CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
 };
@@ -371,6 +369,121 @@ fn get_process_name(pid: u32, process_map: &HashMap<u32, String>) -> Option<Stri
     process_map.get(&pid).cloned()
 }
 
+pub fn list_interfaces() -> Result<Vec<InterfaceEntry>> {
+    unsafe {
+        let mut size: u32 = 0;
+        let flags: u32 = 0;
+
+        // First call to get required buffer size
+        GetAdaptersAddresses(
+            AF_UNSPEC as u32,
+            flags,
+            ptr::null_mut(),
+            ptr::null_mut(),
+            &mut size,
+        );
+
+        if size == 0 {
+            return Ok(Vec::new());
+        }
+
+        let mut buffer = vec![0u8; size as usize];
+
+        let result = GetAdaptersAddresses(
+            AF_UNSPEC as u32,
+            flags,
+            ptr::null_mut(),
+            buffer.as_mut_ptr() as *mut IP_ADAPTER_ADDRESSES_LH,
+            &mut size,
+        );
+
+        if result != NO_ERROR {
+            return Err(anyhow::anyhow!(
+                "GetAdaptersAddresses failed with error code: {}",
+                result
+            ));
+        }
+
+        let mut entries = Vec::new();
+        let mut adapter = buffer.as_ptr() as *const IP_ADAPTER_ADDRESSES_LH;
+
+        while !adapter.is_null() {
+            let a = &*adapter;
+
+            // Get friendly name (wide string)
+            let name = wide_to_string(a.FriendlyName);
+
+            // Get MAC address
+            let mut mac = [0u8; 6];
+            if a.PhysicalAddressLength >= 6 {
+                mac.copy_from_slice(&a.PhysicalAddress[..6]);
+            }
+
+            // Get first unicast IP address (prefer IPv4)
+            let ip = get_first_unicast_ip(a.FirstUnicastAddress);
+
+            entries.push(InterfaceEntry {
+                iface_name: name,
+                mac_address: mac,
+                ip_address: ip,
+            });
+
+            adapter = a.Next;
+        }
+
+        Ok(entries)
+    }
+}
+
+unsafe fn wide_to_string(ptr: *const u16) -> String {
+    if ptr.is_null() {
+        return String::new();
+    }
+    let mut len = 0;
+    while *ptr.add(len) != 0 {
+        len += 1;
+    }
+    String::from_utf16_lossy(std::slice::from_raw_parts(ptr, len))
+}
+
+unsafe fn get_first_unicast_ip(
+    first: *const windows_sys::Win32::NetworkManagement::IpHelper::IP_ADAPTER_UNICAST_ADDRESS_LH,
+) -> Option<IpAddr> {
+    use windows_sys::Win32::Networking::WinSock::{SOCKADDR_IN, SOCKADDR_IN6};
+
+    let mut ipv4: Option<IpAddr> = None;
+    let mut ipv6: Option<IpAddr> = None;
+
+    let mut cur = first;
+    while !cur.is_null() {
+        let addr = &*cur;
+        let sa = addr.Address.lpSockaddr;
+        if !sa.is_null() {
+            let family = (*sa).sa_family;
+            match family {
+                AF_INET => {
+                    if ipv4.is_none() {
+                        let sin = &*(sa as *const SOCKADDR_IN);
+                        let bytes = sin.sin_addr.S_un.S_addr.to_ne_bytes();
+                        ipv4 = Some(IpAddr::V4(Ipv4Addr::from(bytes)));
+                    }
+                }
+                AF_INET6 => {
+                    if ipv6.is_none() {
+                        let sin6 = &*(sa as *const SOCKADDR_IN6);
+                        let bytes = sin6.sin6_addr.u.Byte;
+                        ipv6 = Some(IpAddr::V6(Ipv6Addr::from(bytes)));
+                    }
+                }
+                _ => {}
+            }
+        }
+        cur = addr.Next;
+    }
+
+    ipv4.or(ipv6)
+}
+
 fn parse_tcp_state(state: u32) -> ConnectionState {
     // Windows MIB_TCP_STATE values
     match state {
@@ -445,5 +558,20 @@ mod tests {
 
         assert!(found, "Our test socket should appear in netstat results");
         Ok(())
+    }
+
+    #[test]
+    fn test_list_interfaces() {
+        let result = list_interfaces();
+        assert!(result.is_ok());
+
+        let interfaces = result.unwrap();
+        assert!(!interfaces.is_empty(), "Should have at least one interface");
+    }
+
+    #[test]
+    fn print_interfaces() {
+        let result = list_interfaces();
+        println!("debug {:?}", result)
     }
 }

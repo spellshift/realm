@@ -9,5 +9,9 @@ use spin::RwLock;
 /// **Parameters**
 /// - `message` (Any): The message to include in the error.
 pub fn builtin_fail(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
-    Err(format!("Test failed explicitly: {}", args[0]))
+    Err(format!(
+        "Test failed explicitly: {:?}",
+        args.first()
+            .unwrap_or(&Value::String("no context provided".into()))
+    ))
 }

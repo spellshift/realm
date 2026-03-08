@@ -17,6 +17,8 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
@@ -214,9 +216,13 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		SetIdentifier(req.Beacon.Host.Identifier).
 		SetName(req.Beacon.Host.Name).
 		SetPlatform(req.Beacon.Host.Platform).
-		SetPrimaryIP(req.Beacon.Host.PrimaryIp).
 		SetLastSeenAt(now).
 		SetNextSeenAt(now.Add(time.Duration(activeTransport.Interval) * time.Second))
+
+	// Only update primary IP if it's not empty
+	if req.Beacon.Host.PrimaryIp != "" {
+		hostCreate.SetPrimaryIP(req.Beacon.Host.PrimaryIp)
+	}
 
 	// Only update external IP if it's not NOOP
 	if clientIP != redirectors.ExternalIPNoop {
@@ -303,9 +309,9 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
 			}
 		}
-		for _, canidate := range candidateNames {
-			if !namegen.IsCollision(collisions, canidate) {
-				beaconNameAddr = &canidate
+		for _, candidate := range candidateNames {
+			if !namegen.IsCollision(collisions, candidate) {
+				beaconNameAddr = &candidate
 				break
 			}
 		}
@@ -344,6 +350,17 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		return nil, status.Errorf(codes.Internal, "failed to query tasks: %v", err)
 	}
 
+	// Load Shell Tasks
+	shellTasks, err := srv.graph.ShellTask.Query().
+		Where(shelltask.And(
+			shelltask.HasShellWith(shell.HasBeaconWith(beacon.ID(beaconID))),
+			shelltask.ClaimedAtIsNil(),
+		)).
+		All(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to query shell tasks: %v", err)
+	}
+
 	// Prepare Transaction for Claiming Tasks
 	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
@@ -370,6 +387,18 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 			return nil, rollback(tx, fmt.Errorf("failed to update task %d: %w", t.ID, err))
 		}
 		taskIDs = append(taskIDs, t.ID)
+	}
+
+	// Update all ClaimedAt timestamps to claim shell tasks
+	shellTaskIDs := make([]int, 0, len(shellTasks))
+	for _, t := range shellTasks {
+		_, err := client.ShellTask.UpdateOne(t).
+			SetClaimedAt(now).
+			Save(ctx)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to update shell task %d: %w", t.ID, err))
+		}
+		shellTaskIDs = append(shellTaskIDs, t.ID)
 	}
 
 	// Commit the transaction
@@ -423,6 +452,33 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 				FileNames:  claimedAssetNames,
 			},
 			Jwt: jwtToken,
+		})
+	}
+
+	resp.ShellTasks = make([]*c2pb.ShellTask, 0, len(shellTaskIDs))
+	for _, shellTaskID := range shellTaskIDs {
+		claimedShellTask, err := srv.graph.ShellTask.Get(ctx, shellTaskID)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to load claimed shell task (but it was still claimed) %d: %w", shellTaskID, err))
+		}
+		shellID, err := claimedShellTask.QueryShell().OnlyID(ctx)
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to load shell for claimed shell task (id=%d): %w", shellTaskID, err))
+		}
+
+		// Generate JWT for ShellTask
+		shellJwtToken, err := srv.generateTaskJWT()
+		if err != nil {
+			return nil, rollback(tx, fmt.Errorf("failed to generate JWT for shell task (id=%d): %w", shellTaskID, err))
+		}
+
+		resp.ShellTasks = append(resp.ShellTasks, &c2pb.ShellTask{
+			Id:         int64(claimedShellTask.ID),
+			Input:      claimedShellTask.Input,
+			ShellId:    int64(shellID),
+			SequenceId: claimedShellTask.SequenceID,
+			StreamId:   claimedShellTask.StreamID,
+			Jwt:        shellJwtToken,
 		})
 	}
 

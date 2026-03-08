@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // LinkUpdate is the builder for updating Link entities.
@@ -63,24 +64,51 @@ func (lu *LinkUpdate) SetNillableExpiresAt(t *time.Time) *LinkUpdate {
 	return lu
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (lu *LinkUpdate) SetDownloadsRemaining(i int) *LinkUpdate {
-	lu.mutation.ResetDownloadsRemaining()
-	lu.mutation.SetDownloadsRemaining(i)
+// SetDownloadLimit sets the "download_limit" field.
+func (lu *LinkUpdate) SetDownloadLimit(i int) *LinkUpdate {
+	lu.mutation.ResetDownloadLimit()
+	lu.mutation.SetDownloadLimit(i)
 	return lu
 }
 
-// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
-func (lu *LinkUpdate) SetNillableDownloadsRemaining(i *int) *LinkUpdate {
+// SetNillableDownloadLimit sets the "download_limit" field if the given value is not nil.
+func (lu *LinkUpdate) SetNillableDownloadLimit(i *int) *LinkUpdate {
 	if i != nil {
-		lu.SetDownloadsRemaining(*i)
+		lu.SetDownloadLimit(*i)
 	}
 	return lu
 }
 
-// AddDownloadsRemaining adds i to the "downloads_remaining" field.
-func (lu *LinkUpdate) AddDownloadsRemaining(i int) *LinkUpdate {
-	lu.mutation.AddDownloadsRemaining(i)
+// AddDownloadLimit adds i to the "download_limit" field.
+func (lu *LinkUpdate) AddDownloadLimit(i int) *LinkUpdate {
+	lu.mutation.AddDownloadLimit(i)
+	return lu
+}
+
+// ClearDownloadLimit clears the value of the "download_limit" field.
+func (lu *LinkUpdate) ClearDownloadLimit() *LinkUpdate {
+	lu.mutation.ClearDownloadLimit()
+	return lu
+}
+
+// SetDownloads sets the "downloads" field.
+func (lu *LinkUpdate) SetDownloads(i int) *LinkUpdate {
+	lu.mutation.ResetDownloads()
+	lu.mutation.SetDownloads(i)
+	return lu
+}
+
+// SetNillableDownloads sets the "downloads" field if the given value is not nil.
+func (lu *LinkUpdate) SetNillableDownloads(i *int) *LinkUpdate {
+	if i != nil {
+		lu.SetDownloads(*i)
+	}
+	return lu
+}
+
+// AddDownloads adds i to the "downloads" field.
+func (lu *LinkUpdate) AddDownloads(i int) *LinkUpdate {
+	lu.mutation.AddDownloads(i)
 	return lu
 }
 
@@ -95,6 +123,25 @@ func (lu *LinkUpdate) SetAsset(a *Asset) *LinkUpdate {
 	return lu.SetAssetID(a.ID)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (lu *LinkUpdate) SetCreatorID(id int) *LinkUpdate {
+	lu.mutation.SetCreatorID(id)
+	return lu
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (lu *LinkUpdate) SetNillableCreatorID(id *int) *LinkUpdate {
+	if id != nil {
+		lu = lu.SetCreatorID(*id)
+	}
+	return lu
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (lu *LinkUpdate) SetCreator(u *User) *LinkUpdate {
+	return lu.SetCreatorID(u.ID)
+}
+
 // Mutation returns the LinkMutation object of the builder.
 func (lu *LinkUpdate) Mutation() *LinkMutation {
 	return lu.mutation
@@ -103,6 +150,12 @@ func (lu *LinkUpdate) Mutation() *LinkMutation {
 // ClearAsset clears the "asset" edge to the Asset entity.
 func (lu *LinkUpdate) ClearAsset() *LinkUpdate {
 	lu.mutation.ClearAsset()
+	return lu
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (lu *LinkUpdate) ClearCreator() *LinkUpdate {
+	lu.mutation.ClearCreator()
 	return lu
 }
 
@@ -149,9 +202,14 @@ func (lu *LinkUpdate) check() error {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "Link.path": %w`, err)}
 		}
 	}
-	if v, ok := lu.mutation.DownloadsRemaining(); ok {
-		if err := link.DownloadsRemainingValidator(v); err != nil {
-			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
+	if v, ok := lu.mutation.DownloadLimit(); ok {
+		if err := link.DownloadLimitValidator(v); err != nil {
+			return &ValidationError{Name: "download_limit", err: fmt.Errorf(`ent: validator failed for field "Link.download_limit": %w`, err)}
+		}
+	}
+	if v, ok := lu.mutation.Downloads(); ok {
+		if err := link.DownloadsValidator(v); err != nil {
+			return &ValidationError{Name: "downloads", err: fmt.Errorf(`ent: validator failed for field "Link.downloads": %w`, err)}
 		}
 	}
 	if lu.mutation.AssetCleared() && len(lu.mutation.AssetIDs()) > 0 {
@@ -181,11 +239,20 @@ func (lu *LinkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := lu.mutation.ExpiresAt(); ok {
 		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
 	}
-	if value, ok := lu.mutation.DownloadsRemaining(); ok {
-		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
+	if value, ok := lu.mutation.DownloadLimit(); ok {
+		_spec.SetField(link.FieldDownloadLimit, field.TypeInt, value)
 	}
-	if value, ok := lu.mutation.AddedDownloadsRemaining(); ok {
-		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
+	if value, ok := lu.mutation.AddedDownloadLimit(); ok {
+		_spec.AddField(link.FieldDownloadLimit, field.TypeInt, value)
+	}
+	if lu.mutation.DownloadLimitCleared() {
+		_spec.ClearField(link.FieldDownloadLimit, field.TypeInt)
+	}
+	if value, ok := lu.mutation.Downloads(); ok {
+		_spec.SetField(link.FieldDownloads, field.TypeInt, value)
+	}
+	if value, ok := lu.mutation.AddedDownloads(); ok {
+		_spec.AddField(link.FieldDownloads, field.TypeInt, value)
 	}
 	if lu.mutation.AssetCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -209,6 +276,35 @@ func (lu *LinkUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if lu.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   link.CreatorTable,
+			Columns: []string{link.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   link.CreatorTable,
+			Columns: []string{link.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -270,24 +366,51 @@ func (luo *LinkUpdateOne) SetNillableExpiresAt(t *time.Time) *LinkUpdateOne {
 	return luo
 }
 
-// SetDownloadsRemaining sets the "downloads_remaining" field.
-func (luo *LinkUpdateOne) SetDownloadsRemaining(i int) *LinkUpdateOne {
-	luo.mutation.ResetDownloadsRemaining()
-	luo.mutation.SetDownloadsRemaining(i)
+// SetDownloadLimit sets the "download_limit" field.
+func (luo *LinkUpdateOne) SetDownloadLimit(i int) *LinkUpdateOne {
+	luo.mutation.ResetDownloadLimit()
+	luo.mutation.SetDownloadLimit(i)
 	return luo
 }
 
-// SetNillableDownloadsRemaining sets the "downloads_remaining" field if the given value is not nil.
-func (luo *LinkUpdateOne) SetNillableDownloadsRemaining(i *int) *LinkUpdateOne {
+// SetNillableDownloadLimit sets the "download_limit" field if the given value is not nil.
+func (luo *LinkUpdateOne) SetNillableDownloadLimit(i *int) *LinkUpdateOne {
 	if i != nil {
-		luo.SetDownloadsRemaining(*i)
+		luo.SetDownloadLimit(*i)
 	}
 	return luo
 }
 
-// AddDownloadsRemaining adds i to the "downloads_remaining" field.
-func (luo *LinkUpdateOne) AddDownloadsRemaining(i int) *LinkUpdateOne {
-	luo.mutation.AddDownloadsRemaining(i)
+// AddDownloadLimit adds i to the "download_limit" field.
+func (luo *LinkUpdateOne) AddDownloadLimit(i int) *LinkUpdateOne {
+	luo.mutation.AddDownloadLimit(i)
+	return luo
+}
+
+// ClearDownloadLimit clears the value of the "download_limit" field.
+func (luo *LinkUpdateOne) ClearDownloadLimit() *LinkUpdateOne {
+	luo.mutation.ClearDownloadLimit()
+	return luo
+}
+
+// SetDownloads sets the "downloads" field.
+func (luo *LinkUpdateOne) SetDownloads(i int) *LinkUpdateOne {
+	luo.mutation.ResetDownloads()
+	luo.mutation.SetDownloads(i)
+	return luo
+}
+
+// SetNillableDownloads sets the "downloads" field if the given value is not nil.
+func (luo *LinkUpdateOne) SetNillableDownloads(i *int) *LinkUpdateOne {
+	if i != nil {
+		luo.SetDownloads(*i)
+	}
+	return luo
+}
+
+// AddDownloads adds i to the "downloads" field.
+func (luo *LinkUpdateOne) AddDownloads(i int) *LinkUpdateOne {
+	luo.mutation.AddDownloads(i)
 	return luo
 }
 
@@ -302,6 +425,25 @@ func (luo *LinkUpdateOne) SetAsset(a *Asset) *LinkUpdateOne {
 	return luo.SetAssetID(a.ID)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (luo *LinkUpdateOne) SetCreatorID(id int) *LinkUpdateOne {
+	luo.mutation.SetCreatorID(id)
+	return luo
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (luo *LinkUpdateOne) SetNillableCreatorID(id *int) *LinkUpdateOne {
+	if id != nil {
+		luo = luo.SetCreatorID(*id)
+	}
+	return luo
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (luo *LinkUpdateOne) SetCreator(u *User) *LinkUpdateOne {
+	return luo.SetCreatorID(u.ID)
+}
+
 // Mutation returns the LinkMutation object of the builder.
 func (luo *LinkUpdateOne) Mutation() *LinkMutation {
 	return luo.mutation
@@ -310,6 +452,12 @@ func (luo *LinkUpdateOne) Mutation() *LinkMutation {
 // ClearAsset clears the "asset" edge to the Asset entity.
 func (luo *LinkUpdateOne) ClearAsset() *LinkUpdateOne {
 	luo.mutation.ClearAsset()
+	return luo
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (luo *LinkUpdateOne) ClearCreator() *LinkUpdateOne {
+	luo.mutation.ClearCreator()
 	return luo
 }
 
@@ -369,9 +517,14 @@ func (luo *LinkUpdateOne) check() error {
 			return &ValidationError{Name: "path", err: fmt.Errorf(`ent: validator failed for field "Link.path": %w`, err)}
 		}
 	}
-	if v, ok := luo.mutation.DownloadsRemaining(); ok {
-		if err := link.DownloadsRemainingValidator(v); err != nil {
-			return &ValidationError{Name: "downloads_remaining", err: fmt.Errorf(`ent: validator failed for field "Link.downloads_remaining": %w`, err)}
+	if v, ok := luo.mutation.DownloadLimit(); ok {
+		if err := link.DownloadLimitValidator(v); err != nil {
+			return &ValidationError{Name: "download_limit", err: fmt.Errorf(`ent: validator failed for field "Link.download_limit": %w`, err)}
+		}
+	}
+	if v, ok := luo.mutation.Downloads(); ok {
+		if err := link.DownloadsValidator(v); err != nil {
+			return &ValidationError{Name: "downloads", err: fmt.Errorf(`ent: validator failed for field "Link.downloads": %w`, err)}
 		}
 	}
 	if luo.mutation.AssetCleared() && len(luo.mutation.AssetIDs()) > 0 {
@@ -418,11 +571,20 @@ func (luo *LinkUpdateOne) sqlSave(ctx context.Context) (_node *Link, err error) 
 	if value, ok := luo.mutation.ExpiresAt(); ok {
 		_spec.SetField(link.FieldExpiresAt, field.TypeTime, value)
 	}
-	if value, ok := luo.mutation.DownloadsRemaining(); ok {
-		_spec.SetField(link.FieldDownloadsRemaining, field.TypeInt, value)
+	if value, ok := luo.mutation.DownloadLimit(); ok {
+		_spec.SetField(link.FieldDownloadLimit, field.TypeInt, value)
 	}
-	if value, ok := luo.mutation.AddedDownloadsRemaining(); ok {
-		_spec.AddField(link.FieldDownloadsRemaining, field.TypeInt, value)
+	if value, ok := luo.mutation.AddedDownloadLimit(); ok {
+		_spec.AddField(link.FieldDownloadLimit, field.TypeInt, value)
+	}
+	if luo.mutation.DownloadLimitCleared() {
+		_spec.ClearField(link.FieldDownloadLimit, field.TypeInt)
+	}
+	if value, ok := luo.mutation.Downloads(); ok {
+		_spec.SetField(link.FieldDownloads, field.TypeInt, value)
+	}
+	if value, ok := luo.mutation.AddedDownloads(); ok {
+		_spec.AddField(link.FieldDownloads, field.TypeInt, value)
 	}
 	if luo.mutation.AssetCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -446,6 +608,35 @@ func (luo *LinkUpdateOne) sqlSave(ctx context.Context) (_node *Link, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(asset.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if luo.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   link.CreatorTable,
+			Columns: []string{link.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   link.CreatorTable,
+			Columns: []string{link.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

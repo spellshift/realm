@@ -14,19 +14,21 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // LinkQuery is the builder for querying Link entities.
 type LinkQuery struct {
 	config
-	ctx        *QueryContext
-	order      []link.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Link
-	withAsset  *AssetQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Link) error
+	ctx         *QueryContext
+	order       []link.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Link
+	withAsset   *AssetQuery
+	withCreator *UserQuery
+	withFKs     bool
+	modifiers   []func(*sql.Selector)
+	loadTotal   []func(context.Context, []*Link) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,6 +80,28 @@ func (lq *LinkQuery) QueryAsset() *AssetQuery {
 			sqlgraph.From(link.Table, link.FieldID, selector),
 			sqlgraph.To(asset.Table, asset.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, link.AssetTable, link.AssetColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCreator chains the current query on the "creator" edge.
+func (lq *LinkQuery) QueryCreator() *UserQuery {
+	query := (&UserClient{config: lq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := lq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := lq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(link.Table, link.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, link.CreatorTable, link.CreatorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,12 +296,13 @@ func (lq *LinkQuery) Clone() *LinkQuery {
 		return nil
 	}
 	return &LinkQuery{
-		config:     lq.config,
-		ctx:        lq.ctx.Clone(),
-		order:      append([]link.OrderOption{}, lq.order...),
-		inters:     append([]Interceptor{}, lq.inters...),
-		predicates: append([]predicate.Link{}, lq.predicates...),
-		withAsset:  lq.withAsset.Clone(),
+		config:      lq.config,
+		ctx:         lq.ctx.Clone(),
+		order:       append([]link.OrderOption{}, lq.order...),
+		inters:      append([]Interceptor{}, lq.inters...),
+		predicates:  append([]predicate.Link{}, lq.predicates...),
+		withAsset:   lq.withAsset.Clone(),
+		withCreator: lq.withCreator.Clone(),
 		// clone intermediate query.
 		sql:  lq.sql.Clone(),
 		path: lq.path,
@@ -292,6 +317,17 @@ func (lq *LinkQuery) WithAsset(opts ...func(*AssetQuery)) *LinkQuery {
 		opt(query)
 	}
 	lq.withAsset = query
+	return lq
+}
+
+// WithCreator tells the query-builder to eager-load the nodes that are connected to
+// the "creator" edge. The optional arguments are used to configure the query builder of the edge.
+func (lq *LinkQuery) WithCreator(opts ...func(*UserQuery)) *LinkQuery {
+	query := (&UserClient{config: lq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	lq.withCreator = query
 	return lq
 }
 
@@ -374,11 +410,12 @@ func (lq *LinkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Link, e
 		nodes       = []*Link{}
 		withFKs     = lq.withFKs
 		_spec       = lq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			lq.withAsset != nil,
+			lq.withCreator != nil,
 		}
 	)
-	if lq.withAsset != nil {
+	if lq.withAsset != nil || lq.withCreator != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -408,6 +445,12 @@ func (lq *LinkQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Link, e
 	if query := lq.withAsset; query != nil {
 		if err := lq.loadAsset(ctx, query, nodes, nil,
 			func(n *Link, e *Asset) { n.Edges.Asset = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := lq.withCreator; query != nil {
+		if err := lq.loadCreator(ctx, query, nodes, nil,
+			func(n *Link, e *User) { n.Edges.Creator = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -444,6 +487,38 @@ func (lq *LinkQuery) loadAsset(ctx context.Context, query *AssetQuery, nodes []*
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "link_asset" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (lq *LinkQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*Link, init func(*Link), assign func(*Link, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Link)
+	for i := range nodes {
+		if nodes[i].link_creator == nil {
+			continue
+		}
+		fk := *nodes[i].link_creator
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "link_creator" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

@@ -55,6 +55,7 @@ func WithHistoryReplay() SubOption {
 
 // Subscribe creates a local subscription to the topic.
 func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mote, func()) {
+	slog.Info("New subscription", "topic", topicID)
 	options := subOptions{
 		replayHistory: false,
 	}
@@ -85,6 +86,7 @@ func (m *Mux) Subscribe(topicID string, opts ...SubOption) (<-chan *portalpb.Mot
 	}
 
 	cancel := func() {
+		slog.Info("Subscription canceled", "topic", topicID)
 		m.subs.Lock()
 		defer m.subs.Unlock()
 
@@ -113,7 +115,7 @@ func (m *Mux) dispatch(topicID string, mote *portalpb.Mote) {
 		case ch <- mote:
 		case <-time.After(100 * time.Millisecond):
 			// Drop message if subscriber is slow
-			slog.Warn("Dropping message for slow subscriber", "topic", topicID)
+			slog.Warn("Dropping message for slow subscriber", "topic", topicID, "queue_len", len(ch), "queue_cap", cap(ch))
 			msgsDropped.WithLabelValues(topicID).Inc()
 		}
 	}
@@ -133,6 +135,9 @@ func (m *Mux) addToHistory(topicID string, mote *portalpb.Mote) {
 }
 
 func (m *Mux) receiveLoop(ctx context.Context, topicID string, sub pubsub.Subscriber) {
+	slog.InfoContext(ctx, "Starting receive loop", "topic", topicID)
+	defer slog.InfoContext(ctx, "Receive loop exited", "topic", topicID)
+
 	err := sub.Receive(ctx, func(ctx context.Context, mote *portalpb.Mote) {
 		msgsReceived.WithLabelValues(topicID).Inc()
 

@@ -9,7 +9,7 @@ import { useFilters } from '../../../context/FilterContext';
 
 const TagBarChart = ({ data, loading, tagKind, children }: { data: Array<any>, loading: boolean, tagKind: string, children?: React.ReactNode }) => {
     const navigation = useNavigate();
-    const { filters, updateFilters } = useFilters();
+    const { filters, updateFilters, setIsLocked } = useFilters();
 
     if (loading) {
         return <EmptyState type={EmptyStateType.loading} label="Formatting group data..." />
@@ -30,6 +30,7 @@ const TagBarChart = ({ data, loading, tagKind, children }: { data: Array<any>, l
                 'value': item?.id,
                 'id': item?.id
             };
+            setIsLocked(true);
             updateFilters({ 'beaconFields': [...filters.beaconFields, newFilter] })
         }
         navigation("/quests")

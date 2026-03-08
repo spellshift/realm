@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package builder;
+
+option go_package = "realm.pub/tavern/internal/builder/builderpb";
+
+enum TargetFormat {
+    TARGET_FORMAT_UNSPECIFIED = 0;
+    TARGET_FORMAT_BIN = 1;
+    TARGET_FORMAT_CDYLIB = 2;
+    TARGET_FORMAT_WINDOWS_SERVICE = 3;
+}
+
+message ClaimBuildTasksRequest {}
+
+message BuildTaskSpec {
+    int64 id = 1;
+    string target_os = 2;
+    string build_image = 3;
+    string build_script = 4;
+    string artifact_path = 6;
+    repeated string env = 7;
+}
+
+message ClaimBuildTasksResponse {
+    repeated BuildTaskSpec tasks = 1;
+}
+
+message StreamBuildTaskOutputRequest {
+    int64 task_id = 1;
+    string output = 2;
+    string error = 3;
+    bool finished = 4;
+    int64 exit_code = 5;
+}
+
+message StreamBuildTaskOutputResponse {}
+
+message UploadBuildArtifactRequest {
+    int64 task_id = 1;
+    string artifact_name = 2;
+    bytes chunk = 3;
+}
+
+message UploadBuildArtifactResponse {
+    int64 asset_id = 1;
+}
+
+service Builder {
+    rpc ClaimBuildTasks(ClaimBuildTasksRequest) returns (ClaimBuildTasksResponse) {}
+    rpc StreamBuildTaskOutput(stream StreamBuildTaskOutputRequest) returns (StreamBuildTaskOutputResponse) {}
+    rpc UploadBuildArtifact(stream UploadBuildArtifactRequest) returns (UploadBuildArtifactResponse) {}
+}

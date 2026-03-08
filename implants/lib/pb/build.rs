@@ -1,5 +1,4 @@
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
 use which::which;
@@ -13,6 +12,8 @@ struct TransportConfig {
     extra: String,
     #[serde(default)]
     interval: Option<u64>,
+    #[serde(default)]
+    jitter: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -119,6 +120,11 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
         // Add interval if present
         if let Some(interval) = transport.interval {
             params.push(format!("interval={}", interval));
+        }
+
+        // Add jitter if present
+        if let Some(jitter) = transport.jitter {
+            params.push(format!("jitter={}", jitter));
         }
 
         // Add extra as query parameter if not empty
@@ -246,25 +252,6 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     );
 }
 
-fn build_extra_vars() -> Result<(), Box<dyn std::error::Error>> {
-    let mut res = HashMap::new();
-    for (key, value) in std::env::vars() {
-        if key.starts_with("IMIX_TRANSPORT_EXTRA_") {
-            println!("{}", key);
-            match key.strip_prefix("IMIX_TRANSPORT_EXTRA_") {
-                Some(k) => {
-                    let suffixed_key = String::from(k);
-                    res.insert(suffixed_key, value);
-                }
-                None => panic!("failed to strip prefix"),
-            }
-        }
-    }
-    let res_str = serde_json::to_string(&res)?;
-    println!("cargo:rustc-env=IMIX_TRANSPORT_EXTRA={}", res_str);
-    Ok(())
-}
-
 fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
     // Skip validation if YAML config is being used
     // (parse_yaml_config already handles validation in that case)
@@ -303,6 +290,14 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Tell Cargo to rerun this build script if these env vars change
+    // This fixes the issue where changing IMIX_CONFIG doesn't trigger a rebuild
+    println!("cargo:rerun-if-env-changed=IMIX_CONFIG");
+    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_URI");
+    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
+    println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
+    println!("cargo:rerun-if-env-changed=PROTOC");
+
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;
 
@@ -310,7 +305,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     validate_dsn_config()?;
 
     get_pub_key(yaml_config);
-    build_extra_vars()?;
 
     // Skip if no `protoc` can be found
     match env::var_os("PROTOC")
@@ -325,12 +319,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Build Eldritch Proto
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(
+        .compile_protos(
             &["eldritch.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -345,12 +339,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build Portal Protos
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(
+        .compile_protos(
             &["portal.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -363,12 +357,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Ok(_) => println!("generated portal protos"),
     };
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated/")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_client(false)
         .build_server(false)
-        .compile(&["trace.proto"], &["../../../tavern/portals/proto/"])
+        .compile_protos(&["trace.proto"], &["../../../tavern/portals/proto/"])
     {
         Err(err) => {
             println!("WARNING: Failed to compile portal protos: {}", err);
@@ -378,12 +372,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build C2 Protos
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated")
         .codec_path("crate::xchacha::ChachaCodec")
         .build_server(false)
         .extern_path(".eldritch", "crate::eldritch")
-        .compile(
+        .compile_protos(
             &["c2.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
@@ -398,11 +392,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Build DNS Protos (no encryption codec - used for transport layer only)
-    match tonic_build::configure()
+    match tonic_prost_build::configure()
         .out_dir("./src/generated")
         .build_server(false)
         .build_client(false)
-        .compile(
+        .compile_protos(
             &["dns.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",

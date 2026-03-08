@@ -27,7 +27,7 @@ Want to get hands on now?  <a href="{{ '/user-guide/getting-started' | prepend: 
 <li>Written in rust with support for MacOS, Linux, and Windows.</li>
 <li>Supports long running tasks by reading output from task in real time.</li>
 <li>Interval callback times.</li>
-<li>Simple file based configuration.</li>
+<li>Simple file-based configuration.</li>
 <li>Embedded files.</li>
 <li>Built-in interpreter.</li>
 </ul>

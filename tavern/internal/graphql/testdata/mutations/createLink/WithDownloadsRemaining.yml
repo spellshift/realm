@@ -10,7 +10,8 @@ query: |
   mutation CreateLink($input: CreateLinkInput!) {
     createLink(input: $input) {
       id
-      downloadsRemaining
+      downloads
+      downloadLimit
       asset {
         id
       }
@@ -19,10 +20,11 @@ query: |
 variables:
   input:
     assetID: 1001
-    downloadsRemaining: 1
+    downloadLimit: 1
 expected:
   createLink:
     id: "1"
-    downloadsRemaining: 1
+    downloads: 0
+    downloadLimit: 1
     asset:
       id: "1001"

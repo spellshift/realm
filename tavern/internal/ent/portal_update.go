@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -63,9 +64,36 @@ func (pu *PortalUpdate) SetTaskID(id int) *PortalUpdate {
 	return pu
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (pu *PortalUpdate) SetNillableTaskID(id *int) *PortalUpdate {
+	if id != nil {
+		pu = pu.SetTaskID(*id)
+	}
+	return pu
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (pu *PortalUpdate) SetTask(t *Task) *PortalUpdate {
 	return pu.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (pu *PortalUpdate) SetShellTaskID(id int) *PortalUpdate {
+	pu.mutation.SetShellTaskID(id)
+	return pu
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (pu *PortalUpdate) SetNillableShellTaskID(id *int) *PortalUpdate {
+	if id != nil {
+		pu = pu.SetShellTaskID(*id)
+	}
+	return pu
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (pu *PortalUpdate) SetShellTask(s *ShellTask) *PortalUpdate {
+	return pu.SetShellTaskID(s.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
@@ -113,6 +141,12 @@ func (pu *PortalUpdate) Mutation() *PortalMutation {
 // ClearTask clears the "task" edge to the Task entity.
 func (pu *PortalUpdate) ClearTask() *PortalUpdate {
 	pu.mutation.ClearTask()
+	return pu
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (pu *PortalUpdate) ClearShellTask() *PortalUpdate {
+	pu.mutation.ClearShellTask()
 	return pu
 }
 
@@ -187,9 +221,6 @@ func (pu *PortalUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pu *PortalUpdate) check() error {
-	if pu.mutation.TaskCleared() && len(pu.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Portal.task"`)
-	}
 	if pu.mutation.BeaconCleared() && len(pu.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Portal.beacon"`)
 	}
@@ -242,6 +273,35 @@ func (pu *PortalUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   portal.ShellTaskTable,
+			Columns: []string{portal.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   portal.ShellTaskTable,
+			Columns: []string{portal.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -404,9 +464,36 @@ func (puo *PortalUpdateOne) SetTaskID(id int) *PortalUpdateOne {
 	return puo
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (puo *PortalUpdateOne) SetNillableTaskID(id *int) *PortalUpdateOne {
+	if id != nil {
+		puo = puo.SetTaskID(*id)
+	}
+	return puo
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (puo *PortalUpdateOne) SetTask(t *Task) *PortalUpdateOne {
 	return puo.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (puo *PortalUpdateOne) SetShellTaskID(id int) *PortalUpdateOne {
+	puo.mutation.SetShellTaskID(id)
+	return puo
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (puo *PortalUpdateOne) SetNillableShellTaskID(id *int) *PortalUpdateOne {
+	if id != nil {
+		puo = puo.SetShellTaskID(*id)
+	}
+	return puo
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (puo *PortalUpdateOne) SetShellTask(s *ShellTask) *PortalUpdateOne {
+	return puo.SetShellTaskID(s.ID)
 }
 
 // SetBeaconID sets the "beacon" edge to the Beacon entity by ID.
@@ -454,6 +541,12 @@ func (puo *PortalUpdateOne) Mutation() *PortalMutation {
 // ClearTask clears the "task" edge to the Task entity.
 func (puo *PortalUpdateOne) ClearTask() *PortalUpdateOne {
 	puo.mutation.ClearTask()
+	return puo
+}
+
+// ClearShellTask clears the "shell_task" edge to the ShellTask entity.
+func (puo *PortalUpdateOne) ClearShellTask() *PortalUpdateOne {
+	puo.mutation.ClearShellTask()
 	return puo
 }
 
@@ -541,9 +634,6 @@ func (puo *PortalUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (puo *PortalUpdateOne) check() error {
-	if puo.mutation.TaskCleared() && len(puo.mutation.TaskIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Portal.task"`)
-	}
 	if puo.mutation.BeaconCleared() && len(puo.mutation.BeaconIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Portal.beacon"`)
 	}
@@ -613,6 +703,35 @@ func (puo *PortalUpdateOne) sqlSave(ctx context.Context) (_node *Portal, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(task.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ShellTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   portal.ShellTaskTable,
+			Columns: []string{portal.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   portal.ShellTaskTable,
+			Columns: []string{portal.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

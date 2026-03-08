@@ -44,12 +44,10 @@ def depth_first_search(visited, process_tree, current_proc_pid, padding, process
                                process_pid, padding, process_list_dictionary)
 
 
-def process_tree(cmd_substring):
-
-    if cmd_substring == '*':
-        cmd_substring = ''
+def process_tree():
 
     procs = process.list()
+    report.process_list(procs)
 
     print(pad_pid("PID") + pad_pid("PPID") + pad_username("USER") + "COMMAND")
 
@@ -58,34 +56,33 @@ def process_tree(cmd_substring):
     process_tree = {}
 
     for proc in procs:
-        if cmd_substring in proc['command']:
-            current_proc_command = proc['command']
-            if current_proc_command == "":
-                current_proc_command = proc['name']
+        current_proc_command = proc['command']
+        if current_proc_command == "":
+            current_proc_command = proc['name']
 
-            current_proc_pid = str(proc['pid'])
-            current_proc_ppid = str(proc['ppid'])
-            current_proc_username = proc['username']
+        current_proc_pid = str(proc['pid'])
+        current_proc_ppid = str(proc['ppid'])
+        current_proc_username = proc.get('username', 'unknown')
 
-            current_process_content = {
-                "ppid": current_proc_ppid,
-                "username": current_proc_username,
-                "command": current_proc_command
-            }
-            process_list_dictionary[current_proc_pid] = current_process_content
+        current_process_content = {
+            "ppid": current_proc_ppid,
+            "username": current_proc_username,
+            "command": current_proc_command
+        }
+        process_list_dictionary[current_proc_pid] = current_process_content
 
-            if current_proc_pid not in process_tree:
-                process_tree[current_proc_pid] = []
+        if current_proc_pid not in process_tree:
+            process_tree[current_proc_pid] = []
 
-            if current_proc_ppid in process_tree:
-                process_tree[current_proc_ppid].append(current_proc_pid)
-            else:
-                process_tree[current_proc_ppid] = []
+        if current_proc_ppid in process_tree:
+            process_tree[current_proc_ppid].append(current_proc_pid)
+        else:
+            process_tree[current_proc_ppid] = []
     visited = []
     for pid in process_tree:
         depth_first_search(visited, process_tree, pid,
                            0, process_list_dictionary)
 
 
-process_tree(input_params['cmd_substring'])
+process_tree()
 print("")

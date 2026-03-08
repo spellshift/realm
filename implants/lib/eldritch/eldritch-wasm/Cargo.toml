@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-wasm"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 
 [features]
@@ -26,8 +26,7 @@ eldritch = { workspace = true, default-features = false, features = [
 ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = { workspace = true }
-getrandom = { workspace = true, features = ["js"] }
+getrandom = { version = "0.2", features = ["js"] }
 uuid = { workspace = true, features = ["js"] }
 eldritch = { workspace = true, default-features = false, features = [
     "fake_bindings",
@@ -35,8 +34,10 @@ eldritch = { workspace = true, default-features = false, features = [
 
 [dependencies]
 eldritch-core = { workspace = true }
+eldritch-repl = { workspace = true, default-features = false }
 spin = { workspace = true, features = ["rwlock"] }
 log = "0.4"
+wasm-bindgen = "0.2"
 
 [dev-dependencies]
 criterion = "0.5"

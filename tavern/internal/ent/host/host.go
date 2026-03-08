@@ -45,6 +45,8 @@ const (
 	EdgeProcesses = "processes"
 	// EdgeCredentials holds the string denoting the credentials edge name in mutations.
 	EdgeCredentials = "credentials"
+	// EdgeScreenshots holds the string denoting the screenshots edge name in mutations.
+	EdgeScreenshots = "screenshots"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -80,6 +82,13 @@ const (
 	CredentialsInverseTable = "host_credentials"
 	// CredentialsColumn is the table column denoting the credentials relation/edge.
 	CredentialsColumn = "host_credential_host"
+	// ScreenshotsTable is the table that holds the screenshots relation/edge.
+	ScreenshotsTable = "screenshots"
+	// ScreenshotsInverseTable is the table name for the Screenshot entity.
+	// It exists in this package in order to avoid circular dependency with the "screenshot" package.
+	ScreenshotsInverseTable = "screenshots"
+	// ScreenshotsColumn is the table column denoting the screenshots relation/edge.
+	ScreenshotsColumn = "screenshot_host"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -268,6 +277,20 @@ func ByCredentials(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCredentialsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByScreenshotsCount orders the results by screenshots count.
+func ByScreenshotsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScreenshotsStep(), opts...)
+	}
+}
+
+// ByScreenshots orders the results by screenshots terms.
+func ByScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -301,6 +324,13 @@ func newCredentialsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CredentialsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, CredentialsTable, CredentialsColumn),
+	)
+}
+func newScreenshotsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScreenshotsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ScreenshotsTable, ScreenshotsColumn),
 	)
 }
 

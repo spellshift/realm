@@ -99,6 +99,16 @@ impl SysLibrary for SysLibraryFake {
         Ok(false)
     }
 
+    fn list_users(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        let mut users = Vec::new();
+        let mut root = BTreeMap::new();
+        root.insert("principal".into(), Value::String("root".into()));
+        root.insert("uid".into(), Value::Int(0));
+        root.insert("gid".into(), Value::Int(0));
+        users.push(root);
+        Ok(users)
+    }
+
     fn shell(&self, cmd: String) -> Result<BTreeMap<String, Value>, String> {
         let mut map = BTreeMap::new();
         map.insert("stdout".into(), Value::String(format!("Executed: {}", cmd)));

@@ -17,9 +17,9 @@ fn create_interp() -> Interpreter {
             jwt: "a test jwt".to_string(),
         };
         let backend = Arc::new(EmptyAssets {});
-        Interpreter::new().with_default_libs().with_task_context(
+        Interpreter::new().with_default_libs().with_context(
             agent_mock,
-            task_context,
+            eldritch_agent::Context::Task(task_context),
             vec![],
             backend,
         )
@@ -67,6 +67,7 @@ fn test_file_bindings() {
             "is_dir",
             "is_file",
             "list",
+            "list_recent",
             "mkdir",
             "move",
             "parent_dir",
@@ -108,6 +109,7 @@ fn test_sys_bindings() {
             "is_linux",
             "is_macos",
             "is_windows",
+            "list_users",
             "shell",
             "write_reg_hex",
             "write_reg_int",
@@ -184,6 +186,7 @@ fn test_report_bindings() {
             "file",
             "ntlm_hash",
             "process_list",
+            "screenshot",
             "ssh_key",
             "user_password",
         ],

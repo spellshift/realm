@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 )
 
@@ -134,6 +135,26 @@ func (hfc *HostFileCreate) SetContent(b []byte) *HostFileCreate {
 	return hfc
 }
 
+// SetPreviewType sets the "preview_type" field.
+func (hfc *HostFileCreate) SetPreviewType(ht hostfile.PreviewType) *HostFileCreate {
+	hfc.mutation.SetPreviewType(ht)
+	return hfc
+}
+
+// SetNillablePreviewType sets the "preview_type" field if the given value is not nil.
+func (hfc *HostFileCreate) SetNillablePreviewType(ht *hostfile.PreviewType) *HostFileCreate {
+	if ht != nil {
+		hfc.SetPreviewType(*ht)
+	}
+	return hfc
+}
+
+// SetPreview sets the "preview" field.
+func (hfc *HostFileCreate) SetPreview(b []byte) *HostFileCreate {
+	hfc.mutation.SetPreview(b)
+	return hfc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hfc *HostFileCreate) SetHostID(id int) *HostFileCreate {
 	hfc.mutation.SetHostID(id)
@@ -151,9 +172,36 @@ func (hfc *HostFileCreate) SetTaskID(id int) *HostFileCreate {
 	return hfc
 }
 
+// SetNillableTaskID sets the "task" edge to the Task entity by ID if the given value is not nil.
+func (hfc *HostFileCreate) SetNillableTaskID(id *int) *HostFileCreate {
+	if id != nil {
+		hfc = hfc.SetTaskID(*id)
+	}
+	return hfc
+}
+
 // SetTask sets the "task" edge to the Task entity.
 func (hfc *HostFileCreate) SetTask(t *Task) *HostFileCreate {
 	return hfc.SetTaskID(t.ID)
+}
+
+// SetShellTaskID sets the "shell_task" edge to the ShellTask entity by ID.
+func (hfc *HostFileCreate) SetShellTaskID(id int) *HostFileCreate {
+	hfc.mutation.SetShellTaskID(id)
+	return hfc
+}
+
+// SetNillableShellTaskID sets the "shell_task" edge to the ShellTask entity by ID if the given value is not nil.
+func (hfc *HostFileCreate) SetNillableShellTaskID(id *int) *HostFileCreate {
+	if id != nil {
+		hfc = hfc.SetShellTaskID(*id)
+	}
+	return hfc
+}
+
+// SetShellTask sets the "shell_task" edge to the ShellTask entity.
+func (hfc *HostFileCreate) SetShellTask(s *ShellTask) *HostFileCreate {
+	return hfc.SetShellTaskID(s.ID)
 }
 
 // Mutation returns the HostFileMutation object of the builder.
@@ -211,6 +259,10 @@ func (hfc *HostFileCreate) defaults() error {
 		v := hostfile.DefaultSize
 		hfc.mutation.SetSize(v)
 	}
+	if _, ok := hfc.mutation.PreviewType(); !ok {
+		v := hostfile.DefaultPreviewType
+		hfc.mutation.SetPreviewType(v)
+	}
 	return nil
 }
 
@@ -243,11 +295,16 @@ func (hfc *HostFileCreate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "HostFile.hash": %w`, err)}
 		}
 	}
+	if _, ok := hfc.mutation.PreviewType(); !ok {
+		return &ValidationError{Name: "preview_type", err: errors.New(`ent: missing required field "HostFile.preview_type"`)}
+	}
+	if v, ok := hfc.mutation.PreviewType(); ok {
+		if err := hostfile.PreviewTypeValidator(v); err != nil {
+			return &ValidationError{Name: "preview_type", err: fmt.Errorf(`ent: validator failed for field "HostFile.preview_type": %w`, err)}
+		}
+	}
 	if len(hfc.mutation.HostIDs()) == 0 {
 		return &ValidationError{Name: "host", err: errors.New(`ent: missing required edge "HostFile.host"`)}
-	}
-	if len(hfc.mutation.TaskIDs()) == 0 {
-		return &ValidationError{Name: "task", err: errors.New(`ent: missing required edge "HostFile.task"`)}
 	}
 	return nil
 }
@@ -312,6 +369,14 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 		_spec.SetField(hostfile.FieldContent, field.TypeBytes, value)
 		_node.Content = value
 	}
+	if value, ok := hfc.mutation.PreviewType(); ok {
+		_spec.SetField(hostfile.FieldPreviewType, field.TypeEnum, value)
+		_node.PreviewType = value
+	}
+	if value, ok := hfc.mutation.Preview(); ok {
+		_spec.SetField(hostfile.FieldPreview, field.TypeBytes, value)
+		_node.Preview = value
+	}
 	if nodes := hfc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -344,6 +409,23 @@ func (hfc *HostFileCreate) createSpec() (*HostFile, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.task_reported_files = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hfc.mutation.ShellTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   hostfile.ShellTaskTable,
+			Columns: []string{hostfile.ShellTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.shell_task_reported_files = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -527,6 +609,36 @@ func (u *HostFileUpsert) UpdateContent() *HostFileUpsert {
 // ClearContent clears the value of the "content" field.
 func (u *HostFileUpsert) ClearContent() *HostFileUpsert {
 	u.SetNull(hostfile.FieldContent)
+	return u
+}
+
+// SetPreviewType sets the "preview_type" field.
+func (u *HostFileUpsert) SetPreviewType(v hostfile.PreviewType) *HostFileUpsert {
+	u.Set(hostfile.FieldPreviewType, v)
+	return u
+}
+
+// UpdatePreviewType sets the "preview_type" field to the value that was provided on create.
+func (u *HostFileUpsert) UpdatePreviewType() *HostFileUpsert {
+	u.SetExcluded(hostfile.FieldPreviewType)
+	return u
+}
+
+// SetPreview sets the "preview" field.
+func (u *HostFileUpsert) SetPreview(v []byte) *HostFileUpsert {
+	u.Set(hostfile.FieldPreview, v)
+	return u
+}
+
+// UpdatePreview sets the "preview" field to the value that was provided on create.
+func (u *HostFileUpsert) UpdatePreview() *HostFileUpsert {
+	u.SetExcluded(hostfile.FieldPreview)
+	return u
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (u *HostFileUpsert) ClearPreview() *HostFileUpsert {
+	u.SetNull(hostfile.FieldPreview)
 	return u
 }
 
@@ -726,6 +838,41 @@ func (u *HostFileUpsertOne) UpdateContent() *HostFileUpsertOne {
 func (u *HostFileUpsertOne) ClearContent() *HostFileUpsertOne {
 	return u.Update(func(s *HostFileUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetPreviewType sets the "preview_type" field.
+func (u *HostFileUpsertOne) SetPreviewType(v hostfile.PreviewType) *HostFileUpsertOne {
+	return u.Update(func(s *HostFileUpsert) {
+		s.SetPreviewType(v)
+	})
+}
+
+// UpdatePreviewType sets the "preview_type" field to the value that was provided on create.
+func (u *HostFileUpsertOne) UpdatePreviewType() *HostFileUpsertOne {
+	return u.Update(func(s *HostFileUpsert) {
+		s.UpdatePreviewType()
+	})
+}
+
+// SetPreview sets the "preview" field.
+func (u *HostFileUpsertOne) SetPreview(v []byte) *HostFileUpsertOne {
+	return u.Update(func(s *HostFileUpsert) {
+		s.SetPreview(v)
+	})
+}
+
+// UpdatePreview sets the "preview" field to the value that was provided on create.
+func (u *HostFileUpsertOne) UpdatePreview() *HostFileUpsertOne {
+	return u.Update(func(s *HostFileUpsert) {
+		s.UpdatePreview()
+	})
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (u *HostFileUpsertOne) ClearPreview() *HostFileUpsertOne {
+	return u.Update(func(s *HostFileUpsert) {
+		s.ClearPreview()
 	})
 }
 
@@ -1091,6 +1238,41 @@ func (u *HostFileUpsertBulk) UpdateContent() *HostFileUpsertBulk {
 func (u *HostFileUpsertBulk) ClearContent() *HostFileUpsertBulk {
 	return u.Update(func(s *HostFileUpsert) {
 		s.ClearContent()
+	})
+}
+
+// SetPreviewType sets the "preview_type" field.
+func (u *HostFileUpsertBulk) SetPreviewType(v hostfile.PreviewType) *HostFileUpsertBulk {
+	return u.Update(func(s *HostFileUpsert) {
+		s.SetPreviewType(v)
+	})
+}
+
+// UpdatePreviewType sets the "preview_type" field to the value that was provided on create.
+func (u *HostFileUpsertBulk) UpdatePreviewType() *HostFileUpsertBulk {
+	return u.Update(func(s *HostFileUpsert) {
+		s.UpdatePreviewType()
+	})
+}
+
+// SetPreview sets the "preview" field.
+func (u *HostFileUpsertBulk) SetPreview(v []byte) *HostFileUpsertBulk {
+	return u.Update(func(s *HostFileUpsert) {
+		s.SetPreview(v)
+	})
+}
+
+// UpdatePreview sets the "preview" field to the value that was provided on create.
+func (u *HostFileUpsertBulk) UpdatePreview() *HostFileUpsertBulk {
+	return u.Update(func(s *HostFileUpsert) {
+		s.UpdatePreview()
+	})
+}
+
+// ClearPreview clears the value of the "preview" field.
+func (u *HostFileUpsertBulk) ClearPreview() *HostFileUpsertBulk {
+	return u.Update(func(s *HostFileUpsert) {
+		s.ClearPreview()
 	})
 }
 

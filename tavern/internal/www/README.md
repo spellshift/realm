@@ -19,4 +19,4 @@ _If this is your first time contributing WWW changes in this dev environment, re
 
 ## Building the Application
 
-When you're ready to include changes to the UI in the tavern binary, you'll need to run `npm run build` to update files in the `build/` directory. These files will automatically be bundled into new compliations of the tavern binary.
+When you're ready to include changes to the UI in the tavern binary, you'll need to run `npm run build` to update files in the `build/` directory. These files will automatically be bundled into new compilations of the tavern binary.

@@ -25,14 +25,29 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 		return status.Errorf(codes.Internal, "failed to receive registration message: %v", err)
 	}
 
-	taskID := int(registerMsg.GetContext().GetTaskId())
-	if taskID <= 0 {
-		return status.Errorf(codes.InvalidArgument, "invalid task ID: %d", taskID)
+	var taskID int
+	var shellTaskID int
+	if tc := registerMsg.GetTaskContext(); tc != nil {
+		if err := srv.ValidateJWT(tc.GetJwt()); err != nil {
+			return err
+		}
+		taskID = int(tc.GetTaskId())
+	} else if stc := registerMsg.GetShellTaskContext(); stc != nil {
+		if err := srv.ValidateJWT(stc.GetJwt()); err != nil {
+			return err
+		}
+		shellTaskID = int(stc.GetShellTaskId())
+	} else {
+		return status.Errorf(codes.InvalidArgument, "missing context")
 	}
 
-	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID)
+	if taskID <= 0 && shellTaskID <= 0 {
+		return status.Errorf(codes.InvalidArgument, "invalid task ID or shell task ID")
+	}
+
+	portalID, cleanup, err := srv.portalMux.CreatePortal(ctx, srv.graph, taskID, shellTaskID)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "error", err)
+		slog.ErrorContext(ctx, "failed to create portal", "task_id", taskID, "shell_task_id", shellTaskID, "error", err)
 		return status.Errorf(codes.Internal, "failed to create portal: %v", err)
 	}
 	defer cleanup()

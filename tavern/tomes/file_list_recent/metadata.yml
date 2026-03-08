@@ -1,0 +1,14 @@
+name: List recent files
+description: List the most recently modified files found recursively in the provided directory.
+author: kcarretto
+support_model: FIRST_PARTY
+tactic: RECON
+paramdefs:
+- name: path
+  type: string
+  label: File path
+  placeholder: "/root/"
+- name: limit
+  type: int
+  label: Limit
+  placeholder: "10"

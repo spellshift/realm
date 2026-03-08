@@ -130,6 +130,24 @@ fn test_byte_strings() {
 }
 
 #[test]
+fn test_encode_decode() {
+    assert::pass(
+        r#"
+        s = "hello"
+        b = s.encode()
+        assert_eq(b, b"hello")
+        assert_eq(type(b), "bytes")
+        s2 = b.decode()
+        assert_eq(s2, "hello")
+        assert_eq(type(s2), "string")
+        # Raw byte literal with hex escapes
+        s3 = b"\x41\x42\x43".decode()
+        assert_eq(s3, "ABC")
+    "#,
+    );
+}
+
+#[test]
 fn test_doc_strings() {
     assert::pass(
         r#"
@@ -177,6 +195,34 @@ fn test_string_slicing() {
         assert_eq(s[::-1], "fedcba")
         assert_eq(s[1:4], "bcd")
         assert_eq(s[4:1:-1], "edc")
+    "#,
+    );
+}
+
+#[test]
+fn test_bytes_subscript() {
+    // Index: bytes[i] returns int (the byte value)
+    assert::pass(
+        r#"
+        b = b"ABC"
+        assert_eq(b[0], 65)
+        assert_eq(b[1], 66)
+        assert_eq(b[2], 67)
+        assert_eq(b[-1], 67)
+        assert_eq(b[-3], 65)
+        assert_eq(type(b[0]), "int")
+    "#,
+    );
+
+    // Slice: bytes[i:j] returns bytes
+    assert::pass(
+        r#"
+        b = b"hello"
+        assert_eq(b[1:4], b"ell")
+        assert_eq(b[:3], b"hel")
+        assert_eq(b[3:], b"lo")
+        assert_eq(b[::-1], b"olleh")
+        assert_eq(type(b[1:3]), "bytes")
     "#,
     );
 }

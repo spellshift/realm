@@ -46,10 +46,11 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v an
 }
 
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -61,10 +62,11 @@ func (ec *executionContext) unmarshalNUint642uint64(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalNUint642uint64(ctx context.Context, sel ast.SelectionSet, v uint64) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalUint64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -76,6 +78,8 @@ func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v an
 }
 
 func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalTime(v)
 	return res
 }
@@ -85,9 +89,7 @@ func (ec *executionContext) unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx context.Context
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]time.Time, len(vSlice))
 	for i := range vSlice {
@@ -130,6 +132,8 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalTime(*v)
 	return res
 }
@@ -140,6 +144,8 @@ func (ec *executionContext) unmarshalOUint642uint64(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalOUint642uint64(ctx context.Context, sel ast.SelectionSet, v uint64) graphql.Marshaler {
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalUint64(v)
 	return res
 }
@@ -149,9 +155,7 @@ func (ec *executionContext) unmarshalOUint642ᚕuint64ᚄ(ctx context.Context, v
 		return nil, nil
 	}
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]uint64, len(vSlice))
 	for i := range vSlice {
@@ -194,6 +198,8 @@ func (ec *executionContext) marshalOUint642ᚖuint64(ctx context.Context, sel as
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalUint64(*v)
 	return res
 }

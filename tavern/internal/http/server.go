@@ -16,7 +16,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
 	// Authenticate Request (if possible)
-	ctx, err := srv.Authenticate(r)
+	ctx, err := srv.Authenticate(w, r)
 	if err != nil {
 		switch err {
 		case ErrInvalidAccessToken:

@@ -8,9 +8,9 @@ permalink: dev-guide/eldritch
 
 ## Overview
 
-Eldritch is a Pythonic DSL for Red Team engagements. Eldritch is intended to provide the building-block functionality that operators need, and then operators will compose the provided functionality using Tomes. Creating a function that is too specific could limit it's usefulness to other users.
+Eldritch is a Pythonic DSL for Red Team engagements. Eldritch is intended to provide the building-block functionality that operators need, and then operators will compose the provided functionality using Tomes. Creating a function that is too specific could limit its usefulness to other users.
 
-**For example**: if you want to download a file to a specific location, execute it, and return the functions result this should be chunked into separate `download`, and `execute` functions within Eldritch.
+**For example**: if you want to download a file to a specific location, execute it, and return the function's result this should be chunked into separate `download`, and `execute` functions within Eldritch.
 
 The Eldritch tome could look like this:
 
@@ -42,7 +42,7 @@ Currently Eldritch has the following libraries your function can be bound to:
 * `pivot`: Is used to migrate to identify, and migrate between systems. The pivot library is also responsible for facilitating connectivity within an environment.
 * `process`: Is used to manage running processes on a system.
 * `random` - Used to generate cryptographically secure random values.
-* `regex`: Is used to preform regex operations on strings.
+* `regex`: Is used to perform regex operations on strings.
 * `report`: Is used to report structured data to the caller of the eldritch environment (e.g. to the c2).
 * `sys`: Is used to check system specific configurations and start new processes.
 * `time`: Is used for obtaining and formatting time or adding delays into code.
@@ -91,7 +91,7 @@ pub struct StdFileLibrary;
 
 impl FileLibrary for StdFileLibrary {
     // This Library Binding is what eldritch calls when it evaluates `your_library.function()`
-    // Eldritch function sholud return a type and an error as a string. Here is an example returning a dictiorary and an error string.
+    // Eldritch function should return a type and an error as a string. Here is an example returning a dictionary and an error string.
     fn function(&self, arg1: String, arg2: u8, arg3: UnpackList<String>) -> Result<Vec<BTreeMap<String, Value>>, String> {
         // rust implementation.
         function_impl::function(arg1, arg2, arg3)
@@ -118,7 +118,7 @@ fn helper(argz: String) -> bool {
     // Do helper stuff
 }
 
-pub fn function(path: arg1: String, arg2: u8, arg3: Vec<String>) -> Result<(), String> {
+pub fn function(arg1: String, arg2: u8, arg3: Vec<String>) -> Result<(), String> {
     // Do code stuff
     Ok(true)
 }
@@ -189,7 +189,7 @@ Any methods added to the Eldritch Standard Library should have tests collocated 
 ---
 Limit changes to the implementation file.
 
-OS specific restrictions should be done in the **Eldritch Implementation** you should only have to worry about it in your: `function_impl.rs`.
+OS specific restrictions should be done in the **Eldritch Implementation**. You should only have to worry about it in your: `function_impl.rs`.
 This ensures that all functions are exposed in every version of the Eldritch language.
 To prevent errors and compiler warnings use the `#[cfg(target_os = "windows")]` conditional compiler flag to suppress OS specific code.
 For all non supported OSes return an error with a message explaining which OSes are supported.

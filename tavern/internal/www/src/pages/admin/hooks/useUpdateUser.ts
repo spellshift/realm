@@ -2,6 +2,7 @@ import { gql, useMutation, ApolloError } from "@apollo/client"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GET_USER_QUERY } from "../../../utils/queries";
+import { GET_USER_IDS_QUERY, GET_USER_DETAIL_QUERY } from "../queries";
 import { useToast } from "@chakra-ui/react";
 
 interface UpdateUserMutationResponse {
@@ -61,7 +62,8 @@ export const useUpdateUser = (): UseUpdateUserReturn => {
             onError: handleError,
             refetchQueries: [
                 GET_USER_QUERY,
-                'GetUserQuery'
+                GET_USER_IDS_QUERY,
+                GET_USER_DETAIL_QUERY,
             ]
         }
     );

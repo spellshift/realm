@@ -3,6 +3,7 @@ package c2
 import (
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,6 +16,7 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 
 	var (
 		taskID      int64
+		shellTaskID int64
 		jwtToken    string
 		path        string
 		owner       string
@@ -22,9 +24,12 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		permissions string
 		size        uint64
 		hash        string
+		kind        c2pb.ReportFileKind
 
 		content []byte
 	)
+
+	ctx := stream.Context()
 
 	// Loop Input Stream
 	for {
@@ -37,39 +42,36 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 
 		// Collect args
-		if req.Chunk == nil {
-			continue
+		if kind == c2pb.ReportFileKind_REPORT_FILE_KIND_UNSPECIFIED {
+			kind = req.GetKind()
 		}
-		if taskID == 0 {
-			taskID = req.GetContext().GetTaskId()
+
+		if taskID == 0 && shellTaskID == 0 {
+			if tc := req.GetTaskContext(); tc != nil {
+				taskID = tc.TaskId
+				jwtToken = tc.Jwt
+			} else if stc := req.GetShellTaskContext(); stc != nil {
+				shellTaskID = stc.ShellTaskId
+				jwtToken = stc.Jwt
+			}
 		}
-		if jwtToken == "" {
-			jwtToken = req.GetContext().GetJwt()
+
+		if req.Chunk != nil {
+			if path == "" && req.Chunk.Metadata != nil {
+				path = req.Chunk.Metadata.GetPath()
+				owner = req.Chunk.Metadata.GetOwner()
+				group = req.Chunk.Metadata.GetGroup()
+				permissions = req.Chunk.Metadata.GetPermissions()
+				size = req.Chunk.Metadata.GetSize()
+				hash = req.Chunk.Metadata.GetSha3_256Hash()
+			}
+			content = append(content, req.Chunk.GetChunk()...)
 		}
-		if path == "" && req.Chunk.Metadata != nil {
-			path = req.Chunk.Metadata.GetPath()
-		}
-		if owner == "" && req.Chunk.Metadata != nil {
-			owner = req.Chunk.Metadata.GetOwner()
-		}
-		if group == "" && req.Chunk.Metadata != nil {
-			group = req.Chunk.Metadata.GetGroup()
-		}
-		if permissions == "" && req.Chunk.Metadata != nil {
-			permissions = req.Chunk.Metadata.GetPermissions()
-		}
-		if size == 0 && req.Chunk.Metadata != nil {
-			size = req.Chunk.Metadata.GetSize()
-		}
-		if hash == "" && req.Chunk.Metadata != nil {
-			hash = req.Chunk.Metadata.GetSha3_256Hash()
-		}
-		content = append(content, req.Chunk.GetChunk()...)
 	}
 
 	// Input Validation
-	if taskID == 0 {
-		return status.Errorf(codes.InvalidArgument, "must provide valid task id")
+	if taskID == 0 && shellTaskID == 0 {
+		return status.Errorf(codes.InvalidArgument, "must provide valid task id or shell task id")
 	}
 	if path == "" {
 		return status.Errorf(codes.InvalidArgument, "must provide valid path")
@@ -80,32 +82,56 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		return err
 	}
 
-	// Load Task
-	task, err := srv.graph.Task.Get(stream.Context(), int(taskID))
-	if ent.IsNotFound(err) {
-		return status.Errorf(codes.NotFound, "failed to find related task")
-	}
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load task: %v", err)
+	var host *ent.Host
+	var task *ent.Task
+	var shellTask *ent.ShellTask
+
+	if taskID != 0 {
+		t, err := srv.graph.Task.Get(ctx, int(taskID))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "failed to find related task")
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load task: %v", err)
+		}
+		task = t
+		h, err := t.QueryBeacon().QueryHost().Only(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load host from task: %v", err)
+		}
+		host = h
+	} else {
+		st, err := srv.graph.ShellTask.Get(ctx, int(shellTaskID))
+		if ent.IsNotFound(err) {
+			return status.Errorf(codes.NotFound, "failed to find related shell task")
+		}
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load shell task: %v", err)
+		}
+		shellTask = st
+		h, err := st.QueryShell().QueryBeacon().QueryHost().Only(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load host from shell task: %v", err)
+		}
+		host = h
 	}
 
-	// Load Host
-	host, err := task.QueryBeacon().QueryHost().Only(stream.Context())
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load host")
-	}
+	isScreenshot := kind == c2pb.ReportFileKind_REPORT_FILE_KIND_SCREENSHOT
 
-	// Load Existing Files
-	existingFiles, err := host.QueryFiles().
-		Where(
-			hostfile.Path(path),
-		).All(stream.Context())
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
+	// Load Existing Files (only for HostFile)
+	var existingFiles []*ent.HostFile
+	if !isScreenshot {
+		existingFiles, err = host.QueryFiles().
+			Where(
+				hostfile.Path(path),
+			).All(ctx)
+		if err != nil {
+			return status.Errorf(codes.Internal, "failed to load existing host files: %v", err)
+		}
 	}
 
 	// Prepare Transaction
-	tx, err := srv.graph.Tx(stream.Context())
+	tx, err := srv.graph.Tx(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to initialize transaction: %v", err)
 	}
@@ -119,29 +145,74 @@ func (srv *Server) ReportFile(stream c2pb.C2_ReportFileServer) error {
 		}
 	}()
 
-	// Create File
-	f, err := client.HostFile.Create().
-		SetHostID(host.ID).
-		SetTaskID(task.ID).
-		SetPath(path).
-		SetOwner(owner).
-		SetGroup(group).
-		SetPermissions(permissions).
-		SetSize(size).
-		SetHash(hash).
-		SetContent(content).
-		Save(stream.Context())
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
-	}
+	if isScreenshot {
+		builder := client.Screenshot.Create().
+			SetHostID(host.ID).
+			SetName(path).
+			SetSize(size).
+			SetHash(hash).
+			SetContent(content)
 
-	// Clear Previous Files, Set New File
-	_, err = client.Host.UpdateOneID(host.ID).
-		AddFiles(f).
-		RemoveFiles(existingFiles...).
-		Save(stream.Context())
-	if err != nil {
-		return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+    if task != nil {
+      builder.SetTaskID(task.ID)
+    }
+    if shellTask != nil {
+      builder.SetShellTaskID(shellTask.ID)
+    }
+
+    if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
+
+		_, err = builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create screenshot: %w", err))
+		}
+	} else {
+    // Create File
+    builder := client.HostFile.Create().
+      SetHostID(host.ID).
+      SetPath(path).
+      SetOwner(owner).
+      SetGroup(group).
+      SetPermissions(permissions).
+      SetSize(size).
+      SetHash(hash).
+      SetContent(content)
+
+    // Derive Preview
+    const maxPreviewSize = 100 * 1024
+    if len(content) > 0 && utf8.Valid(content){
+      builder.SetPreviewType(hostfile.PreviewTypeTEXT)
+      builder.SetPreview(content[:min(len(content), maxPreviewSize)])
+    } else {
+      builder.SetPreviewType(hostfile.PreviewTypeNONE)
+    }
+    
+    
+		if task != nil {
+			builder.SetTaskID(task.ID)
+		}
+		if shellTask != nil {
+			builder.SetShellTaskID(shellTask.ID)
+		}
+
+		f, err := builder.Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to create host file: %w", err))
+		}
+
+		// Clear Previous Files, Set New File
+		_, err = client.Host.UpdateOneID(host.ID).
+			AddFiles(f).
+			RemoveFiles(existingFiles...).
+			Save(ctx)
+		if err != nil {
+			return rollback(tx, fmt.Errorf("failed to remove previous host files: %w", err))
+		}
 	}
 
 	// Commit Transaction

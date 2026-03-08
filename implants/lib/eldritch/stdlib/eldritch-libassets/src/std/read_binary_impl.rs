@@ -4,13 +4,9 @@ use anyhow::Result;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
-        // We have a hashmap of all the names, might as well use it
-        if !self.asset_names.contains(name) {
-            return Err(anyhow::anyhow!("asset not found: {}", name));
-        };
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
-            if let Ok(file) = backend.get(&name) {
+            if let Ok(file) = backend.get(name) {
                 // Return immediately upon the first match
                 return Ok(file);
             }
@@ -85,7 +81,7 @@ pub mod tests {
         }
         fn report_file(
             &self,
-            _req: c2::ReportFileRequest,
+            _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
         ) -> Result<c2::ReportFileResponse, String> {
             Ok(c2::ReportFileResponse::default())
         }
@@ -95,20 +91,23 @@ pub mod tests {
         ) -> Result<c2::ReportProcessListResponse, String> {
             Ok(c2::ReportProcessListResponse::default())
         }
-        fn report_task_output(
+        fn report_output(
             &self,
-            _req: c2::ReportTaskOutputRequest,
-        ) -> Result<c2::ReportTaskOutputResponse, String> {
-            Ok(c2::ReportTaskOutputResponse::default())
+            _req: c2::ReportOutputRequest,
+        ) -> Result<c2::ReportOutputResponse, String> {
+            Ok(c2::ReportOutputResponse::default())
         }
         fn start_reverse_shell(
             &self,
-            _task_context: TaskContext,
+            _context: eldritch_agent::Context,
             _cmd: Option<String>,
         ) -> Result<(), String> {
             Ok(())
         }
-        fn start_repl_reverse_shell(&self, _task_context: TaskContext) -> Result<(), String> {
+        fn start_repl_reverse_shell(
+            &self,
+            _context: eldritch_agent::Context,
+        ) -> Result<(), String> {
             Ok(())
         }
         fn claim_tasks(
@@ -162,7 +161,10 @@ pub mod tests {
             Ok(())
         }
 
-        fn create_portal(&self, _task_context: TaskContext) -> std::result::Result<(), String> {
+        fn create_portal(
+            &self,
+            __context: eldritch_agent::Context,
+        ) -> std::result::Result<(), String> {
             Ok(())
         }
     }
@@ -174,9 +176,14 @@ pub mod tests {
         let content = lib.read_binary("print/main.eldritch".to_string());
         assert!(content.is_ok());
         let content = content.unwrap();
-        assert!(!content.is_empty());
+        let bytes = if let eldritch_core::Value::Bytes(b) = content {
+            b
+        } else {
+            panic!("Expected Bytes")
+        };
+        assert!(!bytes.is_empty());
         assert_eq!(
-            std::str::from_utf8(&content).unwrap().trim(),
+            std::str::from_utf8(&bytes).unwrap().trim(),
             "print(\"This script just prints\")"
         );
         Ok(())
@@ -196,15 +203,20 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext {
+            eldritch_agent::Context::Task(TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            },
+            }),
             vec!["remote_file.txt".to_string()],
         )))?;
         let content = lib.read_binary("remote_file.txt".to_string());
         assert!(content.is_ok());
-        assert_eq!(content.unwrap(), b"remote content");
+        let bytes = if let eldritch_core::Value::Bytes(b) = content.unwrap() {
+            b
+        } else {
+            panic!("Expected Bytes")
+        };
+        assert_eq!(bytes, b"remote content");
         Ok(())
     }
 
@@ -214,10 +226,10 @@ pub mod tests {
         let mut lib = StdAssetsLibrary::new();
         lib.add(Arc::new(AgentAssets::new(
             agent,
-            TaskContext {
+            eldritch_agent::Context::Task(TaskContext {
                 task_id: 0,
                 jwt: String::new(),
-            },
+            }),
             vec!["remote_file.txt".to_string()],
         )))?;
         let result = lib.read_binary("remote_file.txt".to_string());

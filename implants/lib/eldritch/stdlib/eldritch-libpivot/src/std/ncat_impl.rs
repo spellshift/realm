@@ -46,7 +46,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
             .send_to(data.as_bytes(), address_and_port.clone())
             .await?;
 
-        // Recieve any response from remote host
+        // Receive any response from remote host
         let mut response_buffer = [0; 1024];
         let (_bytes_copied, _addr) = sock.recv_from(&mut response_buffer).await?;
 

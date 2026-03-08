@@ -17,13 +17,13 @@ permalink: /
 
 * **Focus on Reliability:** Realm always prioritizes quality over quantity, enabling operators to focus on the engagement instead of spending hours troubleshooting bugs. Extensive testing and rigorous code review ensure unwavering reliability, while an intuitive design and clear documentation keep the learning curve minimal. After reaching a stable `1.0.0` release, Realm will follow [Semantic Versioning](https://semver.org/), ensuring the stability of older deployments.
 
-* **Eldritch, a Pythonic DSL for Offensive Security:** Ditch clunky scripting and embrace [Eldritch](/user-guide/eldritch), Realm's Pythonic [Domain Specific Language (DSL)](https://en.wikipedia.org/wiki/Domain-specific_language) based on [Google Starlark](https://github.com/bazelbuild/starlark/blob/master/spec.md#starlark-language-specification). Write clear, concise, reuseable code that reflects your strategic thinking and streamlines offensive operations. [Eldritch](/user-guide/eldritch) is natively compiled to Rust, providing a performant abstraction for low-level system interactions.
+* **Eldritch, a Pythonic DSL for Offensive Security:** Ditch clunky scripting and embrace [Eldritch](/user-guide/eldritch), Realm's Pythonic [Domain Specific Language (DSL)](https://en.wikipedia.org/wiki/Domain-specific_language) based on [Google Starlark](https://github.com/bazelbuild/starlark/blob/master/spec.md#starlark-language-specification). Write clear, concise, reusable code that reflects your strategic thinking and streamlines offensive operations. [Eldritch](/user-guide/eldritch) is natively compiled to Rust, providing a performant abstraction for low-level system interactions.
 
 * **Effortless Multi-Host Management:** Juggling tasks across numerous machines during complex engagements? Realm simplifies the process, enabling you to control agents on multiple hosts simultaneously.
 
 * **Native GCP Integration:** Leverage the power and scalability of Google Cloud directly within your red team engagements. Realm seamlessly integrates with GCP services, boosting your attack capabilities without reinventing the wheel.
 
-* **Stateless Server Architecture:** While Realm officially supports GCP, you may deploy it's [stateless docker container](https://hub.docker.com/r/spellshift/tavern) to any environment that best fits your needs.
+* **Stateless Server Architecture:** While Realm officially supports GCP, you may deploy its [stateless docker container](https://hub.docker.com/r/spellshift/tavern) to any environment that best fits your needs.
 
 ### Documentation Overview
 

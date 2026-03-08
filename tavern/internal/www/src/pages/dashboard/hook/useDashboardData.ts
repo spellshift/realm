@@ -18,6 +18,7 @@ export const useDashboardData = (): UseDashboardDataReturn => {
                 field: "CREATED_AT"
             }],
         },
+        fetchPolicy: 'cache-and-network',
         notifyOnNetworkStatusChange: true,
     });
 
@@ -26,6 +27,7 @@ export const useDashboardData = (): UseDashboardDataReturn => {
         data: hostData,
         error: hostError
     } = useQuery<HostQueryTopLevel>(GET_HOST_QUERY, {
+        fetchPolicy: 'cache-and-network',
         notifyOnNetworkStatusChange: true,
     });
 

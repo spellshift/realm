@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-libprocess"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 
 [dependencies]
@@ -9,6 +9,9 @@ eldritch-macros = { workspace = true }
 sysinfo = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 netstat = { workspace = true }
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
 
 [features]
 default = ["stdlib"]

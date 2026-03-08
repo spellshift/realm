@@ -81,6 +81,9 @@ jobs:
       run: start-process -filepath powershell -ArgumentList '/c','Set-MpPreference -DisableRealtimeMonitoring $true' -verb RunAs
       name: 👾 Disable defender
       shell: powershell
+    - name: Install system dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get update && sudo apt-get install -y libgbm-dev libx11-dev libssl-dev protobuf-compiler pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@master
       with:

@@ -1,4 +1,3 @@
-import * as React from "react"
 import {
   ChakraProvider,
   theme,
@@ -9,18 +8,20 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
 import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
-import { PollingProvider } from "./context/PollingContext";
-import Tasks from "./pages/tasks/Tasks";
-import HostList from "./pages/host-list/HostList";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
-import Quests from "./pages/quest-list/Quests";
 import Shell from "./pages/shell/Shell";
+import ShellV2 from "./pages/shellv2";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
-import { Tomes } from "./pages/tomes/Tomes";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import { CreateQuest } from "./pages/create-quest/CreateQuest";
+import Assets from "./pages/assets/Assets";
 import { PageWrapper } from "./components/page-wrapper";
+import Quests from "./pages/quests";
+import Hosts from "./pages/hosts/Hosts";
+import { Tasks } from "./pages/tasks";
+import { Tomes } from "./pages/tomes/Tomes";
+import Profile from "./pages/profile/Profile";
 
 
 const router = createBrowserRouter([
@@ -38,7 +39,7 @@ const router = createBrowserRouter([
       },
       {
         path: "hosts",
-        element: <HostList />,
+        element: <Hosts />,
       },
       {
         path: "hosts/:hostId",
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
       },
       {
         path: "createQuest",
-        element: <CreateQuest />,
+        element: <TagContextProvider><CreateQuest /></TagContextProvider>,
       },
       {
         path: "tasks",
@@ -65,6 +66,10 @@ const router = createBrowserRouter([
         element: <Tomes />,
       },
       {
+        path: "assets",
+        element: <Assets />,
+      },
+      {
         path: "shells/:shellId",
         element: <Shell />,
       },
@@ -72,7 +77,15 @@ const router = createBrowserRouter([
         path: "admin",
         element: <AdminPortal />,
       },
+      {
+        path: "profile",
+        element: <Profile />,
+      },
     ]
+  },
+  {
+    path: "shellv2/:shellId",
+    element: <ShellV2 />,
   },
 ]);
 
@@ -81,13 +94,9 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-        <PollingProvider>
-          <TagContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
-          </TagContextProvider>
-        </PollingProvider>
+        <UserPreferencesContextProvider>
+          <RouterProvider router={router} />
+        </UserPreferencesContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

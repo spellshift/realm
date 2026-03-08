@@ -28,7 +28,12 @@ func TestPortalClose(t *testing.T) {
 
 	// Send initial registration message
 	err = c2Stream.Send(&c2pb.CreatePortalRequest{
-		Context: &c2pb.TaskContext{TaskId: int64(taskID)},
+		Context: &c2pb.CreatePortalRequest_TaskContext{
+			TaskContext: &c2pb.TaskContext{
+				TaskId: int64(taskID),
+				Jwt:    generateJWT(t, env.PrivKey),
+			},
+		},
 	})
 	require.NoError(t, err)
 

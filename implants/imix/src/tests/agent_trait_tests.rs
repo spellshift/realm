@@ -2,8 +2,7 @@ use super::super::agent::ImixAgent;
 use super::super::task::TaskRegistry;
 use eldritch::agent::agent::Agent;
 use pb::c2::host::Platform;
-use pb::c2::transport::Type;
-use pb::c2::{self, Host};
+use pb::c2::{self, Host, report_file_request, report_output_request};
 use pb::config::Config;
 use std::sync::Arc;
 use transport::MockTransport;
@@ -12,46 +11,39 @@ use transport::MockTransport;
 async fn test_imix_agent_buffer_and_flush() {
     let mut transport = MockTransport::default();
 
-    // We expect report_task_output to be called exactly once
+    // We expect report_output to be called exactly once
     transport
-        .expect_report_task_output()
+        .expect_report_output()
         .times(1)
-        .returning(|_| Ok(c2::ReportTaskOutputResponse {}));
+        .returning(|_| Ok(c2::ReportOutputResponse {}));
 
     transport.expect_is_active().returning(|| true);
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
     // 1. Report output (should buffer)
-    let req = c2::ReportTaskOutputRequest {
-        output: Some(c2::TaskOutput {
-            id: 1,
-            output: "test".to_string(),
-            ..Default::default()
-        }),
-        context: Some(c2::TaskContext {
-            task_id: 1,
-            jwt: "some jwt".to_string(),
-        }),
+    let req = c2::ReportOutputRequest {
+        message: Some(report_output_request::Message::TaskOutput(
+            c2::ReportTaskOutputMessage {
+                output: Some(c2::TaskOutput {
+                    id: 1,
+                    output: "test".to_string(),
+                    ..Default::default()
+                }),
+                context: Some(c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                }),
+            },
+        )),
     };
-    agent.report_task_output(req).unwrap();
-
-    // Verify buffer
-    {
-        let buffer = agent.output_buffer.lock().unwrap();
-        assert_eq!(buffer.len(), 1);
-    }
+    agent.report_output(req).unwrap();
 
     // 2. Flush outputs (should drain buffer and call transport)
     agent.flush_outputs().await;
-
-    // Verify buffer empty
-    {
-        let buffer = agent.output_buffer.lock().unwrap();
-        assert!(buffer.is_empty());
-    }
 }
 
 #[tokio::test]
@@ -59,7 +51,7 @@ async fn test_imix_agent_fetch_asset() {
     let mut transport = MockTransport::default();
 
     transport.expect_is_active().returning(|| true);
-    transport.expect_clone().returning(|| {
+    transport.expect_clone_box().returning(|| {
         let mut t = MockTransport::default();
         t.expect_is_active().returning(|| true);
 
@@ -73,19 +65,22 @@ async fn test_imix_agent_fetch_asset() {
             let _ = tx.send(chunk2);
             Ok(())
         });
-        t
+        Box::new(t)
     });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
     let req = c2::FetchAssetRequest {
         name: "test_file".to_string(),
-        context: Some(c2::TaskContext {
-            task_id: 0,
-            jwt: "a jwt".to_string(),
-        }),
+        context: Some(c2::fetch_asset_request::Context::TaskContext(
+            c2::TaskContext {
+                task_id: 0,
+                jwt: "a jwt".to_string(),
+            },
+        )),
     };
 
     let agent_clone = agent.clone();
@@ -102,27 +97,30 @@ async fn test_imix_agent_report_credential() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
 
-    transport.expect_clone().returning(|| {
+    transport.expect_clone_box().returning(|| {
         let mut t = MockTransport::default();
         t.expect_is_active().returning(|| true);
         t.expect_report_credential()
             .times(1)
             .returning(|_| Ok(c2::ReportCredentialResponse {}));
-        t
+        Box::new(t)
     });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
         let _ = agent_clone.report_credential(c2::ReportCredentialRequest {
             credential: None,
-            context: Some(c2::TaskContext {
-                task_id: 1,
-                jwt: "some jwt".to_string(),
-            }),
+            context: Some(c2::report_credential_request::Context::TaskContext(
+                c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                },
+            )),
         });
     })
     .join()
@@ -134,27 +132,30 @@ async fn test_imix_agent_report_process_list() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
 
-    transport.expect_clone().returning(|| {
+    transport.expect_clone_box().returning(|| {
         let mut t = MockTransport::default();
         t.expect_is_active().returning(|| true);
         t.expect_report_process_list()
             .times(1)
             .returning(|_| Ok(c2::ReportProcessListResponse {}));
-        t
+        Box::new(t)
     });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
         let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
             list: None,
-            context: Some(c2::TaskContext {
-                task_id: 1,
-                jwt: "some jwt".to_string(),
-            }),
+            context: Some(c2::report_process_list_request::Context::TaskContext(
+                c2::TaskContext {
+                    task_id: 1,
+                    jwt: "some jwt".to_string(),
+                },
+            )),
         });
     })
     .join()
@@ -166,17 +167,20 @@ async fn test_imix_agent_claim_tasks() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
     transport.expect_is_active().returning(|| true);
-    transport
-        .expect_claim_tasks()
-        .times(1)
-        .returning(|_| Ok(c2::ClaimTasksResponse { tasks: vec![] }));
+    transport.expect_claim_tasks().times(1).returning(|_| {
+        Ok(c2::ClaimTasksResponse {
+            tasks: vec![],
+            shell_tasks: vec![],
+        })
+    });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
 
     // Provide config with beacon info
     let config = Config::default();
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, Box::new(transport), handle, registry, tx);
 
     // let agent_clone = agent.clone();
     let _ = agent.claim_tasks().await.unwrap();
@@ -187,28 +191,33 @@ async fn test_imix_agent_report_file() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
 
-    transport.expect_clone().returning(|| {
+    transport.expect_clone_box().returning(|| {
         let mut t = MockTransport::default();
         t.expect_is_active().returning(|| true);
         t.expect_report_file()
             .times(1)
             .returning(|_| Ok(c2::ReportFileResponse {}));
-        t
+        Box::new(t)
     });
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(Config::default(), transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
     let agent_clone = agent.clone();
     std::thread::spawn(move || {
-        let _ = agent_clone.report_file(c2::ReportFileRequest {
+        let req = c2::ReportFileRequest {
             chunk: None,
-            context: Some(c2::TaskContext {
+            context: Some(report_file_request::Context::TaskContext(c2::TaskContext {
                 task_id: 1,
                 jwt: "test jwt".to_string(),
-            }),
-        });
+            })),
+            kind: c2::ReportFileKind::Ondisk as i32,
+        };
+        let (tx, rx) = std::sync::mpsc::channel();
+        tx.send(req).unwrap();
+        let _ = agent_clone.report_file(rx);
     })
     .join()
     .unwrap();
@@ -225,6 +234,7 @@ async fn test_imix_agent_config_access() {
             transports: vec![pb::c2::Transport {
                 uri: "http://localhost:8080".to_string(),
                 interval: 5,
+                jitter: 0.0,
                 ..Default::default()
             }],
             active_index: 0,
@@ -237,7 +247,8 @@ async fn test_imix_agent_config_access() {
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
-    let agent = ImixAgent::new(config, transport, handle, registry);
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
+    let agent = ImixAgent::new(config, Box::new(transport), handle, registry, tx);
 
     // Run in thread for block_on
     let agent_clone = agent.clone();
@@ -259,6 +270,7 @@ fn test_agent_config_platform_as_enum_variant_name() {
                 transports: vec![pb::c2::Transport {
                     uri: "http://localhost:8080".to_string(),
                     interval: 5,
+                    jitter: 0.0,
                     ..Default::default()
                 }],
                 active_index: 0,
@@ -276,11 +288,13 @@ fn test_agent_config_platform_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = ImixAgent::new(
         config,
-        transport,
+        Box::new(transport),
         runtime.handle().clone(),
         Arc::new(TaskRegistry::new()),
+        tx,
     );
 
     let map = agent.get_config().unwrap();
@@ -297,6 +311,7 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
                     uri: "http://localhost:8000".to_string(),
                     interval: 5,
                     extra: "".to_string(),
+                    jitter: 0.0,
                 }],
                 active_index: 0,
             }),
@@ -309,11 +324,13 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
     transport.expect_is_active().returning(|| true);
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
+    let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = ImixAgent::new(
         config,
-        transport,
+        Box::new(transport),
         runtime.handle().clone(),
         Arc::new(TaskRegistry::new()),
+        tx,
     );
 
     let map = agent.get_config().unwrap();

@@ -1,6 +1,6 @@
 [package]
 name = "golem"
-version = "0.1.0"
+version = "0.3.2"
 edition = "2024"
 
 [dependencies]
@@ -13,6 +13,7 @@ rust-embed = { workspace = true }
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch = { workspace = true, features = ["std", "stdlib", "fake_agent"] }
+eldritch-agent = { workspace = true }
 # Need fake here so we import this on its own
 tokio.workspace = true
 futures.workspace = true

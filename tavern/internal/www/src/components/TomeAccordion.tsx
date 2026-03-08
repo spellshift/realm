@@ -32,6 +32,20 @@ const ParamValuesDisplay = ({ params }: ParamDisplayProps) => (
     </>
 );
 
+const ParamCodeBlock = ({ params }: ParamDisplayProps) => (
+    <div className="mx-3 flex flex-col gap-0">
+        {params.map((paramDef: FieldInputParams) => {
+            if (!paramDef.value) return null;
+            return (
+                <div className="flex flex-row items-center justify-left text-gray-800" key={paramDef.name}>
+                    <div className="capitalize text-sm">{paramDef.name}:</div>
+                    <CodeBlock inlineButton code={paramDef.value} language="md" showCopyButton/>
+                </div>
+            );
+        })}
+    </div>
+);
+
 const ParamLabelsDisplay = ({ params }: ParamDisplayProps) => (
     <div className="flex flex-row flex-wrap gap-1 text-sm text-gray-600">
         Parameters:
@@ -93,7 +107,10 @@ const TomeAccordion = (props: Props) => {
                 </h2>
                 {tome.eldritch && (
                     <AccordionPanel pb={2} pl={10} pr={4}>
-                        <CodeBlock code={tome.eldritch} language="python" />
+                        <>
+                            {showParamValues && hasParams && <ParamCodeBlock params={params} />}
+                            <CodeBlock code={tome.eldritch} language="python" />
+                        </>
                     </AccordionPanel>
                 )}
             </AccordionItem>

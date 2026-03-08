@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -78,6 +79,7 @@ func (p *Proxy) dispatchLoop(ctx context.Context, errCh chan<- error) {
 
 		resp, err := p.stream.Recv()
 		if err != nil {
+			slog.Error("Stream Recv error", "error", err)
 			errCh <- err
 			return
 		}
@@ -140,19 +142,24 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 	defer p.wg.Done()
 	defer conn.Close()
 
+	slog.Info("Accepted connection", "addr", conn.RemoteAddr())
+
 	// SOCKS5 Handshake
 	if err := p.handshake(conn); err != nil {
+		slog.Error("Handshake failed", "addr", conn.RemoteAddr(), "error", err)
 		return
 	}
 
 	// Request
 	cmd, _, dstAddr, dstPort, err := p.readRequest(conn)
 	if err != nil {
+		slog.Error("Read request failed", "addr", conn.RemoteAddr(), "error", err)
 		return
 	}
 
 	// Prepare Stream
 	streamID := uuid.New().String()
+	slog.Info("Creating stream", "stream_id", streamID, "cmd", cmd, "dst_addr", dstAddr, "dst_port", dstPort)
 	streamCh := make(chan *portalpb.Mote, maxStreamBufferedMessages)
 
 	p.streamsMu.Lock()
@@ -184,9 +191,9 @@ func (p *Proxy) handleConnection(conn net.Conn) {
 
 	switch cmd {
 	case 1: // CONNECT
-		p.handleTCP(ctx, cancel, conn, writer, reader, dstAddr, dstPort)
+		p.handleTCP(ctx, cancel, conn, writer, reader, dstAddr, dstPort, streamID)
 	case 3: // UDP ASSOCIATE
-		p.handleUDP(ctx, cancel, conn, writer, reader)
+		p.handleUDP(ctx, cancel, conn, writer, reader, streamID)
 	default:
 		replyCommandNotSupported(conn)
 	}
@@ -253,7 +260,11 @@ func (p *Proxy) readRequest(conn net.Conn) (cmd byte, atyp byte, addr string, po
 	return cmd, atyp, addr, port, nil
 }
 
-func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader, dstAddr string, dstPort int) {
+func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader, dstAddr string, dstPort int, streamID string) {
+	logger := slog.With("stream_id", streamID, "protocol", "tcp")
+	logger.Info("Starting TCP handler")
+	defer logger.Info("TCP handler finished")
+
 	replySuccess(conn)
 
 	var wg sync.WaitGroup
@@ -270,10 +281,14 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 				data := make([]byte, n)
 				copy(data, buf[:n])
 				if err := writer.WriteTCP(data, dstAddr, uint32(dstPort)); err != nil {
+					logger.Error("Failed to write to stream", "error", err)
 					break
 				}
 			}
 			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					logger.Error("Failed to read from connection", "error", err)
+				}
 				break
 			}
 		}
@@ -286,6 +301,9 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 			mote, err := reader.Read()
 			if err != nil {
 				// Context canceled or stream error
+				if !errors.Is(err, io.EOF) && !errors.Is(err, context.Canceled) {
+					logger.Error("Failed to read from stream", "error", err)
+				}
 				break
 			}
 			if pl, ok := mote.Payload.(*portalpb.Mote_Tcp); ok {
@@ -305,9 +323,14 @@ func (p *Proxy) handleTCP(ctx context.Context, cancel context.CancelFunc, conn n
 	wg.Wait()
 }
 
-func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader) {
+func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn net.Conn, writer *stream.OrderedWriter, reader *stream.OrderedReader, streamID string) {
+	logger := slog.With("stream_id", streamID, "protocol", "udp")
+	logger.Info("Starting UDP handler")
+	defer logger.Info("UDP handler finished")
+
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0})
 	if err != nil {
+		logger.Error("Failed to listen UDP", "error", err)
 		replyGeneralFailure(conn)
 		return
 	}
@@ -334,7 +357,10 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 
 		// Wait for EOF from TCP control connection
 		buf := make([]byte, 1)
-		conn.Read(buf)
+		_, err := conn.Read(buf)
+		if err != nil && !errors.Is(err, io.EOF) {
+			logger.Error("Keepalive connection read error", "error", err)
+		}
 	}()
 
 	// Uplink (UDP -> gRPC)
@@ -344,6 +370,9 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 		for {
 			n, addr, err := udpConn.ReadFromUDP(buf)
 			if err != nil {
+				if !errors.Is(err, net.ErrClosed) {
+					logger.Error("ReadFromUDP error", "error", err)
+				}
 				break
 			}
 			clientAddr.Store(addr)
@@ -390,7 +419,9 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 			data := make([]byte, n-pos)
 			copy(data, buf[pos:n])
 
-			writer.WriteUDP(data, tAddr, uint32(tPort))
+			if err := writer.WriteUDP(data, tAddr, uint32(tPort)); err != nil {
+				logger.Error("Failed to write to stream", "error", err)
+			}
 		}
 	}()
 
@@ -400,6 +431,9 @@ func (p *Proxy) handleUDP(ctx context.Context, cancel context.CancelFunc, conn n
 		for {
 			mote, err := reader.Read()
 			if err != nil {
+				if !errors.Is(err, io.EOF) && !errors.Is(err, context.Canceled) {
+					logger.Error("Failed to read from stream", "error", err)
+				}
 				break
 			}
 

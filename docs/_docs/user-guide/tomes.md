@@ -15,7 +15,7 @@ A [Tome](/user-guide/terminology#tome) has a well-defined structure consisting o
 
 1. `metadata.yml`: This file serves as the [Tome's](/user-guide/terminology#tome) blueprint, containing essential information in YAML format. More information about this file can be found below in the [Tome Metadata section.](/user-guide/tomes#tome-metadata)
 
-2. `main.eldritch`: This file is where the magic happens. It contains the [Eldritch](/user-guide/terminology#eldritch) code evaluated by the [Tome](/user-guide/terminology#tome). Testing your code with [Golem](/user-guide/golem) before running it in production is highly recommended, since it enables signficantly faster developer velocity.
+2. `main.eldritch`: This file is where the magic happens. It contains the [Eldritch](/user-guide/terminology#eldritch) code evaluated by the [Tome](/user-guide/terminology#tome). Testing your code with [Golem](/user-guide/golem) before running it in production is highly recommended, since it enables significantly faster developer velocity.
 
 3. `assets/` (optional): [Tomes](/user-guide/terminology#tome) have the capability to leverage additional resources stored externally. These assets, which may include data files, configuration settings, or other tools, are fetched using the implant's callback protocol (e.g. `gRPC`) using the [Eldritch Assets API](/user-guide/eldritch#assets). More information about these files can be found below in the [Tome Assets section.](/user-guide/tomes#tome-assets)
 
@@ -26,7 +26,7 @@ The `metadata.yml` file specifies key information about a [Tome](/user-guide/ter
 | Name | Description | Required |
 |------|-------------|----------|
 | `name` | Display name of your [Tome](/user-guide/terminology#tome). | Yes |
-| `description` | Provide a helpful description of functionality, for user's of your [Tome](/user-guide/terminology#tome). | Yes |
+| `description` | Provide a helpful description of functionality, for users of your [Tome](/user-guide/terminology#tome). | Yes |
 | `author` | Your name/handle, so you can get credit for your amazing work! | Yes |
 | `support_model` | The type of support offered by this tome `FIRST_PARTY` (from realm developers) or `COMMUNITY` | Yes |
 | `tactic` | The relevant [MITRE ATT&CK tactic](https://attack.mitre.org/tactics/enterprise/) that best describes this [Tome](/user-guide/terminology#tome). Possible values include: `UNSPECIFIED`, `RECON`, `RESOURCE_DEVELOPMENT`, `INITIAL_ACCESS`, `EXECUTION`, `PERSISTENCE`, `PRIVILEGE_ESCALATION`, `DEFENSE_EVASION`, `CREDENTIAL_ACCESS`, `DISCOVERY`, `LATERAL_MOVEMENT`, `COLLECTION`,`COMMAND_AND_CONTROL`,`EXFILTRATION`, `IMPACT`. | Yes |
@@ -144,13 +144,13 @@ Writing tomes will always be specific to your use case. Different teams, differe
 
 OPSEC considerations will tend towards avoiding calls to `shell` and `exec` instead using native functions to accomplish the function.
 
-In some situations you may also wish to avoid testing on target if that's the case you should test throughly off target before launching.
+In some situations you may also wish to avoid testing on target if that's the case you should test thoroughly off target before launching.
 
 If you test off target you can leverage native functions like [`sys.get_os`](/user-guide/eldritch#sysget_os) to ensure that your tome only runs against targets it's been tested on.
 
 ### Example
 
-Copy and run an asset in a safe and idempotant way
+Copy and run an asset in a safe and idempotent way
 
 ```python
 IMPLANT_ASSET_PATH = "tome_name/assets/implant"
@@ -272,7 +272,7 @@ main(input_params['DEST_FILE_PATH'])
 
 ### Fail early
 Before modifying anything on Target or loading assets validate that the tome you're building will run as expected.
-This avoids artifacts being left on disk if something fails and also provides verbose feedback in the event of an error to reduce trouble shooting time.
+This avoids artifacts being left on disk if something fails and also provides verbose feedback in the event of an error to reduce troubleshooting time.
 
 Common things to validate:
 - Operating systems - all tomes are cross platform so it's up to the tome developer to fail if run on an unsupported OS
@@ -310,7 +310,7 @@ res = sys.shell(f"{shell_client} 127.0.0.1 id")
 
 
 ### Idempotence
-In many situations especially when deploying persistance you'll want to ensure that running a tome twice won't cause issues.
+In many situations especially when deploying persistence you'll want to ensure that running a tome twice won't cause issues.
 The best way to handle this is to when possible check the current state of the resource you're about to modify.
 
 This often takes the shape of running validation before and after taking an action.

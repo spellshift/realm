@@ -5,6 +5,7 @@ import { ApolloError } from '@apollo/client';
 import { MemoryRouter } from 'react-router-dom';
 import { FilterProvider } from '../../../../context/FilterContext';
 import { SortsProvider } from '../../../../context/SortContext';
+import { PageNavItem } from '../../../../utils/enums';
 import React from 'react';
 
 // Mock EmptyState component
@@ -29,7 +30,7 @@ vi.mock('../../../../context/FilterContext/FilterControls', () => ({
 }));
 
 vi.mock('../../../../context/SortContext/SortingControls', () => ({
-  default: () => <div data-testid="sorting-controls">Sorting Controls</div>,
+  default: ({ sortType }: { sortType: string }) => <div data-testid="sorting-controls">Sorting Controls ({sortType})</div>,
 }));
 
 // Mock Button component
@@ -41,9 +42,9 @@ vi.mock('../../button/Button', () => ({
   ),
 }));
 
-function TestWrapper({ children, path = '/hosts' }: { children: React.ReactNode; path?: string }) {
+function TestWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter>
       <SortsProvider>
         <FilterProvider>
           {children}
@@ -152,7 +153,18 @@ describe('TableWrapper', () => {
   });
 
   describe('Controls section rendering', () => {
-    it('should render filter and sorting controls', () => {
+    it('should render filter controls and sorting controls when sortType is provided', () => {
+      render(
+        <TestWrapper>
+          <TableWrapper {...defaultProps} sortType={PageNavItem.hosts} />
+        </TestWrapper>
+      );
+
+      expect(screen.getByTestId('filter-controls')).toBeInTheDocument();
+      expect(screen.getByTestId('sorting-controls')).toBeInTheDocument();
+    });
+
+    it('should not render sorting controls when sortType is not provided', () => {
       render(
         <TestWrapper>
           <TableWrapper {...defaultProps} />
@@ -160,7 +172,7 @@ describe('TableWrapper', () => {
       );
 
       expect(screen.getByTestId('filter-controls')).toBeInTheDocument();
-      expect(screen.getByTestId('sorting-controls')).toBeInTheDocument();
+      expect(screen.queryByTestId('sorting-controls')).not.toBeInTheDocument();
     });
 
     it('should render custom title', () => {

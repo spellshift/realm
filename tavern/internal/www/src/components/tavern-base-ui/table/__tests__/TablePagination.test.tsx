@@ -62,12 +62,11 @@ describe('TablePagination', () => {
 
   describe('Button states', () => {
     it.each([
-      { hasPreviousPage: false, hasNextPage: true, expectedPrevDisabled: true, expectedNextDisabled: false },
-      { hasPreviousPage: true, hasNextPage: false, expectedPrevDisabled: false, expectedNextDisabled: true },
-    ])('should set button states based on pageInfo (prev: $hasPreviousPage, next: $hasNextPage)',
-      ({ hasPreviousPage, hasNextPage, expectedPrevDisabled, expectedNextDisabled }) => {
-      const pageInfo = { ...mockPageInfo, hasPreviousPage, hasNextPage };
-      render(<TablePagination {...defaultProps} pageInfo={pageInfo} />);
+      { page: 1, expectedPrevDisabled: true, expectedNextDisabled: false },
+      { page: 10, expectedPrevDisabled: false, expectedNextDisabled: true },
+    ])('should set button states based on page position (page: $page)',
+      ({ page, expectedPrevDisabled, expectedNextDisabled }) => {
+      render(<TablePagination {...defaultProps} page={page} />);
 
       const previousButton = screen.getByTestId('button-previous');
       const nextButton = screen.getByTestId('button-next');
@@ -89,10 +88,9 @@ describe('TablePagination', () => {
   describe('Navigation callbacks', () => {
     it('should call refetchTable with startCursor on Previous click', async () => {
       const user = userEvent.setup();
-      const pageInfo = { ...mockPageInfo, hasPreviousPage: true };
       const mockRefetch = vi.fn();
 
-      render(<TablePagination {...defaultProps} pageInfo={pageInfo} refetchTable={mockRefetch} />);
+      render(<TablePagination {...defaultProps} page={5} refetchTable={mockRefetch} />);
 
       const previousButton = screen.getByTestId('button-previous');
       await user.click(previousButton);

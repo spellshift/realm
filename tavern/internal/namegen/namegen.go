@@ -502,7 +502,7 @@ var (
 		"intestines",
 		"jack-o-lantern",
 		"levitation",
-		"lightening",
+		"lightning",
 		"magic",
 		"magic-potion",
 		"magic-tricks",

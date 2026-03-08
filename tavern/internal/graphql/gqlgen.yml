@@ -5,6 +5,7 @@ schema:
   - schema/query.graphql
   - schema/mutation.graphql
   - schema/inputs.graphql
+  - schema/user.graphql
 
 model:
   package: models
@@ -63,3 +64,6 @@ models:
   Status:
      model:
       - realm.pub/tavern/internal/c2/epb.Process_Status
+  BuildTaskTargetFormat:
+    model:
+      - realm.pub/tavern/internal/builder/builderpb.TargetFormat

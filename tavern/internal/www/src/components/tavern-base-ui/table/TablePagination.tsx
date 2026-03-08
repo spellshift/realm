@@ -8,22 +8,30 @@ type Props = {
   page: number;
   setPage: any;
   rowLimit: number;
+  loading?: boolean;
 }
 export default function TablePagination(props: Props) {
-  const { totalCount, pageInfo, refetchTable, page, setPage, rowLimit } = props;
+  const { totalCount, pageInfo, refetchTable, page, setPage, rowLimit, loading = false } = props;
 
   function handlePreviousClick() {
-    if (refetchTable && pageInfo.hasPreviousPage) {
-      setPage((page: number) => page - 1);
+    if (page <= 1) return;
+
+    setPage((prevPage: number) => Math.max(1, prevPage - 1));
+    if (refetchTable && pageInfo.startCursor) {
       refetchTable(null, pageInfo.startCursor);
     }
   }
+
   function handleNextClick() {
-    if (refetchTable && pageInfo.hasNextPage) {
-      setPage((page: number) => page + 1);
+    const maxPage = getPageCount();
+    if (page >= maxPage) return;
+
+    setPage((prevPage: number) => Math.min(maxPage, prevPage + 1));
+    if (refetchTable && pageInfo.endCursor) {
       refetchTable(pageInfo.endCursor, null);
     }
   }
+
   const getPageCount = () => {
     return Math.ceil(totalCount / rowLimit);
   }
@@ -47,14 +55,14 @@ export default function TablePagination(props: Props) {
         <Button
           buttonVariant="outline"
           buttonStyle={{ color: 'gray', size: "md" }}
-          disabled={!pageInfo.hasPreviousPage}
+          disabled={page <= 1 || loading}
           onClick={() => handlePreviousClick()}
         >
           Previous
         </Button>
         <Button
           buttonVariant="outline"
-          disabled={!pageInfo.hasNextPage}
+          disabled={page >= getPageCount() || loading}
           buttonStyle={{ color: 'gray', size: "md" }}
           onClick={() => handleNextClick()}
         >

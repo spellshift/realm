@@ -108,7 +108,12 @@ pub trait FileLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be opened.
-    fn follow(&self, path: String, fn_val: Value) -> Result<(), String>; // fn is reserved
+    fn follow(
+        &self,
+        interp: &mut eldritch_core::Interpreter,
+        path: String,
+        fn_val: Value,
+    ) -> Result<(), String>; // fn is reserved
 
     #[eldritch_method]
     /// Checks if the path exists and is a directory.
@@ -152,6 +157,20 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if listing fails.
     fn list(&self, path: Option<String>) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    /// Lists files in a directory recursively, sorted by most recent modification time.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The directory to scan. Defaults to "/".
+    /// - `limit` (`int`): The maximum number of files to return. Defaults to 10.
+    ///
+    /// **Returns**
+    /// - `List<str>`: A list of file paths sorted by modification time (descending).
+    ///
+    /// **Errors**
+    /// - Returns an error string if scanning fails.
+    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String>;
 
     #[eldritch_method]
     /// Creates a new directory.
@@ -217,11 +236,11 @@ pub trait FileLibrary {
     /// - `path` (`str`): The file path.
     ///
     /// **Returns**
-    /// - `List<int>`: The file content as a list of bytes (u8).
+    /// - `Bytes`: The file content as a bytes object.
     ///
     /// **Errors**
     /// - Returns an error string if the file cannot be read.
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String>;
+    fn read_binary(&self, path: String) -> Result<Value, String>;
 
     #[eldritch_method]
     /// Returns the current working directory of the process.
@@ -348,6 +367,20 @@ pub trait FileLibrary {
     /// **Errors**
     /// - Returns an error string if writing fails.
     fn write(&self, path: String, content: String) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Writes binary content to a file, overwriting it if it exists.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file path.
+    /// - `content` (`Bytes`): The binary content to write.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if writing fails.
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String>;
 
     #[eldritch_method]
     /// Finds files matching specific criteria.

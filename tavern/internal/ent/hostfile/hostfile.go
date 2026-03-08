@@ -3,6 +3,9 @@
 package hostfile
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"entgo.io/ent"
@@ -33,10 +36,16 @@ const (
 	FieldHash = "hash"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
+	// FieldPreviewType holds the string denoting the preview_type field in the database.
+	FieldPreviewType = "preview_type"
+	// FieldPreview holds the string denoting the preview field in the database.
+	FieldPreview = "preview"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
 	EdgeTask = "task"
+	// EdgeShellTask holds the string denoting the shell_task edge name in mutations.
+	EdgeShellTask = "shell_task"
 	// Table holds the table name of the hostfile in the database.
 	Table = "host_files"
 	// HostTable is the table that holds the host relation/edge.
@@ -53,6 +62,13 @@ const (
 	TaskInverseTable = "tasks"
 	// TaskColumn is the table column denoting the task relation/edge.
 	TaskColumn = "task_reported_files"
+	// ShellTaskTable is the table that holds the shell_task relation/edge.
+	ShellTaskTable = "host_files"
+	// ShellTaskInverseTable is the table name for the ShellTask entity.
+	// It exists in this package in order to avoid circular dependency with the "shelltask" package.
+	ShellTaskInverseTable = "shell_tasks"
+	// ShellTaskColumn is the table column denoting the shell_task relation/edge.
+	ShellTaskColumn = "shell_task_reported_files"
 )
 
 // Columns holds all SQL columns for hostfile fields.
@@ -67,6 +83,8 @@ var Columns = []string{
 	FieldSize,
 	FieldHash,
 	FieldContent,
+	FieldPreviewType,
+	FieldPreview,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_files"
@@ -74,6 +92,7 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"host_files",
 	"host_file_host",
+	"shell_task_reported_files",
 	"task_reported_files",
 }
 
@@ -114,6 +133,32 @@ var (
 	// HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	HashValidator func(string) error
 )
+
+// PreviewType defines the type for the "preview_type" enum field.
+type PreviewType string
+
+// PreviewTypeNONE is the default value of the PreviewType enum.
+const DefaultPreviewType = PreviewTypeNONE
+
+// PreviewType values.
+const (
+	PreviewTypeTEXT PreviewType = "TEXT"
+	PreviewTypeNONE PreviewType = "NONE"
+)
+
+func (pt PreviewType) String() string {
+	return string(pt)
+}
+
+// PreviewTypeValidator is a validator for the "preview_type" field enum values. It is called by the builders before save.
+func PreviewTypeValidator(pt PreviewType) error {
+	switch pt {
+	case PreviewTypeTEXT, PreviewTypeNONE:
+		return nil
+	default:
+		return fmt.Errorf("hostfile: invalid enum value for preview_type field: %q", pt)
+	}
+}
 
 // OrderOption defines the ordering options for the HostFile queries.
 type OrderOption func(*sql.Selector)
@@ -163,6 +208,11 @@ func ByHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHash, opts...).ToFunc()
 }
 
+// ByPreviewType orders the results by the preview_type field.
+func ByPreviewType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPreviewType, opts...).ToFunc()
+}
+
 // ByHostField orders the results by host field.
 func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -174,6 +224,13 @@ func ByHostField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByShellTaskField orders the results by shell_task field.
+func ByShellTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newShellTaskStep(), sql.OrderByField(field, opts...))
 	}
 }
 func newHostStep() *sqlgraph.Step {
@@ -189,4 +246,29 @@ func newTaskStep() *sqlgraph.Step {
 		sqlgraph.To(TaskInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, TaskTable, TaskColumn),
 	)
+}
+func newShellTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ShellTaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ShellTaskTable, ShellTaskColumn),
+	)
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (e PreviewType) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(e.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (e *PreviewType) UnmarshalGQL(val interface{}) error {
+	str, ok := val.(string)
+	if !ok {
+		return fmt.Errorf("enum %T must be a string", val)
+	}
+	*e = PreviewType(str)
+	if err := PreviewTypeValidator(*e); err != nil {
+		return fmt.Errorf("%s is not a valid PreviewType", str)
+	}
+	return nil
 }

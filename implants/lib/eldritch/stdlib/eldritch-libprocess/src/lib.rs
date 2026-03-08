@@ -78,4 +78,20 @@ pub trait ProcessLibrary {
     /// **Errors**
     /// - Returns an error string if network information cannot be retrieved.
     fn netstat(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+
+    #[eldritch_method]
+    /// Sends a signal to a process by its ID.
+    ///
+    /// **Parameters**
+    /// - `pid` (`int`): The process ID to signal.
+    /// - `signal` (`int`): The signal number to send (e.g. `9` for SIGKILL, `15` for SIGTERM).
+    ///   On Unix (Linux, macOS, BSD), uses platform-native signal numbers.
+    ///   On Windows, only `2` (SIGINT), `9` (SIGKILL), and `15` (SIGTERM) are supported.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if the signal could not be sent (e.g. process not found, permission denied, unsupported signal on Windows).
+    fn signal(&self, pid: i64, signal: i64) -> Result<(), String>;
 }

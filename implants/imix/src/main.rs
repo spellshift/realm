@@ -17,12 +17,13 @@ mod win_service;
 use console_subscriber;
 
 pub use pb::config::Config;
-pub use transport::{ActiveTransport, Transport};
+pub use transport::Transport;
 
 mod agent;
 mod assets;
 mod install;
 mod portal;
+mod printer;
 mod run;
 mod shell;
 mod task;

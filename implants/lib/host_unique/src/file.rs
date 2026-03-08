@@ -10,8 +10,9 @@ use crate::HostIDSelector;
 
 const UUID_SIZE: usize = 36;
 
-#[derive(Default)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct File {
+    #[serde(default)]
     path_override: Option<String>,
 }
 
@@ -91,7 +92,9 @@ impl HostIDSelector for File {
         // Save to file
         match std::fs::File::create(path) {
             Ok(mut f) => match f.write(uuid_str.as_bytes()) {
-                Ok(_) => {}
+                Ok(_) => {
+                    return Some(host_id);
+                }
                 Err(_err) => {
                     #[cfg(debug_assertions)]
                     log::debug!("failed to write host id file: {_err}");
@@ -103,7 +106,7 @@ impl HostIDSelector for File {
             }
         };
 
-        Some(host_id)
+        None
     }
 }
 

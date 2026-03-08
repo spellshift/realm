@@ -103,6 +103,7 @@ export const GET_HOST_QUERY = gql`
                     }
                 }
                 beacons {
+                    totalCount
                     edges {
                         node {
                             id
@@ -115,11 +116,18 @@ export const GET_HOST_QUERY = gql`
                     }
                 }
                 credentials {
+                    totalCount
                     edges {
                         node {
                             id
                         }
                     }
+                }
+                processes {
+                    totalCount
+                }
+                files{
+                    totalCount
                 }
             }
             }
@@ -269,6 +277,17 @@ export const GET_HOST_TASK_COUNT = gql`
     }
 `;
 
+export const GET_HOST_SHELL_COUNT = gql`
+    query GetHostShellCount($whereTotal: ShellWhereInput, $whereActive: ShellWhereInput){
+        totalShells: shells(where: $whereTotal){
+            totalCount
+        }
+        activeShells: shells(where: $whereActive){
+            totalCount
+        }
+    }
+`;
+
 export const GET_TASK_QUERY = gql`
     query GetTasks($where: TaskWhereInput, $first: Int, $last: Int, $after: Cursor, $before: Cursor, $orderBy: [TaskOrder!]) {
         tasks(
@@ -315,6 +334,12 @@ export const GET_TASK_QUERY = gql`
                                 }
                             }
                         }
+                    }
+                    reportedProcesses{
+                        totalCount
+                    }
+                    reportedFiles{
+                        totalCount
                     }
                     quest {
                         id

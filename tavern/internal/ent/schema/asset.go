@@ -68,6 +68,12 @@ func (Asset) Edges() []ent.Edge {
 			).
 			Ref("asset").
 			Comment("Links that point to this asset"),
+		edge.To("creator", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("User that created the asset if available."),
 	}
 }
 

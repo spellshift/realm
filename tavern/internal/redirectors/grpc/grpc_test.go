@@ -123,7 +123,7 @@ func TestRedirector_FullDuplexCall(t *testing.T) {
 	defer upstreamConn.Close()
 
 	go func() {
-		redirector.Redirect(context.Background(), addr, upstreamConn)
+		redirector.Redirect(context.Background(), addr, upstreamConn, nil)
 	}()
 
 	// 3. Connect a client to the redirector, also using the raw codec.
@@ -175,7 +175,7 @@ func TestRedirector_ContextCancellation(t *testing.T) {
 
 	serverErr := make(chan error)
 	go func() {
-		serverErr <- redirector.Redirect(ctx, addr, upstreamConn)
+		serverErr <- redirector.Redirect(ctx, addr, upstreamConn, nil)
 	}()
 
 	// Wait a moment for the server to start listening.
@@ -213,7 +213,7 @@ func TestRedirector_UpstreamFailure(t *testing.T) {
 	defer upstreamConn.Close()
 
 	go func() {
-		redirector.Redirect(context.Background(), addr, upstreamConn)
+		redirector.Redirect(context.Background(), addr, upstreamConn, nil)
 	}()
 
 	// 2. Connect a client to the redirector.

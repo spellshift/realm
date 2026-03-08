@@ -7,27 +7,34 @@ export enum FilterFieldType {
     TASK_OUTPUT = 'taskOutput',
     QUEST_NAME = 'questName',
     TOME_FIELDS = 'tomeFields',
-    TOME_MULTI_SEARCH = "tomeMultiSearch"
+    TOME_MULTI_SEARCH = "tomeMultiSearch",
+    ASSET_NAME = "assetName",
+    USER = "user"
 }
 
 const STORAGE_KEY = 'realm-filters-v1.1'
 
 export type Filters = {
-    isLocked: boolean,
     questName: string,
     taskOutput: string,
     beaconFields: Array<FilterBarOption>,
     tomeFields: Array<FilterBarOption>,
     tomeMultiSearch: string,
+    assetName: string,
+    userId: string,
 }
 
+// Storage format includes isLocked alongside filter values
+type StoredFilters = Filters & { isLocked: boolean }
+
 const defaultFilters: Filters = {
-    isLocked: false,
     questName: "",
     taskOutput: "",
     beaconFields: [],
     tomeFields: [],
-    tomeMultiSearch: ""
+    tomeMultiSearch: "",
+    assetName: "",
+    userId: ""
 }
 
 function isValidFilterBarOption(item: any): item is FilterBarOption {
@@ -42,46 +49,52 @@ function isValidFilterBarOption(item: any): item is FilterBarOption {
     )
 }
 
-function validateStoredFilters(data: any): Filters {
-    //If isLocked is not the set state, reset filters
+function validateStoredFilters(data: any): StoredFilters {
+    //If isLocked is not set, reset filters
     if (!data || typeof data !== 'object' || !data.isLocked) {
-        return defaultFilters
+        return { ...defaultFilters, isLocked: false }
     }
 
-    const schema: Record<keyof Filters, (value: any) => boolean> = {
+    const schema: Record<keyof StoredFilters, (value: any) => boolean> = {
         isLocked: (v) => typeof v === 'boolean',
         questName: (v) => typeof v === 'string',
         taskOutput: (v) => typeof v === 'string',
         tomeMultiSearch: (v) => typeof v === 'string',
+        assetName: (v) => typeof v === 'string',
+        userId: (v) => typeof v === 'string',
         beaconFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
         tomeFields: (v) => Array.isArray(v) && v.every(isValidFilterBarOption),
     }
 
     for (const [key, validator] of Object.entries(schema)) {
         if (!(key in data) || !validator(data[key])) {
-            return defaultFilters
+            return { ...defaultFilters, isLocked: false }
         }
     }
 
-    return data as Filters
+    return data as StoredFilters
 }
 
-function loadFiltersFromStorage(): Filters {
+function loadFromStorage(): { filters: Filters, isLocked: boolean } {
     if (typeof window === 'undefined') {
-        return defaultFilters
+        return { filters: defaultFilters, isLocked: false }
     }
 
     const stored = sessionStorage.getItem(STORAGE_KEY)
     if (!stored) {
-        return defaultFilters
+        return { filters: defaultFilters, isLocked: false }
     }
 
     try {
-        const validFilters = validateStoredFilters(JSON.parse(stored));
-        if (!validFilters.isLocked) return defaultFilters;
-        return validFilters
+        const validated = validateStoredFilters(JSON.parse(stored));
+        // Only restore filters if they were locked
+        if (!validated.isLocked) {
+            return { filters: defaultFilters, isLocked: false }
+        }
+        const { isLocked, ...filters } = validated;
+        return { filters, isLocked }
     } catch {
-        return defaultFilters
+        return { filters: defaultFilters, isLocked: false }
     }
 }
 
@@ -93,6 +106,10 @@ export function calculateFilterCount(filters: Filters, field: FilterFieldType): 
             return filters.taskOutput !== "" ? 1 : 0;
         case FilterFieldType.TOME_MULTI_SEARCH:
             return filters.tomeMultiSearch !== "" ? 1 : 0;
+        case FilterFieldType.ASSET_NAME:
+            return filters.assetName !== "" ? 1 : 0;
+        case FilterFieldType.USER:
+            return filters.userId !== "" ? 1 : 0;
         case FilterFieldType.BEACON_FIELDS:
             return filters.beaconFields.length;
         case FilterFieldType.TOME_FIELDS:
@@ -109,6 +126,8 @@ export function calculateTotalFilterCount(filters: Filters, fields: FilterFieldT
 type FilterContextType = {
     filters: Filters
     filterCount: number
+    isLocked: boolean
+    setIsLocked: React.Dispatch<React.SetStateAction<boolean>> 
     updateFilters: (updates: Partial<Filters>) => void
     resetFilters: () => void
 }
@@ -116,12 +135,17 @@ type FilterContextType = {
 const FilterContext = createContext<FilterContextType>({
     filters: defaultFilters,
     filterCount: 0,
+    isLocked: false,
+    setIsLocked: () => { },
     updateFilters: () => { },
     resetFilters: () => { },
 });
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
-    const [filters, setFilters] = useState<Filters>(loadFiltersFromStorage);
+    const initialState = loadFromStorage();
+    const [filters, setFilters] = useState<Filters>(initialState.filters);
+    const [isLocked, setIsLocked] = useState<boolean>(initialState.isLocked);
+
     const allFields = Object.values(FilterFieldType);
     const filterCount = useMemo(() => calculateTotalFilterCount(filters, allFields), [filters, allFields]);
 
@@ -141,23 +165,27 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (previousPathname.current !== location.pathname) {
-            if (!filters.isLocked) {
+            if (!isLocked) {
                 resetFilters();
             }
             previousPathname.current = location.pathname;
         }
-    }, [location.pathname, filters.isLocked]);
+    }, [location.pathname, isLocked]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters))
+            // Store both filters and isLocked together
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...filters, isLocked }))
         }
-    }, [filters]); // Don't collapse these useEffects, this helps fix race condition
+    }, [filters, isLocked]); // Don't collapse these useEffects, this helps fix race condition
 
     useEffect(() => {
         const handleStorage = (event: StorageEvent) => {
             if (event.key === STORAGE_KEY && event.newValue) {
-                setFilters(validateStoredFilters(JSON.parse(event.newValue)))
+                const validated = validateStoredFilters(JSON.parse(event.newValue));
+                const { isLocked: storedIsLocked, ...storedFilters } = validated;
+                setFilters(storedFilters);
+                setIsLocked(storedIsLocked);
             }
         }
         window.addEventListener('storage', handleStorage)
@@ -165,7 +193,7 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <FilterContext.Provider value={{ filters, filterCount, updateFilters, resetFilters }}>
+        <FilterContext.Provider value={{ filters, filterCount, isLocked, setIsLocked, updateFilters, resetFilters }}>
             {children}
         </FilterContext.Provider>
     )

@@ -1,20 +1,17 @@
 import { FC } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useParams } from "react-router-dom";
-import { GET_QUEST_QUERY } from "../../utils/queries";
 import { useQuery } from "@apollo/client";
 import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
-import { QuestQueryTopLevel, } from "../../utils/interfacesQuery";
+import { QuestQueryTopLevel } from "../../utils/interfacesQuery";
+import { GET_QUEST_DETAIL_QUERY } from "../quests/queries";
 
 export const EditablePageHeader: FC = () => {
     const { questId } = useParams();
 
-    const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_QUERY, {
+    const { data } = useQuery<QuestQueryTopLevel>(GET_QUEST_DETAIL_QUERY, {
         variables: {
-            where: {
-                id: questId
-            },
-            first: 1
+            id: questId,
         },
         skip: !questId
     });

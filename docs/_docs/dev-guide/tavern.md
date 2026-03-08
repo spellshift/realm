@@ -20,7 +20,7 @@ Before reading this guide, please check out the [admin guide](/admin-guide/taver
 4. Update `tavern/internal/graphql/gqlgen.yml` to include the ent types in the `autobind:` section (e.g.`- github.com/spellshift/realm/tavern/internal/ent/<NAME>`)
 5. **Optionally** update the `models:` section of `tavern/internal/graphql/gqlgen.yml` to bind any GraphQL enum types to their respective `entgo` generated types (e.g. `github.com/spellshift/realm/tavern/internal/ent/<NAME>.<ENUM_FIELD>`)
 6. Run `go generate ./tavern/...` from the project root
-7. If you added an annotation for a root query field (see above), you will notice auto-generated the `query.resolvers.go` file has been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
+7. If you added an annotation for a root query field (see above), you will notice the auto-generated `query.resolvers.go` file has been updated with new methods to query your model (e.g. `func (r *queryResolver) <NAME>s ...`)
     * This must be implemented (e.g. `return r.client.<NAME>.Query().All(ctx)` where NAME is the name of your model)
 
 ### Adding Mutations
@@ -28,7 +28,7 @@ Before reading this guide, please check out the [admin guide](/admin-guide/taver
 1. Update the `mutation.graphql` schema file to include your new mutation and please include it in the section for the model it's mutating if applicable (e.g. createUser should be defined near all the related User mutations)
     * **Note:** The ent.go code generation will create InputTypes that you can use when defining your new mutation in `mutation.graphql`. These types may include: `Create<NAME>Input` or `Update<NAME>Input`. Ensure you've [added the appropriate annotations to your ent schema](https://entgo.io/docs/tutorial-todo-gql#install-and-configure-entgql). If you require custom mutation inputs (e.g. `ClaimTasksInput`) then add them to the `inputs.graphql` file (Golang code will be generated in tavern/internal/graphql/models e.g. `models.ClaimTasksInput`).
 2. Run `go generate ./...`
-3. Implement generated the generated mutation resolver method in `tavern/internal/graphql/mutation.resolvers.go`
+3. Implement the generated mutation resolver method in `tavern/internal/graphql/mutation.resolvers.go`
     * Depending on the mutation you're trying to implement, a one liner such as `return r.client.<NAME>.Create().SetInput(input).Save(ctx)` might be sufficient
 4. Please write a unit test for your new mutation by defining YAML test cases in a new `testdata/mutations` subdirectory with your mutations name (e.g. `tavern/internal/graphql/testdata/mutations/mymutation/SomeTest.yml`)
 
@@ -76,7 +76,7 @@ You may download files from Tavern utilizing the `DownloadFile` gRPC method. Thi
 
 ## Performance Profiling
 
-Tavern supports built in performance monitoring and debugging via the Golang [pprof tool](https://go.dev/blog/pprof) developed by Google. To run tavern with profiling enabled, ensure the `ENABLE_PPROF=1` environment variable is set.
+Tavern supports built-in performance monitoring and debugging via the Golang [pprof tool](https://go.dev/blog/pprof) developed by Google. To run tavern with profiling enabled, ensure the `ENABLE_PPROF=1` environment variable is set.
 
 ### Install Graphviz
 
@@ -143,7 +143,7 @@ The reverse shell system is designed to be distributed. The gRPC server and the 
 
 The reverse shell supports multi-user sessions, where multiple users can be connected to the same shell session. To ensure that messages are delivered in the correct order, the `sessionBuffer` is used. The `sessionBuffer` assigns a unique order key to each user's session, and then it orders the messages based on that key. This ensures that messages from different users are not interleaved, and that they are delivered in the order that they were sent.
 
-If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's gRPC API. We recommend reusing the existing protobuf definitions for simplicity and forward compatability. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/spellshift/realm/pulls).
+If you wish to develop an agent using a different transport method (e.g. DNS), your development will need to include a C2. The role of the C2 is to handle agent communication, and translate the chosen transport method into HTTP(s) requests to Tavern's gRPC API. We recommend reusing the existing protobuf definitions for simplicity and forward compatibility. This enables developers to use any transport mechanism with Tavern. If you plan to build a C2 for a common protocol for use with Tavern, consider [submitting a PR](https://github.com/spellshift/realm/pulls).
 
 ### Agent Loop Lifecycle
 
@@ -194,7 +194,7 @@ For example to add Hashicorp Vault as an OIDC backend you'll need to:
 
 1. Setup an OIDC provider in vault - <https://developer.hashicorp.com/vault/docs/secrets/identity/oidc-provider>
 2. Get the relevant variables from the '.well-known/openid-configuration` endpoint: `authorization_endpoint`,`token_endpoint`,`userinfo_endpoint`,`scopes_supported`
-3. Open the `tavern/config.go` file and find where the `oauth2.Config` is initalized.
+3. Open the `tavern/config.go` file and find where the `oauth2.Config` is initialized.
 4. You'll need to change `Endpoint: google.Endpoint` to  `oauth2.Endpoint{}` and fill in the `AuthURL` and `TokenURL` with `authorization_endpoint` and `token_endpoint` respectively.
 5. Update the `cfg.userProfiles` link with the `userinfo_endpoint`
 6. Update `Scopes:` with the scopes in `scopes_supported`
@@ -233,4 +233,4 @@ func ConfigureOAuthFromEnv(redirectPath string) func(*Config) {
 
 ```
 
-_Keep in mind `/default/` in vault corresponds to the name of the OIDC provider and may be different in your environemnet. You may need to include / create additional scopes to get things like profile pictures and users names from vault into Tavern_
+_Keep in mind `/default/` in vault corresponds to the name of the OIDC provider and may be different in your environment. You may need to include / create additional scopes to get things like profile pictures and users names from vault into Tavern_

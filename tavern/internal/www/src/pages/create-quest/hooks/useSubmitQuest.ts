@@ -2,7 +2,7 @@ import { gql, useMutation } from "@apollo/client"
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GET_QUEST_QUERY } from "../../../utils/queries";
+import { GET_QUEST_IDS_QUERY } from "../../quests/queries";
 import { QuestFormValues } from "../types";
 
 export type CreateQuestProps = QuestFormValues;
@@ -30,9 +30,10 @@ export const useSubmitQuest = () => {
     }
 
     const [createQuestMutation, { loading, reset }] = useMutation(CREATE_QUEST_MUTATION, {
-        onCompleted: handleOnCompleted, onError: handleError, refetchQueries: [
-            GET_QUEST_QUERY
-        ]
+        onCompleted: handleOnCompleted,
+        onError: handleError,
+        refetchQueries: [GET_QUEST_IDS_QUERY],
+        awaitRefetchQueries: true,
     });
 
     const submitQuest = (props: CreateQuestProps) => {

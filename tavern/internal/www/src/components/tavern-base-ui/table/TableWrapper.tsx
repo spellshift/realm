@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { EmptyState, EmptyStateType } from '../EmptyState';
 import { ApolloError } from '@apollo/client';
 import { FilterControls, useFilters } from '../../../context/FilterContext';
-import { SortingControls } from '../../../context/SortContext';
+import { SortingControls, SortablePageNavItem } from '../../../context/SortContext';
 import Button from '../button/Button';
 
 type TableWrapperProps = {
@@ -11,7 +11,9 @@ type TableWrapperProps = {
   error: ApolloError | undefined;
   title?: string;
   table: ReactNode;
-  pagination: ReactNode;
+  pagination?: ReactNode;
+  /** Sort type for the sorting controls. If provided, sorting controls are shown. */
+  sortType?: SortablePageNavItem;
 }
 
 export const TableWrapper: React.FC<TableWrapperProps> = ({
@@ -21,6 +23,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
   title = "Table",
   table,
   pagination,
+  sortType,
 }) => {
   const { filterCount, resetFilters } = useFilters();
 
@@ -49,7 +52,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
           <div className="overflow-x-auto">
             {table}
           </div>
-          {pagination}
+          {pagination && pagination}
         </>
       )
     }
@@ -62,7 +65,7 @@ export const TableWrapper: React.FC<TableWrapperProps> = ({
       `}>
         <h3 className="text-xl font-semibold leading-6 text-gray-900 md:visible invisible">{title}</h3>
         <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
-          <SortingControls />
+          {sortType && <SortingControls sortType={sortType} />}
           <FilterControls />
         </div>
       </div>

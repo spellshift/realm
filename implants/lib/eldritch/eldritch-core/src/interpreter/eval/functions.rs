@@ -15,7 +15,7 @@ use super::utils::parse_error_kind;
 use super::{MAX_RECURSION_DEPTH, evaluate};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;

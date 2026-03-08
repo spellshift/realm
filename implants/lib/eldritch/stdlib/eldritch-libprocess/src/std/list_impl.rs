@@ -34,7 +34,10 @@ pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
             .and_then(|uid| sys.get_user_by_id(uid))
             .map(|u| u.name())
             .unwrap_or("???");
-        map.insert("username".to_string(), Value::String(user_name.to_string()));
+        map.insert(
+            "principal".to_string(),
+            Value::String(user_name.to_string()),
+        );
 
         map.insert(
             "path".to_string(),
@@ -91,7 +94,7 @@ mod tests {
             assert!(process.contains_key("ppid"));
             assert!(process.contains_key("name"));
             assert!(process.contains_key("path"));
-            assert!(process.contains_key("username"));
+            assert!(process.contains_key("principal"));
             assert!(process.contains_key("status"));
         }
     }

@@ -57,16 +57,19 @@ type TaskEdges struct {
 	ReportedCredentials []*HostCredential `json:"reported_credentials,omitempty"`
 	// Shells that were created by this task
 	Shells []*Shell `json:"shells,omitempty"`
+	// Screenshots that have been reported by this task.
+	Screenshots []*Screenshot `json:"screenshots,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 	// totalCount holds the count of the edges above.
-	totalCount [6]map[string]int
+	totalCount [7]map[string]int
 
 	namedReportedFiles       map[string][]*HostFile
 	namedReportedProcesses   map[string][]*HostProcess
 	namedReportedCredentials map[string][]*HostCredential
 	namedShells              map[string][]*Shell
+	namedScreenshots         map[string][]*Screenshot
 }
 
 // QuestOrErr returns the Quest value or an error if the edge
@@ -125,6 +128,15 @@ func (e TaskEdges) ShellsOrErr() ([]*Shell, error) {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
+}
+
+// ScreenshotsOrErr returns the Screenshots value or an error if the edge
+// was not loaded in eager-loading.
+func (e TaskEdges) ScreenshotsOrErr() ([]*Screenshot, error) {
+	if e.loadedTypes[6] {
+		return e.Screenshots, nil
+	}
+	return nil, &NotLoadedError{edge: "screenshots"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -266,6 +278,11 @@ func (t *Task) QueryReportedCredentials() *HostCredentialQuery {
 // QueryShells queries the "shells" edge of the Task entity.
 func (t *Task) QueryShells() *ShellQuery {
 	return NewTaskClient(t.config).QueryShells(t)
+}
+
+// QueryScreenshots queries the "screenshots" edge of the Task entity.
+func (t *Task) QueryScreenshots() *ScreenshotQuery {
+	return NewTaskClient(t.config).QueryScreenshots(t)
 }
 
 // Update returns a builder for updating this Task.
@@ -411,6 +428,30 @@ func (t *Task) appendNamedShells(name string, edges ...*Shell) {
 		t.Edges.namedShells[name] = []*Shell{}
 	} else {
 		t.Edges.namedShells[name] = append(t.Edges.namedShells[name], edges...)
+	}
+}
+
+// NamedScreenshots returns the Screenshots named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (t *Task) NamedScreenshots(name string) ([]*Screenshot, error) {
+	if t.Edges.namedScreenshots == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := t.Edges.namedScreenshots[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (t *Task) appendNamedScreenshots(name string, edges ...*Screenshot) {
+	if t.Edges.namedScreenshots == nil {
+		t.Edges.namedScreenshots = make(map[string][]*Screenshot)
+	}
+	if len(edges) == 0 {
+		t.Edges.namedScreenshots[name] = []*Screenshot{}
+	} else {
+		t.Edges.namedScreenshots[name] = append(t.Edges.namedScreenshots[name], edges...)
 	}
 }
 

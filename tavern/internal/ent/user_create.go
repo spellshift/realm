@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -125,6 +126,21 @@ func (uc *UserCreate) AddActiveShells(s ...*Shell) *UserCreate {
 		ids[i] = s[i].ID
 	}
 	return uc.AddActiveShellIDs(ids...)
+}
+
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by IDs.
+func (uc *UserCreate) AddDeviceAuthIDs(ids ...int) *UserCreate {
+	uc.mutation.AddDeviceAuthIDs(ids...)
+	return uc
+}
+
+// AddDeviceAuths adds the "device_auths" edges to the DeviceAuth entity.
+func (uc *UserCreate) AddDeviceAuths(d ...*DeviceAuth) *UserCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uc.AddDeviceAuthIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -298,6 +314,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.DeviceAuthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
