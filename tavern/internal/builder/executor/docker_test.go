@@ -230,8 +230,16 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 	wg.Wait()
 
 	require.NoError(t, err)
-	require.Len(t, output, 5)
-	for i, line := range output {
-		assert.True(t, strings.HasPrefix(line, "line_"), "unexpected line %d: %s", i, line)
+	// We check if the output contains the specific lines, because our Build setup wrapper might add lines like 'Running Main Build Script'
+	expectedLines := []string{"line_1", "line_2", "line_3", "line_4", "line_5"}
+	for _, expected := range expectedLines {
+		found := false
+		for _, line := range output {
+			if strings.Contains(line, expected) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "expected output to contain: %s", expected)
 	}
 }
