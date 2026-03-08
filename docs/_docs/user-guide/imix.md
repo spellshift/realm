@@ -259,3 +259,47 @@ By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{
 
 To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
 If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
+
+## Guardrails
+
+Guardrails allow operators to ensure that Imix only runs on approved or expected hosts. This is particularly useful for preventing accidental execution in the wrong environment or ensuring that a payload only activates when specific conditions are met (e.g., a specific file exists, a process is running, or a registry key is set).
+
+By default, Imix compiles with no guardrails, meaning it will run on any host it lands on. Guardrails are evaluated at startup, and if any guardrail fails to validate, Imix will immediately exit.
+
+Guardrails are configured at build time using the `IMIX_GUARDRAILS` environment variable. Similar to host uniqueness, it takes a JSON list of objects specifying the guardrails.
+
+### Example Guardrails
+
+```bash
+export IMIX_GUARDRAILS='[
+    {
+        "type": "file",
+        "args": {
+            "path": "/etc/expected_file.txt"
+        }
+    },
+    {
+        "type": "process",
+        "args": {
+            "name": "explorer.exe"
+        }
+    },
+    {
+        "type": "registry",
+        "args": {
+            "subkey": "SOFTWARE\\MyCompany\\ExpectedKey",
+            "value_name": "ExpectedValue"
+        }
+    }
+]'
+```
+
+### Available Guardrails
+
+*   `file`: Checks if a specific file exists on disk.
+    *   `path` (string, required): The full path to the file.
+*   `process`: Checks if a specific process is currently running.
+    *   `name` (string, required): The name of the process (e.g., `explorer.exe`).
+*   `registry` (Windows only): Checks if a specific registry key or value exists.
+    *   `subkey` (string, required): The path to the registry subkey under `HKEY_CURRENT_USER` or `HKEY_LOCAL_MACHINE`.
+    *   `value_name` (string, optional): The name of a specific value to look for within the subkey. If omitted, only checks if the subkey itself exists.
