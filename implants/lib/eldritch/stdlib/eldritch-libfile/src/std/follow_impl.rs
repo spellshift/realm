@@ -238,4 +238,39 @@ cb
             output
         );
     }
+
+    #[test]
+    fn test_follow_lossy_utf8() {
+        // We verify that follow can handle non-utf8 data without panicking.
+        let tmp = NamedTempFile::new().unwrap();
+        let path = tmp.path().to_string_lossy().to_string();
+
+        ::std::fs::write(&path, "initial\n").unwrap();
+
+        let path_clone = path.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(200));
+            let mut file = OpenOptions::new().append(true).open(path_clone).unwrap();
+            // Write invalid UTF-8 bytes: \xFF\xFE followed by \n
+            file.write_all(b"\xFF\xFEhello\n").unwrap();
+        });
+
+        let mut interp = Interpreter::new();
+        // The callback expects to receive the lossy string where \xFF\xFE became replacement characters
+        let code = r#"
+def cb(line):
+    # \uFFFD is the replacement character
+    if "hello" in line:
+        fail("STOP_LOSSY")
+cb
+"#;
+        let fn_val = interp.interpret(code).map_err(|e| e).unwrap();
+
+        let printer = interp.env.read().printer.clone();
+        let res = follow(path, fn_val, printer);
+
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err();
+        assert!(err_msg.contains("STOP_LOSSY"));
+    }
 }
