@@ -1,0 +1,6 @@
+<<<<<<< SEARCH
+		mainScript += `cp -rn /build_tomes/* install_scripts/ || true` + "\n"
+=======
+		mainScript += `mkdir -p install_scripts` + "\n"
+		mainScript += `cp -r /build_tomes/. install_scripts/ || true` + "\n"
+>>>>>>> REPLACE
