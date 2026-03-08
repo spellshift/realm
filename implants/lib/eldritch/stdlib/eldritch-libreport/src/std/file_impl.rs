@@ -38,87 +38,124 @@ fn get_file_metadata_fields(_metadata: &std::fs::Metadata) -> (String, String, S
     (String::new(), String::new(), String::new())
 }
 
+fn resolve_paths(path: &str) -> Result<alloc::vec::Vec<std::path::PathBuf>, String> {
+    if path.contains('*') || path.contains('?') || path.contains('[') {
+        let mut paths = vec![];
+        for entry in glob::glob(path).map_err(|e| format!("Invalid glob pattern: {e}"))? {
+            match entry {
+                Ok(p) => paths.push(p),
+                Err(e) => return Err(format!("Glob error: {e}")),
+            }
+        }
+        if paths.is_empty() {
+            return Err(format!("No files matched pattern: {path}"));
+        }
+        Ok(paths)
+    } else {
+        Ok(vec![std::path::PathBuf::from(path)])
+    }
+}
+
 pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(), String> {
+    let resolved_paths = resolve_paths(&path)?;
+
     let context_val = match context {
-        Context::Task(tc) => Some(report_file_request::Context::TaskContext(tc)),
-        Context::ShellTask(stc) => Some(report_file_request::Context::ShellTaskContext(stc)),
+        Context::Task(tc) => Some(report_file_request::Context::TaskContext(tc.clone())),
+        Context::ShellTask(stc) => {
+            Some(report_file_request::Context::ShellTaskContext(stc.clone()))
+        }
     };
 
-    let error = Arc::new(Mutex::new(None));
-    let error_clone = error.clone();
-    let path_clone = path.clone();
+    let mut overall_error = None;
 
-    // Use a sync channel with bound 1 to provide backpressure
-    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    for p in resolved_paths {
+        if p.is_dir() {
+            continue; // Can't report directories directly, skip or error. Let's skip.
+        }
 
-    std::thread::spawn(move || {
-        let file_res = std::fs::File::open(&path_clone).map_err(|e| e.to_string());
-        match file_res {
-            Ok(mut file) => {
-                let fs_metadata = std::fs::metadata(&path_clone).ok();
-                let (permissions, owner, group) = fs_metadata
-                    .as_ref()
-                    .map(get_file_metadata_fields)
-                    .unwrap_or_default();
+        let path_clone = p.to_string_lossy().to_string();
+        let error = Arc::new(Mutex::new(None));
+        let error_clone = error.clone();
 
-                let mut metadata_sent = false;
-                let chunk_size = 1024 * 1024; // 1MB
-                let mut buffer = vec![0; chunk_size];
+        let context_val_clone = context_val.clone();
 
-                loop {
-                    // Check if receiver is closed (upload aborted or failed)
-                    // We check this implicitly by handle send result
+        let (tx, rx) = std::sync::mpsc::sync_channel(1);
 
-                    match file.read(&mut buffer) {
-                        Ok(0) => break, // EOF
-                        Ok(n) => {
-                            let chunk_data = buffer[..n].to_vec();
+        std::thread::spawn(move || {
+            let file_res = std::fs::File::open(&path_clone).map_err(|e| e.to_string());
+            match file_res {
+                Ok(mut file) => {
+                    let fs_metadata = std::fs::metadata(&path_clone).ok();
+                    let (permissions, owner, group) = fs_metadata
+                        .as_ref()
+                        .map(get_file_metadata_fields)
+                        .unwrap_or_default();
 
-                            let metadata = if !metadata_sent {
-                                metadata_sent = true;
-                                Some(eldritch::FileMetadata {
-                                    path: path_clone.clone(),
-                                    permissions: permissions.clone(),
-                                    owner: owner.clone(),
-                                    group: group.clone(),
-                                    ..Default::default()
-                                })
-                            } else {
-                                None
-                            };
+                    let mut metadata_sent = false;
+                    let chunk_size = 1024 * 1024; // 1MB
+                    let mut buffer = vec![0; chunk_size];
 
-                            let file_msg = eldritch::File {
-                                metadata,
-                                chunk: chunk_data,
-                            };
+                    loop {
+                        match file.read(&mut buffer) {
+                            Ok(0) => break, // EOF
+                            Ok(n) => {
+                                let chunk_data = buffer[..n].to_vec();
 
-                            let req = c2::ReportFileRequest {
-                                context: context_val.clone(),
-                                chunk: Some(file_msg),
-                                kind: c2::ReportFileKind::Ondisk as i32,
-                            };
+                                let metadata = if !metadata_sent {
+                                    metadata_sent = true;
+                                    Some(eldritch::FileMetadata {
+                                        path: path_clone.clone(),
+                                        permissions: permissions.clone(),
+                                        owner: owner.clone(),
+                                        group: group.clone(),
+                                        ..Default::default()
+                                    })
+                                } else {
+                                    None
+                                };
 
-                            if tx.send(req).is_err() {
+                                let file_msg = eldritch::File {
+                                    metadata,
+                                    chunk: chunk_data,
+                                };
+
+                                let req = c2::ReportFileRequest {
+                                    context: context_val_clone.clone(),
+                                    chunk: Some(file_msg),
+                                    kind: c2::ReportFileKind::Ondisk as i32,
+                                };
+
+                                if tx.send(req).is_err() {
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                *error_clone.lock().unwrap() = Some(e.to_string());
                                 break;
                             }
                         }
-                        Err(e) => {
-                            *error_clone.lock().unwrap() = Some(e.to_string());
-                            break;
-                        }
                     }
                 }
+                Err(e) => {
+                    *error_clone.lock().unwrap() = Some(e);
+                }
             }
-            Err(e) => {
-                *error_clone.lock().unwrap() = Some(e);
-            }
+        });
+
+        // We report each file synchronously in the loop
+        if let Err(e) = agent.report_file(rx) {
+            overall_error = Some(e.to_string());
+            break;
         }
-    });
 
-    agent.report_file(rx).map(|_| ())?;
+        if let Some(e) = error.lock().unwrap().as_ref() {
+            overall_error = Some(e.clone());
+            break;
+        }
+    }
 
-    if let Some(e) = error.lock().unwrap().as_ref() {
-        return Err(e.clone());
+    if let Some(e) = overall_error {
+        return Err(e);
     }
 
     Ok(())

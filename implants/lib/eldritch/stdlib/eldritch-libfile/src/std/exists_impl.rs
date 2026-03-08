@@ -1,8 +1,11 @@
-use ::std::path::Path;
 use alloc::string::String;
 
 pub fn exists(path: String) -> Result<bool, String> {
-    Ok(Path::new(&path).exists())
+    let resolved = match crate::std::glob_util::resolve_first_path(&path) {
+        Ok(p) => p,
+        Err(_) => return Ok(false), // if glob matches nothing, it doesn't exist
+    };
+    Ok(resolved.exists())
 }
 
 #[cfg(test)]

@@ -8,7 +8,11 @@ pub fn write_binary(path: String, content: Value) -> Result<(), String> {
         Value::Bytes(b) => b,
         _ => return Err("content must be of type Bytes".into()),
     };
-    fs::write(&path, bytes).map_err(|e| format!("Failed to write to file {path}: {e}"))
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path)?;
+    for p in resolved_paths {
+        fs::write(&p, &bytes).map_err(|e| format!("Failed to write to {}: {e}", p.display()))?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

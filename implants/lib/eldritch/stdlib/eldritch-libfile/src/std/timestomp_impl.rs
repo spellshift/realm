@@ -62,8 +62,15 @@ fn timestomp_impl(
         final_ctime = Some(parse_time(c)?);
     }
 
+    let resolved_paths =
+        crate::std::glob_util::resolve_paths(&path).map_err(|e| anyhow::anyhow!(e))?;
+
     // 3. Platform specific apply
-    apply_timestamps(&path, final_mtime, final_atime, final_ctime)
+    for p in resolved_paths {
+        apply_timestamps(&p.to_string_lossy(), final_mtime, final_atime, final_ctime)?;
+    }
+
+    Ok(())
 }
 
 #[cfg(feature = "stdlib")]

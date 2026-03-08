@@ -28,19 +28,29 @@ fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
     use std::fs::OpenOptions;
     use tempfile::NamedTempFile;
 
-    let src_path = Path::new(&src);
+    let src_paths = crate::std::glob_util::resolve_paths(&src).map_err(|e| anyhow::anyhow!(e))?;
 
-    // Determine if we need to tar
+    // We tar all matched paths into a single archive
     let tmp_tar_file_src = NamedTempFile::new()?;
-    let tmp_src = if src_path.is_dir() {
-        let tmp_path = tmp_tar_file_src.path().to_str().unwrap().to_string();
-        tar_dir(&src, &tmp_path)?;
-        tmp_path
-    } else {
-        src.clone()
-    };
+    let tmp_path = tmp_tar_file_src.path().to_str().unwrap().to_string();
 
-    let f_src = ::std::io::BufReader::new(File::open(&tmp_src)?);
+    let tar_file = File::create(&tmp_path)?;
+    let mut tar_builder = tar::Builder::new(tar_file);
+    tar_builder.mode(tar::HeaderMode::Deterministic);
+
+    for src_path in src_paths {
+        if src_path.is_dir() {
+            let src_name = src_path.file_name().context("Failed to get file name")?;
+            tar_builder.append_dir_all(src_name, &src_path)?;
+        } else {
+            let src_name = src_path.file_name().context("Failed to get file name")?;
+            let mut f = File::open(&src_path)?;
+            tar_builder.append_file(src_name, &mut f)?;
+        }
+    }
+    tar_builder.finish()?;
+
+    let f_src = ::std::io::BufReader::new(File::open(&tmp_path)?);
     let f_dst = ::std::io::BufWriter::new(
         OpenOptions::new()
             .create(true)

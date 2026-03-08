@@ -1,8 +1,11 @@
-use ::std::path::Path;
 use alloc::string::String;
 
 pub fn is_dir(path: String) -> Result<bool, String> {
-    Ok(Path::new(&path).is_dir())
+    let resolved = match crate::std::glob_util::resolve_first_path(&path) {
+        Ok(p) => p,
+        Err(_) => return Ok(false),
+    };
+    Ok(resolved.is_dir())
 }
 
 #[cfg(test)]

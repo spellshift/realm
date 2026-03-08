@@ -39,16 +39,18 @@ fn follow_impl(
     use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
     use std::fs::{self, File};
     use std::io::{BufRead, BufReader, Seek, SeekFrom};
-    use std::path::Path;
+
+    let resolved =
+        crate::std::glob_util::resolve_first_path(&path).map_err(|e| anyhow::anyhow!(e))?;
 
     // get pos to end of file
-    let mut file = File::open(&path)?;
-    let mut pos = fs::metadata(&path)?.len();
+    let mut file = File::open(&resolved)?;
+    let mut pos = fs::metadata(&resolved)?.len();
 
     // set up watcher
     let (tx, rx) = std::sync::mpsc::channel();
     let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
-    watcher.watch(Path::new(&path), RecursiveMode::NonRecursive)?;
+    watcher.watch(&resolved, RecursiveMode::NonRecursive)?;
 
     // We need an interpreter to run the callback.
     // Use the printer passed from the calling interpreter so that native functions

@@ -46,11 +46,30 @@ fn template_impl(
         context.insert(k, &json_val);
     }
 
-    let data = fs::read(&template_path)?;
-    let template_content = String::from_utf8_lossy(&data);
+    let resolved_paths =
+        crate::std::glob_util::resolve_paths(&template_path).map_err(|e| anyhow::anyhow!(e))?;
+    let is_dst_dir = std::path::Path::new(&dst).is_dir();
 
-    let res_content = Tera::one_off(&template_content, &context, autoescape)?;
-    fs::write(&dst, res_content)?;
+    if resolved_paths.len() > 1 && !is_dst_dir {
+        return Err(anyhow::anyhow!(
+            "Destination {} must be a directory when templating multiple files",
+            dst
+        ));
+    }
+
+    for p in resolved_paths {
+        let data = fs::read(&p)?;
+        let template_content = String::from_utf8_lossy(&data);
+        let res_content = Tera::one_off(&template_content, &context, autoescape)?;
+
+        let target = if is_dst_dir {
+            std::path::Path::new(&dst).join(p.file_name().unwrap_or_default())
+        } else {
+            std::path::PathBuf::from(&dst)
+        };
+        fs::write(&target, res_content)?;
+    }
+
     Ok(())
 }
 

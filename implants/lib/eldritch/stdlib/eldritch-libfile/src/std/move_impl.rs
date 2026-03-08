@@ -3,7 +3,31 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn move_(src: String, dst: String) -> Result<(), String> {
-    fs::rename(&src, &dst).map_err(|e| format!("Failed to move {src} to {dst}: {e}"))
+    let src_paths = crate::std::glob_util::resolve_paths(&src)?;
+    let is_dst_dir = std::path::Path::new(&dst).is_dir();
+
+    if src_paths.len() > 1 && !is_dst_dir {
+        return Err(format!(
+            "Destination {dst} must be a directory when moving multiple files"
+        ));
+    }
+
+    for p in src_paths {
+        let target = if is_dst_dir {
+            std::path::Path::new(&dst).join(p.file_name().unwrap_or_default())
+        } else {
+            std::path::PathBuf::from(&dst)
+        };
+        fs::rename(&p, &target).map_err(|e| {
+            format!(
+                "Failed to move {} to {}: {e}",
+                p.display(),
+                target.display()
+            )
+        })?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

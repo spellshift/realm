@@ -24,12 +24,16 @@ fn replace_impl(path: String, pattern: String, value: String) -> AnyhowResult<()
     use regex::bytes::{NoExpand, Regex};
     use std::fs;
 
-    let data = fs::read(&path)?;
+    let resolved_paths =
+        crate::std::glob_util::resolve_paths(&path).map_err(|e| anyhow::anyhow!(e))?;
     let re = Regex::new(&pattern)?;
 
-    let result = re.replace_all(&data, NoExpand(value.as_bytes()));
+    for p in resolved_paths {
+        let data = fs::read(&p)?;
+        let result = re.replace_all(&data, NoExpand(value.as_bytes()));
+        fs::write(&p, result)?;
+    }
 
-    fs::write(&path, result)?;
     Ok(())
 }
 

@@ -12,6 +12,7 @@ pub mod decompress_impl;
 pub mod exists_impl;
 pub mod find_impl;
 pub mod follow_impl;
+pub mod glob_util;
 pub mod is_dir_impl;
 pub mod is_file_impl;
 pub mod list_impl;

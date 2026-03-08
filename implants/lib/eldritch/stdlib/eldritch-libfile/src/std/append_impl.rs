@@ -1,17 +1,20 @@
-use ::std::fs::OpenOptions;
+use ::std::fs;
 use ::std::io::Write;
 use alloc::format;
 use alloc::string::String;
 
 pub fn append(path: String, content: String) -> Result<(), String> {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&path)
-        .map_err(|e| format!("Failed to open file {path}: {e}"))?;
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path)?;
+    for p in resolved_paths {
+        let mut file = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&p)
+            .map_err(|e| format!("Failed to open {}: {e}", p.display()))?;
 
-    file.write_all(content.as_bytes())
-        .map_err(|e| format!("Failed to write to file {path}: {e}"))?;
+        file.write_all(content.as_bytes())
+            .map_err(|e| format!("Failed to write to {}: {e}", p.display()))?;
+    }
 
     Ok(())
 }
