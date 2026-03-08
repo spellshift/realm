@@ -73,23 +73,25 @@ fn follow_impl(
         let mut bytes_read = 0;
 
         loop {
-            let mut line = String::new();
-            // read_line includes the delimiter
-            let n = reader.read_line(&mut line)?;
+            let mut buf = Vec::new();
+            // read_until includes the delimiter
+            let n = reader.read_until(b'\n', &mut buf)?;
             if n == 0 {
                 break;
             }
             bytes_read += n as u64;
 
-            // Trim trailing newline for consistency with lines() which strips it?
-            // V1 used `reader.lines()` which strips newline.
-            // read_line keeps it. We should strip it.
-            if line.ends_with('\n') {
-                line.pop();
-                if line.ends_with('\r') {
-                    line.pop();
+            // Trim trailing newline and carriage return
+            if buf.ends_with(&[b'\n']) {
+                buf.pop();
+                if buf.ends_with(&[b'\r']) {
+                    buf.pop();
                 }
             }
+
+            let mut line = String::from_utf8_lossy(&buf).into_owned();
+            // Replace the Unicode replacement character with a period
+            line = line.replace('\u{FFFD}', ".");
 
             let line_val = Value::String(line);
 

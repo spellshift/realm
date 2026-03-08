@@ -11,7 +11,8 @@ pub fn read(path: String) -> Result<String, String> {
             .chunks_exact(2)
             .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
             .collect();
-        String::from_utf16(&u16s).map_err(|e| format!("Failed to decode UTF-16 in file {path}: {e}"))
+        String::from_utf16(&u16s)
+            .map_err(|e| format!("Failed to decode UTF-16 in file {path}: {e}"))
     } else {
         String::from_utf8(bytes).map_err(|e| format!("Failed to decode UTF-8 in file {path}: {e}"))
     }
