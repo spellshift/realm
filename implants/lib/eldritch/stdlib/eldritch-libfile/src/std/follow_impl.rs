@@ -41,7 +41,7 @@ fn follow_impl(
     use std::io::{BufRead, BufReader, Seek, SeekFrom};
 
     let resolved =
-        crate::std::glob_util::resolve_first_path(&path).map_err(|e| anyhow::anyhow!(e))?;
+        crate::std::glob_util::resolve_first_path(&path, true).map_err(|e| anyhow::anyhow!(e))?;
 
     // get pos to end of file
     let mut file = File::open(&resolved)?;

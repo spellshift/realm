@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn write(path: String, content: String) -> Result<(), String> {
-    let resolved_paths = crate::std::glob_util::resolve_paths(&path)?;
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path, true)?;
     for p in resolved_paths {
         fs::write(&p, &content).map_err(|e| format!("Failed to write to {}: {e}", p.display()))?;
     }

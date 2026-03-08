@@ -4,7 +4,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
-    let resolved = crate::std::glob_util::resolve_first_path(&path)?;
+    let resolved = crate::std::glob_util::resolve_first_path(&path, true)?;
     fs::read(&resolved).map_err(|e| format!("Failed to read file {path}: {e}"))
 }
 

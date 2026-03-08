@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn mkdir(path: String, parent: Option<bool>) -> Result<(), String> {
-    let resolved_paths = crate::std::glob_util::resolve_paths(&path)
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path, false)
         .unwrap_or_else(|_| alloc::vec![std::path::PathBuf::from(&path)]);
     for p in resolved_paths {
         let res = if parent.unwrap_or(false) {

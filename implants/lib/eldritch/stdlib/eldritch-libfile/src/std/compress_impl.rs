@@ -28,7 +28,8 @@ fn compress_impl(src: String, dst: String) -> AnyhowResult<()> {
     use std::fs::OpenOptions;
     use tempfile::NamedTempFile;
 
-    let src_paths = crate::std::glob_util::resolve_paths(&src).map_err(|e| anyhow::anyhow!(e))?;
+    let src_paths =
+        crate::std::glob_util::resolve_paths(&src, false).map_err(|e| anyhow::anyhow!(e))?;
 
     // We tar all matched paths into a single archive
     let tmp_tar_file_src = NamedTempFile::new()?;

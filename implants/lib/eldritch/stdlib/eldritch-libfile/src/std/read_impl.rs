@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn read(path: String) -> Result<String, String> {
-    let resolved = crate::std::glob_util::resolve_first_path(&path)?;
+    let resolved = crate::std::glob_util::resolve_first_path(&path, true)?;
     fs::read_to_string(&resolved).map_err(|e| format!("Failed to read file {path}: {e}"))
 }
 

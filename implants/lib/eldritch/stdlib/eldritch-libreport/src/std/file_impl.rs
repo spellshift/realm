@@ -38,12 +38,20 @@ fn get_file_metadata_fields(_metadata: &std::fs::Metadata) -> (String, String, S
     (String::new(), String::new(), String::new())
 }
 
-fn resolve_paths(path: &str) -> Result<alloc::vec::Vec<std::path::PathBuf>, String> {
+fn resolve_paths(
+    path: &str,
+    skip_dirs: bool,
+) -> Result<alloc::vec::Vec<std::path::PathBuf>, String> {
     if path.contains('*') || path.contains('?') || path.contains('[') {
         let mut paths = vec![];
         for entry in glob::glob(path).map_err(|e| format!("Invalid glob pattern: {e}"))? {
             match entry {
-                Ok(p) => paths.push(p),
+                Ok(p) => {
+                    if skip_dirs && p.is_dir() {
+                        continue;
+                    }
+                    paths.push(p);
+                }
                 Err(e) => return Err(format!("Glob error: {e}")),
             }
         }
@@ -52,12 +60,16 @@ fn resolve_paths(path: &str) -> Result<alloc::vec::Vec<std::path::PathBuf>, Stri
         }
         Ok(paths)
     } else {
-        Ok(vec![std::path::PathBuf::from(path)])
+        let p = std::path::PathBuf::from(path);
+        if skip_dirs && p.is_dir() {
+            return Err(format!("path '{}' is not a file", p.display()));
+        }
+        Ok(vec![p])
     }
 }
 
 pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(), String> {
-    let resolved_paths = resolve_paths(&path)?;
+    let resolved_paths = resolve_paths(&path, true)?;
 
     let context_val = match context {
         Context::Task(tc) => Some(report_file_request::Context::TaskContext(tc.clone())),

@@ -1,6 +1,7 @@
 #[cfg(feature = "stdlib")]
 pub(crate) fn resolve_paths(
     path: &str,
+    skip_dirs: bool,
 ) -> Result<alloc::vec::Vec<std::path::PathBuf>, alloc::string::String> {
     use alloc::format;
     use alloc::vec::Vec;
@@ -9,7 +10,12 @@ pub(crate) fn resolve_paths(
         let mut paths = Vec::new();
         for entry in glob::glob(path).map_err(|e| format!("Invalid glob pattern: {e}"))? {
             match entry {
-                Ok(p) => paths.push(p),
+                Ok(p) => {
+                    if skip_dirs && p.is_dir() {
+                        continue;
+                    }
+                    paths.push(p);
+                }
                 Err(e) => return Err(format!("Glob error: {e}")),
             }
         }
@@ -18,14 +24,21 @@ pub(crate) fn resolve_paths(
         }
         Ok(paths)
     } else {
-        Ok(alloc::vec![std::path::PathBuf::from(path)])
+        let p = std::path::PathBuf::from(path);
+        if skip_dirs && p.is_dir() {
+            return Err(format!("path '{}' is a directory", path));
+        }
+        Ok(alloc::vec![p])
     }
 }
 
 #[cfg(feature = "stdlib")]
-pub(crate) fn resolve_first_path(path: &str) -> Result<std::path::PathBuf, alloc::string::String> {
+pub(crate) fn resolve_first_path(
+    path: &str,
+    skip_dirs: bool,
+) -> Result<std::path::PathBuf, alloc::string::String> {
     use alloc::format;
-    let paths = resolve_paths(path)?;
+    let paths = resolve_paths(path, skip_dirs)?;
     paths
         .into_iter()
         .next()

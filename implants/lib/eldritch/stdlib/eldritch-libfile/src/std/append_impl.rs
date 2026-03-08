@@ -4,7 +4,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn append(path: String, content: String) -> Result<(), String> {
-    let resolved_paths = crate::std::glob_util::resolve_paths(&path)?;
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path, true)?;
     for p in resolved_paths {
         let mut file = fs::OpenOptions::new()
             .create(true)

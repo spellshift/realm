@@ -1,7 +1,7 @@
 use alloc::string::String;
 
 pub fn is_dir(path: String) -> Result<bool, String> {
-    let resolved = match crate::std::glob_util::resolve_first_path(&path) {
+    let resolved = match crate::std::glob_util::resolve_first_path(&path, false) {
         Ok(p) => p,
         Err(_) => return Ok(false),
     };

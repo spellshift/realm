@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn remove(path: String) -> Result<(), String> {
-    let resolved_paths = crate::std::glob_util::resolve_paths(&path)?;
+    let resolved_paths = crate::std::glob_util::resolve_paths(&path, false)?;
     for p in resolved_paths {
         if p.is_dir() {
             fs::remove_dir_all(&p)

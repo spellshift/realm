@@ -46,8 +46,8 @@ fn template_impl(
         context.insert(k, &json_val);
     }
 
-    let resolved_paths =
-        crate::std::glob_util::resolve_paths(&template_path).map_err(|e| anyhow::anyhow!(e))?;
+    let resolved_paths = crate::std::glob_util::resolve_paths(&template_path, true)
+        .map_err(|e| anyhow::anyhow!(e))?;
     let is_dst_dir = std::path::Path::new(&dst).is_dir();
 
     if resolved_paths.len() > 1 && !is_dst_dir {

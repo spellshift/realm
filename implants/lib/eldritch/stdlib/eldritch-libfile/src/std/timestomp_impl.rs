@@ -63,7 +63,7 @@ fn timestomp_impl(
     }
 
     let resolved_paths =
-        crate::std::glob_util::resolve_paths(&path).map_err(|e| anyhow::anyhow!(e))?;
+        crate::std::glob_util::resolve_paths(&path, false).map_err(|e| anyhow::anyhow!(e))?;
 
     // 3. Platform specific apply
     for p in resolved_paths {

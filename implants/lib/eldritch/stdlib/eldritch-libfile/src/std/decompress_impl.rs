@@ -33,7 +33,7 @@ fn decompress_impl(src: String, dst: String) -> AnyhowResult<()> {
     // We only decompress the first matching file,
     // because decompressing multiple files to a single dst is undefined/messy.
     let resolved =
-        crate::std::glob_util::resolve_first_path(&src).map_err(|e| anyhow::anyhow!(e))?;
+        crate::std::glob_util::resolve_first_path(&src, true).map_err(|e| anyhow::anyhow!(e))?;
 
     let f_src = ::std::io::BufReader::new(File::open(&resolved)?);
     let mut decoder = flate2::read::GzDecoder::new(f_src);

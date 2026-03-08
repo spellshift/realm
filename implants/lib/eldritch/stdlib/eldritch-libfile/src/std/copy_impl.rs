@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn copy(src: String, dst: String) -> Result<(), String> {
-    let src_paths = crate::std::glob_util::resolve_paths(&src)?;
+    let src_paths = crate::std::glob_util::resolve_paths(&src, false)?;
 
     // If copying multiple files, dst should probably be a directory
     // But for simplicity, if there's multiple, let's copy to dst joined with filename

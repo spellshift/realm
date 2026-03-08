@@ -1,7 +1,7 @@
 use alloc::string::String;
 
 pub fn exists(path: String) -> Result<bool, String> {
-    let resolved = match crate::std::glob_util::resolve_first_path(&path) {
+    let resolved = match crate::std::glob_util::resolve_first_path(&path, false) {
         Ok(p) => p,
         Err(_) => return Ok(false), // if glob matches nothing, it doesn't exist
     };

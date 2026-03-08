@@ -19,3 +19,6 @@ image = { version = "0.25", optional = true }
 default = ["stdlib"]
 stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
 fake_bindings = []
+
+[dev-dependencies]
+eldritch-libprocess = { path = "../eldritch-libprocess" }

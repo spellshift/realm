@@ -2,7 +2,7 @@ use alloc::string::String;
 use alloc::string::ToString;
 
 pub fn parent_dir(path: String) -> Result<String, String> {
-    let resolved = crate::std::glob_util::resolve_first_path(&path)?;
+    let resolved = crate::std::glob_util::resolve_first_path(&path, false)?;
     let parent = resolved
         .parent()
         .ok_or_else(|| "Failed to get parent directory".to_string())?;

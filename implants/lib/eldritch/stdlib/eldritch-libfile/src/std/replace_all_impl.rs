@@ -25,7 +25,7 @@ fn replace_impl(path: String, pattern: String, value: String) -> AnyhowResult<()
     use std::fs;
 
     let resolved_paths =
-        crate::std::glob_util::resolve_paths(&path).map_err(|e| anyhow::anyhow!(e))?;
+        crate::std::glob_util::resolve_paths(&path, true).map_err(|e| anyhow::anyhow!(e))?;
     let re = Regex::new(&pattern)?;
 
     for p in resolved_paths {

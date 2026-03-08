@@ -3,7 +3,7 @@ use alloc::format;
 use alloc::string::String;
 
 pub fn move_(src: String, dst: String) -> Result<(), String> {
-    let src_paths = crate::std::glob_util::resolve_paths(&src)?;
+    let src_paths = crate::std::glob_util::resolve_paths(&src, false)?;
     let is_dst_dir = std::path::Path::new(&dst).is_dir();
 
     if src_paths.len() > 1 && !is_dst_dir {
