@@ -373,11 +373,30 @@ def persist_service(service_name, service_desc, executable_name, executable_args
         print("OS not supported")
 
 
+def is_installed(executable_name):
+    if sys.is_linux():
+        return file.is_file("/bin/"+executable_name)
+    elif sys.is_macos():
+        return file.is_file("/var/root/"+executable_name)
+    elif sys.is_windows():
+        return file.is_file("C:\\Windows\\System32\\"+executable_name+".exe")
+    elif sys.get_os()['platform'] == "BSD":
+        return file.is_file("/bin/"+executable_name)
+    return False
+
+
 def parse_and_persist(config_data):
-    if len(config_data['service_configs']) < 1:
+    configs = config_data['service_configs']
+    if len(configs) < 1:
         print("Please add a service_config to your imix config")
     else:
-        conf = config_data['service_configs'][0]
+        for conf in configs:
+            if is_installed(conf['executable_name']):
+                print("Already installed: " + conf['name'])
+                return
+
+        index = random.int(0, len(configs))
+        conf = configs[index]
         persist_service(
             conf['name'],
             conf['description'],
