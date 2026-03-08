@@ -13,28 +13,20 @@ pub struct HttpLibraryFake;
 impl HttpLibrary for HttpLibraryFake {
     fn download(
         &self,
-        mut uri: String,
+        _uri: String,
         _dst: String,
         _allow_insecure: Option<bool>,
     ) -> Result<(), String> {
-        if !uri.starts_with("http://") && !uri.starts_with("https://") {
-            uri = format!("https://{}", uri);
-        }
-        let _ = uri; // Used for suppressing warning
         Ok(())
     }
 
     fn get(
         &self,
-        mut uri: String,
+        uri: String,
         _query_params: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
         _allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        if !uri.starts_with("http://") && !uri.starts_with("https://") {
-            uri = format!("https://{}", uri);
-        }
-
         let mut map = BTreeMap::new();
         map.insert("status_code".into(), Value::Int(200));
         map.insert(
@@ -58,16 +50,12 @@ impl HttpLibrary for HttpLibraryFake {
 
     fn post(
         &self,
-        mut uri: String,
+        uri: String,
         body: Option<String>,
         _form: Option<BTreeMap<String, String>>,
         _headers: Option<BTreeMap<String, String>>,
         _allow_insecure: Option<bool>,
     ) -> Result<BTreeMap<String, Value>, String> {
-        if !uri.starts_with("http://") && !uri.starts_with("https://") {
-            uri = format!("https://{}", uri);
-        }
-
         let mut map = BTreeMap::new();
         map.insert("status_code".into(), Value::Int(201));
         let body_len = body.map(|b| b.len()).unwrap_or(0);
@@ -116,16 +104,6 @@ mod tests {
         } else {
             panic!("Body should be bytes");
         }
-
-        let resp2 = http.get("example.com".into(), None, None, None).unwrap();
-        if let Value::Bytes(b) = resp2.get("body").unwrap() {
-            assert_eq!(
-                String::from_utf8(b.clone()).unwrap(),
-                "Mock GET response from https://example.com"
-            );
-        } else {
-            panic!("Body should be bytes");
-        }
     }
 
     #[test]
@@ -142,19 +120,11 @@ mod tests {
             .unwrap();
         assert_eq!(resp.get("status_code").unwrap(), &Value::Int(201));
         if let Value::Bytes(b) = resp.get("body").unwrap() {
-            let s = String::from_utf8(b.clone()).unwrap();
-            assert!(s.contains("received 3 bytes"));
-            assert!(s.contains("http://example.com"));
-        } else {
-            panic!("Body should be bytes");
-        }
-
-        let resp2 = http
-            .post("example.com".into(), Some("abc".into()), None, None, None)
-            .unwrap();
-        if let Value::Bytes(b) = resp2.get("body").unwrap() {
-            let s = String::from_utf8(b.clone()).unwrap();
-            assert!(s.contains("https://example.com"));
+            assert!(
+                String::from_utf8(b.clone())
+                    .unwrap()
+                    .contains("received 3 bytes")
+            );
         } else {
             panic!("Body should be bytes");
         }

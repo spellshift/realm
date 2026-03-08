@@ -4,11 +4,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 
-pub fn download(mut uri: String, dst: String, allow_insecure: Option<bool>) -> Result<(), String> {
-    if !uri.starts_with("http://") && !uri.starts_with("https://") {
-        uri = format!("https://{}", uri);
-    }
-
+pub fn download(uri: String, dst: String, allow_insecure: Option<bool>) -> Result<(), String> {
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -55,24 +51,6 @@ mod tests {
     use httptest::{Expectation, Server, matchers::request, responders::status_code};
     use std::fs::read_to_string;
     use tempfile::NamedTempFile;
-
-    #[test]
-    fn test_download_default_https() {
-        let tmp_file = NamedTempFile::new().unwrap();
-        let path = String::from(tmp_file.path().to_str().unwrap());
-
-        let res = download(
-            "this-domain-will-not-exist-ever-123.com".to_string(),
-            path,
-            None,
-        );
-        let err = res.unwrap_err();
-        assert!(
-            err.contains("https://this-domain-will-not-exist-ever-123.com"),
-            "Error message should indicate it tried https://this-domain-will-not-exist-ever-123.com, but was: {}",
-            err
-        );
-    }
 
     #[test]
     fn test_download() {
