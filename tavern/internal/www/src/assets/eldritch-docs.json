@@ -632,7 +632,7 @@
     "description": "The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time."
   },
   "time.sleep": {
-    "signature": "time.sleep(secs: int)",
+    "signature": "time.sleep(secs: float)",
     "description": "The **time.sleep** method sleeps the task for the given number of seconds."
   }
 }
