@@ -89,9 +89,7 @@ fn follow_impl(
                 }
             }
 
-            let mut line = String::from_utf8_lossy(&buf).into_owned();
-            // Replace the Unicode replacement character with a period
-            line = line.replace('\u{FFFD}', ".");
+            let line = String::from_utf8_lossy(&buf).into_owned();
 
             let line_val = Value::String(line);
 
