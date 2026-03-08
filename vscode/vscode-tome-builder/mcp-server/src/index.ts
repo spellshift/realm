@@ -1,9 +1,9 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  Tool,
+    CallToolRequestSchema,
+    ListToolsRequestSchema,
+    Tool,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import * as fs from 'fs';
@@ -11,51 +11,44 @@ import * as path from 'path';
 
 // --- Helper Functions for Runtime File Reading ---
 
-function findRepoRoot(): string | null {
-    let currentDir = __dirname;
-    while (currentDir !== path.parse(currentDir).root) {
-        if (fs.existsSync(path.join(currentDir, 'go.mod'))) {
-            return currentDir;
-        }
-        if (fs.existsSync(path.join(currentDir, '.git'))) {
-             return currentDir;
-        }
-        currentDir = path.dirname(currentDir);
-    }
-    return null;
-}
+const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/spellshift/realm/main";
 
-const REPO_ROOT = findRepoRoot();
-
-function readDocFile(relativePath: string): string {
-    if (!REPO_ROOT) {
-        return "Error: Could not locate repository root. Ensure you are running this in the realm repository.";
-    }
-    const fullPath = path.join(REPO_ROOT, relativePath);
+async function readDocFile(relativePath: string): Promise<string> {
+    const url = `${GITHUB_RAW_BASE}/${relativePath}`;
     try {
-        return fs.readFileSync(fullPath, 'utf-8');
+        const response = await fetch(url);
+        if (!response.ok) {
+            return `Error fetching documentation from GitHub: HTTP ${response.status}`;
+        }
+        return await response.text();
     } catch (e) {
-        return `Error reading file ${fullPath}: ${e}`;
+        return `Error fetching documentation: ${e}`;
     }
 }
 
-function readExample(tomeName: string): { metadata: string, script: string } {
-     if (!REPO_ROOT) {
-        return {
-            metadata: "Error: Could not locate repository root.",
-            script: "Error: Could not locate repository root."
-        };
-    }
-
-    const tomeDir = path.join(REPO_ROOT, `tavern/tomes/${tomeName}`);
+async function readExample(tomeName: string): Promise<{ metadata: string, script: string }> {
+    const tomeDirUrl = `${GITHUB_RAW_BASE}/tavern/tomes/${tomeName}`;
     try {
-        const metadata = fs.readFileSync(path.join(tomeDir, 'metadata.yml'), 'utf-8');
-        const script = fs.readFileSync(path.join(tomeDir, 'main.eldritch'), 'utf-8');
+        const [metaRes, scriptRes] = await Promise.all([
+            fetch(`${tomeDirUrl}/metadata.yml`),
+            fetch(`${tomeDirUrl}/main.eldritch`)
+        ]);
+
+        if (!metaRes.ok || !scriptRes.ok) {
+            return {
+                metadata: `Error fetching metadata.yml: HTTP ${metaRes.status}`,
+                script: `Error fetching main.eldritch: HTTP ${scriptRes.status}`
+            };
+        }
+
+        const metadata = await metaRes.text();
+        const script = await scriptRes.text();
+
         return { metadata, script };
     } catch (e) {
         return {
-            metadata: `Error reading example ${tomeName}: ${e}`,
-            script: `Error reading example ${tomeName}: ${e}`
+            metadata: `Network error fetching metadata: ${e}`,
+            script: `Network error fetching script: ${e}`
         };
     }
 }
@@ -63,15 +56,15 @@ function readExample(tomeName: string): { metadata: string, script: string } {
 // --- Server Setup ---
 
 const server = new Server(
-  {
-    name: "tome-builder",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
+    {
+        name: "tome-builder",
+        version: "1.0.0",
     },
-  }
+    {
+        capabilities: {
+            tools: {},
+        },
+    }
 );
 
 // Define Tools
@@ -131,13 +124,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "get_documentation") {
         const topic = (args as any).topic;
+
+        const SYSTEM_PROMPTS = `
+        === CRITICAL AI ELDRITCH PROMPT INSTRUCTIONS ===
+        1. ALWAYS use \`eprint(...)\` for logging errors to stderr. NEVER use \`print("error: ...")\`.
+        2. \`print(...)\` is STRICTLY reserved for actual stdout data output.
+        3. Do NOT hallucinate Python standard libraries (e.g. no \`os\`, \`subprocess\`, \`json\`). You MUST use the Eldritch APIs defined below.
+        ================================================
+        \n\n`;
+
         if (topic === "tomes") {
+            const content = await readDocFile('docs/_docs/user-guide/tomes.md');
             return {
-                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/tomes.md') }],
+                content: [{ type: "text", text: SYSTEM_PROMPTS + content }],
             };
         } else if (topic === "eldritch") {
+            const content = await readDocFile('docs/_docs/user-guide/eldritch.md');
             return {
-                content: [{ type: "text", text: readDocFile('docs/_docs/user-guide/eldritch.md') }],
+                content: [{ type: "text", text: SYSTEM_PROMPTS + content }],
             };
         }
         return { content: [], isError: true };
@@ -145,24 +149,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "get_tome_examples") {
         const topic = (args as any).topic;
+        const SYSTEM_PROMPTS = `
+        === CRITICAL AI ELDRITCH PROMPT INSTRUCTIONS ===
+        1. ALWAYS use \`eprint(...)\` for logging errors to stderr. NEVER use \`print("error: ...")\`.
+        2. \`print(...)\` is STRICTLY reserved for actual stdout data output.
+        3. Do NOT hallucinate Python standard libraries (e.g. no \`os\`, \`subprocess\`, \`json\`). You MUST use the Eldritch APIs defined below.
+        ================================================
+        \n\n`;
+
         if (topic === "file_write") {
-            const example = readExample('file_write');
+            const example = await readExample('file_write');
             return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: SYSTEM_PROMPTS + "## metadata.yml\n" + example.metadata },
                     { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         } else if (topic === "persist_service") {
-             const example = readExample('persist_service');
-             return {
+            const example = await readExample('persist_service');
+            return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: SYSTEM_PROMPTS + "## metadata.yml\n" + example.metadata },
                     { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         }
-         return { content: [], isError: true };
+        return { content: [], isError: true };
     }
 
     if (name === "validate_tome_structure") {
@@ -193,12 +205,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Tome MCP Server running on stdio");
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Tome MCP Server running on stdio");
 }
 
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
+    console.error("Fatal error in main():", error);
+    process.exit(1);
 });

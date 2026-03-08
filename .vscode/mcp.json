@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "tome-builder": {
+      "command": "node",
+      "args": [
+        "c:/Users/Valoriaz/.vscode-insiders/extensions/realm.tome-builder-0.1.0/mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
