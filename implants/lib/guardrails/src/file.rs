@@ -33,7 +33,14 @@ impl Guardrail for File {
         if self.path.is_empty() {
             return false;
         }
-        Path::new(&self.path).exists()
+
+        let path_to_check = if cfg!(target_os = "windows") {
+            self.path.to_lowercase()
+        } else {
+            self.path.clone()
+        };
+
+        Path::new(&path_to_check).exists()
     }
 }
 

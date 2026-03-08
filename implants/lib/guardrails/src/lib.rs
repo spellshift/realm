@@ -71,14 +71,20 @@ impl GuardrailSpec {
 }
 
 pub fn check_guardrails(guardrails: Vec<Box<dyn Guardrail>>) -> bool {
-    for guardrail in guardrails {
-        if !guardrail.check() {
-            #[cfg(debug_assertions)]
-            log::debug!("Guardrail {} failed", guardrail.get_name());
-            return false;
-        }
+    if guardrails.is_empty() {
+        return true;
     }
-    true
+
+    for guardrail in guardrails {
+        if guardrail.check() {
+            #[cfg(debug_assertions)]
+            log::debug!("Guardrail {} passed", guardrail.get_name());
+            return true;
+        }
+        #[cfg(debug_assertions)]
+        log::debug!("Guardrail {} failed", guardrail.get_name());
+    }
+    false
 }
 
 pub fn from_imix_guardrails(json: String) -> Option<Vec<Box<dyn Guardrail>>> {

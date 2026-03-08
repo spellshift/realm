@@ -30,8 +30,9 @@ impl Guardrail for Process {
         let mut sys = System::new();
         sys.refresh_processes();
 
+        let check_name = self.name.to_lowercase();
         for (_, process) in sys.processes() {
-            if process.name().eq_ignore_ascii_case(&self.name) {
+            if process.name().to_lowercase() == check_name {
                 return true;
             }
         }
