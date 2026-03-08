@@ -16,30 +16,26 @@ def print_table(rows: list[list]):
         print("".join(row))
 
 
-def process_list(cmd_substring):
-
-    if cmd_substring == '*':
-        cmd_substring = ''
+def process_list():
 
     procs = process.list()
     report.process_list(procs)
 
     rows = [["PID", "PPID", "USER", "COMMAND"]]
     for proc in procs:
-        if cmd_substring in proc['command']:
-            current_proc_command = proc['command']
-            if current_proc_command == "":
-                current_proc_command = proc['name']
+        current_proc_command = proc['command']
+        if current_proc_command == "":
+            current_proc_command = proc['name']
 
-            rows.append([
-                str(proc['pid']),
-                str(proc['ppid']),
-                proc['username'],
-                current_proc_command.replace("\n", "\\n")
-            ])
+        rows.append([
+            str(proc['pid']),
+            str(proc['ppid']),
+            proc.get('username', 'unknown'),
+            current_proc_command.replace("\n", "\\n")
+        ])
 
     print_table(rows)
 
 
-process_list(input_params['cmd_substring'])
+process_list()
 print("")
