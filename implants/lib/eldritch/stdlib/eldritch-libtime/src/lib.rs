@@ -47,9 +47,9 @@ pub trait TimeLibrary {
     /// Pauses execution for the specified number of seconds.
     ///
     /// **Parameters**
-    /// - `secs` (`int`): Seconds to sleep.
+    /// - `secs` (`float`): Seconds to sleep.
     ///
     /// **Returns**
     /// - `None`
-    fn sleep(&self, secs: i64) -> Result<(), String>;
+    fn sleep(&self, secs: f64) -> Result<(), String>;
 }
