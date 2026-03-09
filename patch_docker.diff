@@ -1,35 +1,17 @@
 <<<<<<< SEARCH
-	// 3. Write pre, main, and post build scripts.
-	if err := os.WriteFile(filepath.Join(scriptsDir, "0_pre_build.sh"), []byte(spec.PreBuildScript), 0755); err != nil {
-		return nil, fmt.Errorf("failed to write pre-build script: %w", err)
-	}
-
-	// Adjust the BuildScript to use the mounted tomes.
-=======
-	// 3. Write pre, main, and post build scripts.
-	if spec.PreBuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "0_pre_build.sh"), []byte(spec.PreBuildScript), 0755); err != nil {
-			return nil, fmt.Errorf("failed to write pre-build script: %w", err)
+		// Construct and write main.eldritch.
+		var tomeScript string
+		tomeScript += "input_params = {\n"
+		for k, v := range tome.Params {
+			tomeScript += fmt.Sprintf("  %q: %q,\n", k, v)
 		}
-	}
+		tomeScript += "}\n"
+		tomeScript += tome.Script
 
-	// Adjust the BuildScript to use the mounted tomes.
->>>>>>> REPLACE
-<<<<<<< SEARCH
-	if err := os.WriteFile(filepath.Join(scriptsDir, "1_build.sh"), []byte(mainScript), 0755); err != nil {
-		return nil, fmt.Errorf("failed to write main build script: %w", err)
-	}
-	if err := os.WriteFile(filepath.Join(scriptsDir, "9_post_build.sh"), []byte(spec.PostBuildScript), 0755); err != nil {
-		return nil, fmt.Errorf("failed to write post-build script: %w", err)
-	}
+		if err := os.WriteFile(filepath.Join(tomePath, "main.eldritch"), []byte(tomeScript), 0644); err != nil {
 =======
-	if err := os.WriteFile(filepath.Join(scriptsDir, "1_build.sh"), []byte(mainScript), 0755); err != nil {
-		return nil, fmt.Errorf("failed to write main build script: %w", err)
-	}
+		// Construct and write main.eldritch.
+		tomeScript := ConstructTomeScript(tome)
 
-	if spec.PostBuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "9_post_build.sh"), []byte(spec.PostBuildScript), 0755); err != nil {
-			return nil, fmt.Errorf("failed to write post-build script: %w", err)
-		}
-	}
+		if err := os.WriteFile(filepath.Join(tomePath, "main.eldritch"), []byte(tomeScript), 0644); err != nil {
 >>>>>>> REPLACE

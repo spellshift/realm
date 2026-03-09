@@ -15,6 +15,8 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+
+	"realm.pub/tavern/internal/builder/builderpb"
 )
 
 // DockerExecutor runs build tasks inside Docker containers.
@@ -89,13 +91,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		}
 
 		// Construct and write main.eldritch.
-		var tomeScript string
-		tomeScript += "input_params = {\n"
-		for k, v := range tome.Params {
-			tomeScript += fmt.Sprintf("  %q: %q,\n", k, v)
-		}
-		tomeScript += "}\n"
-		tomeScript += tome.Script
+		tomeScript := ConstructTomeScript(tome)
 
 		if err := os.WriteFile(filepath.Join(tomePath, "main.eldritch"), []byte(tomeScript), 0644); err != nil {
 			return nil, fmt.Errorf("failed to write tome %s script: %w", tome.Name, err)
@@ -134,7 +130,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		mainScript += setupCmd + "\n"
 		mainScript += `rm -rf install_scripts` + "\n"
 		mainScript += `mkdir -p install_scripts` + "\n"
-		mainScript += `cp -r /build_tomes/. install_scripts/ || true` + "\n"
+		mainScript += `mount -B /build_tomes install_scripts` + "\n"
 		mainScript += buildCmd + "\n"
 	} else {
 		mainScript = spec.BuildScript
@@ -269,6 +265,19 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"task_id", spec.TaskID, "name", name, "size", len(data))
 
 	return &buildResult, nil
+}
+
+// ConstructTomeScript generates the full eldritch script for a tome, prepending
+// the input_params dictionary populated with the tome's parameters.
+func ConstructTomeScript(tome *builderpb.BuildTaskTome) string {
+	var tomeScript string
+	tomeScript += "input_params = {\n"
+	for k, v := range tome.Params {
+		tomeScript += fmt.Sprintf("  %q: %q,\n", k, v)
+	}
+	tomeScript += "}\n"
+	tomeScript += tome.Script
+	return tomeScript
 }
 
 // extractArtifact copies a file from a stopped container using the Docker API.

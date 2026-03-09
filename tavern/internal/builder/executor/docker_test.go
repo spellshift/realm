@@ -11,8 +11,28 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/builder/executor"
 )
+
+func TestConstructTomeScript(t *testing.T) {
+	tome := &builderpb.BuildTaskTome{
+		Name:   "test_tome",
+		Script: "print(input_params[\"key1\"])\n",
+		Params: map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		},
+	}
+	script := executor.ConstructTomeScript(tome)
+
+	// Check the dictionary is constructed and string values are properly quoted
+	assert.Contains(t, script, `input_params = {`)
+	assert.Contains(t, script, `"key1": "value1",`)
+	assert.Contains(t, script, `"key2": "value2",`)
+	assert.Contains(t, script, `}`)
+	assert.Contains(t, script, `print(input_params["key1"])`)
+}
 
 // skipIfNoDocker skips the test if Docker is not available or functional.
 func skipIfNoDocker(t *testing.T) client.APIClient {
