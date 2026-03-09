@@ -5,18 +5,28 @@ use alloc::vec::Vec;
 use glob::glob;
 
 pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
-    let target_path = if path.contains('*') || path.contains('?') || path.contains('[') {
-        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        if let Some(Ok(first_match)) = paths.next() {
-            first_match.to_string_lossy().into_owned()
-        } else {
+    if path.contains('*') || path.contains('?') || path.contains('[') {
+        let mut result = Vec::new();
+        let paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
+        let mut found = false;
+        for entry in paths {
+            if let Ok(match_path) = entry {
+                if match_path.is_file() {
+                    found = true;
+                    let mut data = fs::read(&match_path).map_err(|e| {
+                        format!("Failed to read file {}: {e}", match_path.to_string_lossy())
+                    })?;
+                    result.append(&mut data);
+                }
+            }
+        }
+        if !found {
             return Err(format!("No files found matching pattern {path}"));
         }
+        Ok(result)
     } else {
-        path.clone()
-    };
-
-    fs::read(&target_path).map_err(|e| format!("Failed to read file {target_path}: {e}"))
+        fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
+    }
 }
 
 #[cfg(test)]
