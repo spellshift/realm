@@ -1,8 +1,19 @@
 use ::std::path::Path;
+use alloc::format;
 use alloc::string::String;
+use glob::glob;
 
 pub fn is_dir(path: String) -> Result<bool, String> {
-    Ok(Path::new(&path).is_dir())
+    if path.contains('*') || path.contains('?') || path.contains('[') {
+        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
+        if let Some(Ok(first_match)) = paths.next() {
+            Ok(first_match.is_dir())
+        } else {
+            Ok(false)
+        }
+    } else {
+        Ok(Path::new(&path).is_dir())
+    }
 }
 
 #[cfg(test)]

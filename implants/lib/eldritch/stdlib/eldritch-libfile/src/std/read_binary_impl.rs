@@ -2,9 +2,21 @@ use ::std::fs;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
+use glob::glob;
 
 pub fn read_binary(path: String) -> Result<Vec<u8>, String> {
-    fs::read(&path).map_err(|e| format!("Failed to read file {path}: {e}"))
+    let target_path = if path.contains('*') || path.contains('?') || path.contains('[') {
+        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
+        if let Some(Ok(first_match)) = paths.next() {
+            first_match.to_string_lossy().into_owned()
+        } else {
+            return Err(format!("No files found matching pattern {path}"));
+        }
+    } else {
+        path.clone()
+    };
+
+    fs::read(&target_path).map_err(|e| format!("Failed to read file {target_path}: {e}"))
 }
 
 #[cfg(test)]
