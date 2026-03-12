@@ -12,25 +12,25 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 )
 
-// BuilderProfileCreate is the builder for creating a BuilderProfile entity.
-type BuilderProfileCreate struct {
+// BuildProfileCreate is the builder for creating a BuildProfile entity.
+type BuildProfileCreate struct {
 	config
-	mutation *BuilderProfileMutation
+	mutation *BuildProfileMutation
 	hooks    []Hook
 	conflict []sql.ConflictOption
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (bpc *BuilderProfileCreate) SetCreatedAt(t time.Time) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetCreatedAt(t time.Time) *BuildProfileCreate {
 	bpc.mutation.SetCreatedAt(t)
 	return bpc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (bpc *BuilderProfileCreate) SetNillableCreatedAt(t *time.Time) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetNillableCreatedAt(t *time.Time) *BuildProfileCreate {
 	if t != nil {
 		bpc.SetCreatedAt(*t)
 	}
@@ -38,13 +38,13 @@ func (bpc *BuilderProfileCreate) SetNillableCreatedAt(t *time.Time) *BuilderProf
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (bpc *BuilderProfileCreate) SetLastModifiedAt(t time.Time) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetLastModifiedAt(t time.Time) *BuildProfileCreate {
 	bpc.mutation.SetLastModifiedAt(t)
 	return bpc
 }
 
 // SetNillableLastModifiedAt sets the "last_modified_at" field if the given value is not nil.
-func (bpc *BuilderProfileCreate) SetNillableLastModifiedAt(t *time.Time) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetNillableLastModifiedAt(t *time.Time) *BuildProfileCreate {
 	if t != nil {
 		bpc.SetLastModifiedAt(*t)
 	}
@@ -52,19 +52,19 @@ func (bpc *BuilderProfileCreate) SetNillableLastModifiedAt(t *time.Time) *Builde
 }
 
 // SetName sets the "name" field.
-func (bpc *BuilderProfileCreate) SetName(s string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetName(s string) *BuildProfileCreate {
 	bpc.mutation.SetName(s)
 	return bpc
 }
 
 // SetDescription sets the "description" field.
-func (bpc *BuilderProfileCreate) SetDescription(s string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetDescription(s string) *BuildProfileCreate {
 	bpc.mutation.SetDescription(s)
 	return bpc
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (bpc *BuilderProfileCreate) SetNillableDescription(s *string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetNillableDescription(s *string) *BuildProfileCreate {
 	if s != nil {
 		bpc.SetDescription(*s)
 	}
@@ -72,13 +72,13 @@ func (bpc *BuilderProfileCreate) SetNillableDescription(s *string) *BuilderProfi
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (bpc *BuilderProfileCreate) SetPreBuildScript(s string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetPreBuildScript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPreBuildScript(s)
 	return bpc
 }
 
 // SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
-func (bpc *BuilderProfileCreate) SetNillablePreBuildScript(s *string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetNillablePreBuildScript(s *string) *BuildProfileCreate {
 	if s != nil {
 		bpc.SetPreBuildScript(*s)
 	}
@@ -86,13 +86,13 @@ func (bpc *BuilderProfileCreate) SetNillablePreBuildScript(s *string) *BuilderPr
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (bpc *BuilderProfileCreate) SetPostBuildScript(s string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetPostBuildScript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPostBuildScript(s)
 	return bpc
 }
 
 // SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
-func (bpc *BuilderProfileCreate) SetNillablePostBuildScript(s *string) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetNillablePostBuildScript(s *string) *BuildProfileCreate {
 	if s != nil {
 		bpc.SetPostBuildScript(*s)
 	}
@@ -100,30 +100,30 @@ func (bpc *BuilderProfileCreate) SetNillablePostBuildScript(s *string) *BuilderP
 }
 
 // SetTransports sets the "transports" field.
-func (bpc *BuilderProfileCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildProfileCreate {
 	bpc.mutation.SetTransports(btt)
 	return bpc
 }
 
 // SetTomes sets the "tomes" field.
-func (bpc *BuilderProfileCreate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileCreate {
+func (bpc *BuildProfileCreate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildProfileCreate {
 	bpc.mutation.SetTomes(bttc)
 	return bpc
 }
 
-// Mutation returns the BuilderProfileMutation object of the builder.
-func (bpc *BuilderProfileCreate) Mutation() *BuilderProfileMutation {
+// Mutation returns the BuildProfileMutation object of the builder.
+func (bpc *BuildProfileCreate) Mutation() *BuildProfileMutation {
 	return bpc.mutation
 }
 
-// Save creates the BuilderProfile in the database.
-func (bpc *BuilderProfileCreate) Save(ctx context.Context) (*BuilderProfile, error) {
+// Save creates the BuildProfile in the database.
+func (bpc *BuildProfileCreate) Save(ctx context.Context) (*BuildProfile, error) {
 	bpc.defaults()
 	return withHooks(ctx, bpc.sqlSave, bpc.mutation, bpc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (bpc *BuilderProfileCreate) SaveX(ctx context.Context) *BuilderProfile {
+func (bpc *BuildProfileCreate) SaveX(ctx context.Context) *BuildProfile {
 	v, err := bpc.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -132,50 +132,50 @@ func (bpc *BuilderProfileCreate) SaveX(ctx context.Context) *BuilderProfile {
 }
 
 // Exec executes the query.
-func (bpc *BuilderProfileCreate) Exec(ctx context.Context) error {
+func (bpc *BuildProfileCreate) Exec(ctx context.Context) error {
 	_, err := bpc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpc *BuilderProfileCreate) ExecX(ctx context.Context) {
+func (bpc *BuildProfileCreate) ExecX(ctx context.Context) {
 	if err := bpc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (bpc *BuilderProfileCreate) defaults() {
+func (bpc *BuildProfileCreate) defaults() {
 	if _, ok := bpc.mutation.CreatedAt(); !ok {
-		v := builderprofile.DefaultCreatedAt()
+		v := buildprofile.DefaultCreatedAt()
 		bpc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := bpc.mutation.LastModifiedAt(); !ok {
-		v := builderprofile.DefaultLastModifiedAt()
+		v := buildprofile.DefaultLastModifiedAt()
 		bpc.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bpc *BuilderProfileCreate) check() error {
+func (bpc *BuildProfileCreate) check() error {
 	if _, ok := bpc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "BuilderProfile.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "BuildProfile.created_at"`)}
 	}
 	if _, ok := bpc.mutation.LastModifiedAt(); !ok {
-		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "BuilderProfile.last_modified_at"`)}
+		return &ValidationError{Name: "last_modified_at", err: errors.New(`ent: missing required field "BuildProfile.last_modified_at"`)}
 	}
 	if _, ok := bpc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "BuilderProfile.name"`)}
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "BuildProfile.name"`)}
 	}
 	if v, ok := bpc.mutation.Name(); ok {
-		if err := builderprofile.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuilderProfile.name": %w`, err)}
+		if err := buildprofile.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.name": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (bpc *BuilderProfileCreate) sqlSave(ctx context.Context) (*BuilderProfile, error) {
+func (bpc *BuildProfileCreate) sqlSave(ctx context.Context) (*BuildProfile, error) {
 	if err := bpc.check(); err != nil {
 		return nil, err
 	}
@@ -193,42 +193,42 @@ func (bpc *BuilderProfileCreate) sqlSave(ctx context.Context) (*BuilderProfile, 
 	return _node, nil
 }
 
-func (bpc *BuilderProfileCreate) createSpec() (*BuilderProfile, *sqlgraph.CreateSpec) {
+func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec) {
 	var (
-		_node = &BuilderProfile{config: bpc.config}
-		_spec = sqlgraph.NewCreateSpec(builderprofile.Table, sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt))
+		_node = &BuildProfile{config: bpc.config}
+		_spec = sqlgraph.NewCreateSpec(buildprofile.Table, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	)
 	_spec.OnConflict = bpc.conflict
 	if value, ok := bpc.mutation.CreatedAt(); ok {
-		_spec.SetField(builderprofile.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(buildprofile.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := bpc.mutation.LastModifiedAt(); ok {
-		_spec.SetField(builderprofile.FieldLastModifiedAt, field.TypeTime, value)
+		_spec.SetField(buildprofile.FieldLastModifiedAt, field.TypeTime, value)
 		_node.LastModifiedAt = value
 	}
 	if value, ok := bpc.mutation.Name(); ok {
-		_spec.SetField(builderprofile.FieldName, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
 	if value, ok := bpc.mutation.Description(); ok {
-		_spec.SetField(builderprofile.FieldDescription, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
 	if value, ok := bpc.mutation.PreBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPreBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPreBuildScript, field.TypeString, value)
 		_node.PreBuildScript = value
 	}
 	if value, ok := bpc.mutation.PostBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPostBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPostBuildScript, field.TypeString, value)
 		_node.PostBuildScript = value
 	}
 	if value, ok := bpc.mutation.Transports(); ok {
-		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTransports, field.TypeJSON, value)
 		_node.Transports = value
 	}
 	if value, ok := bpc.mutation.Tomes(); ok {
-		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
 		_node.Tomes = value
 	}
 	return _node, _spec
@@ -237,7 +237,7 @@ func (bpc *BuilderProfileCreate) createSpec() (*BuilderProfile, *sqlgraph.Create
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		SetCreatedAt(v).
 //		OnConflict(
 //			// Update the row with the new values
@@ -246,13 +246,13 @@ func (bpc *BuilderProfileCreate) createSpec() (*BuilderProfile, *sqlgraph.Create
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.BuilderProfileUpsert) {
+//		Update(func(u *ent.BuildProfileUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (bpc *BuilderProfileCreate) OnConflict(opts ...sql.ConflictOption) *BuilderProfileUpsertOne {
+func (bpc *BuildProfileCreate) OnConflict(opts ...sql.ConflictOption) *BuildProfileUpsertOne {
 	bpc.conflict = opts
-	return &BuilderProfileUpsertOne{
+	return &BuildProfileUpsertOne{
 		create: bpc,
 	}
 }
@@ -260,156 +260,156 @@ func (bpc *BuilderProfileCreate) OnConflict(opts ...sql.ConflictOption) *Builder
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (bpc *BuilderProfileCreate) OnConflictColumns(columns ...string) *BuilderProfileUpsertOne {
+func (bpc *BuildProfileCreate) OnConflictColumns(columns ...string) *BuildProfileUpsertOne {
 	bpc.conflict = append(bpc.conflict, sql.ConflictColumns(columns...))
-	return &BuilderProfileUpsertOne{
+	return &BuildProfileUpsertOne{
 		create: bpc,
 	}
 }
 
 type (
-	// BuilderProfileUpsertOne is the builder for "upsert"-ing
-	//  one BuilderProfile node.
-	BuilderProfileUpsertOne struct {
-		create *BuilderProfileCreate
+	// BuildProfileUpsertOne is the builder for "upsert"-ing
+	//  one BuildProfile node.
+	BuildProfileUpsertOne struct {
+		create *BuildProfileCreate
 	}
 
-	// BuilderProfileUpsert is the "OnConflict" setter.
-	BuilderProfileUpsert struct {
+	// BuildProfileUpsert is the "OnConflict" setter.
+	BuildProfileUpsert struct {
 		*sql.UpdateSet
 	}
 )
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (u *BuilderProfileUpsert) SetLastModifiedAt(v time.Time) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldLastModifiedAt, v)
+func (u *BuildProfileUpsert) SetLastModifiedAt(v time.Time) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldLastModifiedAt, v)
 	return u
 }
 
 // UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdateLastModifiedAt() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldLastModifiedAt)
+func (u *BuildProfileUpsert) UpdateLastModifiedAt() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldLastModifiedAt)
 	return u
 }
 
 // SetName sets the "name" field.
-func (u *BuilderProfileUpsert) SetName(v string) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldName, v)
+func (u *BuildProfileUpsert) SetName(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldName, v)
 	return u
 }
 
 // UpdateName sets the "name" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdateName() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldName)
+func (u *BuildProfileUpsert) UpdateName() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldName)
 	return u
 }
 
 // SetDescription sets the "description" field.
-func (u *BuilderProfileUpsert) SetDescription(v string) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldDescription, v)
+func (u *BuildProfileUpsert) SetDescription(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldDescription, v)
 	return u
 }
 
 // UpdateDescription sets the "description" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdateDescription() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldDescription)
+func (u *BuildProfileUpsert) UpdateDescription() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldDescription)
 	return u
 }
 
 // ClearDescription clears the value of the "description" field.
-func (u *BuilderProfileUpsert) ClearDescription() *BuilderProfileUpsert {
-	u.SetNull(builderprofile.FieldDescription)
+func (u *BuildProfileUpsert) ClearDescription() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldDescription)
 	return u
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (u *BuilderProfileUpsert) SetPreBuildScript(v string) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldPreBuildScript, v)
+func (u *BuildProfileUpsert) SetPreBuildScript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldPreBuildScript, v)
 	return u
 }
 
 // UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdatePreBuildScript() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldPreBuildScript)
+func (u *BuildProfileUpsert) UpdatePreBuildScript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldPreBuildScript)
 	return u
 }
 
 // ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (u *BuilderProfileUpsert) ClearPreBuildScript() *BuilderProfileUpsert {
-	u.SetNull(builderprofile.FieldPreBuildScript)
+func (u *BuildProfileUpsert) ClearPreBuildScript() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldPreBuildScript)
 	return u
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (u *BuilderProfileUpsert) SetPostBuildScript(v string) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldPostBuildScript, v)
+func (u *BuildProfileUpsert) SetPostBuildScript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldPostBuildScript, v)
 	return u
 }
 
 // UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdatePostBuildScript() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldPostBuildScript)
+func (u *BuildProfileUpsert) UpdatePostBuildScript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldPostBuildScript)
 	return u
 }
 
 // ClearPostBuildScript clears the value of the "post_build_script" field.
-func (u *BuilderProfileUpsert) ClearPostBuildScript() *BuilderProfileUpsert {
-	u.SetNull(builderprofile.FieldPostBuildScript)
+func (u *BuildProfileUpsert) ClearPostBuildScript() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldPostBuildScript)
 	return u
 }
 
 // SetTransports sets the "transports" field.
-func (u *BuilderProfileUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldTransports, v)
+func (u *BuildProfileUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldTransports, v)
 	return u
 }
 
 // UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdateTransports() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldTransports)
+func (u *BuildProfileUpsert) UpdateTransports() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldTransports)
 	return u
 }
 
 // ClearTransports clears the value of the "transports" field.
-func (u *BuilderProfileUpsert) ClearTransports() *BuilderProfileUpsert {
-	u.SetNull(builderprofile.FieldTransports)
+func (u *BuildProfileUpsert) ClearTransports() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldTransports)
 	return u
 }
 
 // SetTomes sets the "tomes" field.
-func (u *BuilderProfileUpsert) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsert {
-	u.Set(builderprofile.FieldTomes, v)
+func (u *BuildProfileUpsert) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldTomes, v)
 	return u
 }
 
 // UpdateTomes sets the "tomes" field to the value that was provided on create.
-func (u *BuilderProfileUpsert) UpdateTomes() *BuilderProfileUpsert {
-	u.SetExcluded(builderprofile.FieldTomes)
+func (u *BuildProfileUpsert) UpdateTomes() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldTomes)
 	return u
 }
 
 // ClearTomes clears the value of the "tomes" field.
-func (u *BuilderProfileUpsert) ClearTomes() *BuilderProfileUpsert {
-	u.SetNull(builderprofile.FieldTomes)
+func (u *BuildProfileUpsert) ClearTomes() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldTomes)
 	return u
 }
 
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //		).
 //		Exec(ctx)
-func (u *BuilderProfileUpsertOne) UpdateNewValues() *BuilderProfileUpsertOne {
+func (u *BuildProfileUpsertOne) UpdateNewValues() *BuildProfileUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.CreatedAt(); exists {
-			s.SetIgnore(builderprofile.FieldCreatedAt)
+			s.SetIgnore(buildprofile.FieldCreatedAt)
 		}
 	}))
 	return u
@@ -418,180 +418,180 @@ func (u *BuilderProfileUpsertOne) UpdateNewValues() *BuilderProfileUpsertOne {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //	    OnConflict(sql.ResolveWithIgnore()).
 //	    Exec(ctx)
-func (u *BuilderProfileUpsertOne) Ignore() *BuilderProfileUpsertOne {
+func (u *BuildProfileUpsertOne) Ignore() *BuildProfileUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *BuilderProfileUpsertOne) DoNothing() *BuilderProfileUpsertOne {
+func (u *BuildProfileUpsertOne) DoNothing() *BuildProfileUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the BuilderProfileCreate.OnConflict
+// Update allows overriding fields `UPDATE` values. See the BuildProfileCreate.OnConflict
 // documentation for more info.
-func (u *BuilderProfileUpsertOne) Update(set func(*BuilderProfileUpsert)) *BuilderProfileUpsertOne {
+func (u *BuildProfileUpsertOne) Update(set func(*BuildProfileUpsert)) *BuildProfileUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&BuilderProfileUpsert{UpdateSet: update})
+		set(&BuildProfileUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (u *BuilderProfileUpsertOne) SetLastModifiedAt(v time.Time) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetLastModifiedAt(v time.Time) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetLastModifiedAt(v)
 	})
 }
 
 // UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdateLastModifiedAt() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdateLastModifiedAt() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateLastModifiedAt()
 	})
 }
 
 // SetName sets the "name" field.
-func (u *BuilderProfileUpsertOne) SetName(v string) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetName(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetName(v)
 	})
 }
 
 // UpdateName sets the "name" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdateName() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdateName() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateName()
 	})
 }
 
 // SetDescription sets the "description" field.
-func (u *BuilderProfileUpsertOne) SetDescription(v string) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetDescription(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetDescription(v)
 	})
 }
 
 // UpdateDescription sets the "description" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdateDescription() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdateDescription() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateDescription()
 	})
 }
 
 // ClearDescription clears the value of the "description" field.
-func (u *BuilderProfileUpsertOne) ClearDescription() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) ClearDescription() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearDescription()
 	})
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (u *BuilderProfileUpsertOne) SetPreBuildScript(v string) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetPreBuildScript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetPreBuildScript(v)
 	})
 }
 
 // UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdatePreBuildScript() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdatePreBuildScript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePreBuildScript()
 	})
 }
 
 // ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (u *BuilderProfileUpsertOne) ClearPreBuildScript() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) ClearPreBuildScript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearPreBuildScript()
 	})
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (u *BuilderProfileUpsertOne) SetPostBuildScript(v string) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetPostBuildScript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetPostBuildScript(v)
 	})
 }
 
 // UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdatePostBuildScript() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdatePostBuildScript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostBuildScript()
 	})
 }
 
 // ClearPostBuildScript clears the value of the "post_build_script" field.
-func (u *BuilderProfileUpsertOne) ClearPostBuildScript() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) ClearPostBuildScript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearPostBuildScript()
 	})
 }
 
 // SetTransports sets the "transports" field.
-func (u *BuilderProfileUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetTransports(v)
 	})
 }
 
 // UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdateTransports() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdateTransports() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTransports()
 	})
 }
 
 // ClearTransports clears the value of the "transports" field.
-func (u *BuilderProfileUpsertOne) ClearTransports() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) ClearTransports() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearTransports()
 	})
 }
 
 // SetTomes sets the "tomes" field.
-func (u *BuilderProfileUpsertOne) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetTomes(v)
 	})
 }
 
 // UpdateTomes sets the "tomes" field to the value that was provided on create.
-func (u *BuilderProfileUpsertOne) UpdateTomes() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) UpdateTomes() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTomes()
 	})
 }
 
 // ClearTomes clears the value of the "tomes" field.
-func (u *BuilderProfileUpsertOne) ClearTomes() *BuilderProfileUpsertOne {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertOne) ClearTomes() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearTomes()
 	})
 }
 
 // Exec executes the query.
-func (u *BuilderProfileUpsertOne) Exec(ctx context.Context) error {
+func (u *BuildProfileUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for BuilderProfileCreate.OnConflict")
+		return errors.New("ent: missing options for BuildProfileCreate.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *BuilderProfileUpsertOne) ExecX(ctx context.Context) {
+func (u *BuildProfileUpsertOne) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *BuilderProfileUpsertOne) ID(ctx context.Context) (id int, err error) {
+func (u *BuildProfileUpsertOne) ID(ctx context.Context) (id int, err error) {
 	node, err := u.create.Save(ctx)
 	if err != nil {
 		return id, err
@@ -600,7 +600,7 @@ func (u *BuilderProfileUpsertOne) ID(ctx context.Context) (id int, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *BuilderProfileUpsertOne) IDX(ctx context.Context) int {
+func (u *BuildProfileUpsertOne) IDX(ctx context.Context) int {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -608,28 +608,28 @@ func (u *BuilderProfileUpsertOne) IDX(ctx context.Context) int {
 	return id
 }
 
-// BuilderProfileCreateBulk is the builder for creating many BuilderProfile entities in bulk.
-type BuilderProfileCreateBulk struct {
+// BuildProfileCreateBulk is the builder for creating many BuildProfile entities in bulk.
+type BuildProfileCreateBulk struct {
 	config
 	err      error
-	builders []*BuilderProfileCreate
+	builders []*BuildProfileCreate
 	conflict []sql.ConflictOption
 }
 
-// Save creates the BuilderProfile entities in the database.
-func (bpcb *BuilderProfileCreateBulk) Save(ctx context.Context) ([]*BuilderProfile, error) {
+// Save creates the BuildProfile entities in the database.
+func (bpcb *BuildProfileCreateBulk) Save(ctx context.Context) ([]*BuildProfile, error) {
 	if bpcb.err != nil {
 		return nil, bpcb.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(bpcb.builders))
-	nodes := make([]*BuilderProfile, len(bpcb.builders))
+	nodes := make([]*BuildProfile, len(bpcb.builders))
 	mutators := make([]Mutator, len(bpcb.builders))
 	for i := range bpcb.builders {
 		func(i int, root context.Context) {
 			builder := bpcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*BuilderProfileMutation)
+				mutation, ok := m.(*BuildProfileMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -677,7 +677,7 @@ func (bpcb *BuilderProfileCreateBulk) Save(ctx context.Context) ([]*BuilderProfi
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bpcb *BuilderProfileCreateBulk) SaveX(ctx context.Context) []*BuilderProfile {
+func (bpcb *BuildProfileCreateBulk) SaveX(ctx context.Context) []*BuildProfile {
 	v, err := bpcb.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -686,13 +686,13 @@ func (bpcb *BuilderProfileCreateBulk) SaveX(ctx context.Context) []*BuilderProfi
 }
 
 // Exec executes the query.
-func (bpcb *BuilderProfileCreateBulk) Exec(ctx context.Context) error {
+func (bpcb *BuildProfileCreateBulk) Exec(ctx context.Context) error {
 	_, err := bpcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpcb *BuilderProfileCreateBulk) ExecX(ctx context.Context) {
+func (bpcb *BuildProfileCreateBulk) ExecX(ctx context.Context) {
 	if err := bpcb.Exec(ctx); err != nil {
 		panic(err)
 	}
@@ -701,7 +701,7 @@ func (bpcb *BuilderProfileCreateBulk) ExecX(ctx context.Context) {
 // OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
 // of the `INSERT` statement. For example:
 //
-//	client.BuilderProfile.CreateBulk(builders...).
+//	client.BuildProfile.CreateBulk(builders...).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -709,13 +709,13 @@ func (bpcb *BuilderProfileCreateBulk) ExecX(ctx context.Context) {
 //		).
 //		// Override some of the fields with custom
 //		// update values.
-//		Update(func(u *ent.BuilderProfileUpsert) {
+//		Update(func(u *ent.BuildProfileUpsert) {
 //			SetCreatedAt(v+v).
 //		}).
 //		Exec(ctx)
-func (bpcb *BuilderProfileCreateBulk) OnConflict(opts ...sql.ConflictOption) *BuilderProfileUpsertBulk {
+func (bpcb *BuildProfileCreateBulk) OnConflict(opts ...sql.ConflictOption) *BuildProfileUpsertBulk {
 	bpcb.conflict = opts
-	return &BuilderProfileUpsertBulk{
+	return &BuildProfileUpsertBulk{
 		create: bpcb,
 	}
 }
@@ -723,36 +723,36 @@ func (bpcb *BuilderProfileCreateBulk) OnConflict(opts ...sql.ConflictOption) *Bu
 // OnConflictColumns calls `OnConflict` and configures the columns
 // as conflict target. Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		OnConflict(sql.ConflictColumns(columns...)).
 //		Exec(ctx)
-func (bpcb *BuilderProfileCreateBulk) OnConflictColumns(columns ...string) *BuilderProfileUpsertBulk {
+func (bpcb *BuildProfileCreateBulk) OnConflictColumns(columns ...string) *BuildProfileUpsertBulk {
 	bpcb.conflict = append(bpcb.conflict, sql.ConflictColumns(columns...))
-	return &BuilderProfileUpsertBulk{
+	return &BuildProfileUpsertBulk{
 		create: bpcb,
 	}
 }
 
-// BuilderProfileUpsertBulk is the builder for "upsert"-ing
-// a bulk of BuilderProfile nodes.
-type BuilderProfileUpsertBulk struct {
-	create *BuilderProfileCreateBulk
+// BuildProfileUpsertBulk is the builder for "upsert"-ing
+// a bulk of BuildProfile nodes.
+type BuildProfileUpsertBulk struct {
+	create *BuildProfileCreateBulk
 }
 
 // UpdateNewValues updates the mutable fields using the new values that
 // were set on create. Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
 //		).
 //		Exec(ctx)
-func (u *BuilderProfileUpsertBulk) UpdateNewValues() *BuilderProfileUpsertBulk {
+func (u *BuildProfileUpsertBulk) UpdateNewValues() *BuildProfileUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.CreatedAt(); exists {
-				s.SetIgnore(builderprofile.FieldCreatedAt)
+				s.SetIgnore(buildprofile.FieldCreatedAt)
 			}
 		}
 	}))
@@ -762,181 +762,181 @@ func (u *BuilderProfileUpsertBulk) UpdateNewValues() *BuilderProfileUpsertBulk {
 // Ignore sets each column to itself in case of conflict.
 // Using this option is equivalent to using:
 //
-//	client.BuilderProfile.Create().
+//	client.BuildProfile.Create().
 //		OnConflict(sql.ResolveWithIgnore()).
 //		Exec(ctx)
-func (u *BuilderProfileUpsertBulk) Ignore() *BuilderProfileUpsertBulk {
+func (u *BuildProfileUpsertBulk) Ignore() *BuildProfileUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 // Supported only by SQLite and PostgreSQL.
-func (u *BuilderProfileUpsertBulk) DoNothing() *BuilderProfileUpsertBulk {
+func (u *BuildProfileUpsertBulk) DoNothing() *BuildProfileUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.DoNothing())
 	return u
 }
 
-// Update allows overriding fields `UPDATE` values. See the BuilderProfileCreateBulk.OnConflict
+// Update allows overriding fields `UPDATE` values. See the BuildProfileCreateBulk.OnConflict
 // documentation for more info.
-func (u *BuilderProfileUpsertBulk) Update(set func(*BuilderProfileUpsert)) *BuilderProfileUpsertBulk {
+func (u *BuildProfileUpsertBulk) Update(set func(*BuildProfileUpsert)) *BuildProfileUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&BuilderProfileUpsert{UpdateSet: update})
+		set(&BuildProfileUpsert{UpdateSet: update})
 	}))
 	return u
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (u *BuilderProfileUpsertBulk) SetLastModifiedAt(v time.Time) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetLastModifiedAt(v time.Time) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetLastModifiedAt(v)
 	})
 }
 
 // UpdateLastModifiedAt sets the "last_modified_at" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdateLastModifiedAt() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdateLastModifiedAt() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateLastModifiedAt()
 	})
 }
 
 // SetName sets the "name" field.
-func (u *BuilderProfileUpsertBulk) SetName(v string) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetName(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetName(v)
 	})
 }
 
 // UpdateName sets the "name" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdateName() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdateName() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateName()
 	})
 }
 
 // SetDescription sets the "description" field.
-func (u *BuilderProfileUpsertBulk) SetDescription(v string) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetDescription(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetDescription(v)
 	})
 }
 
 // UpdateDescription sets the "description" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdateDescription() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdateDescription() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateDescription()
 	})
 }
 
 // ClearDescription clears the value of the "description" field.
-func (u *BuilderProfileUpsertBulk) ClearDescription() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) ClearDescription() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearDescription()
 	})
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (u *BuilderProfileUpsertBulk) SetPreBuildScript(v string) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetPreBuildScript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetPreBuildScript(v)
 	})
 }
 
 // UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdatePreBuildScript() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdatePreBuildScript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePreBuildScript()
 	})
 }
 
 // ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (u *BuilderProfileUpsertBulk) ClearPreBuildScript() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) ClearPreBuildScript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearPreBuildScript()
 	})
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (u *BuilderProfileUpsertBulk) SetPostBuildScript(v string) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetPostBuildScript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetPostBuildScript(v)
 	})
 }
 
 // UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdatePostBuildScript() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdatePostBuildScript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostBuildScript()
 	})
 }
 
 // ClearPostBuildScript clears the value of the "post_build_script" field.
-func (u *BuilderProfileUpsertBulk) ClearPostBuildScript() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) ClearPostBuildScript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearPostBuildScript()
 	})
 }
 
 // SetTransports sets the "transports" field.
-func (u *BuilderProfileUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetTransports(v)
 	})
 }
 
 // UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdateTransports() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdateTransports() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTransports()
 	})
 }
 
 // ClearTransports clears the value of the "transports" field.
-func (u *BuilderProfileUpsertBulk) ClearTransports() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) ClearTransports() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearTransports()
 	})
 }
 
 // SetTomes sets the "tomes" field.
-func (u *BuilderProfileUpsertBulk) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.SetTomes(v)
 	})
 }
 
 // UpdateTomes sets the "tomes" field to the value that was provided on create.
-func (u *BuilderProfileUpsertBulk) UpdateTomes() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) UpdateTomes() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTomes()
 	})
 }
 
 // ClearTomes clears the value of the "tomes" field.
-func (u *BuilderProfileUpsertBulk) ClearTomes() *BuilderProfileUpsertBulk {
-	return u.Update(func(s *BuilderProfileUpsert) {
+func (u *BuildProfileUpsertBulk) ClearTomes() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
 		s.ClearTomes()
 	})
 }
 
 // Exec executes the query.
-func (u *BuilderProfileUpsertBulk) Exec(ctx context.Context) error {
+func (u *BuildProfileUpsertBulk) Exec(ctx context.Context) error {
 	if u.create.err != nil {
 		return u.create.err
 	}
 	for i, b := range u.create.builders {
 		if len(b.conflict) != 0 {
-			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the BuilderProfileCreateBulk instead", i)
+			return fmt.Errorf("ent: OnConflict was set for builder %d. Set it on the BuildProfileCreateBulk instead", i)
 		}
 	}
 	if len(u.create.conflict) == 0 {
-		return errors.New("ent: missing options for BuilderProfileCreateBulk.OnConflict")
+		return errors.New("ent: missing options for BuildProfileCreateBulk.OnConflict")
 	}
 	return u.create.Exec(ctx)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (u *BuilderProfileUpsertBulk) ExecX(ctx context.Context) {
+func (u *BuildProfileUpsertBulk) ExecX(ctx context.Context) {
 	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}

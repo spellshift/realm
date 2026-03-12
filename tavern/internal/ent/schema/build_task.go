@@ -112,7 +112,7 @@ func (BuildTask) Fields() []ent.Field {
 // Edges of the BuildTask.
 func (BuildTask) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("builder_profile", BuilderProfile.Type).
+		edge.To("builder_profile", BuildProfile.Type).
 			Unique().
 			Comment("The profile specifying pre/post build scripts."),
 		edge.To("builder", Builder.Type).

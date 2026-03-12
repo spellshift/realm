@@ -104,7 +104,7 @@ func TestBuilderE2E(t *testing.T) {
 	)
 	builderSrv := builder.New(graph, "dGVzdC1wdWJrZXk=")
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
-	profile := graph.BuilderProfile.Create().
+	profile := graph.BuildProfile.Create().
 		SetName("claim-test-profile").
 		SaveX(ctx)
 
@@ -170,7 +170,7 @@ func TestBuilderE2E(t *testing.T) {
 		authClient := builderpb.NewBuilderClient(conn)
 
 		// Create a builder profile with custom transports
-		tmpProfile := graph.BuilderProfile.Create().
+		tmpProfile := graph.BuildProfile.Create().
 			SetName("claim-test-profile2").
 			SetTransports([]builderpb.BuildTaskTransport{{
 				URI:      "https://callback.example.com",

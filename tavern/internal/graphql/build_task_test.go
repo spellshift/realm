@@ -49,7 +49,7 @@ func TestCreateBuildTask(t *testing.T) {
 	}`
 
 	t.Run("NoBuilders", func(t *testing.T) {
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
 		var resp struct {
 			CreateBuildTask struct {
@@ -57,7 +57,7 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -71,9 +71,9 @@ func TestCreateBuildTask(t *testing.T) {
 	})
 
 	t.Run("NoMatchingBuilder", func(t *testing.T) {
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -101,7 +101,7 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up previous builders
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
 		linuxBuilder := graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
@@ -168,9 +168,9 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -211,9 +211,9 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -248,9 +248,9 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -293,9 +293,9 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SaveX(ctx)
 
@@ -324,9 +324,9 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuilderProfile.Delete().ExecX(ctx)
+		graph.BuildProfile.Delete().ExecX(ctx)
 
-		profile := graph.BuilderProfile.Create().
+		profile := graph.BuildProfile.Create().
 			SetName("test").
 			SetName("test").
 			SaveX(ctx)

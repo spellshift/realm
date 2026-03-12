@@ -889,7 +889,7 @@ func HasBuilderProfile() predicate.BuildTask {
 }
 
 // HasBuilderProfileWith applies the HasEdge predicate on the "builder_profile" edge with a given conditions (other predicates).
-func HasBuilderProfileWith(preds ...predicate.BuilderProfile) predicate.BuildTask {
+func HasBuilderProfileWith(preds ...predicate.BuildProfile) predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {
 		step := newBuilderProfileStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

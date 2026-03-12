@@ -15,7 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -205,13 +205,13 @@ func (btc *BuildTaskCreate) SetNillableArtifactPath(s *string) *BuildTaskCreate 
 	return btc
 }
 
-// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
+// SetBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID.
 func (btc *BuildTaskCreate) SetBuilderProfileID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderProfileID(id)
 	return btc
 }
 
-// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID if the given value is not nil.
 func (btc *BuildTaskCreate) SetNillableBuilderProfileID(id *int) *BuildTaskCreate {
 	if id != nil {
 		btc = btc.SetBuilderProfileID(*id)
@@ -219,8 +219,8 @@ func (btc *BuildTaskCreate) SetNillableBuilderProfileID(id *int) *BuildTaskCreat
 	return btc
 }
 
-// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
-func (btc *BuildTaskCreate) SetBuilderProfile(b *BuilderProfile) *BuildTaskCreate {
+// SetBuilderProfile sets the "builder_profile" edge to the BuildProfile entity.
+func (btc *BuildTaskCreate) SetBuilderProfile(b *BuildProfile) *BuildTaskCreate {
 	return btc.SetBuilderProfileID(b.ID)
 }
 
@@ -470,7 +470,7 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

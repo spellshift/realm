@@ -9,13 +9,13 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 )
 
-// BuilderProfile holds the schema definition for the BuilderProfile entity.
-type BuilderProfile struct {
+// BuildProfile holds the schema definition for the BuildProfile entity.
+type BuildProfile struct {
 	ent.Schema
 }
 
-// Fields of the BuilderProfile.
-func (BuilderProfile) Fields() []ent.Field {
+// Fields of the BuildProfile.
+func (BuildProfile) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
 			NotEmpty().
@@ -23,10 +23,10 @@ func (BuilderProfile) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("NAME"),
 			).
-			Comment("Name of the builder profile."),
+			Comment("Name of the build profile."),
 		field.String("description").
 			Optional().
-			Comment("Description of the builder profile."),
+			Comment("Description of the build profile."),
 		field.String("pre_build_script").
 			Optional().
 			Comment("Bash script to run before compilation."),
@@ -48,13 +48,13 @@ func (BuilderProfile) Fields() []ent.Field {
 	}
 }
 
-// Edges of the BuilderProfile.
-func (BuilderProfile) Edges() []ent.Edge {
+// Edges of the BuildProfile.
+func (BuildProfile) Edges() []ent.Edge {
 	return []ent.Edge{}
 }
 
 // Annotations describes additional information for the ent.
-func (BuilderProfile) Annotations() []schema.Annotation {
+func (BuildProfile) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
 		entgql.QueryField(),
@@ -70,7 +70,7 @@ func (BuilderProfile) Annotations() []schema.Annotation {
 }
 
 // Mixin defines common shared properties for the ent.
-func (BuilderProfile) Mixin() []ent.Mixin {
+func (BuildProfile) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
 	}

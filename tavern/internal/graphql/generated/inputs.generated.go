@@ -480,7 +480,7 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "artifactPath", "tomes", "builderProfileID"}
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "artifactPath", "builderProfileID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -515,13 +515,6 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.ArtifactPath = data
-		case "tomes":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomes"))
-			data, err := ec.unmarshalOBuildTaskTomeConfigInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTomeConfigInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Tomes = data
 		case "builderProfileID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("builderProfileID"))
 			data, err := ec.unmarshalNID2int(ctx, v)

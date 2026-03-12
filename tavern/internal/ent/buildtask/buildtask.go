@@ -59,9 +59,9 @@ const (
 	Table = "build_tasks"
 	// BuilderProfileTable is the table that holds the builder_profile relation/edge.
 	BuilderProfileTable = "build_tasks"
-	// BuilderProfileInverseTable is the table name for the BuilderProfile entity.
-	// It exists in this package in order to avoid circular dependency with the "builderprofile" package.
-	BuilderProfileInverseTable = "builder_profiles"
+	// BuilderProfileInverseTable is the table name for the BuildProfile entity.
+	// It exists in this package in order to avoid circular dependency with the "buildprofile" package.
+	BuilderProfileInverseTable = "build_profiles"
 	// BuilderProfileColumn is the table column denoting the builder_profile relation/edge.
 	BuilderProfileColumn = "build_task_builder_profile"
 	// BuilderTable is the table that holds the builder relation/edge.

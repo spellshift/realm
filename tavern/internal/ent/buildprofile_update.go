@@ -13,37 +13,37 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
-// BuilderProfileUpdate is the builder for updating BuilderProfile entities.
-type BuilderProfileUpdate struct {
+// BuildProfileUpdate is the builder for updating BuildProfile entities.
+type BuildProfileUpdate struct {
 	config
 	hooks    []Hook
-	mutation *BuilderProfileMutation
+	mutation *BuildProfileMutation
 }
 
-// Where appends a list predicates to the BuilderProfileUpdate builder.
-func (bpu *BuilderProfileUpdate) Where(ps ...predicate.BuilderProfile) *BuilderProfileUpdate {
+// Where appends a list predicates to the BuildProfileUpdate builder.
+func (bpu *BuildProfileUpdate) Where(ps ...predicate.BuildProfile) *BuildProfileUpdate {
 	bpu.mutation.Where(ps...)
 	return bpu
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (bpu *BuilderProfileUpdate) SetLastModifiedAt(t time.Time) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetLastModifiedAt(t time.Time) *BuildProfileUpdate {
 	bpu.mutation.SetLastModifiedAt(t)
 	return bpu
 }
 
 // SetName sets the "name" field.
-func (bpu *BuilderProfileUpdate) SetName(s string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetName(s string) *BuildProfileUpdate {
 	bpu.mutation.SetName(s)
 	return bpu
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (bpu *BuilderProfileUpdate) SetNillableName(s *string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetNillableName(s *string) *BuildProfileUpdate {
 	if s != nil {
 		bpu.SetName(*s)
 	}
@@ -51,13 +51,13 @@ func (bpu *BuilderProfileUpdate) SetNillableName(s *string) *BuilderProfileUpdat
 }
 
 // SetDescription sets the "description" field.
-func (bpu *BuilderProfileUpdate) SetDescription(s string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetDescription(s string) *BuildProfileUpdate {
 	bpu.mutation.SetDescription(s)
 	return bpu
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (bpu *BuilderProfileUpdate) SetNillableDescription(s *string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetNillableDescription(s *string) *BuildProfileUpdate {
 	if s != nil {
 		bpu.SetDescription(*s)
 	}
@@ -65,19 +65,19 @@ func (bpu *BuilderProfileUpdate) SetNillableDescription(s *string) *BuilderProfi
 }
 
 // ClearDescription clears the value of the "description" field.
-func (bpu *BuilderProfileUpdate) ClearDescription() *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) ClearDescription() *BuildProfileUpdate {
 	bpu.mutation.ClearDescription()
 	return bpu
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (bpu *BuilderProfileUpdate) SetPreBuildScript(s string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetPreBuildScript(s string) *BuildProfileUpdate {
 	bpu.mutation.SetPreBuildScript(s)
 	return bpu
 }
 
 // SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
-func (bpu *BuilderProfileUpdate) SetNillablePreBuildScript(s *string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetNillablePreBuildScript(s *string) *BuildProfileUpdate {
 	if s != nil {
 		bpu.SetPreBuildScript(*s)
 	}
@@ -85,19 +85,19 @@ func (bpu *BuilderProfileUpdate) SetNillablePreBuildScript(s *string) *BuilderPr
 }
 
 // ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (bpu *BuilderProfileUpdate) ClearPreBuildScript() *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) ClearPreBuildScript() *BuildProfileUpdate {
 	bpu.mutation.ClearPreBuildScript()
 	return bpu
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (bpu *BuilderProfileUpdate) SetPostBuildScript(s string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetPostBuildScript(s string) *BuildProfileUpdate {
 	bpu.mutation.SetPostBuildScript(s)
 	return bpu
 }
 
 // SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
-func (bpu *BuilderProfileUpdate) SetNillablePostBuildScript(s *string) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetNillablePostBuildScript(s *string) *BuildProfileUpdate {
 	if s != nil {
 		bpu.SetPostBuildScript(*s)
 	}
@@ -105,60 +105,60 @@ func (bpu *BuilderProfileUpdate) SetNillablePostBuildScript(s *string) *BuilderP
 }
 
 // ClearPostBuildScript clears the value of the "post_build_script" field.
-func (bpu *BuilderProfileUpdate) ClearPostBuildScript() *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) ClearPostBuildScript() *BuildProfileUpdate {
 	bpu.mutation.ClearPostBuildScript()
 	return bpu
 }
 
 // SetTransports sets the "transports" field.
-func (bpu *BuilderProfileUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildProfileUpdate {
 	bpu.mutation.SetTransports(btt)
 	return bpu
 }
 
 // AppendTransports appends btt to the "transports" field.
-func (bpu *BuilderProfileUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildProfileUpdate {
 	bpu.mutation.AppendTransports(btt)
 	return bpu
 }
 
 // ClearTransports clears the value of the "transports" field.
-func (bpu *BuilderProfileUpdate) ClearTransports() *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) ClearTransports() *BuildProfileUpdate {
 	bpu.mutation.ClearTransports()
 	return bpu
 }
 
 // SetTomes sets the "tomes" field.
-func (bpu *BuilderProfileUpdate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildProfileUpdate {
 	bpu.mutation.SetTomes(bttc)
 	return bpu
 }
 
 // AppendTomes appends bttc to the "tomes" field.
-func (bpu *BuilderProfileUpdate) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildProfileUpdate {
 	bpu.mutation.AppendTomes(bttc)
 	return bpu
 }
 
 // ClearTomes clears the value of the "tomes" field.
-func (bpu *BuilderProfileUpdate) ClearTomes() *BuilderProfileUpdate {
+func (bpu *BuildProfileUpdate) ClearTomes() *BuildProfileUpdate {
 	bpu.mutation.ClearTomes()
 	return bpu
 }
 
-// Mutation returns the BuilderProfileMutation object of the builder.
-func (bpu *BuilderProfileUpdate) Mutation() *BuilderProfileMutation {
+// Mutation returns the BuildProfileMutation object of the builder.
+func (bpu *BuildProfileUpdate) Mutation() *BuildProfileMutation {
 	return bpu.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (bpu *BuilderProfileUpdate) Save(ctx context.Context) (int, error) {
+func (bpu *BuildProfileUpdate) Save(ctx context.Context) (int, error) {
 	bpu.defaults()
 	return withHooks(ctx, bpu.sqlSave, bpu.mutation, bpu.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bpu *BuilderProfileUpdate) SaveX(ctx context.Context) int {
+func (bpu *BuildProfileUpdate) SaveX(ctx context.Context) int {
 	affected, err := bpu.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -167,41 +167,41 @@ func (bpu *BuilderProfileUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (bpu *BuilderProfileUpdate) Exec(ctx context.Context) error {
+func (bpu *BuildProfileUpdate) Exec(ctx context.Context) error {
 	_, err := bpu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpu *BuilderProfileUpdate) ExecX(ctx context.Context) {
+func (bpu *BuildProfileUpdate) ExecX(ctx context.Context) {
 	if err := bpu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (bpu *BuilderProfileUpdate) defaults() {
+func (bpu *BuildProfileUpdate) defaults() {
 	if _, ok := bpu.mutation.LastModifiedAt(); !ok {
-		v := builderprofile.UpdateDefaultLastModifiedAt()
+		v := buildprofile.UpdateDefaultLastModifiedAt()
 		bpu.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bpu *BuilderProfileUpdate) check() error {
+func (bpu *BuildProfileUpdate) check() error {
 	if v, ok := bpu.mutation.Name(); ok {
-		if err := builderprofile.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuilderProfile.name": %w`, err)}
+		if err := buildprofile.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.name": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (bpu *BuilderProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := bpu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(builderprofile.Table, builderprofile.Columns, sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(buildprofile.Table, buildprofile.Columns, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	if ps := bpu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -210,54 +210,54 @@ func (bpu *BuilderProfileUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 	}
 	if value, ok := bpu.mutation.LastModifiedAt(); ok {
-		_spec.SetField(builderprofile.FieldLastModifiedAt, field.TypeTime, value)
+		_spec.SetField(buildprofile.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := bpu.mutation.Name(); ok {
-		_spec.SetField(builderprofile.FieldName, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldName, field.TypeString, value)
 	}
 	if value, ok := bpu.mutation.Description(); ok {
-		_spec.SetField(builderprofile.FieldDescription, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldDescription, field.TypeString, value)
 	}
 	if bpu.mutation.DescriptionCleared() {
-		_spec.ClearField(builderprofile.FieldDescription, field.TypeString)
+		_spec.ClearField(buildprofile.FieldDescription, field.TypeString)
 	}
 	if value, ok := bpu.mutation.PreBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPreBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPreBuildScript, field.TypeString, value)
 	}
 	if bpu.mutation.PreBuildScriptCleared() {
-		_spec.ClearField(builderprofile.FieldPreBuildScript, field.TypeString)
+		_spec.ClearField(buildprofile.FieldPreBuildScript, field.TypeString)
 	}
 	if value, ok := bpu.mutation.PostBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPostBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPostBuildScript, field.TypeString, value)
 	}
 	if bpu.mutation.PostBuildScriptCleared() {
-		_spec.ClearField(builderprofile.FieldPostBuildScript, field.TypeString)
+		_spec.ClearField(buildprofile.FieldPostBuildScript, field.TypeString)
 	}
 	if value, ok := bpu.mutation.Transports(); ok {
-		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTransports, field.TypeJSON, value)
 	}
 	if value, ok := bpu.mutation.AppendedTransports(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, builderprofile.FieldTransports, value)
+			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
 	}
 	if bpu.mutation.TransportsCleared() {
-		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
+		_spec.ClearField(buildprofile.FieldTransports, field.TypeJSON)
 	}
 	if value, ok := bpu.mutation.Tomes(); ok {
-		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
 	}
 	if value, ok := bpu.mutation.AppendedTomes(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, builderprofile.FieldTomes, value)
+			sqljson.Append(u, buildprofile.FieldTomes, value)
 		})
 	}
 	if bpu.mutation.TomesCleared() {
-		_spec.ClearField(builderprofile.FieldTomes, field.TypeJSON)
+		_spec.ClearField(buildprofile.FieldTomes, field.TypeJSON)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bpu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{builderprofile.Label}
+			err = &NotFoundError{buildprofile.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -267,28 +267,28 @@ func (bpu *BuilderProfileUpdate) sqlSave(ctx context.Context) (n int, err error)
 	return n, nil
 }
 
-// BuilderProfileUpdateOne is the builder for updating a single BuilderProfile entity.
-type BuilderProfileUpdateOne struct {
+// BuildProfileUpdateOne is the builder for updating a single BuildProfile entity.
+type BuildProfileUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *BuilderProfileMutation
+	mutation *BuildProfileMutation
 }
 
 // SetLastModifiedAt sets the "last_modified_at" field.
-func (bpuo *BuilderProfileUpdateOne) SetLastModifiedAt(t time.Time) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetLastModifiedAt(t time.Time) *BuildProfileUpdateOne {
 	bpuo.mutation.SetLastModifiedAt(t)
 	return bpuo
 }
 
 // SetName sets the "name" field.
-func (bpuo *BuilderProfileUpdateOne) SetName(s string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetName(s string) *BuildProfileUpdateOne {
 	bpuo.mutation.SetName(s)
 	return bpuo
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (bpuo *BuilderProfileUpdateOne) SetNillableName(s *string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetNillableName(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetName(*s)
 	}
@@ -296,13 +296,13 @@ func (bpuo *BuilderProfileUpdateOne) SetNillableName(s *string) *BuilderProfileU
 }
 
 // SetDescription sets the "description" field.
-func (bpuo *BuilderProfileUpdateOne) SetDescription(s string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetDescription(s string) *BuildProfileUpdateOne {
 	bpuo.mutation.SetDescription(s)
 	return bpuo
 }
 
 // SetNillableDescription sets the "description" field if the given value is not nil.
-func (bpuo *BuilderProfileUpdateOne) SetNillableDescription(s *string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetNillableDescription(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetDescription(*s)
 	}
@@ -310,19 +310,19 @@ func (bpuo *BuilderProfileUpdateOne) SetNillableDescription(s *string) *BuilderP
 }
 
 // ClearDescription clears the value of the "description" field.
-func (bpuo *BuilderProfileUpdateOne) ClearDescription() *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) ClearDescription() *BuildProfileUpdateOne {
 	bpuo.mutation.ClearDescription()
 	return bpuo
 }
 
 // SetPreBuildScript sets the "pre_build_script" field.
-func (bpuo *BuilderProfileUpdateOne) SetPreBuildScript(s string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetPreBuildScript(s string) *BuildProfileUpdateOne {
 	bpuo.mutation.SetPreBuildScript(s)
 	return bpuo
 }
 
 // SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
-func (bpuo *BuilderProfileUpdateOne) SetNillablePreBuildScript(s *string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetNillablePreBuildScript(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetPreBuildScript(*s)
 	}
@@ -330,19 +330,19 @@ func (bpuo *BuilderProfileUpdateOne) SetNillablePreBuildScript(s *string) *Build
 }
 
 // ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (bpuo *BuilderProfileUpdateOne) ClearPreBuildScript() *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) ClearPreBuildScript() *BuildProfileUpdateOne {
 	bpuo.mutation.ClearPreBuildScript()
 	return bpuo
 }
 
 // SetPostBuildScript sets the "post_build_script" field.
-func (bpuo *BuilderProfileUpdateOne) SetPostBuildScript(s string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetPostBuildScript(s string) *BuildProfileUpdateOne {
 	bpuo.mutation.SetPostBuildScript(s)
 	return bpuo
 }
 
 // SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
-func (bpuo *BuilderProfileUpdateOne) SetNillablePostBuildScript(s *string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetNillablePostBuildScript(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetPostBuildScript(*s)
 	}
@@ -350,73 +350,73 @@ func (bpuo *BuilderProfileUpdateOne) SetNillablePostBuildScript(s *string) *Buil
 }
 
 // ClearPostBuildScript clears the value of the "post_build_script" field.
-func (bpuo *BuilderProfileUpdateOne) ClearPostBuildScript() *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) ClearPostBuildScript() *BuildProfileUpdateOne {
 	bpuo.mutation.ClearPostBuildScript()
 	return bpuo
 }
 
 // SetTransports sets the "transports" field.
-func (bpuo *BuilderProfileUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuildProfileUpdateOne {
 	bpuo.mutation.SetTransports(btt)
 	return bpuo
 }
 
 // AppendTransports appends btt to the "transports" field.
-func (bpuo *BuilderProfileUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildProfileUpdateOne {
 	bpuo.mutation.AppendTransports(btt)
 	return bpuo
 }
 
 // ClearTransports clears the value of the "transports" field.
-func (bpuo *BuilderProfileUpdateOne) ClearTransports() *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) ClearTransports() *BuildProfileUpdateOne {
 	bpuo.mutation.ClearTransports()
 	return bpuo
 }
 
 // SetTomes sets the "tomes" field.
-func (bpuo *BuilderProfileUpdateOne) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildProfileUpdateOne {
 	bpuo.mutation.SetTomes(bttc)
 	return bpuo
 }
 
 // AppendTomes appends bttc to the "tomes" field.
-func (bpuo *BuilderProfileUpdateOne) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildProfileUpdateOne {
 	bpuo.mutation.AppendTomes(bttc)
 	return bpuo
 }
 
 // ClearTomes clears the value of the "tomes" field.
-func (bpuo *BuilderProfileUpdateOne) ClearTomes() *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) ClearTomes() *BuildProfileUpdateOne {
 	bpuo.mutation.ClearTomes()
 	return bpuo
 }
 
-// Mutation returns the BuilderProfileMutation object of the builder.
-func (bpuo *BuilderProfileUpdateOne) Mutation() *BuilderProfileMutation {
+// Mutation returns the BuildProfileMutation object of the builder.
+func (bpuo *BuildProfileUpdateOne) Mutation() *BuildProfileMutation {
 	return bpuo.mutation
 }
 
-// Where appends a list predicates to the BuilderProfileUpdate builder.
-func (bpuo *BuilderProfileUpdateOne) Where(ps ...predicate.BuilderProfile) *BuilderProfileUpdateOne {
+// Where appends a list predicates to the BuildProfileUpdate builder.
+func (bpuo *BuildProfileUpdateOne) Where(ps ...predicate.BuildProfile) *BuildProfileUpdateOne {
 	bpuo.mutation.Where(ps...)
 	return bpuo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (bpuo *BuilderProfileUpdateOne) Select(field string, fields ...string) *BuilderProfileUpdateOne {
+func (bpuo *BuildProfileUpdateOne) Select(field string, fields ...string) *BuildProfileUpdateOne {
 	bpuo.fields = append([]string{field}, fields...)
 	return bpuo
 }
 
-// Save executes the query and returns the updated BuilderProfile entity.
-func (bpuo *BuilderProfileUpdateOne) Save(ctx context.Context) (*BuilderProfile, error) {
+// Save executes the query and returns the updated BuildProfile entity.
+func (bpuo *BuildProfileUpdateOne) Save(ctx context.Context) (*BuildProfile, error) {
 	bpuo.defaults()
 	return withHooks(ctx, bpuo.sqlSave, bpuo.mutation, bpuo.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (bpuo *BuilderProfileUpdateOne) SaveX(ctx context.Context) *BuilderProfile {
+func (bpuo *BuildProfileUpdateOne) SaveX(ctx context.Context) *BuildProfile {
 	node, err := bpuo.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -425,54 +425,54 @@ func (bpuo *BuilderProfileUpdateOne) SaveX(ctx context.Context) *BuilderProfile 
 }
 
 // Exec executes the query on the entity.
-func (bpuo *BuilderProfileUpdateOne) Exec(ctx context.Context) error {
+func (bpuo *BuildProfileUpdateOne) Exec(ctx context.Context) error {
 	_, err := bpuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpuo *BuilderProfileUpdateOne) ExecX(ctx context.Context) {
+func (bpuo *BuildProfileUpdateOne) ExecX(ctx context.Context) {
 	if err := bpuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (bpuo *BuilderProfileUpdateOne) defaults() {
+func (bpuo *BuildProfileUpdateOne) defaults() {
 	if _, ok := bpuo.mutation.LastModifiedAt(); !ok {
-		v := builderprofile.UpdateDefaultLastModifiedAt()
+		v := buildprofile.UpdateDefaultLastModifiedAt()
 		bpuo.mutation.SetLastModifiedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (bpuo *BuilderProfileUpdateOne) check() error {
+func (bpuo *BuildProfileUpdateOne) check() error {
 	if v, ok := bpuo.mutation.Name(); ok {
-		if err := builderprofile.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuilderProfile.name": %w`, err)}
+		if err := buildprofile.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.name": %w`, err)}
 		}
 	}
 	return nil
 }
 
-func (bpuo *BuilderProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuilderProfile, err error) {
+func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildProfile, err error) {
 	if err := bpuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(builderprofile.Table, builderprofile.Columns, sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(buildprofile.Table, buildprofile.Columns, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	id, ok := bpuo.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "BuilderProfile.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "BuildProfile.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := bpuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, builderprofile.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, buildprofile.FieldID)
 		for _, f := range fields {
-			if !builderprofile.ValidColumn(f) {
+			if !buildprofile.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 			}
-			if f != builderprofile.FieldID {
+			if f != buildprofile.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
@@ -485,57 +485,57 @@ func (bpuo *BuilderProfileUpdateOne) sqlSave(ctx context.Context) (_node *Builde
 		}
 	}
 	if value, ok := bpuo.mutation.LastModifiedAt(); ok {
-		_spec.SetField(builderprofile.FieldLastModifiedAt, field.TypeTime, value)
+		_spec.SetField(buildprofile.FieldLastModifiedAt, field.TypeTime, value)
 	}
 	if value, ok := bpuo.mutation.Name(); ok {
-		_spec.SetField(builderprofile.FieldName, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldName, field.TypeString, value)
 	}
 	if value, ok := bpuo.mutation.Description(); ok {
-		_spec.SetField(builderprofile.FieldDescription, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldDescription, field.TypeString, value)
 	}
 	if bpuo.mutation.DescriptionCleared() {
-		_spec.ClearField(builderprofile.FieldDescription, field.TypeString)
+		_spec.ClearField(buildprofile.FieldDescription, field.TypeString)
 	}
 	if value, ok := bpuo.mutation.PreBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPreBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPreBuildScript, field.TypeString, value)
 	}
 	if bpuo.mutation.PreBuildScriptCleared() {
-		_spec.ClearField(builderprofile.FieldPreBuildScript, field.TypeString)
+		_spec.ClearField(buildprofile.FieldPreBuildScript, field.TypeString)
 	}
 	if value, ok := bpuo.mutation.PostBuildScript(); ok {
-		_spec.SetField(builderprofile.FieldPostBuildScript, field.TypeString, value)
+		_spec.SetField(buildprofile.FieldPostBuildScript, field.TypeString, value)
 	}
 	if bpuo.mutation.PostBuildScriptCleared() {
-		_spec.ClearField(builderprofile.FieldPostBuildScript, field.TypeString)
+		_spec.ClearField(buildprofile.FieldPostBuildScript, field.TypeString)
 	}
 	if value, ok := bpuo.mutation.Transports(); ok {
-		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTransports, field.TypeJSON, value)
 	}
 	if value, ok := bpuo.mutation.AppendedTransports(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, builderprofile.FieldTransports, value)
+			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
 	}
 	if bpuo.mutation.TransportsCleared() {
-		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
+		_spec.ClearField(buildprofile.FieldTransports, field.TypeJSON)
 	}
 	if value, ok := bpuo.mutation.Tomes(); ok {
-		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
 	}
 	if value, ok := bpuo.mutation.AppendedTomes(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, builderprofile.FieldTomes, value)
+			sqljson.Append(u, buildprofile.FieldTomes, value)
 		})
 	}
 	if bpuo.mutation.TomesCleared() {
-		_spec.ClearField(builderprofile.FieldTomes, field.TypeJSON)
+		_spec.ClearField(buildprofile.FieldTomes, field.TypeJSON)
 	}
-	_node = &BuilderProfile{config: bpuo.config}
+	_node = &BuildProfile{config: bpuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, bpuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{builderprofile.Label}
+			err = &NotFoundError{buildprofile.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}

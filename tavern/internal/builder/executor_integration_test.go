@@ -616,7 +616,7 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
-	profile := graph.BuilderProfile.Create().
+	profile := graph.BuildProfile.Create().
 		SetName("upload-artifact-profile").
 		SetTransports([]builderpb.BuildTaskTransport{{
 			URI:      "https://callback.example.com",

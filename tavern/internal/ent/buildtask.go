@@ -13,7 +13,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -64,7 +64,7 @@ type BuildTask struct {
 // BuildTaskEdges holds the relations/edges for other nodes in the graph.
 type BuildTaskEdges struct {
 	// The profile specifying pre/post build scripts.
-	BuilderProfile *BuilderProfile `json:"builder_profile,omitempty"`
+	BuilderProfile *BuildProfile `json:"builder_profile,omitempty"`
 	// The builder assigned to execute this build task.
 	Builder *Builder `json:"builder,omitempty"`
 	// The compiled artifact produced by this build task, stored as an Asset.
@@ -78,11 +78,11 @@ type BuildTaskEdges struct {
 
 // BuilderProfileOrErr returns the BuilderProfile value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e BuildTaskEdges) BuilderProfileOrErr() (*BuilderProfile, error) {
+func (e BuildTaskEdges) BuilderProfileOrErr() (*BuildProfile, error) {
 	if e.BuilderProfile != nil {
 		return e.BuilderProfile, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: builderprofile.Label}
+		return nil, &NotFoundError{label: buildprofile.Label}
 	}
 	return nil, &NotLoadedError{edge: "builder_profile"}
 }
@@ -277,7 +277,7 @@ func (bt *BuildTask) Value(name string) (ent.Value, error) {
 }
 
 // QueryBuilderProfile queries the "builder_profile" edge of the BuildTask entity.
-func (bt *BuildTask) QueryBuilderProfile() *BuilderProfileQuery {
+func (bt *BuildTask) QueryBuilderProfile() *BuildProfileQuery {
 	return NewBuildTaskClient(bt.config).QueryBuilderProfile(bt)
 }
 

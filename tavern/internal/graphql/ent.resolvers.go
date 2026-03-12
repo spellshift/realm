@@ -40,20 +40,9 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 	return r.client.Noders(ctx, ids)
 }
 
-// BuilderProfiles is the resolver for the builderProfiles field.
-func (r *queryResolver) BuilderProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderProfileOrder, where *ent.BuilderProfileWhereInput) (*ent.BuilderProfileConnection, error) {
-	query, err := r.client.BuilderProfile.Query().CollectFields(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to collect fields: %w", err)
-	}
-	if where != nil {
-		query, err := where.Filter(query)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply filter: %w", err)
-		}
-		return query.Paginate(ctx, after, first, before, last, ent.WithBuilderProfileOrder(orderBy))
-	}
-	return query.Paginate(ctx, after, first, before, last, ent.WithBuilderProfileOrder(orderBy))
+// BuildProfiles is the resolver for the buildProfiles field.
+func (r *queryResolver) BuildProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) (*ent.BuildProfileConnection, error) {
+	panic(fmt.Errorf("not implemented: BuildProfiles - buildProfiles"))
 }
 
 // SequenceID is the resolver for the sequenceID field.

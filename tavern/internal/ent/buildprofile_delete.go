@@ -8,30 +8,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
-// BuilderProfileDelete is the builder for deleting a BuilderProfile entity.
-type BuilderProfileDelete struct {
+// BuildProfileDelete is the builder for deleting a BuildProfile entity.
+type BuildProfileDelete struct {
 	config
 	hooks    []Hook
-	mutation *BuilderProfileMutation
+	mutation *BuildProfileMutation
 }
 
-// Where appends a list predicates to the BuilderProfileDelete builder.
-func (bpd *BuilderProfileDelete) Where(ps ...predicate.BuilderProfile) *BuilderProfileDelete {
+// Where appends a list predicates to the BuildProfileDelete builder.
+func (bpd *BuildProfileDelete) Where(ps ...predicate.BuildProfile) *BuildProfileDelete {
 	bpd.mutation.Where(ps...)
 	return bpd
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (bpd *BuilderProfileDelete) Exec(ctx context.Context) (int, error) {
+func (bpd *BuildProfileDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, bpd.sqlExec, bpd.mutation, bpd.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpd *BuilderProfileDelete) ExecX(ctx context.Context) int {
+func (bpd *BuildProfileDelete) ExecX(ctx context.Context) int {
 	n, err := bpd.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (bpd *BuilderProfileDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (bpd *BuilderProfileDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(builderprofile.Table, sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt))
+func (bpd *BuildProfileDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(buildprofile.Table, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	if ps := bpd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (bpd *BuilderProfileDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// BuilderProfileDeleteOne is the builder for deleting a single BuilderProfile entity.
-type BuilderProfileDeleteOne struct {
-	bpd *BuilderProfileDelete
+// BuildProfileDeleteOne is the builder for deleting a single BuildProfile entity.
+type BuildProfileDeleteOne struct {
+	bpd *BuildProfileDelete
 }
 
-// Where appends a list predicates to the BuilderProfileDelete builder.
-func (bpdo *BuilderProfileDeleteOne) Where(ps ...predicate.BuilderProfile) *BuilderProfileDeleteOne {
+// Where appends a list predicates to the BuildProfileDelete builder.
+func (bpdo *BuildProfileDeleteOne) Where(ps ...predicate.BuildProfile) *BuildProfileDeleteOne {
 	bpdo.bpd.mutation.Where(ps...)
 	return bpdo
 }
 
 // Exec executes the deletion query.
-func (bpdo *BuilderProfileDeleteOne) Exec(ctx context.Context) error {
+func (bpdo *BuildProfileDeleteOne) Exec(ctx context.Context) error {
 	n, err := bpdo.bpd.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{builderprofile.Label}
+		return &NotFoundError{buildprofile.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (bpdo *BuilderProfileDeleteOne) ExecX(ctx context.Context) {
+func (bpdo *BuildProfileDeleteOne) ExecX(ctx context.Context) {
 	if err := bpdo.Exec(ctx); err != nil {
 		panic(err)
 	}

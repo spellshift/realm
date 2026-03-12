@@ -15,7 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -284,13 +284,13 @@ func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
 	return btu
 }
 
-// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
+// SetBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderProfileID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderProfileID(id)
 	return btu
 }
 
-// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID if the given value is not nil.
 func (btu *BuildTaskUpdate) SetNillableBuilderProfileID(id *int) *BuildTaskUpdate {
 	if id != nil {
 		btu = btu.SetBuilderProfileID(*id)
@@ -298,8 +298,8 @@ func (btu *BuildTaskUpdate) SetNillableBuilderProfileID(id *int) *BuildTaskUpdat
 	return btu
 }
 
-// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
-func (btu *BuildTaskUpdate) SetBuilderProfile(b *BuilderProfile) *BuildTaskUpdate {
+// SetBuilderProfile sets the "builder_profile" edge to the BuildProfile entity.
+func (btu *BuildTaskUpdate) SetBuilderProfile(b *BuildProfile) *BuildTaskUpdate {
 	return btu.SetBuilderProfileID(b.ID)
 }
 
@@ -338,7 +338,7 @@ func (btu *BuildTaskUpdate) Mutation() *BuildTaskMutation {
 	return btu.mutation
 }
 
-// ClearBuilderProfile clears the "builder_profile" edge to the BuilderProfile entity.
+// ClearBuilderProfile clears the "builder_profile" edge to the BuildProfile entity.
 func (btu *BuildTaskUpdate) ClearBuilderProfile() *BuildTaskUpdate {
 	btu.mutation.ClearBuilderProfile()
 	return btu
@@ -528,7 +528,7 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -541,7 +541,7 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -878,13 +878,13 @@ func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
 	return btuo
 }
 
-// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
+// SetBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderProfileID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderProfileID(id)
 	return btuo
 }
 
-// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID if the given value is not nil.
 func (btuo *BuildTaskUpdateOne) SetNillableBuilderProfileID(id *int) *BuildTaskUpdateOne {
 	if id != nil {
 		btuo = btuo.SetBuilderProfileID(*id)
@@ -892,8 +892,8 @@ func (btuo *BuildTaskUpdateOne) SetNillableBuilderProfileID(id *int) *BuildTaskU
 	return btuo
 }
 
-// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
-func (btuo *BuildTaskUpdateOne) SetBuilderProfile(b *BuilderProfile) *BuildTaskUpdateOne {
+// SetBuilderProfile sets the "builder_profile" edge to the BuildProfile entity.
+func (btuo *BuildTaskUpdateOne) SetBuilderProfile(b *BuildProfile) *BuildTaskUpdateOne {
 	return btuo.SetBuilderProfileID(b.ID)
 }
 
@@ -932,7 +932,7 @@ func (btuo *BuildTaskUpdateOne) Mutation() *BuildTaskMutation {
 	return btuo.mutation
 }
 
-// ClearBuilderProfile clears the "builder_profile" edge to the BuilderProfile entity.
+// ClearBuilderProfile clears the "builder_profile" edge to the BuildProfile entity.
 func (btuo *BuildTaskUpdateOne) ClearBuilderProfile() *BuildTaskUpdateOne {
 	btuo.mutation.ClearBuilderProfile()
 	return btuo
@@ -1152,7 +1152,7 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1165,7 +1165,7 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

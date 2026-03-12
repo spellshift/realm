@@ -11,11 +11,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 )
 
-// BuilderProfile is the model entity for the BuilderProfile schema.
-type BuilderProfile struct {
+// BuildProfile is the model entity for the BuildProfile schema.
+type BuildProfile struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
@@ -23,9 +23,9 @@ type BuilderProfile struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
-	// Name of the builder profile.
+	// Name of the build profile.
 	Name string `json:"name,omitempty"`
-	// Description of the builder profile.
+	// Description of the build profile.
 	Description string `json:"description,omitempty"`
 	// Bash script to run before compilation.
 	PreBuildScript string `json:"pre_build_script,omitempty"`
@@ -39,17 +39,17 @@ type BuilderProfile struct {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*BuilderProfile) scanValues(columns []string) ([]any, error) {
+func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case builderprofile.FieldTransports, builderprofile.FieldTomes:
+		case buildprofile.FieldTransports, buildprofile.FieldTomes:
 			values[i] = new([]byte)
-		case builderprofile.FieldID:
+		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case builderprofile.FieldName, builderprofile.FieldDescription, builderprofile.FieldPreBuildScript, builderprofile.FieldPostBuildScript:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldPreBuildScript, buildprofile.FieldPostBuildScript:
 			values[i] = new(sql.NullString)
-		case builderprofile.FieldCreatedAt, builderprofile.FieldLastModifiedAt:
+		case buildprofile.FieldCreatedAt, buildprofile.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -59,56 +59,56 @@ func (*BuilderProfile) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the BuilderProfile fields.
-func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
+// to the BuildProfile fields.
+func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case builderprofile.FieldID:
+		case buildprofile.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			bp.ID = int(value.Int64)
-		case builderprofile.FieldCreatedAt:
+		case buildprofile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				bp.CreatedAt = value.Time
 			}
-		case builderprofile.FieldLastModifiedAt:
+		case buildprofile.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				bp.LastModifiedAt = value.Time
 			}
-		case builderprofile.FieldName:
+		case buildprofile.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				bp.Name = value.String
 			}
-		case builderprofile.FieldDescription:
+		case buildprofile.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				bp.Description = value.String
 			}
-		case builderprofile.FieldPreBuildScript:
+		case buildprofile.FieldPreBuildScript:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field pre_build_script", values[i])
 			} else if value.Valid {
 				bp.PreBuildScript = value.String
 			}
-		case builderprofile.FieldPostBuildScript:
+		case buildprofile.FieldPostBuildScript:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field post_build_script", values[i])
 			} else if value.Valid {
 				bp.PostBuildScript = value.String
 			}
-		case builderprofile.FieldTransports:
+		case buildprofile.FieldTransports:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field transports", values[i])
 			} else if value != nil && len(*value) > 0 {
@@ -116,7 +116,7 @@ func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field transports: %w", err)
 				}
 			}
-		case builderprofile.FieldTomes:
+		case buildprofile.FieldTomes:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field tomes", values[i])
 			} else if value != nil && len(*value) > 0 {
@@ -131,34 +131,34 @@ func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the BuilderProfile.
+// Value returns the ent.Value that was dynamically selected and assigned to the BuildProfile.
 // This includes values selected through modifiers, order, etc.
-func (bp *BuilderProfile) Value(name string) (ent.Value, error) {
+func (bp *BuildProfile) Value(name string) (ent.Value, error) {
 	return bp.selectValues.Get(name)
 }
 
-// Update returns a builder for updating this BuilderProfile.
-// Note that you need to call BuilderProfile.Unwrap() before calling this method if this BuilderProfile
+// Update returns a builder for updating this BuildProfile.
+// Note that you need to call BuildProfile.Unwrap() before calling this method if this BuildProfile
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (bp *BuilderProfile) Update() *BuilderProfileUpdateOne {
-	return NewBuilderProfileClient(bp.config).UpdateOne(bp)
+func (bp *BuildProfile) Update() *BuildProfileUpdateOne {
+	return NewBuildProfileClient(bp.config).UpdateOne(bp)
 }
 
-// Unwrap unwraps the BuilderProfile entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the BuildProfile entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (bp *BuilderProfile) Unwrap() *BuilderProfile {
+func (bp *BuildProfile) Unwrap() *BuildProfile {
 	_tx, ok := bp.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: BuilderProfile is not a transactional entity")
+		panic("ent: BuildProfile is not a transactional entity")
 	}
 	bp.config.driver = _tx.drv
 	return bp
 }
 
 // String implements the fmt.Stringer.
-func (bp *BuilderProfile) String() string {
+func (bp *BuildProfile) String() string {
 	var builder strings.Builder
-	builder.WriteString("BuilderProfile(")
+	builder.WriteString("BuildProfile(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", bp.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(bp.CreatedAt.Format(time.ANSIC))
@@ -187,5 +187,5 @@ func (bp *BuilderProfile) String() string {
 	return builder.String()
 }
 
-// BuilderProfiles is a parsable slice of BuilderProfile.
-type BuilderProfiles []*BuilderProfile
+// BuildProfiles is a parsable slice of BuildProfile.
+type BuildProfiles []*BuildProfile

@@ -40,38 +40,16 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 	return c
 }
 
-// CreateBuilderInput represents a mutation input for creating builders.
-type CreateBuilderInput struct {
-	SupportedTargets []c2pb.Host_Platform
-	Upstream         *string
-}
-
-// Mutate applies the CreateBuilderInput on the BuilderMutation builder.
-func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
-	if v := i.SupportedTargets; v != nil {
-		m.SetSupportedTargets(v)
-	}
-	if v := i.Upstream; v != nil {
-		m.SetUpstream(*v)
-	}
-}
-
-// SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.
-func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
-	i.Mutate(c.Mutation())
-	return c
-}
-
-// CreateBuilderProfileInput represents a mutation input for creating builderprofiles.
-type CreateBuilderProfileInput struct {
+// CreateBuildProfileInput represents a mutation input for creating buildprofiles.
+type CreateBuildProfileInput struct {
 	Name            string
 	Description     *string
 	PreBuildScript  *string
 	PostBuildScript *string
 }
 
-// Mutate applies the CreateBuilderProfileInput on the BuilderProfileMutation builder.
-func (i *CreateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
+// Mutate applies the CreateBuildProfileInput on the BuildProfileMutation builder.
+func (i *CreateBuildProfileInput) Mutate(m *BuildProfileMutation) {
 	m.SetName(i.Name)
 	if v := i.Description; v != nil {
 		m.SetDescription(*v)
@@ -84,14 +62,14 @@ func (i *CreateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
 	}
 }
 
-// SetInput applies the change-set in the CreateBuilderProfileInput on the BuilderProfileCreate builder.
-func (c *BuilderProfileCreate) SetInput(i CreateBuilderProfileInput) *BuilderProfileCreate {
+// SetInput applies the change-set in the CreateBuildProfileInput on the BuildProfileCreate builder.
+func (c *BuildProfileCreate) SetInput(i CreateBuildProfileInput) *BuildProfileCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
 
-// UpdateBuilderProfileInput represents a mutation input for updating builderprofiles.
-type UpdateBuilderProfileInput struct {
+// UpdateBuildProfileInput represents a mutation input for updating buildprofiles.
+type UpdateBuildProfileInput struct {
 	LastModifiedAt       *time.Time
 	Name                 *string
 	ClearDescription     bool
@@ -102,8 +80,8 @@ type UpdateBuilderProfileInput struct {
 	PostBuildScript      *string
 }
 
-// Mutate applies the UpdateBuilderProfileInput on the BuilderProfileMutation builder.
-func (i *UpdateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
+// Mutate applies the UpdateBuildProfileInput on the BuildProfileMutation builder.
+func (i *UpdateBuildProfileInput) Mutate(m *BuildProfileMutation) {
 	if v := i.LastModifiedAt; v != nil {
 		m.SetLastModifiedAt(*v)
 	}
@@ -130,14 +108,36 @@ func (i *UpdateBuilderProfileInput) Mutate(m *BuilderProfileMutation) {
 	}
 }
 
-// SetInput applies the change-set in the UpdateBuilderProfileInput on the BuilderProfileUpdate builder.
-func (c *BuilderProfileUpdate) SetInput(i UpdateBuilderProfileInput) *BuilderProfileUpdate {
+// SetInput applies the change-set in the UpdateBuildProfileInput on the BuildProfileUpdate builder.
+func (c *BuildProfileUpdate) SetInput(i UpdateBuildProfileInput) *BuildProfileUpdate {
 	i.Mutate(c.Mutation())
 	return c
 }
 
-// SetInput applies the change-set in the UpdateBuilderProfileInput on the BuilderProfileUpdateOne builder.
-func (c *BuilderProfileUpdateOne) SetInput(i UpdateBuilderProfileInput) *BuilderProfileUpdateOne {
+// SetInput applies the change-set in the UpdateBuildProfileInput on the BuildProfileUpdateOne builder.
+func (c *BuildProfileUpdateOne) SetInput(i UpdateBuildProfileInput) *BuildProfileUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateBuilderInput represents a mutation input for creating builders.
+type CreateBuilderInput struct {
+	SupportedTargets []c2pb.Host_Platform
+	Upstream         *string
+}
+
+// Mutate applies the CreateBuilderInput on the BuilderMutation builder.
+func (i *CreateBuilderInput) Mutate(m *BuilderMutation) {
+	if v := i.SupportedTargets; v != nil {
+		m.SetSupportedTargets(v)
+	}
+	if v := i.Upstream; v != nil {
+		m.SetUpstream(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateBuilderInput on the BuilderCreate builder.
+func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

@@ -412,7 +412,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// Resolve transports from the builder profile
 	transports := builder.DefaultTransports
 	if input.BuilderProfileID != 0 {
-		profile, err := r.client.BuilderProfile.Get(ctx, input.BuilderProfileID)
+		profile, err := r.client.BuildProfile.Get(ctx, input.BuilderProfileID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load builder profile: %w", err)
 		}
@@ -491,27 +491,14 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	return bt, nil
 }
 
-// CreateBuilderProfile is the resolver for the createBuilderProfile field.
-func (r *mutationResolver) CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput, transports []*models.BuildTaskTransportInput) (*ent.BuilderProfile, error) {
-	create := r.client.BuilderProfile.Create().SetInput(input)
-	if len(transports) > 0 {
-		create.SetTransports(convertTransportInputs(transports))
-	} else {
-		create.SetTransports(builder.DefaultTransports)
-	}
-	return create.Save(ctx)
+// CreateBuildProfile is the resolver for the createBuildProfile field.
+func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input ent.CreateBuildProfileInput, transports []*models.BuildTaskTransportInput, tomes []*models.BuildTaskTomeConfigInput) (*ent.BuildProfile, error) {
+	panic(fmt.Errorf("not implemented: CreateBuildProfile - createBuildProfile"))
 }
 
-// UpdateBuilderProfile is the resolver for the updateBuilderProfile field.
-func (r *mutationResolver) UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool) (*ent.BuilderProfile, error) {
-	update := r.client.BuilderProfile.UpdateOneID(id).SetInput(input)
-	if clearTransports != nil && *clearTransports {
-		update.ClearTransports()
-	}
-	if len(transports) > 0 {
-		update.SetTransports(convertTransportInputs(transports))
-	}
-	return update.Save(ctx)
+// UpdateBuildProfile is the resolver for the updateBuildProfile field.
+func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, id int, input ent.UpdateBuildProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool, tomes []*models.BuildTaskTomeConfigInput, clearTomes *bool) (*ent.BuildProfile, error) {
+	panic(fmt.Errorf("not implemented: UpdateBuildProfile - updateBuildProfile"))
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -11,70 +11,70 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/ent/builderprofile"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/predicate"
 )
 
-// BuilderProfileQuery is the builder for querying BuilderProfile entities.
-type BuilderProfileQuery struct {
+// BuildProfileQuery is the builder for querying BuildProfile entities.
+type BuildProfileQuery struct {
 	config
 	ctx        *QueryContext
-	order      []builderprofile.OrderOption
+	order      []buildprofile.OrderOption
 	inters     []Interceptor
-	predicates []predicate.BuilderProfile
+	predicates []predicate.BuildProfile
 	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*BuilderProfile) error
+	loadTotal  []func(context.Context, []*BuildProfile) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the BuilderProfileQuery builder.
-func (bpq *BuilderProfileQuery) Where(ps ...predicate.BuilderProfile) *BuilderProfileQuery {
+// Where adds a new predicate for the BuildProfileQuery builder.
+func (bpq *BuildProfileQuery) Where(ps ...predicate.BuildProfile) *BuildProfileQuery {
 	bpq.predicates = append(bpq.predicates, ps...)
 	return bpq
 }
 
 // Limit the number of records to be returned by this query.
-func (bpq *BuilderProfileQuery) Limit(limit int) *BuilderProfileQuery {
+func (bpq *BuildProfileQuery) Limit(limit int) *BuildProfileQuery {
 	bpq.ctx.Limit = &limit
 	return bpq
 }
 
 // Offset to start from.
-func (bpq *BuilderProfileQuery) Offset(offset int) *BuilderProfileQuery {
+func (bpq *BuildProfileQuery) Offset(offset int) *BuildProfileQuery {
 	bpq.ctx.Offset = &offset
 	return bpq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (bpq *BuilderProfileQuery) Unique(unique bool) *BuilderProfileQuery {
+func (bpq *BuildProfileQuery) Unique(unique bool) *BuildProfileQuery {
 	bpq.ctx.Unique = &unique
 	return bpq
 }
 
 // Order specifies how the records should be ordered.
-func (bpq *BuilderProfileQuery) Order(o ...builderprofile.OrderOption) *BuilderProfileQuery {
+func (bpq *BuildProfileQuery) Order(o ...buildprofile.OrderOption) *BuildProfileQuery {
 	bpq.order = append(bpq.order, o...)
 	return bpq
 }
 
-// First returns the first BuilderProfile entity from the query.
-// Returns a *NotFoundError when no BuilderProfile was found.
-func (bpq *BuilderProfileQuery) First(ctx context.Context) (*BuilderProfile, error) {
+// First returns the first BuildProfile entity from the query.
+// Returns a *NotFoundError when no BuildProfile was found.
+func (bpq *BuildProfileQuery) First(ctx context.Context) (*BuildProfile, error) {
 	nodes, err := bpq.Limit(1).All(setContextOp(ctx, bpq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{builderprofile.Label}
+		return nil, &NotFoundError{buildprofile.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) FirstX(ctx context.Context) *BuilderProfile {
+func (bpq *BuildProfileQuery) FirstX(ctx context.Context) *BuildProfile {
 	node, err := bpq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -82,22 +82,22 @@ func (bpq *BuilderProfileQuery) FirstX(ctx context.Context) *BuilderProfile {
 	return node
 }
 
-// FirstID returns the first BuilderProfile ID from the query.
-// Returns a *NotFoundError when no BuilderProfile ID was found.
-func (bpq *BuilderProfileQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first BuildProfile ID from the query.
+// Returns a *NotFoundError when no BuildProfile ID was found.
+func (bpq *BuildProfileQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = bpq.Limit(1).IDs(setContextOp(ctx, bpq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{builderprofile.Label}
+		err = &NotFoundError{buildprofile.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) FirstIDX(ctx context.Context) int {
+func (bpq *BuildProfileQuery) FirstIDX(ctx context.Context) int {
 	id, err := bpq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -105,10 +105,10 @@ func (bpq *BuilderProfileQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single BuilderProfile entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one BuilderProfile entity is found.
-// Returns a *NotFoundError when no BuilderProfile entities are found.
-func (bpq *BuilderProfileQuery) Only(ctx context.Context) (*BuilderProfile, error) {
+// Only returns a single BuildProfile entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one BuildProfile entity is found.
+// Returns a *NotFoundError when no BuildProfile entities are found.
+func (bpq *BuildProfileQuery) Only(ctx context.Context) (*BuildProfile, error) {
 	nodes, err := bpq.Limit(2).All(setContextOp(ctx, bpq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -117,14 +117,14 @@ func (bpq *BuilderProfileQuery) Only(ctx context.Context) (*BuilderProfile, erro
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{builderprofile.Label}
+		return nil, &NotFoundError{buildprofile.Label}
 	default:
-		return nil, &NotSingularError{builderprofile.Label}
+		return nil, &NotSingularError{buildprofile.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) OnlyX(ctx context.Context) *BuilderProfile {
+func (bpq *BuildProfileQuery) OnlyX(ctx context.Context) *BuildProfile {
 	node, err := bpq.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -132,10 +132,10 @@ func (bpq *BuilderProfileQuery) OnlyX(ctx context.Context) *BuilderProfile {
 	return node
 }
 
-// OnlyID is like Only, but returns the only BuilderProfile ID in the query.
-// Returns a *NotSingularError when more than one BuilderProfile ID is found.
+// OnlyID is like Only, but returns the only BuildProfile ID in the query.
+// Returns a *NotSingularError when more than one BuildProfile ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (bpq *BuilderProfileQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (bpq *BuildProfileQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = bpq.Limit(2).IDs(setContextOp(ctx, bpq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -144,15 +144,15 @@ func (bpq *BuilderProfileQuery) OnlyID(ctx context.Context) (id int, err error) 
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{builderprofile.Label}
+		err = &NotFoundError{buildprofile.Label}
 	default:
-		err = &NotSingularError{builderprofile.Label}
+		err = &NotSingularError{buildprofile.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) OnlyIDX(ctx context.Context) int {
+func (bpq *BuildProfileQuery) OnlyIDX(ctx context.Context) int {
 	id, err := bpq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -160,18 +160,18 @@ func (bpq *BuilderProfileQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of BuilderProfiles.
-func (bpq *BuilderProfileQuery) All(ctx context.Context) ([]*BuilderProfile, error) {
+// All executes the query and returns a list of BuildProfiles.
+func (bpq *BuildProfileQuery) All(ctx context.Context) ([]*BuildProfile, error) {
 	ctx = setContextOp(ctx, bpq.ctx, ent.OpQueryAll)
 	if err := bpq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*BuilderProfile, *BuilderProfileQuery]()
-	return withInterceptors[[]*BuilderProfile](ctx, bpq, qr, bpq.inters)
+	qr := querierAll[[]*BuildProfile, *BuildProfileQuery]()
+	return withInterceptors[[]*BuildProfile](ctx, bpq, qr, bpq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) AllX(ctx context.Context) []*BuilderProfile {
+func (bpq *BuildProfileQuery) AllX(ctx context.Context) []*BuildProfile {
 	nodes, err := bpq.All(ctx)
 	if err != nil {
 		panic(err)
@@ -179,20 +179,20 @@ func (bpq *BuilderProfileQuery) AllX(ctx context.Context) []*BuilderProfile {
 	return nodes
 }
 
-// IDs executes the query and returns a list of BuilderProfile IDs.
-func (bpq *BuilderProfileQuery) IDs(ctx context.Context) (ids []int, err error) {
+// IDs executes the query and returns a list of BuildProfile IDs.
+func (bpq *BuildProfileQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if bpq.ctx.Unique == nil && bpq.path != nil {
 		bpq.Unique(true)
 	}
 	ctx = setContextOp(ctx, bpq.ctx, ent.OpQueryIDs)
-	if err = bpq.Select(builderprofile.FieldID).Scan(ctx, &ids); err != nil {
+	if err = bpq.Select(buildprofile.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) IDsX(ctx context.Context) []int {
+func (bpq *BuildProfileQuery) IDsX(ctx context.Context) []int {
 	ids, err := bpq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -201,16 +201,16 @@ func (bpq *BuilderProfileQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (bpq *BuilderProfileQuery) Count(ctx context.Context) (int, error) {
+func (bpq *BuildProfileQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, bpq.ctx, ent.OpQueryCount)
 	if err := bpq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, bpq, querierCount[*BuilderProfileQuery](), bpq.inters)
+	return withInterceptors[int](ctx, bpq, querierCount[*BuildProfileQuery](), bpq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) CountX(ctx context.Context) int {
+func (bpq *BuildProfileQuery) CountX(ctx context.Context) int {
 	count, err := bpq.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -219,7 +219,7 @@ func (bpq *BuilderProfileQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (bpq *BuilderProfileQuery) Exist(ctx context.Context) (bool, error) {
+func (bpq *BuildProfileQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, bpq.ctx, ent.OpQueryExist)
 	switch _, err := bpq.FirstID(ctx); {
 	case IsNotFound(err):
@@ -232,7 +232,7 @@ func (bpq *BuilderProfileQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (bpq *BuilderProfileQuery) ExistX(ctx context.Context) bool {
+func (bpq *BuildProfileQuery) ExistX(ctx context.Context) bool {
 	exist, err := bpq.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -240,18 +240,18 @@ func (bpq *BuilderProfileQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the BuilderProfileQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the BuildProfileQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (bpq *BuilderProfileQuery) Clone() *BuilderProfileQuery {
+func (bpq *BuildProfileQuery) Clone() *BuildProfileQuery {
 	if bpq == nil {
 		return nil
 	}
-	return &BuilderProfileQuery{
+	return &BuildProfileQuery{
 		config:     bpq.config,
 		ctx:        bpq.ctx.Clone(),
-		order:      append([]builderprofile.OrderOption{}, bpq.order...),
+		order:      append([]buildprofile.OrderOption{}, bpq.order...),
 		inters:     append([]Interceptor{}, bpq.inters...),
-		predicates: append([]predicate.BuilderProfile{}, bpq.predicates...),
+		predicates: append([]predicate.BuildProfile{}, bpq.predicates...),
 		// clone intermediate query.
 		sql:  bpq.sql.Clone(),
 		path: bpq.path,
@@ -268,15 +268,15 @@ func (bpq *BuilderProfileQuery) Clone() *BuilderProfileQuery {
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.BuilderProfile.Query().
-//		GroupBy(builderprofile.FieldCreatedAt).
+//	client.BuildProfile.Query().
+//		GroupBy(buildprofile.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (bpq *BuilderProfileQuery) GroupBy(field string, fields ...string) *BuilderProfileGroupBy {
+func (bpq *BuildProfileQuery) GroupBy(field string, fields ...string) *BuildProfileGroupBy {
 	bpq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &BuilderProfileGroupBy{build: bpq}
+	grbuild := &BuildProfileGroupBy{build: bpq}
 	grbuild.flds = &bpq.ctx.Fields
-	grbuild.label = builderprofile.Label
+	grbuild.label = buildprofile.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -290,23 +290,23 @@ func (bpq *BuilderProfileQuery) GroupBy(field string, fields ...string) *Builder
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.BuilderProfile.Query().
-//		Select(builderprofile.FieldCreatedAt).
+//	client.BuildProfile.Query().
+//		Select(buildprofile.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (bpq *BuilderProfileQuery) Select(fields ...string) *BuilderProfileSelect {
+func (bpq *BuildProfileQuery) Select(fields ...string) *BuildProfileSelect {
 	bpq.ctx.Fields = append(bpq.ctx.Fields, fields...)
-	sbuild := &BuilderProfileSelect{BuilderProfileQuery: bpq}
-	sbuild.label = builderprofile.Label
+	sbuild := &BuildProfileSelect{BuildProfileQuery: bpq}
+	sbuild.label = buildprofile.Label
 	sbuild.flds, sbuild.scan = &bpq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a BuilderProfileSelect configured with the given aggregations.
-func (bpq *BuilderProfileQuery) Aggregate(fns ...AggregateFunc) *BuilderProfileSelect {
+// Aggregate returns a BuildProfileSelect configured with the given aggregations.
+func (bpq *BuildProfileQuery) Aggregate(fns ...AggregateFunc) *BuildProfileSelect {
 	return bpq.Select().Aggregate(fns...)
 }
 
-func (bpq *BuilderProfileQuery) prepareQuery(ctx context.Context) error {
+func (bpq *BuildProfileQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range bpq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -318,7 +318,7 @@ func (bpq *BuilderProfileQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range bpq.ctx.Fields {
-		if !builderprofile.ValidColumn(f) {
+		if !buildprofile.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -332,16 +332,16 @@ func (bpq *BuilderProfileQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (bpq *BuilderProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*BuilderProfile, error) {
+func (bpq *BuildProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*BuildProfile, error) {
 	var (
-		nodes = []*BuilderProfile{}
+		nodes = []*BuildProfile{}
 		_spec = bpq.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*BuilderProfile).scanValues(nil, columns)
+		return (*BuildProfile).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &BuilderProfile{config: bpq.config}
+		node := &BuildProfile{config: bpq.config}
 		nodes = append(nodes, node)
 		return node.assignValues(columns, values)
 	}
@@ -365,7 +365,7 @@ func (bpq *BuilderProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	return nodes, nil
 }
 
-func (bpq *BuilderProfileQuery) sqlCount(ctx context.Context) (int, error) {
+func (bpq *BuildProfileQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bpq.querySpec()
 	if len(bpq.modifiers) > 0 {
 		_spec.Modifiers = bpq.modifiers
@@ -377,8 +377,8 @@ func (bpq *BuilderProfileQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, bpq.driver, _spec)
 }
 
-func (bpq *BuilderProfileQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(builderprofile.Table, builderprofile.Columns, sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt))
+func (bpq *BuildProfileQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(buildprofile.Table, buildprofile.Columns, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	_spec.From = bpq.sql
 	if unique := bpq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -387,9 +387,9 @@ func (bpq *BuilderProfileQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := bpq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, builderprofile.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, buildprofile.FieldID)
 		for i := range fields {
-			if fields[i] != builderprofile.FieldID {
+			if fields[i] != buildprofile.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
@@ -417,12 +417,12 @@ func (bpq *BuilderProfileQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (bpq *BuilderProfileQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (bpq *BuildProfileQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(bpq.driver.Dialect())
-	t1 := builder.Table(builderprofile.Table)
+	t1 := builder.Table(buildprofile.Table)
 	columns := bpq.ctx.Fields
 	if len(columns) == 0 {
-		columns = builderprofile.Columns
+		columns = buildprofile.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if bpq.sql != nil {
@@ -449,28 +449,28 @@ func (bpq *BuilderProfileQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// BuilderProfileGroupBy is the group-by builder for BuilderProfile entities.
-type BuilderProfileGroupBy struct {
+// BuildProfileGroupBy is the group-by builder for BuildProfile entities.
+type BuildProfileGroupBy struct {
 	selector
-	build *BuilderProfileQuery
+	build *BuildProfileQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (bpgb *BuilderProfileGroupBy) Aggregate(fns ...AggregateFunc) *BuilderProfileGroupBy {
+func (bpgb *BuildProfileGroupBy) Aggregate(fns ...AggregateFunc) *BuildProfileGroupBy {
 	bpgb.fns = append(bpgb.fns, fns...)
 	return bpgb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (bpgb *BuilderProfileGroupBy) Scan(ctx context.Context, v any) error {
+func (bpgb *BuildProfileGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, bpgb.build.ctx, ent.OpQueryGroupBy)
 	if err := bpgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*BuilderProfileQuery, *BuilderProfileGroupBy](ctx, bpgb.build, bpgb, bpgb.build.inters, v)
+	return scanWithInterceptors[*BuildProfileQuery, *BuildProfileGroupBy](ctx, bpgb.build, bpgb, bpgb.build.inters, v)
 }
 
-func (bpgb *BuilderProfileGroupBy) sqlScan(ctx context.Context, root *BuilderProfileQuery, v any) error {
+func (bpgb *BuildProfileGroupBy) sqlScan(ctx context.Context, root *BuildProfileQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(bpgb.fns))
 	for _, fn := range bpgb.fns {
@@ -497,28 +497,28 @@ func (bpgb *BuilderProfileGroupBy) sqlScan(ctx context.Context, root *BuilderPro
 	return sql.ScanSlice(rows, v)
 }
 
-// BuilderProfileSelect is the builder for selecting fields of BuilderProfile entities.
-type BuilderProfileSelect struct {
-	*BuilderProfileQuery
+// BuildProfileSelect is the builder for selecting fields of BuildProfile entities.
+type BuildProfileSelect struct {
+	*BuildProfileQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (bps *BuilderProfileSelect) Aggregate(fns ...AggregateFunc) *BuilderProfileSelect {
+func (bps *BuildProfileSelect) Aggregate(fns ...AggregateFunc) *BuildProfileSelect {
 	bps.fns = append(bps.fns, fns...)
 	return bps
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (bps *BuilderProfileSelect) Scan(ctx context.Context, v any) error {
+func (bps *BuildProfileSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, bps.ctx, ent.OpQuerySelect)
 	if err := bps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*BuilderProfileQuery, *BuilderProfileSelect](ctx, bps.BuilderProfileQuery, bps, bps.inters, v)
+	return scanWithInterceptors[*BuildProfileQuery, *BuildProfileSelect](ctx, bps.BuildProfileQuery, bps, bps.inters, v)
 }
 
-func (bps *BuilderProfileSelect) sqlScan(ctx context.Context, root *BuilderProfileQuery, v any) error {
+func (bps *BuildProfileSelect) sqlScan(ctx context.Context, root *BuildProfileQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(bps.fns))
 	for _, fn := range bps.fns {
