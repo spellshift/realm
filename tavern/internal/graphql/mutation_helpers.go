@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"strings"
 
 	"realm.pub/tavern/internal/builder/builderpb"
@@ -41,4 +42,21 @@ func convertTransportInputs(inputs []*models.BuildTaskTransportInput) []builderp
 		}
 	}
 	return transports
+}
+
+// convertTomeInputs converts GraphQL tome config inputs to the builderpb type.
+func convertTomeInputs(inputs []*models.BuildTaskTomeConfigInput) []builderpb.BuildTaskTomeConfig {
+	tomes := make([]builderpb.BuildTaskTomeConfig, len(inputs))
+	for i, t := range inputs {
+		params := make(map[string]string)
+		if t.Params != "" {
+			// Parse JSON params string into map
+			_ = json.Unmarshal([]byte(t.Params), &params)
+		}
+		tomes[i] = builderpb.BuildTaskTomeConfig{
+			TomeID: int64(t.TomeID),
+			Params: params,
+		}
+	}
+	return tomes
 }
