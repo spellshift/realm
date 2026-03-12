@@ -2,19 +2,6 @@
 
 The builder package orchestrates agent compilation for target platforms. It connects to the Tavern server via gRPC and compiles agents based on its configuration.
 
-## TODO
-
-- Move builder proto into shared proto dir.
-- Remove profile from
-- Reduce builder profile creation overhead in tests don't need same code everywhere define it at outer scope
-- Reuse tome params
-
-
-Builder
-BuildProfile
-BuildTask
-
-
 ## Overview
 
 - **Registration**: Builders register with Tavern via the `registerBuilder` GraphQL mutation, which returns an mTLS certificate signed by the Tavern Builder CA and a YAML configuration file.
@@ -66,8 +53,7 @@ upstream: <tavern server address>
 ```bash
 # Register a builder via GraphQL (returns config YAML)
 # Then run it:
-go run ./tavern builder --config /tmp/builder-config.yaml
-#https://gchq.github.io/CyberChef/#recipe=JPath_expression('$.data.registerBuilder.config','%5C%5Cn')Unescape_string()Find_/_Replace(%7B'option':'Regex','string':'%22'%7D,'',true,false,true,false)
+go run ./tavern builder --config /path/to/builder-config.yaml
 ```
 
 ## Streaming Build Output
@@ -89,7 +75,6 @@ defaults resolved server-side:
 |-------|---------|-------|
 | `targetFormat` | `BIN` | Can also be `CDYLIB` or `WINDOWS_SERVICE` (Windows only) |
 | `buildImage` | `spellshift/devcontainer:main` | Docker image for the build container |
-| `transports` | From `BuilderProfile`, or default gRPC at `http://127.0.0.1:8000` | Transport configs are stored on the BuilderProfile, not the build task input |
 | `artifactPath` | Derived from `targetOS` | Path inside the container to extract the compiled binary |
 
 ## Artifact Extraction
@@ -115,7 +100,7 @@ at `GET /assets/download/{name}`.
 - Add a way for the server to interrupt and cancel a build.
 - Add support for build caching between jobs (will speed up rust builds a lot)
 - Instead of assuming  `/home/vscode` create a correctly permissioned build dir
-- ~~Add support for mulitple transports in the builder~~ (done: transports moved to BuilderProfile)
+- Add support for mulitple transports in the builder
 
 ### future
 - Add terraform for build server

@@ -75,6 +75,6 @@ type Mutation {
     ###
     # BuilderProfile
     ###
-    createBuildProfile(input: CreateBuildProfileInput!, transports: [BuildTaskTransportInput!], tomes: [BuildTaskTomeConfigInput!]): BuildProfile! @requireRole(role: ADMIN)
-    updateBuildProfile(id: ID!, input: UpdateBuildProfileInput!, transports: [BuildTaskTransportInput!], clearTransports: Boolean, tomes: [BuildTaskTomeConfigInput!], clearTomes: Boolean): BuildProfile! @requireRole(role: ADMIN)
+    createBuilderProfile(input: CreateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
+    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
 }

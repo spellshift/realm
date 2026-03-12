@@ -13,7 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -671,136 +671,6 @@ func newBeaconPaginateArgs(rv map[string]any) *beaconPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (bp *BuildProfileQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuildProfileQuery, error) {
-	fc := graphql.GetFieldContext(ctx)
-	if fc == nil {
-		return bp, nil
-	}
-	if err := bp.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
-		return nil, err
-	}
-	return bp, nil
-}
-
-func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
-	path = append([]string(nil), path...)
-	var (
-		unknownSeen    bool
-		fieldSeen      = make(map[string]struct{}, len(buildprofile.Columns))
-		selectedFields = []string{buildprofile.FieldID}
-	)
-	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
-		switch field.Name {
-		case "createdAt":
-			if _, ok := fieldSeen[buildprofile.FieldCreatedAt]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldCreatedAt)
-				fieldSeen[buildprofile.FieldCreatedAt] = struct{}{}
-			}
-		case "lastModifiedAt":
-			if _, ok := fieldSeen[buildprofile.FieldLastModifiedAt]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldLastModifiedAt)
-				fieldSeen[buildprofile.FieldLastModifiedAt] = struct{}{}
-			}
-		case "name":
-			if _, ok := fieldSeen[buildprofile.FieldName]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldName)
-				fieldSeen[buildprofile.FieldName] = struct{}{}
-			}
-		case "description":
-			if _, ok := fieldSeen[buildprofile.FieldDescription]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldDescription)
-				fieldSeen[buildprofile.FieldDescription] = struct{}{}
-			}
-		case "preBuildScript":
-			if _, ok := fieldSeen[buildprofile.FieldPreBuildScript]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldPreBuildScript)
-				fieldSeen[buildprofile.FieldPreBuildScript] = struct{}{}
-			}
-		case "postBuildScript":
-			if _, ok := fieldSeen[buildprofile.FieldPostBuildScript]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldPostBuildScript)
-				fieldSeen[buildprofile.FieldPostBuildScript] = struct{}{}
-			}
-		case "transports":
-			if _, ok := fieldSeen[buildprofile.FieldTransports]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldTransports)
-				fieldSeen[buildprofile.FieldTransports] = struct{}{}
-			}
-		case "tomes":
-			if _, ok := fieldSeen[buildprofile.FieldTomes]; !ok {
-				selectedFields = append(selectedFields, buildprofile.FieldTomes)
-				fieldSeen[buildprofile.FieldTomes] = struct{}{}
-			}
-		case "id":
-		case "__typename":
-		default:
-			unknownSeen = true
-		}
-	}
-	if !unknownSeen {
-		bp.Select(selectedFields...)
-	}
-	return nil
-}
-
-type buildprofilePaginateArgs struct {
-	first, last   *int
-	after, before *Cursor
-	opts          []BuildProfilePaginateOption
-}
-
-func newBuildProfilePaginateArgs(rv map[string]any) *buildprofilePaginateArgs {
-	args := &buildprofilePaginateArgs{}
-	if rv == nil {
-		return args
-	}
-	if v := rv[firstField]; v != nil {
-		args.first = v.(*int)
-	}
-	if v := rv[lastField]; v != nil {
-		args.last = v.(*int)
-	}
-	if v := rv[afterField]; v != nil {
-		args.after = v.(*Cursor)
-	}
-	if v := rv[beforeField]; v != nil {
-		args.before = v.(*Cursor)
-	}
-	if v, ok := rv[orderByField]; ok {
-		switch v := v.(type) {
-		case []*BuildProfileOrder:
-			args.opts = append(args.opts, WithBuildProfileOrder(v))
-		case []any:
-			var orders []*BuildProfileOrder
-			for i := range v {
-				mv, ok := v[i].(map[string]any)
-				if !ok {
-					continue
-				}
-				var (
-					err1, err2 error
-					order      = &BuildProfileOrder{Field: &BuildProfileOrderField{}, Direction: entgql.OrderDirectionAsc}
-				)
-				if d, ok := mv[directionField]; ok {
-					err1 = order.Direction.UnmarshalGQL(d)
-				}
-				if f, ok := mv[fieldField]; ok {
-					err2 = order.Field.UnmarshalGQL(f)
-				}
-				if err1 == nil && err2 == nil {
-					orders = append(orders, order)
-				}
-			}
-			args.opts = append(args.opts, WithBuildProfileOrder(orders))
-		}
-	}
-	if v, ok := rv[whereField].(*BuildProfileWhereInput); ok {
-		args.opts = append(args.opts, WithBuildProfileFilter(v.Filter))
-	}
-	return args
-}
-
-// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (bt *BuildTaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuildTaskQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -826,9 +696,9 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&BuildProfileClient{config: bt.config}).Query()
+				query = (&BuilderProfileClient{config: bt.config}).Query()
 			)
-			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, buildprofileImplementors)...); err != nil {
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, builderprofileImplementors)...); err != nil {
 				return err
 			}
 			bt.withBuilderProfile = query
@@ -883,6 +753,16 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
 				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
+			}
+		case "transports":
+			if _, ok := fieldSeen[buildtask.FieldTransports]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTransports)
+				fieldSeen[buildtask.FieldTransports] = struct{}{}
+			}
+		case "tomes":
+			if _, ok := fieldSeen[buildtask.FieldTomes]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldTomes)
+				fieldSeen[buildtask.FieldTomes] = struct{}{}
 			}
 		case "claimedAt":
 			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {
@@ -1203,6 +1083,126 @@ func newBuilderPaginateArgs(rv map[string]any) *builderPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*BuilderWhereInput); ok {
 		args.opts = append(args.opts, WithBuilderFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (bp *BuilderProfileQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuilderProfileQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return bp, nil
+	}
+	if err := bp.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return bp, nil
+}
+
+func (bp *BuilderProfileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(builderprofile.Columns))
+		selectedFields = []string{builderprofile.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "createdAt":
+			if _, ok := fieldSeen[builderprofile.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldCreatedAt)
+				fieldSeen[builderprofile.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[builderprofile.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldLastModifiedAt)
+				fieldSeen[builderprofile.FieldLastModifiedAt] = struct{}{}
+			}
+		case "name":
+			if _, ok := fieldSeen[builderprofile.FieldName]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldName)
+				fieldSeen[builderprofile.FieldName] = struct{}{}
+			}
+		case "description":
+			if _, ok := fieldSeen[builderprofile.FieldDescription]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldDescription)
+				fieldSeen[builderprofile.FieldDescription] = struct{}{}
+			}
+		case "preBuildScript":
+			if _, ok := fieldSeen[builderprofile.FieldPreBuildScript]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldPreBuildScript)
+				fieldSeen[builderprofile.FieldPreBuildScript] = struct{}{}
+			}
+		case "postBuildScript":
+			if _, ok := fieldSeen[builderprofile.FieldPostBuildScript]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldPostBuildScript)
+				fieldSeen[builderprofile.FieldPostBuildScript] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		bp.Select(selectedFields...)
+	}
+	return nil
+}
+
+type builderprofilePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BuilderProfilePaginateOption
+}
+
+func newBuilderProfilePaginateArgs(rv map[string]any) *builderprofilePaginateArgs {
+	args := &builderprofilePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*BuilderProfileOrder:
+			args.opts = append(args.opts, WithBuilderProfileOrder(v))
+		case []any:
+			var orders []*BuilderProfileOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &BuilderProfileOrder{Field: &BuilderProfileOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithBuilderProfileOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*BuilderProfileWhereInput); ok {
+		args.opts = append(args.opts, WithBuilderProfileFilter(v.Filter))
 	}
 	return args
 }

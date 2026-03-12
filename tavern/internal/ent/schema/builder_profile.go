@@ -6,16 +6,15 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
-	"realm.pub/tavern/internal/builder/builderpb"
 )
 
-// BuildProfile holds the schema definition for the BuildProfile entity.
-type BuildProfile struct {
+// BuilderProfile holds the schema definition for the BuilderProfile entity.
+type BuilderProfile struct {
 	ent.Schema
 }
 
-// Fields of the BuildProfile.
-func (BuildProfile) Fields() []ent.Field {
+// Fields of the BuilderProfile.
+func (BuilderProfile) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
 			NotEmpty().
@@ -23,41 +22,28 @@ func (BuildProfile) Fields() []ent.Field {
 			Annotations(
 				entgql.OrderField("NAME"),
 			).
-			Comment("Name of the build profile."),
+			Comment("Name of the builder profile."),
 		field.String("description").
 			Optional().
-			Comment("Description of the build profile."),
+			Comment("Description of the builder profile."),
 		field.String("pre_build_script").
 			Optional().
 			Comment("Bash script to run before compilation."),
 		field.String("post_build_script").
 			Optional().
 			Comment("Bash script to run after build is complete."),
-		field.JSON("transports", []builderpb.BuildTaskTransport{}).
-			Optional().
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
-			).
-			Comment("List of transport configurations for the IMIX agent."),
-		field.JSON("tomes", []builderpb.BuildTaskTomeConfig{}).
-			Optional().
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
-			).
-			Comment("List of tomes to include in the build."),
 	}
 }
 
-// Edges of the BuildProfile.
-func (BuildProfile) Edges() []ent.Edge {
+// Edges of the BuilderProfile.
+func (BuilderProfile) Edges() []ent.Edge {
 	return []ent.Edge{}
 }
 
 // Annotations describes additional information for the ent.
-func (BuildProfile) Annotations() []schema.Annotation {
+func (BuilderProfile) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
-		entgql.QueryField(),
 		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
@@ -70,7 +56,7 @@ func (BuildProfile) Annotations() []schema.Annotation {
 }
 
 // Mixin defines common shared properties for the ent.
-func (BuildProfile) Mixin() []ent.Mixin {
+func (BuilderProfile) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		MixinHistory{}, // created_at, last_modified_at
 	}

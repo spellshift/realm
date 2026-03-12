@@ -1,0 +1,24 @@
+<<<<<<< SEARCH
+// extractArtifact copies a file from a stopped container using the Docker API.
+// CopyFromContainer returns a tar archive; this method extracts the first
+// regular file from that archive and returns its contents and basename.
+func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path string) ([]byte, string, error) {
+=======
+// ConstructTomeScript generates the full eldritch script for a tome, prepending
+// the input_params dictionary populated with the tome's parameters.
+func ConstructTomeScript(tome *builderpb.BuildTaskTome) string {
+	var tomeScript string
+	tomeScript += "input_params = {\n"
+	for k, v := range tome.Params {
+		tomeScript += fmt.Sprintf("  %q: %q,\n", k, v)
+	}
+	tomeScript += "}\n"
+	tomeScript += tome.Script
+	return tomeScript
+}
+
+// extractArtifact copies a file from a stopped container using the Docker API.
+// CopyFromContainer returns a tar archive; this method extracts the first
+// regular file from that archive and returns its contents and basename.
+func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path string) ([]byte, string, error) {
+>>>>>>> REPLACE

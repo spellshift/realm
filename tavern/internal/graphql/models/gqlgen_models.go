@@ -59,10 +59,14 @@ type CreateBuildTaskInput struct {
 	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
 	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
 	BuildImage *string `json:"buildImage,omitempty"`
+	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
+	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
+	// List of tomes to include in the build.
+	Tomes []*BuildTaskTomeConfigInput `json:"tomes,omitempty"`
 	// The builder profile to use for the build.
-	BuilderProfileID int `json:"builderProfileID"`
+	BuilderProfileID *int `json:"builderProfileID,omitempty"`
 }
 
 type ImportRepositoryInput struct {

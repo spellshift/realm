@@ -31,6 +31,10 @@ const (
 	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
+	// FieldTransports holds the string denoting the transports field in the database.
+	FieldTransports = "transports"
+	// FieldTomes holds the string denoting the tomes field in the database.
+	FieldTomes = "tomes"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -59,9 +63,9 @@ const (
 	Table = "build_tasks"
 	// BuilderProfileTable is the table that holds the builder_profile relation/edge.
 	BuilderProfileTable = "build_tasks"
-	// BuilderProfileInverseTable is the table name for the BuildProfile entity.
-	// It exists in this package in order to avoid circular dependency with the "buildprofile" package.
-	BuilderProfileInverseTable = "build_profiles"
+	// BuilderProfileInverseTable is the table name for the BuilderProfile entity.
+	// It exists in this package in order to avoid circular dependency with the "builderprofile" package.
+	BuilderProfileInverseTable = "builder_profiles"
 	// BuilderProfileColumn is the table column denoting the builder_profile relation/edge.
 	BuilderProfileColumn = "build_task_builder_profile"
 	// BuilderTable is the table that holds the builder relation/edge.
@@ -89,6 +93,8 @@ var Columns = []string{
 	FieldTargetFormat,
 	FieldBuildImage,
 	FieldBuildScript,
+	FieldTransports,
+	FieldTomes,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,

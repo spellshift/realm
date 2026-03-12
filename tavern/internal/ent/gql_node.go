@@ -18,7 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -53,11 +53,6 @@ var beaconImplementors = []string{"Beacon", "Node"}
 // IsNode implements the Node interface check for GQLGen.
 func (*Beacon) IsNode() {}
 
-var buildprofileImplementors = []string{"BuildProfile", "Node"}
-
-// IsNode implements the Node interface check for GQLGen.
-func (*BuildProfile) IsNode() {}
-
 var buildtaskImplementors = []string{"BuildTask", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
@@ -67,6 +62,11 @@ var builderImplementors = []string{"Builder", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Builder) IsNode() {}
+
+var builderprofileImplementors = []string{"BuilderProfile", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*BuilderProfile) IsNode() {}
 
 var deviceauthImplementors = []string{"DeviceAuth", "Node"}
 
@@ -224,15 +224,6 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			}
 		}
 		return query.Only(ctx)
-	case buildprofile.Table:
-		query := c.BuildProfile.Query().
-			Where(buildprofile.ID(id))
-		if fc := graphql.GetFieldContext(ctx); fc != nil {
-			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, buildprofileImplementors...); err != nil {
-				return nil, err
-			}
-		}
-		return query.Only(ctx)
 	case buildtask.Table:
 		query := c.BuildTask.Query().
 			Where(buildtask.ID(id))
@@ -247,6 +238,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(builder.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, builderImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case builderprofile.Table:
+		query := c.BuilderProfile.Query().
+			Where(builderprofile.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, builderprofileImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -500,22 +500,6 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 				*noder = node
 			}
 		}
-	case buildprofile.Table:
-		query := c.BuildProfile.Query().
-			Where(buildprofile.IDIn(ids...))
-		query, err := query.CollectFields(ctx, buildprofileImplementors...)
-		if err != nil {
-			return nil, err
-		}
-		nodes, err := query.All(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, node := range nodes {
-			for _, noder := range idmap[node.ID] {
-				*noder = node
-			}
-		}
 	case buildtask.Table:
 		query := c.BuildTask.Query().
 			Where(buildtask.IDIn(ids...))
@@ -536,6 +520,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Builder.Query().
 			Where(builder.IDIn(ids...))
 		query, err := query.CollectFields(ctx, builderImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case builderprofile.Table:
+		query := c.BuilderProfile.Query().
+			Where(builderprofile.IDIn(ids...))
+		query, err := query.CollectFields(ctx, builderprofileImplementors...)
 		if err != nil {
 			return nil, err
 		}

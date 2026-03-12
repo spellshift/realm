@@ -108,7 +108,7 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (bt *BuildTask) BuilderProfile(ctx context.Context) (*BuildProfile, error) {
+func (bt *BuildTask) BuilderProfile(ctx context.Context) (*BuilderProfile, error) {
 	result, err := bt.Edges.BuilderProfileOrErr()
 	if IsNotLoaded(err) {
 		result, err = bt.QueryBuilderProfile().Only(ctx)

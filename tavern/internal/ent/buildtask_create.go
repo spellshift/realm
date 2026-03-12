@@ -15,7 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -76,6 +76,18 @@ func (btc *BuildTaskCreate) SetBuildImage(s string) *BuildTaskCreate {
 // SetBuildScript sets the "build_script" field.
 func (btc *BuildTaskCreate) SetBuildScript(s string) *BuildTaskCreate {
 	btc.mutation.SetBuildScript(s)
+	return btc
+}
+
+// SetTransports sets the "transports" field.
+func (btc *BuildTaskCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskCreate {
+	btc.mutation.SetTransports(btt)
+	return btc
+}
+
+// SetTomes sets the "tomes" field.
+func (btc *BuildTaskCreate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskCreate {
+	btc.mutation.SetTomes(bttc)
 	return btc
 }
 
@@ -205,13 +217,13 @@ func (btc *BuildTaskCreate) SetNillableArtifactPath(s *string) *BuildTaskCreate 
 	return btc
 }
 
-// SetBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID.
+// SetBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID.
 func (btc *BuildTaskCreate) SetBuilderProfileID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderProfileID(id)
 	return btc
 }
 
-// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuildProfile entity by ID if the given value is not nil.
+// SetNillableBuilderProfileID sets the "builder_profile" edge to the BuilderProfile entity by ID if the given value is not nil.
 func (btc *BuildTaskCreate) SetNillableBuilderProfileID(id *int) *BuildTaskCreate {
 	if id != nil {
 		btc = btc.SetBuilderProfileID(*id)
@@ -219,8 +231,8 @@ func (btc *BuildTaskCreate) SetNillableBuilderProfileID(id *int) *BuildTaskCreat
 	return btc
 }
 
-// SetBuilderProfile sets the "builder_profile" edge to the BuildProfile entity.
-func (btc *BuildTaskCreate) SetBuilderProfile(b *BuildProfile) *BuildTaskCreate {
+// SetBuilderProfile sets the "builder_profile" edge to the BuilderProfile entity.
+func (btc *BuildTaskCreate) SetBuilderProfile(b *BuilderProfile) *BuildTaskCreate {
 	return btc.SetBuilderProfileID(b.ID)
 }
 
@@ -356,6 +368,9 @@ func (btc *BuildTaskCreate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
+	if _, ok := btc.mutation.Transports(); !ok {
+		return &ValidationError{Name: "transports", err: errors.New(`ent: missing required field "BuildTask.transports"`)}
+	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		return &ValidationError{Name: "output_size", err: errors.New(`ent: missing required field "BuildTask.output_size"`)}
 	}
@@ -426,6 +441,14 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 		_node.BuildScript = value
 	}
+	if value, ok := btc.mutation.Transports(); ok {
+		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
+		_node.Transports = value
+	}
+	if value, ok := btc.mutation.Tomes(); ok {
+		_spec.SetField(buildtask.FieldTomes, field.TypeJSON, value)
+		_node.Tomes = value
+	}
 	if value, ok := btc.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
 		_node.ClaimedAt = value
@@ -470,7 +493,7 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 			Columns: []string{buildtask.BuilderProfileColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(builderprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -622,6 +645,36 @@ func (u *BuildTaskUpsert) SetBuildScript(v string) *BuildTaskUpsert {
 // UpdateBuildScript sets the "build_script" field to the value that was provided on create.
 func (u *BuildTaskUpsert) UpdateBuildScript() *BuildTaskUpsert {
 	u.SetExcluded(buildtask.FieldBuildScript)
+	return u
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsert {
+	u.Set(buildtask.FieldTransports, v)
+	return u
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateTransports() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldTransports)
+	return u
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildTaskUpsert) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildTaskUpsert {
+	u.Set(buildtask.FieldTomes, v)
+	return u
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateTomes() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldTomes)
+	return u
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildTaskUpsert) ClearTomes() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldTomes)
 	return u
 }
 
@@ -905,6 +958,41 @@ func (u *BuildTaskUpsertOne) SetBuildScript(v string) *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) UpdateBuildScript() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
+	})
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTransports(v)
+	})
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateTransports() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTransports()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildTaskUpsertOne) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateTomes() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildTaskUpsertOne) ClearTomes() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearTomes()
 	})
 }
 
@@ -1382,6 +1470,41 @@ func (u *BuildTaskUpsertBulk) SetBuildScript(v string) *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) UpdateBuildScript() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
+	})
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuildTaskUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTransports(v)
+	})
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateTransports() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTransports()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildTaskUpsertBulk) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateTomes() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildTaskUpsertBulk) ClearTomes() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearTomes()
 	})
 }
 

@@ -9,16 +9,18 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	mathrand "math/rand"
-	"net/url"
 	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
+	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
@@ -332,16 +334,6 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 
 // RegisterBuilder is the resolver for the registerBuilder field.
 func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
-	// Normalize upstream so bare "host:port" values get an https:// scheme.
-	if input.Upstream != nil {
-		normalized := normalizeUpstream(*input.Upstream)
-		// Validate the result is a well-formed URL.
-		if _, err := url.Parse(normalized); err != nil {
-			return nil, fmt.Errorf("invalid upstream address %q: %w", *input.Upstream, err)
-		}
-		input.Upstream = &normalized
-	}
-
 	// 1. Create builder ent (identifier is auto-generated)
 	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
 	if err != nil {
@@ -409,15 +401,21 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		buildImage = *input.BuildImage
 	}
 
-	// Resolve transports from the builder profile
+	// Resolve transports: use default if none provided
 	transports := builder.DefaultTransports
-	if input.BuilderProfileID != 0 {
-		profile, err := r.client.BuildProfile.Get(ctx, input.BuilderProfileID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load builder profile: %w", err)
-		}
-		if len(profile.Transports) > 0 {
-			transports = profile.Transports
+	if len(input.Transports) > 0 {
+		transports = make([]builderpb.BuildTaskTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildTaskTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
 		}
 	}
 
@@ -470,17 +468,37 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// 6. Randomly select one builder
 	selected := candidates[mathrand.Intn(len(candidates))]
 
+	// Resolve tomes
+	var tomes []builderpb.BuildTaskTomeConfig
+	if len(input.Tomes) > 0 {
+		for _, t := range input.Tomes {
+			var params map[string]string
+			if err := json.Unmarshal([]byte(t.Params), &params); err != nil {
+				return nil, fmt.Errorf("failed to parse params for tome %d: %w", t.TomeID, err)
+			}
+			tomes = append(tomes, builderpb.BuildTaskTomeConfig{
+				TomeID: int64(t.TomeID),
+				Params: params,
+			})
+		}
+	}
+
 	// 7. Create the build task
 	create := r.client.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
 		SetTargetFormat(targetFormat).
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
+		SetTransports(transports).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
 
-	if input.BuilderProfileID != 0 {
-		create.SetBuilderProfileID(input.BuilderProfileID)
+	if len(tomes) > 0 {
+		create.SetTomes(tomes)
+	}
+
+	if input.BuilderProfileID != nil {
+		create.SetBuilderProfileID(*input.BuilderProfileID)
 	}
 
 	bt, err := create.Save(ctx)
@@ -491,14 +509,14 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	return bt, nil
 }
 
-// CreateBuildProfile is the resolver for the createBuildProfile field.
-func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input ent.CreateBuildProfileInput, transports []*models.BuildTaskTransportInput, tomes []*models.BuildTaskTomeConfigInput) (*ent.BuildProfile, error) {
-	panic(fmt.Errorf("not implemented: CreateBuildProfile - createBuildProfile"))
+// CreateBuilderProfile is the resolver for the createBuilderProfile field.
+func (r *mutationResolver) CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput) (*ent.BuilderProfile, error) {
+	return r.client.BuilderProfile.Create().SetInput(input).Save(ctx)
 }
 
-// UpdateBuildProfile is the resolver for the updateBuildProfile field.
-func (r *mutationResolver) UpdateBuildProfile(ctx context.Context, id int, input ent.UpdateBuildProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool, tomes []*models.BuildTaskTomeConfigInput, clearTomes *bool) (*ent.BuildProfile, error) {
-	panic(fmt.Errorf("not implemented: UpdateBuildProfile - updateBuildProfile"))
+// UpdateBuilderProfile is the resolver for the updateBuilderProfile field.
+func (r *mutationResolver) UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput) (*ent.BuilderProfile, error) {
+	return r.client.BuilderProfile.UpdateOneID(id).SetInput(input).Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

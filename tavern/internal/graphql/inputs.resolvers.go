@@ -8,16 +8,10 @@ package graphql
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/graphql/generated"
 )
-
-// TomeID is the resolver for the tomeID field.
-func (r *buildTaskTomeConfigResolver) TomeID(ctx context.Context, obj *builderpb.BuildTaskTomeConfig) (int, error) {
-	panic(fmt.Errorf("not implemented: TomeID - tomeID"))
-}
 
 // Params is the resolver for the params field.
 func (r *buildTaskTomeConfigResolver) Params(ctx context.Context, obj *builderpb.BuildTaskTomeConfig) (string, error) {

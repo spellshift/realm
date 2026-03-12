@@ -7,9 +7,7 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
-	"entgo.io/contrib/entgql"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -38,11 +36,6 @@ func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
 	return r.client.Noders(ctx, ids)
-}
-
-// BuildProfiles is the resolver for the buildProfiles field.
-func (r *queryResolver) BuildProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) (*ent.BuildProfileConnection, error) {
-	panic(fmt.Errorf("not implemented: BuildProfiles - buildProfiles"))
 }
 
 // SequenceID is the resolver for the sequenceID field.

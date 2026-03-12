@@ -50,7 +50,4 @@
 	// "mounts": [
 	// 	"source=${localEnv:HOME}${localEnv:USERPROFILE}/MacOSX.sdk,target=/MacOSX.sdk,readonly,type=bind"
 	// ],
-	"runArgs": [
-		"-v", "/var/run/docker.sock:/var/run/docker.sock"
-	]
 }

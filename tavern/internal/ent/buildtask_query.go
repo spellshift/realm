@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -25,7 +25,7 @@ type BuildTaskQuery struct {
 	order              []buildtask.OrderOption
 	inters             []Interceptor
 	predicates         []predicate.BuildTask
-	withBuilderProfile *BuildProfileQuery
+	withBuilderProfile *BuilderProfileQuery
 	withBuilder        *BuilderQuery
 	withArtifact       *AssetQuery
 	withFKs            bool
@@ -68,8 +68,8 @@ func (btq *BuildTaskQuery) Order(o ...buildtask.OrderOption) *BuildTaskQuery {
 }
 
 // QueryBuilderProfile chains the current query on the "builder_profile" edge.
-func (btq *BuildTaskQuery) QueryBuilderProfile() *BuildProfileQuery {
-	query := (&BuildProfileClient{config: btq.config}).Query()
+func (btq *BuildTaskQuery) QueryBuilderProfile() *BuilderProfileQuery {
+	query := (&BuilderProfileClient{config: btq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := btq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -80,7 +80,7 @@ func (btq *BuildTaskQuery) QueryBuilderProfile() *BuildProfileQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
-			sqlgraph.To(buildprofile.Table, buildprofile.FieldID),
+			sqlgraph.To(builderprofile.Table, builderprofile.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BuilderProfileTable, buildtask.BuilderProfileColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
@@ -336,8 +336,8 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 
 // WithBuilderProfile tells the query-builder to eager-load the nodes that are connected to
 // the "builder_profile" edge. The optional arguments are used to configure the query builder of the edge.
-func (btq *BuildTaskQuery) WithBuilderProfile(opts ...func(*BuildProfileQuery)) *BuildTaskQuery {
-	query := (&BuildProfileClient{config: btq.config}).Query()
+func (btq *BuildTaskQuery) WithBuilderProfile(opts ...func(*BuilderProfileQuery)) *BuildTaskQuery {
+	query := (&BuilderProfileClient{config: btq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -481,7 +481,7 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	}
 	if query := btq.withBuilderProfile; query != nil {
 		if err := btq.loadBuilderProfile(ctx, query, nodes, nil,
-			func(n *BuildTask, e *BuildProfile) { n.Edges.BuilderProfile = e }); err != nil {
+			func(n *BuildTask, e *BuilderProfile) { n.Edges.BuilderProfile = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -505,7 +505,7 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	return nodes, nil
 }
 
-func (btq *BuildTaskQuery) loadBuilderProfile(ctx context.Context, query *BuildProfileQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *BuildProfile)) error {
+func (btq *BuildTaskQuery) loadBuilderProfile(ctx context.Context, query *BuilderProfileQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *BuilderProfile)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*BuildTask)
 	for i := range nodes {
@@ -521,7 +521,7 @@ func (btq *BuildTaskQuery) loadBuilderProfile(ctx context.Context, query *BuildP
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(buildprofile.IDIn(ids...))
+	query.Where(builderprofile.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err

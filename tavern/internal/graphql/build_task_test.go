@@ -38,6 +38,7 @@ func TestCreateBuildTask(t *testing.T) {
 			targetFormat
 			buildImage
 			buildScript
+			transports { uri interval type extra }
 			artifactPath
 			builder { id }
 		}
@@ -49,34 +50,19 @@ func TestCreateBuildTask(t *testing.T) {
 	}`
 
 	t.Run("NoBuilders", func(t *testing.T) {
-		graph.BuildProfile.Delete().ExecX(ctx)
-
 		var resp struct {
 			CreateBuildTask struct {
 				ID string
 			}
 		}
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
-
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 			"targetOS": "PLATFORM_LINUX",
-			"builderProfileID": profile.ID,
-
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
 	})
 
 	t.Run("NoMatchingBuilder", func(t *testing.T) {
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
-
 		// Create a builder that only supports Windows
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).
@@ -91,7 +77,6 @@ func TestCreateBuildTask(t *testing.T) {
 		}
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 			"targetOS": "PLATFORM_LINUX",
-			"builderProfileID": profile.ID,
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
@@ -101,37 +86,12 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up previous builders
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
 
 		linuxBuilder := graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
 			SetUpstream("https://example.com").
 			SetLastSeenAt(time.Now()).
 			SaveX(ctx)
-
-		// Create a builder profile with transports
-		var profileResp struct {
-			CreateBuilderProfile struct {
-				ID string
-			}
-		}
-		err := gqlClient.Post(`mutation createBuilderProfile($input: CreateBuilderProfileInput!, $transports: [BuildTaskTransportInput!]) {
-			createBuilderProfile(input: $input, transports: $transports) {
-				id
-			}
-		}`, &profileResp,
-			client.Var("input", map[string]any{
-				"name": "test-profile",
-			}),
-			client.Var("transports", []map[string]any{
-				{
-					"uri":      "https://callback.example.com",
-					"interval": 10,
-					"type":     "TRANSPORT_GRPC",
-				},
-			}),
-		)
-		require.NoError(t, err)
 
 		var resp struct {
 			CreateBuildTask struct {
@@ -140,15 +100,27 @@ func TestCreateBuildTask(t *testing.T) {
 				TargetFormat string
 				BuildImage   string
 				BuildScript  string
+				Transports   []struct {
+					URI      string
+					Interval int
+					Type     string
+					Extra    *string
+				}
 				ArtifactPath string
 				Builder      struct {
 					ID string
 				}
 			}
 		}
-		err = gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
-			"targetOS":         "PLATFORM_LINUX",
-			"builderProfileID": profileResp.CreateBuilderProfile.ID,
+		err := gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
+			"targetOS": "PLATFORM_LINUX",
+			"transports": []map[string]any{
+				{
+					"uri":   "https://callback.example.com",
+					"interval":      10,
+					"type": "TRANSPORT_GRPC",
+				},
+			},
 		}))
 		require.NoError(t, err)
 		require.NotEmpty(t, resp.CreateBuildTask.ID)
@@ -156,6 +128,10 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].URI)
+		assert.Equal(t, 10, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 
 		// Verify the builder edge
@@ -168,12 +144,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
-
 
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
@@ -183,9 +153,14 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID           string
+				ID         string
 				TargetFormat string
 				BuildImage   string
+				Transports []struct {
+					URI      string
+					Interval int
+					Type     string
+				}
 				ArtifactPath string
 			}
 		}
@@ -195,15 +170,19 @@ func TestCreateBuildTask(t *testing.T) {
 				id
 				targetFormat
 				buildImage
+				transports { uri interval type }
 				artifactPath
 			}
 		}`, &resp, client.Var("input", map[string]any{
-			"targetOS":         "PLATFORM_LINUX",
-			"builderProfileID": profile.ID,
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.NoError(t, err)
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].URI)
+		assert.Equal(t, 5, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 	})
 
@@ -211,12 +190,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
-
 
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
@@ -238,7 +211,6 @@ func TestCreateBuildTask(t *testing.T) {
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
 			"artifactPath": "/custom/path/to/binary",
-			"builderProfileID": profile.ID,
 		}))
 		require.NoError(t, err)
 		assert.Equal(t, "/custom/path/to/binary", resp.CreateBuildTask.ArtifactPath)
@@ -248,11 +220,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
 
 		// Create 3 builders that all support Linux
 		builders := make(map[int]bool)
@@ -275,7 +242,6 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 			err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 				"targetOS": "PLATFORM_LINUX",
-				"builderProfileID": profile.ID,
 			}))
 			require.NoError(t, err)
 
@@ -293,11 +259,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SaveX(ctx)
 
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_LINUX}).
@@ -314,7 +275,6 @@ func TestCreateBuildTask(t *testing.T) {
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
 			"targetFormat": "TARGET_FORMAT_CDYLIB",
-			"builderProfileID": profile.ID,
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not supported")
@@ -324,12 +284,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// Clean up
 		graph.BuildTask.Delete().ExecX(ctx)
 		graph.Builder.Delete().ExecX(ctx)
-		graph.BuildProfile.Delete().ExecX(ctx)
-
-		profile := graph.BuildProfile.Create().
-			SetName("test").
-			SetName("test").
-			SaveX(ctx)
 
 		graph.Builder.Create().
 			SetSupportedTargets([]c2pb.Host_Platform{c2pb.Host_PLATFORM_WINDOWS}).
@@ -353,7 +307,6 @@ func TestCreateBuildTask(t *testing.T) {
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_WINDOWS",
 			"targetFormat": "TARGET_FORMAT_WINDOWS_SERVICE",
-			"builderProfileID": profile.ID,
 		}))
 		require.NoError(t, err)
 		assert.Equal(t, "TARGET_FORMAT_WINDOWS_SERVICE", resp.CreateBuildTask.TargetFormat)

@@ -8,7 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -99,25 +99,6 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
-	buildprofileMixin := schema.BuildProfile{}.Mixin()
-	buildprofileMixinFields0 := buildprofileMixin[0].Fields()
-	_ = buildprofileMixinFields0
-	buildprofileFields := schema.BuildProfile{}.Fields()
-	_ = buildprofileFields
-	// buildprofileDescCreatedAt is the schema descriptor for created_at field.
-	buildprofileDescCreatedAt := buildprofileMixinFields0[0].Descriptor()
-	// buildprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
-	buildprofile.DefaultCreatedAt = buildprofileDescCreatedAt.Default.(func() time.Time)
-	// buildprofileDescLastModifiedAt is the schema descriptor for last_modified_at field.
-	buildprofileDescLastModifiedAt := buildprofileMixinFields0[1].Descriptor()
-	// buildprofile.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
-	buildprofile.DefaultLastModifiedAt = buildprofileDescLastModifiedAt.Default.(func() time.Time)
-	// buildprofile.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
-	buildprofile.UpdateDefaultLastModifiedAt = buildprofileDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// buildprofileDescName is the schema descriptor for name field.
-	buildprofileDescName := buildprofileFields[0].Descriptor()
-	// buildprofile.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	buildprofile.NameValidator = buildprofileDescName.Validators[0].(func(string) error)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
 	buildtaskHooks := schema.BuildTask{}.Hooks()
 	buildtask.Hooks[0] = buildtaskHooks[0]
@@ -144,13 +125,13 @@ func init() {
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[8].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[10].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[10].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[12].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.
@@ -180,6 +161,25 @@ func init() {
 	builderDescUpstream := builderFields[2].Descriptor()
 	// builder.DefaultUpstream holds the default value on creation for the upstream field.
 	builder.DefaultUpstream = builderDescUpstream.Default.(string)
+	builderprofileMixin := schema.BuilderProfile{}.Mixin()
+	builderprofileMixinFields0 := builderprofileMixin[0].Fields()
+	_ = builderprofileMixinFields0
+	builderprofileFields := schema.BuilderProfile{}.Fields()
+	_ = builderprofileFields
+	// builderprofileDescCreatedAt is the schema descriptor for created_at field.
+	builderprofileDescCreatedAt := builderprofileMixinFields0[0].Descriptor()
+	// builderprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
+	builderprofile.DefaultCreatedAt = builderprofileDescCreatedAt.Default.(func() time.Time)
+	// builderprofileDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	builderprofileDescLastModifiedAt := builderprofileMixinFields0[1].Descriptor()
+	// builderprofile.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	builderprofile.DefaultLastModifiedAt = builderprofileDescLastModifiedAt.Default.(func() time.Time)
+	// builderprofile.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	builderprofile.UpdateDefaultLastModifiedAt = builderprofileDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// builderprofileDescName is the schema descriptor for name field.
+	builderprofileDescName := builderprofileFields[0].Descriptor()
+	// builderprofile.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	builderprofile.NameValidator = builderprofileDescName.Validators[0].(func(string) error)
 	deviceauthMixin := schema.DeviceAuth{}.Mixin()
 	deviceauthMixinFields0 := deviceauthMixin[0].Fields()
 	_ = deviceauthMixinFields0

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -34,6 +35,10 @@ type BuildTask struct {
 	BuildImage string `json:"build_image,omitempty"`
 	// The derived script to execute inside the build container.
 	BuildScript string `json:"build_script,omitempty"`
+	// List of transport configurations for the IMIX agent.
+	Transports []builderpb.BuildTaskTransport `json:"transports,omitempty"`
+	// List of tomes to include in the build.
+	Tomes []builderpb.BuildTaskTomeConfig `json:"tomes,omitempty"`
 	// Timestamp of when a builder claimed this task, null if unclaimed.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// Timestamp of when the build execution started, null if not yet started.
@@ -64,7 +69,7 @@ type BuildTask struct {
 // BuildTaskEdges holds the relations/edges for other nodes in the graph.
 type BuildTaskEdges struct {
 	// The profile specifying pre/post build scripts.
-	BuilderProfile *BuildProfile `json:"builder_profile,omitempty"`
+	BuilderProfile *BuilderProfile `json:"builder_profile,omitempty"`
 	// The builder assigned to execute this build task.
 	Builder *Builder `json:"builder,omitempty"`
 	// The compiled artifact produced by this build task, stored as an Asset.
@@ -78,11 +83,11 @@ type BuildTaskEdges struct {
 
 // BuilderProfileOrErr returns the BuilderProfile value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e BuildTaskEdges) BuilderProfileOrErr() (*BuildProfile, error) {
+func (e BuildTaskEdges) BuilderProfileOrErr() (*BuilderProfile, error) {
 	if e.BuilderProfile != nil {
 		return e.BuilderProfile, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: buildprofile.Label}
+		return nil, &NotFoundError{label: builderprofile.Label}
 	}
 	return nil, &NotLoadedError{edge: "builder_profile"}
 }
@@ -114,6 +119,8 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case buildtask.FieldTransports, buildtask.FieldTomes:
+			values[i] = new([]byte)
 		case buildtask.FieldTargetFormat:
 			values[i] = new(builderpb.TargetFormat)
 		case buildtask.FieldTargetOs:
@@ -186,6 +193,22 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field build_script", values[i])
 			} else if value.Valid {
 				bt.BuildScript = value.String
+			}
+		case buildtask.FieldTransports:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field transports", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bt.Transports); err != nil {
+					return fmt.Errorf("unmarshal field transports: %w", err)
+				}
+			}
+		case buildtask.FieldTomes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tomes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bt.Tomes); err != nil {
+					return fmt.Errorf("unmarshal field tomes: %w", err)
+				}
 			}
 		case buildtask.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -277,7 +300,7 @@ func (bt *BuildTask) Value(name string) (ent.Value, error) {
 }
 
 // QueryBuilderProfile queries the "builder_profile" edge of the BuildTask entity.
-func (bt *BuildTask) QueryBuilderProfile() *BuildProfileQuery {
+func (bt *BuildTask) QueryBuilderProfile() *BuilderProfileQuery {
 	return NewBuildTaskClient(bt.config).QueryBuilderProfile(bt)
 }
 
@@ -331,6 +354,12 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("build_script=")
 	builder.WriteString(bt.BuildScript)
+	builder.WriteString(", ")
+	builder.WriteString("transports=")
+	builder.WriteString(fmt.Sprintf("%v", bt.Transports))
+	builder.WriteString(", ")
+	builder.WriteString("tomes=")
+	builder.WriteString(fmt.Sprintf("%v", bt.Tomes))
 	builder.WriteString(", ")
 	builder.WriteString("claimed_at=")
 	builder.WriteString(bt.ClaimedAt.Format(time.ANSIC))

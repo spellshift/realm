@@ -3,19 +3,17 @@
 package ent
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/ent/buildprofile"
+	"realm.pub/tavern/internal/ent/builderprofile"
 )
 
-// BuildProfile is the model entity for the BuildProfile schema.
-type BuildProfile struct {
+// BuilderProfile is the model entity for the BuilderProfile schema.
+type BuilderProfile struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
@@ -23,33 +21,27 @@ type BuildProfile struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Timestamp of when this ent was last updated
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty"`
-	// Name of the build profile.
+	// Name of the builder profile.
 	Name string `json:"name,omitempty"`
-	// Description of the build profile.
+	// Description of the builder profile.
 	Description string `json:"description,omitempty"`
 	// Bash script to run before compilation.
 	PreBuildScript string `json:"pre_build_script,omitempty"`
 	// Bash script to run after build is complete.
 	PostBuildScript string `json:"post_build_script,omitempty"`
-	// List of transport configurations for the IMIX agent.
-	Transports []builderpb.BuildTaskTransport `json:"transports,omitempty"`
-	// List of tomes to include in the build.
-	Tomes        []builderpb.BuildTaskTomeConfig `json:"tomes,omitempty"`
-	selectValues sql.SelectValues
+	selectValues    sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*BuildProfile) scanValues(columns []string) ([]any, error) {
+func (*BuilderProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case buildprofile.FieldTransports, buildprofile.FieldTomes:
-			values[i] = new([]byte)
-		case buildprofile.FieldID:
+		case builderprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldPreBuildScript, buildprofile.FieldPostBuildScript:
+		case builderprofile.FieldName, builderprofile.FieldDescription, builderprofile.FieldPreBuildScript, builderprofile.FieldPostBuildScript:
 			values[i] = new(sql.NullString)
-		case buildprofile.FieldCreatedAt, buildprofile.FieldLastModifiedAt:
+		case builderprofile.FieldCreatedAt, builderprofile.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -59,70 +51,54 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the BuildProfile fields.
-func (bp *BuildProfile) assignValues(columns []string, values []any) error {
+// to the BuilderProfile fields.
+func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case buildprofile.FieldID:
+		case builderprofile.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			bp.ID = int(value.Int64)
-		case buildprofile.FieldCreatedAt:
+		case builderprofile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				bp.CreatedAt = value.Time
 			}
-		case buildprofile.FieldLastModifiedAt:
+		case builderprofile.FieldLastModifiedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_modified_at", values[i])
 			} else if value.Valid {
 				bp.LastModifiedAt = value.Time
 			}
-		case buildprofile.FieldName:
+		case builderprofile.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				bp.Name = value.String
 			}
-		case buildprofile.FieldDescription:
+		case builderprofile.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				bp.Description = value.String
 			}
-		case buildprofile.FieldPreBuildScript:
+		case builderprofile.FieldPreBuildScript:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field pre_build_script", values[i])
 			} else if value.Valid {
 				bp.PreBuildScript = value.String
 			}
-		case buildprofile.FieldPostBuildScript:
+		case builderprofile.FieldPostBuildScript:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field post_build_script", values[i])
 			} else if value.Valid {
 				bp.PostBuildScript = value.String
-			}
-		case buildprofile.FieldTransports:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field transports", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &bp.Transports); err != nil {
-					return fmt.Errorf("unmarshal field transports: %w", err)
-				}
-			}
-		case buildprofile.FieldTomes:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field tomes", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &bp.Tomes); err != nil {
-					return fmt.Errorf("unmarshal field tomes: %w", err)
-				}
 			}
 		default:
 			bp.selectValues.Set(columns[i], values[i])
@@ -131,34 +107,34 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the BuildProfile.
+// Value returns the ent.Value that was dynamically selected and assigned to the BuilderProfile.
 // This includes values selected through modifiers, order, etc.
-func (bp *BuildProfile) Value(name string) (ent.Value, error) {
+func (bp *BuilderProfile) Value(name string) (ent.Value, error) {
 	return bp.selectValues.Get(name)
 }
 
-// Update returns a builder for updating this BuildProfile.
-// Note that you need to call BuildProfile.Unwrap() before calling this method if this BuildProfile
+// Update returns a builder for updating this BuilderProfile.
+// Note that you need to call BuilderProfile.Unwrap() before calling this method if this BuilderProfile
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (bp *BuildProfile) Update() *BuildProfileUpdateOne {
-	return NewBuildProfileClient(bp.config).UpdateOne(bp)
+func (bp *BuilderProfile) Update() *BuilderProfileUpdateOne {
+	return NewBuilderProfileClient(bp.config).UpdateOne(bp)
 }
 
-// Unwrap unwraps the BuildProfile entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the BuilderProfile entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (bp *BuildProfile) Unwrap() *BuildProfile {
+func (bp *BuilderProfile) Unwrap() *BuilderProfile {
 	_tx, ok := bp.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: BuildProfile is not a transactional entity")
+		panic("ent: BuilderProfile is not a transactional entity")
 	}
 	bp.config.driver = _tx.drv
 	return bp
 }
 
 // String implements the fmt.Stringer.
-func (bp *BuildProfile) String() string {
+func (bp *BuilderProfile) String() string {
 	var builder strings.Builder
-	builder.WriteString("BuildProfile(")
+	builder.WriteString("BuilderProfile(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", bp.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(bp.CreatedAt.Format(time.ANSIC))
@@ -177,15 +153,9 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("post_build_script=")
 	builder.WriteString(bp.PostBuildScript)
-	builder.WriteString(", ")
-	builder.WriteString("transports=")
-	builder.WriteString(fmt.Sprintf("%v", bp.Transports))
-	builder.WriteString(", ")
-	builder.WriteString("tomes=")
-	builder.WriteString(fmt.Sprintf("%v", bp.Tomes))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// BuildProfiles is a parsable slice of BuildProfile.
-type BuildProfiles []*BuildProfile
+// BuilderProfiles is a parsable slice of BuilderProfile.
+type BuilderProfiles []*BuilderProfile

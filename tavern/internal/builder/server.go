@@ -107,26 +107,9 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			return nil, status.Errorf(codes.Internal, "failed to load claimed build task (but it was still claimed) %d: %v", taskID, err)
 		}
 
-		// Load the builder profile for transports, tomes, and build scripts.
-		var preBuildScript, postBuildScript string
-		var profileTransports []builderpb.BuildTaskTransport
-		var profileTomes []builderpb.BuildTaskTomeConfig
-		profile, err := claimedTask.QueryBuilderProfile().Only(ctx)
-		if err == nil && profile != nil {
-			preBuildScript = profile.PreBuildScript
-			postBuildScript = profile.PostBuildScript
-			profileTransports = profile.Transports
-			profileTomes = profile.Tomes
-		}
-
-		// Use default transports if profile has none.
-		if len(profileTransports) == 0 {
-			profileTransports = DefaultTransports
-		}
-
-		// Derive the IMIX config YAML from the profile's transports.
-		imixTransports := make([]ImixTransportConfig, len(profileTransports))
-		for i, t := range profileTransports {
+		// Derive the IMIX config YAML from the build task's stored transports.
+		imixTransports := make([]ImixTransportConfig, len(claimedTask.Transports))
+		for i, t := range claimedTask.Transports {
 			imixTransports[i] = ImixTransportConfig{
 				URI:      t.URI,
 				Interval: t.Interval,
@@ -142,9 +125,20 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal IMIX config: %w", err)
 		}
+		// string(cfgBytes)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to marshal IMIX config for task %d: %v", taskID, err)
+		}
 
-		tomesProto := make([]*builderpb.BuildTaskTome, 0, len(profileTomes))
-		for _, btTome := range profileTomes {
+		var preBuildScript, postBuildScript string
+		profile, err := claimedTask.QueryBuilderProfile().Only(ctx)
+		if err == nil && profile != nil {
+			preBuildScript = profile.PreBuildScript
+			postBuildScript = profile.PostBuildScript
+		}
+
+		tomesProto := make([]*builderpb.BuildTaskTome, 0, len(claimedTask.Tomes))
+		for _, btTome := range claimedTask.Tomes {
 			// Find actual tome
 			var tomeEntity *ent.Tome
 			tomeEntity, err = s.graph.Tome.Get(ctx, int(btTome.TomeID))
@@ -375,11 +369,6 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		Save(ctx)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to create asset: %v", err)
-	}
-
-	// Link artifact to build task.
-	if _, err := s.graph.BuildTask.UpdateOneID(int(taskID)).SetArtifactID(asset.ID).Save(ctx); err != nil {
-		return status.Errorf(codes.Internal, "failed to link artifact to build task %d: %v", taskID, err)
 	}
 
 	slog.InfoContext(ctx, "build artifact uploaded",
