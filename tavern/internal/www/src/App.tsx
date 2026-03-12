@@ -53,10 +53,6 @@ const router = createBrowserRouter([
         element: <Tasks />,
       },
       {
-        path: "createQuest",
-        element: <TagContextProvider><CreateQuest /></TagContextProvider>,
-      },
-      {
         path: "tasks",
         element: <Tasks />,
       },

@@ -6,7 +6,22 @@ import { ModalQuestFormValues } from "./types";
 
 export type CreateModalQuestProps = ModalQuestFormValues;
 
-export const useModalSubmitQuest = (setOpen: (arg: any) => any) => {
+interface CreateQuestMutationData {
+    createQuest: {
+        id: string;
+    };
+}
+
+interface CreateQuestMutationVariables {
+    IDs: string[];
+    input: {
+        name: string;
+        tomeID: string;
+        parameters: string;
+    };
+}
+
+export const useModalSubmitQuest = () => {
     const [error, setError] = useState(false);
 
     const CREATE_QUEST_MUTATION = gql`
@@ -23,13 +38,13 @@ export const useModalSubmitQuest = (setOpen: (arg: any) => any) => {
         }
     };
 
-    const [createQuestMutation, { loading, reset }] = useMutation(CREATE_QUEST_MUTATION, {
+    const [createQuestMutation, { loading, reset }] = useMutation<CreateQuestMutationData, CreateQuestMutationVariables>(CREATE_QUEST_MUTATION, {
         onError: handleError,
         refetchQueries: [GET_QUEST_IDS_QUERY],
         awaitRefetchQueries: true,
     });
 
-    const submitQuest = (props: CreateModalQuestProps) => {
+    const submitQuest = async (props: CreateModalQuestProps) => {
         const param_obj = props.params.reduce(
             (acc, param) => {
                 acc[param.name] = param.value;
@@ -48,7 +63,7 @@ export const useModalSubmitQuest = (setOpen: (arg: any) => any) => {
                 },
             },
         };
-        createQuestMutation(formatVariables);
+        return createQuestMutation(formatVariables);
     };
 
     return {
