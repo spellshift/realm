@@ -10,14 +10,14 @@ import { BeaconTab } from "./beacon-tab";
 import { ProcessTab } from "./process-tab";
 import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
-import { CreateQuestModal } from "../../components/create-quest-modal";
-import { useState } from "react";
+import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
+import Button from "../../components/tavern-base-ui/button/Button";
 
 const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
 
 const HostDetails = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [isOpen, setOpen] = useState<boolean>(false);
+    const { openModal } = useCreateQuestModal();
 
     const tabParam = searchParams.get("tab");
     const selectedIndex = Math.max(0, TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]));
@@ -27,12 +27,22 @@ const HostDetails = () => {
     };
 
     const handleOpenCreateQuest = () => {
-        setOpen(true);
+        openModal();
     };
 
     return (
         <HostContextProvider>
-            <HostBreadcrumbs />
+            <div className="flex flex-row justify-between w-full items-center">
+                <HostBreadcrumbs />
+                <div>
+                    <Button
+                        buttonStyle={{ color: "purple", size: "md" }}
+                        onClick={() => openModal()}
+                    >
+                        Create quest
+                    </Button>
+                </div>
+            </div>
             <HostDetailsSection />
             <div className="flex flex-col mt-2">
                 <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
@@ -59,7 +69,6 @@ const HostDetails = () => {
                     </TabPanels>
                 </TabGroup>
             </div>
-            {isOpen && <CreateQuestModal isOpen={isOpen} setOpen={setOpen} />}
         </HostContextProvider>
     );
 };

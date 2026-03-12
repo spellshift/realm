@@ -3,12 +3,15 @@ import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/Empt
 import QuestCard from "./components/QuestCard";
 import AccessCard from "./components/AccessCard";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import Button from "../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
 import { useDashboardData } from "./hook/useDashboardData";
+import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { UseDashboardDataReturn } from "./types";
 
 export const Dashboard = () => {
     const { loading, error, data, hasTaskData }: UseDashboardDataReturn = useDashboardData();
+    const { openModal } = useCreateQuestModal();
 
     function getOverviewWrapper() {
         if (loading) {
@@ -42,10 +45,20 @@ export const Dashboard = () => {
 
     return (
         <>
-            <Breadcrumbs pages={[{
-                label: "Dashboard",
-                link: "/dashboard"
-            }]} />
+            <div className="flex flex-row justify-between w-full items-center">
+                <Breadcrumbs pages={[{
+                    label: "Dashboard",
+                    link: "/dashboard"
+                }]} />
+                <div>
+                    <Button
+                        buttonStyle={{ color: "purple", size: "md" }}
+                        onClick={() => openModal()}
+                    >
+                        Create quest
+                    </Button>
+                </div>
+            </div>
             <PageHeader title="Dashboard" />
             {getOverviewWrapper()}
         </>

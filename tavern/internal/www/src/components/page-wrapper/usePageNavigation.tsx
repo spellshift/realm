@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
     DocumentDuplicateIcon,
-    CommandLineIcon,
     WrenchScrewdriverIcon,
     BugAntIcon,
     PresentationChartBarIcon,
@@ -26,7 +25,6 @@ export const usePageNavigation = () => {
     const { data } = useAuthorization();
 
     const navigation = useMemo(() => [
-        { name: PageNavItem.createQuest, href: '/createQuest', icon: CommandLineIcon, internal: true },
         { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
         { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
         { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },

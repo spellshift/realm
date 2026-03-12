@@ -10,11 +10,35 @@ import { useModalSubmitQuest } from "./useModalSubmitQuest";
 import { BeaconSelectionStep } from "./beacon-selection";
 import { TomeSelectionStep } from "./tome-selection";
 import { FinalizeSelection } from "./finalize-selection";
+import { CreateQuestInitialData } from "../../context/CreateQuestModalContext";
 
 interface CreateQuestModalProps {
     isOpen: boolean;
-    setOpen: (arg: any) => any;
-    initialBeacons?: string[];
+    setOpen: (arg: boolean) => void;
+    initialFormData?: CreateQuestInitialData;
+    onComplete?: (questId: string) => void;
+}
+
+function getInitialStep(initialData?: CreateQuestInitialData): number {
+    if (initialData?.beacons && initialData.beacons.length > 0) {
+        if (initialData?.tomeId) {
+            return 2;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+function getInitialFormValues(
+    initialData: CreateQuestInitialData | undefined,
+    placeholderTitle: string
+): ModalQuestFormValues {
+    return {
+        name: initialData?.name || placeholderTitle,
+        tomeId: initialData?.tomeId ?? null,
+        params: initialData?.params || [],
+        beacons: initialData?.beacons || [],
+    };
 }
 
 interface StepConfig {
@@ -42,22 +66,23 @@ const STEPS: StepConfig[] = [
     },
 ];
 
-const CreateQuestModal = ({ isOpen, setOpen, initialBeacons = [] }: CreateQuestModalProps) => {
-    const [currStep, setCurrStep] = useState(0);
-    const { submitQuest, loading } = useModalSubmitQuest(setOpen);
+const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete }: CreateQuestModalProps) => {
     const [placeholderTitle] = useState(() => getRandomQuestName());
+    const [currStep, setCurrStep] = useState(() => getInitialStep(initialFormData));
+    const { submitQuest, loading } = useModalSubmitQuest();
 
     const formik = useFormik<ModalQuestFormValues>({
-        initialValues: {
-            name: placeholderTitle,
-            tomeId: null,
-            params: [],
-            beacons: initialBeacons,
-        },
+        initialValues: getInitialFormValues(initialFormData, placeholderTitle),
         validationSchema: modalQuestSchema,
         validateOnChange: true,
         validateOnBlur: true,
-        onSubmit: (values: ModalQuestFormValues) => submitQuest(values),
+        onSubmit: async (values: ModalQuestFormValues) => {
+            const result = await submitQuest(values);
+            const questId = result?.data?.createQuest?.id;
+            if (questId && onComplete) {
+                onComplete(questId);
+            }
+        },
     });
 
     const stepsMeta = useMemo(() => STEPS.map(s => s.meta), []);

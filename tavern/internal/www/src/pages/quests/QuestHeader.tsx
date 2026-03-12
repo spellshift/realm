@@ -1,9 +1,9 @@
 import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
-import { useNavigate } from "react-router-dom";
+import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 
 const QuestHeader = () => {
-    const navigate = useNavigate();
+    const { openModal } = useCreateQuestModal();
 
     return (
         <div className="flex flex-col gap-4 justify-between">
@@ -15,9 +15,9 @@ const QuestHeader = () => {
                 <div>
                     <Button
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => navigate("/createQuest")}
+                        onClick={() => openModal()}
                     >
-                        Create new quest
+                        Create quest
                     </Button>
                 </div>
             </div>

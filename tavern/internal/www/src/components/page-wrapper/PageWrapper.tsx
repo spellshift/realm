@@ -8,6 +8,7 @@ import { classNames, getNavItemFromPath } from '../../utils/utils';
 import { Outlet, useLocation } from 'react-router-dom'
 import { FilterProvider } from '../../context/FilterContext';
 import { SortsProvider } from '../../context/SortContext';
+import { CreateQuestModalProvider } from '../../context/CreateQuestModalContext';
 
 export const PageWrapper = () => {
   const { pathname } = useLocation();
@@ -17,24 +18,26 @@ export const PageWrapper = () => {
 
   return (
     <AccessGate>
-      <div>
-        {sidebarMinimized ?
-          <MinimizedSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
-          :
-          <FullSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
-        }
-        <MobileNav currNavItem={currNavItem} sidebarOpen={sidebarOpen} handleSidebarOpen={setSidebarOpen} />
+      <CreateQuestModalProvider>
+        <div>
+          {sidebarMinimized ?
+            <MinimizedSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
+            :
+            <FullSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
+          }
+          <MobileNav currNavItem={currNavItem} sidebarOpen={sidebarOpen} handleSidebarOpen={setSidebarOpen} />
 
-        <main className={classNames("py-4", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
-          <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">
-            <FilterProvider>
-              <SortsProvider>
-                <Outlet />
-              </SortsProvider>
-            </FilterProvider>
-          </div>
-        </main>
-      </div>
+          <main className={classNames("py-4", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
+            <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">
+              <FilterProvider>
+                <SortsProvider>
+                  <Outlet />
+                </SortsProvider>
+              </FilterProvider>
+            </div>
+          </main>
+        </div>
+      </CreateQuestModalProvider>
     </AccessGate>
   )
 }
