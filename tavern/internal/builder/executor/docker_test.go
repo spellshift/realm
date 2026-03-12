@@ -250,7 +250,9 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 	wg.Wait()
 
 	require.NoError(t, err)
-	// We check if the output contains the specific lines, because our Build setup wrapper might add lines like 'Running Main Build Script'
+	// Because of our custom runner wrapper, it executes `/bin/sh -c set -e; for f in ...`
+	// This wrapper creates its own output which might include setup commands or other statements.
+	// Just ensure we got all lines from our script.
 	expectedLines := []string{"line_1", "line_2", "line_3", "line_4", "line_5"}
 	for _, expected := range expectedLines {
 		found := false
@@ -260,6 +262,11 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 				break
 			}
 		}
-		assert.True(t, found, "expected output to contain: %s", expected)
+		assert.True(t, found, "expected output to contain: %s\nGot: %v", expected, output)
+	}
+
+	// Print actual output for manual debugging if needed
+	if t.Failed() {
+		t.Logf("Full output:\n%v", strings.Join(output, "\n"))
 	}
 }

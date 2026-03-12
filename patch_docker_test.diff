@@ -1,0 +1,31 @@
+<<<<<<< SEARCH
+	// We check if the output contains the specific lines, because our Build setup wrapper might add lines like 'Running Main Build Script'
+	expectedLines := []string{"line_1", "line_2", "line_3", "line_4", "line_5"}
+	for _, expected := range expectedLines {
+		found := false
+		for _, line := range output {
+			if strings.Contains(line, expected) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "expected output to contain: %s", expected)
+	}
+}
+=======
+	// Because of our custom runner wrapper, it executes `/bin/sh -c set -e; for f in ...`
+	// This wrapper creates its own output which might include setup commands or other statements.
+	// Just ensure we got all lines from our script.
+	expectedLines := []string{"line_1", "line_2", "line_3", "line_4", "line_5"}
+	for _, expected := range expectedLines {
+		found := false
+		for _, line := range output {
+			if strings.Contains(line, expected) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "expected output to contain: %s\nGot: %v", expected, output)
+	}
+}
+>>>>>>> REPLACE
