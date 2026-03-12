@@ -107,9 +107,6 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
-
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
@@ -117,7 +114,7 @@ input CreateBuildTaskInput {
   tomes: [BuildTaskTomeConfigInput!]
 
   """The builder profile to use for the build."""
-  builderProfileID: Int
+  builderProfileID: ID!
 }
 
 """Output returned when registering a new builder."""

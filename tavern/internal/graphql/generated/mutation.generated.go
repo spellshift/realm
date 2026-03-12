@@ -39,8 +39,8 @@ type MutationResolver interface {
 	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error)
 	DeleteBuilder(ctx context.Context, builderID int) (int, error)
 	CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error)
-	CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput) (*ent.BuilderProfile, error)
-	UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput) (*ent.BuilderProfile, error)
+	CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput, transports []*models.BuildTaskTransportInput) (*ent.BuilderProfile, error)
+	UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool) (*ent.BuilderProfile, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -66,6 +66,11 @@ func (ec *executionContext) field_Mutation_createBuilderProfile_args(ctx context
 		return nil, err
 	}
 	args["input"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "transports", ec.unmarshalOBuildTaskTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInputᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["transports"] = arg1
 	return args, nil
 }
 
@@ -240,6 +245,16 @@ func (ec *executionContext) field_Mutation_updateBuilderProfile_args(ctx context
 		return nil, err
 	}
 	args["input"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "transports", ec.unmarshalOBuildTaskTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInputᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["transports"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "clearTransports", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["clearTransports"] = arg3
 	return args, nil
 }
 
@@ -1964,7 +1979,7 @@ func (ec *executionContext) _Mutation_createBuilderProfile(ctx context.Context, 
 		ec.fieldContext_Mutation_createBuilderProfile,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateBuilderProfile(ctx, fc.Args["input"].(ent.CreateBuilderProfileInput))
+			return ec.resolvers.Mutation().CreateBuilderProfile(ctx, fc.Args["input"].(ent.CreateBuilderProfileInput), fc.Args["transports"].([]*models.BuildTaskTransportInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2013,6 +2028,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuilderProfile(ctx conte
 				return ec.fieldContext_BuilderProfile_preBuildScript(ctx, field)
 			case "postBuildScript":
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuilderProfile_transports(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -2039,7 +2056,7 @@ func (ec *executionContext) _Mutation_updateBuilderProfile(ctx context.Context, 
 		ec.fieldContext_Mutation_updateBuilderProfile,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateBuilderProfile(ctx, fc.Args["id"].(int), fc.Args["input"].(ent.UpdateBuilderProfileInput))
+			return ec.resolvers.Mutation().UpdateBuilderProfile(ctx, fc.Args["id"].(int), fc.Args["input"].(ent.UpdateBuilderProfileInput), fc.Args["transports"].([]*models.BuildTaskTransportInput), fc.Args["clearTransports"].(*bool))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2088,6 +2105,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBuilderProfile(ctx conte
 				return ec.fieldContext_BuilderProfile_preBuildScript(ctx, field)
 			case "postBuildScript":
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuilderProfile_transports(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent/builderprofile"
 )
 
@@ -95,6 +96,12 @@ func (bpc *BuilderProfileCreate) SetNillablePostBuildScript(s *string) *BuilderP
 	if s != nil {
 		bpc.SetPostBuildScript(*s)
 	}
+	return bpc
+}
+
+// SetTransports sets the "transports" field.
+func (bpc *BuilderProfileCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileCreate {
+	bpc.mutation.SetTransports(btt)
 	return bpc
 }
 
@@ -209,6 +216,10 @@ func (bpc *BuilderProfileCreate) createSpec() (*BuilderProfile, *sqlgraph.Create
 	if value, ok := bpc.mutation.PostBuildScript(); ok {
 		_spec.SetField(builderprofile.FieldPostBuildScript, field.TypeString, value)
 		_node.PostBuildScript = value
+	}
+	if value, ok := bpc.mutation.Transports(); ok {
+		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+		_node.Transports = value
 	}
 	return _node, _spec
 }
@@ -337,6 +348,24 @@ func (u *BuilderProfileUpsert) UpdatePostBuildScript() *BuilderProfileUpsert {
 // ClearPostBuildScript clears the value of the "post_build_script" field.
 func (u *BuilderProfileUpsert) ClearPostBuildScript() *BuilderProfileUpsert {
 	u.SetNull(builderprofile.FieldPostBuildScript)
+	return u
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuilderProfileUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsert {
+	u.Set(builderprofile.FieldTransports, v)
+	return u
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuilderProfileUpsert) UpdateTransports() *BuilderProfileUpsert {
+	u.SetExcluded(builderprofile.FieldTransports)
+	return u
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (u *BuilderProfileUpsert) ClearTransports() *BuilderProfileUpsert {
+	u.SetNull(builderprofile.FieldTransports)
 	return u
 }
 
@@ -473,6 +502,27 @@ func (u *BuilderProfileUpsertOne) UpdatePostBuildScript() *BuilderProfileUpsertO
 func (u *BuilderProfileUpsertOne) ClearPostBuildScript() *BuilderProfileUpsertOne {
 	return u.Update(func(s *BuilderProfileUpsert) {
 		s.ClearPostBuildScript()
+	})
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuilderProfileUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.SetTransports(v)
+	})
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuilderProfileUpsertOne) UpdateTransports() *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.UpdateTransports()
+	})
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (u *BuilderProfileUpsertOne) ClearTransports() *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.ClearTransports()
 	})
 }
 
@@ -775,6 +825,27 @@ func (u *BuilderProfileUpsertBulk) UpdatePostBuildScript() *BuilderProfileUpsert
 func (u *BuilderProfileUpsertBulk) ClearPostBuildScript() *BuilderProfileUpsertBulk {
 	return u.Update(func(s *BuilderProfileUpsert) {
 		s.ClearPostBuildScript()
+	})
+}
+
+// SetTransports sets the "transports" field.
+func (u *BuilderProfileUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.SetTransports(v)
+	})
+}
+
+// UpdateTransports sets the "transports" field to the value that was provided on create.
+func (u *BuilderProfileUpsertBulk) UpdateTransports() *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.UpdateTransports()
+	})
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (u *BuilderProfileUpsertBulk) ClearTransports() *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.ClearTransports()
 	})
 }
 

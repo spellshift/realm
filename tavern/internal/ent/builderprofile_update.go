@@ -10,7 +10,9 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent/builderprofile"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -108,6 +110,24 @@ func (bpu *BuilderProfileUpdate) ClearPostBuildScript() *BuilderProfileUpdate {
 	return bpu
 }
 
+// SetTransports sets the "transports" field.
+func (bpu *BuilderProfileUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdate {
+	bpu.mutation.SetTransports(btt)
+	return bpu
+}
+
+// AppendTransports appends btt to the "transports" field.
+func (bpu *BuilderProfileUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdate {
+	bpu.mutation.AppendTransports(btt)
+	return bpu
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (bpu *BuilderProfileUpdate) ClearTransports() *BuilderProfileUpdate {
+	bpu.mutation.ClearTransports()
+	return bpu
+}
+
 // Mutation returns the BuilderProfileMutation object of the builder.
 func (bpu *BuilderProfileUpdate) Mutation() *BuilderProfileMutation {
 	return bpu.mutation
@@ -194,6 +214,17 @@ func (bpu *BuilderProfileUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if bpu.mutation.PostBuildScriptCleared() {
 		_spec.ClearField(builderprofile.FieldPostBuildScript, field.TypeString)
+	}
+	if value, ok := bpu.mutation.Transports(); ok {
+		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+	}
+	if value, ok := bpu.mutation.AppendedTransports(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, builderprofile.FieldTransports, value)
+		})
+	}
+	if bpu.mutation.TransportsCleared() {
+		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bpu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -292,6 +323,24 @@ func (bpuo *BuilderProfileUpdateOne) SetNillablePostBuildScript(s *string) *Buil
 // ClearPostBuildScript clears the value of the "post_build_script" field.
 func (bpuo *BuilderProfileUpdateOne) ClearPostBuildScript() *BuilderProfileUpdateOne {
 	bpuo.mutation.ClearPostBuildScript()
+	return bpuo
+}
+
+// SetTransports sets the "transports" field.
+func (bpuo *BuilderProfileUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdateOne {
+	bpuo.mutation.SetTransports(btt)
+	return bpuo
+}
+
+// AppendTransports appends btt to the "transports" field.
+func (bpuo *BuilderProfileUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuilderProfileUpdateOne {
+	bpuo.mutation.AppendTransports(btt)
+	return bpuo
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (bpuo *BuilderProfileUpdateOne) ClearTransports() *BuilderProfileUpdateOne {
+	bpuo.mutation.ClearTransports()
 	return bpuo
 }
 
@@ -411,6 +460,17 @@ func (bpuo *BuilderProfileUpdateOne) sqlSave(ctx context.Context) (_node *Builde
 	}
 	if bpuo.mutation.PostBuildScriptCleared() {
 		_spec.ClearField(builderprofile.FieldPostBuildScript, field.TypeString)
+	}
+	if value, ok := bpuo.mutation.Transports(); ok {
+		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
+	}
+	if value, ok := bpuo.mutation.AppendedTransports(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, builderprofile.FieldTransports, value)
+		})
+	}
+	if bpuo.mutation.TransportsCleared() {
+		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
 	}
 	_node = &BuilderProfile{config: bpuo.config}
 	_spec.Assign = _node.assignValues

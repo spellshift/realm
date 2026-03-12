@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/builder/builderpb"
 )
 
 // BuilderProfile holds the schema definition for the BuilderProfile entity.
@@ -32,6 +33,12 @@ func (BuilderProfile) Fields() []ent.Field {
 		field.String("post_build_script").
 			Optional().
 			Comment("Bash script to run after build is complete."),
+		field.JSON("transports", []builderpb.BuildTaskTransport{}).
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("List of transport configurations for the IMIX agent."),
 	}
 }
 
@@ -44,6 +51,7 @@ func (BuilderProfile) Edges() []ent.Edge {
 func (BuilderProfile) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
+		entgql.QueryField(),
 		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),

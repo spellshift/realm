@@ -120,7 +120,11 @@ func DeriveArtifactPath(os c2pb.Host_Platform) string {
 	if !ok {
 		return "/home/vscode/realm/implants/target/release/imix"
 	}
-	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix", target)
+	ext := ""
+	if target == c2pb.Host_PLATFORM_WINDOWS.String() {
+		ext = ".exe"
+	}
+	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix%s", target, ext)
 }
 
 // GenerateBuildScript generates the full build script from the build configuration.

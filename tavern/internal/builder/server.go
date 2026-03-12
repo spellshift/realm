@@ -371,6 +371,11 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Errorf(codes.Internal, "failed to create asset: %v", err)
 	}
 
+	// Link artifact to build task.
+	if _, err := s.graph.BuildTask.UpdateOneID(int(taskID)).SetArtifactID(asset.ID).Save(ctx); err != nil {
+		return status.Errorf(codes.Internal, "failed to link artifact to build task %d: %v", taskID, err)
+	}
+
 	slog.InfoContext(ctx, "build artifact uploaded",
 		"task_id", taskID,
 		"builder_id", b.ID,

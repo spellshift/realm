@@ -454,6 +454,16 @@ func PostBuildScriptContainsFold(v string) predicate.BuilderProfile {
 	return predicate.BuilderProfile(sql.FieldContainsFold(FieldPostBuildScript, v))
 }
 
+// TransportsIsNil applies the IsNil predicate on the "transports" field.
+func TransportsIsNil() predicate.BuilderProfile {
+	return predicate.BuilderProfile(sql.FieldIsNull(FieldTransports))
+}
+
+// TransportsNotNil applies the NotNil predicate on the "transports" field.
+func TransportsNotNil() predicate.BuilderProfile {
+	return predicate.BuilderProfile(sql.FieldNotNull(FieldTransports))
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.BuilderProfile) predicate.BuilderProfile {
 	return predicate.BuilderProfile(sql.AndPredicates(predicates...))

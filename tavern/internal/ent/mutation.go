@@ -4524,6 +4524,8 @@ type BuilderProfileMutation struct {
 	description       *string
 	pre_build_script  *string
 	post_build_script *string
+	transports        *[]builderpb.BuildTaskTransport
+	appendtransports  []builderpb.BuildTaskTransport
 	clearedFields     map[string]struct{}
 	done              bool
 	oldValue          func(context.Context) (*BuilderProfile, error)
@@ -4883,6 +4885,71 @@ func (m *BuilderProfileMutation) ResetPostBuildScript() {
 	delete(m.clearedFields, builderprofile.FieldPostBuildScript)
 }
 
+// SetTransports sets the "transports" field.
+func (m *BuilderProfileMutation) SetTransports(btt []builderpb.BuildTaskTransport) {
+	m.transports = &btt
+	m.appendtransports = nil
+}
+
+// Transports returns the value of the "transports" field in the mutation.
+func (m *BuilderProfileMutation) Transports() (r []builderpb.BuildTaskTransport, exists bool) {
+	v := m.transports
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransports returns the old "transports" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldTransports(ctx context.Context) (v []builderpb.BuildTaskTransport, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransports is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransports requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransports: %w", err)
+	}
+	return oldValue.Transports, nil
+}
+
+// AppendTransports adds btt to the "transports" field.
+func (m *BuilderProfileMutation) AppendTransports(btt []builderpb.BuildTaskTransport) {
+	m.appendtransports = append(m.appendtransports, btt...)
+}
+
+// AppendedTransports returns the list of values that were appended to the "transports" field in this mutation.
+func (m *BuilderProfileMutation) AppendedTransports() ([]builderpb.BuildTaskTransport, bool) {
+	if len(m.appendtransports) == 0 {
+		return nil, false
+	}
+	return m.appendtransports, true
+}
+
+// ClearTransports clears the value of the "transports" field.
+func (m *BuilderProfileMutation) ClearTransports() {
+	m.transports = nil
+	m.appendtransports = nil
+	m.clearedFields[builderprofile.FieldTransports] = struct{}{}
+}
+
+// TransportsCleared returns if the "transports" field was cleared in this mutation.
+func (m *BuilderProfileMutation) TransportsCleared() bool {
+	_, ok := m.clearedFields[builderprofile.FieldTransports]
+	return ok
+}
+
+// ResetTransports resets all changes to the "transports" field.
+func (m *BuilderProfileMutation) ResetTransports() {
+	m.transports = nil
+	m.appendtransports = nil
+	delete(m.clearedFields, builderprofile.FieldTransports)
+}
+
 // Where appends a list predicates to the BuilderProfileMutation builder.
 func (m *BuilderProfileMutation) Where(ps ...predicate.BuilderProfile) {
 	m.predicates = append(m.predicates, ps...)
@@ -4917,7 +4984,7 @@ func (m *BuilderProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderProfileMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, builderprofile.FieldCreatedAt)
 	}
@@ -4935,6 +5002,9 @@ func (m *BuilderProfileMutation) Fields() []string {
 	}
 	if m.post_build_script != nil {
 		fields = append(fields, builderprofile.FieldPostBuildScript)
+	}
+	if m.transports != nil {
+		fields = append(fields, builderprofile.FieldTransports)
 	}
 	return fields
 }
@@ -4956,6 +5026,8 @@ func (m *BuilderProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.PreBuildScript()
 	case builderprofile.FieldPostBuildScript:
 		return m.PostBuildScript()
+	case builderprofile.FieldTransports:
+		return m.Transports()
 	}
 	return nil, false
 }
@@ -4977,6 +5049,8 @@ func (m *BuilderProfileMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldPreBuildScript(ctx)
 	case builderprofile.FieldPostBuildScript:
 		return m.OldPostBuildScript(ctx)
+	case builderprofile.FieldTransports:
+		return m.OldTransports(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuilderProfile field %s", name)
 }
@@ -5028,6 +5102,13 @@ func (m *BuilderProfileMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPostBuildScript(v)
 		return nil
+	case builderprofile.FieldTransports:
+		v, ok := value.([]builderpb.BuildTaskTransport)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransports(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile field %s", name)
 }
@@ -5067,6 +5148,9 @@ func (m *BuilderProfileMutation) ClearedFields() []string {
 	if m.FieldCleared(builderprofile.FieldPostBuildScript) {
 		fields = append(fields, builderprofile.FieldPostBuildScript)
 	}
+	if m.FieldCleared(builderprofile.FieldTransports) {
+		fields = append(fields, builderprofile.FieldTransports)
+	}
 	return fields
 }
 
@@ -5089,6 +5173,9 @@ func (m *BuilderProfileMutation) ClearField(name string) error {
 		return nil
 	case builderprofile.FieldPostBuildScript:
 		m.ClearPostBuildScript()
+		return nil
+	case builderprofile.FieldTransports:
+		m.ClearTransports()
 		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile nullable field %s", name)
@@ -5115,6 +5202,9 @@ func (m *BuilderProfileMutation) ResetField(name string) error {
 		return nil
 	case builderprofile.FieldPostBuildScript:
 		m.ResetPostBuildScript()
+		return nil
+	case builderprofile.FieldTransports:
+		m.ResetTransports()
 		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile field %s", name)

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	mathrand "math/rand"
+	"net/url"
 	"strings"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
-	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
@@ -334,6 +334,16 @@ func (r *mutationResolver) DisableLink(ctx context.Context, linkID int) (*ent.Li
 
 // RegisterBuilder is the resolver for the registerBuilder field.
 func (r *mutationResolver) RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error) {
+	// Normalize upstream so bare "host:port" values get an https:// scheme.
+	if input.Upstream != nil {
+		normalized := normalizeUpstream(*input.Upstream)
+		// Validate the result is a well-formed URL.
+		if _, err := url.Parse(normalized); err != nil {
+			return nil, fmt.Errorf("invalid upstream address %q: %w", *input.Upstream, err)
+		}
+		input.Upstream = &normalized
+	}
+
 	// 1. Create builder ent (identifier is auto-generated)
 	b, err := r.client.Builder.Create().SetInput(input).Save(ctx)
 	if err != nil {
@@ -401,21 +411,15 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		buildImage = *input.BuildImage
 	}
 
-	// Resolve transports: use default if none provided
+	// Resolve transports from the builder profile
 	transports := builder.DefaultTransports
-	if len(input.Transports) > 0 {
-		transports = make([]builderpb.BuildTaskTransport, len(input.Transports))
-		for i, t := range input.Transports {
-			var extra string
-			if t.Extra != nil {
-				extra = *t.Extra
-			}
-			transports[i] = builderpb.BuildTaskTransport{
-				URI:      t.URI,
-				Interval: t.Interval,
-				Type:     c2pb.Transport_Type(t.Type),
-				Extra:    extra,
-			}
+	if input.BuilderProfileID != 0 {
+		profile, err := r.client.BuilderProfile.Get(ctx, input.BuilderProfileID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load builder profile: %w", err)
+		}
+		if len(profile.Transports) > 0 {
+			transports = profile.Transports
 		}
 	}
 
@@ -497,8 +501,8 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		create.SetTomes(tomes)
 	}
 
-	if input.BuilderProfileID != nil {
-		create.SetBuilderProfileID(*input.BuilderProfileID)
+	if input.BuilderProfileID != 0 {
+		create.SetBuilderProfileID(input.BuilderProfileID)
 	}
 
 	bt, err := create.Save(ctx)
@@ -510,13 +514,26 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 }
 
 // CreateBuilderProfile is the resolver for the createBuilderProfile field.
-func (r *mutationResolver) CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput) (*ent.BuilderProfile, error) {
-	return r.client.BuilderProfile.Create().SetInput(input).Save(ctx)
+func (r *mutationResolver) CreateBuilderProfile(ctx context.Context, input ent.CreateBuilderProfileInput, transports []*models.BuildTaskTransportInput) (*ent.BuilderProfile, error) {
+	create := r.client.BuilderProfile.Create().SetInput(input)
+	if len(transports) > 0 {
+		create.SetTransports(convertTransportInputs(transports))
+	} else {
+		create.SetTransports(builder.DefaultTransports)
+	}
+	return create.Save(ctx)
 }
 
 // UpdateBuilderProfile is the resolver for the updateBuilderProfile field.
-func (r *mutationResolver) UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput) (*ent.BuilderProfile, error) {
-	return r.client.BuilderProfile.UpdateOneID(id).SetInput(input).Save(ctx)
+func (r *mutationResolver) UpdateBuilderProfile(ctx context.Context, id int, input ent.UpdateBuilderProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool) (*ent.BuilderProfile, error) {
+	update := r.client.BuilderProfile.UpdateOneID(id).SetInput(input)
+	if clearTransports != nil && *clearTransports {
+		update.ClearTransports()
+	}
+	if len(transports) > 0 {
+		update.SetTransports(convertTransportInputs(transports))
+	}
+	return update.Save(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

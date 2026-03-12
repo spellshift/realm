@@ -3,12 +3,14 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent/builderprofile"
 )
 
@@ -29,7 +31,9 @@ type BuilderProfile struct {
 	PreBuildScript string `json:"pre_build_script,omitempty"`
 	// Bash script to run after build is complete.
 	PostBuildScript string `json:"post_build_script,omitempty"`
-	selectValues    sql.SelectValues
+	// List of transport configurations for the IMIX agent.
+	Transports   []builderpb.BuildTaskTransport `json:"transports,omitempty"`
+	selectValues sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,6 +41,8 @@ func (*BuilderProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case builderprofile.FieldTransports:
+			values[i] = new([]byte)
 		case builderprofile.FieldID:
 			values[i] = new(sql.NullInt64)
 		case builderprofile.FieldName, builderprofile.FieldDescription, builderprofile.FieldPreBuildScript, builderprofile.FieldPostBuildScript:
@@ -100,6 +106,14 @@ func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bp.PostBuildScript = value.String
 			}
+		case builderprofile.FieldTransports:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field transports", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bp.Transports); err != nil {
+					return fmt.Errorf("unmarshal field transports: %w", err)
+				}
+			}
 		default:
 			bp.selectValues.Set(columns[i], values[i])
 		}
@@ -153,6 +167,9 @@ func (bp *BuilderProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("post_build_script=")
 	builder.WriteString(bp.PostBuildScript)
+	builder.WriteString(", ")
+	builder.WriteString("transports=")
+	builder.WriteString(fmt.Sprintf("%v", bp.Transports))
 	builder.WriteByte(')')
 	return builder.String()
 }

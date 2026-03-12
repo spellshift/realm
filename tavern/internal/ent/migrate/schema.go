@@ -138,6 +138,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "pre_build_script", Type: field.TypeString, Nullable: true},
 		{Name: "post_build_script", Type: field.TypeString, Nullable: true},
+		{Name: "transports", Type: field.TypeJSON, Nullable: true},
 	}
 	// BuilderProfilesTable holds the schema information for the "builder_profiles" table.
 	BuilderProfilesTable = &schema.Table{

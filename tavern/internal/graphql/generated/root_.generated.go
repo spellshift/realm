@@ -177,6 +177,7 @@ type ComplexityRoot struct {
 		Name            func(childComplexity int) int
 		PostBuildScript func(childComplexity int) int
 		PreBuildScript  func(childComplexity int) int
+		Transports      func(childComplexity int) int
 	}
 
 	BuilderProfileConnection struct {
@@ -346,7 +347,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateBuilderProfile func(childComplexity int, input ent.CreateBuilderProfileInput) int
+		CreateBuilderProfile func(childComplexity int, input ent.CreateBuilderProfileInput, transports []*models.BuildTaskTransportInput) int
 		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
 		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
@@ -362,7 +363,7 @@ type ComplexityRoot struct {
 		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
 		ResetUserAPIKey      func(childComplexity int) int
 		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateBuilderProfile func(childComplexity int, id int, input ent.UpdateBuilderProfileInput) int
+		UpdateBuilderProfile func(childComplexity int, id int, input ent.UpdateBuilderProfileInput, transports []*models.BuildTaskTransportInput, clearTransports *bool) int
 		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
 		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
@@ -401,22 +402,23 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
-		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
-		BuildTasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
-		Builders     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
-		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		Me           func(childComplexity int) int
-		Node         func(childComplexity int, id int) int
-		Nodes        func(childComplexity int, ids []int) int
-		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
-		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
-		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
-		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
-		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Assets          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Beacons         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		BuildTasks      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		BuilderProfiles func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderProfileOrder, where *ent.BuilderProfileWhereInput) int
+		Builders        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
+		Hosts           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Me              func(childComplexity int) int
+		Node            func(childComplexity int, id int) int
+		Nodes           func(childComplexity int, ids []int) int
+		Portals         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
+		Quests          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Repositories    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		Shells          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Tags            func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
+		Tasks           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -1292,6 +1294,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuilderProfile.PreBuildScript(childComplexity), true
 
+	case "BuilderProfile.transports":
+		if e.complexity.BuilderProfile.Transports == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.Transports(childComplexity), true
+
 	case "BuilderProfileConnection.edges":
 		if e.complexity.BuilderProfileConnection.Edges == nil {
 			break
@@ -2079,7 +2088,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateBuilderProfile(childComplexity, args["input"].(ent.CreateBuilderProfileInput)), true
+		return e.complexity.Mutation.CreateBuilderProfile(childComplexity, args["input"].(ent.CreateBuilderProfileInput), args["transports"].([]*models.BuildTaskTransportInput)), true
 
 	case "Mutation.createCredential":
 		if e.complexity.Mutation.CreateCredential == nil {
@@ -2261,7 +2270,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateBuilderProfile(childComplexity, args["id"].(int), args["input"].(ent.UpdateBuilderProfileInput)), true
+		return e.complexity.Mutation.UpdateBuilderProfile(childComplexity, args["id"].(int), args["input"].(ent.UpdateBuilderProfileInput), args["transports"].([]*models.BuildTaskTransportInput), args["clearTransports"].(*bool)), true
 
 	case "Mutation.updateHost":
 		if e.complexity.Mutation.UpdateHost == nil {
@@ -2489,6 +2498,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.BuildTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
+
+	case "Query.builderProfiles":
+		if e.complexity.Query.BuilderProfiles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_builderProfiles_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BuilderProfiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuilderProfileOrder), args["where"].(*ent.BuilderProfileWhereInput)), true
 
 	case "Query.builders":
 		if e.complexity.Query.Builders == nil {
@@ -5036,6 +5057,10 @@ type BuilderProfile implements Node {
   Bash script to run after build is complete.
   """
   postBuildScript: String
+  """
+  List of transport configurations for the IMIX agent.
+  """
+  transports: [BuildTaskTransport!]
 }
 """
 A connection to a list of items.
@@ -7361,6 +7386,37 @@ type Query {
     """
     ids: [ID!]!
   ): [Node]!
+  builderProfiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for BuilderProfiles returned from the connection.
+    """
+    orderBy: [BuilderProfileOrder!]
+
+    """
+    Filtering options for BuilderProfiles returned from the connection.
+    """
+    where: BuilderProfileWhereInput
+  ): BuilderProfileConnection!
 }
 type Quest implements Node {
   id: ID!
@@ -10291,8 +10347,8 @@ scalar Uint64
     ###
     # BuilderProfile
     ###
-    createBuilderProfile(input: CreateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
-    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
+    createBuilderProfile(input: CreateBuilderProfileInput!, transports: [BuildTaskTransportInput!]): BuilderProfile! @requireRole(role: ADMIN)
+    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!, transports: [BuildTaskTransportInput!], clearTransports: Boolean): BuilderProfile! @requireRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
@@ -10404,9 +10460,6 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
-
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
@@ -10414,7 +10467,7 @@ input CreateBuildTaskInput {
   tomes: [BuildTaskTomeConfigInput!]
 
   """The builder profile to use for the build."""
-  builderProfileID: Int
+  builderProfileID: ID!
 }
 
 """Output returned when registering a new builder."""

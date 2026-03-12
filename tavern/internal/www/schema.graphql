@@ -1103,6 +1103,10 @@ type BuilderProfile implements Node {
   Bash script to run after build is complete.
   """
   postBuildScript: String
+  """
+  List of transport configurations for the IMIX agent.
+  """
+  transports: [BuildTaskTransport!]
 }
 """
 A connection to a list of items.
@@ -3428,6 +3432,37 @@ type Query {
     """
     ids: [ID!]!
   ): [Node]!
+  builderProfiles(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for BuilderProfiles returned from the connection.
+    """
+    orderBy: [BuilderProfileOrder!]
+
+    """
+    Filtering options for BuilderProfiles returned from the connection.
+    """
+    where: BuilderProfileWhereInput
+  ): BuilderProfileConnection!
 }
 type Quest implements Node {
   id: ID!
@@ -6135,9 +6170,6 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
-
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
@@ -6145,7 +6177,7 @@ input CreateBuildTaskInput {
   tomes: [BuildTaskTomeConfigInput!]
 
   """The builder profile to use for the build."""
-  builderProfileID: Int
+  builderProfileID: ID!
 }
 
 """Output returned when registering a new builder."""
@@ -6236,8 +6268,8 @@ type Mutation {
     ###
     # BuilderProfile
     ###
-    createBuilderProfile(input: CreateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
-    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!): BuilderProfile! @requireRole(role: ADMIN)
+    createBuilderProfile(input: CreateBuilderProfileInput!, transports: [BuildTaskTransportInput!]): BuilderProfile! @requireRole(role: ADMIN)
+    updateBuilderProfile(id: ID!, input: UpdateBuilderProfileInput!, transports: [BuildTaskTransportInput!], clearTransports: Boolean): BuilderProfile! @requireRole(role: ADMIN)
 }
 extend type Query {
   assets(

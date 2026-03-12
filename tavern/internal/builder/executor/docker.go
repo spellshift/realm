@@ -3,6 +3,7 @@ package executor
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -129,8 +130,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		mainScript += "set -e\n"
 		mainScript += setupCmd + "\n"
 		mainScript += `rm -rf install_scripts` + "\n"
-		mainScript += `mkdir -p install_scripts` + "\n"
-		mainScript += `mount -B /build_tomes install_scripts` + "\n"
+		mainScript += `cp -a /build_tomes install_scripts` + "\n"
 		mainScript += buildCmd + "\n"
 	} else {
 		mainScript = spec.BuildScript
@@ -146,24 +146,19 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		}
 	}
 
-	// 4. Create container with mounted volumes and custom entrypoint.
-	// We use `sh -c` to execute all scripts in sequence.
-	entrypointCmd := `set -e; for f in /build_scripts/*.sh; do if [ -f "$f" ]; then sh "$f" || exit 1; fi; done`
-
-	hostConfig := &container.HostConfig{
-		Binds: []string{
-			fmt.Sprintf("%s:/build_tomes:ro", tomesDir),
-			fmt.Sprintf("%s:/build_scripts:ro", scriptsDir),
-		},
-	}
+	// 4. Create container and copy files into it.
+	// We use CopyToContainer instead of bind mounts so that this works in
+	// Docker-in-Docker environments (e.g. devcontainers) where host paths
+	// visible to the Docker daemon differ from the paths inside the outer container.
+	entrypointCmd := `set -e; for f in /build_scripts/*.sh; do if [ -f "$f" ]; then sh "$f"; fi; done`
 
 	resp, err := d.client.ContainerCreate(ctx,
 		&container.Config{
 			Image:      spec.BuildImage,
 			Entrypoint: []string{"/bin/sh", "-c", entrypointCmd},
-			Env:        spec.Env,
+			Env:        append(spec.Env, fmt.Sprintf("ARTIFACT_PATH=%s", spec.ArtifactPath)),
 		},
-		hostConfig, // host config
+		nil, // host config
 		nil, // networking config
 		nil, // platform
 		"",  // container name (auto-generated)
@@ -181,11 +176,25 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		}
 	}()
 
+	// Copy tomes and scripts into the container as tar archives.
+	if err := copyDirToContainer(ctx, d.client, containerID, tomesDir, "/build_tomes"); err != nil {
+		return nil, fmt.Errorf("failed to copy tomes into container: %w", err)
+	}
+	if err := copyDirToContainer(ctx, d.client, containerID, scriptsDir, "/build_scripts"); err != nil {
+		return nil, fmt.Errorf("failed to copy scripts into container: %w", err)
+	}
+
 	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
 		return nil, fmt.Errorf("failed to start container: %w", err)
 	}
 
 	slog.InfoContext(ctx, "container started", "container_id", containerID, "task_id", spec.TaskID)
+	slog.DebugContext(ctx, "container config",
+		"task_id", spec.TaskID,
+		"entrypoint", entrypointCmd,
+		"env", spec.Env,
+		"artifact_path", spec.ArtifactPath,
+	)
 
 	// Attach to container logs to stream stdout and stderr.
 	logReader, err := d.client.ContainerLogs(ctx, containerID, container.LogsOptions{
@@ -228,6 +237,7 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	<-done
 
 	// Wait for the container to exit and check its status.
+	slog.DebugContext(ctx, "waiting for container to exit", "container_id", containerID, "task_id", spec.TaskID)
 	statusCh, errCh := d.client.ContainerWait(ctx, containerID, container.WaitConditionNotRunning)
 	var exitCode int64
 	select {
@@ -237,8 +247,29 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		}
 	case result := <-statusCh:
 		exitCode = result.StatusCode
+		if result.Error != nil {
+			slog.WarnContext(ctx, "container wait returned error message",
+				"task_id", spec.TaskID, "error_message", result.Error.Message)
+		}
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	}
+
+	slog.InfoContext(ctx, "container exited", "container_id", containerID, "task_id", spec.TaskID, "exit_code", exitCode)
+
+	// Inspect the container to get its final state for debugging.
+	inspectResp, inspectErr := d.client.ContainerInspect(ctx, containerID)
+	if inspectErr != nil {
+		slog.WarnContext(ctx, "failed to inspect container", "task_id", spec.TaskID, "error", inspectErr)
+	} else {
+		slog.DebugContext(ctx, "container inspect",
+			"task_id", spec.TaskID,
+			"state", inspectResp.State.Status,
+			"exit_code", inspectResp.State.ExitCode,
+			"error", inspectResp.State.Error,
+			"started_at", inspectResp.State.StartedAt,
+			"finished_at", inspectResp.State.FinishedAt,
+		)
 	}
 
 	// Extract artifact from the stopped container (before deferred removal).
@@ -249,9 +280,12 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 
 	if spec.ArtifactPath == "" {
+		slog.DebugContext(ctx, "no artifact path specified, skipping extraction", "task_id", spec.TaskID)
 		return &buildResult, nil
 	}
 
+	slog.DebugContext(ctx, "attempting artifact extraction",
+		"task_id", spec.TaskID, "container_id", containerID, "artifact_path", spec.ArtifactPath)
 	data, name, extractErr := d.extractArtifact(ctx, containerID, spec.ArtifactPath)
 	if extractErr != nil {
 		slog.WarnContext(ctx, "artifact extraction failed",
@@ -310,4 +344,59 @@ func (d *DockerExecutor) extractArtifact(ctx context.Context, containerID, path 
 	}
 
 	return nil, "", fmt.Errorf("no regular file found at %q", path)
+}
+
+// copyDirToContainer creates a tar archive from a local directory and copies
+// it into a container at the specified path. This works in Docker-in-Docker
+// environments where bind mounts would reference host paths instead of the
+// outer container's filesystem.
+func copyDirToContainer(ctx context.Context, cli client.APIClient, containerID, srcDir, dstPath string) error {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+
+	// Use the destination directory name as the tar prefix so we can copy
+	// to "/" and have Docker create the directory automatically.
+	prefix := filepath.Base(dstPath)
+
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		rel, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.Join(prefix, rel)
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(tw, f)
+		return err
+	})
+	if err != nil {
+		tw.Close()
+		return fmt.Errorf("building tar archive from %s: %w", srcDir, err)
+	}
+	if err := tw.Close(); err != nil {
+		return fmt.Errorf("closing tar writer: %w", err)
+	}
+
+	return cli.CopyToContainer(ctx, containerID, "/", &buf, container.CopyToContainerOptions{})
 }

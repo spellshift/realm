@@ -31,6 +31,7 @@ type HostFileResolver interface {
 type QueryResolver interface {
 	Node(ctx context.Context, id int) (ent.Noder, error)
 	Nodes(ctx context.Context, ids []int) ([]ent.Noder, error)
+	BuilderProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderProfileOrder, where *ent.BuilderProfileWhereInput) (*ent.BuilderProfileConnection, error)
 	Assets(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) (*ent.AssetConnection, error)
 	Quests(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) (*ent.QuestConnection, error)
 	Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error)
@@ -612,6 +613,42 @@ func (ec *executionContext) field_Query_buildTasks_args(ctx context.Context, raw
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBuildTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTaskWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_builderProfiles_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOBuilderProfileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBuilderProfileWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -3298,6 +3335,8 @@ func (ec *executionContext) fieldContext_BuildTask_builderProfile(_ context.Cont
 				return ec.fieldContext_BuilderProfile_preBuildScript(ctx, field)
 			case "postBuildScript":
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuilderProfile_transports(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -4240,6 +4279,45 @@ func (ec *executionContext) fieldContext_BuilderProfile_postBuildScript(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _BuilderProfile_transports(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderProfile_transports,
+		func(ctx context.Context) (any, error) {
+			return obj.Transports, nil
+		},
+		nil,
+		ec.marshalOBuildTaskTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransportᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderProfile_transports(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "uri":
+				return ec.fieldContext_BuildTaskTransport_uri(ctx, field)
+			case "interval":
+				return ec.fieldContext_BuildTaskTransport_interval(ctx, field)
+			case "type":
+				return ec.fieldContext_BuildTaskTransport_type(ctx, field)
+			case "extra":
+				return ec.fieldContext_BuildTaskTransport_extra(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildTaskTransport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BuilderProfileConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderProfileConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4381,6 +4459,8 @@ func (ec *executionContext) fieldContext_BuilderProfileEdge_node(_ context.Conte
 				return ec.fieldContext_BuilderProfile_preBuildScript(ctx, field)
 			case "postBuildScript":
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
+			case "transports":
+				return ec.fieldContext_BuilderProfile_transports(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -8831,6 +8911,55 @@ func (ec *executionContext) fieldContext_Query_nodes(ctx context.Context, field 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_nodes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_builderProfiles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_builderProfiles,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().BuilderProfiles(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuilderProfileOrder), fc.Args["where"].(*ent.BuilderProfileWhereInput))
+		},
+		nil,
+		ec.marshalNBuilderProfileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_builderProfiles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_BuilderProfileConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_BuilderProfileConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_BuilderProfileConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuilderProfileConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_builderProfiles_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -31822,6 +31951,8 @@ func (ec *executionContext) _BuilderProfile(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._BuilderProfile_preBuildScript(ctx, field, obj)
 		case "postBuildScript":
 			out.Values[i] = ec._BuilderProfile_postBuildScript(ctx, field, obj)
+		case "transports":
+			out.Values[i] = ec._BuilderProfile_transports(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -33936,6 +34067,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_nodes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "builderProfiles":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_builderProfiles(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -37207,6 +37360,25 @@ func (ec *executionContext) marshalNBuilderProfile2ᚖrealmᚗpubᚋtavernᚋint
 	return ec._BuilderProfile(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBuilderProfileConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileConnection(ctx context.Context, sel ast.SelectionSet, v ent.BuilderProfileConnection) graphql.Marshaler {
+	return ec._BuilderProfileConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBuilderProfileConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileConnection(ctx context.Context, sel ast.SelectionSet, v *ent.BuilderProfileConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BuilderProfileConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBuilderProfileOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileOrder(ctx context.Context, v any) (*ent.BuilderProfileOrder, error) {
+	res, err := ec.unmarshalInputBuilderProfileOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBuilderProfileOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileOrderField(ctx context.Context, v any) (*ent.BuilderProfileOrderField, error) {
 	var res = new(ent.BuilderProfileOrderField)
 	err := res.UnmarshalGQL(v)
@@ -38873,6 +39045,24 @@ func (ec *executionContext) marshalOBuilderProfileEdge2ᚖrealmᚗpubᚋtavern�
 		return graphql.Null
 	}
 	return ec._BuilderProfileEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOBuilderProfileOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileOrderᚄ(ctx context.Context, v any) ([]*ent.BuilderProfileOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.BuilderProfileOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNBuilderProfileOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOBuilderProfileWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderProfileWhereInputᚄ(ctx context.Context, v any) ([]*ent.BuilderProfileWhereInput, error) {

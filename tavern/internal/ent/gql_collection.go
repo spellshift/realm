@@ -1138,6 +1138,11 @@ func (bp *BuilderProfileQuery) collectField(ctx context.Context, oneNode bool, o
 				selectedFields = append(selectedFields, builderprofile.FieldPostBuildScript)
 				fieldSeen[builderprofile.FieldPostBuildScript] = struct{}{}
 			}
+		case "transports":
+			if _, ok := fieldSeen[builderprofile.FieldTransports]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldTransports)
+				fieldSeen[builderprofile.FieldTransports] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

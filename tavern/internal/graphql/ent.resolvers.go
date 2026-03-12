@@ -7,7 +7,9 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
+	"entgo.io/contrib/entgql"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -36,6 +38,22 @@ func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
 	return r.client.Noders(ctx, ids)
+}
+
+// BuilderProfiles is the resolver for the builderProfiles field.
+func (r *queryResolver) BuilderProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderProfileOrder, where *ent.BuilderProfileWhereInput) (*ent.BuilderProfileConnection, error) {
+	query, err := r.client.BuilderProfile.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithBuilderProfileOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithBuilderProfileOrder(orderBy))
 }
 
 // SequenceID is the resolver for the sequenceID field.
