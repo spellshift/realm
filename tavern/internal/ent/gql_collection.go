@@ -754,16 +754,6 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
 				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
 			}
-		case "transports":
-			if _, ok := fieldSeen[buildtask.FieldTransports]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldTransports)
-				fieldSeen[buildtask.FieldTransports] = struct{}{}
-			}
-		case "tomes":
-			if _, ok := fieldSeen[buildtask.FieldTomes]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldTomes)
-				fieldSeen[buildtask.FieldTomes] = struct{}{}
-			}
 		case "claimedAt":
 			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldClaimedAt)
@@ -1142,6 +1132,11 @@ func (bp *BuilderProfileQuery) collectField(ctx context.Context, oneNode bool, o
 			if _, ok := fieldSeen[builderprofile.FieldTransports]; !ok {
 				selectedFields = append(selectedFields, builderprofile.FieldTransports)
 				fieldSeen[builderprofile.FieldTransports] = struct{}{}
+			}
+		case "tomes":
+			if _, ok := fieldSeen[builderprofile.FieldTomes]; !ok {
+				selectedFields = append(selectedFields, builderprofile.FieldTomes)
+				fieldSeen[builderprofile.FieldTomes] = struct{}{}
 			}
 		case "id":
 		case "__typename":

@@ -128,6 +128,24 @@ func (bpu *BuilderProfileUpdate) ClearTransports() *BuilderProfileUpdate {
 	return bpu
 }
 
+// SetTomes sets the "tomes" field.
+func (bpu *BuilderProfileUpdate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdate {
+	bpu.mutation.SetTomes(bttc)
+	return bpu
+}
+
+// AppendTomes appends bttc to the "tomes" field.
+func (bpu *BuilderProfileUpdate) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdate {
+	bpu.mutation.AppendTomes(bttc)
+	return bpu
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (bpu *BuilderProfileUpdate) ClearTomes() *BuilderProfileUpdate {
+	bpu.mutation.ClearTomes()
+	return bpu
+}
+
 // Mutation returns the BuilderProfileMutation object of the builder.
 func (bpu *BuilderProfileUpdate) Mutation() *BuilderProfileMutation {
 	return bpu.mutation
@@ -225,6 +243,17 @@ func (bpu *BuilderProfileUpdate) sqlSave(ctx context.Context) (n int, err error)
 	}
 	if bpu.mutation.TransportsCleared() {
 		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
+	}
+	if value, ok := bpu.mutation.Tomes(); ok {
+		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := bpu.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, builderprofile.FieldTomes, value)
+		})
+	}
+	if bpu.mutation.TomesCleared() {
+		_spec.ClearField(builderprofile.FieldTomes, field.TypeJSON)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bpu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -341,6 +370,24 @@ func (bpuo *BuilderProfileUpdateOne) AppendTransports(btt []builderpb.BuildTaskT
 // ClearTransports clears the value of the "transports" field.
 func (bpuo *BuilderProfileUpdateOne) ClearTransports() *BuilderProfileUpdateOne {
 	bpuo.mutation.ClearTransports()
+	return bpuo
+}
+
+// SetTomes sets the "tomes" field.
+func (bpuo *BuilderProfileUpdateOne) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdateOne {
+	bpuo.mutation.SetTomes(bttc)
+	return bpuo
+}
+
+// AppendTomes appends bttc to the "tomes" field.
+func (bpuo *BuilderProfileUpdateOne) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileUpdateOne {
+	bpuo.mutation.AppendTomes(bttc)
+	return bpuo
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (bpuo *BuilderProfileUpdateOne) ClearTomes() *BuilderProfileUpdateOne {
+	bpuo.mutation.ClearTomes()
 	return bpuo
 }
 
@@ -471,6 +518,17 @@ func (bpuo *BuilderProfileUpdateOne) sqlSave(ctx context.Context) (_node *Builde
 	}
 	if bpuo.mutation.TransportsCleared() {
 		_spec.ClearField(builderprofile.FieldTransports, field.TypeJSON)
+	}
+	if value, ok := bpuo.mutation.Tomes(); ok {
+		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := bpuo.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, builderprofile.FieldTomes, value)
+		})
+	}
+	if bpuo.mutation.TomesCleared() {
+		_spec.ClearField(builderprofile.FieldTomes, field.TypeJSON)
 	}
 	_node = &BuilderProfile{config: bpuo.config}
 	_spec.Assign = _node.assignValues

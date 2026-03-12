@@ -372,16 +372,6 @@ func BuildScriptContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldBuildScript, v))
 }
 
-// TomesIsNil applies the IsNil predicate on the "tomes" field.
-func TomesIsNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIsNull(FieldTomes))
-}
-
-// TomesNotNil applies the NotNil predicate on the "tomes" field.
-func TomesNotNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotNull(FieldTomes))
-}
-
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.
 func ClaimedAtEQ(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldClaimedAt, v))

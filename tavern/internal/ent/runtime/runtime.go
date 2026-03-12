@@ -125,13 +125,13 @@ func init() {
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[10].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[8].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[12].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[10].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.

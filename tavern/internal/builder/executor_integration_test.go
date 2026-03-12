@@ -77,11 +77,6 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -225,11 +220,6 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -378,11 +368,6 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -511,11 +496,6 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -636,18 +616,23 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
+	profile := graph.BuilderProfile.Create().
+		SetName("upload-artifact-profile").
+		SetTransports([]builderpb.BuildTaskTransport{{
+			URI:      "https://callback.example.com",
+			Interval: 5,
+			Type:     c2pb.Transport_TRANSPORT_GRPC,
+		}}).
+		SaveX(ctx)
+
 	graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 		SetBuildImage("golang:1.21").
 		SetBuildScript("go build -o /app/output/binary ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
 		SetArtifactPath("/app/output/binary").
 		SetBuilderID(builders[0].ID).
+		SetBuilderProfileID(profile.ID).
 		SaveX(ctx)
 
 	lis := bufconn.Listen(1024 * 1024)

@@ -610,14 +610,6 @@ type BuildTask implements Node {
   """
   buildScript: String!
   """
-  List of transport configurations for the IMIX agent.
-  """
-  transports: [BuildTaskTransport!]!
-  """
-  List of tomes to include in the build.
-  """
-  tomes: [BuildTaskTomeConfig!]
-  """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
   claimedAt: Time
@@ -1102,6 +1094,10 @@ type BuilderProfile implements Node {
   List of transport configurations for the IMIX agent.
   """
   transports: [BuildTaskTransport!]
+  """
+  List of tomes to include in the build.
+  """
+  tomes: [BuildTaskTomeConfig!]
 }
 """
 A connection to a list of items.

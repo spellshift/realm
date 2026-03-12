@@ -2131,10 +2131,6 @@ type BuildTaskMutation struct {
 	target_format          *builderpb.TargetFormat
 	build_image            *string
 	build_script           *string
-	transports             *[]builderpb.BuildTaskTransport
-	appendtransports       []builderpb.BuildTaskTransport
-	tomes                  *[]builderpb.BuildTaskTomeConfig
-	appendtomes            []builderpb.BuildTaskTomeConfig
 	claimed_at             *time.Time
 	started_at             *time.Time
 	finished_at            *time.Time
@@ -2471,122 +2467,6 @@ func (m *BuildTaskMutation) OldBuildScript(ctx context.Context) (v string, err e
 // ResetBuildScript resets all changes to the "build_script" field.
 func (m *BuildTaskMutation) ResetBuildScript() {
 	m.build_script = nil
-}
-
-// SetTransports sets the "transports" field.
-func (m *BuildTaskMutation) SetTransports(btt []builderpb.BuildTaskTransport) {
-	m.transports = &btt
-	m.appendtransports = nil
-}
-
-// Transports returns the value of the "transports" field in the mutation.
-func (m *BuildTaskMutation) Transports() (r []builderpb.BuildTaskTransport, exists bool) {
-	v := m.transports
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTransports returns the old "transports" field's value of the BuildTask entity.
-// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldTransports(ctx context.Context) (v []builderpb.BuildTaskTransport, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTransports is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTransports requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTransports: %w", err)
-	}
-	return oldValue.Transports, nil
-}
-
-// AppendTransports adds btt to the "transports" field.
-func (m *BuildTaskMutation) AppendTransports(btt []builderpb.BuildTaskTransport) {
-	m.appendtransports = append(m.appendtransports, btt...)
-}
-
-// AppendedTransports returns the list of values that were appended to the "transports" field in this mutation.
-func (m *BuildTaskMutation) AppendedTransports() ([]builderpb.BuildTaskTransport, bool) {
-	if len(m.appendtransports) == 0 {
-		return nil, false
-	}
-	return m.appendtransports, true
-}
-
-// ResetTransports resets all changes to the "transports" field.
-func (m *BuildTaskMutation) ResetTransports() {
-	m.transports = nil
-	m.appendtransports = nil
-}
-
-// SetTomes sets the "tomes" field.
-func (m *BuildTaskMutation) SetTomes(bttc []builderpb.BuildTaskTomeConfig) {
-	m.tomes = &bttc
-	m.appendtomes = nil
-}
-
-// Tomes returns the value of the "tomes" field in the mutation.
-func (m *BuildTaskMutation) Tomes() (r []builderpb.BuildTaskTomeConfig, exists bool) {
-	v := m.tomes
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldTomes returns the old "tomes" field's value of the BuildTask entity.
-// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BuildTaskMutation) OldTomes(ctx context.Context) (v []builderpb.BuildTaskTomeConfig, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTomes is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTomes requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTomes: %w", err)
-	}
-	return oldValue.Tomes, nil
-}
-
-// AppendTomes adds bttc to the "tomes" field.
-func (m *BuildTaskMutation) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) {
-	m.appendtomes = append(m.appendtomes, bttc...)
-}
-
-// AppendedTomes returns the list of values that were appended to the "tomes" field in this mutation.
-func (m *BuildTaskMutation) AppendedTomes() ([]builderpb.BuildTaskTomeConfig, bool) {
-	if len(m.appendtomes) == 0 {
-		return nil, false
-	}
-	return m.appendtomes, true
-}
-
-// ClearTomes clears the value of the "tomes" field.
-func (m *BuildTaskMutation) ClearTomes() {
-	m.tomes = nil
-	m.appendtomes = nil
-	m.clearedFields[buildtask.FieldTomes] = struct{}{}
-}
-
-// TomesCleared returns if the "tomes" field was cleared in this mutation.
-func (m *BuildTaskMutation) TomesCleared() bool {
-	_, ok := m.clearedFields[buildtask.FieldTomes]
-	return ok
-}
-
-// ResetTomes resets all changes to the "tomes" field.
-func (m *BuildTaskMutation) ResetTomes() {
-	m.tomes = nil
-	m.appendtomes = nil
-	delete(m.clearedFields, buildtask.FieldTomes)
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -3216,7 +3096,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -3234,12 +3114,6 @@ func (m *BuildTaskMutation) Fields() []string {
 	}
 	if m.build_script != nil {
 		fields = append(fields, buildtask.FieldBuildScript)
-	}
-	if m.transports != nil {
-		fields = append(fields, buildtask.FieldTransports)
-	}
-	if m.tomes != nil {
-		fields = append(fields, buildtask.FieldTomes)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, buildtask.FieldClaimedAt)
@@ -3288,10 +3162,6 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildImage()
 	case buildtask.FieldBuildScript:
 		return m.BuildScript()
-	case buildtask.FieldTransports:
-		return m.Transports()
-	case buildtask.FieldTomes:
-		return m.Tomes()
 	case buildtask.FieldClaimedAt:
 		return m.ClaimedAt()
 	case buildtask.FieldStartedAt:
@@ -3331,10 +3201,6 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldBuildImage(ctx)
 	case buildtask.FieldBuildScript:
 		return m.OldBuildScript(ctx)
-	case buildtask.FieldTransports:
-		return m.OldTransports(ctx)
-	case buildtask.FieldTomes:
-		return m.OldTomes(ctx)
 	case buildtask.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case buildtask.FieldStartedAt:
@@ -3403,20 +3269,6 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBuildScript(v)
-		return nil
-	case buildtask.FieldTransports:
-		v, ok := value.([]builderpb.BuildTaskTransport)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTransports(v)
-		return nil
-	case buildtask.FieldTomes:
-		v, ok := value.([]builderpb.BuildTaskTomeConfig)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetTomes(v)
 		return nil
 	case buildtask.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -3550,9 +3402,6 @@ func (m *BuildTaskMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuildTaskMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(buildtask.FieldTomes) {
-		fields = append(fields, buildtask.FieldTomes)
-	}
 	if m.FieldCleared(buildtask.FieldClaimedAt) {
 		fields = append(fields, buildtask.FieldClaimedAt)
 	}
@@ -3588,9 +3437,6 @@ func (m *BuildTaskMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuildTaskMutation) ClearField(name string) error {
 	switch name {
-	case buildtask.FieldTomes:
-		m.ClearTomes()
-		return nil
 	case buildtask.FieldClaimedAt:
 		m.ClearClaimedAt()
 		return nil
@@ -3637,12 +3483,6 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldBuildScript:
 		m.ResetBuildScript()
-		return nil
-	case buildtask.FieldTransports:
-		m.ResetTransports()
-		return nil
-	case buildtask.FieldTomes:
-		m.ResetTomes()
 		return nil
 	case buildtask.FieldClaimedAt:
 		m.ResetClaimedAt()
@@ -4526,6 +4366,8 @@ type BuilderProfileMutation struct {
 	post_build_script *string
 	transports        *[]builderpb.BuildTaskTransport
 	appendtransports  []builderpb.BuildTaskTransport
+	tomes             *[]builderpb.BuildTaskTomeConfig
+	appendtomes       []builderpb.BuildTaskTomeConfig
 	clearedFields     map[string]struct{}
 	done              bool
 	oldValue          func(context.Context) (*BuilderProfile, error)
@@ -4950,6 +4792,71 @@ func (m *BuilderProfileMutation) ResetTransports() {
 	delete(m.clearedFields, builderprofile.FieldTransports)
 }
 
+// SetTomes sets the "tomes" field.
+func (m *BuilderProfileMutation) SetTomes(bttc []builderpb.BuildTaskTomeConfig) {
+	m.tomes = &bttc
+	m.appendtomes = nil
+}
+
+// Tomes returns the value of the "tomes" field in the mutation.
+func (m *BuilderProfileMutation) Tomes() (r []builderpb.BuildTaskTomeConfig, exists bool) {
+	v := m.tomes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTomes returns the old "tomes" field's value of the BuilderProfile entity.
+// If the BuilderProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuilderProfileMutation) OldTomes(ctx context.Context) (v []builderpb.BuildTaskTomeConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTomes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTomes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTomes: %w", err)
+	}
+	return oldValue.Tomes, nil
+}
+
+// AppendTomes adds bttc to the "tomes" field.
+func (m *BuilderProfileMutation) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) {
+	m.appendtomes = append(m.appendtomes, bttc...)
+}
+
+// AppendedTomes returns the list of values that were appended to the "tomes" field in this mutation.
+func (m *BuilderProfileMutation) AppendedTomes() ([]builderpb.BuildTaskTomeConfig, bool) {
+	if len(m.appendtomes) == 0 {
+		return nil, false
+	}
+	return m.appendtomes, true
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (m *BuilderProfileMutation) ClearTomes() {
+	m.tomes = nil
+	m.appendtomes = nil
+	m.clearedFields[builderprofile.FieldTomes] = struct{}{}
+}
+
+// TomesCleared returns if the "tomes" field was cleared in this mutation.
+func (m *BuilderProfileMutation) TomesCleared() bool {
+	_, ok := m.clearedFields[builderprofile.FieldTomes]
+	return ok
+}
+
+// ResetTomes resets all changes to the "tomes" field.
+func (m *BuilderProfileMutation) ResetTomes() {
+	m.tomes = nil
+	m.appendtomes = nil
+	delete(m.clearedFields, builderprofile.FieldTomes)
+}
+
 // Where appends a list predicates to the BuilderProfileMutation builder.
 func (m *BuilderProfileMutation) Where(ps ...predicate.BuilderProfile) {
 	m.predicates = append(m.predicates, ps...)
@@ -4984,7 +4891,7 @@ func (m *BuilderProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuilderProfileMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, builderprofile.FieldCreatedAt)
 	}
@@ -5005,6 +4912,9 @@ func (m *BuilderProfileMutation) Fields() []string {
 	}
 	if m.transports != nil {
 		fields = append(fields, builderprofile.FieldTransports)
+	}
+	if m.tomes != nil {
+		fields = append(fields, builderprofile.FieldTomes)
 	}
 	return fields
 }
@@ -5028,6 +4938,8 @@ func (m *BuilderProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.PostBuildScript()
 	case builderprofile.FieldTransports:
 		return m.Transports()
+	case builderprofile.FieldTomes:
+		return m.Tomes()
 	}
 	return nil, false
 }
@@ -5051,6 +4963,8 @@ func (m *BuilderProfileMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldPostBuildScript(ctx)
 	case builderprofile.FieldTransports:
 		return m.OldTransports(ctx)
+	case builderprofile.FieldTomes:
+		return m.OldTomes(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuilderProfile field %s", name)
 }
@@ -5109,6 +5023,13 @@ func (m *BuilderProfileMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTransports(v)
 		return nil
+	case builderprofile.FieldTomes:
+		v, ok := value.([]builderpb.BuildTaskTomeConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTomes(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile field %s", name)
 }
@@ -5151,6 +5072,9 @@ func (m *BuilderProfileMutation) ClearedFields() []string {
 	if m.FieldCleared(builderprofile.FieldTransports) {
 		fields = append(fields, builderprofile.FieldTransports)
 	}
+	if m.FieldCleared(builderprofile.FieldTomes) {
+		fields = append(fields, builderprofile.FieldTomes)
+	}
 	return fields
 }
 
@@ -5176,6 +5100,9 @@ func (m *BuilderProfileMutation) ClearField(name string) error {
 		return nil
 	case builderprofile.FieldTransports:
 		m.ClearTransports()
+		return nil
+	case builderprofile.FieldTomes:
+		m.ClearTomes()
 		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile nullable field %s", name)
@@ -5205,6 +5132,9 @@ func (m *BuilderProfileMutation) ResetField(name string) error {
 		return nil
 	case builderprofile.FieldTransports:
 		m.ResetTransports()
+		return nil
+	case builderprofile.FieldTomes:
+		m.ResetTomes()
 		return nil
 	}
 	return fmt.Errorf("unknown BuilderProfile field %s", name)

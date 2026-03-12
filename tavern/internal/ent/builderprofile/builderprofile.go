@@ -27,6 +27,8 @@ const (
 	FieldPostBuildScript = "post_build_script"
 	// FieldTransports holds the string denoting the transports field in the database.
 	FieldTransports = "transports"
+	// FieldTomes holds the string denoting the tomes field in the database.
+	FieldTomes = "tomes"
 	// Table holds the table name of the builderprofile in the database.
 	Table = "builder_profiles"
 )
@@ -41,6 +43,7 @@ var Columns = []string{
 	FieldPreBuildScript,
 	FieldPostBuildScript,
 	FieldTransports,
+	FieldTomes,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

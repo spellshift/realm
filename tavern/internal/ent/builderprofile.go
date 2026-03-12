@@ -32,7 +32,9 @@ type BuilderProfile struct {
 	// Bash script to run after build is complete.
 	PostBuildScript string `json:"post_build_script,omitempty"`
 	// List of transport configurations for the IMIX agent.
-	Transports   []builderpb.BuildTaskTransport `json:"transports,omitempty"`
+	Transports []builderpb.BuildTaskTransport `json:"transports,omitempty"`
+	// List of tomes to include in the build.
+	Tomes        []builderpb.BuildTaskTomeConfig `json:"tomes,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -41,7 +43,7 @@ func (*BuilderProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case builderprofile.FieldTransports:
+		case builderprofile.FieldTransports, builderprofile.FieldTomes:
 			values[i] = new([]byte)
 		case builderprofile.FieldID:
 			values[i] = new(sql.NullInt64)
@@ -114,6 +116,14 @@ func (bp *BuilderProfile) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field transports: %w", err)
 				}
 			}
+		case builderprofile.FieldTomes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tomes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bp.Tomes); err != nil {
+					return fmt.Errorf("unmarshal field tomes: %w", err)
+				}
+			}
 		default:
 			bp.selectValues.Set(columns[i], values[i])
 		}
@@ -170,6 +180,9 @@ func (bp *BuilderProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("transports=")
 	builder.WriteString(fmt.Sprintf("%v", bp.Transports))
+	builder.WriteString(", ")
+	builder.WriteString("tomes=")
+	builder.WriteString(fmt.Sprintf("%v", bp.Tomes))
 	builder.WriteByte(')')
 	return builder.String()
 }

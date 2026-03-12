@@ -31,10 +31,6 @@ const (
 	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
-	// FieldTransports holds the string denoting the transports field in the database.
-	FieldTransports = "transports"
-	// FieldTomes holds the string denoting the tomes field in the database.
-	FieldTomes = "tomes"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -93,8 +89,6 @@ var Columns = []string{
 	FieldTargetFormat,
 	FieldBuildImage,
 	FieldBuildScript,
-	FieldTransports,
-	FieldTomes,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,

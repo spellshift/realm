@@ -2962,80 +2962,6 @@ func (ec *executionContext) fieldContext_BuildTask_buildScript(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTask_transports(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_BuildTask_transports,
-		func(ctx context.Context) (any, error) {
-			return obj.Transports, nil
-		},
-		nil,
-		ec.marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransportᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_BuildTask_transports(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "BuildTask",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "uri":
-				return ec.fieldContext_BuildTaskTransport_uri(ctx, field)
-			case "interval":
-				return ec.fieldContext_BuildTaskTransport_interval(ctx, field)
-			case "type":
-				return ec.fieldContext_BuildTaskTransport_type(ctx, field)
-			case "extra":
-				return ec.fieldContext_BuildTaskTransport_extra(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type BuildTaskTransport", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _BuildTask_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_BuildTask_tomes,
-		func(ctx context.Context) (any, error) {
-			return obj.Tomes, nil
-		},
-		nil,
-		ec.marshalOBuildTaskTomeConfig2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTomeConfigᚄ,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_BuildTask_tomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "BuildTask",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "tomeID":
-				return ec.fieldContext_BuildTaskTomeConfig_tomeID(ctx, field)
-			case "params":
-				return ec.fieldContext_BuildTaskTomeConfig_params(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type BuildTaskTomeConfig", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _BuildTask_claimedAt(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3337,6 +3263,8 @@ func (ec *executionContext) fieldContext_BuildTask_builderProfile(_ context.Cont
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
 			case "transports":
 				return ec.fieldContext_BuilderProfile_transports(ctx, field)
+			case "tomes":
+				return ec.fieldContext_BuilderProfile_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -3581,10 +3509,6 @@ func (ec *executionContext) fieldContext_BuildTaskEdge_node(_ context.Context, f
 				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
-			case "transports":
-				return ec.fieldContext_BuildTask_transports(ctx, field)
-			case "tomes":
-				return ec.fieldContext_BuildTask_tomes(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":
@@ -4318,6 +4242,41 @@ func (ec *executionContext) fieldContext_BuilderProfile_transports(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _BuilderProfile_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderProfile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuilderProfile_tomes,
+		func(ctx context.Context) (any, error) {
+			return obj.Tomes, nil
+		},
+		nil,
+		ec.marshalOBuildTaskTomeConfig2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTomeConfigᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuilderProfile_tomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuilderProfile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tomeID":
+				return ec.fieldContext_BuildTaskTomeConfig_tomeID(ctx, field)
+			case "params":
+				return ec.fieldContext_BuildTaskTomeConfig_params(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BuildTaskTomeConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BuilderProfileConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.BuilderProfileConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4461,6 +4420,8 @@ func (ec *executionContext) fieldContext_BuilderProfileEdge_node(_ context.Conte
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
 			case "transports":
 				return ec.fieldContext_BuilderProfile_transports(ctx, field)
+			case "tomes":
+				return ec.fieldContext_BuilderProfile_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -31482,13 +31443,6 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "transports":
-			out.Values[i] = ec._BuildTask_transports(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "tomes":
-			out.Values[i] = ec._BuildTask_tomes(ctx, field, obj)
 		case "claimedAt":
 			out.Values[i] = ec._BuildTask_claimedAt(ctx, field, obj)
 		case "startedAt":
@@ -31953,6 +31907,8 @@ func (ec *executionContext) _BuilderProfile(ctx context.Context, sel ast.Selecti
 			out.Values[i] = ec._BuilderProfile_postBuildScript(ctx, field, obj)
 		case "transports":
 			out.Values[i] = ec._BuilderProfile_transports(ctx, field, obj)
+		case "tomes":
+			out.Values[i] = ec._BuilderProfile_tomes(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -39,6 +39,12 @@ func (BuilderProfile) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
 			).
 			Comment("List of transport configurations for the IMIX agent."),
+		field.JSON("tomes", []builderpb.BuildTaskTomeConfig{}).
+			Optional().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("List of tomes to include in the build."),
 	}
 }
 

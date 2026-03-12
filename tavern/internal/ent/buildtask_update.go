@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -93,36 +92,6 @@ func (btu *BuildTaskUpdate) SetNillableBuildScript(s *string) *BuildTaskUpdate {
 	if s != nil {
 		btu.SetBuildScript(*s)
 	}
-	return btu
-}
-
-// SetTransports sets the "transports" field.
-func (btu *BuildTaskUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
-	btu.mutation.SetTransports(btt)
-	return btu
-}
-
-// AppendTransports appends btt to the "transports" field.
-func (btu *BuildTaskUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
-	btu.mutation.AppendTransports(btt)
-	return btu
-}
-
-// SetTomes sets the "tomes" field.
-func (btu *BuildTaskUpdate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdate {
-	btu.mutation.SetTomes(bttc)
-	return btu
-}
-
-// AppendTomes appends bttc to the "tomes" field.
-func (btu *BuildTaskUpdate) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdate {
-	btu.mutation.AppendTomes(bttc)
-	return btu
-}
-
-// ClearTomes clears the value of the "tomes" field.
-func (btu *BuildTaskUpdate) ClearTomes() *BuildTaskUpdate {
-	btu.mutation.ClearTomes()
 	return btu
 }
 
@@ -494,25 +463,6 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 	}
-	if value, ok := btu.mutation.Transports(); ok {
-		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
-	}
-	if value, ok := btu.mutation.AppendedTransports(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTransports, value)
-		})
-	}
-	if value, ok := btu.mutation.Tomes(); ok {
-		_spec.SetField(buildtask.FieldTomes, field.TypeJSON, value)
-	}
-	if value, ok := btu.mutation.AppendedTomes(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTomes, value)
-		})
-	}
-	if btu.mutation.TomesCleared() {
-		_spec.ClearField(buildtask.FieldTomes, field.TypeJSON)
-	}
 	if value, ok := btu.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
 	}
@@ -736,36 +686,6 @@ func (btuo *BuildTaskUpdateOne) SetNillableBuildScript(s *string) *BuildTaskUpda
 	if s != nil {
 		btuo.SetBuildScript(*s)
 	}
-	return btuo
-}
-
-// SetTransports sets the "transports" field.
-func (btuo *BuildTaskUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
-	btuo.mutation.SetTransports(btt)
-	return btuo
-}
-
-// AppendTransports appends btt to the "transports" field.
-func (btuo *BuildTaskUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
-	btuo.mutation.AppendTransports(btt)
-	return btuo
-}
-
-// SetTomes sets the "tomes" field.
-func (btuo *BuildTaskUpdateOne) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdateOne {
-	btuo.mutation.SetTomes(bttc)
-	return btuo
-}
-
-// AppendTomes appends bttc to the "tomes" field.
-func (btuo *BuildTaskUpdateOne) AppendTomes(bttc []builderpb.BuildTaskTomeConfig) *BuildTaskUpdateOne {
-	btuo.mutation.AppendTomes(bttc)
-	return btuo
-}
-
-// ClearTomes clears the value of the "tomes" field.
-func (btuo *BuildTaskUpdateOne) ClearTomes() *BuildTaskUpdateOne {
-	btuo.mutation.ClearTomes()
 	return btuo
 }
 
@@ -1166,25 +1086,6 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
-	}
-	if value, ok := btuo.mutation.Transports(); ok {
-		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
-	}
-	if value, ok := btuo.mutation.AppendedTransports(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTransports, value)
-		})
-	}
-	if value, ok := btuo.mutation.Tomes(); ok {
-		_spec.SetField(buildtask.FieldTomes, field.TypeJSON, value)
-	}
-	if value, ok := btuo.mutation.AppendedTomes(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTomes, value)
-		})
-	}
-	if btuo.mutation.TomesCleared() {
-		_spec.ClearField(buildtask.FieldTomes, field.TypeJSON)
 	}
 	if value, ok := btuo.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)

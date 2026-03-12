@@ -38,7 +38,6 @@ func TestCreateBuildTask(t *testing.T) {
 			targetFormat
 			buildImage
 			buildScript
-			transports { uri interval type extra }
 			artifactPath
 			builder { id }
 		}
@@ -141,12 +140,6 @@ func TestCreateBuildTask(t *testing.T) {
 				TargetFormat string
 				BuildImage   string
 				BuildScript  string
-				Transports   []struct {
-					URI      string
-					Interval int
-					Type     string
-					Extra    *string
-				}
 				ArtifactPath string
 				Builder      struct {
 					ID string
@@ -163,10 +156,6 @@ func TestCreateBuildTask(t *testing.T) {
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
-		require.Len(t, resp.CreateBuildTask.Transports, 1)
-		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].URI)
-		assert.Equal(t, 10, resp.CreateBuildTask.Transports[0].Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 
 		// Verify the builder edge
@@ -194,14 +183,9 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID         string
+				ID           string
 				TargetFormat string
 				BuildImage   string
-				Transports []struct {
-					URI      string
-					Interval int
-					Type     string
-				}
 				ArtifactPath string
 			}
 		}
@@ -211,20 +195,15 @@ func TestCreateBuildTask(t *testing.T) {
 				id
 				targetFormat
 				buildImage
-				transports { uri interval type }
 				artifactPath
 			}
 		}`, &resp, client.Var("input", map[string]any{
-			"targetOS": "PLATFORM_LINUX",
+			"targetOS":         "PLATFORM_LINUX",
 			"builderProfileID": profile.ID,
 		}))
 		require.NoError(t, err)
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
 		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
-		require.Len(t, resp.CreateBuildTask.Transports, 1)
-		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].URI)
-		assert.Equal(t, 5, resp.CreateBuildTask.Transports[0].Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 	})
 

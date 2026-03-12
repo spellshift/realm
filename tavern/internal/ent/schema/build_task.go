@@ -49,11 +49,6 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("The derived script to execute inside the build container."),
-		field.JSON("transports", []builderpb.BuildTaskTransport{}).
-			Comment("List of transport configurations for the IMIX agent."),
-		field.JSON("tomes", []builderpb.BuildTaskTomeConfig{}).
-			Optional().
-			Comment("List of tomes to include in the build."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(

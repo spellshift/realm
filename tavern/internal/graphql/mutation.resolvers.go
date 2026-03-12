@@ -9,7 +9,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	mathrand "math/rand"
@@ -20,7 +19,6 @@ import (
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/builder"
-	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
@@ -472,34 +470,14 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// 6. Randomly select one builder
 	selected := candidates[mathrand.Intn(len(candidates))]
 
-	// Resolve tomes
-	var tomes []builderpb.BuildTaskTomeConfig
-	if len(input.Tomes) > 0 {
-		for _, t := range input.Tomes {
-			var params map[string]string
-			if err := json.Unmarshal([]byte(t.Params), &params); err != nil {
-				return nil, fmt.Errorf("failed to parse params for tome %d: %w", t.TomeID, err)
-			}
-			tomes = append(tomes, builderpb.BuildTaskTomeConfig{
-				TomeID: int64(t.TomeID),
-				Params: params,
-			})
-		}
-	}
-
 	// 7. Create the build task
 	create := r.client.BuildTask.Create().
 		SetTargetOs(input.TargetOs).
 		SetTargetFormat(targetFormat).
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
-		SetTransports(transports).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
-
-	if len(tomes) > 0 {
-		create.SetTomes(tomes)
-	}
 
 	if input.BuilderProfileID != 0 {
 		create.SetBuilderProfileID(input.BuilderProfileID)

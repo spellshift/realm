@@ -104,6 +104,9 @@ func TestBuilderE2E(t *testing.T) {
 	)
 	builderSrv := builder.New(graph, "dGVzdC1wdWJrZXk=")
 	builderpb.RegisterBuilderServer(grpcSrv, builderSrv)
+	profile := graph.BuilderProfile.Create().
+		SetName("claim-test-profile").
+		SaveX(ctx)
 
 	go func() {
 		if err := grpcSrv.Serve(lis); err != nil {
@@ -166,18 +169,24 @@ func TestBuilderE2E(t *testing.T) {
 
 		authClient := builderpb.NewBuilderClient(conn)
 
-		// Create a build task assigned to this builder
+		// Create a builder profile with custom transports
+		tmpProfile := graph.BuilderProfile.Create().
+			SetName("claim-test-profile2").
+			SetTransports([]builderpb.BuildTaskTransport{{
+				URI:      "https://callback.example.com",
+				Interval: 10,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
+			}}).
+			SaveX(ctx)
+
+		// Create a build task assigned to this builder with the profile
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      10,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
 			SetBuilderID(builders[0].ID).
+			SetBuilderProfileID(tmpProfile.ID).
 			SaveX(ctx)
 
 		// Claim tasks
@@ -188,7 +197,7 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Equal(t, "golang:1.21", resp.Tasks[0].BuildImage)
 		assert.Equal(t, "echo hello && go build ./...", resp.Tasks[0].BuildScript)
 
-		// Verify IMIX_CONFIG env var is set
+		// Verify IMIX_CONFIG env var is set with profile transports
 		require.Len(t, resp.Tasks[0].Env, 1)
 		assert.Contains(t, resp.Tasks[0].Env[0], "IMIX_CONFIG=")
 		assert.Contains(t, resp.Tasks[0].Env[0], "transports:")
@@ -232,12 +241,8 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
 			SetBuilderID(builders[0].ID).
+			SetBuilderProfileID(profile.ID).
 			SaveX(ctx)
 
 		// Claim the task
@@ -292,12 +297,8 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
 			SetBuilderID(builders[0].ID).
+			SetBuilderProfileID(profile.ID).
 			SaveX(ctx)
 
 		claimResp, err := authClient.ClaimBuildTasks(ctx, &builderpb.ClaimBuildTasksRequest{})
@@ -374,12 +375,8 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
 			SetBuilderID(secondBuilder).
+			SetBuilderProfileID(profile.ID).
 			SaveX(ctx)
 
 		// Try to stream output using the FIRST builder's credentials

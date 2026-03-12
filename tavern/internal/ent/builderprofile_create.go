@@ -105,6 +105,12 @@ func (bpc *BuilderProfileCreate) SetTransports(btt []builderpb.BuildTaskTranspor
 	return bpc
 }
 
+// SetTomes sets the "tomes" field.
+func (bpc *BuilderProfileCreate) SetTomes(bttc []builderpb.BuildTaskTomeConfig) *BuilderProfileCreate {
+	bpc.mutation.SetTomes(bttc)
+	return bpc
+}
+
 // Mutation returns the BuilderProfileMutation object of the builder.
 func (bpc *BuilderProfileCreate) Mutation() *BuilderProfileMutation {
 	return bpc.mutation
@@ -220,6 +226,10 @@ func (bpc *BuilderProfileCreate) createSpec() (*BuilderProfile, *sqlgraph.Create
 	if value, ok := bpc.mutation.Transports(); ok {
 		_spec.SetField(builderprofile.FieldTransports, field.TypeJSON, value)
 		_node.Transports = value
+	}
+	if value, ok := bpc.mutation.Tomes(); ok {
+		_spec.SetField(builderprofile.FieldTomes, field.TypeJSON, value)
+		_node.Tomes = value
 	}
 	return _node, _spec
 }
@@ -366,6 +376,24 @@ func (u *BuilderProfileUpsert) UpdateTransports() *BuilderProfileUpsert {
 // ClearTransports clears the value of the "transports" field.
 func (u *BuilderProfileUpsert) ClearTransports() *BuilderProfileUpsert {
 	u.SetNull(builderprofile.FieldTransports)
+	return u
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuilderProfileUpsert) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsert {
+	u.Set(builderprofile.FieldTomes, v)
+	return u
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuilderProfileUpsert) UpdateTomes() *BuilderProfileUpsert {
+	u.SetExcluded(builderprofile.FieldTomes)
+	return u
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuilderProfileUpsert) ClearTomes() *BuilderProfileUpsert {
+	u.SetNull(builderprofile.FieldTomes)
 	return u
 }
 
@@ -523,6 +551,27 @@ func (u *BuilderProfileUpsertOne) UpdateTransports() *BuilderProfileUpsertOne {
 func (u *BuilderProfileUpsertOne) ClearTransports() *BuilderProfileUpsertOne {
 	return u.Update(func(s *BuilderProfileUpsert) {
 		s.ClearTransports()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuilderProfileUpsertOne) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuilderProfileUpsertOne) UpdateTomes() *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuilderProfileUpsertOne) ClearTomes() *BuilderProfileUpsertOne {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.ClearTomes()
 	})
 }
 
@@ -846,6 +895,27 @@ func (u *BuilderProfileUpsertBulk) UpdateTransports() *BuilderProfileUpsertBulk 
 func (u *BuilderProfileUpsertBulk) ClearTransports() *BuilderProfileUpsertBulk {
 	return u.Update(func(s *BuilderProfileUpsert) {
 		s.ClearTransports()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuilderProfileUpsertBulk) SetTomes(v []builderpb.BuildTaskTomeConfig) *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuilderProfileUpsertBulk) UpdateTomes() *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuilderProfileUpsertBulk) ClearTomes() *BuilderProfileUpsertBulk {
+	return u.Update(func(s *BuilderProfileUpsert) {
+		s.ClearTomes()
 	})
 }
 

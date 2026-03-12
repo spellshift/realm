@@ -120,8 +120,6 @@ type ComplexityRoot struct {
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
-		Tomes          func(childComplexity int) int
-		Transports     func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -177,6 +175,7 @@ type ComplexityRoot struct {
 		Name            func(childComplexity int) int
 		PostBuildScript func(childComplexity int) int
 		PreBuildScript  func(childComplexity int) int
+		Tomes           func(childComplexity int) int
 		Transports      func(childComplexity int) int
 	}
 
@@ -1058,20 +1057,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
 
-	case "BuildTask.tomes":
-		if e.complexity.BuildTask.Tomes == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Tomes(childComplexity), true
-
-	case "BuildTask.transports":
-		if e.complexity.BuildTask.Transports == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Transports(childComplexity), true
-
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
 			break
@@ -1293,6 +1278,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuilderProfile.PreBuildScript(childComplexity), true
+
+	case "BuilderProfile.tomes":
+		if e.complexity.BuilderProfile.Tomes == nil {
+			break
+		}
+
+		return e.complexity.BuilderProfile.Tomes(childComplexity), true
 
 	case "BuilderProfile.transports":
 		if e.complexity.BuilderProfile.Transports == nil {
@@ -4569,14 +4561,6 @@ type BuildTask implements Node {
   """
   buildScript: String!
   """
-  List of transport configurations for the IMIX agent.
-  """
-  transports: [BuildTaskTransport!]!
-  """
-  List of tomes to include in the build.
-  """
-  tomes: [BuildTaskTomeConfig!]
-  """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
   claimedAt: Time
@@ -5061,6 +5045,10 @@ type BuilderProfile implements Node {
   List of transport configurations for the IMIX agent.
   """
   transports: [BuildTaskTransport!]
+  """
+  List of tomes to include in the build.
+  """
+  tomes: [BuildTaskTomeConfig!]
 }
 """
 A connection to a list of items.
@@ -10434,7 +10422,7 @@ input BuildTaskTransportInput {
 """A single tome configuration for a build task."""
 type BuildTaskTomeConfig @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTomeConfig") {
   """The ID of the tome."""
-  tomeID: Int!
+  tomeID: ID!
 
   """The parameters for the tome."""
   params: String!

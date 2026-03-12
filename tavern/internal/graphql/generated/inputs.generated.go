@@ -19,6 +19,7 @@ import (
 // region    ************************** generated!.gotpl **************************
 
 type BuildTaskTomeConfigResolver interface {
+	TomeID(ctx context.Context, obj *builderpb.BuildTaskTomeConfig) (int, error)
 	Params(ctx context.Context, obj *builderpb.BuildTaskTomeConfig) (string, error)
 }
 
@@ -41,10 +42,10 @@ func (ec *executionContext) _BuildTaskTomeConfig_tomeID(ctx context.Context, fie
 		field,
 		ec.fieldContext_BuildTaskTomeConfig_tomeID,
 		func(ctx context.Context) (any, error) {
-			return obj.TomeID, nil
+			return ec.resolvers.BuildTaskTomeConfig().TomeID(ctx, obj)
 		},
 		nil,
-		ec.marshalNInt2int64,
+		ec.marshalNID2int,
 		true,
 		true,
 	)
@@ -54,10 +55,10 @@ func (ec *executionContext) fieldContext_BuildTaskTomeConfig_tomeID(_ context.Co
 	fc = &graphql.FieldContext{
 		Object:     "BuildTaskTomeConfig",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -636,10 +637,41 @@ func (ec *executionContext) _BuildTaskTomeConfig(ctx context.Context, sel ast.Se
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("BuildTaskTomeConfig")
 		case "tomeID":
-			out.Values[i] = ec._BuildTaskTomeConfig_tomeID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BuildTaskTomeConfig_tomeID(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "params":
 			field := field
 
@@ -814,50 +846,6 @@ func (ec *executionContext) unmarshalNBuildTaskTomeConfigInput2ᚖrealmᚗpubᚋ
 
 func (ec *executionContext) marshalNBuildTaskTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransport(ctx context.Context, sel ast.SelectionSet, v builderpb.BuildTaskTransport) graphql.Marshaler {
 	return ec._BuildTaskTransport(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransportᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildTaskTransport) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBuildTaskTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransport(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalNBuildTaskTransportInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInput(ctx context.Context, v any) (*models.BuildTaskTransportInput, error) {

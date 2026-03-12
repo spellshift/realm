@@ -72,8 +72,6 @@ var (
 		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE"}},
 		{Name: "build_image", Type: field.TypeString},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
-		{Name: "transports", Type: field.TypeJSON},
-		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
@@ -95,19 +93,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builder_profiles_builder_profile",
-				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				Columns:    []*schema.Column{BuildTasksColumns[16]},
 				RefColumns: []*schema.Column{BuilderProfilesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[19]},
+				Columns:    []*schema.Column{BuildTasksColumns[17]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[20]},
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -139,6 +137,7 @@ var (
 		{Name: "pre_build_script", Type: field.TypeString, Nullable: true},
 		{Name: "post_build_script", Type: field.TypeString, Nullable: true},
 		{Name: "transports", Type: field.TypeJSON, Nullable: true},
+		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
 	}
 	// BuilderProfilesTable holds the schema information for the "builder_profiles" table.
 	BuilderProfilesTable = &schema.Table{

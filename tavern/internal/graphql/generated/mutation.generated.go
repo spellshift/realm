@@ -1925,10 +1925,6 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
-			case "transports":
-				return ec.fieldContext_BuildTask_transports(ctx, field)
-			case "tomes":
-				return ec.fieldContext_BuildTask_tomes(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":
@@ -2030,6 +2026,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuilderProfile(ctx conte
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
 			case "transports":
 				return ec.fieldContext_BuilderProfile_transports(ctx, field)
+			case "tomes":
+				return ec.fieldContext_BuilderProfile_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},
@@ -2107,6 +2105,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBuilderProfile(ctx conte
 				return ec.fieldContext_BuilderProfile_postBuildScript(ctx, field)
 			case "transports":
 				return ec.fieldContext_BuilderProfile_transports(ctx, field)
+			case "tomes":
+				return ec.fieldContext_BuilderProfile_tomes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type BuilderProfile", field.Name)
 		},

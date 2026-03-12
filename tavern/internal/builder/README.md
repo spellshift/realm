@@ -6,8 +6,14 @@ The builder package orchestrates agent compilation for target platforms. It conn
 
 - Move builder proto into shared proto dir.
 - Remove profile from
-- Reduce builder profile creation overhead don't need same code everywhere define it at outer scope
-- Update default builder profile
+- Reduce builder profile creation overhead in tests don't need same code everywhere define it at outer scope
+- Reuse tome params
+
+
+Builder
+BuildProfile
+BuildTask
+
 
 ## Overview
 

@@ -464,6 +464,16 @@ func TransportsNotNil() predicate.BuilderProfile {
 	return predicate.BuilderProfile(sql.FieldNotNull(FieldTransports))
 }
 
+// TomesIsNil applies the IsNil predicate on the "tomes" field.
+func TomesIsNil() predicate.BuilderProfile {
+	return predicate.BuilderProfile(sql.FieldIsNull(FieldTomes))
+}
+
+// TomesNotNil applies the NotNil predicate on the "tomes" field.
+func TomesNotNil() predicate.BuilderProfile {
+	return predicate.BuilderProfile(sql.FieldNotNull(FieldTomes))
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.BuilderProfile) predicate.BuilderProfile {
 	return predicate.BuilderProfile(sql.AndPredicates(predicates...))
