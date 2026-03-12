@@ -38,9 +38,7 @@ fn get_hostname() -> String {
 
 #[cfg(target_env = "musl")]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
-    return Err(
-        "Screenshot is not supported on musl static builds.".to_string()
-    );
+    return Err("Screenshot is not supported on musl static builds.".to_string());
 }
 
 #[cfg(not(target_env = "musl"))]
