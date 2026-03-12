@@ -66,7 +66,7 @@ After installing the gcloud CLI, run `gcloud auth application-default login` to 
 2. Clone [the repo](https://github.com/spellshift/realm) and navigate to the `terraform` directory.
 3. Checkout the latest stable release `git checkout -b latest $(git tag | tail -1)`
 4. Run `terraform init` to install the Google provider for terraform.
-5. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=$(git tag | tail -1)"` to deploy Tavern!
+5. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=spellshift/tavern:$(git tag | tail -1)"` to deploy Tavern!
 
 **Example:**
 
