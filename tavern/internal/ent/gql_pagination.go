@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -905,6 +906,255 @@ func (b *Beacon) ToEdge(order *BeaconOrder) *BeaconEdge {
 	return &BeaconEdge{
 		Node:   b,
 		Cursor: order.Field.toCursor(b),
+	}
+}
+
+// BuildProfileEdge is the edge representation of BuildProfile.
+type BuildProfileEdge struct {
+	Node   *BuildProfile `json:"node"`
+	Cursor Cursor        `json:"cursor"`
+}
+
+// BuildProfileConnection is the connection containing edges to BuildProfile.
+type BuildProfileConnection struct {
+	Edges      []*BuildProfileEdge `json:"edges"`
+	PageInfo   PageInfo            `json:"pageInfo"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+func (c *BuildProfileConnection) build(nodes []*BuildProfile, pager *buildprofilePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *BuildProfile
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *BuildProfile {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *BuildProfile {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BuildProfileEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BuildProfileEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BuildProfilePaginateOption enables pagination customization.
+type BuildProfilePaginateOption func(*buildprofilePager) error
+
+// WithBuildProfileOrder configures pagination ordering.
+func WithBuildProfileOrder(order *BuildProfileOrder) BuildProfilePaginateOption {
+	if order == nil {
+		order = DefaultBuildProfileOrder
+	}
+	o := *order
+	return func(pager *buildprofilePager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultBuildProfileOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithBuildProfileFilter configures pagination filter.
+func WithBuildProfileFilter(filter func(*BuildProfileQuery) (*BuildProfileQuery, error)) BuildProfilePaginateOption {
+	return func(pager *buildprofilePager) error {
+		if filter == nil {
+			return errors.New("BuildProfileQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type buildprofilePager struct {
+	reverse bool
+	order   *BuildProfileOrder
+	filter  func(*BuildProfileQuery) (*BuildProfileQuery, error)
+}
+
+func newBuildProfilePager(opts []BuildProfilePaginateOption, reverse bool) (*buildprofilePager, error) {
+	pager := &buildprofilePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultBuildProfileOrder
+	}
+	return pager, nil
+}
+
+func (p *buildprofilePager) applyFilter(query *BuildProfileQuery) (*BuildProfileQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *buildprofilePager) toCursor(bp *BuildProfile) Cursor {
+	return p.order.Field.toCursor(bp)
+}
+
+func (p *buildprofilePager) applyCursors(query *BuildProfileQuery, after, before *Cursor) (*BuildProfileQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultBuildProfileOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *buildprofilePager) applyOrder(query *BuildProfileQuery) *BuildProfileQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultBuildProfileOrder.Field {
+		query = query.Order(DefaultBuildProfileOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *buildprofilePager) orderExpr(query *BuildProfileQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultBuildProfileOrder.Field {
+			b.Comma().Ident(DefaultBuildProfileOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to BuildProfile.
+func (bp *BuildProfileQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BuildProfilePaginateOption,
+) (*BuildProfileConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBuildProfilePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if bp, err = pager.applyFilter(bp); err != nil {
+		return nil, err
+	}
+	conn := &BuildProfileConnection{Edges: []*BuildProfileEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := bp.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if bp, err = pager.applyCursors(bp, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		bp.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := bp.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	bp = pager.applyOrder(bp)
+	nodes, err := bp.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// BuildProfileOrderField defines the ordering field of BuildProfile.
+type BuildProfileOrderField struct {
+	// Value extracts the ordering value from the given BuildProfile.
+	Value    func(*BuildProfile) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) buildprofile.OrderOption
+	toCursor func(*BuildProfile) Cursor
+}
+
+// BuildProfileOrder defines the ordering of BuildProfile.
+type BuildProfileOrder struct {
+	Direction OrderDirection          `json:"direction"`
+	Field     *BuildProfileOrderField `json:"field"`
+}
+
+// DefaultBuildProfileOrder is the default ordering of BuildProfile.
+var DefaultBuildProfileOrder = &BuildProfileOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BuildProfileOrderField{
+		Value: func(bp *BuildProfile) (ent.Value, error) {
+			return bp.ID, nil
+		},
+		column: buildprofile.FieldID,
+		toTerm: buildprofile.ByID,
+		toCursor: func(bp *BuildProfile) Cursor {
+			return Cursor{ID: bp.ID}
+		},
+	},
+}
+
+// ToEdge converts BuildProfile into BuildProfileEdge.
+func (bp *BuildProfile) ToEdge(order *BuildProfileOrder) *BuildProfileEdge {
+	if order == nil {
+		order = DefaultBuildProfileOrder
+	}
+	return &BuildProfileEdge{
+		Node:   bp,
+		Cursor: order.Field.toCursor(bp),
 	}
 }
 

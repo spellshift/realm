@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 )
 
@@ -75,12 +76,6 @@ func (btc *BuildTaskCreate) SetBuildImage(s string) *BuildTaskCreate {
 // SetBuildScript sets the "build_script" field.
 func (btc *BuildTaskCreate) SetBuildScript(s string) *BuildTaskCreate {
 	btc.mutation.SetBuildScript(s)
-	return btc
-}
-
-// SetTransports sets the "transports" field.
-func (btc *BuildTaskCreate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskCreate {
-	btc.mutation.SetTransports(btt)
 	return btc
 }
 
@@ -221,6 +216,17 @@ func (btc *BuildTaskCreate) SetBuilder(b *Builder) *BuildTaskCreate {
 	return btc.SetBuilderID(b.ID)
 }
 
+// SetProfileID sets the "profile" edge to the BuildProfile entity by ID.
+func (btc *BuildTaskCreate) SetProfileID(id int) *BuildTaskCreate {
+	btc.mutation.SetProfileID(id)
+	return btc
+}
+
+// SetProfile sets the "profile" edge to the BuildProfile entity.
+func (btc *BuildTaskCreate) SetProfile(b *BuildProfile) *BuildTaskCreate {
+	return btc.SetProfileID(b.ID)
+}
+
 // SetArtifactID sets the "artifact" edge to the Asset entity by ID.
 func (btc *BuildTaskCreate) SetArtifactID(id int) *BuildTaskCreate {
 	btc.mutation.SetArtifactID(id)
@@ -342,9 +348,6 @@ func (btc *BuildTaskCreate) check() error {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
 		}
 	}
-	if _, ok := btc.mutation.Transports(); !ok {
-		return &ValidationError{Name: "transports", err: errors.New(`ent: missing required field "BuildTask.transports"`)}
-	}
 	if _, ok := btc.mutation.OutputSize(); !ok {
 		return &ValidationError{Name: "output_size", err: errors.New(`ent: missing required field "BuildTask.output_size"`)}
 	}
@@ -363,6 +366,9 @@ func (btc *BuildTaskCreate) check() error {
 	}
 	if len(btc.mutation.BuilderIDs()) == 0 {
 		return &ValidationError{Name: "builder", err: errors.New(`ent: missing required edge "BuildTask.builder"`)}
+	}
+	if len(btc.mutation.ProfileIDs()) == 0 {
+		return &ValidationError{Name: "profile", err: errors.New(`ent: missing required edge "BuildTask.profile"`)}
 	}
 	return nil
 }
@@ -415,10 +421,6 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 		_node.BuildScript = value
 	}
-	if value, ok := btc.mutation.Transports(); ok {
-		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
-		_node.Transports = value
-	}
 	if value, ok := btc.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
 		_node.ClaimedAt = value
@@ -470,6 +472,23 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.build_task_builder = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := btc.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ProfileTable,
+			Columns: []string{buildtask.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.build_task_profile = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := btc.mutation.ArtifactIDs(); len(nodes) > 0 {
@@ -598,18 +617,6 @@ func (u *BuildTaskUpsert) SetBuildScript(v string) *BuildTaskUpsert {
 // UpdateBuildScript sets the "build_script" field to the value that was provided on create.
 func (u *BuildTaskUpsert) UpdateBuildScript() *BuildTaskUpsert {
 	u.SetExcluded(buildtask.FieldBuildScript)
-	return u
-}
-
-// SetTransports sets the "transports" field.
-func (u *BuildTaskUpsert) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsert {
-	u.Set(buildtask.FieldTransports, v)
-	return u
-}
-
-// UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuildTaskUpsert) UpdateTransports() *BuildTaskUpsert {
-	u.SetExcluded(buildtask.FieldTransports)
 	return u
 }
 
@@ -893,20 +900,6 @@ func (u *BuildTaskUpsertOne) SetBuildScript(v string) *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) UpdateBuildScript() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
-	})
-}
-
-// SetTransports sets the "transports" field.
-func (u *BuildTaskUpsertOne) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetTransports(v)
-	})
-}
-
-// UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuildTaskUpsertOne) UpdateTransports() *BuildTaskUpsertOne {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateTransports()
 	})
 }
 
@@ -1384,20 +1377,6 @@ func (u *BuildTaskUpsertBulk) SetBuildScript(v string) *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) UpdateBuildScript() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.UpdateBuildScript()
-	})
-}
-
-// SetTransports sets the "transports" field.
-func (u *BuildTaskUpsertBulk) SetTransports(v []builderpb.BuildTaskTransport) *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.SetTransports(v)
-	})
-}
-
-// UpdateTransports sets the "transports" field to the value that was provided on create.
-func (u *BuildTaskUpsertBulk) UpdateTransports() *BuildTaskUpsertBulk {
-	return u.Update(func(s *BuildTaskUpsert) {
-		s.UpdateTransports()
 	})
 }
 

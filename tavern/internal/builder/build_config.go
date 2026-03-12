@@ -20,7 +20,7 @@ const (
 )
 
 // DefaultTransports is the default transport configuration for a build task.
-var DefaultTransports = []builderpb.BuildTaskTransport{{
+var DefaultTransports = []builderpb.BuildProfileTransport{{
 	URI:   "http://127.0.0.1:8000",
 	Interval:      5,
 	Type: c2pb.Transport_TRANSPORT_GRPC,

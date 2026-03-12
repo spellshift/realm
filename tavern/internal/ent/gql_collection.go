@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -671,6 +672,96 @@ func newBeaconPaginateArgs(rv map[string]any) *beaconPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (bp *BuildProfileQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuildProfileQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return bp, nil
+	}
+	if err := bp.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return bp, nil
+}
+
+func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(buildprofile.Columns))
+		selectedFields = []string{buildprofile.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "buildtasks":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BuildTaskClient{config: bp.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, buildtaskImplementors)...); err != nil {
+				return err
+			}
+			bp.WithNamedBuildtasks(alias, func(wq *BuildTaskQuery) {
+				*wq = *query
+			})
+		case "name":
+			if _, ok := fieldSeen[buildprofile.FieldName]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldName)
+				fieldSeen[buildprofile.FieldName] = struct{}{}
+			}
+		case "description":
+			if _, ok := fieldSeen[buildprofile.FieldDescription]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldDescription)
+				fieldSeen[buildprofile.FieldDescription] = struct{}{}
+			}
+		case "transports":
+			if _, ok := fieldSeen[buildprofile.FieldTransports]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldTransports)
+				fieldSeen[buildprofile.FieldTransports] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		bp.Select(selectedFields...)
+	}
+	return nil
+}
+
+type buildprofilePaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BuildProfilePaginateOption
+}
+
+func newBuildProfilePaginateArgs(rv map[string]any) *buildprofilePaginateArgs {
+	args := &buildprofilePaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*BuildProfileWhereInput); ok {
+		args.opts = append(args.opts, WithBuildProfileFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (bt *BuildTaskQuery) CollectFields(ctx context.Context, satisfies ...string) (*BuildTaskQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -702,6 +793,17 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				return err
 			}
 			bt.withBuilder = query
+
+		case "profile":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BuildProfileClient{config: bt.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, buildprofileImplementors)...); err != nil {
+				return err
+			}
+			bt.withProfile = query
 
 		case "artifact":
 			var (
@@ -742,11 +844,6 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
 				fieldSeen[buildtask.FieldBuildScript] = struct{}{}
-			}
-		case "transports":
-			if _, ok := fieldSeen[buildtask.FieldTransports]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldTransports)
-				fieldSeen[buildtask.FieldTransports] = struct{}{}
 			}
 		case "claimedAt":
 			if _, ok := fieldSeen[buildtask.FieldClaimedAt]; !ok {
@@ -884,7 +981,7 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "buildTasks":
+		case "buildtasks":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
@@ -916,9 +1013,9 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 							Count  int `sql:"count"`
 						}
 						query.Where(func(s *sql.Selector) {
-							s.Where(sql.InValues(s.C(builder.BuildTasksColumn), ids...))
+							s.Where(sql.InValues(s.C(builder.BuildtasksColumn), ids...))
 						})
-						if err := query.GroupBy(builder.BuildTasksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+						if err := query.GroupBy(builder.BuildtasksColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
 							return err
 						}
 						m := make(map[int]int, len(v))
@@ -937,7 +1034,7 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 				} else {
 					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Builder) error {
 						for i := range nodes {
-							n := len(nodes[i].Edges.BuildTasks)
+							n := len(nodes[i].Edges.Buildtasks)
 							if nodes[i].Edges.totalCount[0] == nil {
 								nodes[i].Edges.totalCount[0] = make(map[string]int)
 							}
@@ -963,13 +1060,13 @@ func (b *BuilderQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 				if oneNode {
 					pager.applyOrder(query.Limit(limit))
 				} else {
-					modify := entgql.LimitPerRow(builder.BuildTasksColumn, limit, pager.orderExpr(query))
+					modify := entgql.LimitPerRow(builder.BuildtasksColumn, limit, pager.orderExpr(query))
 					query.modifiers = append(query.modifiers, modify)
 				}
 			} else {
 				query = pager.applyOrder(query)
 			}
-			b.WithNamedBuildTasks(alias, func(wq *BuildTaskQuery) {
+			b.WithNamedBuildtasks(alias, func(wq *BuildTaskQuery) {
 				*wq = *query
 			})
 		case "createdAt":

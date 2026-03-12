@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -1068,6 +1069,260 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 	}
 }
 
+// BuildProfileWhereInput represents a where input for filtering BuildProfile queries.
+type BuildProfileWhereInput struct {
+	Predicates []predicate.BuildProfile  `json:"-"`
+	Not        *BuildProfileWhereInput   `json:"not,omitempty"`
+	Or         []*BuildProfileWhereInput `json:"or,omitempty"`
+	And        []*BuildProfileWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "description" field predicates.
+	Description             *string  `json:"description,omitempty"`
+	DescriptionNEQ          *string  `json:"descriptionNEQ,omitempty"`
+	DescriptionIn           []string `json:"descriptionIn,omitempty"`
+	DescriptionNotIn        []string `json:"descriptionNotIn,omitempty"`
+	DescriptionGT           *string  `json:"descriptionGT,omitempty"`
+	DescriptionGTE          *string  `json:"descriptionGTE,omitempty"`
+	DescriptionLT           *string  `json:"descriptionLT,omitempty"`
+	DescriptionLTE          *string  `json:"descriptionLTE,omitempty"`
+	DescriptionContains     *string  `json:"descriptionContains,omitempty"`
+	DescriptionHasPrefix    *string  `json:"descriptionHasPrefix,omitempty"`
+	DescriptionHasSuffix    *string  `json:"descriptionHasSuffix,omitempty"`
+	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
+	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
+
+	// "buildtasks" edge predicates.
+	HasBuildtasks     *bool                  `json:"hasBuildtasks,omitempty"`
+	HasBuildtasksWith []*BuildTaskWhereInput `json:"hasBuildtasksWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BuildProfileWhereInput) AddPredicates(predicates ...predicate.BuildProfile) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BuildProfileWhereInput filter on the BuildProfileQuery builder.
+func (i *BuildProfileWhereInput) Filter(q *BuildProfileQuery) (*BuildProfileQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBuildProfileWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBuildProfileWhereInput is returned in case the BuildProfileWhereInput is empty.
+var ErrEmptyBuildProfileWhereInput = errors.New("ent: empty predicate BuildProfileWhereInput")
+
+// P returns a predicate for filtering buildprofiles.
+// An error is returned if the input is empty or invalid.
+func (i *BuildProfileWhereInput) P() (predicate.BuildProfile, error) {
+	var predicates []predicate.BuildProfile
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, buildprofile.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.BuildProfile, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, buildprofile.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.BuildProfile, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, buildprofile.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, buildprofile.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, buildprofile.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, buildprofile.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, buildprofile.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, buildprofile.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, buildprofile.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, buildprofile.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, buildprofile.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, buildprofile.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, buildprofile.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, buildprofile.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, buildprofile.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, buildprofile.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, buildprofile.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, buildprofile.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, buildprofile.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, buildprofile.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, buildprofile.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, buildprofile.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, buildprofile.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, buildprofile.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Description != nil {
+		predicates = append(predicates, buildprofile.DescriptionEQ(*i.Description))
+	}
+	if i.DescriptionNEQ != nil {
+		predicates = append(predicates, buildprofile.DescriptionNEQ(*i.DescriptionNEQ))
+	}
+	if len(i.DescriptionIn) > 0 {
+		predicates = append(predicates, buildprofile.DescriptionIn(i.DescriptionIn...))
+	}
+	if len(i.DescriptionNotIn) > 0 {
+		predicates = append(predicates, buildprofile.DescriptionNotIn(i.DescriptionNotIn...))
+	}
+	if i.DescriptionGT != nil {
+		predicates = append(predicates, buildprofile.DescriptionGT(*i.DescriptionGT))
+	}
+	if i.DescriptionGTE != nil {
+		predicates = append(predicates, buildprofile.DescriptionGTE(*i.DescriptionGTE))
+	}
+	if i.DescriptionLT != nil {
+		predicates = append(predicates, buildprofile.DescriptionLT(*i.DescriptionLT))
+	}
+	if i.DescriptionLTE != nil {
+		predicates = append(predicates, buildprofile.DescriptionLTE(*i.DescriptionLTE))
+	}
+	if i.DescriptionContains != nil {
+		predicates = append(predicates, buildprofile.DescriptionContains(*i.DescriptionContains))
+	}
+	if i.DescriptionHasPrefix != nil {
+		predicates = append(predicates, buildprofile.DescriptionHasPrefix(*i.DescriptionHasPrefix))
+	}
+	if i.DescriptionHasSuffix != nil {
+		predicates = append(predicates, buildprofile.DescriptionHasSuffix(*i.DescriptionHasSuffix))
+	}
+	if i.DescriptionEqualFold != nil {
+		predicates = append(predicates, buildprofile.DescriptionEqualFold(*i.DescriptionEqualFold))
+	}
+	if i.DescriptionContainsFold != nil {
+		predicates = append(predicates, buildprofile.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+
+	if i.HasBuildtasks != nil {
+		p := buildprofile.HasBuildtasks()
+		if !*i.HasBuildtasks {
+			p = buildprofile.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBuildtasksWith) > 0 {
+		with := make([]predicate.BuildTask, 0, len(i.HasBuildtasksWith))
+		for _, w := range i.HasBuildtasksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBuildtasksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, buildprofile.HasBuildtasksWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBuildProfileWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return buildprofile.And(predicates...), nil
+	}
+}
+
 // BuildTaskWhereInput represents a where input for filtering BuildTask queries.
 type BuildTaskWhereInput struct {
 	Predicates []predicate.BuildTask  `json:"-"`
@@ -1269,6 +1524,10 @@ type BuildTaskWhereInput struct {
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
 	HasBuilderWith []*BuilderWhereInput `json:"hasBuilderWith,omitempty"`
+
+	// "profile" edge predicates.
+	HasProfile     *bool                     `json:"hasProfile,omitempty"`
+	HasProfileWith []*BuildProfileWhereInput `json:"hasProfileWith,omitempty"`
 
 	// "artifact" edge predicates.
 	HasArtifact     *bool              `json:"hasArtifact,omitempty"`
@@ -1842,6 +2101,24 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 		}
 		predicates = append(predicates, buildtask.HasBuilderWith(with...))
 	}
+	if i.HasProfile != nil {
+		p := buildtask.HasProfile()
+		if !*i.HasProfile {
+			p = buildtask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasProfileWith) > 0 {
+		with := make([]predicate.BuildProfile, 0, len(i.HasProfileWith))
+		for _, w := range i.HasProfileWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasProfileWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, buildtask.HasProfileWith(with...))
+	}
 	if i.HasArtifact != nil {
 		p := buildtask.HasArtifact()
 		if !*i.HasArtifact {
@@ -1949,9 +2226,9 @@ type BuilderWhereInput struct {
 	LastSeenAtIsNil  bool        `json:"lastSeenAtIsNil,omitempty"`
 	LastSeenAtNotNil bool        `json:"lastSeenAtNotNil,omitempty"`
 
-	// "build_tasks" edge predicates.
-	HasBuildTasks     *bool                  `json:"hasBuildTasks,omitempty"`
-	HasBuildTasksWith []*BuildTaskWhereInput `json:"hasBuildTasksWith,omitempty"`
+	// "buildtasks" edge predicates.
+	HasBuildtasks     *bool                  `json:"hasBuildtasks,omitempty"`
+	HasBuildtasksWith []*BuildTaskWhereInput `json:"hasBuildtasksWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -2206,23 +2483,23 @@ func (i *BuilderWhereInput) P() (predicate.Builder, error) {
 		predicates = append(predicates, builder.LastSeenAtNotNil())
 	}
 
-	if i.HasBuildTasks != nil {
-		p := builder.HasBuildTasks()
-		if !*i.HasBuildTasks {
+	if i.HasBuildtasks != nil {
+		p := builder.HasBuildtasks()
+		if !*i.HasBuildtasks {
 			p = builder.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasBuildTasksWith) > 0 {
-		with := make([]predicate.BuildTask, 0, len(i.HasBuildTasksWith))
-		for _, w := range i.HasBuildTasksWith {
+	if len(i.HasBuildtasksWith) > 0 {
+		with := make([]predicate.BuildTask, 0, len(i.HasBuildtasksWith))
+		for _, w := range i.HasBuildtasksWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasBuildTasksWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasBuildtasksWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, builder.HasBuildTasksWith(with...))
+		predicates = append(predicates, builder.HasBuildtasksWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -47,6 +48,8 @@ type Client struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BuildProfile is the client for interacting with the BuildProfile builders.
+	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
@@ -100,6 +103,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Asset = NewAssetClient(c.config)
 	c.Beacon = NewBeaconClient(c.config)
+	c.BuildProfile = NewBuildProfileClient(c.config)
 	c.BuildTask = NewBuildTaskClient(c.config)
 	c.Builder = NewBuilderClient(c.config)
 	c.DeviceAuth = NewDeviceAuthClient(c.config)
@@ -213,6 +217,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:         cfg,
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		BuildProfile:   NewBuildProfileClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
 		DeviceAuth:     NewDeviceAuthClient(cfg),
@@ -253,6 +258,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:         cfg,
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		BuildProfile:   NewBuildProfileClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
 		DeviceAuth:     NewDeviceAuthClient(cfg),
@@ -301,7 +307,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
+		c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
 		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
 		c.Task, c.Tome, c.User,
@@ -314,7 +320,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
+		c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
 		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
 		c.Task, c.Tome, c.User,
@@ -330,6 +336,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Asset.mutate(ctx, m)
 	case *BeaconMutation:
 		return c.Beacon.mutate(ctx, m)
+	case *BuildProfileMutation:
+		return c.BuildProfile.mutate(ctx, m)
 	case *BuildTaskMutation:
 		return c.BuildTask.mutate(ctx, m)
 	case *BuilderMutation:
@@ -736,6 +744,155 @@ func (c *BeaconClient) mutate(ctx context.Context, m *BeaconMutation) (Value, er
 	}
 }
 
+// BuildProfileClient is a client for the BuildProfile schema.
+type BuildProfileClient struct {
+	config
+}
+
+// NewBuildProfileClient returns a client for the BuildProfile from the given config.
+func NewBuildProfileClient(c config) *BuildProfileClient {
+	return &BuildProfileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `buildprofile.Hooks(f(g(h())))`.
+func (c *BuildProfileClient) Use(hooks ...Hook) {
+	c.hooks.BuildProfile = append(c.hooks.BuildProfile, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `buildprofile.Intercept(f(g(h())))`.
+func (c *BuildProfileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BuildProfile = append(c.inters.BuildProfile, interceptors...)
+}
+
+// Create returns a builder for creating a BuildProfile entity.
+func (c *BuildProfileClient) Create() *BuildProfileCreate {
+	mutation := newBuildProfileMutation(c.config, OpCreate)
+	return &BuildProfileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BuildProfile entities.
+func (c *BuildProfileClient) CreateBulk(builders ...*BuildProfileCreate) *BuildProfileCreateBulk {
+	return &BuildProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BuildProfileClient) MapCreateBulk(slice any, setFunc func(*BuildProfileCreate, int)) *BuildProfileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BuildProfileCreateBulk{err: fmt.Errorf("calling to BuildProfileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BuildProfileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BuildProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BuildProfile.
+func (c *BuildProfileClient) Update() *BuildProfileUpdate {
+	mutation := newBuildProfileMutation(c.config, OpUpdate)
+	return &BuildProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BuildProfileClient) UpdateOne(bp *BuildProfile) *BuildProfileUpdateOne {
+	mutation := newBuildProfileMutation(c.config, OpUpdateOne, withBuildProfile(bp))
+	return &BuildProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BuildProfileClient) UpdateOneID(id int) *BuildProfileUpdateOne {
+	mutation := newBuildProfileMutation(c.config, OpUpdateOne, withBuildProfileID(id))
+	return &BuildProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BuildProfile.
+func (c *BuildProfileClient) Delete() *BuildProfileDelete {
+	mutation := newBuildProfileMutation(c.config, OpDelete)
+	return &BuildProfileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BuildProfileClient) DeleteOne(bp *BuildProfile) *BuildProfileDeleteOne {
+	return c.DeleteOneID(bp.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BuildProfileClient) DeleteOneID(id int) *BuildProfileDeleteOne {
+	builder := c.Delete().Where(buildprofile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BuildProfileDeleteOne{builder}
+}
+
+// Query returns a query builder for BuildProfile.
+func (c *BuildProfileClient) Query() *BuildProfileQuery {
+	return &BuildProfileQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBuildProfile},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BuildProfile entity by its id.
+func (c *BuildProfileClient) Get(ctx context.Context, id int) (*BuildProfile, error) {
+	return c.Query().Where(buildprofile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BuildProfileClient) GetX(ctx context.Context, id int) *BuildProfile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryBuildtasks queries the buildtasks edge of a BuildProfile.
+func (c *BuildProfileClient) QueryBuildtasks(bp *BuildProfile) *BuildTaskQuery {
+	query := (&BuildTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildprofile.Table, buildprofile.FieldID, id),
+			sqlgraph.To(buildtask.Table, buildtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, buildprofile.BuildtasksTable, buildprofile.BuildtasksColumn),
+		)
+		fromV = sqlgraph.Neighbors(bp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BuildProfileClient) Hooks() []Hook {
+	return c.hooks.BuildProfile
+}
+
+// Interceptors returns the client interceptors.
+func (c *BuildProfileClient) Interceptors() []Interceptor {
+	return c.inters.BuildProfile
+}
+
+func (c *BuildProfileClient) mutate(ctx context.Context, m *BuildProfileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BuildProfileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BuildProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BuildProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BuildProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BuildProfile mutation op: %q", m.Op())
+	}
+}
+
 // BuildTaskClient is a client for the BuildTask schema.
 type BuildTaskClient struct {
 	config
@@ -853,6 +1010,22 @@ func (c *BuildTaskClient) QueryBuilder(bt *BuildTask) *BuilderQuery {
 			sqlgraph.From(buildtask.Table, buildtask.FieldID, id),
 			sqlgraph.To(builder.Table, builder.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BuilderTable, buildtask.BuilderColumn),
+		)
+		fromV = sqlgraph.Neighbors(bt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProfile queries the profile edge of a BuildTask.
+func (c *BuildTaskClient) QueryProfile(bt *BuildTask) *BuildProfileQuery {
+	query := (&BuildProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, id),
+			sqlgraph.To(buildprofile.Table, buildprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.ProfileTable, buildtask.ProfileColumn),
 		)
 		fromV = sqlgraph.Neighbors(bt.driver.Dialect(), step)
 		return fromV, nil
@@ -1010,15 +1183,15 @@ func (c *BuilderClient) GetX(ctx context.Context, id int) *Builder {
 	return obj
 }
 
-// QueryBuildTasks queries the build_tasks edge of a Builder.
-func (c *BuilderClient) QueryBuildTasks(b *Builder) *BuildTaskQuery {
+// QueryBuildtasks queries the buildtasks edge of a Builder.
+func (c *BuilderClient) QueryBuildtasks(b *Builder) *BuildTaskQuery {
 	query := (&BuildTaskClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := b.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(builder.Table, builder.FieldID, id),
 			sqlgraph.To(buildtask.Table, buildtask.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, builder.BuildTasksTable, builder.BuildTasksColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, builder.BuildtasksTable, builder.BuildtasksColumn),
 		)
 		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
 		return fromV, nil

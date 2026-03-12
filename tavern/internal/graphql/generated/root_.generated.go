@@ -99,6 +99,21 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BuildProfile struct {
+		Buildtasks  func(childComplexity int) int
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Transports  func(childComplexity int) int
+	}
+
+	BuildProfileTransport struct {
+		Extra    func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Type     func(childComplexity int) int
+		URI      func(childComplexity int) int
+	}
+
 	BuildTask struct {
 		Artifact       func(childComplexity int) int
 		ArtifactPath   func(childComplexity int) int
@@ -115,10 +130,10 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
+		Profile        func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
-		Transports     func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -132,15 +147,8 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
-	BuildTaskTransport struct {
-		Extra    func(childComplexity int) int
-		Interval func(childComplexity int) int
-		Type     func(childComplexity int) int
-		URI      func(childComplexity int) int
-	}
-
 	Builder struct {
-		BuildTasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		Buildtasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		CreatedAt        func(childComplexity int) int
 		ID               func(childComplexity int) int
 		Identifier       func(childComplexity int) int
@@ -920,6 +928,69 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
 
+	case "BuildProfile.buildtasks":
+		if e.complexity.BuildProfile.Buildtasks == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Buildtasks(childComplexity), true
+
+	case "BuildProfile.description":
+		if e.complexity.BuildProfile.Description == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Description(childComplexity), true
+
+	case "BuildProfile.id":
+		if e.complexity.BuildProfile.ID == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.ID(childComplexity), true
+
+	case "BuildProfile.name":
+		if e.complexity.BuildProfile.Name == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Name(childComplexity), true
+
+	case "BuildProfile.transports":
+		if e.complexity.BuildProfile.Transports == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Transports(childComplexity), true
+
+	case "BuildProfileTransport.extra":
+		if e.complexity.BuildProfileTransport.Extra == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Extra(childComplexity), true
+
+	case "BuildProfileTransport.interval":
+		if e.complexity.BuildProfileTransport.Interval == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Interval(childComplexity), true
+
+	case "BuildProfileTransport.type":
+		if e.complexity.BuildProfileTransport.Type == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Type(childComplexity), true
+
+	case "BuildProfileTransport.uri":
+		if e.complexity.BuildProfileTransport.URI == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.URI(childComplexity), true
+
 	case "BuildTask.artifact":
 		if e.complexity.BuildTask.Artifact == nil {
 			break
@@ -1025,6 +1096,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.OutputSize(childComplexity), true
 
+	case "BuildTask.profile":
+		if e.complexity.BuildTask.Profile == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Profile(childComplexity), true
+
 	case "BuildTask.startedAt":
 		if e.complexity.BuildTask.StartedAt == nil {
 			break
@@ -1045,13 +1123,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
-
-	case "BuildTask.transports":
-		if e.complexity.BuildTask.Transports == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.Transports(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -1088,45 +1159,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
 
-	case "BuildTaskTransport.extra":
-		if e.complexity.BuildTaskTransport.Extra == nil {
+	case "Builder.buildtasks":
+		if e.complexity.Builder.Buildtasks == nil {
 			break
 		}
 
-		return e.complexity.BuildTaskTransport.Extra(childComplexity), true
-
-	case "BuildTaskTransport.interval":
-		if e.complexity.BuildTaskTransport.Interval == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.Interval(childComplexity), true
-
-	case "BuildTaskTransport.type":
-		if e.complexity.BuildTaskTransport.Type == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.Type(childComplexity), true
-
-	case "BuildTaskTransport.uri":
-		if e.complexity.BuildTaskTransport.URI == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.URI(childComplexity), true
-
-	case "Builder.buildTasks":
-		if e.complexity.Builder.BuildTasks == nil {
-			break
-		}
-
-		args, err := ec.field_Builder_buildTasks_args(ctx, rawArgs)
+		args, err := ec.field_Builder_buildtasks_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Builder.BuildTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
+		return e.complexity.Builder.Buildtasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
 
 	case "Builder.createdAt":
 		if e.complexity.Builder.CreatedAt == nil {
@@ -3785,8 +3828,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAssetWhereInput,
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
+		ec.unmarshalInputBuildProfileTransportInput,
+		ec.unmarshalInputBuildProfileWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
-		ec.unmarshalInputBuildTaskTransportInput,
 		ec.unmarshalInputBuildTaskWhereInput,
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
@@ -4534,6 +4578,82 @@ input BeaconWhereInput {
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
 }
+type BuildProfile implements Node {
+  id: ID!
+  """
+  The build profiles name
+  """
+  name: String!
+  """
+  A user facing build profile description.
+  """
+  description: String!
+  """
+  The transports builds should use in order of priority.
+  """
+  transports: [BuildProfileTransport!]!
+  """
+  Build Tasks that have used this profile
+  """
+  buildtasks: [BuildTask!]
+}
+"""
+BuildProfileWhereInput is used for filtering BuildProfile objects.
+Input was generated by ent.
+"""
+input BuildProfileWhereInput {
+  not: BuildProfileWhereInput
+  and: [BuildProfileWhereInput!]
+  or: [BuildProfileWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  buildtasks edge predicates
+  """
+  hasBuildtasks: Boolean
+  hasBuildtasksWith: [BuildTaskWhereInput!]
+}
 type BuildTask implements Node {
   id: ID!
   """
@@ -4560,10 +4680,6 @@ type BuildTask implements Node {
   The derived script to execute inside the build container.
   """
   buildScript: String!
-  """
-  List of transport configurations for the IMIX agent.
-  """
-  transports: [BuildTaskTransport!]!
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -4604,6 +4720,10 @@ type BuildTask implements Node {
   The builder assigned to execute this build task.
   """
   builder: Builder!
+  """
+  The profile assigned to this build Task
+  """
+  profile: BuildProfile!
   """
   The compiled artifact produced by this build task, stored as an Asset.
   """
@@ -4896,6 +5016,11 @@ input BuildTaskWhereInput {
   hasBuilder: Boolean
   hasBuilderWith: [BuilderWhereInput!]
   """
+  profile edge predicates
+  """
+  hasProfile: Boolean
+  hasProfileWith: [BuildProfileWhereInput!]
+  """
   artifact edge predicates
   """
   hasArtifact: Boolean
@@ -4927,7 +5052,7 @@ type Builder implements Node {
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
   lastSeenAt: Time
-  buildTasks(
+  buildtasks(
     """
     Returns the elements in the list that come after the specified cursor.
     """
@@ -5097,10 +5222,10 @@ input BuilderWhereInput {
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
   """
-  build_tasks edge predicates
+  buildtasks edge predicates
   """
-  hasBuildTasks: Boolean
-  hasBuildTasksWith: [BuildTaskWhereInput!]
+  hasBuildtasks: Boolean
+  hasBuildtasksWith: [BuildTaskWhereInput!]
 }
 """
 CreateBuilderInput is used for create Builder object.
@@ -10421,7 +10546,7 @@ input ImportRepositoryInput {
 }
 
 """A single transport configuration for a build task."""
-type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+type BuildProfileTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileTransport") {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -10436,7 +10561,7 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
 }
 
 """Input for a single transport configuration."""
-input BuildTaskTransportInput {
+input BuildProfileTransportInput {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -10462,7 +10587,7 @@ input CreateBuildTaskInput {
   buildImage: String
 
   """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
+  transports: [BuildProfileTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

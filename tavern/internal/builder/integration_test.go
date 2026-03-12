@@ -150,6 +150,10 @@ func TestBuilderE2E(t *testing.T) {
 		require.NotNil(t, claimResp)
 	})
 
+	profile := graph.BuildProfile.Create().
+		SetName("default").
+		SaveX(ctx)
+
 	// 10. Test: ClaimBuildTasks returns unclaimed tasks and marks them as claimed
 	t.Run("ClaimBuildTasks", func(t *testing.T) {
 		// Create an authenticated client
@@ -165,6 +169,14 @@ func TestBuilderE2E(t *testing.T) {
 		defer conn.Close()
 
 		authClient := builderpb.NewBuilderClient(conn)
+		explictProfile := graph.BuildProfile.Create().
+			SetName("explicit").
+			SetTransports([]builderpb.BuildProfileTransport{{
+				URI:   "https://callback.example.com",
+				Interval:      10,
+				Type: c2pb.Transport_TRANSPORT_GRPC,
+			}}).
+			SaveX(ctx)
 
 		// Create a build task assigned to this builder
 		bt := graph.BuildTask.Create().
@@ -172,12 +184,8 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      10,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
 			SetBuilderID(builders[0].ID).
+			SetProfileID(explictProfile.ID).
 			SaveX(ctx)
 
 		// Claim tasks
@@ -232,11 +240,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
+			SetProfileID(profile.ID).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -292,11 +296,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
+			SetProfileID(profile.ID).
 			SetBuilderID(builders[0].ID).
 			SaveX(ctx)
 
@@ -374,11 +374,7 @@ func TestBuilderE2E(t *testing.T) {
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
 			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
-			SetTransports([]builderpb.BuildTaskTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      5,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
-			}}).
+			SetProfileID(profile.ID).
 			SetBuilderID(secondBuilder).
 			SaveX(ctx)
 

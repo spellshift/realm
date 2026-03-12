@@ -900,6 +900,29 @@ func HasBuilderWith(preds ...predicate.Builder) predicate.BuildTask {
 	})
 }
 
+// HasProfile applies the HasEdge predicate on the "profile" edge.
+func HasProfile() predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProfileTable, ProfileColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProfileWith applies the HasEdge predicate on the "profile" edge with a given conditions (other predicates).
+func HasProfileWith(preds ...predicate.BuildProfile) predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := newProfileStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasArtifact applies the HasEdge predicate on the "artifact" edge.
 func HasArtifact() predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {

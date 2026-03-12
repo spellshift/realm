@@ -30,12 +30,12 @@ import (
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _BuildTaskTransport_uri(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildProfileTransport_uri(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTransport) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTaskTransport_uri,
+		ec.fieldContext_BuildProfileTransport_uri,
 		func(ctx context.Context) (any, error) {
 			return obj.URI, nil
 		},
@@ -46,9 +46,9 @@ func (ec *executionContext) _BuildTaskTransport_uri(ctx context.Context, field g
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTaskTransport_uri(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildProfileTransport_uri(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "BuildTaskTransport",
+		Object:     "BuildProfileTransport",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -59,12 +59,12 @@ func (ec *executionContext) fieldContext_BuildTaskTransport_uri(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTaskTransport_interval(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildProfileTransport_interval(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTransport) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTaskTransport_interval,
+		ec.fieldContext_BuildProfileTransport_interval,
 		func(ctx context.Context) (any, error) {
 			return obj.Interval, nil
 		},
@@ -75,9 +75,9 @@ func (ec *executionContext) _BuildTaskTransport_interval(ctx context.Context, fi
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTaskTransport_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildProfileTransport_interval(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "BuildTaskTransport",
+		Object:     "BuildProfileTransport",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -88,12 +88,12 @@ func (ec *executionContext) fieldContext_BuildTaskTransport_interval(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTaskTransport_type(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildProfileTransport_type(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTransport) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTaskTransport_type,
+		ec.fieldContext_BuildProfileTransport_type,
 		func(ctx context.Context) (any, error) {
 			return obj.Type, nil
 		},
@@ -104,9 +104,9 @@ func (ec *executionContext) _BuildTaskTransport_type(ctx context.Context, field 
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTaskTransport_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildProfileTransport_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "BuildTaskTransport",
+		Object:     "BuildProfileTransport",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -117,12 +117,12 @@ func (ec *executionContext) fieldContext_BuildTaskTransport_type(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _BuildTaskTransport_extra(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildTaskTransport) (ret graphql.Marshaler) {
+func (ec *executionContext) _BuildProfileTransport_extra(ctx context.Context, field graphql.CollectedField, obj *builderpb.BuildProfileTransport) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_BuildTaskTransport_extra,
+		ec.fieldContext_BuildProfileTransport_extra,
 		func(ctx context.Context) (any, error) {
 			return obj.Extra, nil
 		},
@@ -133,9 +133,9 @@ func (ec *executionContext) _BuildTaskTransport_extra(ctx context.Context, field
 	)
 }
 
-func (ec *executionContext) fieldContext_BuildTaskTransport_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BuildProfileTransport_extra(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "BuildTaskTransport",
+		Object:     "BuildProfileTransport",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -184,8 +184,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_builder(_ context
 				return ec.fieldContext_Builder_upstream(ctx, field)
 			case "lastSeenAt":
 				return ec.fieldContext_Builder_lastSeenAt(ctx, field)
-			case "buildTasks":
-				return ec.fieldContext_Builder_buildTasks(ctx, field)
+			case "buildtasks":
+				return ec.fieldContext_Builder_buildtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Builder", field.Name)
 		},
@@ -255,8 +255,8 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_config(_ context.
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputBuildTaskTransportInput(ctx context.Context, obj any) (models.BuildTaskTransportInput, error) {
-	var it models.BuildTaskTransportInput
+func (ec *executionContext) unmarshalInputBuildProfileTransportInput(ctx context.Context, obj any) (models.BuildProfileTransportInput, error) {
+	var it models.BuildProfileTransportInput
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -413,7 +413,7 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 			it.BuildImage = data
 		case "transports":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transports"))
-			data, err := ec.unmarshalOBuildTaskTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInputᚄ(ctx, v)
+			data, err := ec.unmarshalOBuildProfileTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTransportInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -521,34 +521,34 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 
 // region    **************************** object.gotpl ****************************
 
-var buildTaskTransportImplementors = []string{"BuildTaskTransport"}
+var buildProfileTransportImplementors = []string{"BuildProfileTransport"}
 
-func (ec *executionContext) _BuildTaskTransport(ctx context.Context, sel ast.SelectionSet, obj *builderpb.BuildTaskTransport) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, buildTaskTransportImplementors)
+func (ec *executionContext) _BuildProfileTransport(ctx context.Context, sel ast.SelectionSet, obj *builderpb.BuildProfileTransport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, buildProfileTransportImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("BuildTaskTransport")
+			out.Values[i] = graphql.MarshalString("BuildProfileTransport")
 		case "uri":
-			out.Values[i] = ec._BuildTaskTransport_uri(ctx, field, obj)
+			out.Values[i] = ec._BuildProfileTransport_uri(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "interval":
-			out.Values[i] = ec._BuildTaskTransport_interval(ctx, field, obj)
+			out.Values[i] = ec._BuildProfileTransport_interval(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "type":
-			out.Values[i] = ec._BuildTaskTransport_type(ctx, field, obj)
+			out.Values[i] = ec._BuildProfileTransport_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "extra":
-			out.Values[i] = ec._BuildTaskTransport_extra(ctx, field, obj)
+			out.Values[i] = ec._BuildProfileTransport_extra(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -625,11 +625,11 @@ func (ec *executionContext) _RegisterBuilderOutput(ctx context.Context, sel ast.
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNBuildTaskTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransport(ctx context.Context, sel ast.SelectionSet, v builderpb.BuildTaskTransport) graphql.Marshaler {
-	return ec._BuildTaskTransport(ctx, sel, &v)
+func (ec *executionContext) marshalNBuildProfileTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransport(ctx context.Context, sel ast.SelectionSet, v builderpb.BuildProfileTransport) graphql.Marshaler {
+	return ec._BuildProfileTransport(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransportᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildTaskTransport) graphql.Marshaler {
+func (ec *executionContext) marshalNBuildProfileTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransportᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildProfileTransport) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -653,7 +653,7 @@ func (ec *executionContext) marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavern�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNBuildTaskTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildTaskTransport(ctx, sel, v[i])
+			ret[i] = ec.marshalNBuildProfileTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransport(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -673,8 +673,8 @@ func (ec *executionContext) marshalNBuildTaskTransport2ᚕrealmᚗpubᚋtavern�
 	return ret
 }
 
-func (ec *executionContext) unmarshalNBuildTaskTransportInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInput(ctx context.Context, v any) (*models.BuildTaskTransportInput, error) {
-	res, err := ec.unmarshalInputBuildTaskTransportInput(ctx, v)
+func (ec *executionContext) unmarshalNBuildProfileTransportInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTransportInput(ctx context.Context, v any) (*models.BuildProfileTransportInput, error) {
+	res, err := ec.unmarshalInputBuildProfileTransportInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -697,17 +697,17 @@ func (ec *executionContext) marshalNRegisterBuilderOutput2ᚖrealmᚗpubᚋtaver
 	return ec._RegisterBuilderOutput(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOBuildTaskTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInputᚄ(ctx context.Context, v any) ([]*models.BuildTaskTransportInput, error) {
+func (ec *executionContext) unmarshalOBuildProfileTransportInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTransportInputᚄ(ctx context.Context, v any) ([]*models.BuildProfileTransportInput, error) {
 	if v == nil {
 		return nil, nil
 	}
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
 	var err error
-	res := make([]*models.BuildTaskTransportInput, len(vSlice))
+	res := make([]*models.BuildProfileTransportInput, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNBuildTaskTransportInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildTaskTransportInput(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNBuildProfileTransportInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBuildProfileTransportInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}

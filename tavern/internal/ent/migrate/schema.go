@@ -63,6 +63,19 @@ var (
 			},
 		},
 	}
+	// BuildProfilesColumns holds the columns for the "build_profiles" table.
+	BuildProfilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "transports", Type: field.TypeJSON},
+	}
+	// BuildProfilesTable holds the schema information for the "build_profiles" table.
+	BuildProfilesTable = &schema.Table{
+		Name:       "build_profiles",
+		Columns:    BuildProfilesColumns,
+		PrimaryKey: []*schema.Column{BuildProfilesColumns[0]},
+	}
 	// BuildTasksColumns holds the columns for the "build_tasks" table.
 	BuildTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -72,7 +85,6 @@ var (
 		{Name: "target_format", Type: field.TypeEnum, Enums: []string{"TARGET_FORMAT_BIN", "TARGET_FORMAT_CDYLIB", "TARGET_FORMAT_UNSPECIFIED", "TARGET_FORMAT_WINDOWS_SERVICE"}},
 		{Name: "build_image", Type: field.TypeString},
 		{Name: "build_script", Type: field.TypeString, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
-		{Name: "transports", Type: field.TypeJSON},
 		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
@@ -83,6 +95,7 @@ var (
 		{Name: "exit_code", Type: field.TypeInt, Nullable: true},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
 		{Name: "build_task_builder", Type: field.TypeInt},
+		{Name: "build_task_profile", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
 	}
 	// BuildTasksTable holds the schema information for the "build_tasks" table.
@@ -93,9 +106,15 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				Columns:    []*schema.Column{BuildTasksColumns[16]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
-				OnDelete:   schema.Cascade,
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "build_tasks_build_profiles_profile",
+				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
@@ -795,6 +814,7 @@ var (
 	Tables = []*schema.Table{
 		AssetsTable,
 		BeaconsTable,
+		BuildProfilesTable,
 		BuildTasksTable,
 		BuildersTable,
 		DeviceAuthsTable,
@@ -830,7 +850,8 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	BuildTasksTable.ForeignKeys[0].RefTable = BuildersTable
-	BuildTasksTable.ForeignKeys[1].RefTable = AssetsTable
+	BuildTasksTable.ForeignKeys[1].RefTable = BuildProfilesTable
+	BuildTasksTable.ForeignKeys[2].RefTable = AssetsTable
 	BuildTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

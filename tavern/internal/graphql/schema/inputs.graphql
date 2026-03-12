@@ -49,7 +49,7 @@ input ImportRepositoryInput {
 }
 
 """A single transport configuration for a build task."""
-type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+type BuildProfileTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileTransport") {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -64,7 +64,7 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
 }
 
 """Input for a single transport configuration."""
-input BuildTaskTransportInput {
+input BuildProfileTransportInput {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -90,7 +90,7 @@ input CreateBuildTaskInput {
   buildImage: String
 
   """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
+  transports: [BuildProfileTransportInput!]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String

@@ -403,13 +403,13 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	// Resolve transports: use default if none provided
 	transports := builder.DefaultTransports
 	if len(input.Transports) > 0 {
-		transports = make([]builderpb.BuildTaskTransport, len(input.Transports))
+		transports = make([]builderpb.BuildProfileTransport, len(input.Transports))
 		for i, t := range input.Transports {
 			var extra string
 			if t.Extra != nil {
 				extra = *t.Extra
 			}
-			transports[i] = builderpb.BuildTaskTransport{
+			transports[i] = builderpb.BuildProfileTransport{
 				URI:      t.URI,
 				Interval: t.Interval,
 				Type:     c2pb.Transport_Type(t.Type),
@@ -473,7 +473,6 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetTargetFormat(targetFormat).
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
-		SetTransports(transports).
 		SetArtifactPath(artifactPath).
 		SetBuilder(selected)
 

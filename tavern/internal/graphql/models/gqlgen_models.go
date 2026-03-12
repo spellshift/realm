@@ -15,7 +15,7 @@ import (
 )
 
 // Input for a single transport configuration.
-type BuildTaskTransportInput struct {
+type BuildProfileTransportInput struct {
 	// The URI for the IMIX agent.
 	URI string `json:"uri"`
 	// The callback interval in seconds.
@@ -52,7 +52,7 @@ type CreateBuildTaskInput struct {
 	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
 	BuildImage *string `json:"buildImage,omitempty"`
 	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
-	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
+	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
 }

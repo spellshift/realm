@@ -108,8 +108,14 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		}
 
 		// Derive the IMIX config YAML from the build task's stored transports.
-		imixTransports := make([]ImixTransportConfig, len(claimedTask.Transports))
-		for i, t := range claimedTask.Transports {
+		profile, err := claimedTask.Profile(ctx)
+		if err != nil || profile == nil{
+			return nil, status.Errorf(codes.Internal, "failed to load build profile task %d: %v", taskID, err)
+		}
+		transports := profile.Transports
+
+		imixTransports := make([]ImixTransportConfig, len(transports))
+		for i, t := range transports {
 			imixTransports[i] = ImixTransportConfig{
 				URI:      t.URI,
 				Interval: t.Interval,

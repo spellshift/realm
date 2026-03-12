@@ -49,8 +49,6 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("The derived script to execute inside the build container."),
-		field.JSON("transports", []builderpb.BuildTaskTransport{}).
-			Comment("List of transport configurations for the IMIX agent."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(
@@ -115,12 +113,13 @@ func (BuildTask) Fields() []ent.Field {
 func (BuildTask) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("builder", Builder.Type).
-			Annotations(
-				entsql.OnDelete(entsql.Cascade),
-			).
 			Required().
 			Unique().
 			Comment("The builder assigned to execute this build task."),
+		edge.To("profile", BuildProfile.Type).
+			Required().
+			Unique().
+			Comment("The profile assigned to this build Task"),
 		edge.To("artifact", Asset.Type).
 			Unique().
 			Comment("The compiled artifact produced by this build task, stored as an Asset."),
