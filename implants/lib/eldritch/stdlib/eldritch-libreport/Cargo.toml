@@ -10,13 +10,12 @@ eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
-[target.'cfg(not(target_os = "linux"))'.dependencies]
-xcap = { workspace = true, optional = true }
+screenshot = { path = "../../../screenshot", optional = true }
 image = { version = "0.25", optional = true }
 
 [features]
 default = ["stdlib"]
-stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:xcap", "dep:image"]
+stdlib = ["dep:pb", "dep:eldritch-agent", "dep:nix", "dep:screenshot", "dep:image"]
 fake_bindings = []
 
 [dev-dependencies]

