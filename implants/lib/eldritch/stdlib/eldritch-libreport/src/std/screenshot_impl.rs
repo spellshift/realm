@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use eldritch_agent::{Agent, Context};
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(target_env = "musl"))]
 use {
     alloc::format,
     alloc::string::{String, ToString},
@@ -36,14 +36,14 @@ fn get_hostname() -> String {
     "unknown".to_string()
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(target_env = "musl")]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     return Err(
-        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
+        "Screenshot is not supported on musl static builds.".to_string()
     );
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(target_env = "musl"))]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
 
