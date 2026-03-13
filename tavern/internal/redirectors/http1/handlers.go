@@ -94,6 +94,92 @@ func handleFetchAssetStreaming(w http.ResponseWriter, r *http.Request, conn *grp
 	slog.Debug("http1 redirector: FetchAsset streaming complete", "chunks", chunkCount, "total_bytes", totalBytes)
 }
 
+func handleShortPollStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn, cfg streamConfig) {
+	if !requirePOST(w, r) {
+		slog.Error("http1 redirector: incoming request rejected, method not allowed", "method", r.Method, "path", r.URL.Path, "source", r.RemoteAddr)
+		return
+	}
+
+	clientIP := getClientIP(r)
+	slog.Info("http1 redirector: request", "source", clientIP, "destination", cfg.MethodPath)
+	slog.Debug("http1 redirector: short poll streaming request", "method", cfg.MethodPath, "source", clientIP)
+
+	ctx, cancel := createRequestContext(unaryTimeout)
+	defer cancel()
+
+	// Parse incoming gRPC stream data
+	buffer, ok := readRequestBody(w, r)
+	if !ok {
+		slog.Error("http1 redirector: incoming request failed, could not read request body", "path", cfg.MethodPath, "source", clientIP)
+		return
+	}
+
+	stream, err := createStream(ctx, conn, cfg)
+	if err != nil {
+		slog.Error("http1 redirector: upstream request failed, could not create gRPC stream", "method", cfg.MethodPath, "error", err)
+		handleStreamError(w, "Failed to create gRPC stream", err)
+		return
+	}
+
+	// Send all messages extracted from buffer
+	for {
+		header, message, remaining, ok := extractFrame(buffer)
+		if !ok {
+			break
+		}
+
+		buffer = remaining
+		slog.Debug("http1 redirector: received short poll stream chunk", "compression", header.CompressionFlag, "length", header.MessageLength)
+
+		if err := stream.SendMsg(message); err != nil {
+			slog.Error("http1 redirector: upstream request failed, could not send gRPC message", "method", cfg.MethodPath, "error", err)
+			handleStreamError(w, "Failed to send gRPC message", err)
+			return
+		}
+	}
+
+	if err := stream.CloseSend(); err != nil {
+		slog.Error("http1 redirector: upstream request failed, could not close gRPC send", "method", cfg.MethodPath, "error", err)
+		handleStreamError(w, "Failed to close gRPC send", err)
+		return
+	}
+
+	setGRPCResponseHeaders(w)
+
+	// Collect any returned messages and pack them as a single response buffer
+	chunkCount := 0
+	totalBytes := 0
+	for {
+		var responseChunk []byte
+		err := stream.RecvMsg(&responseChunk)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			slog.Error("http1 redirector: upstream request failed, error receiving stream message", "method", cfg.MethodPath, "error", err)
+			return
+		}
+
+		chunkCount++
+		totalBytes += len(responseChunk)
+		slog.Debug("http1 redirector: received stream chunk", "chunk", chunkCount, "chunk_size", len(responseChunk))
+
+		// Write gRPC frame header
+		frameHeader := newFrameHeader(uint32(len(responseChunk)))
+		encodedHeader := frameHeader.Encode()
+		if _, err := w.Write(encodedHeader[:]); err != nil {
+			slog.Error("http1 redirector: incoming request failed, could not write frame header to client", "error", err)
+			return
+		}
+
+		if _, err := w.Write(responseChunk); err != nil {
+			slog.Error("http1 redirector: incoming request failed, could not write chunk to client", "error", err)
+			return
+		}
+	}
+	slog.Debug("http1 redirector: short poll streaming complete", "chunks", chunkCount, "total_bytes", totalBytes)
+}
+
 func handleReportFileStreaming(w http.ResponseWriter, r *http.Request, conn *grpc.ClientConn) {
 	if !requirePOST(w, r) {
 		slog.Error("http1 redirector: incoming request rejected, method not allowed", "method", r.Method, "path", r.URL.Path, "source", r.RemoteAddr)

