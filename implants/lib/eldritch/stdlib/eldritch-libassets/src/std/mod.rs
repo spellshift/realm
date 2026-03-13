@@ -136,7 +136,7 @@ impl StdAssetsLibrary {
         // Make a hashset of the new asset names
         let new_assets: HashSet<String> =
             backend.assets().into_iter().map(Cow::into_owned).collect();
-        // See if any name overlap with existin assets
+        // See if any name overlap with existing assets
         let colliding_names: Vec<&str> = self
             .asset_names
             .intersection(&new_assets)

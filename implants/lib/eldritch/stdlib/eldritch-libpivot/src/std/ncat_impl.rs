@@ -19,7 +19,7 @@ async fn handle_ncat(address: String, port: i32, data: String, protocol: String)
         // Connect to remote host
         let mut connection = TcpStream::connect(&address_and_port).await?;
 
-        // Write our meessage
+        // Write our message
         connection.write_all(data.as_bytes()).await?;
 
         // Read server response

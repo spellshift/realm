@@ -17,7 +17,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [profile.dev]
-opt-level = "z"   # This reduces the numebr of symbols not found.
+opt-level = "z"   # This reduces the number of symbols not found.
 lto = true
 codegen-units = 1
 panic = "abort"

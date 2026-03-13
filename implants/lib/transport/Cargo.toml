@@ -30,7 +30,7 @@ http = { workspace = true }
 tower = { workspace = true }
 # Use hyper 1.x for grpc
 hyper = { workspace = true, features = ["client"] }
-# These crates are kinda funky gonna keep them in just transprot for now.
+# These crates are kinda funky gonna keep them in just transport for now.
 hyper_legacy = { package = "hyper", version = "0.14", features = ["client", "http1", "http2", "stream"] }
 hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "http2"] }
 hyper-rustls = { version = "0.27", default-features = false, features = ["webpki-tokio", "http2"] }
