@@ -1,6 +1,6 @@
-use tokio_stream::StreamExt;
 #[cfg(feature = "stdlib")]
 use image::RgbaImage;
+use tokio_stream::StreamExt;
 
 #[cfg(feature = "stdlib")]
 pub fn capture_monitors() -> Result<Vec<RgbaImage>, String> {
@@ -17,32 +17,43 @@ pub fn capture_monitors() -> Result<Vec<RgbaImage>, String> {
 
 #[cfg(feature = "stdlib")]
 async fn capture_xdg_portal() -> Result<Vec<RgbaImage>, zbus::Error> {
-    use zbus::Connection;
     use std::collections::HashMap;
+    use zbus::{proxy::Builder, Connection, Proxy};
 
     let connection = Connection::session().await?;
 
-    let proxy = zbus::Proxy::new(
-        &connection,
-        "org.freedesktop.portal.Desktop",
-        "/org/freedesktop/portal/desktop",
-        "org.freedesktop.portal.Screenshot"
-    ).await?;
+    let proxy: Proxy = Builder::new(&connection)
+        .destination("org.freedesktop.portal.Desktop")?
+        .path("/org/freedesktop/portal/desktop")?
+        .interface("org.freedesktop.portal.Screenshot")?
+        .build()
+        .await?;
 
-    let unique_name = connection.unique_name().ok_or_else(|| zbus::Error::Failure("No unique name".into()))?;
+    let unique_name = connection
+        .unique_name()
+        .ok_or_else(|| zbus::Error::Failure("No unique name".into()))?;
     let sender = unique_name.as_str().replace('.', "_").replace(':', "");
-    let handle_token = format!("screenshot_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+    let handle_token = format!(
+        "screenshot_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
 
     // Construct the expected request object path
-    let request_path = format!("/org/freedesktop/portal/desktop/request/{}/{}", sender, handle_token);
+    let request_path = format!(
+        "/org/freedesktop/portal/desktop/request/{}/{}",
+        sender, handle_token
+    );
 
     // Create a proxy to the expected Request object and subscribe to Response BEFORE calling Screenshot
-    let request_proxy = zbus::Proxy::new(
-        &connection,
-        "org.freedesktop.portal.Desktop",
-        request_path,
-        "org.freedesktop.portal.Request"
-    ).await?;
+    let request_proxy: Proxy = Builder::new(&connection)
+        .destination("org.freedesktop.portal.Desktop")?
+        .path(request_path)?
+        .interface("org.freedesktop.portal.Request")?
+        .build()
+        .await?;
 
     let mut stream = request_proxy.receive_signal("Response").await?;
 
@@ -53,16 +64,30 @@ async fn capture_xdg_portal() -> Result<Vec<RgbaImage>, zbus::Error> {
 
     // Call Screenshot method (we don't wait for its response path since we already have it)
     let args = ("", options);
-    let _ = proxy.call::<&str, (&str, HashMap<&str, zbus::zvariant::Value>), zbus::zvariant::OwnedValue>("Screenshot", &args).await?;
+    let _ = proxy
+        .call::<&str, (&str, HashMap<&str, zbus::zvariant::Value>), zbus::zvariant::OwnedValue>(
+            "Screenshot",
+            &args,
+        )
+        .await?;
 
     // Wait for the signal
-    let msg = stream.next().await.ok_or_else(|| zbus::Error::Failure("Stream closed before receiving signal".into()))?;
+    let msg = stream
+        .next()
+        .await
+        .ok_or_else(|| zbus::Error::Failure("Stream closed before receiving signal".into()))?;
 
     let body = msg.body();
-    let (response_code, results): (u32, std::collections::HashMap<String, zbus::zvariant::OwnedValue>) = body.deserialize()?;
+    let (response_code, results): (
+        u32,
+        std::collections::HashMap<String, zbus::zvariant::OwnedValue>,
+    ) = body.deserialize()?;
 
     if response_code != 0 {
-        return Err(zbus::Error::Failure(format!("Portal request failed with code {}", response_code)));
+        return Err(zbus::Error::Failure(format!(
+            "Portal request failed with code {}",
+            response_code
+        )));
     }
 
     if let Some(uri_val) = results.get("uri") {
@@ -77,7 +102,9 @@ async fn capture_xdg_portal() -> Result<Vec<RgbaImage>, zbus::Error> {
         }
     }
 
-    Err(zbus::Error::Failure("Could not extract image from response".into()))
+    Err(zbus::Error::Failure(
+        "Could not extract image from response".into(),
+    ))
 }
 
 #[cfg(not(feature = "stdlib"))]
