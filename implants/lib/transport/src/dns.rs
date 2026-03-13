@@ -541,7 +541,7 @@ impl DNS {
                     conversation_id: conv_id_clone,
                     data: chunk.clone(),
                     crc32: Self::calculate_crc32(&chunk),
-                            acks: vec![],
+                    acks: vec![],
                     nacks: vec![],
                 };
 
@@ -666,7 +666,7 @@ impl DNS {
                         conversation_id: conv_id.to_string(),
                         data: chunk.clone(),
                         crc32: Self::calculate_crc32(chunk),
-                                    acks: vec![],
+                        acks: vec![],
                         nacks: vec![],
                     };
 
@@ -815,7 +815,7 @@ impl DNS {
                 conversation_id: conv_id.to_string(),
                 data: fetch_payload_bytes,
                 crc32: 0,
-                    acks: vec![],
+                acks: vec![],
                 nacks: vec![],
             };
 
