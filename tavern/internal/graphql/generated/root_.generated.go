@@ -4176,6 +4176,7 @@ enum BeaconTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Tra
   TRANSPORT_DNS
   TRANSPORT_GRPC
   TRANSPORT_HTTP1
+  TRANSPORT_ICMP
   TRANSPORT_UNSPECIFIED
 }
 """

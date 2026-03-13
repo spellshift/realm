@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package dns;
+package conv;
 
-option go_package = "realm.pub/tavern/internal/c2/dnspb";
+option go_package = "realm.pub/tavern/internal/c2/convpb";
 
-// PacketType defines the type of DNS packet in the conversation
+// PacketType defines the type of packet in the conversation
 enum PacketType {
     PACKET_TYPE_UNSPECIFIED = 0;
     PACKET_TYPE_INIT = 1;     // Establish conversation
@@ -14,17 +14,14 @@ enum PacketType {
     PACKET_TYPE_COMPLETE = 5; // Client confirms response received and verified
 }
 
-// DNSPacket is the main message format for DNS C2 communication
-// It is serialized to protobuf, then encoded Base32, and sent as DNS subdomain
-message DNSPacket {
+// ConvPacket is the main message format for conversation-based C2 communication
+// It is transport-agnostic: DNS encodes as Base32 subdomain, ICMP sends as raw bytes
+message ConvPacket {
     PacketType type = 1;            // Packet type
     uint32 sequence = 2;            // Chunk sequence number (0-Based for INIT, 1-based for DATA)
     string conversation_id = 3;     // 8-character random conversation ID
     bytes data = 4;                 // Chunk payload (or InitPayload for INIT packets)
     uint32 crc32 = 5;               // Optional CRC32 for validation
-
-    // Async protocol fields for windowed transmission
-    uint32 window_size = 6;         // Number of packets client has in-flight
     repeated AckRange acks = 7;     // Ranges of successfully received chunks (SACK)
     repeated uint32 nacks = 8;      // Specific sequence numbers to retransmit
 }
