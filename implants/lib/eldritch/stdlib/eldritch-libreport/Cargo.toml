@@ -13,7 +13,8 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 
 
 [target.'cfg(target_os = "linux")'.dependencies]
-uuid = { workspace = true }
+x11rb = { version = "0.13.2", features = ["image"] }
+image = { version = "0.25", optional = true }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 xcap = { workspace = true, optional = true }

