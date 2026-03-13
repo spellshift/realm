@@ -1116,6 +1116,36 @@ type BuildProfileWhereInput struct {
 	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
 	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
 
+	// "prebuildscript" field predicates.
+	Prebuildscript             *string  `json:"prebuildscript,omitempty"`
+	PrebuildscriptNEQ          *string  `json:"prebuildscriptNEQ,omitempty"`
+	PrebuildscriptIn           []string `json:"prebuildscriptIn,omitempty"`
+	PrebuildscriptNotIn        []string `json:"prebuildscriptNotIn,omitempty"`
+	PrebuildscriptGT           *string  `json:"prebuildscriptGT,omitempty"`
+	PrebuildscriptGTE          *string  `json:"prebuildscriptGTE,omitempty"`
+	PrebuildscriptLT           *string  `json:"prebuildscriptLT,omitempty"`
+	PrebuildscriptLTE          *string  `json:"prebuildscriptLTE,omitempty"`
+	PrebuildscriptContains     *string  `json:"prebuildscriptContains,omitempty"`
+	PrebuildscriptHasPrefix    *string  `json:"prebuildscriptHasPrefix,omitempty"`
+	PrebuildscriptHasSuffix    *string  `json:"prebuildscriptHasSuffix,omitempty"`
+	PrebuildscriptEqualFold    *string  `json:"prebuildscriptEqualFold,omitempty"`
+	PrebuildscriptContainsFold *string  `json:"prebuildscriptContainsFold,omitempty"`
+
+	// "postbuildscript" field predicates.
+	Postbuildscript             *string  `json:"postbuildscript,omitempty"`
+	PostbuildscriptNEQ          *string  `json:"postbuildscriptNEQ,omitempty"`
+	PostbuildscriptIn           []string `json:"postbuildscriptIn,omitempty"`
+	PostbuildscriptNotIn        []string `json:"postbuildscriptNotIn,omitempty"`
+	PostbuildscriptGT           *string  `json:"postbuildscriptGT,omitempty"`
+	PostbuildscriptGTE          *string  `json:"postbuildscriptGTE,omitempty"`
+	PostbuildscriptLT           *string  `json:"postbuildscriptLT,omitempty"`
+	PostbuildscriptLTE          *string  `json:"postbuildscriptLTE,omitempty"`
+	PostbuildscriptContains     *string  `json:"postbuildscriptContains,omitempty"`
+	PostbuildscriptHasPrefix    *string  `json:"postbuildscriptHasPrefix,omitempty"`
+	PostbuildscriptHasSuffix    *string  `json:"postbuildscriptHasSuffix,omitempty"`
+	PostbuildscriptEqualFold    *string  `json:"postbuildscriptEqualFold,omitempty"`
+	PostbuildscriptContainsFold *string  `json:"postbuildscriptContainsFold,omitempty"`
+
 	// "buildtasks" edge predicates.
 	HasBuildtasks     *bool                  `json:"hasBuildtasks,omitempty"`
 	HasBuildtasksWith []*BuildTaskWhereInput `json:"hasBuildtasksWith,omitempty"`
@@ -1293,6 +1323,84 @@ func (i *BuildProfileWhereInput) P() (predicate.BuildProfile, error) {
 	}
 	if i.DescriptionContainsFold != nil {
 		predicates = append(predicates, buildprofile.DescriptionContainsFold(*i.DescriptionContainsFold))
+	}
+	if i.Prebuildscript != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptEQ(*i.Prebuildscript))
+	}
+	if i.PrebuildscriptNEQ != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptNEQ(*i.PrebuildscriptNEQ))
+	}
+	if len(i.PrebuildscriptIn) > 0 {
+		predicates = append(predicates, buildprofile.PrebuildscriptIn(i.PrebuildscriptIn...))
+	}
+	if len(i.PrebuildscriptNotIn) > 0 {
+		predicates = append(predicates, buildprofile.PrebuildscriptNotIn(i.PrebuildscriptNotIn...))
+	}
+	if i.PrebuildscriptGT != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptGT(*i.PrebuildscriptGT))
+	}
+	if i.PrebuildscriptGTE != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptGTE(*i.PrebuildscriptGTE))
+	}
+	if i.PrebuildscriptLT != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptLT(*i.PrebuildscriptLT))
+	}
+	if i.PrebuildscriptLTE != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptLTE(*i.PrebuildscriptLTE))
+	}
+	if i.PrebuildscriptContains != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptContains(*i.PrebuildscriptContains))
+	}
+	if i.PrebuildscriptHasPrefix != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptHasPrefix(*i.PrebuildscriptHasPrefix))
+	}
+	if i.PrebuildscriptHasSuffix != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptHasSuffix(*i.PrebuildscriptHasSuffix))
+	}
+	if i.PrebuildscriptEqualFold != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptEqualFold(*i.PrebuildscriptEqualFold))
+	}
+	if i.PrebuildscriptContainsFold != nil {
+		predicates = append(predicates, buildprofile.PrebuildscriptContainsFold(*i.PrebuildscriptContainsFold))
+	}
+	if i.Postbuildscript != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptEQ(*i.Postbuildscript))
+	}
+	if i.PostbuildscriptNEQ != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptNEQ(*i.PostbuildscriptNEQ))
+	}
+	if len(i.PostbuildscriptIn) > 0 {
+		predicates = append(predicates, buildprofile.PostbuildscriptIn(i.PostbuildscriptIn...))
+	}
+	if len(i.PostbuildscriptNotIn) > 0 {
+		predicates = append(predicates, buildprofile.PostbuildscriptNotIn(i.PostbuildscriptNotIn...))
+	}
+	if i.PostbuildscriptGT != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptGT(*i.PostbuildscriptGT))
+	}
+	if i.PostbuildscriptGTE != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptGTE(*i.PostbuildscriptGTE))
+	}
+	if i.PostbuildscriptLT != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptLT(*i.PostbuildscriptLT))
+	}
+	if i.PostbuildscriptLTE != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptLTE(*i.PostbuildscriptLTE))
+	}
+	if i.PostbuildscriptContains != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptContains(*i.PostbuildscriptContains))
+	}
+	if i.PostbuildscriptHasPrefix != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptHasPrefix(*i.PostbuildscriptHasPrefix))
+	}
+	if i.PostbuildscriptHasSuffix != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptHasSuffix(*i.PostbuildscriptHasSuffix))
+	}
+	if i.PostbuildscriptEqualFold != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptEqualFold(*i.PostbuildscriptEqualFold))
+	}
+	if i.PostbuildscriptContainsFold != nil {
+		predicates = append(predicates, buildprofile.PostbuildscriptContainsFold(*i.PostbuildscriptContainsFold))
 	}
 
 	if i.HasBuildtasks != nil {

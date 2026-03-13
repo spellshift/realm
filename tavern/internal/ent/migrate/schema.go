@@ -69,6 +69,8 @@ var (
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString},
 		{Name: "transports", Type: field.TypeJSON},
+		{Name: "prebuildscript", Type: field.TypeString},
+		{Name: "postbuildscript", Type: field.TypeString},
 	}
 	// BuildProfilesTable holds the schema information for the "build_profiles" table.
 	BuildProfilesTable = &schema.Table{

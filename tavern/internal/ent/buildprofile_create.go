@@ -41,6 +41,18 @@ func (bpc *BuildProfileCreate) SetTransports(bpt []builderpb.BuildProfileTranspo
 	return bpc
 }
 
+// SetPrebuildscript sets the "prebuildscript" field.
+func (bpc *BuildProfileCreate) SetPrebuildscript(s string) *BuildProfileCreate {
+	bpc.mutation.SetPrebuildscript(s)
+	return bpc
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (bpc *BuildProfileCreate) SetPostbuildscript(s string) *BuildProfileCreate {
+	bpc.mutation.SetPostbuildscript(s)
+	return bpc
+}
+
 // AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by IDs.
 func (bpc *BuildProfileCreate) AddBuildtaskIDs(ids ...int) *BuildProfileCreate {
 	bpc.mutation.AddBuildtaskIDs(ids...)
@@ -99,6 +111,12 @@ func (bpc *BuildProfileCreate) check() error {
 	if _, ok := bpc.mutation.Transports(); !ok {
 		return &ValidationError{Name: "transports", err: errors.New(`ent: missing required field "BuildProfile.transports"`)}
 	}
+	if _, ok := bpc.mutation.Prebuildscript(); !ok {
+		return &ValidationError{Name: "prebuildscript", err: errors.New(`ent: missing required field "BuildProfile.prebuildscript"`)}
+	}
+	if _, ok := bpc.mutation.Postbuildscript(); !ok {
+		return &ValidationError{Name: "postbuildscript", err: errors.New(`ent: missing required field "BuildProfile.postbuildscript"`)}
+	}
 	return nil
 }
 
@@ -137,6 +155,14 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 	if value, ok := bpc.mutation.Transports(); ok {
 		_spec.SetField(buildprofile.FieldTransports, field.TypeJSON, value)
 		_node.Transports = value
+	}
+	if value, ok := bpc.mutation.Prebuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
+		_node.Prebuildscript = value
+	}
+	if value, ok := bpc.mutation.Postbuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
+		_node.Postbuildscript = value
 	}
 	if nodes := bpc.mutation.BuildtasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -242,6 +268,30 @@ func (u *BuildProfileUpsert) UpdateTransports() *BuildProfileUpsert {
 	return u
 }
 
+// SetPrebuildscript sets the "prebuildscript" field.
+func (u *BuildProfileUpsert) SetPrebuildscript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldPrebuildscript, v)
+	return u
+}
+
+// UpdatePrebuildscript sets the "prebuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdatePrebuildscript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldPrebuildscript)
+	return u
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (u *BuildProfileUpsert) SetPostbuildscript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldPostbuildscript, v)
+	return u
+}
+
+// UpdatePostbuildscript sets the "postbuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdatePostbuildscript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldPostbuildscript)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -321,6 +371,34 @@ func (u *BuildProfileUpsertOne) SetTransports(v []builderpb.BuildProfileTranspor
 func (u *BuildProfileUpsertOne) UpdateTransports() *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTransports()
+	})
+}
+
+// SetPrebuildscript sets the "prebuildscript" field.
+func (u *BuildProfileUpsertOne) SetPrebuildscript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetPrebuildscript(v)
+	})
+}
+
+// UpdatePrebuildscript sets the "prebuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdatePrebuildscript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdatePrebuildscript()
+	})
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (u *BuildProfileUpsertOne) SetPostbuildscript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetPostbuildscript(v)
+	})
+}
+
+// UpdatePostbuildscript sets the "postbuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdatePostbuildscript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdatePostbuildscript()
 	})
 }
 
@@ -566,6 +644,34 @@ func (u *BuildProfileUpsertBulk) SetTransports(v []builderpb.BuildProfileTranspo
 func (u *BuildProfileUpsertBulk) UpdateTransports() *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdateTransports()
+	})
+}
+
+// SetPrebuildscript sets the "prebuildscript" field.
+func (u *BuildProfileUpsertBulk) SetPrebuildscript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetPrebuildscript(v)
+	})
+}
+
+// UpdatePrebuildscript sets the "prebuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdatePrebuildscript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdatePrebuildscript()
+	})
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (u *BuildProfileUpsertBulk) SetPostbuildscript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetPostbuildscript(v)
+	})
+}
+
+// UpdatePostbuildscript sets the "postbuildscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdatePostbuildscript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdatePostbuildscript()
 	})
 }
 

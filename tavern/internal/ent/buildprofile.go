@@ -24,6 +24,10 @@ type BuildProfile struct {
 	Description string `json:"description,omitempty"`
 	// The transports builds should use in order of priority.
 	Transports []builderpb.BuildProfileTransport `json:"transports,omitempty"`
+	// Bash script to run before build command
+	Prebuildscript string `json:"prebuildscript,omitempty"`
+	// Bash script to run after build command
+	Postbuildscript string `json:"postbuildscript,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildProfileQuery when eager-loading is set.
 	Edges        BuildProfileEdges `json:"edges"`
@@ -61,7 +65,7 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldPrebuildscript, buildprofile.FieldPostbuildscript:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -103,6 +107,18 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &bp.Transports); err != nil {
 					return fmt.Errorf("unmarshal field transports: %w", err)
 				}
+			}
+		case buildprofile.FieldPrebuildscript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field prebuildscript", values[i])
+			} else if value.Valid {
+				bp.Prebuildscript = value.String
+			}
+		case buildprofile.FieldPostbuildscript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field postbuildscript", values[i])
+			} else if value.Valid {
+				bp.Postbuildscript = value.String
 			}
 		default:
 			bp.selectValues.Set(columns[i], values[i])
@@ -153,6 +169,12 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("transports=")
 	builder.WriteString(fmt.Sprintf("%v", bp.Transports))
+	builder.WriteString(", ")
+	builder.WriteString("prebuildscript=")
+	builder.WriteString(bp.Prebuildscript)
+	builder.WriteString(", ")
+	builder.WriteString("postbuildscript=")
+	builder.WriteString(bp.Postbuildscript)
 	builder.WriteByte(')')
 	return builder.String()
 }

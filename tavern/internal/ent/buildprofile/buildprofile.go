@@ -18,6 +18,10 @@ const (
 	FieldDescription = "description"
 	// FieldTransports holds the string denoting the transports field in the database.
 	FieldTransports = "transports"
+	// FieldPrebuildscript holds the string denoting the prebuildscript field in the database.
+	FieldPrebuildscript = "prebuildscript"
+	// FieldPostbuildscript holds the string denoting the postbuildscript field in the database.
+	FieldPostbuildscript = "postbuildscript"
 	// EdgeBuildtasks holds the string denoting the buildtasks edge name in mutations.
 	EdgeBuildtasks = "buildtasks"
 	// Table holds the table name of the buildprofile in the database.
@@ -37,6 +41,8 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldTransports,
+	FieldPrebuildscript,
+	FieldPostbuildscript,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -65,6 +71,16 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByPrebuildscript orders the results by the prebuildscript field.
+func ByPrebuildscript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrebuildscript, opts...).ToFunc()
+}
+
+// ByPostbuildscript orders the results by the postbuildscript field.
+func ByPostbuildscript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPostbuildscript, opts...).ToFunc()
 }
 
 // ByBuildtasksCount orders the results by buildtasks count.

@@ -100,11 +100,13 @@ type ComplexityRoot struct {
 	}
 
 	BuildProfile struct {
-		Buildtasks  func(childComplexity int) int
-		Description func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
-		Transports  func(childComplexity int) int
+		Buildtasks      func(childComplexity int) int
+		Description     func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Postbuildscript func(childComplexity int) int
+		Prebuildscript  func(childComplexity int) int
+		Transports      func(childComplexity int) int
 	}
 
 	BuildProfileTransport struct {
@@ -955,6 +957,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildProfile.Name(childComplexity), true
+
+	case "BuildProfile.postbuildscript":
+		if e.complexity.BuildProfile.Postbuildscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Postbuildscript(childComplexity), true
+
+	case "BuildProfile.prebuildscript":
+		if e.complexity.BuildProfile.Prebuildscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Prebuildscript(childComplexity), true
 
 	case "BuildProfile.transports":
 		if e.complexity.BuildProfile.Transports == nil {
@@ -4593,6 +4609,14 @@ type BuildProfile implements Node {
   """
   transports: [BuildProfileTransport!]!
   """
+  Bash script to run before build command
+  """
+  prebuildscript: String!
+  """
+  Bash script to run after build command
+  """
+  postbuildscript: String!
+  """
   Build Tasks that have used this profile
   """
   buildtasks: [BuildTask!]
@@ -4648,6 +4672,38 @@ input BuildProfileWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """
+  prebuildscript field predicates
+  """
+  prebuildscript: String
+  prebuildscriptNEQ: String
+  prebuildscriptIn: [String!]
+  prebuildscriptNotIn: [String!]
+  prebuildscriptGT: String
+  prebuildscriptGTE: String
+  prebuildscriptLT: String
+  prebuildscriptLTE: String
+  prebuildscriptContains: String
+  prebuildscriptHasPrefix: String
+  prebuildscriptHasSuffix: String
+  prebuildscriptEqualFold: String
+  prebuildscriptContainsFold: String
+  """
+  postbuildscript field predicates
+  """
+  postbuildscript: String
+  postbuildscriptNEQ: String
+  postbuildscriptIn: [String!]
+  postbuildscriptNotIn: [String!]
+  postbuildscriptGT: String
+  postbuildscriptGTE: String
+  postbuildscriptLT: String
+  postbuildscriptLTE: String
+  postbuildscriptContains: String
+  postbuildscriptHasPrefix: String
+  postbuildscriptHasSuffix: String
+  postbuildscriptEqualFold: String
+  postbuildscriptContainsFold: String
   """
   buildtasks edge predicates
   """

@@ -21,6 +21,10 @@ func (BuildProfile) Fields() []ent.Field {
 			Comment("A user facing build profile description."),
 		field.JSON("transports", []builderpb.BuildProfileTransport{}).
 			Comment("The transports builds should use in order of priority."),
+		field.String("prebuildscript").
+			Comment("Bash script to run before build command"),
+		field.String("postbuildscript").
+			Comment("Bash script to run after build command"),
 	}
 }
 

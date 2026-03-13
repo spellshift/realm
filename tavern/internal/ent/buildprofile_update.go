@@ -70,6 +70,34 @@ func (bpu *BuildProfileUpdate) AppendTransports(bpt []builderpb.BuildProfileTran
 	return bpu
 }
 
+// SetPrebuildscript sets the "prebuildscript" field.
+func (bpu *BuildProfileUpdate) SetPrebuildscript(s string) *BuildProfileUpdate {
+	bpu.mutation.SetPrebuildscript(s)
+	return bpu
+}
+
+// SetNillablePrebuildscript sets the "prebuildscript" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillablePrebuildscript(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetPrebuildscript(*s)
+	}
+	return bpu
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (bpu *BuildProfileUpdate) SetPostbuildscript(s string) *BuildProfileUpdate {
+	bpu.mutation.SetPostbuildscript(s)
+	return bpu
+}
+
+// SetNillablePostbuildscript sets the "postbuildscript" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillablePostbuildscript(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetPostbuildscript(*s)
+	}
+	return bpu
+}
+
 // AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by IDs.
 func (bpu *BuildProfileUpdate) AddBuildtaskIDs(ids ...int) *BuildProfileUpdate {
 	bpu.mutation.AddBuildtaskIDs(ids...)
@@ -160,6 +188,12 @@ func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
+	}
+	if value, ok := bpu.mutation.Prebuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.Postbuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
 	}
 	if bpu.mutation.BuildtasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -263,6 +297,34 @@ func (bpuo *BuildProfileUpdateOne) SetTransports(bpt []builderpb.BuildProfileTra
 // AppendTransports appends bpt to the "transports" field.
 func (bpuo *BuildProfileUpdateOne) AppendTransports(bpt []builderpb.BuildProfileTransport) *BuildProfileUpdateOne {
 	bpuo.mutation.AppendTransports(bpt)
+	return bpuo
+}
+
+// SetPrebuildscript sets the "prebuildscript" field.
+func (bpuo *BuildProfileUpdateOne) SetPrebuildscript(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetPrebuildscript(s)
+	return bpuo
+}
+
+// SetNillablePrebuildscript sets the "prebuildscript" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillablePrebuildscript(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetPrebuildscript(*s)
+	}
+	return bpuo
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (bpuo *BuildProfileUpdateOne) SetPostbuildscript(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetPostbuildscript(s)
+	return bpuo
+}
+
+// SetNillablePostbuildscript sets the "postbuildscript" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillablePostbuildscript(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetPostbuildscript(*s)
+	}
 	return bpuo
 }
 
@@ -386,6 +448,12 @@ func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildPro
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
+	}
+	if value, ok := bpuo.mutation.Prebuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.Postbuildscript(); ok {
+		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
 	}
 	if bpuo.mutation.BuildtasksCleared() {
 		edge := &sqlgraph.EdgeSpec{

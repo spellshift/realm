@@ -720,6 +720,16 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, buildprofile.FieldTransports)
 				fieldSeen[buildprofile.FieldTransports] = struct{}{}
 			}
+		case "prebuildscript":
+			if _, ok := fieldSeen[buildprofile.FieldPrebuildscript]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldPrebuildscript)
+				fieldSeen[buildprofile.FieldPrebuildscript] = struct{}{}
+			}
+		case "postbuildscript":
+			if _, ok := fieldSeen[buildprofile.FieldPostbuildscript]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldPostbuildscript)
+				fieldSeen[buildprofile.FieldPostbuildscript] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

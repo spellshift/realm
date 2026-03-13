@@ -2,6 +2,13 @@
 
 The builder package orchestrates agent compilation for target platforms. It connects to the Tavern server via gRPC and compiles agents based on its configuration.
 
+## TODO
+- Add pre and post install scripts
+- Update the docker exector to support pre and post install scirpts
+- Expose env vars to container
+   - Artifact path
+- 
+
 ## Overview
 
 - **Registration**: Builders register with Tavern via the `registerBuilder` GraphQL mutation, which returns an mTLS certificate signed by the Tavern Builder CA and a YAML configuration file.

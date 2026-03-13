@@ -2131,6 +2131,8 @@ type BuildProfileMutation struct {
 	description       *string
 	transports        *[]builderpb.BuildProfileTransport
 	appendtransports  []builderpb.BuildProfileTransport
+	prebuildscript    *string
+	postbuildscript   *string
 	clearedFields     map[string]struct{}
 	buildtasks        map[int]struct{}
 	removedbuildtasks map[int]struct{}
@@ -2361,6 +2363,78 @@ func (m *BuildProfileMutation) ResetTransports() {
 	m.appendtransports = nil
 }
 
+// SetPrebuildscript sets the "prebuildscript" field.
+func (m *BuildProfileMutation) SetPrebuildscript(s string) {
+	m.prebuildscript = &s
+}
+
+// Prebuildscript returns the value of the "prebuildscript" field in the mutation.
+func (m *BuildProfileMutation) Prebuildscript() (r string, exists bool) {
+	v := m.prebuildscript
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrebuildscript returns the old "prebuildscript" field's value of the BuildProfile entity.
+// If the BuildProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildProfileMutation) OldPrebuildscript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrebuildscript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrebuildscript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrebuildscript: %w", err)
+	}
+	return oldValue.Prebuildscript, nil
+}
+
+// ResetPrebuildscript resets all changes to the "prebuildscript" field.
+func (m *BuildProfileMutation) ResetPrebuildscript() {
+	m.prebuildscript = nil
+}
+
+// SetPostbuildscript sets the "postbuildscript" field.
+func (m *BuildProfileMutation) SetPostbuildscript(s string) {
+	m.postbuildscript = &s
+}
+
+// Postbuildscript returns the value of the "postbuildscript" field in the mutation.
+func (m *BuildProfileMutation) Postbuildscript() (r string, exists bool) {
+	v := m.postbuildscript
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPostbuildscript returns the old "postbuildscript" field's value of the BuildProfile entity.
+// If the BuildProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildProfileMutation) OldPostbuildscript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPostbuildscript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPostbuildscript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPostbuildscript: %w", err)
+	}
+	return oldValue.Postbuildscript, nil
+}
+
+// ResetPostbuildscript resets all changes to the "postbuildscript" field.
+func (m *BuildProfileMutation) ResetPostbuildscript() {
+	m.postbuildscript = nil
+}
+
 // AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by ids.
 func (m *BuildProfileMutation) AddBuildtaskIDs(ids ...int) {
 	if m.buildtasks == nil {
@@ -2449,7 +2523,7 @@ func (m *BuildProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildProfileMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.name != nil {
 		fields = append(fields, buildprofile.FieldName)
 	}
@@ -2458,6 +2532,12 @@ func (m *BuildProfileMutation) Fields() []string {
 	}
 	if m.transports != nil {
 		fields = append(fields, buildprofile.FieldTransports)
+	}
+	if m.prebuildscript != nil {
+		fields = append(fields, buildprofile.FieldPrebuildscript)
+	}
+	if m.postbuildscript != nil {
+		fields = append(fields, buildprofile.FieldPostbuildscript)
 	}
 	return fields
 }
@@ -2473,6 +2553,10 @@ func (m *BuildProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case buildprofile.FieldTransports:
 		return m.Transports()
+	case buildprofile.FieldPrebuildscript:
+		return m.Prebuildscript()
+	case buildprofile.FieldPostbuildscript:
+		return m.Postbuildscript()
 	}
 	return nil, false
 }
@@ -2488,6 +2572,10 @@ func (m *BuildProfileMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldDescription(ctx)
 	case buildprofile.FieldTransports:
 		return m.OldTransports(ctx)
+	case buildprofile.FieldPrebuildscript:
+		return m.OldPrebuildscript(ctx)
+	case buildprofile.FieldPostbuildscript:
+		return m.OldPostbuildscript(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuildProfile field %s", name)
 }
@@ -2517,6 +2605,20 @@ func (m *BuildProfileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTransports(v)
+		return nil
+	case buildprofile.FieldPrebuildscript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrebuildscript(v)
+		return nil
+	case buildprofile.FieldPostbuildscript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPostbuildscript(v)
 		return nil
 	}
 	return fmt.Errorf("unknown BuildProfile field %s", name)
@@ -2575,6 +2677,12 @@ func (m *BuildProfileMutation) ResetField(name string) error {
 		return nil
 	case buildprofile.FieldTransports:
 		m.ResetTransports()
+		return nil
+	case buildprofile.FieldPrebuildscript:
+		m.ResetPrebuildscript()
+		return nil
+	case buildprofile.FieldPostbuildscript:
+		m.ResetPostbuildscript()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildProfile field %s", name)
