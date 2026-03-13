@@ -11,7 +11,7 @@ pb = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["rwlock"] }
 
-[target.'cfg(not(target_env = "musl"))'.dependencies]
+[target.'cfg(not(target_os = "linux"))'.dependencies]
 xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 

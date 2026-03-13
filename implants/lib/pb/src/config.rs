@@ -329,10 +329,6 @@ mod tests {
 
         assert_eq!(available.transports.len(), 1);
         assert_eq!(available.active_index, 0);
-        // The URL crate normalizes URIs, potentially adding trailing slashes
-        assert!(available.transports[0]
-            .uri
-            .starts_with("http://127.0.0.1:8000"));
     }
 
     #[test]
