@@ -106,7 +106,9 @@ func (m *Manager) HandleInit(packet *convpb.ConvPacket) ([]byte, error) {
 	}
 	statusData, err := proto.Marshal(statusPacket)
 	if err != nil {
+		m.mu.Lock()
 		m.cache.Remove(packet.ConversationId)
+		m.mu.Unlock()
 		return nil, fmt.Errorf("failed to marshal init status: %w", err)
 	}
 	return statusData, nil
@@ -117,13 +119,15 @@ func (m *Manager) HandleInit(packet *convpb.ConvPacket) ([]byte, error) {
 // clientIP is the originating client address forwarded to upstream via x-redirected-for;
 // pass redirectors.ExternalIPNoop when the client IP cannot be determined.
 func (m *Manager) HandleData(ctx context.Context, upstream *grpc.ClientConn, packet *convpb.ConvPacket, maxChunkSize int, clientIP string) ([]byte, error) {
+	m.mu.Lock()
 	conv, ok := m.cache.Get(packet.ConversationId)
 	if !ok {
+		m.mu.Unlock()
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
-
 	// Re-Add to refresh TTL
 	m.cache.Add(packet.ConversationId, conv)
+	m.mu.Unlock()
 
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
@@ -157,7 +161,7 @@ func (m *Manager) HandleData(ctx context.Context, upstream *grpc.ClientConn, pac
 			"method", conv.MethodPath, "total_chunks", conv.TotalChunks, "data_size", conv.ExpectedDataSize)
 
 		conv.mu.Unlock()
-		if err := processCompleted(ctx, upstream, m.cache, conv, maxChunkSize, clientIP); err != nil {
+		if err := m.processCompleted(ctx, upstream, conv, maxChunkSize, clientIP); err != nil {
 			slog.Error("upstream request failed, could not process completed conversation",
 				"conv_id", conv.ID, "method", conv.MethodPath, "error", err)
 		}
@@ -181,13 +185,15 @@ func (m *Manager) HandleData(ctx context.Context, upstream *grpc.ClientConn, pac
 
 // HandleFetch processes a FETCH packet and returns the response data (or metadata).
 func (m *Manager) HandleFetch(packet *convpb.ConvPacket) ([]byte, error) {
+	m.mu.Lock()
 	conv, ok := m.cache.Get(packet.ConversationId)
 	if !ok {
+		m.mu.Unlock()
 		return nil, fmt.Errorf("conversation not found: %s", packet.ConversationId)
 	}
-
 	// Re-Add to refresh TTL
 	m.cache.Add(packet.ConversationId, conv)
+	m.mu.Unlock()
 
 	conv.mu.Lock()
 	defer conv.mu.Unlock()
@@ -301,7 +307,7 @@ func computeAcksNacks(conv *Conversation) ([]*convpb.AckRange, []uint32) {
 }
 
 // processCompleted reassembles data, verifies CRC, forwards to upstream, and stores the response.
-func processCompleted(ctx context.Context, upstream *grpc.ClientConn, cache *expirable.LRU[string, *Conversation], conv *Conversation, maxChunkSize int, clientIP string) error {
+func (m *Manager) processCompleted(ctx context.Context, upstream *grpc.ClientConn, conv *Conversation, maxChunkSize int, clientIP string) error {
 	// Phase 1: reassemble and verify under the lock, then free chunk memory.
 	conv.mu.Lock()
 	var fullData []byte
@@ -323,13 +329,17 @@ func processCompleted(ctx context.Context, upstream *grpc.ClientConn, cache *exp
 	actualCRC := crc32.ChecksumIEEE(fullData)
 	if actualCRC != conv.ExpectedCRC {
 		conv.mu.Unlock()
-		cache.Remove(conv.ID)
+		m.mu.Lock()
+		m.cache.Remove(conv.ID)
+		m.mu.Unlock()
 		return fmt.Errorf("data CRC mismatch: expected %d, got %d", conv.ExpectedCRC, actualCRC)
 	}
 
 	if conv.ExpectedDataSize > 0 && uint32(len(fullData)) != conv.ExpectedDataSize {
 		conv.mu.Unlock()
-		cache.Remove(conv.ID)
+		m.mu.Lock()
+		m.cache.Remove(conv.ID)
+		m.mu.Unlock()
 		return fmt.Errorf("reassembled data size mismatch: expected %d bytes, got %d bytes", conv.ExpectedDataSize, len(fullData))
 	}
 
