@@ -22,7 +22,7 @@ def netstat():
     for p in process.list():
         pids[p['pid']] = p['name']
 
-    # Counts for dynamic column formating
+    # Counts for dynamic column formatting
     counts = [6, 6, 7, 6, 8]
     rows = [["PROTO", "LOCAL", "REMOTE", "STATE", "PROCESS"]]
     # Loop through each net result and format the columns

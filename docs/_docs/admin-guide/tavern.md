@@ -498,7 +498,7 @@ mutation tempLink {
 }
 ```
 
-This will create a link that allows the link to be active until Feburary 2nd 2026 at 21:33:18 UTC with 10 downloads. These two conditions are or'd so if either is allowed the download will work.
+This will create a link that allows the link to be active until February 2nd 2026 at 21:33:18 UTC with 10 downloads. These two conditions are or'd so if either is allowed the download will work.
 
 If no path is specified a random 6 character path will be generated. In the graphql query above we request the path back to ensure we know where to grab the file.
 

@@ -132,7 +132,7 @@ struct Stats {
 impl Display for Stats {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&format!(
-            "{} files, {} errors, {} warnings, {} advices, {} disabled",
+            "{} files, {} errors, {} warnings, {} advice, {} disabled",
             self.file, self.error, self.warning, self.advice, self.disabled
         ))
     }
