@@ -55,6 +55,10 @@ type CreateBuildTaskInput struct {
 	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
+	// Script to run before the build command.
+	PreBuildScript *string `json:"preBuildScript,omitempty"`
+	// Script to run after the build command.
+	PostBuildScript *string `json:"postBuildScript,omitempty"`
 }
 
 type ImportRepositoryInput struct {

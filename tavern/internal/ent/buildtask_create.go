@@ -205,6 +205,34 @@ func (btc *BuildTaskCreate) SetNillableArtifactPath(s *string) *BuildTaskCreate 
 	return btc
 }
 
+// SetPreBuildScript sets the "pre_build_script" field.
+func (btc *BuildTaskCreate) SetPreBuildScript(s string) *BuildTaskCreate {
+	btc.mutation.SetPreBuildScript(s)
+	return btc
+}
+
+// SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillablePreBuildScript(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetPreBuildScript(*s)
+	}
+	return btc
+}
+
+// SetPostBuildScript sets the "post_build_script" field.
+func (btc *BuildTaskCreate) SetPostBuildScript(s string) *BuildTaskCreate {
+	btc.mutation.SetPostBuildScript(s)
+	return btc
+}
+
+// SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillablePostBuildScript(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetPostBuildScript(*s)
+	}
+	return btc
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btc *BuildTaskCreate) SetBuilderID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderID(id)
@@ -456,6 +484,14 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.ArtifactPath(); ok {
 		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
 		_node.ArtifactPath = value
+	}
+	if value, ok := btc.mutation.PreBuildScript(); ok {
+		_spec.SetField(buildtask.FieldPreBuildScript, field.TypeString, value)
+		_node.PreBuildScript = value
+	}
+	if value, ok := btc.mutation.PostBuildScript(); ok {
+		_spec.SetField(buildtask.FieldPostBuildScript, field.TypeString, value)
+		_node.PostBuildScript = value
 	}
 	if nodes := btc.mutation.BuilderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -788,6 +824,42 @@ func (u *BuildTaskUpsert) ClearArtifactPath() *BuildTaskUpsert {
 	return u
 }
 
+// SetPreBuildScript sets the "pre_build_script" field.
+func (u *BuildTaskUpsert) SetPreBuildScript(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldPreBuildScript, v)
+	return u
+}
+
+// UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdatePreBuildScript() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldPreBuildScript)
+	return u
+}
+
+// ClearPreBuildScript clears the value of the "pre_build_script" field.
+func (u *BuildTaskUpsert) ClearPreBuildScript() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldPreBuildScript)
+	return u
+}
+
+// SetPostBuildScript sets the "post_build_script" field.
+func (u *BuildTaskUpsert) SetPostBuildScript(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldPostBuildScript, v)
+	return u
+}
+
+// UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdatePostBuildScript() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldPostBuildScript)
+	return u
+}
+
+// ClearPostBuildScript clears the value of the "post_build_script" field.
+func (u *BuildTaskUpsert) ClearPostBuildScript() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldPostBuildScript)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1096,6 +1168,48 @@ func (u *BuildTaskUpsertOne) UpdateArtifactPath() *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) ClearArtifactPath() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearArtifactPath()
+	})
+}
+
+// SetPreBuildScript sets the "pre_build_script" field.
+func (u *BuildTaskUpsertOne) SetPreBuildScript(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetPreBuildScript(v)
+	})
+}
+
+// UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdatePreBuildScript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdatePreBuildScript()
+	})
+}
+
+// ClearPreBuildScript clears the value of the "pre_build_script" field.
+func (u *BuildTaskUpsertOne) ClearPreBuildScript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearPreBuildScript()
+	})
+}
+
+// SetPostBuildScript sets the "post_build_script" field.
+func (u *BuildTaskUpsertOne) SetPostBuildScript(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetPostBuildScript(v)
+	})
+}
+
+// UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdatePostBuildScript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdatePostBuildScript()
+	})
+}
+
+// ClearPostBuildScript clears the value of the "post_build_script" field.
+func (u *BuildTaskUpsertOne) ClearPostBuildScript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearPostBuildScript()
 	})
 }
 
@@ -1573,6 +1687,48 @@ func (u *BuildTaskUpsertBulk) UpdateArtifactPath() *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) ClearArtifactPath() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearArtifactPath()
+	})
+}
+
+// SetPreBuildScript sets the "pre_build_script" field.
+func (u *BuildTaskUpsertBulk) SetPreBuildScript(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetPreBuildScript(v)
+	})
+}
+
+// UpdatePreBuildScript sets the "pre_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdatePreBuildScript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdatePreBuildScript()
+	})
+}
+
+// ClearPreBuildScript clears the value of the "pre_build_script" field.
+func (u *BuildTaskUpsertBulk) ClearPreBuildScript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearPreBuildScript()
+	})
+}
+
+// SetPostBuildScript sets the "post_build_script" field.
+func (u *BuildTaskUpsertBulk) SetPostBuildScript(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetPostBuildScript(v)
+	})
+}
+
+// UpdatePostBuildScript sets the "post_build_script" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdatePostBuildScript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdatePostBuildScript()
+	})
+}
+
+// ClearPostBuildScript clears the value of the "post_build_script" field.
+func (u *BuildTaskUpsertBulk) ClearPostBuildScript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearPostBuildScript()
 	})
 }
 

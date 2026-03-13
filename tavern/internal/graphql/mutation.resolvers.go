@@ -474,6 +474,8 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetBuildImage(buildImage).
 		SetBuildScript(buildScript).
 		SetArtifactPath(artifactPath).
+		SetNillablePreBuildScript(input.PreBuildScript).
+		SetNillablePostBuildScript(input.PostBuildScript).
 		SetBuilder(selected)
 
 	bt, err := create.Save(ctx)

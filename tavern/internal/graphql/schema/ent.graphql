@@ -762,6 +762,14 @@ type BuildTask implements Node {
   """
   artifactPath: String
   """
+  Script to run before the build command.
+  """
+  preBuildScript: String
+  """
+  Script to run after the build command.
+  """
+  postBuildScript: String
+  """
   The builder assigned to execute this build task.
   """
   builder: Builder!
@@ -1055,6 +1063,42 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
+  """
+  pre_build_script field predicates
+  """
+  preBuildScript: String
+  preBuildScriptNEQ: String
+  preBuildScriptIn: [String!]
+  preBuildScriptNotIn: [String!]
+  preBuildScriptGT: String
+  preBuildScriptGTE: String
+  preBuildScriptLT: String
+  preBuildScriptLTE: String
+  preBuildScriptContains: String
+  preBuildScriptHasPrefix: String
+  preBuildScriptHasSuffix: String
+  preBuildScriptIsNil: Boolean
+  preBuildScriptNotNil: Boolean
+  preBuildScriptEqualFold: String
+  preBuildScriptContainsFold: String
+  """
+  post_build_script field predicates
+  """
+  postBuildScript: String
+  postBuildScriptNEQ: String
+  postBuildScriptIn: [String!]
+  postBuildScriptNotIn: [String!]
+  postBuildScriptGT: String
+  postBuildScriptGTE: String
+  postBuildScriptLT: String
+  postBuildScriptLTE: String
+  postBuildScriptContains: String
+  postBuildScriptHasPrefix: String
+  postBuildScriptHasSuffix: String
+  postBuildScriptIsNil: Boolean
+  postBuildScriptNotNil: Boolean
+  postBuildScriptEqualFold: String
+  postBuildScriptContainsFold: String
   """
   builder edge predicates
   """

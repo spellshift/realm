@@ -94,6 +94,12 @@ input CreateBuildTaskInput {
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
+
+  """Script to run before the build command."""
+  preBuildScript: String
+
+  """Script to run after the build command."""
+  postBuildScript: String
 }
 
 """Output returned when registering a new builder."""

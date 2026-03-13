@@ -900,6 +900,16 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldArtifactPath)
 				fieldSeen[buildtask.FieldArtifactPath] = struct{}{}
 			}
+		case "preBuildScript":
+			if _, ok := fieldSeen[buildtask.FieldPreBuildScript]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldPreBuildScript)
+				fieldSeen[buildtask.FieldPreBuildScript] = struct{}{}
+			}
+		case "postBuildScript":
+			if _, ok := fieldSeen[buildtask.FieldPostBuildScript]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldPostBuildScript)
+				fieldSeen[buildtask.FieldPostBuildScript] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

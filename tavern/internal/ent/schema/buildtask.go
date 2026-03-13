@@ -106,6 +106,18 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Path inside the container where the build artifact is located. Derived from target_os if not set."),
+		field.Text("pre_build_script").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("Script to run before the build command."),
+		field.Text("post_build_script").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("Script to run after the build command."),
 	}
 }
 

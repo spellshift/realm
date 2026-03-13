@@ -3035,6 +3035,10 @@ func (ec *executionContext) fieldContext_BuildProfile_buildtasks(_ context.Conte
 				return ec.fieldContext_BuildTask_exitCode(ctx, field)
 			case "artifactPath":
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
+			case "preBuildScript":
+				return ec.fieldContext_BuildTask_preBuildScript(ctx, field)
+			case "postBuildScript":
+				return ec.fieldContext_BuildTask_postBuildScript(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":
@@ -3512,6 +3516,64 @@ func (ec *executionContext) fieldContext_BuildTask_artifactPath(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _BuildTask_preBuildScript(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTask_preBuildScript,
+		func(ctx context.Context) (any, error) {
+			return obj.PreBuildScript, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTask_preBuildScript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BuildTask_postBuildScript(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BuildTask_postBuildScript,
+		func(ctx context.Context) (any, error) {
+			return obj.PostBuildScript, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_BuildTask_postBuildScript(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BuildTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _BuildTask_builder(ctx context.Context, field graphql.CollectedField, obj *ent.BuildTask) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3812,6 +3874,10 @@ func (ec *executionContext) fieldContext_BuildTaskEdge_node(_ context.Context, f
 				return ec.fieldContext_BuildTask_exitCode(ctx, field)
 			case "artifactPath":
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
+			case "preBuildScript":
+				return ec.fieldContext_BuildTask_preBuildScript(ctx, field)
+			case "postBuildScript":
+				return ec.fieldContext_BuildTask_postBuildScript(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":
@@ -17784,7 +17850,7 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "targetOs", "targetOsNEQ", "targetOsIn", "targetOsNotIn", "targetFormat", "targetFormatNEQ", "targetFormatIn", "targetFormatNotIn", "buildImage", "buildImageNEQ", "buildImageIn", "buildImageNotIn", "buildImageGT", "buildImageGTE", "buildImageLT", "buildImageLTE", "buildImageContains", "buildImageHasPrefix", "buildImageHasSuffix", "buildImageEqualFold", "buildImageContainsFold", "buildScript", "buildScriptNEQ", "buildScriptIn", "buildScriptNotIn", "buildScriptGT", "buildScriptGTE", "buildScriptLT", "buildScriptLTE", "buildScriptContains", "buildScriptHasPrefix", "buildScriptHasSuffix", "buildScriptEqualFold", "buildScriptContainsFold", "claimedAt", "claimedAtNEQ", "claimedAtIn", "claimedAtNotIn", "claimedAtGT", "claimedAtGTE", "claimedAtLT", "claimedAtLTE", "claimedAtIsNil", "claimedAtNotNil", "startedAt", "startedAtNEQ", "startedAtIn", "startedAtNotIn", "startedAtGT", "startedAtGTE", "startedAtLT", "startedAtLTE", "startedAtIsNil", "startedAtNotNil", "finishedAt", "finishedAtNEQ", "finishedAtIn", "finishedAtNotIn", "finishedAtGT", "finishedAtGTE", "finishedAtLT", "finishedAtLTE", "finishedAtIsNil", "finishedAtNotNil", "output", "outputNEQ", "outputIn", "outputNotIn", "outputGT", "outputGTE", "outputLT", "outputLTE", "outputContains", "outputHasPrefix", "outputHasSuffix", "outputIsNil", "outputNotNil", "outputEqualFold", "outputContainsFold", "outputSize", "outputSizeNEQ", "outputSizeIn", "outputSizeNotIn", "outputSizeGT", "outputSizeGTE", "outputSizeLT", "outputSizeLTE", "error", "errorNEQ", "errorIn", "errorNotIn", "errorGT", "errorGTE", "errorLT", "errorLTE", "errorContains", "errorHasPrefix", "errorHasSuffix", "errorIsNil", "errorNotNil", "errorEqualFold", "errorContainsFold", "errorSize", "errorSizeNEQ", "errorSizeIn", "errorSizeNotIn", "errorSizeGT", "errorSizeGTE", "errorSizeLT", "errorSizeLTE", "exitCode", "exitCodeNEQ", "exitCodeIn", "exitCodeNotIn", "exitCodeGT", "exitCodeGTE", "exitCodeLT", "exitCodeLTE", "exitCodeIsNil", "exitCodeNotNil", "artifactPath", "artifactPathNEQ", "artifactPathIn", "artifactPathNotIn", "artifactPathGT", "artifactPathGTE", "artifactPathLT", "artifactPathLTE", "artifactPathContains", "artifactPathHasPrefix", "artifactPathHasSuffix", "artifactPathIsNil", "artifactPathNotNil", "artifactPathEqualFold", "artifactPathContainsFold", "preBuildScript", "preBuildScriptNEQ", "preBuildScriptIn", "preBuildScriptNotIn", "preBuildScriptGT", "preBuildScriptGTE", "preBuildScriptLT", "preBuildScriptLTE", "preBuildScriptContains", "preBuildScriptHasPrefix", "preBuildScriptHasSuffix", "preBuildScriptIsNil", "preBuildScriptNotNil", "preBuildScriptEqualFold", "preBuildScriptContainsFold", "postBuildScript", "postBuildScriptNEQ", "postBuildScriptIn", "postBuildScriptNotIn", "postBuildScriptGT", "postBuildScriptGTE", "postBuildScriptLT", "postBuildScriptLTE", "postBuildScriptContains", "postBuildScriptHasPrefix", "postBuildScriptHasSuffix", "postBuildScriptIsNil", "postBuildScriptNotNil", "postBuildScriptEqualFold", "postBuildScriptContainsFold", "hasBuilder", "hasBuilderWith", "hasProfile", "hasProfileWith", "hasArtifact", "hasArtifactWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18925,6 +18991,216 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 				return it, err
 			}
 			it.ArtifactPathContainsFold = data
+		case "preBuildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScript = data
+		case "preBuildScriptNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptNEQ = data
+		case "preBuildScriptIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptIn = data
+		case "preBuildScriptNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptNotIn = data
+		case "preBuildScriptGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptGT = data
+		case "preBuildScriptGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptGTE = data
+		case "preBuildScriptLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptLT = data
+		case "preBuildScriptLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptLTE = data
+		case "preBuildScriptContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptContains = data
+		case "preBuildScriptHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptHasPrefix = data
+		case "preBuildScriptHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptHasSuffix = data
+		case "preBuildScriptIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptIsNil = data
+		case "preBuildScriptNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptNotNil = data
+		case "preBuildScriptEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptEqualFold = data
+		case "preBuildScriptContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScriptContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScriptContainsFold = data
+		case "postBuildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScript = data
+		case "postBuildScriptNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptNEQ = data
+		case "postBuildScriptIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptIn = data
+		case "postBuildScriptNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptNotIn = data
+		case "postBuildScriptGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptGT = data
+		case "postBuildScriptGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptGTE = data
+		case "postBuildScriptLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptLT = data
+		case "postBuildScriptLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptLTE = data
+		case "postBuildScriptContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptContains = data
+		case "postBuildScriptHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptHasPrefix = data
+		case "postBuildScriptHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptHasSuffix = data
+		case "postBuildScriptIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptIsNil = data
+		case "postBuildScriptNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptNotNil = data
+		case "postBuildScriptEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptEqualFold = data
+		case "postBuildScriptContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScriptContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScriptContainsFold = data
 		case "hasBuilder":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasBuilder"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -32465,6 +32741,10 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._BuildTask_exitCode(ctx, field, obj)
 		case "artifactPath":
 			out.Values[i] = ec._BuildTask_artifactPath(ctx, field, obj)
+		case "preBuildScript":
+			out.Values[i] = ec._BuildTask_preBuildScript(ctx, field, obj)
+		case "postBuildScript":
+			out.Values[i] = ec._BuildTask_postBuildScript(ctx, field, obj)
 		case "builder":
 			field := field
 

@@ -1909,6 +1909,10 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_exitCode(ctx, field)
 			case "artifactPath":
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
+			case "preBuildScript":
+				return ec.fieldContext_BuildTask_preBuildScript(ctx, field)
+			case "postBuildScript":
+				return ec.fieldContext_BuildTask_postBuildScript(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":

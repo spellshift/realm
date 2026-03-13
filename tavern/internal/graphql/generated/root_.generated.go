@@ -117,25 +117,27 @@ type ComplexityRoot struct {
 	}
 
 	BuildTask struct {
-		Artifact       func(childComplexity int) int
-		ArtifactPath   func(childComplexity int) int
-		BuildImage     func(childComplexity int) int
-		BuildScript    func(childComplexity int) int
-		Builder        func(childComplexity int) int
-		ClaimedAt      func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		Error          func(childComplexity int) int
-		ErrorSize      func(childComplexity int) int
-		ExitCode       func(childComplexity int) int
-		FinishedAt     func(childComplexity int) int
-		ID             func(childComplexity int) int
-		LastModifiedAt func(childComplexity int) int
-		Output         func(childComplexity int) int
-		OutputSize     func(childComplexity int) int
-		Profile        func(childComplexity int) int
-		StartedAt      func(childComplexity int) int
-		TargetFormat   func(childComplexity int) int
-		TargetOs       func(childComplexity int) int
+		Artifact        func(childComplexity int) int
+		ArtifactPath    func(childComplexity int) int
+		BuildImage      func(childComplexity int) int
+		BuildScript     func(childComplexity int) int
+		Builder         func(childComplexity int) int
+		ClaimedAt       func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Error           func(childComplexity int) int
+		ErrorSize       func(childComplexity int) int
+		ExitCode        func(childComplexity int) int
+		FinishedAt      func(childComplexity int) int
+		ID              func(childComplexity int) int
+		LastModifiedAt  func(childComplexity int) int
+		Output          func(childComplexity int) int
+		OutputSize      func(childComplexity int) int
+		PostBuildScript func(childComplexity int) int
+		PreBuildScript  func(childComplexity int) int
+		Profile         func(childComplexity int) int
+		StartedAt       func(childComplexity int) int
+		TargetFormat    func(childComplexity int) int
+		TargetOs        func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -1111,6 +1113,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.OutputSize(childComplexity), true
+
+	case "BuildTask.postBuildScript":
+		if e.complexity.BuildTask.PostBuildScript == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.PostBuildScript(childComplexity), true
+
+	case "BuildTask.preBuildScript":
+		if e.complexity.BuildTask.PreBuildScript == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.PreBuildScript(childComplexity), true
 
 	case "BuildTask.profile":
 		if e.complexity.BuildTask.Profile == nil {
@@ -4773,6 +4789,14 @@ type BuildTask implements Node {
   """
   artifactPath: String
   """
+  Script to run before the build command.
+  """
+  preBuildScript: String
+  """
+  Script to run after the build command.
+  """
+  postBuildScript: String
+  """
   The builder assigned to execute this build task.
   """
   builder: Builder!
@@ -5066,6 +5090,42 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
+  """
+  pre_build_script field predicates
+  """
+  preBuildScript: String
+  preBuildScriptNEQ: String
+  preBuildScriptIn: [String!]
+  preBuildScriptNotIn: [String!]
+  preBuildScriptGT: String
+  preBuildScriptGTE: String
+  preBuildScriptLT: String
+  preBuildScriptLTE: String
+  preBuildScriptContains: String
+  preBuildScriptHasPrefix: String
+  preBuildScriptHasSuffix: String
+  preBuildScriptIsNil: Boolean
+  preBuildScriptNotNil: Boolean
+  preBuildScriptEqualFold: String
+  preBuildScriptContainsFold: String
+  """
+  post_build_script field predicates
+  """
+  postBuildScript: String
+  postBuildScriptNEQ: String
+  postBuildScriptIn: [String!]
+  postBuildScriptNotIn: [String!]
+  postBuildScriptGT: String
+  postBuildScriptGTE: String
+  postBuildScriptLT: String
+  postBuildScriptLTE: String
+  postBuildScriptContains: String
+  postBuildScriptHasPrefix: String
+  postBuildScriptHasSuffix: String
+  postBuildScriptIsNil: Boolean
+  postBuildScriptNotNil: Boolean
+  postBuildScriptEqualFold: String
+  postBuildScriptContainsFold: String
   """
   builder edge predicates
   """
@@ -10647,6 +10707,12 @@ input CreateBuildTaskInput {
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
+
+  """Script to run before the build command."""
+  preBuildScript: String
+
+  """Script to run after the build command."""
+  postBuildScript: String
 }
 
 """Output returned when registering a new builder."""

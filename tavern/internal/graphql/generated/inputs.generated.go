@@ -383,7 +383,7 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "transports", "artifactPath"}
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "transports", "artifactPath", "preBuildScript", "postBuildScript"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -425,6 +425,20 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.ArtifactPath = data
+		case "preBuildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PreBuildScript = data
+		case "postBuildScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postBuildScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PostBuildScript = data
 		}
 	}
 

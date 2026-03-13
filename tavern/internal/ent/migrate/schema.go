@@ -96,6 +96,8 @@ var (
 		{Name: "error_size", Type: field.TypeInt, Default: 0},
 		{Name: "exit_code", Type: field.TypeInt, Nullable: true},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
+		{Name: "pre_build_script", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "post_build_script", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "build_task_builder", Type: field.TypeInt},
 		{Name: "build_task_profile", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
@@ -108,19 +110,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[16]},
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_build_profiles_profile",
-				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				Columns:    []*schema.Column{BuildTasksColumns[19]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[18]},
+				Columns:    []*schema.Column{BuildTasksColumns[20]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

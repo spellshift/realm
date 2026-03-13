@@ -137,12 +137,14 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		}
 
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
-			Id:           int64(claimedTask.ID),
-			TargetOs:     claimedTask.TargetOs.String(),
-			BuildImage:   claimedTask.BuildImage,
-			BuildScript:  claimedTask.BuildScript,
-			ArtifactPath: claimedTask.ArtifactPath,
-			Env:          []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
+			Id:              int64(claimedTask.ID),
+			TargetOs:        claimedTask.TargetOs.String(),
+			BuildImage:      claimedTask.BuildImage,
+			BuildScript:     claimedTask.BuildScript,
+			ArtifactPath:    claimedTask.ArtifactPath,
+			PreBuildScript:  claimedTask.PreBuildScript,
+			PostBuildScript: claimedTask.PostBuildScript,
+			Env:             []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
 		})
 	}
 

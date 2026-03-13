@@ -52,6 +52,10 @@ type BuildTask struct {
 	ExitCode *int `json:"exit_code,omitempty"`
 	// Path inside the container where the build artifact is located. Derived from target_os if not set.
 	ArtifactPath string `json:"artifact_path,omitempty"`
+	// Script to run before the build command.
+	PreBuildScript string `json:"pre_build_script,omitempty"`
+	// Script to run after the build command.
+	PostBuildScript string `json:"post_build_script,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildTaskQuery when eager-loading is set.
 	Edges               BuildTaskEdges `json:"edges"`
@@ -120,7 +124,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case buildtask.FieldID, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
-		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath:
+		case buildtask.FieldBuildImage, buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldPreBuildScript, buildtask.FieldPostBuildScript:
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -242,6 +246,18 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bt.ArtifactPath = value.String
 			}
+		case buildtask.FieldPreBuildScript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field pre_build_script", values[i])
+			} else if value.Valid {
+				bt.PreBuildScript = value.String
+			}
+		case buildtask.FieldPostBuildScript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field post_build_script", values[i])
+			} else if value.Valid {
+				bt.PostBuildScript = value.String
+			}
 		case buildtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_builder", value)
@@ -360,6 +376,12 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("artifact_path=")
 	builder.WriteString(bt.ArtifactPath)
+	builder.WriteString(", ")
+	builder.WriteString("pre_build_script=")
+	builder.WriteString(bt.PreBuildScript)
+	builder.WriteString(", ")
+	builder.WriteString("post_build_script=")
+	builder.WriteString(bt.PostBuildScript)
 	builder.WriteByte(')')
 	return builder.String()
 }
