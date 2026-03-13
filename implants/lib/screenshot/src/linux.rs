@@ -66,8 +66,8 @@ async fn capture_xdg_portal() -> Result<Vec<RgbaImage>, zbus::Error> {
     }
 
     if let Some(uri_val) = results.get("uri") {
-        if let zbus::zvariant::Value::Str(uri_str) = &**uri_val {
-            if let Ok(url) = url::Url::parse(uri_str.as_str()) {
+        if let Ok(uri_str) = <&str>::try_from(uri_val) {
+            if let Ok(url) = url::Url::parse(uri_str) {
                 if let Ok(file_path) = url.to_file_path() {
                     if let Ok(img) = image::open(&file_path) {
                         return Ok(vec![img.to_rgba8()]);
