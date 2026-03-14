@@ -199,13 +199,14 @@ func TestBuilderE2E(t *testing.T) {
 		assert.Equal(t, "golang:1.21", resp.Tasks[0].BuildImage)
 		assert.Equal(t, "echo hello && go build ./...", resp.Tasks[0].BuildScript)
 
-		// Verify IMIX_CONFIG env var is set
-		require.Len(t, resp.Tasks[0].Env, 1)
+		// Verify env vars are set (IMIX_CONFIG + ARTIFACT_PATH)
+		require.Len(t, resp.Tasks[0].Env, 2)
 		assert.Contains(t, resp.Tasks[0].Env[0], "IMIX_CONFIG=")
 		assert.Contains(t, resp.Tasks[0].Env[0], "transports:")
 		assert.Contains(t, resp.Tasks[0].Env[0], "URI: https://callback.example.com")
 		assert.Contains(t, resp.Tasks[0].Env[0], "interval: 10")
 		assert.Contains(t, resp.Tasks[0].Env[0], "type: grpc")
+		assert.Contains(t, resp.Tasks[0].Env[1], "ARTIFACT_PATH=")
 
 		// Verify claimed_at is set
 		reloaded := graph.BuildTask.GetX(ctx, bt.ID)
