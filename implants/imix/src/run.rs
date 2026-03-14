@@ -167,7 +167,9 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
         drop(subtasks);
 
         if !has_subtasks {
-            let _ = shelter::fluctuate(true, Some(sleep_secs as u32), None);
+            // Using as_millis() as many sleep implementations underlying these wrappers
+            // expect milliseconds, mitigating busy-loop regressions.
+            let _ = shelter::fluctuate(true, Some(delay.as_millis() as u32), None);
         } else {
             tokio::time::sleep(delay).await;
         }
