@@ -39,6 +39,7 @@ type MutationResolver interface {
 	RegisterBuilder(ctx context.Context, input ent.CreateBuilderInput) (*models.RegisterBuilderOutput, error)
 	DeleteBuilder(ctx context.Context, builderID int) (int, error)
 	CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error)
+	CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -98,6 +99,17 @@ func (ec *executionContext) field_Mutation_createRepository_args(ctx context.Con
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateRepositoryInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateRepositoryInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createScheduledTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateScheduledTaskInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateScheduledTaskInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1907,6 +1919,89 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createScheduledTask(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createScheduledTask,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateScheduledTask(ctx, fc.Args["input"].(ent.CreateScheduledTaskInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.ScheduledTask
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.ScheduledTask
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNScheduledTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTask,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createScheduledTask(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ScheduledTask_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ScheduledTask_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_ScheduledTask_lastModifiedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_ScheduledTask_name(ctx, field)
+			case "description":
+				return ec.fieldContext_ScheduledTask_description(ctx, field)
+			case "runOnNewBeaconCallback":
+				return ec.fieldContext_ScheduledTask_runOnNewBeaconCallback(ctx, field)
+			case "runOnFirstHostCallback":
+				return ec.fieldContext_ScheduledTask_runOnFirstHostCallback(ctx, field)
+			case "parameters":
+				return ec.fieldContext_ScheduledTask_parameters(ctx, field)
+			case "runOnSchedule":
+				return ec.fieldContext_ScheduledTask_runOnSchedule(ctx, field)
+			case "tome":
+				return ec.fieldContext_ScheduledTask_tome(ctx, field)
+			case "scheduledHosts":
+				return ec.fieldContext_ScheduledTask_scheduledHosts(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ScheduledTask", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createScheduledTask_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -2075,6 +2170,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createBuildTask":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createBuildTask(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createScheduledTask":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createScheduledTask(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

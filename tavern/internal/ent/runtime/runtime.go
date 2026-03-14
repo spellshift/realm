@@ -413,8 +413,12 @@ func init() {
 	scheduledtaskDescRunOnFirstHostCallback := scheduledtaskFields[3].Descriptor()
 	// scheduledtask.DefaultRunOnFirstHostCallback holds the default value on creation for the run_on_first_host_callback field.
 	scheduledtask.DefaultRunOnFirstHostCallback = scheduledtaskDescRunOnFirstHostCallback.Default.(bool)
+	// scheduledtaskDescParameters is the schema descriptor for parameters field.
+	scheduledtaskDescParameters := scheduledtaskFields[4].Descriptor()
+	// scheduledtask.ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
+	scheduledtask.ParametersValidator = scheduledtaskDescParameters.Validators[0].(func(string) error)
 	// scheduledtaskDescRunOnSchedule is the schema descriptor for run_on_schedule field.
-	scheduledtaskDescRunOnSchedule := scheduledtaskFields[4].Descriptor()
+	scheduledtaskDescRunOnSchedule := scheduledtaskFields[5].Descriptor()
 	// scheduledtask.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
 	scheduledtask.DefaultRunOnSchedule = scheduledtaskDescRunOnSchedule.Default.(string)
 	screenshotMixin := schema.Screenshot{}.Mixin()

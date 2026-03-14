@@ -92,6 +92,26 @@ func (stu *ScheduledTaskUpdate) SetNillableRunOnFirstHostCallback(b *bool) *Sche
 	return stu
 }
 
+// SetParameters sets the "parameters" field.
+func (stu *ScheduledTaskUpdate) SetParameters(s string) *ScheduledTaskUpdate {
+	stu.mutation.SetParameters(s)
+	return stu
+}
+
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (stu *ScheduledTaskUpdate) SetNillableParameters(s *string) *ScheduledTaskUpdate {
+	if s != nil {
+		stu.SetParameters(*s)
+	}
+	return stu
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (stu *ScheduledTaskUpdate) ClearParameters() *ScheduledTaskUpdate {
+	stu.mutation.ClearParameters()
+	return stu
+}
+
 // SetRunOnSchedule sets the "run_on_schedule" field.
 func (stu *ScheduledTaskUpdate) SetRunOnSchedule(s string) *ScheduledTaskUpdate {
 	stu.mutation.SetRunOnSchedule(s)
@@ -207,6 +227,11 @@ func (stu *ScheduledTaskUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.name": %w`, err)}
 		}
 	}
+	if v, ok := stu.mutation.Parameters(); ok {
+		if err := scheduledtask.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.parameters": %w`, err)}
+		}
+	}
 	if stu.mutation.TomeCleared() && len(stu.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ScheduledTask.tome"`)
 	}
@@ -239,6 +264,12 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if value, ok := stu.mutation.RunOnFirstHostCallback(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnFirstHostCallback, field.TypeBool, value)
+	}
+	if value, ok := stu.mutation.Parameters(); ok {
+		_spec.SetField(scheduledtask.FieldParameters, field.TypeString, value)
+	}
+	if stu.mutation.ParametersCleared() {
+		_spec.ClearField(scheduledtask.FieldParameters, field.TypeString)
 	}
 	if value, ok := stu.mutation.RunOnSchedule(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)
@@ -399,6 +430,26 @@ func (stuo *ScheduledTaskUpdateOne) SetNillableRunOnFirstHostCallback(b *bool) *
 	return stuo
 }
 
+// SetParameters sets the "parameters" field.
+func (stuo *ScheduledTaskUpdateOne) SetParameters(s string) *ScheduledTaskUpdateOne {
+	stuo.mutation.SetParameters(s)
+	return stuo
+}
+
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (stuo *ScheduledTaskUpdateOne) SetNillableParameters(s *string) *ScheduledTaskUpdateOne {
+	if s != nil {
+		stuo.SetParameters(*s)
+	}
+	return stuo
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (stuo *ScheduledTaskUpdateOne) ClearParameters() *ScheduledTaskUpdateOne {
+	stuo.mutation.ClearParameters()
+	return stuo
+}
+
 // SetRunOnSchedule sets the "run_on_schedule" field.
 func (stuo *ScheduledTaskUpdateOne) SetRunOnSchedule(s string) *ScheduledTaskUpdateOne {
 	stuo.mutation.SetRunOnSchedule(s)
@@ -527,6 +578,11 @@ func (stuo *ScheduledTaskUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.name": %w`, err)}
 		}
 	}
+	if v, ok := stuo.mutation.Parameters(); ok {
+		if err := scheduledtask.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.parameters": %w`, err)}
+		}
+	}
 	if stuo.mutation.TomeCleared() && len(stuo.mutation.TomeIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "ScheduledTask.tome"`)
 	}
@@ -576,6 +632,12 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 	}
 	if value, ok := stuo.mutation.RunOnFirstHostCallback(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnFirstHostCallback, field.TypeBool, value)
+	}
+	if value, ok := stuo.mutation.Parameters(); ok {
+		_spec.SetField(scheduledtask.FieldParameters, field.TypeString, value)
+	}
+	if stuo.mutation.ParametersCleared() {
+		_spec.ClearField(scheduledtask.FieldParameters, field.TypeString)
 	}
 	if value, ok := stuo.mutation.RunOnSchedule(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)

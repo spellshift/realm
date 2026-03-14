@@ -85,6 +85,11 @@ func RunOnFirstHostCallback(v bool) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldEQ(FieldRunOnFirstHostCallback, v))
 }
 
+// Parameters applies equality check predicate on the "parameters" field. It's identical to ParametersEQ.
+func Parameters(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldEQ(FieldParameters, v))
+}
+
 // RunOnSchedule applies equality check predicate on the "run_on_schedule" field. It's identical to RunOnScheduleEQ.
 func RunOnSchedule(v string) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldEQ(FieldRunOnSchedule, v))
@@ -318,6 +323,81 @@ func RunOnFirstHostCallbackEQ(v bool) predicate.ScheduledTask {
 // RunOnFirstHostCallbackNEQ applies the NEQ predicate on the "run_on_first_host_callback" field.
 func RunOnFirstHostCallbackNEQ(v bool) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldNEQ(FieldRunOnFirstHostCallback, v))
+}
+
+// ParametersEQ applies the EQ predicate on the "parameters" field.
+func ParametersEQ(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldEQ(FieldParameters, v))
+}
+
+// ParametersNEQ applies the NEQ predicate on the "parameters" field.
+func ParametersNEQ(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldNEQ(FieldParameters, v))
+}
+
+// ParametersIn applies the In predicate on the "parameters" field.
+func ParametersIn(vs ...string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldIn(FieldParameters, vs...))
+}
+
+// ParametersNotIn applies the NotIn predicate on the "parameters" field.
+func ParametersNotIn(vs ...string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldNotIn(FieldParameters, vs...))
+}
+
+// ParametersGT applies the GT predicate on the "parameters" field.
+func ParametersGT(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldGT(FieldParameters, v))
+}
+
+// ParametersGTE applies the GTE predicate on the "parameters" field.
+func ParametersGTE(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldGTE(FieldParameters, v))
+}
+
+// ParametersLT applies the LT predicate on the "parameters" field.
+func ParametersLT(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldLT(FieldParameters, v))
+}
+
+// ParametersLTE applies the LTE predicate on the "parameters" field.
+func ParametersLTE(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldLTE(FieldParameters, v))
+}
+
+// ParametersContains applies the Contains predicate on the "parameters" field.
+func ParametersContains(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldContains(FieldParameters, v))
+}
+
+// ParametersHasPrefix applies the HasPrefix predicate on the "parameters" field.
+func ParametersHasPrefix(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldHasPrefix(FieldParameters, v))
+}
+
+// ParametersHasSuffix applies the HasSuffix predicate on the "parameters" field.
+func ParametersHasSuffix(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldHasSuffix(FieldParameters, v))
+}
+
+// ParametersIsNil applies the IsNil predicate on the "parameters" field.
+func ParametersIsNil() predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldIsNull(FieldParameters))
+}
+
+// ParametersNotNil applies the NotNil predicate on the "parameters" field.
+func ParametersNotNil() predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldNotNull(FieldParameters))
+}
+
+// ParametersEqualFold applies the EqualFold predicate on the "parameters" field.
+func ParametersEqualFold(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldEqualFold(FieldParameters, v))
+}
+
+// ParametersContainsFold applies the ContainsFold predicate on the "parameters" field.
+func ParametersContainsFold(v string) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldContainsFold(FieldParameters, v))
 }
 
 // RunOnScheduleEQ applies the EQ predicate on the "run_on_schedule" field.

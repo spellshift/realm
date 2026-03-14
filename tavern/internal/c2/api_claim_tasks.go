@@ -17,11 +17,11 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
 )
@@ -70,7 +70,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		return
 	}
 
-	selectedTomes := make(map[int]*ent.Tome)
+	selectedTasks := make(map[int]*ent.ScheduledTask)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cutoff := now.Add(interval)
 
@@ -121,20 +121,25 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 		}
 
 		if shouldRun && t.Edges.Tome != nil {
-			selectedTomes[t.Edges.Tome.ID] = t.Edges.Tome
+			selectedTasks[t.ID] = t
 		}
 	}
 
-	// Create Quest and Task for each selected Tome
-	for _, tome := range selectedTomes {
-		q, err := srv.graph.Quest.Create().
-			SetName(fmt.Sprintf("Automated: %s", tome.Name)).
+	// Create Quest and Task for each selected ScheduledTask
+	for _, st := range selectedTasks {
+		tome := st.Edges.Tome
+		questCreate := srv.graph.Quest.Create().
+			SetName(fmt.Sprintf("Automated: %s", st.Name)).
 			SetTome(tome).
+			SetParameters(st.Parameters).
 			SetParamDefsAtCreation(tome.ParamDefs).
-			SetEldritchAtCreation(tome.Eldritch).
-			Save(ctx)
+			SetEldritchAtCreation(tome.Eldritch)
+		if st.Parameters != "" {
+			questCreate.SetParameters(st.Parameters)
+		}
+		q, err := questCreate.Save(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "tome_id", tome.ID)
+			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
 			metricTomeAutomationErrors.Inc()
 			continue
 		}

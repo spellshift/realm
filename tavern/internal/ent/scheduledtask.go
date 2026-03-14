@@ -30,6 +30,8 @@ type ScheduledTask struct {
 	RunOnNewBeaconCallback bool `json:"run_on_new_beacon_callback,omitempty"`
 	// If true, this tome will automatically be queued for the first new callback on a Host.
 	RunOnFirstHostCallback bool `json:"run_on_first_host_callback,omitempty"`
+	// Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+	Parameters string `json:"parameters,omitempty"`
 	// Cron-like schedule for this tome to be automatically queued.
 	RunOnSchedule string `json:"run_on_schedule,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -83,7 +85,7 @@ func (*ScheduledTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case scheduledtask.FieldID:
 			values[i] = new(sql.NullInt64)
-		case scheduledtask.FieldName, scheduledtask.FieldDescription, scheduledtask.FieldRunOnSchedule:
+		case scheduledtask.FieldName, scheduledtask.FieldDescription, scheduledtask.FieldParameters, scheduledtask.FieldRunOnSchedule:
 			values[i] = new(sql.NullString)
 		case scheduledtask.FieldCreatedAt, scheduledtask.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -145,6 +147,12 @@ func (st *ScheduledTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field run_on_first_host_callback", values[i])
 			} else if value.Valid {
 				st.RunOnFirstHostCallback = value.Bool
+			}
+		case scheduledtask.FieldParameters:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field parameters", values[i])
+			} else if value.Valid {
+				st.Parameters = value.String
 			}
 		case scheduledtask.FieldRunOnSchedule:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -222,6 +230,9 @@ func (st *ScheduledTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("run_on_first_host_callback=")
 	builder.WriteString(fmt.Sprintf("%v", st.RunOnFirstHostCallback))
+	builder.WriteString(", ")
+	builder.WriteString("parameters=")
+	builder.WriteString(st.Parameters)
 	builder.WriteString(", ")
 	builder.WriteString("run_on_schedule=")
 	builder.WriteString(st.RunOnSchedule)

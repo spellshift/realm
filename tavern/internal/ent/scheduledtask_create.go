@@ -92,6 +92,20 @@ func (stc *ScheduledTaskCreate) SetNillableRunOnFirstHostCallback(b *bool) *Sche
 	return stc
 }
 
+// SetParameters sets the "parameters" field.
+func (stc *ScheduledTaskCreate) SetParameters(s string) *ScheduledTaskCreate {
+	stc.mutation.SetParameters(s)
+	return stc
+}
+
+// SetNillableParameters sets the "parameters" field if the given value is not nil.
+func (stc *ScheduledTaskCreate) SetNillableParameters(s *string) *ScheduledTaskCreate {
+	if s != nil {
+		stc.SetParameters(*s)
+	}
+	return stc
+}
+
 // SetRunOnSchedule sets the "run_on_schedule" field.
 func (stc *ScheduledTaskCreate) SetRunOnSchedule(s string) *ScheduledTaskCreate {
 	stc.mutation.SetRunOnSchedule(s)
@@ -214,6 +228,11 @@ func (stc *ScheduledTaskCreate) check() error {
 	if _, ok := stc.mutation.RunOnFirstHostCallback(); !ok {
 		return &ValidationError{Name: "run_on_first_host_callback", err: errors.New(`ent: missing required field "ScheduledTask.run_on_first_host_callback"`)}
 	}
+	if v, ok := stc.mutation.Parameters(); ok {
+		if err := scheduledtask.ParametersValidator(v); err != nil {
+			return &ValidationError{Name: "parameters", err: fmt.Errorf(`ent: validator failed for field "ScheduledTask.parameters": %w`, err)}
+		}
+	}
 	if _, ok := stc.mutation.RunOnSchedule(); !ok {
 		return &ValidationError{Name: "run_on_schedule", err: errors.New(`ent: missing required field "ScheduledTask.run_on_schedule"`)}
 	}
@@ -270,6 +289,10 @@ func (stc *ScheduledTaskCreate) createSpec() (*ScheduledTask, *sqlgraph.CreateSp
 	if value, ok := stc.mutation.RunOnFirstHostCallback(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnFirstHostCallback, field.TypeBool, value)
 		_node.RunOnFirstHostCallback = value
+	}
+	if value, ok := stc.mutation.Parameters(); ok {
+		_spec.SetField(scheduledtask.FieldParameters, field.TypeString, value)
+		_node.Parameters = value
 	}
 	if value, ok := stc.mutation.RunOnSchedule(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)
@@ -420,6 +443,24 @@ func (u *ScheduledTaskUpsert) UpdateRunOnFirstHostCallback() *ScheduledTaskUpser
 	return u
 }
 
+// SetParameters sets the "parameters" field.
+func (u *ScheduledTaskUpsert) SetParameters(v string) *ScheduledTaskUpsert {
+	u.Set(scheduledtask.FieldParameters, v)
+	return u
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *ScheduledTaskUpsert) UpdateParameters() *ScheduledTaskUpsert {
+	u.SetExcluded(scheduledtask.FieldParameters)
+	return u
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *ScheduledTaskUpsert) ClearParameters() *ScheduledTaskUpsert {
+	u.SetNull(scheduledtask.FieldParameters)
+	return u
+}
+
 // SetRunOnSchedule sets the "run_on_schedule" field.
 func (u *ScheduledTaskUpsert) SetRunOnSchedule(v string) *ScheduledTaskUpsert {
 	u.Set(scheduledtask.FieldRunOnSchedule, v)
@@ -544,6 +585,27 @@ func (u *ScheduledTaskUpsertOne) SetRunOnFirstHostCallback(v bool) *ScheduledTas
 func (u *ScheduledTaskUpsertOne) UpdateRunOnFirstHostCallback() *ScheduledTaskUpsertOne {
 	return u.Update(func(s *ScheduledTaskUpsert) {
 		s.UpdateRunOnFirstHostCallback()
+	})
+}
+
+// SetParameters sets the "parameters" field.
+func (u *ScheduledTaskUpsertOne) SetParameters(v string) *ScheduledTaskUpsertOne {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.SetParameters(v)
+	})
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *ScheduledTaskUpsertOne) UpdateParameters() *ScheduledTaskUpsertOne {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.UpdateParameters()
+	})
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *ScheduledTaskUpsertOne) ClearParameters() *ScheduledTaskUpsertOne {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.ClearParameters()
 	})
 }
 
@@ -839,6 +901,27 @@ func (u *ScheduledTaskUpsertBulk) SetRunOnFirstHostCallback(v bool) *ScheduledTa
 func (u *ScheduledTaskUpsertBulk) UpdateRunOnFirstHostCallback() *ScheduledTaskUpsertBulk {
 	return u.Update(func(s *ScheduledTaskUpsert) {
 		s.UpdateRunOnFirstHostCallback()
+	})
+}
+
+// SetParameters sets the "parameters" field.
+func (u *ScheduledTaskUpsertBulk) SetParameters(v string) *ScheduledTaskUpsertBulk {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.SetParameters(v)
+	})
+}
+
+// UpdateParameters sets the "parameters" field to the value that was provided on create.
+func (u *ScheduledTaskUpsertBulk) UpdateParameters() *ScheduledTaskUpsertBulk {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.UpdateParameters()
+	})
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (u *ScheduledTaskUpsertBulk) ClearParameters() *ScheduledTaskUpsertBulk {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.ClearParameters()
 	})
 }
 

@@ -44,6 +44,7 @@ type QueryResolver interface {
 	Shells(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) (*ent.ShellConnection, error)
 	BuildTasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) (*ent.BuildTaskConnection, error)
 	Builders(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) (*ent.BuilderConnection, error)
+	ScheduledTasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) (*ent.ScheduledTaskConnection, error)
 	Me(ctx context.Context) (*ent.User, error)
 }
 type ShellTaskResolver interface {
@@ -814,6 +815,42 @@ func (ec *executionContext) field_Query_repositories_args(ctx context.Context, r
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalORepositoryWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_scheduledTasks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOScheduledTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOScheduledTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -9244,6 +9281,73 @@ func (ec *executionContext) fieldContext_Query_builders(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_scheduledTasks(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_scheduledTasks,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ScheduledTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ScheduledTaskOrder), fc.Args["where"].(*ent.ScheduledTaskWhereInput))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.ScheduledTaskConnection
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *ent.ScheduledTaskConnection
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNScheduledTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_scheduledTasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_ScheduledTaskConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_ScheduledTaskConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ScheduledTaskConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ScheduledTaskConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_scheduledTasks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10647,6 +10751,35 @@ func (ec *executionContext) fieldContext_ScheduledTask_runOnFirstHostCallback(_ 
 	return fc, nil
 }
 
+func (ec *executionContext) _ScheduledTask_parameters(ctx context.Context, field graphql.CollectedField, obj *ent.ScheduledTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ScheduledTask_parameters,
+		func(ctx context.Context) (any, error) {
+			return obj.Parameters, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ScheduledTask_parameters(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScheduledTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ScheduledTask_runOnSchedule(ctx context.Context, field graphql.CollectedField, obj *ent.ScheduledTask) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10923,6 +11056,8 @@ func (ec *executionContext) fieldContext_ScheduledTaskEdge_node(_ context.Contex
 				return ec.fieldContext_ScheduledTask_runOnNewBeaconCallback(ctx, field)
 			case "runOnFirstHostCallback":
 				return ec.fieldContext_ScheduledTask_runOnFirstHostCallback(ctx, field)
+			case "parameters":
+				return ec.fieldContext_ScheduledTask_parameters(ctx, field)
 			case "runOnSchedule":
 				return ec.fieldContext_ScheduledTask_runOnSchedule(ctx, field)
 			case "tome":
@@ -18665,7 +18800,7 @@ func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "runOnSchedule", "tomeID", "scheduledHostIDs"}
+	fieldsInOrder := [...]string{"name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "runOnSchedule", "tomeID", "scheduledHostIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18700,6 +18835,13 @@ func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.C
 				return it, err
 			}
 			it.RunOnFirstHostCallback = data
+		case "parameters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parameters"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Parameters = data
 		case "runOnSchedule":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runOnSchedule"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -24842,7 +24984,7 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25248,6 +25390,111 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 				return it, err
 			}
 			it.RunOnFirstHostCallbackNEQ = data
+		case "parameters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parameters"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Parameters = data
+		case "parametersNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNEQ"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersNEQ = data
+		case "parametersIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersIn = data
+		case "parametersNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNotIn"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersNotIn = data
+		case "parametersGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersGT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersGT = data
+		case "parametersGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersGTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersGTE = data
+		case "parametersLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersLT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersLT = data
+		case "parametersLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersLTE"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersLTE = data
+		case "parametersContains":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersContains"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersContains = data
+		case "parametersHasPrefix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersHasPrefix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersHasPrefix = data
+		case "parametersHasSuffix":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersHasSuffix"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersHasSuffix = data
+		case "parametersIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersIsNil = data
+		case "parametersNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersNotNil = data
+		case "parametersEqualFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersEqualFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersEqualFold = data
+		case "parametersContainsFold":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parametersContainsFold"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ParametersContainsFold = data
 		case "runOnSchedule":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runOnSchedule"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -29562,7 +29809,7 @@ func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "runOnSchedule", "addScheduledHostIDs", "removeScheduledHostIDs", "clearScheduledHosts"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "clearParameters", "runOnSchedule", "addScheduledHostIDs", "removeScheduledHostIDs", "clearScheduledHosts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29604,6 +29851,20 @@ func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.C
 				return it, err
 			}
 			it.RunOnFirstHostCallback = data
+		case "parameters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parameters"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Parameters = data
+		case "clearParameters":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearParameters"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearParameters = data
 		case "runOnSchedule":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runOnSchedule"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -33691,6 +33952,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "scheduledTasks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_scheduledTasks(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "me":
 			field := field
 
@@ -34292,6 +34575,8 @@ func (ec *executionContext) _ScheduledTask(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "parameters":
+			out.Values[i] = ec._ScheduledTask_parameters(ctx, field, obj)
 		case "runOnSchedule":
 			out.Values[i] = ec._ScheduledTask_runOnSchedule(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -36862,6 +37147,11 @@ func (ec *executionContext) unmarshalNCreateRepositoryInput2realmᚗpubᚋtavern
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateScheduledTaskInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateScheduledTaskInput(ctx context.Context, v any) (ent.CreateScheduledTaskInput, error) {
+	res, err := ec.unmarshalInputCreateScheduledTaskInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateShellInput2realmᚗpubᚋtavernᚋinternalᚋentᚐCreateShellInput(ctx context.Context, v any) (ent.CreateShellInput, error) {
 	res, err := ec.unmarshalInputCreateShellInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -37481,6 +37771,39 @@ func (ec *executionContext) marshalNRepositoryOrderField2ᚖrealmᚗpubᚋtavern
 
 func (ec *executionContext) unmarshalNRepositoryWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryWhereInput(ctx context.Context, v any) (*ent.RepositoryWhereInput, error) {
 	res, err := ec.unmarshalInputRepositoryWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNScheduledTask2realmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTask(ctx context.Context, sel ast.SelectionSet, v ent.ScheduledTask) graphql.Marshaler {
+	return ec._ScheduledTask(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNScheduledTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTask(ctx context.Context, sel ast.SelectionSet, v *ent.ScheduledTask) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ScheduledTask(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNScheduledTaskConnection2realmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskConnection(ctx context.Context, sel ast.SelectionSet, v ent.ScheduledTaskConnection) graphql.Marshaler {
+	return ec._ScheduledTaskConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNScheduledTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskConnection(ctx context.Context, sel ast.SelectionSet, v *ent.ScheduledTaskConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ScheduledTaskConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNScheduledTaskOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskOrder(ctx context.Context, v any) (*ent.ScheduledTaskOrder, error) {
+	res, err := ec.unmarshalInputScheduledTaskOrder(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -40021,6 +40344,24 @@ func (ec *executionContext) marshalOScheduledTaskEdge2ᚖrealmᚗpubᚋtavernᚋ
 		return graphql.Null
 	}
 	return ec._ScheduledTaskEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOScheduledTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskOrderᚄ(ctx context.Context, v any) ([]*ent.ScheduledTaskOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.ScheduledTaskOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNScheduledTaskOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOScheduledTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskWhereInputᚄ(ctx context.Context, v any) ([]*ent.ScheduledTaskWhereInput, error) {

@@ -316,27 +316,28 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask  func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateShell      func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder    func(childComplexity int, builderID int) int
-		DeleteTome       func(childComplexity int, tomeID int) int
-		DisableLink      func(childComplexity int, linkID int) int
-		DropAllData      func(childComplexity int) int
-		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder  func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey  func(childComplexity int) int
-		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask     func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateCredential    func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink          func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest         func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository    func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell         func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag           func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome          func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder       func(childComplexity int, builderID int) int
+		DeleteTome          func(childComplexity int, tomeID int) int
+		DisableLink         func(childComplexity int, linkID int) int
+		DropAllData         func(childComplexity int) int
+		ImportRepository    func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		RegisterBuilder     func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey     func(childComplexity int) int
+		UpdateBeacon        func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost          func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink          func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag           func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome          func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser          func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -370,22 +371,23 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
-		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
-		BuildTasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
-		Builders     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
-		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		Me           func(childComplexity int) int
-		Node         func(childComplexity int, id int) int
-		Nodes        func(childComplexity int, ids []int) int
-		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
-		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
-		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
-		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
-		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		BuildTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
+		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Me             func(childComplexity int) int
+		Node           func(childComplexity int, id int) int
+		Nodes          func(childComplexity int, ids []int) int
+		Portals        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
+		Quests         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Repositories   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		ScheduledTasks func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
+		Shells         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
+		Tasks          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -447,6 +449,7 @@ type ComplexityRoot struct {
 		ID                     func(childComplexity int) int
 		LastModifiedAt         func(childComplexity int) int
 		Name                   func(childComplexity int) int
+		Parameters             func(childComplexity int) int
 		RunOnFirstHostCallback func(childComplexity int) int
 		RunOnNewBeaconCallback func(childComplexity int) int
 		RunOnSchedule          func(childComplexity int) int
@@ -1994,6 +1997,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateRepository(childComplexity, args["input"].(ent.CreateRepositoryInput)), true
 
+	case "Mutation.createScheduledTask":
+		if e.complexity.Mutation.CreateScheduledTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createScheduledTask_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateScheduledTask(childComplexity, args["input"].(ent.CreateScheduledTaskInput)), true
+
 	case "Mutation.createShell":
 		if e.complexity.Mutation.CreateShell == nil {
 			break
@@ -2434,6 +2449,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
 
+	case "Query.scheduledTasks":
+		if e.complexity.Query.ScheduledTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_scheduledTasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ScheduledTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScheduledTaskOrder), args["where"].(*ent.ScheduledTaskWhereInput)), true
+
 	case "Query.shells":
 		if e.complexity.Query.Shells == nil {
 			break
@@ -2762,6 +2789,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ScheduledTask.Name(childComplexity), true
+
+	case "ScheduledTask.parameters":
+		if e.complexity.ScheduledTask.Parameters == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Parameters(childComplexity), true
 
 	case "ScheduledTask.runOnFirstHostCallback":
 		if e.complexity.ScheduledTask.RunOnFirstHostCallback == nil {
@@ -5144,6 +5178,10 @@ input CreateScheduledTaskInput {
   If true, this tome will automatically be queued for the first new callback on a Host.
   """
   runOnFirstHostCallback: Boolean
+  """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
   """
   Cron-like schedule for this tome to be automatically queued.
   """
@@ -7567,6 +7605,10 @@ type ScheduledTask implements Node {
   """
   runOnFirstHostCallback: Boolean!
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String!
@@ -7740,6 +7782,24 @@ input ScheduledTaskWhereInput {
   """
   runOnFirstHostCallback: Boolean
   runOnFirstHostCallbackNEQ: Boolean
+  """
+  parameters field predicates
+  """
+  parameters: String
+  parametersNEQ: String
+  parametersIn: [String!]
+  parametersNotIn: [String!]
+  parametersGT: String
+  parametersGTE: String
+  parametersLT: String
+  parametersLTE: String
+  parametersContains: String
+  parametersHasPrefix: String
+  parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
+  parametersEqualFold: String
+  parametersContainsFold: String
   """
   run_on_schedule field predicates
   """
@@ -9485,6 +9545,11 @@ input UpdateScheduledTaskInput {
   """
   runOnFirstHostCallback: Boolean
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  clearParameters: Boolean
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
@@ -10072,6 +10137,25 @@ scalar Uint64
     """Filtering options for Builders returned from the connection."""
     where: BuilderWhereInput
   ): BuilderConnection! @requireRole(role: ADMIN)
+  scheduledTasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for ScheduledTasks returned from the connection."""
+    orderBy: [ScheduledTaskOrder!]
+
+    """Filtering options for ScheduledTasks returned from the connection."""
+    where: ScheduledTaskWhereInput
+  ): ScheduledTaskConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},
@@ -10148,6 +10232,11 @@ scalar Uint64
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # ScheduledTask
+    ###
+    createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

@@ -485,6 +485,11 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	return bt, nil
 }
 
+// CreateScheduledTask is the resolver for the createScheduledTask field.
+func (r *mutationResolver) CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error) {
+	return r.client.ScheduledTask.Create().SetInput(input).Save(ctx)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

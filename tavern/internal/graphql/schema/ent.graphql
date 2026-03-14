@@ -1278,6 +1278,10 @@ input CreateScheduledTaskInput {
   """
   runOnFirstHostCallback: Boolean
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
@@ -3700,6 +3704,10 @@ type ScheduledTask implements Node {
   """
   runOnFirstHostCallback: Boolean!
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String!
@@ -3873,6 +3881,24 @@ input ScheduledTaskWhereInput {
   """
   runOnFirstHostCallback: Boolean
   runOnFirstHostCallbackNEQ: Boolean
+  """
+  parameters field predicates
+  """
+  parameters: String
+  parametersNEQ: String
+  parametersIn: [String!]
+  parametersNotIn: [String!]
+  parametersGT: String
+  parametersGTE: String
+  parametersLT: String
+  parametersLTE: String
+  parametersContains: String
+  parametersHasPrefix: String
+  parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
+  parametersEqualFold: String
+  parametersContainsFold: String
   """
   run_on_schedule field predicates
   """
@@ -5617,6 +5643,11 @@ input UpdateScheduledTaskInput {
   If true, this tome will automatically be queued for the first new callback on a Host.
   """
   runOnFirstHostCallback: Boolean
+  """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  clearParameters: Boolean
   """
   Cron-like schedule for this tome to be automatically queued.
   """

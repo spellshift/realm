@@ -3357,6 +3357,11 @@ func (st *ScheduledTaskQuery) collectField(ctx context.Context, oneNode bool, op
 				selectedFields = append(selectedFields, scheduledtask.FieldRunOnFirstHostCallback)
 				fieldSeen[scheduledtask.FieldRunOnFirstHostCallback] = struct{}{}
 			}
+		case "parameters":
+			if _, ok := fieldSeen[scheduledtask.FieldParameters]; !ok {
+				selectedFields = append(selectedFields, scheduledtask.FieldParameters)
+				fieldSeen[scheduledtask.FieldParameters] = struct{}{}
+			}
 		case "runOnSchedule":
 			if _, ok := fieldSeen[scheduledtask.FieldRunOnSchedule]; !ok {
 				selectedFields = append(selectedFields, scheduledtask.FieldRunOnSchedule)

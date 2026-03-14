@@ -26,6 +26,8 @@ const (
 	FieldRunOnNewBeaconCallback = "run_on_new_beacon_callback"
 	// FieldRunOnFirstHostCallback holds the string denoting the run_on_first_host_callback field in the database.
 	FieldRunOnFirstHostCallback = "run_on_first_host_callback"
+	// FieldParameters holds the string denoting the parameters field in the database.
+	FieldParameters = "parameters"
 	// FieldRunOnSchedule holds the string denoting the run_on_schedule field in the database.
 	FieldRunOnSchedule = "run_on_schedule"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
@@ -59,6 +61,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldRunOnNewBeaconCallback,
 	FieldRunOnFirstHostCallback,
+	FieldParameters,
 	FieldRunOnSchedule,
 }
 
@@ -96,6 +99,8 @@ var (
 	DefaultRunOnNewBeaconCallback bool
 	// DefaultRunOnFirstHostCallback holds the default value on creation for the "run_on_first_host_callback" field.
 	DefaultRunOnFirstHostCallback bool
+	// ParametersValidator is a validator for the "parameters" field. It is called by the builders before save.
+	ParametersValidator func(string) error
 	// DefaultRunOnSchedule holds the default value on creation for the "run_on_schedule" field.
 	DefaultRunOnSchedule string
 )
@@ -136,6 +141,11 @@ func ByRunOnNewBeaconCallback(opts ...sql.OrderTermOption) OrderOption {
 // ByRunOnFirstHostCallback orders the results by the run_on_first_host_callback field.
 func ByRunOnFirstHostCallback(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRunOnFirstHostCallback, opts...).ToFunc()
+}
+
+// ByParameters orders the results by the parameters field.
+func ByParameters(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParameters, opts...).ToFunc()
 }
 
 // ByRunOnSchedule orders the results by the run_on_schedule field.

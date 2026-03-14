@@ -3,10 +3,12 @@ package schema
 import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/schema/validators"
 )
 
 // ScheduledTask holds the schema definition for the ScheduledTask entity.
@@ -32,6 +34,13 @@ func (ScheduledTask) Fields() []ent.Field {
 		field.Bool("run_on_first_host_callback").
 			Default(false).
 			Comment("If true, this tome will automatically be queued for the first new callback on a Host."),
+		field.String("parameters").
+			Validate(validators.NewJSONStringString()).
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Optional().
+			Comment("Value of parameters that will be used when creating quests from this scheduled task (as a JSON string)."),
 		field.String("run_on_schedule").
 			Default("").
 			Comment("Cron-like schedule for this tome to be automatically queued."),

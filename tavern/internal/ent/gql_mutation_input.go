@@ -388,6 +388,7 @@ type CreateScheduledTaskInput struct {
 	Description            string
 	RunOnNewBeaconCallback *bool
 	RunOnFirstHostCallback *bool
+	Parameters             *string
 	RunOnSchedule          *string
 	TomeID                 int
 	ScheduledHostIDs       []int
@@ -402,6 +403,9 @@ func (i *CreateScheduledTaskInput) Mutate(m *ScheduledTaskMutation) {
 	}
 	if v := i.RunOnFirstHostCallback; v != nil {
 		m.SetRunOnFirstHostCallback(*v)
+	}
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
 	}
 	if v := i.RunOnSchedule; v != nil {
 		m.SetRunOnSchedule(*v)
@@ -425,6 +429,8 @@ type UpdateScheduledTaskInput struct {
 	Description            *string
 	RunOnNewBeaconCallback *bool
 	RunOnFirstHostCallback *bool
+	ClearParameters        bool
+	Parameters             *string
 	RunOnSchedule          *string
 	ClearScheduledHosts    bool
 	AddScheduledHostIDs    []int
@@ -447,6 +453,12 @@ func (i *UpdateScheduledTaskInput) Mutate(m *ScheduledTaskMutation) {
 	}
 	if v := i.RunOnFirstHostCallback; v != nil {
 		m.SetRunOnFirstHostCallback(*v)
+	}
+	if i.ClearParameters {
+		m.ClearParameters()
+	}
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
 	}
 	if v := i.RunOnSchedule; v != nil {
 		m.SetRunOnSchedule(*v)

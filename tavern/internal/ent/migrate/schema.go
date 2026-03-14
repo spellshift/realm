@@ -469,6 +469,7 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "run_on_new_beacon_callback", Type: field.TypeBool, Default: false},
 		{Name: "run_on_first_host_callback", Type: field.TypeBool, Default: false},
+		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
 		{Name: "scheduled_task_tome", Type: field.TypeInt},
 	}
@@ -480,7 +481,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "scheduled_tasks_tomes_tome",
-				Columns:    []*schema.Column{ScheduledTasksColumns[8]},
+				Columns:    []*schema.Column{ScheduledTasksColumns[9]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},

@@ -1283,6 +1283,10 @@ input CreateScheduledTaskInput {
   """
   runOnFirstHostCallback: Boolean
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
@@ -3705,6 +3709,10 @@ type ScheduledTask implements Node {
   """
   runOnFirstHostCallback: Boolean!
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String!
@@ -3878,6 +3886,24 @@ input ScheduledTaskWhereInput {
   """
   runOnFirstHostCallback: Boolean
   runOnFirstHostCallbackNEQ: Boolean
+  """
+  parameters field predicates
+  """
+  parameters: String
+  parametersNEQ: String
+  parametersIn: [String!]
+  parametersNotIn: [String!]
+  parametersGT: String
+  parametersGTE: String
+  parametersLT: String
+  parametersLTE: String
+  parametersContains: String
+  parametersHasPrefix: String
+  parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
+  parametersEqualFold: String
+  parametersContainsFold: String
   """
   run_on_schedule field predicates
   """
@@ -5623,6 +5649,11 @@ input UpdateScheduledTaskInput {
   """
   runOnFirstHostCallback: Boolean
   """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  clearParameters: Boolean
+  """
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
@@ -6140,6 +6171,11 @@ type Mutation {
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # ScheduledTask
+    ###
+    createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
 }
 extend type Query {
   assets(
@@ -6389,6 +6425,25 @@ extend type Query {
     """Filtering options for Builders returned from the connection."""
     where: BuilderWhereInput
   ): BuilderConnection! @requireRole(role: ADMIN)
+  scheduledTasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for ScheduledTasks returned from the connection."""
+    orderBy: [ScheduledTaskOrder!]
+
+    """Filtering options for ScheduledTasks returned from the connection."""
+    where: ScheduledTaskWhereInput
+  ): ScheduledTaskConnection! @requireRole(role: USER)
   me: User!
 }
 scalar Time

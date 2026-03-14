@@ -71,4 +71,9 @@ type Mutation {
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # ScheduledTask
+    ###
+    createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
 }

@@ -12827,6 +12827,7 @@ type ScheduledTaskMutation struct {
 	description                *string
 	run_on_new_beacon_callback *bool
 	run_on_first_host_callback *bool
+	parameters                 *string
 	run_on_schedule            *string
 	clearedFields              map[string]struct{}
 	tome                       *int
@@ -13153,6 +13154,55 @@ func (m *ScheduledTaskMutation) ResetRunOnFirstHostCallback() {
 	m.run_on_first_host_callback = nil
 }
 
+// SetParameters sets the "parameters" field.
+func (m *ScheduledTaskMutation) SetParameters(s string) {
+	m.parameters = &s
+}
+
+// Parameters returns the value of the "parameters" field in the mutation.
+func (m *ScheduledTaskMutation) Parameters() (r string, exists bool) {
+	v := m.parameters
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParameters returns the old "parameters" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldParameters(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParameters requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParameters: %w", err)
+	}
+	return oldValue.Parameters, nil
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (m *ScheduledTaskMutation) ClearParameters() {
+	m.parameters = nil
+	m.clearedFields[scheduledtask.FieldParameters] = struct{}{}
+}
+
+// ParametersCleared returns if the "parameters" field was cleared in this mutation.
+func (m *ScheduledTaskMutation) ParametersCleared() bool {
+	_, ok := m.clearedFields[scheduledtask.FieldParameters]
+	return ok
+}
+
+// ResetParameters resets all changes to the "parameters" field.
+func (m *ScheduledTaskMutation) ResetParameters() {
+	m.parameters = nil
+	delete(m.clearedFields, scheduledtask.FieldParameters)
+}
+
 // SetRunOnSchedule sets the "run_on_schedule" field.
 func (m *ScheduledTaskMutation) SetRunOnSchedule(s string) {
 	m.run_on_schedule = &s
@@ -13316,7 +13366,7 @@ func (m *ScheduledTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScheduledTaskMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, scheduledtask.FieldCreatedAt)
 	}
@@ -13334,6 +13384,9 @@ func (m *ScheduledTaskMutation) Fields() []string {
 	}
 	if m.run_on_first_host_callback != nil {
 		fields = append(fields, scheduledtask.FieldRunOnFirstHostCallback)
+	}
+	if m.parameters != nil {
+		fields = append(fields, scheduledtask.FieldParameters)
 	}
 	if m.run_on_schedule != nil {
 		fields = append(fields, scheduledtask.FieldRunOnSchedule)
@@ -13358,6 +13411,8 @@ func (m *ScheduledTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.RunOnNewBeaconCallback()
 	case scheduledtask.FieldRunOnFirstHostCallback:
 		return m.RunOnFirstHostCallback()
+	case scheduledtask.FieldParameters:
+		return m.Parameters()
 	case scheduledtask.FieldRunOnSchedule:
 		return m.RunOnSchedule()
 	}
@@ -13381,6 +13436,8 @@ func (m *ScheduledTaskMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldRunOnNewBeaconCallback(ctx)
 	case scheduledtask.FieldRunOnFirstHostCallback:
 		return m.OldRunOnFirstHostCallback(ctx)
+	case scheduledtask.FieldParameters:
+		return m.OldParameters(ctx)
 	case scheduledtask.FieldRunOnSchedule:
 		return m.OldRunOnSchedule(ctx)
 	}
@@ -13434,6 +13491,13 @@ func (m *ScheduledTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRunOnFirstHostCallback(v)
 		return nil
+	case scheduledtask.FieldParameters:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParameters(v)
+		return nil
 	case scheduledtask.FieldRunOnSchedule:
 		v, ok := value.(string)
 		if !ok {
@@ -13470,7 +13534,11 @@ func (m *ScheduledTaskMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ScheduledTaskMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(scheduledtask.FieldParameters) {
+		fields = append(fields, scheduledtask.FieldParameters)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -13483,6 +13551,11 @@ func (m *ScheduledTaskMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ScheduledTaskMutation) ClearField(name string) error {
+	switch name {
+	case scheduledtask.FieldParameters:
+		m.ClearParameters()
+		return nil
+	}
 	return fmt.Errorf("unknown ScheduledTask nullable field %s", name)
 }
 
@@ -13507,6 +13580,9 @@ func (m *ScheduledTaskMutation) ResetField(name string) error {
 		return nil
 	case scheduledtask.FieldRunOnFirstHostCallback:
 		m.ResetRunOnFirstHostCallback()
+		return nil
+	case scheduledtask.FieldParameters:
+		m.ResetParameters()
 		return nil
 	case scheduledtask.FieldRunOnSchedule:
 		m.ResetRunOnSchedule()

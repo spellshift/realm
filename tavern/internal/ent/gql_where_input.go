@@ -6695,6 +6695,23 @@ type ScheduledTaskWhereInput struct {
 	RunOnFirstHostCallback    *bool `json:"runOnFirstHostCallback,omitempty"`
 	RunOnFirstHostCallbackNEQ *bool `json:"runOnFirstHostCallbackNEQ,omitempty"`
 
+	// "parameters" field predicates.
+	Parameters             *string  `json:"parameters,omitempty"`
+	ParametersNEQ          *string  `json:"parametersNEQ,omitempty"`
+	ParametersIn           []string `json:"parametersIn,omitempty"`
+	ParametersNotIn        []string `json:"parametersNotIn,omitempty"`
+	ParametersGT           *string  `json:"parametersGT,omitempty"`
+	ParametersGTE          *string  `json:"parametersGTE,omitempty"`
+	ParametersLT           *string  `json:"parametersLT,omitempty"`
+	ParametersLTE          *string  `json:"parametersLTE,omitempty"`
+	ParametersContains     *string  `json:"parametersContains,omitempty"`
+	ParametersHasPrefix    *string  `json:"parametersHasPrefix,omitempty"`
+	ParametersHasSuffix    *string  `json:"parametersHasSuffix,omitempty"`
+	ParametersIsNil        bool     `json:"parametersIsNil,omitempty"`
+	ParametersNotNil       bool     `json:"parametersNotNil,omitempty"`
+	ParametersEqualFold    *string  `json:"parametersEqualFold,omitempty"`
+	ParametersContainsFold *string  `json:"parametersContainsFold,omitempty"`
+
 	// "run_on_schedule" field predicates.
 	RunOnSchedule             *string  `json:"runOnSchedule,omitempty"`
 	RunOnScheduleNEQ          *string  `json:"runOnScheduleNEQ,omitempty"`
@@ -6951,6 +6968,51 @@ func (i *ScheduledTaskWhereInput) P() (predicate.ScheduledTask, error) {
 	}
 	if i.RunOnFirstHostCallbackNEQ != nil {
 		predicates = append(predicates, scheduledtask.RunOnFirstHostCallbackNEQ(*i.RunOnFirstHostCallbackNEQ))
+	}
+	if i.Parameters != nil {
+		predicates = append(predicates, scheduledtask.ParametersEQ(*i.Parameters))
+	}
+	if i.ParametersNEQ != nil {
+		predicates = append(predicates, scheduledtask.ParametersNEQ(*i.ParametersNEQ))
+	}
+	if len(i.ParametersIn) > 0 {
+		predicates = append(predicates, scheduledtask.ParametersIn(i.ParametersIn...))
+	}
+	if len(i.ParametersNotIn) > 0 {
+		predicates = append(predicates, scheduledtask.ParametersNotIn(i.ParametersNotIn...))
+	}
+	if i.ParametersGT != nil {
+		predicates = append(predicates, scheduledtask.ParametersGT(*i.ParametersGT))
+	}
+	if i.ParametersGTE != nil {
+		predicates = append(predicates, scheduledtask.ParametersGTE(*i.ParametersGTE))
+	}
+	if i.ParametersLT != nil {
+		predicates = append(predicates, scheduledtask.ParametersLT(*i.ParametersLT))
+	}
+	if i.ParametersLTE != nil {
+		predicates = append(predicates, scheduledtask.ParametersLTE(*i.ParametersLTE))
+	}
+	if i.ParametersContains != nil {
+		predicates = append(predicates, scheduledtask.ParametersContains(*i.ParametersContains))
+	}
+	if i.ParametersHasPrefix != nil {
+		predicates = append(predicates, scheduledtask.ParametersHasPrefix(*i.ParametersHasPrefix))
+	}
+	if i.ParametersHasSuffix != nil {
+		predicates = append(predicates, scheduledtask.ParametersHasSuffix(*i.ParametersHasSuffix))
+	}
+	if i.ParametersIsNil {
+		predicates = append(predicates, scheduledtask.ParametersIsNil())
+	}
+	if i.ParametersNotNil {
+		predicates = append(predicates, scheduledtask.ParametersNotNil())
+	}
+	if i.ParametersEqualFold != nil {
+		predicates = append(predicates, scheduledtask.ParametersEqualFold(*i.ParametersEqualFold))
+	}
+	if i.ParametersContainsFold != nil {
+		predicates = append(predicates, scheduledtask.ParametersContainsFold(*i.ParametersContainsFold))
 	}
 	if i.RunOnSchedule != nil {
 		predicates = append(predicates, scheduledtask.RunOnScheduleEQ(*i.RunOnSchedule))
