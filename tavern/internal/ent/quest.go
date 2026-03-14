@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
@@ -34,11 +35,12 @@ type Quest struct {
 	EldritchAtCreation string `json:"eldritch_at_creation,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
-	Edges         QuestEdges `json:"edges"`
-	quest_tome    *int
-	quest_bundle  *int
-	quest_creator *int
-	selectValues  sql.SelectValues
+	Edges                 QuestEdges `json:"edges"`
+	quest_tome            *int
+	quest_bundle          *int
+	quest_creator         *int
+	scheduled_task_quests *int
+	selectValues          sql.SelectValues
 }
 
 // QuestEdges holds the relations/edges for other nodes in the graph.
@@ -51,11 +53,13 @@ type QuestEdges struct {
 	Tasks []*Task `json:"tasks,omitempty"`
 	// User that created the quest if available.
 	Creator *User `json:"creator,omitempty"`
+	// The scheduled task that created this quest, if any.
+	ScheduledTask *ScheduledTask `json:"scheduled_task,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
 	namedTasks map[string][]*Task
 }
@@ -102,6 +106,17 @@ func (e QuestEdges) CreatorOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "creator"}
 }
 
+// ScheduledTaskOrErr returns the ScheduledTask value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e QuestEdges) ScheduledTaskOrErr() (*ScheduledTask, error) {
+	if e.ScheduledTask != nil {
+		return e.ScheduledTask, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: scheduledtask.Label}
+	}
+	return nil, &NotLoadedError{edge: "scheduled_task"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Quest) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -118,6 +133,8 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 		case quest.ForeignKeys[1]: // quest_bundle
 			values[i] = new(sql.NullInt64)
 		case quest.ForeignKeys[2]: // quest_creator
+			values[i] = new(sql.NullInt64)
+		case quest.ForeignKeys[3]: // scheduled_task_quests
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -197,6 +214,13 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 				q.quest_creator = new(int)
 				*q.quest_creator = int(value.Int64)
 			}
+		case quest.ForeignKeys[3]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field scheduled_task_quests", value)
+			} else if value.Valid {
+				q.scheduled_task_quests = new(int)
+				*q.scheduled_task_quests = int(value.Int64)
+			}
 		default:
 			q.selectValues.Set(columns[i], values[i])
 		}
@@ -228,6 +252,11 @@ func (q *Quest) QueryTasks() *TaskQuery {
 // QueryCreator queries the "creator" edge of the Quest entity.
 func (q *Quest) QueryCreator() *UserQuery {
 	return NewQuestClient(q.config).QueryCreator(q)
+}
+
+// QueryScheduledTask queries the "scheduled_task" edge of the Quest entity.
+func (q *Quest) QueryScheduledTask() *ScheduledTaskQuery {
+	return NewQuestClient(q.config).QueryScheduledTask(q)
 }
 
 // Update returns a builder for updating this Quest.

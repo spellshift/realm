@@ -45,6 +45,9 @@ type Quest func(*sql.Selector)
 // Repository is the predicate function for repository builders.
 type Repository func(*sql.Selector)
 
+// ScheduledTask is the predicate function for scheduledtask builders.
+type ScheduledTask func(*sql.Selector)
+
 // Screenshot is the predicate function for screenshot builders.
 type Screenshot func(*sql.Selector)
 
