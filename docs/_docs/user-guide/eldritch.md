@@ -1501,6 +1501,6 @@ The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This us
 
 ### time.sleep
 
-`time.sleep(secs: int)`
+`time.sleep(secs: float)`
 
 The **time.sleep** method sleeps the task for the given number of seconds.
