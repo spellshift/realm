@@ -27,6 +27,8 @@ const (
 	FieldSetupscript = "setupscript"
 	// FieldPostbuildscript holds the string denoting the postbuildscript field in the database.
 	FieldPostbuildscript = "postbuildscript"
+	// FieldUnique holds the string denoting the unique field in the database.
+	FieldUnique = "unique"
 	// FieldTomes holds the string denoting the tomes field in the database.
 	FieldTomes = "tomes"
 	// EdgeBuildtasks holds the string denoting the buildtasks edge name in mutations.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldPrebuildscript,
 	FieldSetupscript,
 	FieldPostbuildscript,
+	FieldUnique,
 	FieldTomes,
 }
 
@@ -116,6 +119,11 @@ func BySetupscript(opts ...sql.OrderTermOption) OrderOption {
 // ByPostbuildscript orders the results by the postbuildscript field.
 func ByPostbuildscript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPostbuildscript, opts...).ToFunc()
+}
+
+// ByUnique orders the results by the unique field.
+func ByUnique(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnique, opts...).ToFunc()
 }
 
 // ByBuildtasksCount orders the results by buildtasks count.

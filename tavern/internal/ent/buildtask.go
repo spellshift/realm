@@ -52,6 +52,8 @@ type BuildTask struct {
 	ArtifactPath string `json:"artifact_path,omitempty"`
 	// The setup script executed inside the build container.
 	Setupscript string `json:"setupscript,omitempty"`
+	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+	Unique string `json:"unique,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildTaskQuery when eager-loading is set.
 	Edges               BuildTaskEdges `json:"edges"`
@@ -120,7 +122,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case buildtask.FieldID, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
-		case buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldSetupscript:
+		case buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldSetupscript, buildtask.FieldUnique:
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -242,6 +244,12 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				bt.Setupscript = value.String
 			}
+		case buildtask.FieldUnique:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unique", values[i])
+			} else if value.Valid {
+				bt.Unique = value.String
+			}
 		case buildtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field build_task_builder", value)
@@ -360,6 +368,9 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("setupscript=")
 	builder.WriteString(bt.Setupscript)
+	builder.WriteString(", ")
+	builder.WriteString("unique=")
+	builder.WriteString(bt.Unique)
 	builder.WriteByte(')')
 	return builder.String()
 }

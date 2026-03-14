@@ -83,6 +83,11 @@ func Postbuildscript(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPostbuildscript, v))
 }
 
+// Unique applies equality check predicate on the "unique" field. It's identical to UniqueEQ.
+func Unique(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldUnique, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldName, v))
@@ -471,6 +476,81 @@ func PostbuildscriptEqualFold(v string) predicate.BuildProfile {
 // PostbuildscriptContainsFold applies the ContainsFold predicate on the "postbuildscript" field.
 func PostbuildscriptContainsFold(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldContainsFold(FieldPostbuildscript, v))
+}
+
+// UniqueEQ applies the EQ predicate on the "unique" field.
+func UniqueEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldUnique, v))
+}
+
+// UniqueNEQ applies the NEQ predicate on the "unique" field.
+func UniqueNEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNEQ(FieldUnique, v))
+}
+
+// UniqueIn applies the In predicate on the "unique" field.
+func UniqueIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIn(FieldUnique, vs...))
+}
+
+// UniqueNotIn applies the NotIn predicate on the "unique" field.
+func UniqueNotIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotIn(FieldUnique, vs...))
+}
+
+// UniqueGT applies the GT predicate on the "unique" field.
+func UniqueGT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGT(FieldUnique, v))
+}
+
+// UniqueGTE applies the GTE predicate on the "unique" field.
+func UniqueGTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGTE(FieldUnique, v))
+}
+
+// UniqueLT applies the LT predicate on the "unique" field.
+func UniqueLT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLT(FieldUnique, v))
+}
+
+// UniqueLTE applies the LTE predicate on the "unique" field.
+func UniqueLTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLTE(FieldUnique, v))
+}
+
+// UniqueContains applies the Contains predicate on the "unique" field.
+func UniqueContains(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContains(FieldUnique, v))
+}
+
+// UniqueHasPrefix applies the HasPrefix predicate on the "unique" field.
+func UniqueHasPrefix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasPrefix(FieldUnique, v))
+}
+
+// UniqueHasSuffix applies the HasSuffix predicate on the "unique" field.
+func UniqueHasSuffix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasSuffix(FieldUnique, v))
+}
+
+// UniqueIsNil applies the IsNil predicate on the "unique" field.
+func UniqueIsNil() predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIsNull(FieldUnique))
+}
+
+// UniqueNotNil applies the NotNil predicate on the "unique" field.
+func UniqueNotNil() predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotNull(FieldUnique))
+}
+
+// UniqueEqualFold applies the EqualFold predicate on the "unique" field.
+func UniqueEqualFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEqualFold(FieldUnique, v))
+}
+
+// UniqueContainsFold applies the ContainsFold predicate on the "unique" field.
+func UniqueContainsFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContainsFold(FieldUnique, v))
 }
 
 // TomesIsNil applies the IsNil predicate on the "tomes" field.

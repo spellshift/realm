@@ -475,7 +475,7 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "transports", "prebuildscript", "setupscript", "postbuildscript", "tomes"}
+	fieldsInOrder := [...]string{"name", "description", "transports", "prebuildscript", "setupscript", "postbuildscript", "tomes", "unique"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -531,6 +531,13 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 				return it, err
 			}
 			it.Tomes = data
+		case "unique":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unique"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unique = data
 		}
 	}
 
@@ -544,7 +551,7 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "profileID", "transports", "tomes", "artifactPath", "setupScript", "preBuildScript", "postBuildScript"}
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "profileID", "transports", "tomes", "artifactPath", "setupScript", "preBuildScript", "postBuildScript", "unique"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -621,6 +628,13 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.PostBuildScript = data
+		case "unique":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unique"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Unique = data
 		}
 	}
 

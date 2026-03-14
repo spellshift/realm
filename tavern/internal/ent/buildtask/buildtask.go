@@ -49,6 +49,8 @@ const (
 	FieldArtifactPath = "artifact_path"
 	// FieldSetupscript holds the string denoting the setupscript field in the database.
 	FieldSetupscript = "setupscript"
+	// FieldUnique holds the string denoting the unique field in the database.
+	FieldUnique = "unique"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
 	// EdgeProfile holds the string denoting the profile edge name in mutations.
@@ -98,6 +100,7 @@ var Columns = []string{
 	FieldExitCode,
 	FieldArtifactPath,
 	FieldSetupscript,
+	FieldUnique,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
@@ -249,6 +252,11 @@ func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 // BySetupscript orders the results by the setupscript field.
 func BySetupscript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSetupscript, opts...).ToFunc()
+}
+
+// ByUnique orders the results by the unique field.
+func ByUnique(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnique, opts...).ToFunc()
 }
 
 // ByBuilderField orders the results by builder field.

@@ -103,6 +103,12 @@ func (BuildTask) Fields() []ent.Field {
 				dialect.MySQL: "LONGTEXT",
 			}).
 			Comment("The setup script executed inside the build container."),
+		field.Text("unique").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."),
 	}
 }
 

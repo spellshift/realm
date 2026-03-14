@@ -148,6 +148,19 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			})
 		}
 
+		envVars := []string{
+			fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes)),
+			fmt.Sprintf("ARTIFACT_PATH=%s", string(claimedTask.ArtifactPath)),
+		}
+
+		uniqueStr := claimedTask.Unique
+		if uniqueStr == "" {
+			uniqueStr = profile.Unique
+		}
+		if uniqueStr != "" {
+			envVars = append(envVars, fmt.Sprintf("IMIX_UNIQUE=%s", uniqueStr))
+		}
+
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
 			Id:              int64(claimedTask.ID),
 			TargetOs:        claimedTask.TargetOs.String(),
@@ -157,11 +170,8 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			PreBuildScript:  profile.Prebuildscript,
 			PostBuildScript: profile.Postbuildscript,
 			SetupScript:     claimedTask.Setupscript,
-			Env:             []string{
-				fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes)),
-				fmt.Sprintf("ARTIFACT_PATH=%s", string(claimedTask.ArtifactPath)),
-			},
-			Tomes: protoTomes,
+			Env:             envVars,
+			Tomes:           protoTomes,
 		})
 	}
 

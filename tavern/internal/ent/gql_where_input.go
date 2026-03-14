@@ -1176,6 +1176,23 @@ type BuildProfileWhereInput struct {
 	PostbuildscriptEqualFold    *string  `json:"postbuildscriptEqualFold,omitempty"`
 	PostbuildscriptContainsFold *string  `json:"postbuildscriptContainsFold,omitempty"`
 
+	// "unique" field predicates.
+	Unique             *string  `json:"unique,omitempty"`
+	UniqueNEQ          *string  `json:"uniqueNEQ,omitempty"`
+	UniqueIn           []string `json:"uniqueIn,omitempty"`
+	UniqueNotIn        []string `json:"uniqueNotIn,omitempty"`
+	UniqueGT           *string  `json:"uniqueGT,omitempty"`
+	UniqueGTE          *string  `json:"uniqueGTE,omitempty"`
+	UniqueLT           *string  `json:"uniqueLT,omitempty"`
+	UniqueLTE          *string  `json:"uniqueLTE,omitempty"`
+	UniqueContains     *string  `json:"uniqueContains,omitempty"`
+	UniqueHasPrefix    *string  `json:"uniqueHasPrefix,omitempty"`
+	UniqueHasSuffix    *string  `json:"uniqueHasSuffix,omitempty"`
+	UniqueIsNil        bool     `json:"uniqueIsNil,omitempty"`
+	UniqueNotNil       bool     `json:"uniqueNotNil,omitempty"`
+	UniqueEqualFold    *string  `json:"uniqueEqualFold,omitempty"`
+	UniqueContainsFold *string  `json:"uniqueContainsFold,omitempty"`
+
 	// "buildtasks" edge predicates.
 	HasBuildtasks     *bool                  `json:"hasBuildtasks,omitempty"`
 	HasBuildtasksWith []*BuildTaskWhereInput `json:"hasBuildtasksWith,omitempty"`
@@ -1510,6 +1527,51 @@ func (i *BuildProfileWhereInput) P() (predicate.BuildProfile, error) {
 	if i.PostbuildscriptContainsFold != nil {
 		predicates = append(predicates, buildprofile.PostbuildscriptContainsFold(*i.PostbuildscriptContainsFold))
 	}
+	if i.Unique != nil {
+		predicates = append(predicates, buildprofile.UniqueEQ(*i.Unique))
+	}
+	if i.UniqueNEQ != nil {
+		predicates = append(predicates, buildprofile.UniqueNEQ(*i.UniqueNEQ))
+	}
+	if len(i.UniqueIn) > 0 {
+		predicates = append(predicates, buildprofile.UniqueIn(i.UniqueIn...))
+	}
+	if len(i.UniqueNotIn) > 0 {
+		predicates = append(predicates, buildprofile.UniqueNotIn(i.UniqueNotIn...))
+	}
+	if i.UniqueGT != nil {
+		predicates = append(predicates, buildprofile.UniqueGT(*i.UniqueGT))
+	}
+	if i.UniqueGTE != nil {
+		predicates = append(predicates, buildprofile.UniqueGTE(*i.UniqueGTE))
+	}
+	if i.UniqueLT != nil {
+		predicates = append(predicates, buildprofile.UniqueLT(*i.UniqueLT))
+	}
+	if i.UniqueLTE != nil {
+		predicates = append(predicates, buildprofile.UniqueLTE(*i.UniqueLTE))
+	}
+	if i.UniqueContains != nil {
+		predicates = append(predicates, buildprofile.UniqueContains(*i.UniqueContains))
+	}
+	if i.UniqueHasPrefix != nil {
+		predicates = append(predicates, buildprofile.UniqueHasPrefix(*i.UniqueHasPrefix))
+	}
+	if i.UniqueHasSuffix != nil {
+		predicates = append(predicates, buildprofile.UniqueHasSuffix(*i.UniqueHasSuffix))
+	}
+	if i.UniqueIsNil {
+		predicates = append(predicates, buildprofile.UniqueIsNil())
+	}
+	if i.UniqueNotNil {
+		predicates = append(predicates, buildprofile.UniqueNotNil())
+	}
+	if i.UniqueEqualFold != nil {
+		predicates = append(predicates, buildprofile.UniqueEqualFold(*i.UniqueEqualFold))
+	}
+	if i.UniqueContainsFold != nil {
+		predicates = append(predicates, buildprofile.UniqueContainsFold(*i.UniqueContainsFold))
+	}
 
 	if i.HasBuildtasks != nil {
 		p := buildprofile.HasBuildtasks()
@@ -1738,6 +1800,23 @@ type BuildTaskWhereInput struct {
 	SetupscriptNotNil       bool     `json:"setupscriptNotNil,omitempty"`
 	SetupscriptEqualFold    *string  `json:"setupscriptEqualFold,omitempty"`
 	SetupscriptContainsFold *string  `json:"setupscriptContainsFold,omitempty"`
+
+	// "unique" field predicates.
+	Unique             *string  `json:"unique,omitempty"`
+	UniqueNEQ          *string  `json:"uniqueNEQ,omitempty"`
+	UniqueIn           []string `json:"uniqueIn,omitempty"`
+	UniqueNotIn        []string `json:"uniqueNotIn,omitempty"`
+	UniqueGT           *string  `json:"uniqueGT,omitempty"`
+	UniqueGTE          *string  `json:"uniqueGTE,omitempty"`
+	UniqueLT           *string  `json:"uniqueLT,omitempty"`
+	UniqueLTE          *string  `json:"uniqueLTE,omitempty"`
+	UniqueContains     *string  `json:"uniqueContains,omitempty"`
+	UniqueHasPrefix    *string  `json:"uniqueHasPrefix,omitempty"`
+	UniqueHasSuffix    *string  `json:"uniqueHasSuffix,omitempty"`
+	UniqueIsNil        bool     `json:"uniqueIsNil,omitempty"`
+	UniqueNotNil       bool     `json:"uniqueNotNil,omitempty"`
+	UniqueEqualFold    *string  `json:"uniqueEqualFold,omitempty"`
+	UniqueContainsFold *string  `json:"uniqueContainsFold,omitempty"`
 
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
@@ -2305,6 +2384,51 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if i.SetupscriptContainsFold != nil {
 		predicates = append(predicates, buildtask.SetupscriptContainsFold(*i.SetupscriptContainsFold))
+	}
+	if i.Unique != nil {
+		predicates = append(predicates, buildtask.UniqueEQ(*i.Unique))
+	}
+	if i.UniqueNEQ != nil {
+		predicates = append(predicates, buildtask.UniqueNEQ(*i.UniqueNEQ))
+	}
+	if len(i.UniqueIn) > 0 {
+		predicates = append(predicates, buildtask.UniqueIn(i.UniqueIn...))
+	}
+	if len(i.UniqueNotIn) > 0 {
+		predicates = append(predicates, buildtask.UniqueNotIn(i.UniqueNotIn...))
+	}
+	if i.UniqueGT != nil {
+		predicates = append(predicates, buildtask.UniqueGT(*i.UniqueGT))
+	}
+	if i.UniqueGTE != nil {
+		predicates = append(predicates, buildtask.UniqueGTE(*i.UniqueGTE))
+	}
+	if i.UniqueLT != nil {
+		predicates = append(predicates, buildtask.UniqueLT(*i.UniqueLT))
+	}
+	if i.UniqueLTE != nil {
+		predicates = append(predicates, buildtask.UniqueLTE(*i.UniqueLTE))
+	}
+	if i.UniqueContains != nil {
+		predicates = append(predicates, buildtask.UniqueContains(*i.UniqueContains))
+	}
+	if i.UniqueHasPrefix != nil {
+		predicates = append(predicates, buildtask.UniqueHasPrefix(*i.UniqueHasPrefix))
+	}
+	if i.UniqueHasSuffix != nil {
+		predicates = append(predicates, buildtask.UniqueHasSuffix(*i.UniqueHasSuffix))
+	}
+	if i.UniqueIsNil {
+		predicates = append(predicates, buildtask.UniqueIsNil())
+	}
+	if i.UniqueNotNil {
+		predicates = append(predicates, buildtask.UniqueNotNil())
+	}
+	if i.UniqueEqualFold != nil {
+		predicates = append(predicates, buildtask.UniqueEqualFold(*i.UniqueEqualFold))
+	}
+	if i.UniqueContainsFold != nil {
+		predicates = append(predicates, buildtask.UniqueContainsFold(*i.UniqueContainsFold))
 	}
 
 	if i.HasBuilder != nil {

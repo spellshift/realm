@@ -213,6 +213,20 @@ func (btc *BuildTaskCreate) SetNillableSetupscript(s *string) *BuildTaskCreate {
 	return btc
 }
 
+// SetUnique sets the "unique" field.
+func (btc *BuildTaskCreate) SetUnique(s string) *BuildTaskCreate {
+	btc.mutation.SetUnique(s)
+	return btc
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableUnique(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetUnique(*s)
+	}
+	return btc
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btc *BuildTaskCreate) SetBuilderID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderID(id)
@@ -456,6 +470,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.Setupscript(); ok {
 		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
 		_node.Setupscript = value
+	}
+	if value, ok := btc.mutation.Unique(); ok {
+		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
+		_node.Unique = value
 	}
 	if nodes := btc.mutation.BuilderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -794,6 +812,24 @@ func (u *BuildTaskUpsert) ClearSetupscript() *BuildTaskUpsert {
 	return u
 }
 
+// SetUnique sets the "unique" field.
+func (u *BuildTaskUpsert) SetUnique(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldUnique, v)
+	return u
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateUnique() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldUnique)
+	return u
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildTaskUpsert) ClearUnique() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldUnique)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1109,6 +1145,27 @@ func (u *BuildTaskUpsertOne) UpdateSetupscript() *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) ClearSetupscript() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearSetupscript()
+	})
+}
+
+// SetUnique sets the "unique" field.
+func (u *BuildTaskUpsertOne) SetUnique(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetUnique(v)
+	})
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateUnique() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateUnique()
+	})
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildTaskUpsertOne) ClearUnique() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearUnique()
 	})
 }
 
@@ -1593,6 +1650,27 @@ func (u *BuildTaskUpsertBulk) UpdateSetupscript() *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) ClearSetupscript() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearSetupscript()
+	})
+}
+
+// SetUnique sets the "unique" field.
+func (u *BuildTaskUpsertBulk) SetUnique(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetUnique(v)
+	})
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateUnique() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateUnique()
+	})
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildTaskUpsertBulk) ClearUnique() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearUnique()
 	})
 }
 

@@ -32,6 +32,8 @@ type BuildProfile struct {
 	Setupscript string `json:"setupscript,omitempty"`
 	// Bash script to run after build command
 	Postbuildscript string `json:"postbuildscript,omitempty"`
+	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+	Unique string `json:"unique,omitempty"`
 	// The tomes to include in builds using this profile.
 	Tomes []builderpb.BuildProfileTome `json:"tomes,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -71,7 +73,7 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldSetupscript, buildprofile.FieldPostbuildscript:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldSetupscript, buildprofile.FieldPostbuildscript, buildprofile.FieldUnique:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -137,6 +139,12 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field postbuildscript", values[i])
 			} else if value.Valid {
 				bp.Postbuildscript = value.String
+			}
+		case buildprofile.FieldUnique:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field unique", values[i])
+			} else if value.Valid {
+				bp.Unique = value.String
 			}
 		case buildprofile.FieldTomes:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -207,6 +215,9 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("postbuildscript=")
 	builder.WriteString(bp.Postbuildscript)
+	builder.WriteString(", ")
+	builder.WriteString("unique=")
+	builder.WriteString(bp.Unique)
 	builder.WriteString(", ")
 	builder.WriteString("tomes=")
 	builder.WriteString(fmt.Sprintf("%v", bp.Tomes))

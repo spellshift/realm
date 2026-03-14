@@ -740,6 +740,11 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, buildprofile.FieldPostbuildscript)
 				fieldSeen[buildprofile.FieldPostbuildscript] = struct{}{}
 			}
+		case "unique":
+			if _, ok := fieldSeen[buildprofile.FieldUnique]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldUnique)
+				fieldSeen[buildprofile.FieldUnique] = struct{}{}
+			}
 		case "tomes":
 			if _, ok := fieldSeen[buildprofile.FieldTomes]; !ok {
 				selectedFields = append(selectedFields, buildprofile.FieldTomes)
@@ -942,6 +947,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldSetupscript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldSetupscript)
 				fieldSeen[buildtask.FieldSetupscript] = struct{}{}
+			}
+		case "unique":
+			if _, ok := fieldSeen[buildtask.FieldUnique]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldUnique)
+				fieldSeen[buildtask.FieldUnique] = struct{}{}
 			}
 		case "id":
 		case "__typename":

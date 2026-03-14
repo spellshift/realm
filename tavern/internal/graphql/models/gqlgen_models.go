@@ -67,6 +67,8 @@ type CreateBuildProfileInput struct {
 	Postbuildscript string `json:"postbuildscript"`
 	// List of tomes to include in builds using this profile.
 	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
+	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+	Unique *string `json:"unique,omitempty"`
 }
 
 // Input for creating a new build task.
@@ -91,6 +93,8 @@ type CreateBuildTaskInput struct {
 	PreBuildScript *string `json:"preBuildScript,omitempty"`
 	// Script to run after the build command. Overrides profile postBuildScript if both are set.
 	PostBuildScript *string `json:"postBuildScript,omitempty"`
+	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+	Unique *string `json:"unique,omitempty"`
 }
 
 type ImportRepositoryInput struct {

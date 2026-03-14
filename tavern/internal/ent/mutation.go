@@ -2135,6 +2135,7 @@ type BuildProfileMutation struct {
 	prebuildscript    *string
 	setupscript       *string
 	postbuildscript   *string
+	_unique           *string
 	tomes             *[]builderpb.BuildProfileTome
 	appendtomes       []builderpb.BuildProfileTome
 	clearedFields     map[string]struct{}
@@ -2511,6 +2512,55 @@ func (m *BuildProfileMutation) ResetPostbuildscript() {
 	m.postbuildscript = nil
 }
 
+// SetUnique sets the "unique" field.
+func (m *BuildProfileMutation) SetUnique(s string) {
+	m._unique = &s
+}
+
+// Unique returns the value of the "unique" field in the mutation.
+func (m *BuildProfileMutation) Unique() (r string, exists bool) {
+	v := m._unique
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnique returns the old "unique" field's value of the BuildProfile entity.
+// If the BuildProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildProfileMutation) OldUnique(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnique is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnique requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnique: %w", err)
+	}
+	return oldValue.Unique, nil
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (m *BuildProfileMutation) ClearUnique() {
+	m._unique = nil
+	m.clearedFields[buildprofile.FieldUnique] = struct{}{}
+}
+
+// UniqueCleared returns if the "unique" field was cleared in this mutation.
+func (m *BuildProfileMutation) UniqueCleared() bool {
+	_, ok := m.clearedFields[buildprofile.FieldUnique]
+	return ok
+}
+
+// ResetUnique resets all changes to the "unique" field.
+func (m *BuildProfileMutation) ResetUnique() {
+	m._unique = nil
+	delete(m.clearedFields, buildprofile.FieldUnique)
+}
+
 // SetTomes sets the "tomes" field.
 func (m *BuildProfileMutation) SetTomes(bpt []builderpb.BuildProfileTome) {
 	m.tomes = &bpt
@@ -2664,7 +2714,7 @@ func (m *BuildProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildProfileMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.name != nil {
 		fields = append(fields, buildprofile.FieldName)
 	}
@@ -2685,6 +2735,9 @@ func (m *BuildProfileMutation) Fields() []string {
 	}
 	if m.postbuildscript != nil {
 		fields = append(fields, buildprofile.FieldPostbuildscript)
+	}
+	if m._unique != nil {
+		fields = append(fields, buildprofile.FieldUnique)
 	}
 	if m.tomes != nil {
 		fields = append(fields, buildprofile.FieldTomes)
@@ -2711,6 +2764,8 @@ func (m *BuildProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.Setupscript()
 	case buildprofile.FieldPostbuildscript:
 		return m.Postbuildscript()
+	case buildprofile.FieldUnique:
+		return m.Unique()
 	case buildprofile.FieldTomes:
 		return m.Tomes()
 	}
@@ -2736,6 +2791,8 @@ func (m *BuildProfileMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldSetupscript(ctx)
 	case buildprofile.FieldPostbuildscript:
 		return m.OldPostbuildscript(ctx)
+	case buildprofile.FieldUnique:
+		return m.OldUnique(ctx)
 	case buildprofile.FieldTomes:
 		return m.OldTomes(ctx)
 	}
@@ -2796,6 +2853,13 @@ func (m *BuildProfileMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPostbuildscript(v)
 		return nil
+	case buildprofile.FieldUnique:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnique(v)
+		return nil
 	case buildprofile.FieldTomes:
 		v, ok := value.([]builderpb.BuildProfileTome)
 		if !ok {
@@ -2833,6 +2897,9 @@ func (m *BuildProfileMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BuildProfileMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(buildprofile.FieldUnique) {
+		fields = append(fields, buildprofile.FieldUnique)
+	}
 	if m.FieldCleared(buildprofile.FieldTomes) {
 		fields = append(fields, buildprofile.FieldTomes)
 	}
@@ -2850,6 +2917,9 @@ func (m *BuildProfileMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BuildProfileMutation) ClearField(name string) error {
 	switch name {
+	case buildprofile.FieldUnique:
+		m.ClearUnique()
+		return nil
 	case buildprofile.FieldTomes:
 		m.ClearTomes()
 		return nil
@@ -2881,6 +2951,9 @@ func (m *BuildProfileMutation) ResetField(name string) error {
 		return nil
 	case buildprofile.FieldPostbuildscript:
 		m.ResetPostbuildscript()
+		return nil
+	case buildprofile.FieldUnique:
+		m.ResetUnique()
 		return nil
 	case buildprofile.FieldTomes:
 		m.ResetTomes()
@@ -2997,6 +3070,7 @@ type BuildTaskMutation struct {
 	addexit_code     *int
 	artifact_path    *string
 	setupscript      *string
+	_unique          *string
 	clearedFields    map[string]struct{}
 	builder          *int
 	clearedbuilder   bool
@@ -3812,6 +3886,55 @@ func (m *BuildTaskMutation) ResetSetupscript() {
 	delete(m.clearedFields, buildtask.FieldSetupscript)
 }
 
+// SetUnique sets the "unique" field.
+func (m *BuildTaskMutation) SetUnique(s string) {
+	m._unique = &s
+}
+
+// Unique returns the value of the "unique" field in the mutation.
+func (m *BuildTaskMutation) Unique() (r string, exists bool) {
+	v := m._unique
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnique returns the old "unique" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldUnique(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnique is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnique requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnique: %w", err)
+	}
+	return oldValue.Unique, nil
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (m *BuildTaskMutation) ClearUnique() {
+	m._unique = nil
+	m.clearedFields[buildtask.FieldUnique] = struct{}{}
+}
+
+// UniqueCleared returns if the "unique" field was cleared in this mutation.
+func (m *BuildTaskMutation) UniqueCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldUnique]
+	return ok
+}
+
+// ResetUnique resets all changes to the "unique" field.
+func (m *BuildTaskMutation) ResetUnique() {
+	m._unique = nil
+	delete(m.clearedFields, buildtask.FieldUnique)
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by id.
 func (m *BuildTaskMutation) SetBuilderID(id int) {
 	m.builder = &id
@@ -3963,7 +4086,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -4009,6 +4132,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.setupscript != nil {
 		fields = append(fields, buildtask.FieldSetupscript)
 	}
+	if m._unique != nil {
+		fields = append(fields, buildtask.FieldUnique)
+	}
 	return fields
 }
 
@@ -4047,6 +4173,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.ArtifactPath()
 	case buildtask.FieldSetupscript:
 		return m.Setupscript()
+	case buildtask.FieldUnique:
+		return m.Unique()
 	}
 	return nil, false
 }
@@ -4086,6 +4214,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldArtifactPath(ctx)
 	case buildtask.FieldSetupscript:
 		return m.OldSetupscript(ctx)
+	case buildtask.FieldUnique:
+		return m.OldUnique(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -4200,6 +4330,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSetupscript(v)
 		return nil
+	case buildtask.FieldUnique:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnique(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -4293,6 +4430,9 @@ func (m *BuildTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(buildtask.FieldSetupscript) {
 		fields = append(fields, buildtask.FieldSetupscript)
 	}
+	if m.FieldCleared(buildtask.FieldUnique) {
+		fields = append(fields, buildtask.FieldUnique)
+	}
 	return fields
 }
 
@@ -4330,6 +4470,9 @@ func (m *BuildTaskMutation) ClearField(name string) error {
 		return nil
 	case buildtask.FieldSetupscript:
 		m.ClearSetupscript()
+		return nil
+	case buildtask.FieldUnique:
+		m.ClearUnique()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask nullable field %s", name)
@@ -4383,6 +4526,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldSetupscript:
 		m.ResetSetupscript()
+		return nil
+	case buildtask.FieldUnique:
+		m.ResetUnique()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)

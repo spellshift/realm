@@ -614,6 +614,10 @@ type BuildProfile implements Node {
   """
   postbuildscript: String!
   """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
+  """
   The tomes to include in builds using this profile.
   """
   tomes: [BuildProfileTome!]
@@ -787,6 +791,24 @@ input BuildProfileWhereInput {
   postbuildscriptEqualFold: String
   postbuildscriptContainsFold: String
   """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
+  """
   buildtasks edge predicates
   """
   hasBuildtasks: Boolean
@@ -854,6 +876,10 @@ type BuildTask implements Node {
   The setup script executed inside the build container.
   """
   setupscript: String
+  """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
   """
   The builder assigned to execute this build task.
   """
@@ -1150,6 +1176,24 @@ input BuildTaskWhereInput {
   setupscriptNotNil: Boolean
   setupscriptEqualFold: String
   setupscriptContainsFold: String
+  """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
   """
   builder edge predicates
   """

@@ -126,6 +126,26 @@ func (bpu *BuildProfileUpdate) SetNillablePostbuildscript(s *string) *BuildProfi
 	return bpu
 }
 
+// SetUnique sets the "unique" field.
+func (bpu *BuildProfileUpdate) SetUnique(s string) *BuildProfileUpdate {
+	bpu.mutation.SetUnique(s)
+	return bpu
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillableUnique(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetUnique(*s)
+	}
+	return bpu
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (bpu *BuildProfileUpdate) ClearUnique() *BuildProfileUpdate {
+	bpu.mutation.ClearUnique()
+	return bpu
+}
+
 // SetTomes sets the "tomes" field.
 func (bpu *BuildProfileUpdate) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdate {
 	bpu.mutation.SetTomes(bpt)
@@ -259,6 +279,12 @@ func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bpu.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.Unique(); ok {
+		_spec.SetField(buildprofile.FieldUnique, field.TypeString, value)
+	}
+	if bpu.mutation.UniqueCleared() {
+		_spec.ClearField(buildprofile.FieldUnique, field.TypeString)
 	}
 	if value, ok := bpu.mutation.Tomes(); ok {
 		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
@@ -432,6 +458,26 @@ func (bpuo *BuildProfileUpdateOne) SetNillablePostbuildscript(s *string) *BuildP
 	return bpuo
 }
 
+// SetUnique sets the "unique" field.
+func (bpuo *BuildProfileUpdateOne) SetUnique(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetUnique(s)
+	return bpuo
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillableUnique(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetUnique(*s)
+	}
+	return bpuo
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (bpuo *BuildProfileUpdateOne) ClearUnique() *BuildProfileUpdateOne {
+	bpuo.mutation.ClearUnique()
+	return bpuo
+}
+
 // SetTomes sets the "tomes" field.
 func (bpuo *BuildProfileUpdateOne) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdateOne {
 	bpuo.mutation.SetTomes(bpt)
@@ -595,6 +641,12 @@ func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildPro
 	}
 	if value, ok := bpuo.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.Unique(); ok {
+		_spec.SetField(buildprofile.FieldUnique, field.TypeString, value)
+	}
+	if bpuo.mutation.UniqueCleared() {
+		_spec.ClearField(buildprofile.FieldUnique, field.TypeString)
 	}
 	if value, ok := bpuo.mutation.Tomes(); ok {
 		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)

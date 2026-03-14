@@ -110,6 +110,7 @@ type ComplexityRoot struct {
 		Setupscript     func(childComplexity int) int
 		Tomes           func(childComplexity int) int
 		Transports      func(childComplexity int) int
+		Unique          func(childComplexity int) int
 	}
 
 	BuildProfileConnection struct {
@@ -155,6 +156,7 @@ type ComplexityRoot struct {
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
+		Unique         func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -1019,6 +1021,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildProfile.Transports(childComplexity), true
 
+	case "BuildProfile.unique":
+		if e.complexity.BuildProfile.Unique == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Unique(childComplexity), true
+
 	case "BuildProfileConnection.edges":
 		if e.complexity.BuildProfileConnection.Edges == nil {
 			break
@@ -1228,6 +1237,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
+
+	case "BuildTask.unique":
+		if e.complexity.BuildTask.Unique == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Unique(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -4741,6 +4757,10 @@ type BuildProfile implements Node {
   """
   postbuildscript: String!
   """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
+  """
   The tomes to include in builds using this profile.
   """
   tomes: [BuildProfileTome!]
@@ -4914,6 +4934,24 @@ input BuildProfileWhereInput {
   postbuildscriptEqualFold: String
   postbuildscriptContainsFold: String
   """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
+  """
   buildtasks edge predicates
   """
   hasBuildtasks: Boolean
@@ -4981,6 +5019,10 @@ type BuildTask implements Node {
   The setup script executed inside the build container.
   """
   setupscript: String
+  """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
   """
   The builder assigned to execute this build task.
   """
@@ -5277,6 +5319,24 @@ input BuildTaskWhereInput {
   setupscriptNotNil: Boolean
   setupscriptEqualFold: String
   setupscriptContainsFold: String
+  """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
   """
   builder edge predicates
   """
@@ -10910,6 +10970,9 @@ input CreateBuildTaskInput {
 
   """Script to run after the build command. Overrides profile postBuildScript if both are set."""
   postBuildScript: String
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
 }
 
 """Input for creating a new build profile."""
@@ -10934,6 +10997,9 @@ input CreateBuildProfileInput {
 
   """List of tomes to include in builds using this profile."""
   tomes: [BuildProfileTomeInput!]
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
 }
 
 """Output returned when registering a new builder."""

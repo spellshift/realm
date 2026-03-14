@@ -122,6 +122,11 @@ func Setupscript(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldSetupscript, v))
 }
 
+// Unique applies equality check predicate on the "unique" field. It's identical to UniqueEQ.
+func Unique(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldUnique, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldCreatedAt, v))
@@ -885,6 +890,81 @@ func SetupscriptEqualFold(v string) predicate.BuildTask {
 // SetupscriptContainsFold applies the ContainsFold predicate on the "setupscript" field.
 func SetupscriptContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldSetupscript, v))
+}
+
+// UniqueEQ applies the EQ predicate on the "unique" field.
+func UniqueEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldUnique, v))
+}
+
+// UniqueNEQ applies the NEQ predicate on the "unique" field.
+func UniqueNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldUnique, v))
+}
+
+// UniqueIn applies the In predicate on the "unique" field.
+func UniqueIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldUnique, vs...))
+}
+
+// UniqueNotIn applies the NotIn predicate on the "unique" field.
+func UniqueNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldUnique, vs...))
+}
+
+// UniqueGT applies the GT predicate on the "unique" field.
+func UniqueGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldUnique, v))
+}
+
+// UniqueGTE applies the GTE predicate on the "unique" field.
+func UniqueGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldUnique, v))
+}
+
+// UniqueLT applies the LT predicate on the "unique" field.
+func UniqueLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldUnique, v))
+}
+
+// UniqueLTE applies the LTE predicate on the "unique" field.
+func UniqueLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldUnique, v))
+}
+
+// UniqueContains applies the Contains predicate on the "unique" field.
+func UniqueContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldUnique, v))
+}
+
+// UniqueHasPrefix applies the HasPrefix predicate on the "unique" field.
+func UniqueHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldUnique, v))
+}
+
+// UniqueHasSuffix applies the HasSuffix predicate on the "unique" field.
+func UniqueHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldUnique, v))
+}
+
+// UniqueIsNil applies the IsNil predicate on the "unique" field.
+func UniqueIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldUnique))
+}
+
+// UniqueNotNil applies the NotNil predicate on the "unique" field.
+func UniqueNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldUnique))
+}
+
+// UniqueEqualFold applies the EqualFold predicate on the "unique" field.
+func UniqueEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldUnique, v))
+}
+
+// UniqueContainsFold applies the ContainsFold predicate on the "unique" field.
+func UniqueContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldUnique, v))
 }
 
 // HasBuilder applies the HasEdge predicate on the "builder" edge.

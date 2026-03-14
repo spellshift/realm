@@ -500,6 +500,9 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	if setupScript != nil {
 		create.SetSetupscript(*setupScript)
 	}
+	if input.Unique != nil {
+		create.SetUnique(*input.Unique)
+	}
 
 	bt, err := create.Save(ctx)
 	if err != nil {
@@ -536,15 +539,20 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 		}
 	}
 
-	return r.client.BuildProfile.Create().
+	create := r.client.BuildProfile.Create().
 		SetName(input.Name).
 		SetDescription(input.Description).
 		SetTransports(transports).
 		SetTomes(tomes).
 		SetPrebuildscript(input.Prebuildscript).
 		SetSetupscript(input.Setupscript).
-		SetPostbuildscript(input.Postbuildscript).
-		Save(ctx)
+		SetPostbuildscript(input.Postbuildscript)
+
+	if input.Unique != nil {
+		create.SetUnique(*input.Unique)
+	}
+
+	return create.Save(ctx)
 }
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.

@@ -127,6 +127,9 @@ input CreateBuildTaskInput {
 
   """Script to run after the build command. Overrides profile postBuildScript if both are set."""
   postBuildScript: String
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
 }
 
 """Input for creating a new build profile."""
@@ -151,6 +154,9 @@ input CreateBuildProfileInput {
 
   """List of tomes to include in builds using this profile."""
   tomes: [BuildProfileTomeInput!]
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
 }
 
 """Output returned when registering a new builder."""

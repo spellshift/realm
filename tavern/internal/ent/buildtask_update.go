@@ -290,6 +290,26 @@ func (btu *BuildTaskUpdate) ClearSetupscript() *BuildTaskUpdate {
 	return btu
 }
 
+// SetUnique sets the "unique" field.
+func (btu *BuildTaskUpdate) SetUnique(s string) *BuildTaskUpdate {
+	btu.mutation.SetUnique(s)
+	return btu
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableUnique(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetUnique(*s)
+	}
+	return btu
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (btu *BuildTaskUpdate) ClearUnique() *BuildTaskUpdate {
+	btu.mutation.ClearUnique()
+	return btu
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -518,6 +538,12 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if btu.mutation.SetupscriptCleared() {
 		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
+	}
+	if value, ok := btu.mutation.Unique(); ok {
+		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
+	}
+	if btu.mutation.UniqueCleared() {
+		_spec.ClearField(buildtask.FieldUnique, field.TypeString)
 	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -883,6 +909,26 @@ func (btuo *BuildTaskUpdateOne) ClearSetupscript() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetUnique sets the "unique" field.
+func (btuo *BuildTaskUpdateOne) SetUnique(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetUnique(s)
+	return btuo
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableUnique(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetUnique(*s)
+	}
+	return btuo
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (btuo *BuildTaskUpdateOne) ClearUnique() *BuildTaskUpdateOne {
+	btuo.mutation.ClearUnique()
+	return btuo
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -1141,6 +1187,12 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if btuo.mutation.SetupscriptCleared() {
 		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
+	}
+	if value, ok := btuo.mutation.Unique(); ok {
+		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
+	}
+	if btuo.mutation.UniqueCleared() {
+		_spec.ClearField(buildtask.FieldUnique, field.TypeString)
 	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{

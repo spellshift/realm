@@ -97,6 +97,20 @@ func (bpc *BuildProfileCreate) SetNillablePostbuildscript(s *string) *BuildProfi
 	return bpc
 }
 
+// SetUnique sets the "unique" field.
+func (bpc *BuildProfileCreate) SetUnique(s string) *BuildProfileCreate {
+	bpc.mutation.SetUnique(s)
+	return bpc
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillableUnique(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetUnique(*s)
+	}
+	return bpc
+}
+
 // SetTomes sets the "tomes" field.
 func (bpc *BuildProfileCreate) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileCreate {
 	bpc.mutation.SetTomes(bpt)
@@ -258,6 +272,10 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
 		_node.Postbuildscript = value
 	}
+	if value, ok := bpc.mutation.Unique(); ok {
+		_spec.SetField(buildprofile.FieldUnique, field.TypeString, value)
+		_node.Unique = value
+	}
 	if value, ok := bpc.mutation.Tomes(); ok {
 		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
 		_node.Tomes = value
@@ -414,6 +432,24 @@ func (u *BuildProfileUpsert) UpdatePostbuildscript() *BuildProfileUpsert {
 	return u
 }
 
+// SetUnique sets the "unique" field.
+func (u *BuildProfileUpsert) SetUnique(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldUnique, v)
+	return u
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateUnique() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldUnique)
+	return u
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildProfileUpsert) ClearUnique() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldUnique)
+	return u
+}
+
 // SetTomes sets the "tomes" field.
 func (u *BuildProfileUpsert) SetTomes(v []builderpb.BuildProfileTome) *BuildProfileUpsert {
 	u.Set(buildprofile.FieldTomes, v)
@@ -567,6 +603,27 @@ func (u *BuildProfileUpsertOne) SetPostbuildscript(v string) *BuildProfileUpsert
 func (u *BuildProfileUpsertOne) UpdatePostbuildscript() *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostbuildscript()
+	})
+}
+
+// SetUnique sets the "unique" field.
+func (u *BuildProfileUpsertOne) SetUnique(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetUnique(v)
+	})
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateUnique() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateUnique()
+	})
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildProfileUpsertOne) ClearUnique() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.ClearUnique()
 	})
 }
 
@@ -890,6 +947,27 @@ func (u *BuildProfileUpsertBulk) SetPostbuildscript(v string) *BuildProfileUpser
 func (u *BuildProfileUpsertBulk) UpdatePostbuildscript() *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostbuildscript()
+	})
+}
+
+// SetUnique sets the "unique" field.
+func (u *BuildProfileUpsertBulk) SetUnique(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetUnique(v)
+	})
+}
+
+// UpdateUnique sets the "unique" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateUnique() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateUnique()
+	})
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (u *BuildProfileUpsertBulk) ClearUnique() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.ClearUnique()
 	})
 }
 

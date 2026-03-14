@@ -1920,6 +1920,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
 			case "setupscript":
 				return ec.fieldContext_BuildTask_setupscript(ctx, field)
+			case "unique":
+				return ec.fieldContext_BuildTask_unique(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":

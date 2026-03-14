@@ -44,6 +44,9 @@ func (BuildProfile) Fields() []ent.Field {
 		field.String("postbuildscript").
 			Default("echo 'no postbuild set'").
 			Comment("Bash script to run after build command"),
+		field.String("unique").
+			Optional().
+			Comment("JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."),
 		field.JSON("tomes", []builderpb.BuildProfileTome{}).
 			Optional().
 			Annotations(
