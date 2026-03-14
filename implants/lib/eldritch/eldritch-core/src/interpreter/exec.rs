@@ -155,6 +155,46 @@ pub fn execute(interp: &mut Interpreter, stmt: &Stmt) -> Result<(), EldritchErro
     Ok(())
 }
 
+pub fn hoist_functions(interp: &mut Interpreter, stmts: &[Stmt]) -> Result<(), EldritchError> {
+    // Collect functions to hoist so we don't hold read locks while evaluating default params
+    // Only hoist the *first* definition of a given name in this block, to allow forward references,
+    // while sequential execution will properly overwrite later definitions.
+    let mut to_hoist = Vec::new();
+    let mut seen = BTreeSet::new();
+
+    for stmt in stmts {
+        if let StmtKind::Def(name, params, _return_annotation, body) = &stmt.kind {
+            if !seen.contains(name) {
+                seen.insert(name.clone());
+                to_hoist.push((name, params, body));
+            }
+        }
+    }
+
+    for (name, params, body) in to_hoist {
+        let mut runtime_params = Vec::new();
+        for param in params {
+            match param {
+                Param::Normal(n, _) => runtime_params.push(RuntimeParam::Normal(n.clone())),
+                Param::Star(n, _) => runtime_params.push(RuntimeParam::Star(n.clone())),
+                Param::StarStar(n, _) => runtime_params.push(RuntimeParam::StarStar(n.clone())),
+                Param::WithDefault(n, _, _) => {
+                    runtime_params.push(RuntimeParam::WithDefault(n.clone(), Value::None));
+                }
+            }
+        }
+
+        let func = Value::Function(Function {
+            name: name.clone(),
+            params: runtime_params,
+            body: body.clone(),
+            closure: interp.env.clone(),
+        });
+        interp.env.write().values.insert(name.clone(), func);
+    }
+    Ok(())
+}
+
 pub fn execute_stmts(interp: &mut Interpreter, stmts: &[Stmt]) -> Result<(), EldritchError> {
     for stmt in stmts {
         execute(interp, stmt)?;
