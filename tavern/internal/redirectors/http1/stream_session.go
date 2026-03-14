@@ -165,10 +165,14 @@ func (s *streamSession) drain() [][]byte {
 		select {
 		case msg, ok := <-s.recvBuf:
 			if !ok {
+				slog.Debug("http1 redirector: drained session buffer (closed)", "count", len(msgs))
 				return msgs
 			}
 			msgs = append(msgs, msg)
 		default:
+			if len(msgs) > 0 {
+				slog.Debug("http1 redirector: drained session buffer", "count", len(msgs))
+			}
 			return msgs
 		}
 	}
@@ -188,6 +192,7 @@ func (s *streamSession) recvLoop() {
 			slog.Debug("http1 redirector: stream session recv ended", "method", s.cfg.MethodPath, "error", err)
 			return
 		}
+		slog.Debug("http1 redirector: received message from upstream gRPC", "method", s.cfg.MethodPath, "size", len(msg))
 		select {
 		case s.recvBuf <- msg:
 		default:

@@ -244,13 +244,25 @@ impl HTTP {
             let body_bytes = Self::read_response_body(response).await;
             let result: Result<()> = match body_bytes {
                 Ok(bytes) => {
+                    #[cfg(debug_assertions)]
+                    if !bytes.is_empty() {
+                        log::debug!("Received short poll response body: {} bytes", bytes.len());
+                    }
                     let mut buffer = BytesMut::from(bytes.as_ref());
                     let mut send_err = None;
+                    let mut frame_count = 0;
                     while let Some((_header, encrypted_message)) =
                         grpc_frame::FrameHeader::extract_frame(&mut buffer)
                     {
+                        frame_count += 1;
+                        #[cfg(debug_assertions)]
+                        log::debug!("Extracted frame {} from short poll response ({} bytes)", frame_count, encrypted_message.len());
+
                         match unmarshal_with_codec::<Req, Resp>(&encrypted_message) {
                             Ok(response_msg) => {
+                                #[cfg(debug_assertions)]
+                                log::debug!("Unmarshaled message {} from short poll response, sending to channel", frame_count);
+
                                 if let Err(err) = tx.send(response_msg).await {
                                     send_err = Some(anyhow::anyhow!(
                                         "Failed to send response through channel: {}",
