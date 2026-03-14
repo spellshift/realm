@@ -106,6 +106,11 @@ func Cwd(v string) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldEQ(FieldCwd, v))
 }
 
+// StartTime applies equality check predicate on the "start_time" field. It's identical to StartTimeEQ.
+func StartTime(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldEQ(FieldStartTime, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldEQ(FieldCreatedAt, v))
@@ -714,6 +719,56 @@ func StatusIn(vs ...epb.Process_Status) predicate.HostProcess {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...epb.Process_Status) predicate.HostProcess {
 	return predicate.HostProcess(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// StartTimeEQ applies the EQ predicate on the "start_time" field.
+func StartTimeEQ(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldEQ(FieldStartTime, v))
+}
+
+// StartTimeNEQ applies the NEQ predicate on the "start_time" field.
+func StartTimeNEQ(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldNEQ(FieldStartTime, v))
+}
+
+// StartTimeIn applies the In predicate on the "start_time" field.
+func StartTimeIn(vs ...uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldIn(FieldStartTime, vs...))
+}
+
+// StartTimeNotIn applies the NotIn predicate on the "start_time" field.
+func StartTimeNotIn(vs ...uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldNotIn(FieldStartTime, vs...))
+}
+
+// StartTimeGT applies the GT predicate on the "start_time" field.
+func StartTimeGT(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldGT(FieldStartTime, v))
+}
+
+// StartTimeGTE applies the GTE predicate on the "start_time" field.
+func StartTimeGTE(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldGTE(FieldStartTime, v))
+}
+
+// StartTimeLT applies the LT predicate on the "start_time" field.
+func StartTimeLT(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldLT(FieldStartTime, v))
+}
+
+// StartTimeLTE applies the LTE predicate on the "start_time" field.
+func StartTimeLTE(v uint64) predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldLTE(FieldStartTime, v))
+}
+
+// StartTimeIsNil applies the IsNil predicate on the "start_time" field.
+func StartTimeIsNil() predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldIsNull(FieldStartTime))
+}
+
+// StartTimeNotNil applies the NotNil predicate on the "start_time" field.
+func StartTimeNotNil() predicate.HostProcess {
+	return predicate.HostProcess(sql.FieldNotNull(FieldStartTime))
 }
 
 // HasHost applies the HasEdge predicate on the "host" edge.

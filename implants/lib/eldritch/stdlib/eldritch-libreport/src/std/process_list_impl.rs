@@ -79,6 +79,14 @@ pub fn process_list(
 
         let status = map_status(status_str);
 
+        let start_time = d
+            .get("start_time")
+            .and_then(|v| match v {
+                Value::Int(i) => Some(*i as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
+
         processes.push(eldritch::Process {
             pid,
             ppid,
@@ -89,6 +97,7 @@ pub fn process_list(
             env,
             cwd,
             status,
+            start_time,
         });
     }
 
