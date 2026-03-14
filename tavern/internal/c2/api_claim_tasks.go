@@ -50,11 +50,17 @@ func init() {
 func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
 	candidateTasks, err := srv.graph.ScheduledTask.Query().
-		Where(scheduledtask.Or(
-			scheduledtask.RunOnNewBeaconCallback(true),
-			scheduledtask.RunOnFirstHostCallback(true),
-			scheduledtask.RunOnScheduleNEQ(""),
-		)).
+		Where(
+			scheduledtask.Or(
+				scheduledtask.RunOnNewBeaconCallback(true),
+				scheduledtask.RunOnFirstHostCallback(true),
+				scheduledtask.RunOnScheduleNEQ(""),
+			),
+			scheduledtask.Or(
+				scheduledtask.Not(scheduledtask.HasScheduledHosts()),
+				scheduledtask.HasScheduledHostsWith(host.ID(hostID)),
+			),
+		).
 		WithTome().
 		All(ctx)
 
@@ -106,28 +112,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				}
 
 				if isMatch {
-					// Check scheduled_hosts constraint
-					hostCount, err := t.QueryScheduledHosts().Count(ctx)
-					if err != nil {
-						slog.ErrorContext(ctx, "failed to count scheduled hosts for automation", "err", err, "scheduled_task_id", t.ID)
-						metricTomeAutomationErrors.Inc()
-						continue
-					}
-					if hostCount == 0 {
-						shouldRun = true
-					} else {
-						hostExists, err := t.QueryScheduledHosts().
-							Where(host.ID(hostID)).
-							Exist(ctx)
-						if err != nil {
-							slog.ErrorContext(ctx, "failed to check host existence for automation", "err", err, "scheduled_task_id", t.ID)
-							metricTomeAutomationErrors.Inc()
-							continue
-						}
-						if hostExists {
-							shouldRun = true
-						}
-					}
+					shouldRun = true
 				}
 			} else {
 				// Don't log cron parse errors for now, as it might be spammy if stored in DB
