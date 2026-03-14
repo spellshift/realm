@@ -490,6 +490,13 @@ func (r *mutationResolver) CreateScheduledTask(ctx context.Context, input ent.Cr
 	return r.client.ScheduledTask.Create().SetInput(input).Save(ctx)
 }
 
+// DisableScheduledTask is the resolver for the disableScheduledTask field.
+func (r *mutationResolver) DisableScheduledTask(ctx context.Context, scheduledTaskID int) (*ent.ScheduledTask, error) {
+	return r.client.ScheduledTask.UpdateOneID(scheduledTaskID).
+		SetDisabled(true).
+		Save(ctx)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

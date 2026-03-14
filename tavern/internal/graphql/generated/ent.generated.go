@@ -1110,6 +1110,42 @@ func (ec *executionContext) field_Repository_tomes_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_ScheduledTask_quests_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOQuestOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOQuestWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_ScheduledTask_scheduledHosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -9912,6 +9948,63 @@ func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Quest_scheduledTask(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_scheduledTask,
+		func(ctx context.Context) (any, error) {
+			return obj.ScheduledTask(ctx)
+		},
+		nil,
+		ec.marshalOScheduledTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTask,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Quest_scheduledTask(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ScheduledTask_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ScheduledTask_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_ScheduledTask_lastModifiedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_ScheduledTask_name(ctx, field)
+			case "description":
+				return ec.fieldContext_ScheduledTask_description(ctx, field)
+			case "runOnNewBeaconCallback":
+				return ec.fieldContext_ScheduledTask_runOnNewBeaconCallback(ctx, field)
+			case "runOnFirstHostCallback":
+				return ec.fieldContext_ScheduledTask_runOnFirstHostCallback(ctx, field)
+			case "parameters":
+				return ec.fieldContext_ScheduledTask_parameters(ctx, field)
+			case "runOnSchedule":
+				return ec.fieldContext_ScheduledTask_runOnSchedule(ctx, field)
+			case "disabled":
+				return ec.fieldContext_ScheduledTask_disabled(ctx, field)
+			case "tome":
+				return ec.fieldContext_ScheduledTask_tome(ctx, field)
+			case "scheduledHosts":
+				return ec.fieldContext_ScheduledTask_scheduledHosts(ctx, field)
+			case "quests":
+				return ec.fieldContext_ScheduledTask_quests(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ScheduledTask", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _QuestConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.QuestConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10061,6 +10154,8 @@ func (ec *executionContext) fieldContext_QuestEdge_node(_ context.Context, field
 				return ec.fieldContext_Quest_tasks(ctx, field)
 			case "creator":
 				return ec.fieldContext_Quest_creator(ctx, field)
+			case "scheduledTask":
+				return ec.fieldContext_Quest_scheduledTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
@@ -10809,6 +10904,35 @@ func (ec *executionContext) fieldContext_ScheduledTask_runOnSchedule(_ context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _ScheduledTask_disabled(ctx context.Context, field graphql.CollectedField, obj *ent.ScheduledTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ScheduledTask_disabled,
+		func(ctx context.Context) (any, error) {
+			return obj.Disabled, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ScheduledTask_disabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScheduledTask",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ScheduledTask_tome(ctx context.Context, field graphql.CollectedField, obj *ent.ScheduledTask) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10909,6 +11033,55 @@ func (ec *executionContext) fieldContext_ScheduledTask_scheduledHosts(ctx contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_ScheduledTask_scheduledHosts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScheduledTask_quests(ctx context.Context, field graphql.CollectedField, obj *ent.ScheduledTask) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ScheduledTask_quests,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Quests(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
+		},
+		nil,
+		ec.marshalNQuestConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ScheduledTask_quests(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScheduledTask",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_QuestConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_QuestConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_QuestConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type QuestConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ScheduledTask_quests_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -11060,10 +11233,14 @@ func (ec *executionContext) fieldContext_ScheduledTaskEdge_node(_ context.Contex
 				return ec.fieldContext_ScheduledTask_parameters(ctx, field)
 			case "runOnSchedule":
 				return ec.fieldContext_ScheduledTask_runOnSchedule(ctx, field)
+			case "disabled":
+				return ec.fieldContext_ScheduledTask_disabled(ctx, field)
 			case "tome":
 				return ec.fieldContext_ScheduledTask_tome(ctx, field)
 			case "scheduledHosts":
 				return ec.fieldContext_ScheduledTask_scheduledHosts(ctx, field)
+			case "quests":
+				return ec.fieldContext_ScheduledTask_quests(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScheduledTask", field.Name)
 		},
@@ -13711,6 +13888,8 @@ func (ec *executionContext) fieldContext_Task_quest(_ context.Context, field gra
 				return ec.fieldContext_Quest_tasks(ctx, field)
 			case "creator":
 				return ec.fieldContext_Quest_creator(ctx, field)
+			case "scheduledTask":
+				return ec.fieldContext_Quest_scheduledTask(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
@@ -18800,7 +18979,7 @@ func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "runOnSchedule", "tomeID", "scheduledHostIDs"}
+	fieldsInOrder := [...]string{"name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "runOnSchedule", "disabled", "tomeID", "scheduledHostIDs"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18849,6 +19028,13 @@ func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.C
 				return it, err
 			}
 			it.RunOnSchedule = data
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
 		case "tomeID":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tomeID"))
 			data, err := ec.unmarshalNID2int(ctx, v)
@@ -23748,7 +23934,7 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "paramDefsAtCreation", "paramDefsAtCreationNEQ", "paramDefsAtCreationIn", "paramDefsAtCreationNotIn", "paramDefsAtCreationGT", "paramDefsAtCreationGTE", "paramDefsAtCreationLT", "paramDefsAtCreationLTE", "paramDefsAtCreationContains", "paramDefsAtCreationHasPrefix", "paramDefsAtCreationHasSuffix", "paramDefsAtCreationIsNil", "paramDefsAtCreationNotNil", "paramDefsAtCreationEqualFold", "paramDefsAtCreationContainsFold", "eldritchAtCreation", "eldritchAtCreationNEQ", "eldritchAtCreationIn", "eldritchAtCreationNotIn", "eldritchAtCreationGT", "eldritchAtCreationGTE", "eldritchAtCreationLT", "eldritchAtCreationLTE", "eldritchAtCreationContains", "eldritchAtCreationHasPrefix", "eldritchAtCreationHasSuffix", "eldritchAtCreationIsNil", "eldritchAtCreationNotNil", "eldritchAtCreationEqualFold", "eldritchAtCreationContainsFold", "hasTome", "hasTomeWith", "hasBundle", "hasBundleWith", "hasTasks", "hasTasksWith", "hasCreator", "hasCreatorWith", "hasScheduledTask", "hasScheduledTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -24406,6 +24592,20 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasCreatorWith = data
+		case "hasScheduledTask":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasScheduledTask"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasScheduledTask = data
+		case "hasScheduledTaskWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasScheduledTaskWith"))
+			data, err := ec.unmarshalOScheduledTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasScheduledTaskWith = data
 		}
 	}
 
@@ -24984,7 +25184,7 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "description", "descriptionNEQ", "descriptionIn", "descriptionNotIn", "descriptionGT", "descriptionGTE", "descriptionLT", "descriptionLTE", "descriptionContains", "descriptionHasPrefix", "descriptionHasSuffix", "descriptionEqualFold", "descriptionContainsFold", "runOnNewBeaconCallback", "runOnNewBeaconCallbackNEQ", "runOnFirstHostCallback", "runOnFirstHostCallbackNEQ", "parameters", "parametersNEQ", "parametersIn", "parametersNotIn", "parametersGT", "parametersGTE", "parametersLT", "parametersLTE", "parametersContains", "parametersHasPrefix", "parametersHasSuffix", "parametersIsNil", "parametersNotNil", "parametersEqualFold", "parametersContainsFold", "runOnSchedule", "runOnScheduleNEQ", "runOnScheduleIn", "runOnScheduleNotIn", "runOnScheduleGT", "runOnScheduleGTE", "runOnScheduleLT", "runOnScheduleLTE", "runOnScheduleContains", "runOnScheduleHasPrefix", "runOnScheduleHasSuffix", "runOnScheduleEqualFold", "runOnScheduleContainsFold", "disabled", "disabledNEQ", "hasTome", "hasTomeWith", "hasScheduledHosts", "hasScheduledHostsWith", "hasQuests", "hasQuestsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25586,6 +25786,20 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 				return it, err
 			}
 			it.RunOnScheduleContainsFold = data
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
+		case "disabledNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabledNEQ"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DisabledNEQ = data
 		case "hasTome":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTome"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -25614,6 +25828,20 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 				return it, err
 			}
 			it.HasScheduledHostsWith = data
+		case "hasQuests":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasQuests"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasQuests = data
+		case "hasQuestsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasQuestsWith"))
+			data, err := ec.unmarshalOQuestWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasQuestsWith = data
 		}
 	}
 
@@ -29809,7 +30037,7 @@ func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.C
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "clearParameters", "runOnSchedule", "addScheduledHostIDs", "removeScheduledHostIDs", "clearScheduledHosts"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "name", "description", "runOnNewBeaconCallback", "runOnFirstHostCallback", "parameters", "clearParameters", "runOnSchedule", "disabled", "addScheduledHostIDs", "removeScheduledHostIDs", "clearScheduledHosts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29872,6 +30100,13 @@ func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.C
 				return it, err
 			}
 			it.RunOnSchedule = data
+		case "disabled":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("disabled"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Disabled = data
 		case "addScheduledHostIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addScheduledHostIDs"))
 			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
@@ -34202,6 +34437,39 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "scheduledTask":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Quest_scheduledTask(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34582,6 +34850,11 @@ func (ec *executionContext) _ScheduledTask(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "disabled":
+			out.Values[i] = ec._ScheduledTask_disabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "tome":
 			field := field
 
@@ -34628,6 +34901,42 @@ func (ec *executionContext) _ScheduledTask(ctx context.Context, sel ast.Selectio
 					}
 				}()
 				res = ec._ScheduledTask_scheduledHosts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "quests":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ScheduledTask_quests(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

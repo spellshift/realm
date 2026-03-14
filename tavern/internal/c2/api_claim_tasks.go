@@ -51,6 +51,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 	// Tome Automation Logic
 	candidateTasks, err := srv.graph.ScheduledTask.Query().
 		Where(
+			scheduledtask.Disabled(false),
 			scheduledtask.Or(
 				scheduledtask.RunOnNewBeaconCallback(true),
 				scheduledtask.RunOnFirstHostCallback(true),
@@ -143,6 +144,9 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			metricTomeAutomationErrors.Inc()
 			continue
 		}
+
+		// Link quest to scheduled task
+		srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx)
 
 		_, err = srv.graph.Task.Create().
 			SetQuest(q).

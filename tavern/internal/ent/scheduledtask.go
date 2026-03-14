@@ -34,6 +34,8 @@ type ScheduledTask struct {
 	Parameters string `json:"parameters,omitempty"`
 	// Cron-like schedule for this tome to be automatically queued.
 	RunOnSchedule string `json:"run_on_schedule,omitempty"`
+	// If true, this scheduled task will not be run.
+	Disabled bool `json:"disabled,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScheduledTaskQuery when eager-loading is set.
 	Edges               ScheduledTaskEdges `json:"edges"`
@@ -47,13 +49,16 @@ type ScheduledTaskEdges struct {
 	Tome *Tome `json:"tome,omitempty"`
 	// If a schedule is configured for this tome, you may limit which hosts it runs on using this field. If a schedule is configured but no hosts are set, the tome will run on all hosts.
 	ScheduledHosts []*Host `json:"scheduled_hosts,omitempty"`
+	// Quests that were created from this scheduled task.
+	Quests []*Quest `json:"quests,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 	// totalCount holds the count of the edges above.
-	totalCount [2]map[string]int
+	totalCount [3]map[string]int
 
 	namedScheduledHosts map[string][]*Host
+	namedQuests         map[string][]*Quest
 }
 
 // TomeOrErr returns the Tome value or an error if the edge
@@ -76,12 +81,21 @@ func (e ScheduledTaskEdges) ScheduledHostsOrErr() ([]*Host, error) {
 	return nil, &NotLoadedError{edge: "scheduled_hosts"}
 }
 
+// QuestsOrErr returns the Quests value or an error if the edge
+// was not loaded in eager-loading.
+func (e ScheduledTaskEdges) QuestsOrErr() ([]*Quest, error) {
+	if e.loadedTypes[2] {
+		return e.Quests, nil
+	}
+	return nil, &NotLoadedError{edge: "quests"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*ScheduledTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case scheduledtask.FieldRunOnNewBeaconCallback, scheduledtask.FieldRunOnFirstHostCallback:
+		case scheduledtask.FieldRunOnNewBeaconCallback, scheduledtask.FieldRunOnFirstHostCallback, scheduledtask.FieldDisabled:
 			values[i] = new(sql.NullBool)
 		case scheduledtask.FieldID:
 			values[i] = new(sql.NullInt64)
@@ -160,6 +174,12 @@ func (st *ScheduledTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				st.RunOnSchedule = value.String
 			}
+		case scheduledtask.FieldDisabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field disabled", values[i])
+			} else if value.Valid {
+				st.Disabled = value.Bool
+			}
 		case scheduledtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field scheduled_task_tome", value)
@@ -188,6 +208,11 @@ func (st *ScheduledTask) QueryTome() *TomeQuery {
 // QueryScheduledHosts queries the "scheduled_hosts" edge of the ScheduledTask entity.
 func (st *ScheduledTask) QueryScheduledHosts() *HostQuery {
 	return NewScheduledTaskClient(st.config).QueryScheduledHosts(st)
+}
+
+// QueryQuests queries the "quests" edge of the ScheduledTask entity.
+func (st *ScheduledTask) QueryQuests() *QuestQuery {
+	return NewScheduledTaskClient(st.config).QueryQuests(st)
 }
 
 // Update returns a builder for updating this ScheduledTask.
@@ -236,6 +261,9 @@ func (st *ScheduledTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("run_on_schedule=")
 	builder.WriteString(st.RunOnSchedule)
+	builder.WriteString(", ")
+	builder.WriteString("disabled=")
+	builder.WriteString(fmt.Sprintf("%v", st.Disabled))
 	builder.WriteByte(')')
 	return builder.String()
 }
@@ -261,6 +289,30 @@ func (st *ScheduledTask) appendNamedScheduledHosts(name string, edges ...*Host) 
 		st.Edges.namedScheduledHosts[name] = []*Host{}
 	} else {
 		st.Edges.namedScheduledHosts[name] = append(st.Edges.namedScheduledHosts[name], edges...)
+	}
+}
+
+// NamedQuests returns the Quests named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (st *ScheduledTask) NamedQuests(name string) ([]*Quest, error) {
+	if st.Edges.namedQuests == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := st.Edges.namedQuests[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (st *ScheduledTask) appendNamedQuests(name string, edges ...*Quest) {
+	if st.Edges.namedQuests == nil {
+		st.Edges.namedQuests = make(map[string][]*Quest)
+	}
+	if len(edges) == 0 {
+		st.Edges.namedQuests[name] = []*Quest{}
+	} else {
+		st.Edges.namedQuests[name] = append(st.Edges.namedQuests[name], edges...)
 	}
 }
 

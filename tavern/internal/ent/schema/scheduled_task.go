@@ -44,6 +44,9 @@ func (ScheduledTask) Fields() []ent.Field {
 		field.String("run_on_schedule").
 			Default("").
 			Comment("Cron-like schedule for this tome to be automatically queued."),
+		field.Bool("disabled").
+			Default(false).
+			Comment("If true, this scheduled task will not be run."),
 	}
 }
 
@@ -63,6 +66,13 @@ func (ScheduledTask) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("If a schedule is configured for this tome, you may limit which hosts it runs on using this field. If a schedule is configured but no hosts are set, the tome will run on all hosts."),
+		edge.To("quests", Quest.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Quests that were created from this scheduled task."),
 	}
 }
 

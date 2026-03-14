@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -120,6 +121,20 @@ func (stc *ScheduledTaskCreate) SetNillableRunOnSchedule(s *string) *ScheduledTa
 	return stc
 }
 
+// SetDisabled sets the "disabled" field.
+func (stc *ScheduledTaskCreate) SetDisabled(b bool) *ScheduledTaskCreate {
+	stc.mutation.SetDisabled(b)
+	return stc
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (stc *ScheduledTaskCreate) SetNillableDisabled(b *bool) *ScheduledTaskCreate {
+	if b != nil {
+		stc.SetDisabled(*b)
+	}
+	return stc
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (stc *ScheduledTaskCreate) SetTomeID(id int) *ScheduledTaskCreate {
 	stc.mutation.SetTomeID(id)
@@ -144,6 +159,21 @@ func (stc *ScheduledTaskCreate) AddScheduledHosts(h ...*Host) *ScheduledTaskCrea
 		ids[i] = h[i].ID
 	}
 	return stc.AddScheduledHostIDs(ids...)
+}
+
+// AddQuestIDs adds the "quests" edge to the Quest entity by IDs.
+func (stc *ScheduledTaskCreate) AddQuestIDs(ids ...int) *ScheduledTaskCreate {
+	stc.mutation.AddQuestIDs(ids...)
+	return stc
+}
+
+// AddQuests adds the "quests" edges to the Quest entity.
+func (stc *ScheduledTaskCreate) AddQuests(q ...*Quest) *ScheduledTaskCreate {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return stc.AddQuestIDs(ids...)
 }
 
 // Mutation returns the ScheduledTaskMutation object of the builder.
@@ -201,6 +231,10 @@ func (stc *ScheduledTaskCreate) defaults() {
 		v := scheduledtask.DefaultRunOnSchedule
 		stc.mutation.SetRunOnSchedule(v)
 	}
+	if _, ok := stc.mutation.Disabled(); !ok {
+		v := scheduledtask.DefaultDisabled
+		stc.mutation.SetDisabled(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -235,6 +269,9 @@ func (stc *ScheduledTaskCreate) check() error {
 	}
 	if _, ok := stc.mutation.RunOnSchedule(); !ok {
 		return &ValidationError{Name: "run_on_schedule", err: errors.New(`ent: missing required field "ScheduledTask.run_on_schedule"`)}
+	}
+	if _, ok := stc.mutation.Disabled(); !ok {
+		return &ValidationError{Name: "disabled", err: errors.New(`ent: missing required field "ScheduledTask.disabled"`)}
 	}
 	if len(stc.mutation.TomeIDs()) == 0 {
 		return &ValidationError{Name: "tome", err: errors.New(`ent: missing required edge "ScheduledTask.tome"`)}
@@ -298,6 +335,10 @@ func (stc *ScheduledTaskCreate) createSpec() (*ScheduledTask, *sqlgraph.CreateSp
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)
 		_node.RunOnSchedule = value
 	}
+	if value, ok := stc.mutation.Disabled(); ok {
+		_spec.SetField(scheduledtask.FieldDisabled, field.TypeBool, value)
+		_node.Disabled = value
+	}
 	if nodes := stc.mutation.TomeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -324,6 +365,22 @@ func (stc *ScheduledTaskCreate) createSpec() (*ScheduledTask, *sqlgraph.CreateSp
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.QuestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -470,6 +527,18 @@ func (u *ScheduledTaskUpsert) SetRunOnSchedule(v string) *ScheduledTaskUpsert {
 // UpdateRunOnSchedule sets the "run_on_schedule" field to the value that was provided on create.
 func (u *ScheduledTaskUpsert) UpdateRunOnSchedule() *ScheduledTaskUpsert {
 	u.SetExcluded(scheduledtask.FieldRunOnSchedule)
+	return u
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *ScheduledTaskUpsert) SetDisabled(v bool) *ScheduledTaskUpsert {
+	u.Set(scheduledtask.FieldDisabled, v)
+	return u
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ScheduledTaskUpsert) UpdateDisabled() *ScheduledTaskUpsert {
+	u.SetExcluded(scheduledtask.FieldDisabled)
 	return u
 }
 
@@ -620,6 +689,20 @@ func (u *ScheduledTaskUpsertOne) SetRunOnSchedule(v string) *ScheduledTaskUpsert
 func (u *ScheduledTaskUpsertOne) UpdateRunOnSchedule() *ScheduledTaskUpsertOne {
 	return u.Update(func(s *ScheduledTaskUpsert) {
 		s.UpdateRunOnSchedule()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *ScheduledTaskUpsertOne) SetDisabled(v bool) *ScheduledTaskUpsertOne {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ScheduledTaskUpsertOne) UpdateDisabled() *ScheduledTaskUpsertOne {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.UpdateDisabled()
 	})
 }
 
@@ -936,6 +1019,20 @@ func (u *ScheduledTaskUpsertBulk) SetRunOnSchedule(v string) *ScheduledTaskUpser
 func (u *ScheduledTaskUpsertBulk) UpdateRunOnSchedule() *ScheduledTaskUpsertBulk {
 	return u.Update(func(s *ScheduledTaskUpsert) {
 		s.UpdateRunOnSchedule()
+	})
+}
+
+// SetDisabled sets the "disabled" field.
+func (u *ScheduledTaskUpsertBulk) SetDisabled(v bool) *ScheduledTaskUpsertBulk {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.SetDisabled(v)
+	})
+}
+
+// UpdateDisabled sets the "disabled" field to the value that was provided on create.
+func (u *ScheduledTaskUpsertBulk) UpdateDisabled() *ScheduledTaskUpsertBulk {
+	return u.Update(func(s *ScheduledTaskUpsert) {
+		s.UpdateDisabled()
 	})
 }
 

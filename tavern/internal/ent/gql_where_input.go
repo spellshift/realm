@@ -5832,6 +5832,10 @@ type QuestWhereInput struct {
 	// "creator" edge predicates.
 	HasCreator     *bool             `json:"hasCreator,omitempty"`
 	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
+
+	// "scheduled_task" edge predicates.
+	HasScheduledTask     *bool                      `json:"hasScheduledTask,omitempty"`
+	HasScheduledTaskWith []*ScheduledTaskWhereInput `json:"hasScheduledTaskWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6223,6 +6227,24 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, quest.HasCreatorWith(with...))
+	}
+	if i.HasScheduledTask != nil {
+		p := quest.HasScheduledTask()
+		if !*i.HasScheduledTask {
+			p = quest.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScheduledTaskWith) > 0 {
+		with := make([]predicate.ScheduledTask, 0, len(i.HasScheduledTaskWith))
+		for _, w := range i.HasScheduledTaskWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScheduledTaskWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, quest.HasScheduledTaskWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6727,6 +6749,10 @@ type ScheduledTaskWhereInput struct {
 	RunOnScheduleEqualFold    *string  `json:"runOnScheduleEqualFold,omitempty"`
 	RunOnScheduleContainsFold *string  `json:"runOnScheduleContainsFold,omitempty"`
 
+	// "disabled" field predicates.
+	Disabled    *bool `json:"disabled,omitempty"`
+	DisabledNEQ *bool `json:"disabledNEQ,omitempty"`
+
 	// "tome" edge predicates.
 	HasTome     *bool             `json:"hasTome,omitempty"`
 	HasTomeWith []*TomeWhereInput `json:"hasTomeWith,omitempty"`
@@ -6734,6 +6760,10 @@ type ScheduledTaskWhereInput struct {
 	// "scheduled_hosts" edge predicates.
 	HasScheduledHosts     *bool             `json:"hasScheduledHosts,omitempty"`
 	HasScheduledHostsWith []*HostWhereInput `json:"hasScheduledHostsWith,omitempty"`
+
+	// "quests" edge predicates.
+	HasQuests     *bool              `json:"hasQuests,omitempty"`
+	HasQuestsWith []*QuestWhereInput `json:"hasQuestsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7053,6 +7083,12 @@ func (i *ScheduledTaskWhereInput) P() (predicate.ScheduledTask, error) {
 	if i.RunOnScheduleContainsFold != nil {
 		predicates = append(predicates, scheduledtask.RunOnScheduleContainsFold(*i.RunOnScheduleContainsFold))
 	}
+	if i.Disabled != nil {
+		predicates = append(predicates, scheduledtask.DisabledEQ(*i.Disabled))
+	}
+	if i.DisabledNEQ != nil {
+		predicates = append(predicates, scheduledtask.DisabledNEQ(*i.DisabledNEQ))
+	}
 
 	if i.HasTome != nil {
 		p := scheduledtask.HasTome()
@@ -7089,6 +7125,24 @@ func (i *ScheduledTaskWhereInput) P() (predicate.ScheduledTask, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, scheduledtask.HasScheduledHostsWith(with...))
+	}
+	if i.HasQuests != nil {
+		p := scheduledtask.HasQuests()
+		if !*i.HasQuests {
+			p = scheduledtask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasQuestsWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasQuestsWith))
+		for _, w := range i.HasQuestsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasQuestsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, scheduledtask.HasQuestsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -1290,6 +1290,10 @@ input CreateScheduledTaskInput {
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
   tomeID: ID!
   scheduledHostIDs: [ID!]
 }
@@ -3292,6 +3296,10 @@ type Quest implements Node {
   User that created the quest if available.
   """
   creator: User
+  """
+  The scheduled task that created this quest, if any.
+  """
+  scheduledTask: ScheduledTask
 }
 """
 A connection to a list of items.
@@ -3475,6 +3483,11 @@ input QuestWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  scheduled_task edge predicates
+  """
+  hasScheduledTask: Boolean
+  hasScheduledTaskWith: [ScheduledTaskWhereInput!]
 }
 type Repository implements Node {
   id: ID!
@@ -3717,6 +3730,10 @@ type ScheduledTask implements Node {
   """
   runOnSchedule: String!
   """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean!
+  """
   The Tome that this ScheduledTask will run.
   """
   tome: Tome!
@@ -3751,6 +3768,37 @@ type ScheduledTask implements Node {
     """
     where: HostWhereInput
   ): HostConnection!
+  quests(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Quests returned from the connection.
+    """
+    orderBy: [QuestOrder!]
+
+    """
+    Filtering options for Quests returned from the connection.
+    """
+    where: QuestWhereInput
+  ): QuestConnection!
 }
 """
 A connection to a list of items.
@@ -3921,6 +3969,11 @@ input ScheduledTaskWhereInput {
   runOnScheduleEqualFold: String
   runOnScheduleContainsFold: String
   """
+  disabled field predicates
+  """
+  disabled: Boolean
+  disabledNEQ: Boolean
+  """
   tome edge predicates
   """
   hasTome: Boolean
@@ -3930,6 +3983,11 @@ input ScheduledTaskWhereInput {
   """
   hasScheduledHosts: Boolean
   hasScheduledHostsWith: [HostWhereInput!]
+  """
+  quests edge predicates
+  """
+  hasQuests: Boolean
+  hasQuestsWith: [QuestWhereInput!]
 }
 type Screenshot implements Node {
   id: ID!
@@ -5657,6 +5715,10 @@ input UpdateScheduledTaskInput {
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
   addScheduledHostIDs: [ID!]
   removeScheduledHostIDs: [ID!]
   clearScheduledHosts: Boolean
@@ -6176,6 +6238,7 @@ type Mutation {
     # ScheduledTask
     ###
     createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
+    disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
 }
 extend type Query {
   assets(

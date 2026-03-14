@@ -408,6 +408,7 @@ var (
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},
+		{Name: "scheduled_task_quests", Type: field.TypeInt, Nullable: true},
 	}
 	// QuestsTable holds the schema information for the "quests" table.
 	QuestsTable = &schema.Table{
@@ -431,6 +432,12 @@ var (
 				Symbol:     "quests_users_creator",
 				Columns:    []*schema.Column{QuestsColumns[9]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "quests_scheduled_tasks_quests",
+				Columns:    []*schema.Column{QuestsColumns[10]},
+				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -471,6 +478,7 @@ var (
 		{Name: "run_on_first_host_callback", Type: field.TypeBool, Default: false},
 		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
+		{Name: "disabled", Type: field.TypeBool, Default: false},
 		{Name: "scheduled_task_tome", Type: field.TypeInt},
 	}
 	// ScheduledTasksTable holds the schema information for the "scheduled_tasks" table.
@@ -481,7 +489,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "scheduled_tasks_tomes_tome",
-				Columns:    []*schema.Column{ScheduledTasksColumns[9]},
+				Columns:    []*schema.Column{ScheduledTasksColumns[10]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -872,6 +880,7 @@ func init() {
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = AssetsTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
+	QuestsTable.ForeignKeys[3].RefTable = ScheduledTasksTable
 	QuestsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

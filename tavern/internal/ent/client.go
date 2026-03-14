@@ -2523,6 +2523,22 @@ func (c *QuestClient) QueryCreator(q *Quest) *UserQuery {
 	return query
 }
 
+// QueryScheduledTask queries the scheduled_task edge of a Quest.
+func (c *QuestClient) QueryScheduledTask(q *Quest) *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, id),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.ScheduledTaskTable, quest.ScheduledTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *QuestClient) Hooks() []Hook {
 	return c.hooks.Quest
@@ -2847,6 +2863,22 @@ func (c *ScheduledTaskClient) QueryScheduledHosts(st *ScheduledTask) *HostQuery 
 			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.ScheduledHostsTable, scheduledtask.ScheduledHostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryQuests queries the quests edge of a ScheduledTask.
+func (c *ScheduledTaskClient) QueryQuests(st *ScheduledTask) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.QuestsTable, scheduledtask.QuestsColumn),
 		)
 		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
 		return fromV, nil

@@ -2892,6 +2892,17 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				return err
 			}
 			q.withCreator = query
+
+		case "scheduledTask":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ScheduledTaskClient{config: q.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, scheduledtaskImplementors)...); err != nil {
+				return err
+			}
+			q.withScheduledTask = query
 		case "createdAt":
 			if _, ok := fieldSeen[quest.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, quest.FieldCreatedAt)
@@ -3327,6 +3338,95 @@ func (st *ScheduledTaskQuery) collectField(ctx context.Context, oneNode bool, op
 			st.WithNamedScheduledHosts(alias, func(wq *HostQuery) {
 				*wq = *query
 			})
+
+		case "quests":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&QuestClient{config: st.config}).Query()
+			)
+			args := newQuestPaginateArgs(fieldArgs(ctx, new(QuestWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newQuestPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					st.loadTotal = append(st.loadTotal, func(ctx context.Context, nodes []*ScheduledTask) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"scheduled_task_quests"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(scheduledtask.QuestsColumn), ids...))
+						})
+						if err := query.GroupBy(scheduledtask.QuestsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				} else {
+					st.loadTotal = append(st.loadTotal, func(_ context.Context, nodes []*ScheduledTask) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Quests)
+							if nodes[i].Edges.totalCount[2] == nil {
+								nodes[i].Edges.totalCount[2] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[2][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, questImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(scheduledtask.QuestsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			st.WithNamedQuests(alias, func(wq *QuestQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[scheduledtask.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, scheduledtask.FieldCreatedAt)
@@ -3366,6 +3466,11 @@ func (st *ScheduledTaskQuery) collectField(ctx context.Context, oneNode bool, op
 			if _, ok := fieldSeen[scheduledtask.FieldRunOnSchedule]; !ok {
 				selectedFields = append(selectedFields, scheduledtask.FieldRunOnSchedule)
 				fieldSeen[scheduledtask.FieldRunOnSchedule] = struct{}{}
+			}
+		case "disabled":
+			if _, ok := fieldSeen[scheduledtask.FieldDisabled]; !ok {
+				selectedFields = append(selectedFields, scheduledtask.FieldDisabled)
+				fieldSeen[scheduledtask.FieldDisabled] = struct{}{}
 			}
 		case "id":
 		case "__typename":

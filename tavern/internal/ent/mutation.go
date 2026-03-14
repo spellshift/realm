@@ -11141,6 +11141,8 @@ type QuestMutation struct {
 	clearedtasks           bool
 	creator                *int
 	clearedcreator         bool
+	scheduled_task         *int
+	clearedscheduled_task  bool
 	done                   bool
 	oldValue               func(context.Context) (*Quest, error)
 	predicates             []predicate.Quest
@@ -11670,6 +11672,45 @@ func (m *QuestMutation) ResetCreator() {
 	m.clearedcreator = false
 }
 
+// SetScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by id.
+func (m *QuestMutation) SetScheduledTaskID(id int) {
+	m.scheduled_task = &id
+}
+
+// ClearScheduledTask clears the "scheduled_task" edge to the ScheduledTask entity.
+func (m *QuestMutation) ClearScheduledTask() {
+	m.clearedscheduled_task = true
+}
+
+// ScheduledTaskCleared reports if the "scheduled_task" edge to the ScheduledTask entity was cleared.
+func (m *QuestMutation) ScheduledTaskCleared() bool {
+	return m.clearedscheduled_task
+}
+
+// ScheduledTaskID returns the "scheduled_task" edge ID in the mutation.
+func (m *QuestMutation) ScheduledTaskID() (id int, exists bool) {
+	if m.scheduled_task != nil {
+		return *m.scheduled_task, true
+	}
+	return
+}
+
+// ScheduledTaskIDs returns the "scheduled_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ScheduledTaskID instead. It exists only for internal usage by the builders.
+func (m *QuestMutation) ScheduledTaskIDs() (ids []int) {
+	if id := m.scheduled_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetScheduledTask resets all changes to the "scheduled_task" edge.
+func (m *QuestMutation) ResetScheduledTask() {
+	m.scheduled_task = nil
+	m.clearedscheduled_task = false
+}
+
 // Where appends a list predicates to the QuestMutation builder.
 func (m *QuestMutation) Where(ps ...predicate.Quest) {
 	m.predicates = append(m.predicates, ps...)
@@ -11909,7 +11950,7 @@ func (m *QuestMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *QuestMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.tome != nil {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -11921,6 +11962,9 @@ func (m *QuestMutation) AddedEdges() []string {
 	}
 	if m.creator != nil {
 		edges = append(edges, quest.EdgeCreator)
+	}
+	if m.scheduled_task != nil {
+		edges = append(edges, quest.EdgeScheduledTask)
 	}
 	return edges
 }
@@ -11947,13 +11991,17 @@ func (m *QuestMutation) AddedIDs(name string) []ent.Value {
 		if id := m.creator; id != nil {
 			return []ent.Value{*id}
 		}
+	case quest.EdgeScheduledTask:
+		if id := m.scheduled_task; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *QuestMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtasks != nil {
 		edges = append(edges, quest.EdgeTasks)
 	}
@@ -11976,7 +12024,7 @@ func (m *QuestMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *QuestMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtome {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -11988,6 +12036,9 @@ func (m *QuestMutation) ClearedEdges() []string {
 	}
 	if m.clearedcreator {
 		edges = append(edges, quest.EdgeCreator)
+	}
+	if m.clearedscheduled_task {
+		edges = append(edges, quest.EdgeScheduledTask)
 	}
 	return edges
 }
@@ -12004,6 +12055,8 @@ func (m *QuestMutation) EdgeCleared(name string) bool {
 		return m.clearedtasks
 	case quest.EdgeCreator:
 		return m.clearedcreator
+	case quest.EdgeScheduledTask:
+		return m.clearedscheduled_task
 	}
 	return false
 }
@@ -12020,6 +12073,9 @@ func (m *QuestMutation) ClearEdge(name string) error {
 		return nil
 	case quest.EdgeCreator:
 		m.ClearCreator()
+		return nil
+	case quest.EdgeScheduledTask:
+		m.ClearScheduledTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest unique edge %s", name)
@@ -12040,6 +12096,9 @@ func (m *QuestMutation) ResetEdge(name string) error {
 		return nil
 	case quest.EdgeCreator:
 		m.ResetCreator()
+		return nil
+	case quest.EdgeScheduledTask:
+		m.ResetScheduledTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest edge %s", name)
@@ -12829,12 +12888,16 @@ type ScheduledTaskMutation struct {
 	run_on_first_host_callback *bool
 	parameters                 *string
 	run_on_schedule            *string
+	disabled                   *bool
 	clearedFields              map[string]struct{}
 	tome                       *int
 	clearedtome                bool
 	scheduled_hosts            map[int]struct{}
 	removedscheduled_hosts     map[int]struct{}
 	clearedscheduled_hosts     bool
+	quests                     map[int]struct{}
+	removedquests              map[int]struct{}
+	clearedquests              bool
 	done                       bool
 	oldValue                   func(context.Context) (*ScheduledTask, error)
 	predicates                 []predicate.ScheduledTask
@@ -13239,6 +13302,42 @@ func (m *ScheduledTaskMutation) ResetRunOnSchedule() {
 	m.run_on_schedule = nil
 }
 
+// SetDisabled sets the "disabled" field.
+func (m *ScheduledTaskMutation) SetDisabled(b bool) {
+	m.disabled = &b
+}
+
+// Disabled returns the value of the "disabled" field in the mutation.
+func (m *ScheduledTaskMutation) Disabled() (r bool, exists bool) {
+	v := m.disabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabled returns the old "disabled" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldDisabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabled: %w", err)
+	}
+	return oldValue.Disabled, nil
+}
+
+// ResetDisabled resets all changes to the "disabled" field.
+func (m *ScheduledTaskMutation) ResetDisabled() {
+	m.disabled = nil
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by id.
 func (m *ScheduledTaskMutation) SetTomeID(id int) {
 	m.tome = &id
@@ -13332,6 +13431,60 @@ func (m *ScheduledTaskMutation) ResetScheduledHosts() {
 	m.removedscheduled_hosts = nil
 }
 
+// AddQuestIDs adds the "quests" edge to the Quest entity by ids.
+func (m *ScheduledTaskMutation) AddQuestIDs(ids ...int) {
+	if m.quests == nil {
+		m.quests = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.quests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearQuests clears the "quests" edge to the Quest entity.
+func (m *ScheduledTaskMutation) ClearQuests() {
+	m.clearedquests = true
+}
+
+// QuestsCleared reports if the "quests" edge to the Quest entity was cleared.
+func (m *ScheduledTaskMutation) QuestsCleared() bool {
+	return m.clearedquests
+}
+
+// RemoveQuestIDs removes the "quests" edge to the Quest entity by IDs.
+func (m *ScheduledTaskMutation) RemoveQuestIDs(ids ...int) {
+	if m.removedquests == nil {
+		m.removedquests = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.quests, ids[i])
+		m.removedquests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedQuests returns the removed IDs of the "quests" edge to the Quest entity.
+func (m *ScheduledTaskMutation) RemovedQuestsIDs() (ids []int) {
+	for id := range m.removedquests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// QuestsIDs returns the "quests" edge IDs in the mutation.
+func (m *ScheduledTaskMutation) QuestsIDs() (ids []int) {
+	for id := range m.quests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetQuests resets all changes to the "quests" edge.
+func (m *ScheduledTaskMutation) ResetQuests() {
+	m.quests = nil
+	m.clearedquests = false
+	m.removedquests = nil
+}
+
 // Where appends a list predicates to the ScheduledTaskMutation builder.
 func (m *ScheduledTaskMutation) Where(ps ...predicate.ScheduledTask) {
 	m.predicates = append(m.predicates, ps...)
@@ -13366,7 +13519,7 @@ func (m *ScheduledTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ScheduledTaskMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, scheduledtask.FieldCreatedAt)
 	}
@@ -13390,6 +13543,9 @@ func (m *ScheduledTaskMutation) Fields() []string {
 	}
 	if m.run_on_schedule != nil {
 		fields = append(fields, scheduledtask.FieldRunOnSchedule)
+	}
+	if m.disabled != nil {
+		fields = append(fields, scheduledtask.FieldDisabled)
 	}
 	return fields
 }
@@ -13415,6 +13571,8 @@ func (m *ScheduledTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.Parameters()
 	case scheduledtask.FieldRunOnSchedule:
 		return m.RunOnSchedule()
+	case scheduledtask.FieldDisabled:
+		return m.Disabled()
 	}
 	return nil, false
 }
@@ -13440,6 +13598,8 @@ func (m *ScheduledTaskMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldParameters(ctx)
 	case scheduledtask.FieldRunOnSchedule:
 		return m.OldRunOnSchedule(ctx)
+	case scheduledtask.FieldDisabled:
+		return m.OldDisabled(ctx)
 	}
 	return nil, fmt.Errorf("unknown ScheduledTask field %s", name)
 }
@@ -13504,6 +13664,13 @@ func (m *ScheduledTaskMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRunOnSchedule(v)
+		return nil
+	case scheduledtask.FieldDisabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabled(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ScheduledTask field %s", name)
@@ -13587,18 +13754,24 @@ func (m *ScheduledTaskMutation) ResetField(name string) error {
 	case scheduledtask.FieldRunOnSchedule:
 		m.ResetRunOnSchedule()
 		return nil
+	case scheduledtask.FieldDisabled:
+		m.ResetDisabled()
+		return nil
 	}
 	return fmt.Errorf("unknown ScheduledTask field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ScheduledTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.tome != nil {
 		edges = append(edges, scheduledtask.EdgeTome)
 	}
 	if m.scheduled_hosts != nil {
 		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.quests != nil {
+		edges = append(edges, scheduledtask.EdgeQuests)
 	}
 	return edges
 }
@@ -13617,15 +13790,24 @@ func (m *ScheduledTaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case scheduledtask.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.quests))
+		for id := range m.quests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ScheduledTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedscheduled_hosts != nil {
 		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.removedquests != nil {
+		edges = append(edges, scheduledtask.EdgeQuests)
 	}
 	return edges
 }
@@ -13640,18 +13822,27 @@ func (m *ScheduledTaskMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case scheduledtask.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.removedquests))
+		for id := range m.removedquests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ScheduledTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedtome {
 		edges = append(edges, scheduledtask.EdgeTome)
 	}
 	if m.clearedscheduled_hosts {
 		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.clearedquests {
+		edges = append(edges, scheduledtask.EdgeQuests)
 	}
 	return edges
 }
@@ -13664,6 +13855,8 @@ func (m *ScheduledTaskMutation) EdgeCleared(name string) bool {
 		return m.clearedtome
 	case scheduledtask.EdgeScheduledHosts:
 		return m.clearedscheduled_hosts
+	case scheduledtask.EdgeQuests:
+		return m.clearedquests
 	}
 	return false
 }
@@ -13688,6 +13881,9 @@ func (m *ScheduledTaskMutation) ResetEdge(name string) error {
 		return nil
 	case scheduledtask.EdgeScheduledHosts:
 		m.ResetScheduledHosts()
+		return nil
+	case scheduledtask.EdgeQuests:
+		m.ResetQuests()
 		return nil
 	}
 	return fmt.Errorf("unknown ScheduledTask edge %s", name)

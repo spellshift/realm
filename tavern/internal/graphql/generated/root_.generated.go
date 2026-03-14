@@ -316,28 +316,29 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask     func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential    func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink          func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest         func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateRepository    func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateScheduledTask func(childComplexity int, input ent.CreateScheduledTaskInput) int
-		CreateShell         func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag           func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome          func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder       func(childComplexity int, builderID int) int
-		DeleteTome          func(childComplexity int, tomeID int) int
-		DisableLink         func(childComplexity int, linkID int) int
-		DropAllData         func(childComplexity int) int
-		ImportRepository    func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder     func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey     func(childComplexity int) int
-		UpdateBeacon        func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost          func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink          func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag           func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome          func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser          func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask  func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag            func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome           func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder        func(childComplexity int, builderID int) int
+		DeleteTome           func(childComplexity int, tomeID int) int
+		DisableLink          func(childComplexity int, linkID int) int
+		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
+		DropAllData          func(childComplexity int) int
+		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey      func(childComplexity int) int
+		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome           func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser           func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -400,6 +401,7 @@ type ComplexityRoot struct {
 		Name                func(childComplexity int) int
 		ParamDefsAtCreation func(childComplexity int) int
 		Parameters          func(childComplexity int) int
+		ScheduledTask       func(childComplexity int) int
 		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tome                func(childComplexity int) int
 	}
@@ -446,10 +448,12 @@ type ComplexityRoot struct {
 	ScheduledTask struct {
 		CreatedAt              func(childComplexity int) int
 		Description            func(childComplexity int) int
+		Disabled               func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		LastModifiedAt         func(childComplexity int) int
 		Name                   func(childComplexity int) int
 		Parameters             func(childComplexity int) int
+		Quests                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		RunOnFirstHostCallback func(childComplexity int) int
 		RunOnNewBeaconCallback func(childComplexity int) int
 		RunOnSchedule          func(childComplexity int) int
@@ -2081,6 +2085,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DisableLink(childComplexity, args["linkID"].(int)), true
 
+	case "Mutation.disableScheduledTask":
+		if e.complexity.Mutation.DisableScheduledTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableScheduledTask_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableScheduledTask(childComplexity, args["scheduledTaskID"].(int)), true
+
 	case "Mutation.dropAllData":
 		if e.complexity.Mutation.DropAllData == nil {
 			break
@@ -2584,6 +2600,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Quest.Parameters(childComplexity), true
 
+	case "Quest.scheduledTask":
+		if e.complexity.Quest.ScheduledTask == nil {
+			break
+		}
+
+		return e.complexity.Quest.ScheduledTask(childComplexity), true
+
 	case "Quest.tasks":
 		if e.complexity.Quest.Tasks == nil {
 			break
@@ -2769,6 +2792,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ScheduledTask.Description(childComplexity), true
 
+	case "ScheduledTask.disabled":
+		if e.complexity.ScheduledTask.Disabled == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Disabled(childComplexity), true
+
 	case "ScheduledTask.id":
 		if e.complexity.ScheduledTask.ID == nil {
 			break
@@ -2796,6 +2826,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ScheduledTask.Parameters(childComplexity), true
+
+	case "ScheduledTask.quests":
+		if e.complexity.ScheduledTask.Quests == nil {
+			break
+		}
+
+		args, err := ec.field_ScheduledTask_quests_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ScheduledTask.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
 
 	case "ScheduledTask.runOnFirstHostCallback":
 		if e.complexity.ScheduledTask.RunOnFirstHostCallback == nil {
@@ -5186,6 +5228,10 @@ input CreateScheduledTaskInput {
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
   tomeID: ID!
   scheduledHostIDs: [ID!]
 }
@@ -7188,6 +7234,10 @@ type Quest implements Node {
   User that created the quest if available.
   """
   creator: User
+  """
+  The scheduled task that created this quest, if any.
+  """
+  scheduledTask: ScheduledTask
 }
 """
 A connection to a list of items.
@@ -7371,6 +7421,11 @@ input QuestWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  scheduled_task edge predicates
+  """
+  hasScheduledTask: Boolean
+  hasScheduledTaskWith: [ScheduledTaskWhereInput!]
 }
 type Repository implements Node {
   id: ID!
@@ -7613,6 +7668,10 @@ type ScheduledTask implements Node {
   """
   runOnSchedule: String!
   """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean!
+  """
   The Tome that this ScheduledTask will run.
   """
   tome: Tome!
@@ -7647,6 +7706,37 @@ type ScheduledTask implements Node {
     """
     where: HostWhereInput
   ): HostConnection!
+  quests(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Quests returned from the connection.
+    """
+    orderBy: [QuestOrder!]
+
+    """
+    Filtering options for Quests returned from the connection.
+    """
+    where: QuestWhereInput
+  ): QuestConnection!
 }
 """
 A connection to a list of items.
@@ -7817,6 +7907,11 @@ input ScheduledTaskWhereInput {
   runOnScheduleEqualFold: String
   runOnScheduleContainsFold: String
   """
+  disabled field predicates
+  """
+  disabled: Boolean
+  disabledNEQ: Boolean
+  """
   tome edge predicates
   """
   hasTome: Boolean
@@ -7826,6 +7921,11 @@ input ScheduledTaskWhereInput {
   """
   hasScheduledHosts: Boolean
   hasScheduledHostsWith: [HostWhereInput!]
+  """
+  quests edge predicates
+  """
+  hasQuests: Boolean
+  hasQuestsWith: [QuestWhereInput!]
 }
 type Screenshot implements Node {
   id: ID!
@@ -9553,6 +9653,10 @@ input UpdateScheduledTaskInput {
   Cron-like schedule for this tome to be automatically queued.
   """
   runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
   addScheduledHostIDs: [ID!]
   removeScheduledHostIDs: [ID!]
   clearScheduledHosts: Boolean
@@ -10237,6 +10341,7 @@ scalar Uint64
     # ScheduledTask
     ###
     createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
+    disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

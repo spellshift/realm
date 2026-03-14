@@ -30,10 +30,14 @@ const (
 	FieldParameters = "parameters"
 	// FieldRunOnSchedule holds the string denoting the run_on_schedule field in the database.
 	FieldRunOnSchedule = "run_on_schedule"
+	// FieldDisabled holds the string denoting the disabled field in the database.
+	FieldDisabled = "disabled"
 	// EdgeTome holds the string denoting the tome edge name in mutations.
 	EdgeTome = "tome"
 	// EdgeScheduledHosts holds the string denoting the scheduled_hosts edge name in mutations.
 	EdgeScheduledHosts = "scheduled_hosts"
+	// EdgeQuests holds the string denoting the quests edge name in mutations.
+	EdgeQuests = "quests"
 	// Table holds the table name of the scheduledtask in the database.
 	Table = "scheduled_tasks"
 	// TomeTable is the table that holds the tome relation/edge.
@@ -50,6 +54,13 @@ const (
 	ScheduledHostsInverseTable = "hosts"
 	// ScheduledHostsColumn is the table column denoting the scheduled_hosts relation/edge.
 	ScheduledHostsColumn = "scheduled_task_scheduled_hosts"
+	// QuestsTable is the table that holds the quests relation/edge.
+	QuestsTable = "quests"
+	// QuestsInverseTable is the table name for the Quest entity.
+	// It exists in this package in order to avoid circular dependency with the "quest" package.
+	QuestsInverseTable = "quests"
+	// QuestsColumn is the table column denoting the quests relation/edge.
+	QuestsColumn = "scheduled_task_quests"
 )
 
 // Columns holds all SQL columns for scheduledtask fields.
@@ -63,6 +74,7 @@ var Columns = []string{
 	FieldRunOnFirstHostCallback,
 	FieldParameters,
 	FieldRunOnSchedule,
+	FieldDisabled,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "scheduled_tasks"
@@ -103,6 +115,8 @@ var (
 	ParametersValidator func(string) error
 	// DefaultRunOnSchedule holds the default value on creation for the "run_on_schedule" field.
 	DefaultRunOnSchedule string
+	// DefaultDisabled holds the default value on creation for the "disabled" field.
+	DefaultDisabled bool
 )
 
 // OrderOption defines the ordering options for the ScheduledTask queries.
@@ -153,6 +167,11 @@ func ByRunOnSchedule(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRunOnSchedule, opts...).ToFunc()
 }
 
+// ByDisabled orders the results by the disabled field.
+func ByDisabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisabled, opts...).ToFunc()
+}
+
 // ByTomeField orders the results by tome field.
 func ByTomeField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -173,6 +192,20 @@ func ByScheduledHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newScheduledHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByQuestsCount orders the results by quests count.
+func ByQuestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newQuestsStep(), opts...)
+	}
+}
+
+// ByQuests orders the results by quests terms.
+func ByQuests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newQuestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTomeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -185,5 +218,12 @@ func newScheduledHostsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScheduledHostsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ScheduledHostsTable, ScheduledHostsColumn),
+	)
+}
+func newQuestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(QuestsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, QuestsTable, QuestsColumn),
 	)
 }

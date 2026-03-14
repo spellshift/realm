@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -27,10 +28,12 @@ type ScheduledTaskQuery struct {
 	predicates              []predicate.ScheduledTask
 	withTome                *TomeQuery
 	withScheduledHosts      *HostQuery
+	withQuests              *QuestQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
 	loadTotal               []func(context.Context, []*ScheduledTask) error
 	withNamedScheduledHosts map[string]*HostQuery
+	withNamedQuests         map[string]*QuestQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -104,6 +107,28 @@ func (stq *ScheduledTaskQuery) QueryScheduledHosts() *HostQuery {
 			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, selector),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.ScheduledHostsTable, scheduledtask.ScheduledHostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryQuests chains the current query on the "quests" edge.
+func (stq *ScheduledTaskQuery) QueryQuests() *QuestQuery {
+	query := (&QuestClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, selector),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.QuestsTable, scheduledtask.QuestsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
 		return fromU, nil
@@ -305,6 +330,7 @@ func (stq *ScheduledTaskQuery) Clone() *ScheduledTaskQuery {
 		predicates:         append([]predicate.ScheduledTask{}, stq.predicates...),
 		withTome:           stq.withTome.Clone(),
 		withScheduledHosts: stq.withScheduledHosts.Clone(),
+		withQuests:         stq.withQuests.Clone(),
 		// clone intermediate query.
 		sql:  stq.sql.Clone(),
 		path: stq.path,
@@ -330,6 +356,17 @@ func (stq *ScheduledTaskQuery) WithScheduledHosts(opts ...func(*HostQuery)) *Sch
 		opt(query)
 	}
 	stq.withScheduledHosts = query
+	return stq
+}
+
+// WithQuests tells the query-builder to eager-load the nodes that are connected to
+// the "quests" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ScheduledTaskQuery) WithQuests(opts ...func(*QuestQuery)) *ScheduledTaskQuery {
+	query := (&QuestClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withQuests = query
 	return stq
 }
 
@@ -412,9 +449,10 @@ func (stq *ScheduledTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		nodes       = []*ScheduledTask{}
 		withFKs     = stq.withFKs
 		_spec       = stq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			stq.withTome != nil,
 			stq.withScheduledHosts != nil,
+			stq.withQuests != nil,
 		}
 	)
 	if stq.withTome != nil {
@@ -457,10 +495,24 @@ func (stq *ScheduledTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 			return nil, err
 		}
 	}
+	if query := stq.withQuests; query != nil {
+		if err := stq.loadQuests(ctx, query, nodes,
+			func(n *ScheduledTask) { n.Edges.Quests = []*Quest{} },
+			func(n *ScheduledTask, e *Quest) { n.Edges.Quests = append(n.Edges.Quests, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range stq.withNamedScheduledHosts {
 		if err := stq.loadScheduledHosts(ctx, query, nodes,
 			func(n *ScheduledTask) { n.appendNamedScheduledHosts(name) },
 			func(n *ScheduledTask, e *Host) { n.appendNamedScheduledHosts(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range stq.withNamedQuests {
+		if err := stq.loadQuests(ctx, query, nodes,
+			func(n *ScheduledTask) { n.appendNamedQuests(name) },
+			func(n *ScheduledTask, e *Quest) { n.appendNamedQuests(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -530,6 +582,37 @@ func (stq *ScheduledTaskQuery) loadScheduledHosts(ctx context.Context, query *Ho
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "scheduled_task_scheduled_hosts" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (stq *ScheduledTaskQuery) loadQuests(ctx context.Context, query *QuestQuery, nodes []*ScheduledTask, init func(*ScheduledTask), assign func(*ScheduledTask, *Quest)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*ScheduledTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Quest(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(scheduledtask.QuestsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.scheduled_task_quests
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "scheduled_task_quests" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "scheduled_task_quests" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -631,6 +714,20 @@ func (stq *ScheduledTaskQuery) WithNamedScheduledHosts(name string, opts ...func
 		stq.withNamedScheduledHosts = make(map[string]*HostQuery)
 	}
 	stq.withNamedScheduledHosts[name] = query
+	return stq
+}
+
+// WithNamedQuests tells the query-builder to eager-load the nodes that are connected to the "quests"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (stq *ScheduledTaskQuery) WithNamedQuests(name string, opts ...func(*QuestQuery)) *ScheduledTaskQuery {
+	query := (&QuestClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if stq.withNamedQuests == nil {
+		stq.withNamedQuests = make(map[string]*QuestQuery)
+	}
+	stq.withNamedQuests[name] = query
 	return stq
 }
 

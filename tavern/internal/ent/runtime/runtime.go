@@ -421,6 +421,10 @@ func init() {
 	scheduledtaskDescRunOnSchedule := scheduledtaskFields[5].Descriptor()
 	// scheduledtask.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
 	scheduledtask.DefaultRunOnSchedule = scheduledtaskDescRunOnSchedule.Default.(string)
+	// scheduledtaskDescDisabled is the schema descriptor for disabled field.
+	scheduledtaskDescDisabled := scheduledtaskFields[6].Descriptor()
+	// scheduledtask.DefaultDisabled holds the default value on creation for the disabled field.
+	scheduledtask.DefaultDisabled = scheduledtaskDescDisabled.Default.(bool)
 	screenshotMixin := schema.Screenshot{}.Mixin()
 	screenshotHooks := schema.Screenshot{}.Hooks()
 	screenshot.Hooks[0] = screenshotHooks[0]

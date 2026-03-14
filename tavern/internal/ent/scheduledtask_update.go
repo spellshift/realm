@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -126,6 +127,20 @@ func (stu *ScheduledTaskUpdate) SetNillableRunOnSchedule(s *string) *ScheduledTa
 	return stu
 }
 
+// SetDisabled sets the "disabled" field.
+func (stu *ScheduledTaskUpdate) SetDisabled(b bool) *ScheduledTaskUpdate {
+	stu.mutation.SetDisabled(b)
+	return stu
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (stu *ScheduledTaskUpdate) SetNillableDisabled(b *bool) *ScheduledTaskUpdate {
+	if b != nil {
+		stu.SetDisabled(*b)
+	}
+	return stu
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (stu *ScheduledTaskUpdate) SetTomeID(id int) *ScheduledTaskUpdate {
 	stu.mutation.SetTomeID(id)
@@ -150,6 +165,21 @@ func (stu *ScheduledTaskUpdate) AddScheduledHosts(h ...*Host) *ScheduledTaskUpda
 		ids[i] = h[i].ID
 	}
 	return stu.AddScheduledHostIDs(ids...)
+}
+
+// AddQuestIDs adds the "quests" edge to the Quest entity by IDs.
+func (stu *ScheduledTaskUpdate) AddQuestIDs(ids ...int) *ScheduledTaskUpdate {
+	stu.mutation.AddQuestIDs(ids...)
+	return stu
+}
+
+// AddQuests adds the "quests" edges to the Quest entity.
+func (stu *ScheduledTaskUpdate) AddQuests(q ...*Quest) *ScheduledTaskUpdate {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return stu.AddQuestIDs(ids...)
 }
 
 // Mutation returns the ScheduledTaskMutation object of the builder.
@@ -182,6 +212,27 @@ func (stu *ScheduledTaskUpdate) RemoveScheduledHosts(h ...*Host) *ScheduledTaskU
 		ids[i] = h[i].ID
 	}
 	return stu.RemoveScheduledHostIDs(ids...)
+}
+
+// ClearQuests clears all "quests" edges to the Quest entity.
+func (stu *ScheduledTaskUpdate) ClearQuests() *ScheduledTaskUpdate {
+	stu.mutation.ClearQuests()
+	return stu
+}
+
+// RemoveQuestIDs removes the "quests" edge to Quest entities by IDs.
+func (stu *ScheduledTaskUpdate) RemoveQuestIDs(ids ...int) *ScheduledTaskUpdate {
+	stu.mutation.RemoveQuestIDs(ids...)
+	return stu
+}
+
+// RemoveQuests removes "quests" edges to Quest entities.
+func (stu *ScheduledTaskUpdate) RemoveQuests(q ...*Quest) *ScheduledTaskUpdate {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return stu.RemoveQuestIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -274,6 +325,9 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	if value, ok := stu.mutation.RunOnSchedule(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)
 	}
+	if value, ok := stu.mutation.Disabled(); ok {
+		_spec.SetField(scheduledtask.FieldDisabled, field.TypeBool, value)
+	}
 	if stu.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -341,6 +395,51 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stu.mutation.QuestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.RemovedQuestsIDs(); len(nodes) > 0 && !stu.mutation.QuestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.QuestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -464,6 +563,20 @@ func (stuo *ScheduledTaskUpdateOne) SetNillableRunOnSchedule(s *string) *Schedul
 	return stuo
 }
 
+// SetDisabled sets the "disabled" field.
+func (stuo *ScheduledTaskUpdateOne) SetDisabled(b bool) *ScheduledTaskUpdateOne {
+	stuo.mutation.SetDisabled(b)
+	return stuo
+}
+
+// SetNillableDisabled sets the "disabled" field if the given value is not nil.
+func (stuo *ScheduledTaskUpdateOne) SetNillableDisabled(b *bool) *ScheduledTaskUpdateOne {
+	if b != nil {
+		stuo.SetDisabled(*b)
+	}
+	return stuo
+}
+
 // SetTomeID sets the "tome" edge to the Tome entity by ID.
 func (stuo *ScheduledTaskUpdateOne) SetTomeID(id int) *ScheduledTaskUpdateOne {
 	stuo.mutation.SetTomeID(id)
@@ -488,6 +601,21 @@ func (stuo *ScheduledTaskUpdateOne) AddScheduledHosts(h ...*Host) *ScheduledTask
 		ids[i] = h[i].ID
 	}
 	return stuo.AddScheduledHostIDs(ids...)
+}
+
+// AddQuestIDs adds the "quests" edge to the Quest entity by IDs.
+func (stuo *ScheduledTaskUpdateOne) AddQuestIDs(ids ...int) *ScheduledTaskUpdateOne {
+	stuo.mutation.AddQuestIDs(ids...)
+	return stuo
+}
+
+// AddQuests adds the "quests" edges to the Quest entity.
+func (stuo *ScheduledTaskUpdateOne) AddQuests(q ...*Quest) *ScheduledTaskUpdateOne {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return stuo.AddQuestIDs(ids...)
 }
 
 // Mutation returns the ScheduledTaskMutation object of the builder.
@@ -520,6 +648,27 @@ func (stuo *ScheduledTaskUpdateOne) RemoveScheduledHosts(h ...*Host) *ScheduledT
 		ids[i] = h[i].ID
 	}
 	return stuo.RemoveScheduledHostIDs(ids...)
+}
+
+// ClearQuests clears all "quests" edges to the Quest entity.
+func (stuo *ScheduledTaskUpdateOne) ClearQuests() *ScheduledTaskUpdateOne {
+	stuo.mutation.ClearQuests()
+	return stuo
+}
+
+// RemoveQuestIDs removes the "quests" edge to Quest entities by IDs.
+func (stuo *ScheduledTaskUpdateOne) RemoveQuestIDs(ids ...int) *ScheduledTaskUpdateOne {
+	stuo.mutation.RemoveQuestIDs(ids...)
+	return stuo
+}
+
+// RemoveQuests removes "quests" edges to Quest entities.
+func (stuo *ScheduledTaskUpdateOne) RemoveQuests(q ...*Quest) *ScheduledTaskUpdateOne {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return stuo.RemoveQuestIDs(ids...)
 }
 
 // Where appends a list predicates to the ScheduledTaskUpdate builder.
@@ -642,6 +791,9 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 	if value, ok := stuo.mutation.RunOnSchedule(); ok {
 		_spec.SetField(scheduledtask.FieldRunOnSchedule, field.TypeString, value)
 	}
+	if value, ok := stuo.mutation.Disabled(); ok {
+		_spec.SetField(scheduledtask.FieldDisabled, field.TypeBool, value)
+	}
 	if stuo.mutation.TomeCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -709,6 +861,51 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.QuestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.RemovedQuestsIDs(); len(nodes) > 0 && !stuo.mutation.QuestsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.QuestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   scheduledtask.QuestsTable,
+			Columns: []string{scheduledtask.QuestsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

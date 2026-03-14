@@ -95,6 +95,11 @@ func RunOnSchedule(v string) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldEQ(FieldRunOnSchedule, v))
 }
 
+// Disabled applies equality check predicate on the "disabled" field. It's identical to DisabledEQ.
+func Disabled(v bool) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldEQ(FieldDisabled, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldEQ(FieldCreatedAt, v))
@@ -465,6 +470,16 @@ func RunOnScheduleContainsFold(v string) predicate.ScheduledTask {
 	return predicate.ScheduledTask(sql.FieldContainsFold(FieldRunOnSchedule, v))
 }
 
+// DisabledEQ applies the EQ predicate on the "disabled" field.
+func DisabledEQ(v bool) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldEQ(FieldDisabled, v))
+}
+
+// DisabledNEQ applies the NEQ predicate on the "disabled" field.
+func DisabledNEQ(v bool) predicate.ScheduledTask {
+	return predicate.ScheduledTask(sql.FieldNEQ(FieldDisabled, v))
+}
+
 // HasTome applies the HasEdge predicate on the "tome" edge.
 func HasTome() predicate.ScheduledTask {
 	return predicate.ScheduledTask(func(s *sql.Selector) {
@@ -503,6 +518,29 @@ func HasScheduledHosts() predicate.ScheduledTask {
 func HasScheduledHostsWith(preds ...predicate.Host) predicate.ScheduledTask {
 	return predicate.ScheduledTask(func(s *sql.Selector) {
 		step := newScheduledHostsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasQuests applies the HasEdge predicate on the "quests" edge.
+func HasQuests() predicate.ScheduledTask {
+	return predicate.ScheduledTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, QuestsTable, QuestsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasQuestsWith applies the HasEdge predicate on the "quests" edge with a given conditions (other predicates).
+func HasQuestsWith(preds ...predicate.Quest) predicate.ScheduledTask {
+	return predicate.ScheduledTask(func(s *sql.Selector) {
+		step := newQuestsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
