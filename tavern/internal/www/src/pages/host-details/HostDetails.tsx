@@ -12,6 +12,7 @@ import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import Button from "../../components/tavern-base-ui/button/Button";
+import { FileTerminal } from "lucide-react";
 
 const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
 
@@ -26,20 +27,23 @@ const HostDetails = () => {
         setSearchParams({ tab: TAB_NAMES[index] }, { replace: true });
     };
 
-    const handleOpenCreateQuest = () => {
-        openModal();
-    };
-
     return (
         <HostContextProvider>
             <div className="flex flex-row justify-between w-full items-center">
                 <HostBreadcrumbs />
                 <div>
                     <Button
+                        leftIcon={<FileTerminal className="w-5 h-5" />}
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => openModal()}
+                        onClick={() => {
+                            openModal({
+                                onComplete: () => {
+                                    setSearchParams({ tab: "tasks" });
+                                }
+                            });
+                        }}
                     >
-                        Create quest
+                        Create a quest
                     </Button>
                 </div>
             </div>
@@ -55,7 +59,7 @@ const HostDetails = () => {
                             <HostTaskTab />
                         </TabPanel>
                         <TabPanel>
-                            <ProcessTab handleOpenCreateQuest={handleOpenCreateQuest} />
+                            <ProcessTab />
                         </TabPanel>
                         <TabPanel>
                             <FilesTab />

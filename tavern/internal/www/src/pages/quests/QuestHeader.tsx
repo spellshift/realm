@@ -1,3 +1,4 @@
+import { FileTerminal, SquareTerminal } from "lucide-react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
@@ -14,10 +15,11 @@ const QuestHeader = () => {
                 }]} />
                 <div>
                     <Button
+                        leftIcon={<FileTerminal className="w-5 h-5" />}
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => openModal()}
+                        onClick={() => openModal({ navigateToQuest: true })}
                     >
-                        Create quest
+                        Create a quest
                     </Button>
                 </div>
             </div>

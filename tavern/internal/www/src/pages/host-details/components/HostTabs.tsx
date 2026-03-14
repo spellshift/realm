@@ -1,50 +1,10 @@
 import { Tab, TabList } from "@headlessui/react"
 import { useHost } from "../../../context/HostContext";
-import { getOfflineOnlineStatus } from "../../../utils/utils";
-import { useQuery } from "@apollo/client";
-import { useParams } from "react-router-dom";
-import { GET_HOST_TASK_COUNT, GET_HOST_SHELL_COUNT } from "../../../utils/queries";
 import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon } from "lucide-react";
 
 
 const HostTabs = () => {
-    const { hostId } = useParams();
-    const { data: host } = useHost();
-    const { data: hostTaskData } = useQuery(GET_HOST_TASK_COUNT, {
-        variables: {
-            "where":
-            {
-                "hasBeaconWith": {
-                    "hasHostWith": {
-                        "id": hostId
-                    }
-                }
-            }
-        }
-    });
-
-    const { data: shellCountData } = useQuery(GET_HOST_SHELL_COUNT, {
-        variables: {
-            whereTotal: {
-                hasBeaconWith: {
-                    hasHostWith: {
-                        id: hostId
-                    }
-                }
-            },
-            whereActive: {
-                hasBeaconWith: {
-                    hasHostWith: {
-                        id: hostId
-                    }
-                },
-                closedAtIsNil: true
-            }
-        },
-        skip: !hostId
-    });
-
-    const { online } = getOfflineOnlineStatus(host?.beacons?.edges || []);
+    const { data: host, taskCount, totalShellCount, activeShellCount } = useHost();
 
     return (
         <TabList className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
@@ -54,7 +14,7 @@ const HostTabs = () => {
                     Beacons
                 </div>
                 <div>
-                    {host?.beacons?.totalCount !== undefined && `(${online}/${host.beacons.totalCount})`}
+                    {host?.beacons?.totalCount !== undefined && `(${host.beacons.totalCount})`}
                 </div>
             </Tab>
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
@@ -63,7 +23,7 @@ const HostTabs = () => {
                     Tasks
                 </div>
                 <div>
-                    {hostTaskData?.tasks?.totalCount !== undefined && `(${hostTaskData.tasks.totalCount})`}
+                    {taskCount !== undefined && `(${taskCount})`}
                 </div>
             </Tab>
             <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
@@ -99,7 +59,7 @@ const HostTabs = () => {
                     Shells
                 </div>
                 <div>
-                    {shellCountData?.totalShells?.totalCount !== undefined && `(${shellCountData.activeShells?.totalCount || 0}/${shellCountData.totalShells.totalCount})`}
+                    {totalShellCount !== undefined && `(${activeShellCount ?? 0}/${totalShellCount})`}
                 </div>
             </Tab>
         </TabList>

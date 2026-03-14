@@ -1,3 +1,4 @@
+import { useToast } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useMemo, useState } from "react";
 
@@ -10,16 +11,19 @@ import { useModalSubmitQuest } from "./useModalSubmitQuest";
 import { BeaconSelectionStep } from "./beacon-selection";
 import { TomeSelectionStep } from "./tome-selection";
 import { FinalizeSelection } from "./finalize-selection";
-import { CreateQuestInitialData } from "../../context/CreateQuestModalContext";
+import { CreateQuestInitialData, RefetchQuery } from "../../context/CreateQuestModalContext";
 
 interface CreateQuestModalProps {
     isOpen: boolean;
     setOpen: (arg: boolean) => void;
     initialFormData?: CreateQuestInitialData;
     onComplete?: (questId: string) => void;
+    refetchQueries?: RefetchQuery[];
 }
 
 function getInitialStep(initialData?: CreateQuestInitialData): number {
+    if(initialData?.initialStep) return initialData?.initialStep;
+    
     if (initialData?.beacons && initialData.beacons.length > 0) {
         if (initialData?.tomeId) {
             return 2;
@@ -66,10 +70,11 @@ const STEPS: StepConfig[] = [
     },
 ];
 
-const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete }: CreateQuestModalProps) => {
+const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete, refetchQueries }: CreateQuestModalProps) => {
     const [placeholderTitle] = useState(() => getRandomQuestName());
     const [currStep, setCurrStep] = useState(() => getInitialStep(initialFormData));
-    const { submitQuest, loading } = useModalSubmitQuest();
+    const { submitQuest, loading } = useModalSubmitQuest(refetchQueries);
+    const toast = useToast();
 
     const formik = useFormik<ModalQuestFormValues>({
         initialValues: getInitialFormValues(initialFormData, placeholderTitle),
@@ -79,8 +84,16 @@ const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete }: Crea
         onSubmit: async (values: ModalQuestFormValues) => {
             const result = await submitQuest(values);
             const questId = result?.data?.createQuest?.id;
-            if (questId && onComplete) {
-                onComplete(questId);
+            if (questId) {
+                toast({
+                    title: "Quest queued",
+                    description: "The quest has been successfully queued.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "bottom-right",
+                });
+                onComplete?.(questId);
             }
         },
     });

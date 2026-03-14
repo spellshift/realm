@@ -1,8 +1,8 @@
 import { gql, useMutation } from "@apollo/client";
 import { GraphQLErrors, NetworkError } from "@apollo/client/errors";
-import { useState } from "react";
-import { GET_QUEST_IDS_QUERY } from "../../pages/quests/queries";
+import { useMemo, useState } from "react";
 import { ModalQuestFormValues } from "./types";
+import { RefetchQuery } from "../../context/CreateQuestModalContext";
 
 export type CreateModalQuestProps = ModalQuestFormValues;
 
@@ -21,16 +21,21 @@ interface CreateQuestMutationVariables {
     };
 }
 
-export const useModalSubmitQuest = () => {
+const CREATE_QUEST_MUTATION = gql`
+    mutation CreateQuest($IDs: [ID!]!, $input: CreateQuestInput!) {
+        createQuest(beaconIDs: $IDs, input: $input) {
+            id
+        }
+    }
+`;
+
+export const useModalSubmitQuest = (additionalRefetchQueries?: RefetchQuery[]) => {
     const [error, setError] = useState(false);
 
-    const CREATE_QUEST_MUTATION = gql`
-        mutation CreateQuest($IDs: [ID!]!, $input: CreateQuestInput!) {
-            createQuest(beaconIDs: $IDs, input: $input) {
-                id
-            }
-        }
-    `;
+    const refetchQueries = useMemo(
+        () => [...(additionalRefetchQueries || [])],
+        [additionalRefetchQueries]
+    );
 
     const handleError = (error: NetworkError | GraphQLErrors) => {
         if (error) {
@@ -40,7 +45,7 @@ export const useModalSubmitQuest = () => {
 
     const [createQuestMutation, { loading, reset }] = useMutation<CreateQuestMutationData, CreateQuestMutationVariables>(CREATE_QUEST_MUTATION, {
         onError: handleError,
-        refetchQueries: [GET_QUEST_IDS_QUERY],
+        refetchQueries,
         awaitRefetchQueries: true,
     });
 
