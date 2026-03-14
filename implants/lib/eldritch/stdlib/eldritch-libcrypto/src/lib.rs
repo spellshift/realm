@@ -196,4 +196,27 @@ pub trait CryptoLibrary {
     /// **Errors**
     /// - Returns an error string if serialization fails (e.g., circular references, unsupported types).
     fn to_json(&self, content: Value) -> Result<String, String>;
+
+    #[eldritch_method]
+    /// Encodes a UTF-8 string into UTF-16LE bytes.
+    ///
+    /// **Parameters**
+    /// - `content` (`str`): The string to encode.
+    ///
+    /// **Returns**
+    /// - `Bytes`: The UTF-16LE encoded bytes.
+    fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String>;
+
+    #[eldritch_method]
+    /// Decodes UTF-16LE bytes into a UTF-8 string.
+    ///
+    /// **Parameters**
+    /// - `content` (`Bytes`): The UTF-16LE bytes to decode.
+    ///
+    /// **Returns**
+    /// - `str`: The decoded UTF-8 string.
+    ///
+    /// **Errors**
+    /// - Returns an error string if the bytes are not valid UTF-16.
+    fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String>;
 }
