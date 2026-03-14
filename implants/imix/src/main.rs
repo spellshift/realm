@@ -31,7 +31,7 @@ mod task;
 mod tests;
 mod version;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     #[cfg(all(debug_assertions, feature = "tokio-console"))]
     {
@@ -70,7 +70,7 @@ async fn main() -> Result<()> {
 define_windows_service!(ffi_service_main, service_main);
 
 #[cfg(all(feature = "win_service", windows))]
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn service_main(arguments: Vec<std::ffi::OsString>) {
     crate::win_service::handle_service_main(arguments);
     let _ = run::run_agent().await;
