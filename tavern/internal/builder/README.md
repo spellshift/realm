@@ -5,7 +5,6 @@ The builder package orchestrates agent compilation for target platforms. It conn
 # TODO
 - Add guardrails
 - Add e2e testsq
-- Figure out if the dupe NameInput is needed with Name in inputs.graphql
 - BuildProfile structs are spread across models and builderpb can we consolidate these
 - [x] Streamline the buildScript with a setupScript and buildScript
 
