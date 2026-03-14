@@ -101,7 +101,7 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
             query={GET_PROCESS_DETAIL_QUERY}
             getVariables={getVariables}
             extractData={extractData}
-            estimateRowSize={73}
+            estimateRowSize={80}
             overscan={5}
             height="60vh"
         />

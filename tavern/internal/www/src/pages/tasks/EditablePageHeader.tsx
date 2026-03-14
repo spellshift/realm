@@ -33,15 +33,6 @@ export const EditablePageHeader: FC = () => {
         <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-row justify-between w-full items-center gap-2">
                 <Breadcrumbs pages={BreadcrumbsList} />
-                {questData && questData.tasks.edges && (
-                    <CreateQuestDropdown
-                        showLabel={true}
-                        name={questData.name}
-                        originalParms={questData.parameters || ""}
-                        tome={questData.tome}
-                        tasks={questData.tasks}
-                    />
-                )}
             </div>
         </div>
     );

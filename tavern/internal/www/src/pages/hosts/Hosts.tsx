@@ -5,6 +5,7 @@ import { HostsTable } from "./HostsTable";
 import { useHostIds } from "./useHostIds";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { PageNavItem } from "../../utils/enums";
+import { FileTerminal, SquareTerminal } from "lucide-react";
 
 const Hosts = () => {
     const {
@@ -28,10 +29,11 @@ const Hosts = () => {
                 />
                 <div>
                     <Button
+                        leftIcon={<FileTerminal className="w-5 h-5" />}
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => openModal()}
+                        onClick={() => openModal({navigateToQuest: true})}
                     >
-                        Create quest
+                        Create a quest
                     </Button>
                 </div>
             </div>

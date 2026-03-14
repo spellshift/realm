@@ -3,4 +3,5 @@ export type {
     CreateQuestModalContextType,
     CreateQuestInitialData,
     OpenCreateQuestModalOptions,
+    RefetchQuery,
 } from './types';

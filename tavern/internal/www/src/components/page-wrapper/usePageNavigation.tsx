@@ -5,12 +5,11 @@ import {
     BugAntIcon,
     PresentationChartBarIcon,
     BookOpenIcon,
-    ClipboardDocumentListIcon,
     UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { useAuthorization } from '../../context/AuthorizationContext';
 import { PageNavItem } from '../../utils/enums';
-import { LibraryBigIcon } from 'lucide-react';
+import { FileTerminal, LibraryBigIcon } from 'lucide-react';
 
 interface NavigationItemType {
     name: string;
@@ -27,7 +26,7 @@ export const usePageNavigation = () => {
     const navigation = useMemo(() => [
         { name: PageNavItem.dashboard, href: '/dashboard', icon: PresentationChartBarIcon, internal: true },
         { name: PageNavItem.hosts, href: '/hosts', icon: BugAntIcon, internal: true },
-        { name: PageNavItem.quests, href: '/quests', icon: ClipboardDocumentListIcon, internal: true },
+        { name: PageNavItem.quests, href: '/quests', icon: FileTerminal, internal: true },
         { name: PageNavItem.tomes, href: '/tomes', icon: BookOpenIcon, internal: true },
         { name: PageNavItem.assets, href: '/assets', icon: LibraryBigIcon, internal: true },
         ...data?.me?.isAdmin ? [{ name: PageNavItem.admin, href: '/admin', icon: UserGroupIcon, internal: true, adminOnly: true }] : [],

@@ -6,7 +6,6 @@ import './style.css';
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
-import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
@@ -14,7 +13,6 @@ import Shell from "./pages/shell/Shell";
 import ShellV2 from "./pages/shellv2";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
-import { CreateQuest } from "./pages/create-quest/CreateQuest";
 import Assets from "./pages/assets/Assets";
 import { PageWrapper } from "./components/page-wrapper";
 import Quests from "./pages/quests";

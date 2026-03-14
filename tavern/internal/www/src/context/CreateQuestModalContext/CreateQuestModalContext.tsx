@@ -4,6 +4,7 @@ import {
     CreateQuestModalContextType,
     OpenCreateQuestModalOptions,
 } from './types';
+import { useNavigate } from 'react-router-dom';
 
 const CreateQuestModalContext = createContext<CreateQuestModalContextType | undefined>(undefined);
 
@@ -17,6 +18,7 @@ const CreateQuestModalContext = createContext<CreateQuestModalContextType | unde
 
 export function CreateQuestModalProvider({ children }: { children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
     const optionsRef = useRef<OpenCreateQuestModalOptions | undefined>(undefined);
 
     const openModal = useCallback((options?: OpenCreateQuestModalOptions) => {
@@ -32,6 +34,9 @@ export function CreateQuestModalProvider({ children }: { children: React.ReactNo
     const handleComplete = useCallback((questId: string) => {
         if (optionsRef.current?.onComplete) {
             optionsRef.current.onComplete(questId);
+        }
+        if(optionsRef?.current?.navigateToQuest){
+            navigate(`/tasks/${questId}`)
         }
         closeModal();
     }, [closeModal]);
@@ -53,6 +58,7 @@ export function CreateQuestModalProvider({ children }: { children: React.ReactNo
                     setOpen={handleSetOpen}
                     initialFormData={optionsRef.current?.initialFormData}
                     onComplete={handleComplete}
+                    refetchQueries={optionsRef.current?.refetchQueries}
                 />
             )}
         </CreateQuestModalContext.Provider>

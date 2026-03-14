@@ -5,6 +5,7 @@ import { EllipsisHorizontalIcon } from '@heroicons/react/24/outline'
 import { LimitedTaskNode, useCreateQuest } from './useCreateQuest'
 import Button from '../../components/tavern-base-ui/button/Button'
 import { TomeNode } from '../../utils/interfacesQuery'
+import { FileTerminal } from 'lucide-react'
 
 
 export const CreateQuestDropdown = ({
@@ -32,6 +33,7 @@ export const CreateQuestDropdown = ({
             <div>
                 {showLabel ?
                     <Menu.Button
+                        leftIcon={<FileTerminal className="h-5 w-5" /> }
                         as={Button}
                         buttonStyle={{ color: 'purple', size: "md" }}
                         rightIcon={<ChevronDownIcon
@@ -39,7 +41,7 @@ export const CreateQuestDropdown = ({
                             aria-hidden="true"
                         />}
                     >
-                        Re-run quest
+                        Re-run a quest
                     </Menu.Button>
                     :
                     <Menu.Button

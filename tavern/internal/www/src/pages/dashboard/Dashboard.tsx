@@ -8,6 +8,7 @@ import PageHeader from "../../components/tavern-base-ui/PageHeader";
 import { useDashboardData } from "./hook/useDashboardData";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { UseDashboardDataReturn } from "./types";
+import { FileTerminal } from "lucide-react";
 
 export const Dashboard = () => {
     const { loading, error, data, hasTaskData }: UseDashboardDataReturn = useDashboardData();
@@ -52,10 +53,11 @@ export const Dashboard = () => {
                 }]} />
                 <div>
                     <Button
+                        leftIcon={<FileTerminal className="w-5 h-5" />}
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => openModal()}
+                        onClick={() => openModal({navigateToQuest: true})}
                     >
-                        Create quest
+                        Create a quest
                     </Button>
                 </div>
             </div>
