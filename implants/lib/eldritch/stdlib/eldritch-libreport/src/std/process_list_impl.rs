@@ -35,7 +35,7 @@ pub fn process_list(
     list: Vec<BTreeMap<String, Value>>,
 ) -> Result<(), String> {
     let mut processes = Vec::new();
-    for d in list {
+    for d in list.iter() {
         let pid = d
             .get("pid")
             .and_then(|v| match v {
@@ -86,7 +86,6 @@ pub fn process_list(
                 _ => None,
             })
             .unwrap_or(0);
-
         processes.push(eldritch::Process {
             pid,
             ppid,

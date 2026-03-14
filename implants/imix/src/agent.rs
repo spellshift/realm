@@ -31,6 +31,8 @@ pub struct ImixAgent {
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
+    pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
+    pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
 }
 
@@ -43,6 +45,7 @@ impl ImixAgent {
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
     ) -> Self {
         let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
+        let (process_list_tx, process_list_rx) = std::sync::mpsc::sync_channel(64);
 
         Self {
             config: Arc::new(RwLock::new(config)),
@@ -52,6 +55,8 @@ impl ImixAgent {
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
+            process_list_tx,
+            process_list_rx: Arc::new(Mutex::new(process_list_rx)),
             shell_manager_tx,
         }
     }
@@ -126,22 +131,30 @@ impl ImixAgent {
         *transport = t;
     }
 
-    // Flushes all buffered task outputs using the provided transport
+    // Flushes all buffered task outputs and process list reports using the provided transport
     pub async fn flush_outputs(&self) {
-        let rx = match self.output_rx.lock() {
-            Ok(rx) => rx,
-            Err(_) => return,
-        };
-
         let mut outputs = Vec::new();
-        while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
-            outputs.push(msg);
+        if let Ok(rx) = self.output_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                outputs.push(msg);
+            }
+        }
+
+        let mut process_list_reqs = Vec::new();
+        if let Ok(rx) = self.process_list_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                process_list_reqs.push(msg);
+            }
         }
 
         #[cfg(debug_assertions)]
-        log::info!("Flushing {} task outputs", outputs.len());
+        log::info!(
+            "Flushing {} task outputs and {} process list reports",
+            outputs.len(),
+            process_list_reqs.len()
+        );
 
-        if outputs.is_empty() {
+        if outputs.is_empty() && process_list_reqs.is_empty() {
             return;
         }
 
@@ -240,6 +253,14 @@ impl ImixAgent {
             if let Err(_e) = transport.report_output(req).await {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to report shell task output: {_e}");
+            }
+        }
+
+        // Only send the latest process list report (it replaces previous ones)
+        if let Some(req) = process_list_reqs.into_iter().last() {
+            if let Err(_e) = transport.report_process_list(req).await {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report process list: {_e}");
             }
         }
     }
@@ -423,7 +444,11 @@ impl Agent for ImixAgent {
         &self,
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String> {
-        self.with_transport(|mut t| async move { t.report_process_list(req).await })
+        // Buffer the request to be sent during the next flush cycle
+        self.process_list_tx
+            .try_send(req)
+            .map_err(|_| "Process list buffer full".to_string())?;
+        Ok(c2::ReportProcessListResponse {})
     }
 
     fn report_output(
