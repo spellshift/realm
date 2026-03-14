@@ -2,22 +2,50 @@
 
 The builder package orchestrates agent compilation for target platforms. It connects to the Tavern server via gRPC and compiles agents based on its configuration.
 
-## TODO
+# TODO
 - Add host_uniqueness
 - Add guardrails
 - Add e2e testsq
 - Use human readable names for payloads
 - Use profile name in payload builds
-
 - Figure out if the dupe NameInput is needed with Name in inputs.graphql
 - BuildProfile structs are spreak across models and builderpb can we consolidate these
 
+### Architectural
+- Add a way for the server to interrupt and cancel a build.
+- Add support for build caching between jobs (will speed up rust builds a lot)
+- Instead of assuming  `/home/vscode` create a correctly permissioned build dir
+
+### future
+- Add terraform for build server
+- Register redirectors so bulider callback uri can be a drop down.
+- Modifying the agent IMIX_CONFIG currently requires changes to both imix and tavern code bases now. Is there a way to codegen a YAML spec from tavern to the agent?
+- De-dupe agent builds should the API stop builds that have the same params and point to the existing build? Or is this a UI thing?
+
+
+### Planning
+- Change exit Code to a bool and rename to errored to make API querying easier
+- Change exit Code to a bool and rename to errored to
+- Where should realm source code be pulled?
+   - which version'd copy of the code to checkout
+      - Can we automatically determine which version / main,edge the server is and pass that ot the build script.
+   - Ship tavern with imix source code embedded?
+      - Hard for teams to bring their own changes.
+
+- Update schema for UX
+   - Target OS + Target Format ---> rust target
+      - TargetOS's only support certain formats
+   - where to get the realm source code from - pull public repo?
+   - Currentt pattern with arbitrary bulid script is RCE as a service. Scope and limit this to just build configuration options.
+   - upstream should be free form
+   - pubkey can be set by the server
 ## Overview
 
 - **Registration**: Builders register with Tavern via the `registerBuilder` GraphQL mutation, which returns an mTLS certificate signed by the Tavern Builder CA and a YAML configuration file.
 - **mTLS Authentication**: All gRPC requests are authenticated using application-level mTLS. The builder presents its CA-signed certificate and a signed timestamp in gRPC metadata on each request. The server verifies the certificate chain, proof of private key possession, and looks up the builder by the identifier embedded in the certificate CN.
 - **gRPC API**: Builders communicate with Tavern over gRPC at the `/builder.Builder/` route. Supports `ClaimBuildTasks` (poll for unclaimed tasks), `StreamBuildTaskOutput` (stream build output and exit code incrementally), and `UploadBuildArtifact` (upload compiled binaries).
 - **Builder Management**: Builders are queryable via the `builders` GraphQL query (paginated, filterable, orderable by `LAST_SEEN_AT`) and removable via `deleteBuilder`. Deleting a builder cascade-deletes its build tasks. The `last_seen_at` field is updated on each `ClaimBuildTasks` call.
+- **Build Profiles**: Tasks use a `BuildProfile` to define agent configuration, including prioritized transports, pre/post build scripts, and bundled tomes.
 - **Executor**: Build tasks are executed via the `executor.Executor` interface. The `DockerExecutor` runs builds inside Docker containers; the `MockExecutor` is used in tests.
 - **CLI**: Run a builder using the `builder` subcommand with a `--config` flag pointing to a YAML configuration file.
 
@@ -76,6 +104,14 @@ includes the container's `exit_code` to signal completion. The server persists b
 the first message is received. If the stream is interrupted before `finished=true`, partial
 output is preserved but `finished_at` and `exit_code` are not set.
 
+## Build Profiles
+
+Build tasks reference a `BuildProfile` which centralizes the configuration for the compiled agent. A Build Profile defines:
+- **Transports**: The list of C2 transports (e.g., HTTP, gRPC) the agent should use, in order of priority.
+- **Build Image**: The Docker image used for the build environment (default: `spellshift/devcontainer:main`).
+- **Scripts**: Optional `prebuildscript` and `postbuildscript` that execute as Bash scripts before and after the `cargo build` command.
+- **Tomes**: Bundled Eldritch scripts. During execution, tomes are mounted to `/mnt/tomes/` and copied into the agent's `install_scripts/` directory before building.
+
 ## Build Task Defaults
 
 The `createBuildTask` mutation requires only `targetOS`. All other fields have sensible
@@ -99,42 +135,6 @@ then streams the artifact to Tavern via the `UploadBuildArtifact` RPC in 1 MB ch
 server creates an `Asset` entity. The artifact is downloadable via the existing CDN endpoint
 at `GET /assets/download/{name}`.
 
-## TODO
-
-- What is tavern/internal/graphql/inputs.resolvers.go doing?
-
-## Easy
-- Update builder query to check TS instead of querying all builders
-
-### Architectural
-- Add a way for the server to interrupt and cancel a build.
-- Add support for build caching between jobs (will speed up rust builds a lot)
-- Instead of assuming  `/home/vscode` create a correctly permissioned build dir
-- Add support for mulitple transports in the builder
-
-### future
-- Add terraform for build server
-- Register redirectors so bulider callback uri can be a drop down.
-- Modifying the agent IMIX_CONFIG currently requires changes to both imix and tavern code bases now. Is there a way to codegen a YAML spec from tavern to the agent?
-- De-dupe agent builds should the API stop builds that have the same params and point to the existing build? Or is this a UI thing?
-
-
-### Planning
-- Change exit Code to a bool and rename to errored to make API querying easier
-- Change exit Code to a bool and rename to errored to
-- Where should realm source code be pulled?
-   - which version'd copy of the code to checkout
-      - Can we automatically determine which version / main,edge the server is and pass that ot the build script.
-   - Ship tavern with imix source code embedded?
-      - Hard for teams to bring their own changes.
-
-- Update schema for UX
-   - Target OS + Target Format ---> rust target
-      - TargetOS's only support certain formats
-   - where to get the realm source code from - pull public repo?
-   - Currentt pattern with arbitrary bulid script is RCE as a service. Scope and limit this to just build configuration options.
-   - upstream should be free form
-   - pubkey can be set by the server
 
 
 ## Package Structure
