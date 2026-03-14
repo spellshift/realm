@@ -43,6 +43,8 @@ type HostProcess struct {
 	Cwd string `json:"cwd,omitempty"`
 	// Current process status.
 	Status epb.Process_Status `json:"status,omitempty"`
+	// The process start time.
+	StartTime uint64 `json:"start_time,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostProcessQuery when eager-loading is set.
 	Edges                         HostProcessEdges `json:"edges"`
@@ -108,7 +110,7 @@ func (*HostProcess) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case hostprocess.FieldStatus:
 			values[i] = new(epb.Process_Status)
-		case hostprocess.FieldID, hostprocess.FieldPid, hostprocess.FieldPpid:
+		case hostprocess.FieldID, hostprocess.FieldPid, hostprocess.FieldPpid, hostprocess.FieldStartTime:
 			values[i] = new(sql.NullInt64)
 		case hostprocess.FieldName, hostprocess.FieldPrincipal, hostprocess.FieldPath, hostprocess.FieldCmd, hostprocess.FieldEnv, hostprocess.FieldCwd:
 			values[i] = new(sql.NullString)
@@ -208,6 +210,12 @@ func (hp *HostProcess) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value != nil {
 				hp.Status = *value
+			}
+		case hostprocess.FieldStartTime:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field start_time", values[i])
+			} else if value.Valid {
+				hp.StartTime = uint64(value.Int64)
 			}
 		case hostprocess.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -320,6 +328,9 @@ func (hp *HostProcess) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", hp.Status))
+	builder.WriteString(", ")
+	builder.WriteString("start_time=")
+	builder.WriteString(fmt.Sprintf("%v", hp.StartTime))
 	builder.WriteByte(')')
 	return builder.String()
 }

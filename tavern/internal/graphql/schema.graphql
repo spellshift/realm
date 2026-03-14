@@ -2328,6 +2328,10 @@ type HostProcess implements Node {
   """
   status: HostProcessStatus!
   """
+  The process start time.
+  """
+  startTime: Uint64
+  """
   Host the process was reported on.
   """
   host: Host!
@@ -2392,6 +2396,7 @@ enum HostProcessOrderField {
   PROCESS_ID
   PARENT_PROCESS_ID
   NAME
+  PROCESS_START_TIME
 }
 """
 HostProcessStatus is enum for the field status
@@ -2586,6 +2591,19 @@ input HostProcessWhereInput {
   statusNEQ: HostProcessStatus
   statusIn: [HostProcessStatus!]
   statusNotIn: [HostProcessStatus!]
+  """
+  start_time field predicates
+  """
+  startTime: Uint64
+  startTimeNEQ: Uint64
+  startTimeIn: [Uint64!]
+  startTimeNotIn: [Uint64!]
+  startTimeGT: Uint64
+  startTimeGTE: Uint64
+  startTimeLT: Uint64
+  startTimeLTE: Uint64
+  startTimeIsNil: Boolean
+  startTimeNotNil: Boolean
   """
   host edge predicates
   """

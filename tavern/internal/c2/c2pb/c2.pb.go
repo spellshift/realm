@@ -7,14 +7,15 @@
 package c2pb
 
 import (
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	epb "realm.pub/tavern/internal/c2/epb"
 	portalpb "realm.pub/tavern/portals/portalpb"
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
 )
 
 const (

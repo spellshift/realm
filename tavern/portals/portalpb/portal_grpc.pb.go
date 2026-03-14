@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PortalClient interface {
-	OpenPortal(ctx context.Context, opts ...grpc.CallOption) (Portal_OpenPortalClient, error)
+	OpenPortal(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[OpenPortalRequest, OpenPortalResponse], error)
 }
 
 type portalClient struct {
@@ -47,44 +47,29 @@ func (c *portalClient) OpenPortal(ctx context.Context, opts ...grpc.CallOption) 
 	return x, nil
 }
 
-type Portal_OpenPortalClient interface {
-	Send(*OpenPortalRequest) error
-	Recv() (*OpenPortalResponse, error)
-	grpc.ClientStream
-}
-
-type portalOpenPortalClient struct {
-	grpc.ClientStream
-}
-
-func (x *portalOpenPortalClient) Send(m *OpenPortalRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *portalOpenPortalClient) Recv() (*OpenPortalResponse, error) {
-	m := new(OpenPortalResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Portal_OpenPortalClient = grpc.BidiStreamingClient[OpenPortalRequest, OpenPortalResponse]
 
 // PortalServer is the server API for Portal service.
 // All implementations must embed UnimplementedPortalServer
-// for forward compatibility
+// for forward compatibility.
 type PortalServer interface {
-	OpenPortal(Portal_OpenPortalServer) error
+	OpenPortal(grpc.BidiStreamingServer[OpenPortalRequest, OpenPortalResponse]) error
 	mustEmbedUnimplementedPortalServer()
 }
 
-// UnimplementedPortalServer must be embedded to have forward compatible implementations.
-type UnimplementedPortalServer struct {
-}
+// UnimplementedPortalServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPortalServer struct{}
 
-func (UnimplementedPortalServer) OpenPortal(Portal_OpenPortalServer) error {
-	return status.Errorf(codes.Unimplemented, "method OpenPortal not implemented")
+func (UnimplementedPortalServer) OpenPortal(grpc.BidiStreamingServer[OpenPortalRequest, OpenPortalResponse]) error {
+	return status.Error(codes.Unimplemented, "method OpenPortal not implemented")
 }
 func (UnimplementedPortalServer) mustEmbedUnimplementedPortalServer() {}
+func (UnimplementedPortalServer) testEmbeddedByValue()                {}
 
 // UnsafePortalServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to PortalServer will

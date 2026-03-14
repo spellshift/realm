@@ -386,6 +386,13 @@ func (x *Process) GetStatus() Process_Status {
 	return Process_STATUS_UNSPECIFIED
 }
 
+func (x *Process) GetStartTime() uint64 {
+	if x != nil {
+		return x.StartTime
+	}
+	return 0
+}
+
 // ProcessList of running processes on the host system.
 type ProcessList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`

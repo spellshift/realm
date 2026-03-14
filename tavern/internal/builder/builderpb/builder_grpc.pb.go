@@ -29,8 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BuilderClient interface {
 	ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error)
-	StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (Builder_StreamBuildTaskOutputClient, error)
-	UploadBuildArtifact(ctx context.Context, opts ...grpc.CallOption) (Builder_UploadBuildArtifactClient, error)
+	StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[StreamBuildTaskOutputRequest, StreamBuildTaskOutputResponse], error)
+	UploadBuildArtifact(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadBuildArtifactRequest, UploadBuildArtifactResponse], error)
 }
 
 type builderClient struct {
@@ -96,55 +96,37 @@ func (c *builderClient) UploadBuildArtifact(ctx context.Context, opts ...grpc.Ca
 	return x, nil
 }
 
-type Builder_UploadBuildArtifactClient interface {
-	Send(*UploadBuildArtifactRequest) error
-	CloseAndRecv() (*UploadBuildArtifactResponse, error)
-	grpc.ClientStream
-}
-
-type builderUploadBuildArtifactClient struct {
-	grpc.ClientStream
-}
-
-func (x *builderUploadBuildArtifactClient) Send(m *UploadBuildArtifactRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *builderUploadBuildArtifactClient) CloseAndRecv() (*UploadBuildArtifactResponse, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(UploadBuildArtifactResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Builder_UploadBuildArtifactClient = grpc.ClientStreamingClient[UploadBuildArtifactRequest, UploadBuildArtifactResponse]
 
 // BuilderServer is the server API for Builder service.
 // All implementations must embed UnimplementedBuilderServer
-// for forward compatibility
+// for forward compatibility.
 type BuilderServer interface {
 	ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error)
-	StreamBuildTaskOutput(Builder_StreamBuildTaskOutputServer) error
-	UploadBuildArtifact(Builder_UploadBuildArtifactServer) error
+	StreamBuildTaskOutput(grpc.ClientStreamingServer[StreamBuildTaskOutputRequest, StreamBuildTaskOutputResponse]) error
+	UploadBuildArtifact(grpc.ClientStreamingServer[UploadBuildArtifactRequest, UploadBuildArtifactResponse]) error
 	mustEmbedUnimplementedBuilderServer()
 }
 
-// UnimplementedBuilderServer must be embedded to have forward compatible implementations.
-type UnimplementedBuilderServer struct {
-}
+// UnimplementedBuilderServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedBuilderServer struct{}
 
 func (UnimplementedBuilderServer) ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClaimBuildTasks not implemented")
+	return nil, status.Error(codes.Unimplemented, "method ClaimBuildTasks not implemented")
 }
-func (UnimplementedBuilderServer) StreamBuildTaskOutput(Builder_StreamBuildTaskOutputServer) error {
-	return status.Errorf(codes.Unimplemented, "method StreamBuildTaskOutput not implemented")
+func (UnimplementedBuilderServer) StreamBuildTaskOutput(grpc.ClientStreamingServer[StreamBuildTaskOutputRequest, StreamBuildTaskOutputResponse]) error {
+	return status.Error(codes.Unimplemented, "method StreamBuildTaskOutput not implemented")
 }
-func (UnimplementedBuilderServer) UploadBuildArtifact(Builder_UploadBuildArtifactServer) error {
-	return status.Errorf(codes.Unimplemented, "method UploadBuildArtifact not implemented")
+func (UnimplementedBuilderServer) UploadBuildArtifact(grpc.ClientStreamingServer[UploadBuildArtifactRequest, UploadBuildArtifactResponse]) error {
+	return status.Error(codes.Unimplemented, "method UploadBuildArtifact not implemented")
 }
 func (UnimplementedBuilderServer) mustEmbedUnimplementedBuilderServer() {}
+func (UnimplementedBuilderServer) testEmbeddedByValue()                 {}
 
 // UnsafeBuilderServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to BuilderServer will
