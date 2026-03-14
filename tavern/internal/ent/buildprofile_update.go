@@ -70,6 +70,20 @@ func (bpu *BuildProfileUpdate) AppendTransports(bpt []builderpb.BuildProfileTran
 	return bpu
 }
 
+// SetBuildImage sets the "build_image" field.
+func (bpu *BuildProfileUpdate) SetBuildImage(s string) *BuildProfileUpdate {
+	bpu.mutation.SetBuildImage(s)
+	return bpu
+}
+
+// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillableBuildImage(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetBuildImage(*s)
+	}
+	return bpu
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (bpu *BuildProfileUpdate) SetPrebuildscript(s string) *BuildProfileUpdate {
 	bpu.mutation.SetPrebuildscript(s)
@@ -95,6 +109,24 @@ func (bpu *BuildProfileUpdate) SetNillablePostbuildscript(s *string) *BuildProfi
 	if s != nil {
 		bpu.SetPostbuildscript(*s)
 	}
+	return bpu
+}
+
+// SetTomes sets the "tomes" field.
+func (bpu *BuildProfileUpdate) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdate {
+	bpu.mutation.SetTomes(bpt)
+	return bpu
+}
+
+// AppendTomes appends bpt to the "tomes" field.
+func (bpu *BuildProfileUpdate) AppendTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdate {
+	bpu.mutation.AppendTomes(bpt)
+	return bpu
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (bpu *BuildProfileUpdate) ClearTomes() *BuildProfileUpdate {
+	bpu.mutation.ClearTomes()
 	return bpu
 }
 
@@ -166,7 +198,20 @@ func (bpu *BuildProfileUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (bpu *BuildProfileUpdate) check() error {
+	if v, ok := bpu.mutation.BuildImage(); ok {
+		if err := buildprofile.BuildImageValidator(v); err != nil {
+			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := bpu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(buildprofile.Table, buildprofile.Columns, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	if ps := bpu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -189,11 +234,25 @@ func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
 	}
+	if value, ok := bpu.mutation.BuildImage(); ok {
+		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
+	}
 	if value, ok := bpu.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
 	}
 	if value, ok := bpu.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.Tomes(); ok {
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := bpu.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildprofile.FieldTomes, value)
+		})
+	}
+	if bpu.mutation.TomesCleared() {
+		_spec.ClearField(buildprofile.FieldTomes, field.TypeJSON)
 	}
 	if bpu.mutation.BuildtasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -300,6 +359,20 @@ func (bpuo *BuildProfileUpdateOne) AppendTransports(bpt []builderpb.BuildProfile
 	return bpuo
 }
 
+// SetBuildImage sets the "build_image" field.
+func (bpuo *BuildProfileUpdateOne) SetBuildImage(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetBuildImage(s)
+	return bpuo
+}
+
+// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillableBuildImage(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetBuildImage(*s)
+	}
+	return bpuo
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (bpuo *BuildProfileUpdateOne) SetPrebuildscript(s string) *BuildProfileUpdateOne {
 	bpuo.mutation.SetPrebuildscript(s)
@@ -325,6 +398,24 @@ func (bpuo *BuildProfileUpdateOne) SetNillablePostbuildscript(s *string) *BuildP
 	if s != nil {
 		bpuo.SetPostbuildscript(*s)
 	}
+	return bpuo
+}
+
+// SetTomes sets the "tomes" field.
+func (bpuo *BuildProfileUpdateOne) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdateOne {
+	bpuo.mutation.SetTomes(bpt)
+	return bpuo
+}
+
+// AppendTomes appends bpt to the "tomes" field.
+func (bpuo *BuildProfileUpdateOne) AppendTomes(bpt []builderpb.BuildProfileTome) *BuildProfileUpdateOne {
+	bpuo.mutation.AppendTomes(bpt)
+	return bpuo
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (bpuo *BuildProfileUpdateOne) ClearTomes() *BuildProfileUpdateOne {
+	bpuo.mutation.ClearTomes()
 	return bpuo
 }
 
@@ -409,7 +500,20 @@ func (bpuo *BuildProfileUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (bpuo *BuildProfileUpdateOne) check() error {
+	if v, ok := bpuo.mutation.BuildImage(); ok {
+		if err := buildprofile.BuildImageValidator(v); err != nil {
+			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildProfile, err error) {
+	if err := bpuo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(buildprofile.Table, buildprofile.Columns, sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt))
 	id, ok := bpuo.mutation.ID()
 	if !ok {
@@ -449,11 +553,25 @@ func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildPro
 			sqljson.Append(u, buildprofile.FieldTransports, value)
 		})
 	}
+	if value, ok := bpuo.mutation.BuildImage(); ok {
+		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
+	}
 	if value, ok := bpuo.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
 	}
 	if value, ok := bpuo.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.Tomes(); ok {
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
+	}
+	if value, ok := bpuo.mutation.AppendedTomes(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, buildprofile.FieldTomes, value)
+		})
+	}
+	if bpuo.mutation.TomesCleared() {
+		_spec.ClearField(buildprofile.FieldTomes, field.TypeJSON)
 	}
 	if bpuo.mutation.BuildtasksCleared() {
 		edge := &sqlgraph.EdgeSpec{

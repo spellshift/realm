@@ -389,18 +389,118 @@ func (r *mutationResolver) DeleteBuilder(ctx context.Context, builderID int) (in
 
 // CreateBuildTask is the resolver for the createBuildTask field.
 func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error) {
-	// 1. Resolve defaults for optional fields
+	// 1. Load the build profile; its values serve as defaults for transports,
+	//    preBuildScript, and postBuildScript.
+	profile, err := r.client.BuildProfile.Get(ctx, input.ProfileID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load build profile: %w", err)
+	}
+
+	// 2. Resolve defaults for optional fields
 	targetFormat := builder.DefaultTargetFormat
 	if input.TargetFormat != nil {
 		targetFormat = *input.TargetFormat
 	}
 
-	buildImage := builder.DefaultBuildImage
-	if input.BuildImage != nil {
-		buildImage = *input.BuildImage
+	// Resolve transports: input > profile > default
+	transports := builder.DefaultTransports
+	if len(profile.Transports) > 0 {
+		transports = profile.Transports
+	}
+	if len(input.Transports) > 0 {
+		transports = make([]builderpb.BuildProfileTransport, len(input.Transports))
+		for i, t := range input.Transports {
+			var extra string
+			if t.Extra != nil {
+				extra = *t.Extra
+			}
+			transports[i] = builderpb.BuildProfileTransport{
+				URI:      t.URI,
+				Interval: t.Interval,
+				Type:     c2pb.Transport_Type(t.Type),
+				Extra:    extra,
+			}
+		}
 	}
 
-	// Resolve transports: use default if none provided
+	// Resolve pre/post build scripts: input > profile > nil
+	preBuildScript := input.PreBuildScript
+	if preBuildScript == nil && profile.Prebuildscript != "" {
+		preBuildScript = &profile.Prebuildscript
+	}
+	postBuildScript := input.PostBuildScript
+	if postBuildScript == nil && profile.Postbuildscript != "" {
+		postBuildScript = &profile.Postbuildscript
+	}
+
+	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
+	if input.ArtifactPath != nil {
+		artifactPath = *input.ArtifactPath
+	}
+
+	// 3. Validate target format for the given OS
+	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
+		return nil, err
+	}
+
+	// 4. Derive the build script from configuration
+	buildScript, err := builder.GenerateBuildScript(input.TargetOs, targetFormat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate build script: %w", err)
+	}
+
+	// 5. Query healthy builders (checked in within the stale threshold).
+	// Use the first transport's interval for the stale threshold.
+	staleThreshold := time.Duration(transports[0].Interval) * time.Second
+	staleCutoff := time.Now().Add(-staleThreshold)
+	healthyBuilders, err := r.client.Builder.Query().
+		Where(
+			entbuilder.LastSeenAtNotNil(),
+			entbuilder.LastSeenAtGTE(staleCutoff),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query builders: %w", err)
+	}
+
+	// 6. Filter builders that support the target OS.
+	// SupportedTargets is a JSON field so it must be filtered in application code.
+	var candidates []*ent.Builder
+	for _, b := range healthyBuilders {
+		for _, target := range b.SupportedTargets {
+			if target == input.TargetOs {
+				candidates = append(candidates, b)
+				break
+			}
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
+	}
+
+	// 7. Randomly select one builder
+	selected := candidates[mathrand.Intn(len(candidates))]
+
+	// 8. Create the build task
+	create := r.client.BuildTask.Create().
+		SetTargetOs(input.TargetOs).
+		SetTargetFormat(targetFormat).
+		SetArtifactPath(artifactPath).
+		SetBuilder(selected).
+		SetBuildScript(buildScript).
+		SetProfile(profile)
+
+	bt, err := create.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create build task: %w", err)
+	}
+
+	return bt, nil
+}
+
+// CreateBuildProfile is the resolver for the createBuildProfile field.
+func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
 	transports := builder.DefaultTransports
 	if len(input.Transports) > 0 {
 		transports = make([]builderpb.BuildProfileTransport, len(input.Transports))
@@ -418,72 +518,22 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 	}
 
-	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
-	if input.ArtifactPath != nil {
-		artifactPath = *input.ArtifactPath
-	}
-
-	// 2. Validate target format for the given OS
-	if err := builder.ValidateTargetFormat(input.TargetOs, targetFormat); err != nil {
-		return nil, err
-	}
-
-	// 3. Derive the build script from configuration
-	buildScript, err := builder.GenerateBuildScript(input.TargetOs, targetFormat)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate build script: %w", err)
-	}
-
-	// 4. Query healthy builders (checked in within the stale threshold).
-	// Use the first transport's interval for the stale threshold.
-	staleThreshold := time.Duration(transports[0].Interval) * time.Second
-	staleCutoff := time.Now().Add(-staleThreshold)
-	healthyBuilders, err := r.client.Builder.Query().
-		Where(
-			entbuilder.LastSeenAtNotNil(),
-			entbuilder.LastSeenAtGTE(staleCutoff),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query builders: %w", err)
-	}
-
-	// 5. Filter builders that support the target OS.
-	// SupportedTargets is a JSON field so it must be filtered in application code.
-	var candidates []*ent.Builder
-	for _, b := range healthyBuilders {
-		for _, target := range b.SupportedTargets {
-			if target == input.TargetOs {
-				candidates = append(candidates, b)
-				break
-			}
+	tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
+	for i, tome := range input.Tomes {
+		tomes[i] = builderpb.BuildProfileTome{
+			TomeID: tome.TomeID,
+			Params: tome.Params,
 		}
 	}
 
-	if len(candidates) == 0 {
-		return nil, fmt.Errorf("no builder available that supports target %s (or all matching builders are offline)", input.TargetOs.String())
-	}
-
-	// 6. Randomly select one builder
-	selected := candidates[mathrand.Intn(len(candidates))]
-
-	// 7. Create the build task
-	create := r.client.BuildTask.Create().
-		SetTargetOs(input.TargetOs).
-		SetTargetFormat(targetFormat).
-		SetBuildImage(buildImage).
-		SetBuildScript(buildScript).
-		SetArtifactPath(artifactPath).
-		SetNillablePreBuildScript(input.PreBuildScript).
-		SetNillablePostBuildScript(input.PostBuildScript).
-		SetBuilder(selected)
-
-	bt, err := create.Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create build task: %w", err)
-	}
-
-	return bt, nil
+	return r.client.BuildProfile.Create().
+		SetName(input.Name).
+		SetDescription(input.Description).
+		SetTransports(transports).
+		SetTomes(tomes).
+		SetPrebuildscript(input.Prebuildscript).
+		SetPostbuildscript(input.Postbuildscript).
+		Save(ctx)
 }
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.

@@ -63,6 +63,11 @@ func Description(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldDescription, v))
 }
 
+// BuildImage applies equality check predicate on the "build_image" field. It's identical to BuildImageEQ.
+func BuildImage(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldBuildImage, v))
+}
+
 // Prebuildscript applies equality check predicate on the "prebuildscript" field. It's identical to PrebuildscriptEQ.
 func Prebuildscript(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPrebuildscript, v))
@@ -203,6 +208,71 @@ func DescriptionContainsFold(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldContainsFold(FieldDescription, v))
 }
 
+// BuildImageEQ applies the EQ predicate on the "build_image" field.
+func BuildImageEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldBuildImage, v))
+}
+
+// BuildImageNEQ applies the NEQ predicate on the "build_image" field.
+func BuildImageNEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNEQ(FieldBuildImage, v))
+}
+
+// BuildImageIn applies the In predicate on the "build_image" field.
+func BuildImageIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIn(FieldBuildImage, vs...))
+}
+
+// BuildImageNotIn applies the NotIn predicate on the "build_image" field.
+func BuildImageNotIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotIn(FieldBuildImage, vs...))
+}
+
+// BuildImageGT applies the GT predicate on the "build_image" field.
+func BuildImageGT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGT(FieldBuildImage, v))
+}
+
+// BuildImageGTE applies the GTE predicate on the "build_image" field.
+func BuildImageGTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGTE(FieldBuildImage, v))
+}
+
+// BuildImageLT applies the LT predicate on the "build_image" field.
+func BuildImageLT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLT(FieldBuildImage, v))
+}
+
+// BuildImageLTE applies the LTE predicate on the "build_image" field.
+func BuildImageLTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLTE(FieldBuildImage, v))
+}
+
+// BuildImageContains applies the Contains predicate on the "build_image" field.
+func BuildImageContains(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContains(FieldBuildImage, v))
+}
+
+// BuildImageHasPrefix applies the HasPrefix predicate on the "build_image" field.
+func BuildImageHasPrefix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasPrefix(FieldBuildImage, v))
+}
+
+// BuildImageHasSuffix applies the HasSuffix predicate on the "build_image" field.
+func BuildImageHasSuffix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasSuffix(FieldBuildImage, v))
+}
+
+// BuildImageEqualFold applies the EqualFold predicate on the "build_image" field.
+func BuildImageEqualFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEqualFold(FieldBuildImage, v))
+}
+
+// BuildImageContainsFold applies the ContainsFold predicate on the "build_image" field.
+func BuildImageContainsFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContainsFold(FieldBuildImage, v))
+}
+
 // PrebuildscriptEQ applies the EQ predicate on the "prebuildscript" field.
 func PrebuildscriptEQ(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPrebuildscript, v))
@@ -331,6 +401,16 @@ func PostbuildscriptEqualFold(v string) predicate.BuildProfile {
 // PostbuildscriptContainsFold applies the ContainsFold predicate on the "postbuildscript" field.
 func PostbuildscriptContainsFold(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldContainsFold(FieldPostbuildscript, v))
+}
+
+// TomesIsNil applies the IsNil predicate on the "tomes" field.
+func TomesIsNil() predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIsNull(FieldTomes))
+}
+
+// TomesNotNil applies the NotNil predicate on the "tomes" field.
+func TomesNotNil() predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotNull(FieldTomes))
 }
 
 // HasBuildtasks applies the HasEdge predicate on the "buildtasks" edge.

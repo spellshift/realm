@@ -37,17 +37,11 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Type("BuildTaskTargetFormat"),
 			).
 			Comment("The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE)."),
-		field.String("build_image").
-			NotEmpty().
-			Comment("Docker container image name to use for the build."),
 		field.Text("build_script").
 			NotEmpty().
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT",
 			}).
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput),
-			).
 			Comment("The derived script to execute inside the build container."),
 		field.Time("claimed_at").
 			Optional().
@@ -102,22 +96,7 @@ func (BuildTask) Fields() []ent.Field {
 			Comment("Exit code from the build container process. Null if the build has not finished."),
 		field.String("artifact_path").
 			Optional().
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput),
-			).
 			Comment("Path inside the container where the build artifact is located. Derived from target_os if not set."),
-		field.Text("pre_build_script").
-			Optional().
-			SchemaType(map[string]string{
-				dialect.MySQL: "LONGTEXT",
-			}).
-			Comment("Script to run before the build command."),
-		field.Text("post_build_script").
-			Optional().
-			SchemaType(map[string]string{
-				dialect.MySQL: "LONGTEXT",
-			}).
-			Comment("Script to run after the build command."),
 	}
 }
 

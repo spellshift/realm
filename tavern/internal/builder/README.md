@@ -3,11 +3,12 @@
 The builder package orchestrates agent compilation for target platforms. It connects to the Tavern server via gRPC and compiles agents based on its configuration.
 
 ## TODO
-- Add pre and post install scripts
-- Update the docker exector to support pre and post install scirpts
-- Expose env vars to container
-   - Artifact path
-- 
+- Add host_uniqueness
+- Add guardrails
+- Add e2e testsq
+
+- Figure out if the dupe NameInput is needed with Name in inputs.graphql
+- BuildProfile structs are spreak across models and builderpb can we consolidate these
 
 ## Overview
 

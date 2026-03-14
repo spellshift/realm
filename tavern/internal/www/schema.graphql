@@ -603,6 +603,10 @@ type BuildProfile implements Node {
   """
   transports: [BuildProfileTransport!]!
   """
+  Docker container image name to use for the build.
+  """
+  buildImage: String!
+  """
   Bash script to run before build command
   """
   prebuildscript: String!
@@ -611,9 +615,62 @@ type BuildProfile implements Node {
   """
   postbuildscript: String!
   """
+  The tomes to include in builds using this profile.
+  """
+  tomes: [BuildProfileTome!]
+  """
   Build Tasks that have used this profile
   """
   buildtasks: [BuildTask!]
+}
+"""
+A connection to a list of items.
+"""
+type BuildProfileConnection {
+  """
+  A list of edges.
+  """
+  edges: [BuildProfileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BuildProfileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: BuildProfile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for BuildProfile connections
+"""
+input BuildProfileOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order BuildProfiles.
+  """
+  field: BuildProfileOrderField!
+}
+"""
+Properties by which BuildProfile connections can be ordered.
+"""
+enum BuildProfileOrderField {
+  NAME
 }
 """
 BuildProfileWhereInput is used for filtering BuildProfile objects.
@@ -666,6 +723,22 @@ input BuildProfileWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """
+  build_image field predicates
+  """
+  buildImage: String
+  buildImageNEQ: String
+  buildImageIn: [String!]
+  buildImageNotIn: [String!]
+  buildImageGT: String
+  buildImageGTE: String
+  buildImageLT: String
+  buildImageLTE: String
+  buildImageContains: String
+  buildImageHasPrefix: String
+  buildImageHasSuffix: String
+  buildImageEqualFold: String
+  buildImageContainsFold: String
   """
   prebuildscript field predicates
   """
@@ -723,10 +796,6 @@ type BuildTask implements Node {
   """
   targetFormat: BuildTaskTargetFormat!
   """
-  Docker container image name to use for the build.
-  """
-  buildImage: String!
-  """
   The derived script to execute inside the build container.
   """
   buildScript: String!
@@ -766,14 +835,6 @@ type BuildTask implements Node {
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
-  """
-  Script to run before the build command.
-  """
-  preBuildScript: String
-  """
-  Script to run after the build command.
-  """
-  postBuildScript: String
   """
   The builder assigned to execute this build task.
   """
@@ -908,22 +969,6 @@ input BuildTaskWhereInput {
   targetFormatNEQ: BuildTaskTargetFormat
   targetFormatIn: [BuildTaskTargetFormat!]
   targetFormatNotIn: [BuildTaskTargetFormat!]
-  """
-  build_image field predicates
-  """
-  buildImage: String
-  buildImageNEQ: String
-  buildImageIn: [String!]
-  buildImageNotIn: [String!]
-  buildImageGT: String
-  buildImageGTE: String
-  buildImageLT: String
-  buildImageLTE: String
-  buildImageContains: String
-  buildImageHasPrefix: String
-  buildImageHasSuffix: String
-  buildImageEqualFold: String
-  buildImageContainsFold: String
   """
   build_script field predicates
   """
@@ -1068,42 +1113,6 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
-  """
-  pre_build_script field predicates
-  """
-  preBuildScript: String
-  preBuildScriptNEQ: String
-  preBuildScriptIn: [String!]
-  preBuildScriptNotIn: [String!]
-  preBuildScriptGT: String
-  preBuildScriptGTE: String
-  preBuildScriptLT: String
-  preBuildScriptLTE: String
-  preBuildScriptContains: String
-  preBuildScriptHasPrefix: String
-  preBuildScriptHasSuffix: String
-  preBuildScriptIsNil: Boolean
-  preBuildScriptNotNil: Boolean
-  preBuildScriptEqualFold: String
-  preBuildScriptContainsFold: String
-  """
-  post_build_script field predicates
-  """
-  postBuildScript: String
-  postBuildScriptNEQ: String
-  postBuildScriptIn: [String!]
-  postBuildScriptNotIn: [String!]
-  postBuildScriptGT: String
-  postBuildScriptGTE: String
-  postBuildScriptLT: String
-  postBuildScriptLTE: String
-  postBuildScriptContains: String
-  postBuildScriptHasPrefix: String
-  postBuildScriptHasSuffix: String
-  postBuildScriptIsNil: Boolean
-  postBuildScriptNotNil: Boolean
-  postBuildScriptEqualFold: String
-  postBuildScriptContainsFold: String
   """
   builder edge predicates
   """
@@ -6314,6 +6323,24 @@ input BuildProfileTransportInput {
   extra: String
 }
 
+"""A tome configuration in a build profile."""
+type BuildProfileTome @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileTome") {
+  """The ID of the tome to include."""
+  tomeID: Int!
+
+  """JSON-encoded parameters for the tome."""
+  params: String!
+}
+
+"""Input for a tome configuration in a build profile."""
+input BuildProfileTomeInput {
+  """The ID of the tome to include."""
+  tomeID: ID!
+
+  """JSON-encoded parameters for the tome."""
+  params: String!
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -6325,17 +6352,44 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  """ID of the build profile to use. Transports, preBuildScript, and postBuildScript default to the profile's values unless explicitly overridden."""
+  profileID: ID!
+
+  """List of transport configurations. Overrides profile transports if both are set. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
   transports: [BuildProfileTransportInput!]
+
+  """List of tomes to embed in the agent."""
+  tomes: [BuildProfileTomeInput]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
-  """Script to run before the build command."""
+  """Script to run before the build command. Overrides profile preBuildScript if both are set."""
   preBuildScript: String
 
-  """Script to run after the build command."""
+  """Script to run after the build command. Overrides profile postBuildScript if both are set."""
   postBuildScript: String
+}
+
+"""Input for creating a new build profile."""
+input CreateBuildProfileInput {
+  """The name of the build profile."""
+  name: String!
+
+  """A user facing build profile description."""
+  description: String!
+
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildProfileTransportInput!]
+
+  """Bash script to run before the build command."""
+  prebuildscript: String!
+
+  """Bash script to run after the build command."""
+  postbuildscript: String!
+
+  """List of tomes to include in builds using this profile."""
+  tomes: [BuildProfileTomeInput!]
 }
 
 """Output returned when registering a new builder."""
@@ -6639,6 +6693,25 @@ extend type Query {
 
     """Filtering options for Shells returned from the connection."""
     where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
+  buildProfiles(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for BuildProfiles returned from the connection."""
+    orderBy: [BuildProfileOrder!]
+
+    """Filtering options for BuildProfiles returned from the connection."""
+    where: BuildProfileWhereInput
+  ): BuildProfileConnection! @requireRole(role: USER)
   buildTasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor

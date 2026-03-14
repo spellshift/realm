@@ -23,6 +23,18 @@ type BuildSpec struct {
 	// Env is a list of environment variables to set in the build container,
 	// in the form "KEY=VALUE".
 	Env []string
+
+	// PreBuildScript is a shell script to run before the build command.
+	// Written to /mnt/scripts/0_pre_build.sh inside the container.
+	PreBuildScript string
+
+	// PostBuildScript is a shell script to run after the build command.
+	// Written to /mnt/scripts/9_post_build.sh inside the container.
+	PostBuildScript string
+
+	// TomesDir is a local directory containing tome files to copy into
+	// the container at /mnt/tomes.
+	TomesDir string
 }
 
 // BuildResult holds the results of a build execution, including any extracted artifacts.

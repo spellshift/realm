@@ -18,10 +18,14 @@ const (
 	FieldDescription = "description"
 	// FieldTransports holds the string denoting the transports field in the database.
 	FieldTransports = "transports"
+	// FieldBuildImage holds the string denoting the build_image field in the database.
+	FieldBuildImage = "build_image"
 	// FieldPrebuildscript holds the string denoting the prebuildscript field in the database.
 	FieldPrebuildscript = "prebuildscript"
 	// FieldPostbuildscript holds the string denoting the postbuildscript field in the database.
 	FieldPostbuildscript = "postbuildscript"
+	// FieldTomes holds the string denoting the tomes field in the database.
+	FieldTomes = "tomes"
 	// EdgeBuildtasks holds the string denoting the buildtasks edge name in mutations.
 	EdgeBuildtasks = "buildtasks"
 	// Table holds the table name of the buildprofile in the database.
@@ -41,8 +45,10 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldTransports,
+	FieldBuildImage,
 	FieldPrebuildscript,
 	FieldPostbuildscript,
+	FieldTomes,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -54,6 +60,13 @@ func ValidColumn(column string) bool {
 	}
 	return false
 }
+
+var (
+	// DefaultBuildImage holds the default value on creation for the "build_image" field.
+	DefaultBuildImage string
+	// BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
+	BuildImageValidator func(string) error
+)
 
 // OrderOption defines the ordering options for the BuildProfile queries.
 type OrderOption func(*sql.Selector)
@@ -71,6 +84,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
+}
+
+// ByBuildImage orders the results by the build_image field.
+func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuildImage, opts...).ToFunc()
 }
 
 // ByPrebuildscript orders the results by the prebuildscript field.

@@ -22,16 +22,16 @@ Before reading this guide, please check out the [admin guide](/admin-guide/taver
 // Additional annotations can be found:
 // https://entgo.io/docs/schema-annotations/
 // Annotations describes additional information for the ent.
-func (BuildTask) Annotations() []schema.Annotation {
+func (<NAME>) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(), // Recommended - Required for pagination
-		entgql.MultiOrder(), // Rocemmended - Required for pagination
+		entgql.MultiOrder(), // Recommended - Required for pagination
 		entgql.Mutations(
 			entgql.MutationCreate(), // Auto generate create mutation
 			entgql.MutationUpdate(), // Auto generate update mutation
 		),
 		entsql.Annotation{
-			Collation: "utf8mb4_general_ci", // Rocemmended - requried for case insensitive searching
+			Collation: "utf8mb4_general_ci", // Recommended - requried for case insensitive searching
 		},
 	}
 }

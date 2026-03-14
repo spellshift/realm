@@ -598,6 +598,10 @@ type BuildProfile implements Node {
   """
   transports: [BuildProfileTransport!]!
   """
+  Docker container image name to use for the build.
+  """
+  buildImage: String!
+  """
   Bash script to run before build command
   """
   prebuildscript: String!
@@ -606,9 +610,62 @@ type BuildProfile implements Node {
   """
   postbuildscript: String!
   """
+  The tomes to include in builds using this profile.
+  """
+  tomes: [BuildProfileTome!]
+  """
   Build Tasks that have used this profile
   """
   buildtasks: [BuildTask!]
+}
+"""
+A connection to a list of items.
+"""
+type BuildProfileConnection {
+  """
+  A list of edges.
+  """
+  edges: [BuildProfileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BuildProfileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: BuildProfile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for BuildProfile connections
+"""
+input BuildProfileOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order BuildProfiles.
+  """
+  field: BuildProfileOrderField!
+}
+"""
+Properties by which BuildProfile connections can be ordered.
+"""
+enum BuildProfileOrderField {
+  NAME
 }
 """
 BuildProfileWhereInput is used for filtering BuildProfile objects.
@@ -661,6 +718,22 @@ input BuildProfileWhereInput {
   descriptionHasSuffix: String
   descriptionEqualFold: String
   descriptionContainsFold: String
+  """
+  build_image field predicates
+  """
+  buildImage: String
+  buildImageNEQ: String
+  buildImageIn: [String!]
+  buildImageNotIn: [String!]
+  buildImageGT: String
+  buildImageGTE: String
+  buildImageLT: String
+  buildImageLTE: String
+  buildImageContains: String
+  buildImageHasPrefix: String
+  buildImageHasSuffix: String
+  buildImageEqualFold: String
+  buildImageContainsFold: String
   """
   prebuildscript field predicates
   """
@@ -718,10 +791,6 @@ type BuildTask implements Node {
   """
   targetFormat: BuildTaskTargetFormat!
   """
-  Docker container image name to use for the build.
-  """
-  buildImage: String!
-  """
   The derived script to execute inside the build container.
   """
   buildScript: String!
@@ -761,14 +830,6 @@ type BuildTask implements Node {
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
-  """
-  Script to run before the build command.
-  """
-  preBuildScript: String
-  """
-  Script to run after the build command.
-  """
-  postBuildScript: String
   """
   The builder assigned to execute this build task.
   """
@@ -903,22 +964,6 @@ input BuildTaskWhereInput {
   targetFormatNEQ: BuildTaskTargetFormat
   targetFormatIn: [BuildTaskTargetFormat!]
   targetFormatNotIn: [BuildTaskTargetFormat!]
-  """
-  build_image field predicates
-  """
-  buildImage: String
-  buildImageNEQ: String
-  buildImageIn: [String!]
-  buildImageNotIn: [String!]
-  buildImageGT: String
-  buildImageGTE: String
-  buildImageLT: String
-  buildImageLTE: String
-  buildImageContains: String
-  buildImageHasPrefix: String
-  buildImageHasSuffix: String
-  buildImageEqualFold: String
-  buildImageContainsFold: String
   """
   build_script field predicates
   """
@@ -1063,42 +1108,6 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
-  """
-  pre_build_script field predicates
-  """
-  preBuildScript: String
-  preBuildScriptNEQ: String
-  preBuildScriptIn: [String!]
-  preBuildScriptNotIn: [String!]
-  preBuildScriptGT: String
-  preBuildScriptGTE: String
-  preBuildScriptLT: String
-  preBuildScriptLTE: String
-  preBuildScriptContains: String
-  preBuildScriptHasPrefix: String
-  preBuildScriptHasSuffix: String
-  preBuildScriptIsNil: Boolean
-  preBuildScriptNotNil: Boolean
-  preBuildScriptEqualFold: String
-  preBuildScriptContainsFold: String
-  """
-  post_build_script field predicates
-  """
-  postBuildScript: String
-  postBuildScriptNEQ: String
-  postBuildScriptIn: [String!]
-  postBuildScriptNotIn: [String!]
-  postBuildScriptGT: String
-  postBuildScriptGTE: String
-  postBuildScriptLT: String
-  postBuildScriptLTE: String
-  postBuildScriptContains: String
-  postBuildScriptHasPrefix: String
-  postBuildScriptHasSuffix: String
-  postBuildScriptIsNil: Boolean
-  postBuildScriptNotNil: Boolean
-  postBuildScriptEqualFold: String
-  postBuildScriptContainsFold: String
   """
   builder edge predicates
   """

@@ -124,9 +124,10 @@ func DeriveArtifactPath(os c2pb.Host_Platform) string {
 }
 
 // GenerateBuildScript generates the full build script from the build configuration.
-// It clones the repository and runs the build command. The IMIX configuration
-// is passed via the IMIX_CONFIG environment variable rather than being written
-// to a file in the build script.
+// It clones the repository, deletes the default install_scripts contents, copies
+// tomes from /mnt/tomes into the install_scripts directory, and runs the cargo
+// build command. The IMIX configuration is passed via the IMIX_CONFIG environment
+// variable rather than being written to a file in the build script.
 func GenerateBuildScript(os c2pb.Host_Platform, format TargetFormat) (string, error) {
 	buildCmd, err := BuildCommand(os, format)
 	if err != nil {
@@ -134,7 +135,7 @@ func GenerateBuildScript(os c2pb.Host_Platform, format TargetFormat) (string, er
 	}
 
 	script := fmt.Sprintf(
-		`cd /home/vscode && git clone %s realm && cd realm/implants/imix && %s`,
+		`cd /home/vscode && git clone %s realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true && %s`,
 		DefaultRealmRepoURL,
 		buildCmd,
 	)

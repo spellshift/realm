@@ -3,11 +3,14 @@ package executor
 import (
 	"archive/tar"
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
@@ -58,12 +61,28 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 	}
 	pullReader.Close()
 
+	// Prepare the local tmp dir with /scripts and /tomes.
+	tmpDir, err := prepareMountDir(spec)
+	if err != nil {
+		if tmpDir != "" {
+			os.RemoveAll(tmpDir)
+		}
+		return nil, fmt.Errorf("failed to prepare mount dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
 	slog.InfoContext(ctx, "creating container", "image", spec.BuildImage, "task_id", spec.TaskID)
+
+	// The container entrypoint runs all scripts in /mnt/scripts in order.
+	entrypoint := strings.Join([]string{
+		"set -e",
+		"for s in $(ls /mnt/scripts/*.sh 2>/dev/null | sort); do echo \"==> Running $s\"; sh \"$s\"; done",
+	}, " && ")
 
 	resp, err := d.client.ContainerCreate(ctx,
 		&container.Config{
 			Image:      spec.BuildImage,
-			Entrypoint: []string{"/bin/sh", "-c", spec.BuildScript},
+			Entrypoint: []string{"/bin/sh", "-c", entrypoint},
 			Env:        spec.Env,
 		},
 		nil, // host config
@@ -83,6 +102,11 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 			slog.Warn("failed to remove container", "container_id", containerID, "error", removeErr)
 		}
 	}()
+
+	// Copy the prepared tmp dir contents into /mnt inside the container.
+	if err := d.copyDirToContainer(ctx, containerID, tmpDir, "/mnt"); err != nil {
+		return nil, fmt.Errorf("failed to copy build dir to container: %w", err)
+	}
 
 	if err := d.client.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
 		return nil, fmt.Errorf("failed to start container: %w", err)
@@ -168,6 +192,130 @@ func (d *DockerExecutor) Build(ctx context.Context, spec BuildSpec, outputCh cha
 		"task_id", spec.TaskID, "name", name, "size", len(data))
 
 	return &buildResult, nil
+}
+
+// copyDirToContainer creates a tar archive from a local directory and copies
+// it into the container at the specified path. The directory contents are placed
+// directly under destPath (i.e. the top-level dir itself is not nested).
+func (d *DockerExecutor) copyDirToContainer(ctx context.Context, containerID, localDir, destPath string) error {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+
+	baseDir := filepath.Clean(localDir)
+	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(baseDir, path)
+		if err != nil {
+			return err
+		}
+		if relPath == "." {
+			return nil
+		}
+
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		header.Name = relPath
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = io.Copy(tw, f)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("walking local dir %q: %w", localDir, err)
+	}
+
+	if err := tw.Close(); err != nil {
+		return fmt.Errorf("closing tar writer: %w", err)
+	}
+
+	return d.client.CopyToContainer(ctx, containerID, destPath, &buf, container.CopyToContainerOptions{})
+}
+
+// prepareMountDir creates a temporary directory with /scripts and /tomes
+// subdirectories populated from the BuildSpec. It writes the pre-build,
+// build, and post-build scripts to numbered files under /scripts so they
+// execute in order. Returns the tmp dir path (caller must clean up).
+func prepareMountDir(spec BuildSpec) (string, error) {
+	tmpDir, err := os.MkdirTemp("", "realm-build-*")
+	if err != nil {
+		return "", fmt.Errorf("creating temp dir: %w", err)
+	}
+
+	scriptsDir := filepath.Join(tmpDir, "scripts")
+	if err := os.MkdirAll(scriptsDir, 0o755); err != nil {
+		return tmpDir, fmt.Errorf("creating scripts dir: %w", err)
+	}
+
+	tomesDir := filepath.Join(tmpDir, "tomes")
+	if err := os.MkdirAll(tomesDir, 0o755); err != nil {
+		return tmpDir, fmt.Errorf("creating tomes dir: %w", err)
+	}
+
+	// Write pre-build script.
+	if spec.PreBuildScript != "" {
+		if err := os.WriteFile(filepath.Join(scriptsDir, "0_pre_build.sh"), []byte(spec.PreBuildScript), 0o755); err != nil {
+			return tmpDir, fmt.Errorf("writing pre-build script: %w", err)
+		}
+	}
+
+	// Write build script.
+	if spec.BuildScript != "" {
+		if err := os.WriteFile(filepath.Join(scriptsDir, "4_build.sh"), []byte(spec.BuildScript), 0o755); err != nil {
+			return tmpDir, fmt.Errorf("writing build script: %w", err)
+		}
+	}
+
+	// Write post-build script.
+	if spec.PostBuildScript != "" {
+		if err := os.WriteFile(filepath.Join(scriptsDir, "9_post_build.sh"), []byte(spec.PostBuildScript), 0o755); err != nil {
+			return tmpDir, fmt.Errorf("writing post-build script: %w", err)
+		}
+	}
+
+	// Copy tomes from source directory if provided.
+	if spec.TomesDir != "" {
+		err := filepath.Walk(spec.TomesDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			relPath, err := filepath.Rel(spec.TomesDir, path)
+			if err != nil {
+				return err
+			}
+			destPath := filepath.Join(tomesDir, relPath)
+			if info.IsDir() {
+				return os.MkdirAll(destPath, info.Mode())
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(destPath, data, info.Mode())
+		})
+		if err != nil {
+			return tmpDir, fmt.Errorf("copying tomes dir: %w", err)
+		}
+	}
+
+	return tmpDir, nil
 }
 
 // extractArtifact copies a file from a stopped container using the Docker API.

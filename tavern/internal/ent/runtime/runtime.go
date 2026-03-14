@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -99,6 +100,14 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	buildprofileFields := schema.BuildProfile{}.Fields()
+	_ = buildprofileFields
+	// buildprofileDescBuildImage is the schema descriptor for build_image field.
+	buildprofileDescBuildImage := buildprofileFields[3].Descriptor()
+	// buildprofile.DefaultBuildImage holds the default value on creation for the build_image field.
+	buildprofile.DefaultBuildImage = buildprofileDescBuildImage.Default.(string)
+	// buildprofile.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
+	buildprofile.BuildImageValidator = buildprofileDescBuildImage.Validators[0].(func(string) error)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
 	buildtaskHooks := schema.BuildTask{}.Hooks()
 	buildtask.Hooks[0] = buildtaskHooks[0]
@@ -116,22 +125,18 @@ func init() {
 	buildtask.DefaultLastModifiedAt = buildtaskDescLastModifiedAt.Default.(func() time.Time)
 	// buildtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	buildtask.UpdateDefaultLastModifiedAt = buildtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// buildtaskDescBuildImage is the schema descriptor for build_image field.
-	buildtaskDescBuildImage := buildtaskFields[2].Descriptor()
-	// buildtask.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
-	buildtask.BuildImageValidator = buildtaskDescBuildImage.Validators[0].(func(string) error)
 	// buildtaskDescBuildScript is the schema descriptor for build_script field.
-	buildtaskDescBuildScript := buildtaskFields[3].Descriptor()
+	buildtaskDescBuildScript := buildtaskFields[2].Descriptor()
 	// buildtask.BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	buildtask.BuildScriptValidator = buildtaskDescBuildScript.Validators[0].(func(string) error)
 	// buildtaskDescOutputSize is the schema descriptor for output_size field.
-	buildtaskDescOutputSize := buildtaskFields[8].Descriptor()
+	buildtaskDescOutputSize := buildtaskFields[7].Descriptor()
 	// buildtask.DefaultOutputSize holds the default value on creation for the output_size field.
 	buildtask.DefaultOutputSize = buildtaskDescOutputSize.Default.(int)
 	// buildtask.OutputSizeValidator is a validator for the "output_size" field. It is called by the builders before save.
 	buildtask.OutputSizeValidator = buildtaskDescOutputSize.Validators[0].(func(int) error)
 	// buildtaskDescErrorSize is the schema descriptor for error_size field.
-	buildtaskDescErrorSize := buildtaskFields[10].Descriptor()
+	buildtaskDescErrorSize := buildtaskFields[9].Descriptor()
 	// buildtask.DefaultErrorSize holds the default value on creation for the error_size field.
 	buildtask.DefaultErrorSize = buildtaskDescErrorSize.Default.(int)
 	// buildtask.ErrorSizeValidator is a validator for the "error_size" field. It is called by the builders before save.

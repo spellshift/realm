@@ -1116,6 +1116,21 @@ type BuildProfileWhereInput struct {
 	DescriptionEqualFold    *string  `json:"descriptionEqualFold,omitempty"`
 	DescriptionContainsFold *string  `json:"descriptionContainsFold,omitempty"`
 
+	// "build_image" field predicates.
+	BuildImage             *string  `json:"buildImage,omitempty"`
+	BuildImageNEQ          *string  `json:"buildImageNEQ,omitempty"`
+	BuildImageIn           []string `json:"buildImageIn,omitempty"`
+	BuildImageNotIn        []string `json:"buildImageNotIn,omitempty"`
+	BuildImageGT           *string  `json:"buildImageGT,omitempty"`
+	BuildImageGTE          *string  `json:"buildImageGTE,omitempty"`
+	BuildImageLT           *string  `json:"buildImageLT,omitempty"`
+	BuildImageLTE          *string  `json:"buildImageLTE,omitempty"`
+	BuildImageContains     *string  `json:"buildImageContains,omitempty"`
+	BuildImageHasPrefix    *string  `json:"buildImageHasPrefix,omitempty"`
+	BuildImageHasSuffix    *string  `json:"buildImageHasSuffix,omitempty"`
+	BuildImageEqualFold    *string  `json:"buildImageEqualFold,omitempty"`
+	BuildImageContainsFold *string  `json:"buildImageContainsFold,omitempty"`
+
 	// "prebuildscript" field predicates.
 	Prebuildscript             *string  `json:"prebuildscript,omitempty"`
 	PrebuildscriptNEQ          *string  `json:"prebuildscriptNEQ,omitempty"`
@@ -1324,6 +1339,45 @@ func (i *BuildProfileWhereInput) P() (predicate.BuildProfile, error) {
 	if i.DescriptionContainsFold != nil {
 		predicates = append(predicates, buildprofile.DescriptionContainsFold(*i.DescriptionContainsFold))
 	}
+	if i.BuildImage != nil {
+		predicates = append(predicates, buildprofile.BuildImageEQ(*i.BuildImage))
+	}
+	if i.BuildImageNEQ != nil {
+		predicates = append(predicates, buildprofile.BuildImageNEQ(*i.BuildImageNEQ))
+	}
+	if len(i.BuildImageIn) > 0 {
+		predicates = append(predicates, buildprofile.BuildImageIn(i.BuildImageIn...))
+	}
+	if len(i.BuildImageNotIn) > 0 {
+		predicates = append(predicates, buildprofile.BuildImageNotIn(i.BuildImageNotIn...))
+	}
+	if i.BuildImageGT != nil {
+		predicates = append(predicates, buildprofile.BuildImageGT(*i.BuildImageGT))
+	}
+	if i.BuildImageGTE != nil {
+		predicates = append(predicates, buildprofile.BuildImageGTE(*i.BuildImageGTE))
+	}
+	if i.BuildImageLT != nil {
+		predicates = append(predicates, buildprofile.BuildImageLT(*i.BuildImageLT))
+	}
+	if i.BuildImageLTE != nil {
+		predicates = append(predicates, buildprofile.BuildImageLTE(*i.BuildImageLTE))
+	}
+	if i.BuildImageContains != nil {
+		predicates = append(predicates, buildprofile.BuildImageContains(*i.BuildImageContains))
+	}
+	if i.BuildImageHasPrefix != nil {
+		predicates = append(predicates, buildprofile.BuildImageHasPrefix(*i.BuildImageHasPrefix))
+	}
+	if i.BuildImageHasSuffix != nil {
+		predicates = append(predicates, buildprofile.BuildImageHasSuffix(*i.BuildImageHasSuffix))
+	}
+	if i.BuildImageEqualFold != nil {
+		predicates = append(predicates, buildprofile.BuildImageEqualFold(*i.BuildImageEqualFold))
+	}
+	if i.BuildImageContainsFold != nil {
+		predicates = append(predicates, buildprofile.BuildImageContainsFold(*i.BuildImageContainsFold))
+	}
 	if i.Prebuildscript != nil {
 		predicates = append(predicates, buildprofile.PrebuildscriptEQ(*i.Prebuildscript))
 	}
@@ -1480,21 +1534,6 @@ type BuildTaskWhereInput struct {
 	TargetFormatIn    []builderpb.TargetFormat `json:"targetFormatIn,omitempty"`
 	TargetFormatNotIn []builderpb.TargetFormat `json:"targetFormatNotIn,omitempty"`
 
-	// "build_image" field predicates.
-	BuildImage             *string  `json:"buildImage,omitempty"`
-	BuildImageNEQ          *string  `json:"buildImageNEQ,omitempty"`
-	BuildImageIn           []string `json:"buildImageIn,omitempty"`
-	BuildImageNotIn        []string `json:"buildImageNotIn,omitempty"`
-	BuildImageGT           *string  `json:"buildImageGT,omitempty"`
-	BuildImageGTE          *string  `json:"buildImageGTE,omitempty"`
-	BuildImageLT           *string  `json:"buildImageLT,omitempty"`
-	BuildImageLTE          *string  `json:"buildImageLTE,omitempty"`
-	BuildImageContains     *string  `json:"buildImageContains,omitempty"`
-	BuildImageHasPrefix    *string  `json:"buildImageHasPrefix,omitempty"`
-	BuildImageHasSuffix    *string  `json:"buildImageHasSuffix,omitempty"`
-	BuildImageEqualFold    *string  `json:"buildImageEqualFold,omitempty"`
-	BuildImageContainsFold *string  `json:"buildImageContainsFold,omitempty"`
-
 	// "build_script" field predicates.
 	BuildScript             *string  `json:"buildScript,omitempty"`
 	BuildScriptNEQ          *string  `json:"buildScriptNEQ,omitempty"`
@@ -1628,40 +1667,6 @@ type BuildTaskWhereInput struct {
 	ArtifactPathNotNil       bool     `json:"artifactPathNotNil,omitempty"`
 	ArtifactPathEqualFold    *string  `json:"artifactPathEqualFold,omitempty"`
 	ArtifactPathContainsFold *string  `json:"artifactPathContainsFold,omitempty"`
-
-	// "pre_build_script" field predicates.
-	PreBuildScript             *string  `json:"preBuildScript,omitempty"`
-	PreBuildScriptNEQ          *string  `json:"preBuildScriptNEQ,omitempty"`
-	PreBuildScriptIn           []string `json:"preBuildScriptIn,omitempty"`
-	PreBuildScriptNotIn        []string `json:"preBuildScriptNotIn,omitempty"`
-	PreBuildScriptGT           *string  `json:"preBuildScriptGT,omitempty"`
-	PreBuildScriptGTE          *string  `json:"preBuildScriptGTE,omitempty"`
-	PreBuildScriptLT           *string  `json:"preBuildScriptLT,omitempty"`
-	PreBuildScriptLTE          *string  `json:"preBuildScriptLTE,omitempty"`
-	PreBuildScriptContains     *string  `json:"preBuildScriptContains,omitempty"`
-	PreBuildScriptHasPrefix    *string  `json:"preBuildScriptHasPrefix,omitempty"`
-	PreBuildScriptHasSuffix    *string  `json:"preBuildScriptHasSuffix,omitempty"`
-	PreBuildScriptIsNil        bool     `json:"preBuildScriptIsNil,omitempty"`
-	PreBuildScriptNotNil       bool     `json:"preBuildScriptNotNil,omitempty"`
-	PreBuildScriptEqualFold    *string  `json:"preBuildScriptEqualFold,omitempty"`
-	PreBuildScriptContainsFold *string  `json:"preBuildScriptContainsFold,omitempty"`
-
-	// "post_build_script" field predicates.
-	PostBuildScript             *string  `json:"postBuildScript,omitempty"`
-	PostBuildScriptNEQ          *string  `json:"postBuildScriptNEQ,omitempty"`
-	PostBuildScriptIn           []string `json:"postBuildScriptIn,omitempty"`
-	PostBuildScriptNotIn        []string `json:"postBuildScriptNotIn,omitempty"`
-	PostBuildScriptGT           *string  `json:"postBuildScriptGT,omitempty"`
-	PostBuildScriptGTE          *string  `json:"postBuildScriptGTE,omitempty"`
-	PostBuildScriptLT           *string  `json:"postBuildScriptLT,omitempty"`
-	PostBuildScriptLTE          *string  `json:"postBuildScriptLTE,omitempty"`
-	PostBuildScriptContains     *string  `json:"postBuildScriptContains,omitempty"`
-	PostBuildScriptHasPrefix    *string  `json:"postBuildScriptHasPrefix,omitempty"`
-	PostBuildScriptHasSuffix    *string  `json:"postBuildScriptHasSuffix,omitempty"`
-	PostBuildScriptIsNil        bool     `json:"postBuildScriptIsNil,omitempty"`
-	PostBuildScriptNotNil       bool     `json:"postBuildScriptNotNil,omitempty"`
-	PostBuildScriptEqualFold    *string  `json:"postBuildScriptEqualFold,omitempty"`
-	PostBuildScriptContainsFold *string  `json:"postBuildScriptContainsFold,omitempty"`
 
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
@@ -1842,45 +1847,6 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if len(i.TargetFormatNotIn) > 0 {
 		predicates = append(predicates, buildtask.TargetFormatNotIn(i.TargetFormatNotIn...))
-	}
-	if i.BuildImage != nil {
-		predicates = append(predicates, buildtask.BuildImageEQ(*i.BuildImage))
-	}
-	if i.BuildImageNEQ != nil {
-		predicates = append(predicates, buildtask.BuildImageNEQ(*i.BuildImageNEQ))
-	}
-	if len(i.BuildImageIn) > 0 {
-		predicates = append(predicates, buildtask.BuildImageIn(i.BuildImageIn...))
-	}
-	if len(i.BuildImageNotIn) > 0 {
-		predicates = append(predicates, buildtask.BuildImageNotIn(i.BuildImageNotIn...))
-	}
-	if i.BuildImageGT != nil {
-		predicates = append(predicates, buildtask.BuildImageGT(*i.BuildImageGT))
-	}
-	if i.BuildImageGTE != nil {
-		predicates = append(predicates, buildtask.BuildImageGTE(*i.BuildImageGTE))
-	}
-	if i.BuildImageLT != nil {
-		predicates = append(predicates, buildtask.BuildImageLT(*i.BuildImageLT))
-	}
-	if i.BuildImageLTE != nil {
-		predicates = append(predicates, buildtask.BuildImageLTE(*i.BuildImageLTE))
-	}
-	if i.BuildImageContains != nil {
-		predicates = append(predicates, buildtask.BuildImageContains(*i.BuildImageContains))
-	}
-	if i.BuildImageHasPrefix != nil {
-		predicates = append(predicates, buildtask.BuildImageHasPrefix(*i.BuildImageHasPrefix))
-	}
-	if i.BuildImageHasSuffix != nil {
-		predicates = append(predicates, buildtask.BuildImageHasSuffix(*i.BuildImageHasSuffix))
-	}
-	if i.BuildImageEqualFold != nil {
-		predicates = append(predicates, buildtask.BuildImageEqualFold(*i.BuildImageEqualFold))
-	}
-	if i.BuildImageContainsFold != nil {
-		predicates = append(predicates, buildtask.BuildImageContainsFold(*i.BuildImageContainsFold))
 	}
 	if i.BuildScript != nil {
 		predicates = append(predicates, buildtask.BuildScriptEQ(*i.BuildScript))
@@ -2223,96 +2189,6 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if i.ArtifactPathContainsFold != nil {
 		predicates = append(predicates, buildtask.ArtifactPathContainsFold(*i.ArtifactPathContainsFold))
-	}
-	if i.PreBuildScript != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptEQ(*i.PreBuildScript))
-	}
-	if i.PreBuildScriptNEQ != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptNEQ(*i.PreBuildScriptNEQ))
-	}
-	if len(i.PreBuildScriptIn) > 0 {
-		predicates = append(predicates, buildtask.PreBuildScriptIn(i.PreBuildScriptIn...))
-	}
-	if len(i.PreBuildScriptNotIn) > 0 {
-		predicates = append(predicates, buildtask.PreBuildScriptNotIn(i.PreBuildScriptNotIn...))
-	}
-	if i.PreBuildScriptGT != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptGT(*i.PreBuildScriptGT))
-	}
-	if i.PreBuildScriptGTE != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptGTE(*i.PreBuildScriptGTE))
-	}
-	if i.PreBuildScriptLT != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptLT(*i.PreBuildScriptLT))
-	}
-	if i.PreBuildScriptLTE != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptLTE(*i.PreBuildScriptLTE))
-	}
-	if i.PreBuildScriptContains != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptContains(*i.PreBuildScriptContains))
-	}
-	if i.PreBuildScriptHasPrefix != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptHasPrefix(*i.PreBuildScriptHasPrefix))
-	}
-	if i.PreBuildScriptHasSuffix != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptHasSuffix(*i.PreBuildScriptHasSuffix))
-	}
-	if i.PreBuildScriptIsNil {
-		predicates = append(predicates, buildtask.PreBuildScriptIsNil())
-	}
-	if i.PreBuildScriptNotNil {
-		predicates = append(predicates, buildtask.PreBuildScriptNotNil())
-	}
-	if i.PreBuildScriptEqualFold != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptEqualFold(*i.PreBuildScriptEqualFold))
-	}
-	if i.PreBuildScriptContainsFold != nil {
-		predicates = append(predicates, buildtask.PreBuildScriptContainsFold(*i.PreBuildScriptContainsFold))
-	}
-	if i.PostBuildScript != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptEQ(*i.PostBuildScript))
-	}
-	if i.PostBuildScriptNEQ != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptNEQ(*i.PostBuildScriptNEQ))
-	}
-	if len(i.PostBuildScriptIn) > 0 {
-		predicates = append(predicates, buildtask.PostBuildScriptIn(i.PostBuildScriptIn...))
-	}
-	if len(i.PostBuildScriptNotIn) > 0 {
-		predicates = append(predicates, buildtask.PostBuildScriptNotIn(i.PostBuildScriptNotIn...))
-	}
-	if i.PostBuildScriptGT != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptGT(*i.PostBuildScriptGT))
-	}
-	if i.PostBuildScriptGTE != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptGTE(*i.PostBuildScriptGTE))
-	}
-	if i.PostBuildScriptLT != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptLT(*i.PostBuildScriptLT))
-	}
-	if i.PostBuildScriptLTE != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptLTE(*i.PostBuildScriptLTE))
-	}
-	if i.PostBuildScriptContains != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptContains(*i.PostBuildScriptContains))
-	}
-	if i.PostBuildScriptHasPrefix != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptHasPrefix(*i.PostBuildScriptHasPrefix))
-	}
-	if i.PostBuildScriptHasSuffix != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptHasSuffix(*i.PostBuildScriptHasSuffix))
-	}
-	if i.PostBuildScriptIsNil {
-		predicates = append(predicates, buildtask.PostBuildScriptIsNil())
-	}
-	if i.PostBuildScriptNotNil {
-		predicates = append(predicates, buildtask.PostBuildScriptNotNil())
-	}
-	if i.PostBuildScriptEqualFold != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptEqualFold(*i.PostBuildScriptEqualFold))
-	}
-	if i.PostBuildScriptContainsFold != nil {
-		predicates = append(predicates, buildtask.PostBuildScriptContainsFold(*i.PostBuildScriptContainsFold))
 	}
 
 	if i.HasBuilder != nil {

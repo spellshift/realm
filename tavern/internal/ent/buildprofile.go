@@ -24,10 +24,14 @@ type BuildProfile struct {
 	Description string `json:"description,omitempty"`
 	// The transports builds should use in order of priority.
 	Transports []builderpb.BuildProfileTransport `json:"transports,omitempty"`
+	// Docker container image name to use for the build.
+	BuildImage string `json:"build_image,omitempty"`
 	// Bash script to run before build command
 	Prebuildscript string `json:"prebuildscript,omitempty"`
 	// Bash script to run after build command
 	Postbuildscript string `json:"postbuildscript,omitempty"`
+	// The tomes to include in builds using this profile.
+	Tomes []builderpb.BuildProfileTome `json:"tomes,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildProfileQuery when eager-loading is set.
 	Edges        BuildProfileEdges `json:"edges"`
@@ -61,11 +65,11 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case buildprofile.FieldTransports:
+		case buildprofile.FieldTransports, buildprofile.FieldTomes:
 			values[i] = new([]byte)
 		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldPrebuildscript, buildprofile.FieldPostbuildscript:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldPostbuildscript:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -108,6 +112,12 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field transports: %w", err)
 				}
 			}
+		case buildprofile.FieldBuildImage:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field build_image", values[i])
+			} else if value.Valid {
+				bp.BuildImage = value.String
+			}
 		case buildprofile.FieldPrebuildscript:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field prebuildscript", values[i])
@@ -119,6 +129,14 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field postbuildscript", values[i])
 			} else if value.Valid {
 				bp.Postbuildscript = value.String
+			}
+		case buildprofile.FieldTomes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tomes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &bp.Tomes); err != nil {
+					return fmt.Errorf("unmarshal field tomes: %w", err)
+				}
 			}
 		default:
 			bp.selectValues.Set(columns[i], values[i])
@@ -170,11 +188,17 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString("transports=")
 	builder.WriteString(fmt.Sprintf("%v", bp.Transports))
 	builder.WriteString(", ")
+	builder.WriteString("build_image=")
+	builder.WriteString(bp.BuildImage)
+	builder.WriteString(", ")
 	builder.WriteString("prebuildscript=")
 	builder.WriteString(bp.Prebuildscript)
 	builder.WriteString(", ")
 	builder.WriteString("postbuildscript=")
 	builder.WriteString(bp.Postbuildscript)
+	builder.WriteString(", ")
+	builder.WriteString("tomes=")
+	builder.WriteString(fmt.Sprintf("%v", bp.Tomes))
 	builder.WriteByte(')')
 	return builder.String()
 }

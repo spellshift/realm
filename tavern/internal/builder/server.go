@@ -131,20 +131,19 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal IMIX config: %w", err)
 		}
-		// string(cfgBytes)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to marshal IMIX config for task %d: %v", taskID, err)
-		}
 
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
 			Id:              int64(claimedTask.ID),
 			TargetOs:        claimedTask.TargetOs.String(),
-			BuildImage:      claimedTask.BuildImage,
+			BuildImage:      profile.BuildImage,
 			BuildScript:     claimedTask.BuildScript,
 			ArtifactPath:    claimedTask.ArtifactPath,
-			PreBuildScript:  claimedTask.PreBuildScript,
-			PostBuildScript: claimedTask.PostBuildScript,
-			Env:             []string{fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes))},
+			PreBuildScript:  profile.Prebuildscript,
+			PostBuildScript: profile.Postbuildscript,
+			Env:             []string{
+				fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes)),
+				fmt.Sprintf("ARTIFACT_PATH=%s", string(claimedTask.ArtifactPath)),
+			},
 		})
 	}
 

@@ -67,20 +67,6 @@ func (btu *BuildTaskUpdate) SetNillableTargetFormat(bf *builderpb.TargetFormat) 
 	return btu
 }
 
-// SetBuildImage sets the "build_image" field.
-func (btu *BuildTaskUpdate) SetBuildImage(s string) *BuildTaskUpdate {
-	btu.mutation.SetBuildImage(s)
-	return btu
-}
-
-// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableBuildImage(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetBuildImage(*s)
-	}
-	return btu
-}
-
 // SetBuildScript sets the "build_script" field.
 func (btu *BuildTaskUpdate) SetBuildScript(s string) *BuildTaskUpdate {
 	btu.mutation.SetBuildScript(s)
@@ -284,46 +270,6 @@ func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
 	return btu
 }
 
-// SetPreBuildScript sets the "pre_build_script" field.
-func (btu *BuildTaskUpdate) SetPreBuildScript(s string) *BuildTaskUpdate {
-	btu.mutation.SetPreBuildScript(s)
-	return btu
-}
-
-// SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillablePreBuildScript(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetPreBuildScript(*s)
-	}
-	return btu
-}
-
-// ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (btu *BuildTaskUpdate) ClearPreBuildScript() *BuildTaskUpdate {
-	btu.mutation.ClearPreBuildScript()
-	return btu
-}
-
-// SetPostBuildScript sets the "post_build_script" field.
-func (btu *BuildTaskUpdate) SetPostBuildScript(s string) *BuildTaskUpdate {
-	btu.mutation.SetPostBuildScript(s)
-	return btu
-}
-
-// SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillablePostBuildScript(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetPostBuildScript(*s)
-	}
-	return btu
-}
-
-// ClearPostBuildScript clears the value of the "post_build_script" field.
-func (btu *BuildTaskUpdate) ClearPostBuildScript() *BuildTaskUpdate {
-	btu.mutation.ClearPostBuildScript()
-	return btu
-}
-
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -442,11 +388,6 @@ func (btu *BuildTaskUpdate) check() error {
 			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
 		}
 	}
-	if v, ok := btu.mutation.BuildImage(); ok {
-		if err := buildtask.BuildImageValidator(v); err != nil {
-			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
-		}
-	}
 	if v, ok := btu.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
@@ -491,9 +432,6 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := btu.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
-	}
-	if value, ok := btu.mutation.BuildImage(); ok {
-		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
 	}
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
@@ -554,18 +492,6 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if btu.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
-	}
-	if value, ok := btu.mutation.PreBuildScript(); ok {
-		_spec.SetField(buildtask.FieldPreBuildScript, field.TypeString, value)
-	}
-	if btu.mutation.PreBuildScriptCleared() {
-		_spec.ClearField(buildtask.FieldPreBuildScript, field.TypeString)
-	}
-	if value, ok := btu.mutation.PostBuildScript(); ok {
-		_spec.SetField(buildtask.FieldPostBuildScript, field.TypeString, value)
-	}
-	if btu.mutation.PostBuildScriptCleared() {
-		_spec.ClearField(buildtask.FieldPostBuildScript, field.TypeString)
 	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -704,20 +630,6 @@ func (btuo *BuildTaskUpdateOne) SetTargetFormat(bf builderpb.TargetFormat) *Buil
 func (btuo *BuildTaskUpdateOne) SetNillableTargetFormat(bf *builderpb.TargetFormat) *BuildTaskUpdateOne {
 	if bf != nil {
 		btuo.SetTargetFormat(*bf)
-	}
-	return btuo
-}
-
-// SetBuildImage sets the "build_image" field.
-func (btuo *BuildTaskUpdateOne) SetBuildImage(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetBuildImage(s)
-	return btuo
-}
-
-// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableBuildImage(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetBuildImage(*s)
 	}
 	return btuo
 }
@@ -925,46 +837,6 @@ func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
 	return btuo
 }
 
-// SetPreBuildScript sets the "pre_build_script" field.
-func (btuo *BuildTaskUpdateOne) SetPreBuildScript(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetPreBuildScript(s)
-	return btuo
-}
-
-// SetNillablePreBuildScript sets the "pre_build_script" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillablePreBuildScript(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetPreBuildScript(*s)
-	}
-	return btuo
-}
-
-// ClearPreBuildScript clears the value of the "pre_build_script" field.
-func (btuo *BuildTaskUpdateOne) ClearPreBuildScript() *BuildTaskUpdateOne {
-	btuo.mutation.ClearPreBuildScript()
-	return btuo
-}
-
-// SetPostBuildScript sets the "post_build_script" field.
-func (btuo *BuildTaskUpdateOne) SetPostBuildScript(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetPostBuildScript(s)
-	return btuo
-}
-
-// SetNillablePostBuildScript sets the "post_build_script" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillablePostBuildScript(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetPostBuildScript(*s)
-	}
-	return btuo
-}
-
-// ClearPostBuildScript clears the value of the "post_build_script" field.
-func (btuo *BuildTaskUpdateOne) ClearPostBuildScript() *BuildTaskUpdateOne {
-	btuo.mutation.ClearPostBuildScript()
-	return btuo
-}
-
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -1096,11 +968,6 @@ func (btuo *BuildTaskUpdateOne) check() error {
 			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
 		}
 	}
-	if v, ok := btuo.mutation.BuildImage(); ok {
-		if err := buildtask.BuildImageValidator(v); err != nil {
-			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
-		}
-	}
 	if v, ok := btuo.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
@@ -1163,9 +1030,6 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if value, ok := btuo.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
 	}
-	if value, ok := btuo.mutation.BuildImage(); ok {
-		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
-	}
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
 	}
@@ -1225,18 +1089,6 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if btuo.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
-	}
-	if value, ok := btuo.mutation.PreBuildScript(); ok {
-		_spec.SetField(buildtask.FieldPreBuildScript, field.TypeString, value)
-	}
-	if btuo.mutation.PreBuildScriptCleared() {
-		_spec.ClearField(buildtask.FieldPreBuildScript, field.TypeString)
-	}
-	if value, ok := btuo.mutation.PostBuildScript(); ok {
-		_spec.SetField(buildtask.FieldPostBuildScript, field.TypeString, value)
-	}
-	if btuo.mutation.PostBuildScriptCleared() {
-		_spec.ClearField(buildtask.FieldPostBuildScript, field.TypeString)
 	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{

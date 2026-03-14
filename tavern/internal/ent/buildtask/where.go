@@ -67,11 +67,6 @@ func LastModifiedAt(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
-// BuildImage applies equality check predicate on the "build_image" field. It's identical to BuildImageEQ.
-func BuildImage(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldBuildImage, v))
-}
-
 // BuildScript applies equality check predicate on the "build_script" field. It's identical to BuildScriptEQ.
 func BuildScript(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldBuildScript, v))
@@ -120,16 +115,6 @@ func ExitCode(v int) predicate.BuildTask {
 // ArtifactPath applies equality check predicate on the "artifact_path" field. It's identical to ArtifactPathEQ.
 func ArtifactPath(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldArtifactPath, v))
-}
-
-// PreBuildScript applies equality check predicate on the "pre_build_script" field. It's identical to PreBuildScriptEQ.
-func PreBuildScript(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldPreBuildScript, v))
-}
-
-// PostBuildScript applies equality check predicate on the "post_build_script" field. It's identical to PostBuildScriptEQ.
-func PostBuildScript(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldPostBuildScript, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -250,71 +235,6 @@ func TargetFormatIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 // TargetFormatNotIn applies the NotIn predicate on the "target_format" field.
 func TargetFormatNotIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldNotIn(FieldTargetFormat, vs...))
-}
-
-// BuildImageEQ applies the EQ predicate on the "build_image" field.
-func BuildImageEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldBuildImage, v))
-}
-
-// BuildImageNEQ applies the NEQ predicate on the "build_image" field.
-func BuildImageNEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNEQ(FieldBuildImage, v))
-}
-
-// BuildImageIn applies the In predicate on the "build_image" field.
-func BuildImageIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIn(FieldBuildImage, vs...))
-}
-
-// BuildImageNotIn applies the NotIn predicate on the "build_image" field.
-func BuildImageNotIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotIn(FieldBuildImage, vs...))
-}
-
-// BuildImageGT applies the GT predicate on the "build_image" field.
-func BuildImageGT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGT(FieldBuildImage, v))
-}
-
-// BuildImageGTE applies the GTE predicate on the "build_image" field.
-func BuildImageGTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGTE(FieldBuildImage, v))
-}
-
-// BuildImageLT applies the LT predicate on the "build_image" field.
-func BuildImageLT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLT(FieldBuildImage, v))
-}
-
-// BuildImageLTE applies the LTE predicate on the "build_image" field.
-func BuildImageLTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLTE(FieldBuildImage, v))
-}
-
-// BuildImageContains applies the Contains predicate on the "build_image" field.
-func BuildImageContains(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContains(FieldBuildImage, v))
-}
-
-// BuildImageHasPrefix applies the HasPrefix predicate on the "build_image" field.
-func BuildImageHasPrefix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasPrefix(FieldBuildImage, v))
-}
-
-// BuildImageHasSuffix applies the HasSuffix predicate on the "build_image" field.
-func BuildImageHasSuffix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasSuffix(FieldBuildImage, v))
-}
-
-// BuildImageEqualFold applies the EqualFold predicate on the "build_image" field.
-func BuildImageEqualFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEqualFold(FieldBuildImage, v))
-}
-
-// BuildImageContainsFold applies the ContainsFold predicate on the "build_image" field.
-func BuildImageContainsFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContainsFold(FieldBuildImage, v))
 }
 
 // BuildScriptEQ applies the EQ predicate on the "build_script" field.
@@ -885,156 +805,6 @@ func ArtifactPathEqualFold(v string) predicate.BuildTask {
 // ArtifactPathContainsFold applies the ContainsFold predicate on the "artifact_path" field.
 func ArtifactPathContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldArtifactPath, v))
-}
-
-// PreBuildScriptEQ applies the EQ predicate on the "pre_build_script" field.
-func PreBuildScriptEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptNEQ applies the NEQ predicate on the "pre_build_script" field.
-func PreBuildScriptNEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNEQ(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptIn applies the In predicate on the "pre_build_script" field.
-func PreBuildScriptIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIn(FieldPreBuildScript, vs...))
-}
-
-// PreBuildScriptNotIn applies the NotIn predicate on the "pre_build_script" field.
-func PreBuildScriptNotIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotIn(FieldPreBuildScript, vs...))
-}
-
-// PreBuildScriptGT applies the GT predicate on the "pre_build_script" field.
-func PreBuildScriptGT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGT(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptGTE applies the GTE predicate on the "pre_build_script" field.
-func PreBuildScriptGTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGTE(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptLT applies the LT predicate on the "pre_build_script" field.
-func PreBuildScriptLT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLT(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptLTE applies the LTE predicate on the "pre_build_script" field.
-func PreBuildScriptLTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLTE(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptContains applies the Contains predicate on the "pre_build_script" field.
-func PreBuildScriptContains(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContains(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptHasPrefix applies the HasPrefix predicate on the "pre_build_script" field.
-func PreBuildScriptHasPrefix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasPrefix(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptHasSuffix applies the HasSuffix predicate on the "pre_build_script" field.
-func PreBuildScriptHasSuffix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasSuffix(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptIsNil applies the IsNil predicate on the "pre_build_script" field.
-func PreBuildScriptIsNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIsNull(FieldPreBuildScript))
-}
-
-// PreBuildScriptNotNil applies the NotNil predicate on the "pre_build_script" field.
-func PreBuildScriptNotNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotNull(FieldPreBuildScript))
-}
-
-// PreBuildScriptEqualFold applies the EqualFold predicate on the "pre_build_script" field.
-func PreBuildScriptEqualFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEqualFold(FieldPreBuildScript, v))
-}
-
-// PreBuildScriptContainsFold applies the ContainsFold predicate on the "pre_build_script" field.
-func PreBuildScriptContainsFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContainsFold(FieldPreBuildScript, v))
-}
-
-// PostBuildScriptEQ applies the EQ predicate on the "post_build_script" field.
-func PostBuildScriptEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptNEQ applies the NEQ predicate on the "post_build_script" field.
-func PostBuildScriptNEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNEQ(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptIn applies the In predicate on the "post_build_script" field.
-func PostBuildScriptIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIn(FieldPostBuildScript, vs...))
-}
-
-// PostBuildScriptNotIn applies the NotIn predicate on the "post_build_script" field.
-func PostBuildScriptNotIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotIn(FieldPostBuildScript, vs...))
-}
-
-// PostBuildScriptGT applies the GT predicate on the "post_build_script" field.
-func PostBuildScriptGT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGT(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptGTE applies the GTE predicate on the "post_build_script" field.
-func PostBuildScriptGTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGTE(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptLT applies the LT predicate on the "post_build_script" field.
-func PostBuildScriptLT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLT(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptLTE applies the LTE predicate on the "post_build_script" field.
-func PostBuildScriptLTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLTE(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptContains applies the Contains predicate on the "post_build_script" field.
-func PostBuildScriptContains(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContains(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptHasPrefix applies the HasPrefix predicate on the "post_build_script" field.
-func PostBuildScriptHasPrefix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasPrefix(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptHasSuffix applies the HasSuffix predicate on the "post_build_script" field.
-func PostBuildScriptHasSuffix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasSuffix(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptIsNil applies the IsNil predicate on the "post_build_script" field.
-func PostBuildScriptIsNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIsNull(FieldPostBuildScript))
-}
-
-// PostBuildScriptNotNil applies the NotNil predicate on the "post_build_script" field.
-func PostBuildScriptNotNil() predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotNull(FieldPostBuildScript))
-}
-
-// PostBuildScriptEqualFold applies the EqualFold predicate on the "post_build_script" field.
-func PostBuildScriptEqualFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEqualFold(FieldPostBuildScript, v))
-}
-
-// PostBuildScriptContainsFold applies the ContainsFold predicate on the "post_build_script" field.
-func PostBuildScriptContainsFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContainsFold(FieldPostBuildScript, v))
 }
 
 // HasBuilder applies the HasEdge predicate on the "builder" edge.

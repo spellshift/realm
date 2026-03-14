@@ -720,6 +720,11 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, buildprofile.FieldTransports)
 				fieldSeen[buildprofile.FieldTransports] = struct{}{}
 			}
+		case "buildImage":
+			if _, ok := fieldSeen[buildprofile.FieldBuildImage]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldBuildImage)
+				fieldSeen[buildprofile.FieldBuildImage] = struct{}{}
+			}
 		case "prebuildscript":
 			if _, ok := fieldSeen[buildprofile.FieldPrebuildscript]; !ok {
 				selectedFields = append(selectedFields, buildprofile.FieldPrebuildscript)
@@ -729,6 +734,11 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 			if _, ok := fieldSeen[buildprofile.FieldPostbuildscript]; !ok {
 				selectedFields = append(selectedFields, buildprofile.FieldPostbuildscript)
 				fieldSeen[buildprofile.FieldPostbuildscript] = struct{}{}
+			}
+		case "tomes":
+			if _, ok := fieldSeen[buildprofile.FieldTomes]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldTomes)
+				fieldSeen[buildprofile.FieldTomes] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -764,6 +774,34 @@ func newBuildProfilePaginateArgs(rv map[string]any) *buildprofilePaginateArgs {
 	}
 	if v := rv[beforeField]; v != nil {
 		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*BuildProfileOrder:
+			args.opts = append(args.opts, WithBuildProfileOrder(v))
+		case []any:
+			var orders []*BuildProfileOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &BuildProfileOrder{Field: &BuildProfileOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithBuildProfileOrder(orders))
+		}
 	}
 	if v, ok := rv[whereField].(*BuildProfileWhereInput); ok {
 		args.opts = append(args.opts, WithBuildProfileFilter(v.Filter))
@@ -845,11 +883,6 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 				selectedFields = append(selectedFields, buildtask.FieldTargetFormat)
 				fieldSeen[buildtask.FieldTargetFormat] = struct{}{}
 			}
-		case "buildImage":
-			if _, ok := fieldSeen[buildtask.FieldBuildImage]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldBuildImage)
-				fieldSeen[buildtask.FieldBuildImage] = struct{}{}
-			}
 		case "buildScript":
 			if _, ok := fieldSeen[buildtask.FieldBuildScript]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldBuildScript)
@@ -899,16 +932,6 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldArtifactPath]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldArtifactPath)
 				fieldSeen[buildtask.FieldArtifactPath] = struct{}{}
-			}
-		case "preBuildScript":
-			if _, ok := fieldSeen[buildtask.FieldPreBuildScript]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldPreBuildScript)
-				fieldSeen[buildtask.FieldPreBuildScript] = struct{}{}
-			}
-		case "postBuildScript":
-			if _, ok := fieldSeen[buildtask.FieldPostBuildScript]; !ok {
-				selectedFields = append(selectedFields, buildtask.FieldPostBuildScript)
-				fieldSeen[buildtask.FieldPostBuildScript] = struct{}{}
 			}
 		case "id":
 		case "__typename":

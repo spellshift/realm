@@ -47,6 +47,17 @@ type MutationResolver interface {
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createBuildProfile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateBuildProfileInput2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐCreateBuildProfileInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createBuildTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1887,8 +1898,6 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
 				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
-			case "buildImage":
-				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
 			case "claimedAt":
@@ -1909,10 +1918,6 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_exitCode(ctx, field)
 			case "artifactPath":
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
-			case "preBuildScript":
-				return ec.fieldContext_BuildTask_preBuildScript(ctx, field)
-			case "postBuildScript":
-				return ec.fieldContext_BuildTask_postBuildScript(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
 			case "profile":

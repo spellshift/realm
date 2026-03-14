@@ -190,6 +190,22 @@ func (r *queryResolver) Shells(ctx context.Context, after *entgql.Cursor[int], f
 	return query.Paginate(ctx, after, first, before, last, ent.WithShellOrder(orderBy))
 }
 
+// BuildProfiles is the resolver for the buildProfiles field.
+func (r *queryResolver) BuildProfiles(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) (*ent.BuildProfileConnection, error) {
+	query, err := r.client.BuildProfile.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		query, err := where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+		return query.Paginate(ctx, after, first, before, last, ent.WithBuildProfileOrder(orderBy))
+	}
+	return query.Paginate(ctx, after, first, before, last, ent.WithBuildProfileOrder(orderBy))
+}
+
 // BuildTasks is the resolver for the buildTasks field.
 func (r *queryResolver) BuildTasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) (*ent.BuildTaskConnection, error) {
 	query, err := r.client.BuildTask.Query().CollectFields(ctx)

@@ -41,6 +41,20 @@ func (bpc *BuildProfileCreate) SetTransports(bpt []builderpb.BuildProfileTranspo
 	return bpc
 }
 
+// SetBuildImage sets the "build_image" field.
+func (bpc *BuildProfileCreate) SetBuildImage(s string) *BuildProfileCreate {
+	bpc.mutation.SetBuildImage(s)
+	return bpc
+}
+
+// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillableBuildImage(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetBuildImage(*s)
+	}
+	return bpc
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (bpc *BuildProfileCreate) SetPrebuildscript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPrebuildscript(s)
@@ -50,6 +64,12 @@ func (bpc *BuildProfileCreate) SetPrebuildscript(s string) *BuildProfileCreate {
 // SetPostbuildscript sets the "postbuildscript" field.
 func (bpc *BuildProfileCreate) SetPostbuildscript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPostbuildscript(s)
+	return bpc
+}
+
+// SetTomes sets the "tomes" field.
+func (bpc *BuildProfileCreate) SetTomes(bpt []builderpb.BuildProfileTome) *BuildProfileCreate {
+	bpc.mutation.SetTomes(bpt)
 	return bpc
 }
 
@@ -75,6 +95,7 @@ func (bpc *BuildProfileCreate) Mutation() *BuildProfileMutation {
 
 // Save creates the BuildProfile in the database.
 func (bpc *BuildProfileCreate) Save(ctx context.Context) (*BuildProfile, error) {
+	bpc.defaults()
 	return withHooks(ctx, bpc.sqlSave, bpc.mutation, bpc.hooks)
 }
 
@@ -100,6 +121,14 @@ func (bpc *BuildProfileCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (bpc *BuildProfileCreate) defaults() {
+	if _, ok := bpc.mutation.BuildImage(); !ok {
+		v := buildprofile.DefaultBuildImage
+		bpc.mutation.SetBuildImage(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (bpc *BuildProfileCreate) check() error {
 	if _, ok := bpc.mutation.Name(); !ok {
@@ -110,6 +139,14 @@ func (bpc *BuildProfileCreate) check() error {
 	}
 	if _, ok := bpc.mutation.Transports(); !ok {
 		return &ValidationError{Name: "transports", err: errors.New(`ent: missing required field "BuildProfile.transports"`)}
+	}
+	if _, ok := bpc.mutation.BuildImage(); !ok {
+		return &ValidationError{Name: "build_image", err: errors.New(`ent: missing required field "BuildProfile.build_image"`)}
+	}
+	if v, ok := bpc.mutation.BuildImage(); ok {
+		if err := buildprofile.BuildImageValidator(v); err != nil {
+			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildProfile.build_image": %w`, err)}
+		}
 	}
 	if _, ok := bpc.mutation.Prebuildscript(); !ok {
 		return &ValidationError{Name: "prebuildscript", err: errors.New(`ent: missing required field "BuildProfile.prebuildscript"`)}
@@ -156,6 +193,10 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 		_spec.SetField(buildprofile.FieldTransports, field.TypeJSON, value)
 		_node.Transports = value
 	}
+	if value, ok := bpc.mutation.BuildImage(); ok {
+		_spec.SetField(buildprofile.FieldBuildImage, field.TypeString, value)
+		_node.BuildImage = value
+	}
 	if value, ok := bpc.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
 		_node.Prebuildscript = value
@@ -163,6 +204,10 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 	if value, ok := bpc.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
 		_node.Postbuildscript = value
+	}
+	if value, ok := bpc.mutation.Tomes(); ok {
+		_spec.SetField(buildprofile.FieldTomes, field.TypeJSON, value)
+		_node.Tomes = value
 	}
 	if nodes := bpc.mutation.BuildtasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -268,6 +313,18 @@ func (u *BuildProfileUpsert) UpdateTransports() *BuildProfileUpsert {
 	return u
 }
 
+// SetBuildImage sets the "build_image" field.
+func (u *BuildProfileUpsert) SetBuildImage(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldBuildImage, v)
+	return u
+}
+
+// UpdateBuildImage sets the "build_image" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateBuildImage() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldBuildImage)
+	return u
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (u *BuildProfileUpsert) SetPrebuildscript(v string) *BuildProfileUpsert {
 	u.Set(buildprofile.FieldPrebuildscript, v)
@@ -289,6 +346,24 @@ func (u *BuildProfileUpsert) SetPostbuildscript(v string) *BuildProfileUpsert {
 // UpdatePostbuildscript sets the "postbuildscript" field to the value that was provided on create.
 func (u *BuildProfileUpsert) UpdatePostbuildscript() *BuildProfileUpsert {
 	u.SetExcluded(buildprofile.FieldPostbuildscript)
+	return u
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildProfileUpsert) SetTomes(v []builderpb.BuildProfileTome) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldTomes, v)
+	return u
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateTomes() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldTomes)
+	return u
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildProfileUpsert) ClearTomes() *BuildProfileUpsert {
+	u.SetNull(buildprofile.FieldTomes)
 	return u
 }
 
@@ -374,6 +449,20 @@ func (u *BuildProfileUpsertOne) UpdateTransports() *BuildProfileUpsertOne {
 	})
 }
 
+// SetBuildImage sets the "build_image" field.
+func (u *BuildProfileUpsertOne) SetBuildImage(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetBuildImage(v)
+	})
+}
+
+// UpdateBuildImage sets the "build_image" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateBuildImage() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateBuildImage()
+	})
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (u *BuildProfileUpsertOne) SetPrebuildscript(v string) *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
@@ -399,6 +488,27 @@ func (u *BuildProfileUpsertOne) SetPostbuildscript(v string) *BuildProfileUpsert
 func (u *BuildProfileUpsertOne) UpdatePostbuildscript() *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostbuildscript()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildProfileUpsertOne) SetTomes(v []builderpb.BuildProfileTome) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateTomes() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildProfileUpsertOne) ClearTomes() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.ClearTomes()
 	})
 }
 
@@ -454,6 +564,7 @@ func (bpcb *BuildProfileCreateBulk) Save(ctx context.Context) ([]*BuildProfile, 
 	for i := range bpcb.builders {
 		func(i int, root context.Context) {
 			builder := bpcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*BuildProfileMutation)
 				if !ok {
@@ -647,6 +758,20 @@ func (u *BuildProfileUpsertBulk) UpdateTransports() *BuildProfileUpsertBulk {
 	})
 }
 
+// SetBuildImage sets the "build_image" field.
+func (u *BuildProfileUpsertBulk) SetBuildImage(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetBuildImage(v)
+	})
+}
+
+// UpdateBuildImage sets the "build_image" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateBuildImage() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateBuildImage()
+	})
+}
+
 // SetPrebuildscript sets the "prebuildscript" field.
 func (u *BuildProfileUpsertBulk) SetPrebuildscript(v string) *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
@@ -672,6 +797,27 @@ func (u *BuildProfileUpsertBulk) SetPostbuildscript(v string) *BuildProfileUpser
 func (u *BuildProfileUpsertBulk) UpdatePostbuildscript() *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePostbuildscript()
+	})
+}
+
+// SetTomes sets the "tomes" field.
+func (u *BuildProfileUpsertBulk) SetTomes(v []builderpb.BuildProfileTome) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetTomes(v)
+	})
+}
+
+// UpdateTomes sets the "tomes" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateTomes() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateTomes()
+	})
+}
+
+// ClearTomes clears the value of the "tomes" field.
+func (u *BuildProfileUpsertBulk) ClearTomes() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.ClearTomes()
 	})
 }
 

@@ -27,8 +27,6 @@ const (
 	FieldTargetOs = "target_os"
 	// FieldTargetFormat holds the string denoting the target_format field in the database.
 	FieldTargetFormat = "target_format"
-	// FieldBuildImage holds the string denoting the build_image field in the database.
-	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
@@ -49,10 +47,6 @@ const (
 	FieldExitCode = "exit_code"
 	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
 	FieldArtifactPath = "artifact_path"
-	// FieldPreBuildScript holds the string denoting the pre_build_script field in the database.
-	FieldPreBuildScript = "pre_build_script"
-	// FieldPostBuildScript holds the string denoting the post_build_script field in the database.
-	FieldPostBuildScript = "post_build_script"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
 	// EdgeProfile holds the string denoting the profile edge name in mutations.
@@ -91,7 +85,6 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldTargetOs,
 	FieldTargetFormat,
-	FieldBuildImage,
 	FieldBuildScript,
 	FieldClaimedAt,
 	FieldStartedAt,
@@ -102,8 +95,6 @@ var Columns = []string{
 	FieldErrorSize,
 	FieldExitCode,
 	FieldArtifactPath,
-	FieldPreBuildScript,
-	FieldPostBuildScript,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
@@ -142,8 +133,6 @@ var (
 	DefaultLastModifiedAt func() time.Time
 	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
-	// BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
-	BuildImageValidator func(string) error
 	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	BuildScriptValidator func(string) error
 	// DefaultOutputSize holds the default value on creation for the "output_size" field.
@@ -204,11 +193,6 @@ func ByTargetFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTargetFormat, opts...).ToFunc()
 }
 
-// ByBuildImage orders the results by the build_image field.
-func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBuildImage, opts...).ToFunc()
-}
-
 // ByBuildScript orders the results by the build_script field.
 func ByBuildScript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildScript, opts...).ToFunc()
@@ -257,16 +241,6 @@ func ByExitCode(opts ...sql.OrderTermOption) OrderOption {
 // ByArtifactPath orders the results by the artifact_path field.
 func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
-}
-
-// ByPreBuildScript orders the results by the pre_build_script field.
-func ByPreBuildScript(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPreBuildScript, opts...).ToFunc()
-}
-
-// ByPostBuildScript orders the results by the post_build_script field.
-func ByPostBuildScript(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPostBuildScript, opts...).ToFunc()
 }
 
 // ByBuilderField orders the results by builder field.
