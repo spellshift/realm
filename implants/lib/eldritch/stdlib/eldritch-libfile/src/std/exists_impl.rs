@@ -1,8 +1,15 @@
 use ::std::path::Path;
+use alloc::format;
 use alloc::string::String;
+use glob::glob;
 
 pub fn exists(path: String) -> Result<bool, String> {
-    Ok(Path::new(&path).exists())
+    if path.contains('*') || path.contains('?') || path.contains('[') {
+        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
+        Ok(paths.next().is_some())
+    } else {
+        Ok(Path::new(&path).exists())
+    }
 }
 
 #[cfg(test)]
