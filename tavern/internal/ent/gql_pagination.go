@@ -3575,6 +3575,20 @@ var (
 			}
 		},
 	}
+	// HostProcessOrderFieldStartTime orders HostProcess by start_time.
+	HostProcessOrderFieldStartTime = &HostProcessOrderField{
+		Value: func(hp *HostProcess) (ent.Value, error) {
+			return hp.StartTime, nil
+		},
+		column: hostprocess.FieldStartTime,
+		toTerm: hostprocess.ByStartTime,
+		toCursor: func(hp *HostProcess) Cursor {
+			return Cursor{
+				ID:    hp.ID,
+				Value: hp.StartTime,
+			}
+		},
+	}
 )
 
 // String implement fmt.Stringer interface.
@@ -3591,6 +3605,8 @@ func (f HostProcessOrderField) String() string {
 		str = "PARENT_PROCESS_ID"
 	case HostProcessOrderFieldName.column:
 		str = "NAME"
+	case HostProcessOrderFieldStartTime.column:
+		str = "PROCESS_START_TIME"
 	}
 	return str
 }
@@ -3617,6 +3633,8 @@ func (f *HostProcessOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *HostProcessOrderFieldPpid
 	case "NAME":
 		*f = *HostProcessOrderFieldName
+	case "PROCESS_START_TIME":
+		*f = *HostProcessOrderFieldStartTime
 	default:
 		return fmt.Errorf("%s is not a valid HostProcessOrderField", str)
 	}

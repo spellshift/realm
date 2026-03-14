@@ -6800,6 +6800,35 @@ func (ec *executionContext) fieldContext_HostProcess_status(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _HostProcess_startTime(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_HostProcess_startTime,
+		func(ctx context.Context) (any, error) {
+			return obj.StartTime, nil
+		},
+		nil,
+		ec.marshalOUint642uint64,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_HostProcess_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HostProcess",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Uint64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HostProcess_host(ctx context.Context, field graphql.CollectedField, obj *ent.HostProcess) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7142,6 +7171,8 @@ func (ec *executionContext) fieldContext_HostProcessEdge_node(_ context.Context,
 				return ec.fieldContext_HostProcess_cwd(ctx, field)
 			case "status":
 				return ec.fieldContext_HostProcess_status(ctx, field)
+			case "startTime":
+				return ec.fieldContext_HostProcess_startTime(ctx, field)
 			case "host":
 				return ec.fieldContext_HostProcess_host(ctx, field)
 			case "task":
@@ -13015,6 +13046,8 @@ func (ec *executionContext) fieldContext_ShellTask_reportedProcesses(_ context.C
 				return ec.fieldContext_HostProcess_cwd(ctx, field)
 			case "status":
 				return ec.fieldContext_HostProcess_status(ctx, field)
+			case "startTime":
+				return ec.fieldContext_HostProcess_startTime(ctx, field)
 			case "host":
 				return ec.fieldContext_HostProcess_host(ctx, field)
 			case "task":
@@ -21101,7 +21134,7 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "pid", "pidNEQ", "pidIn", "pidNotIn", "pidGT", "pidGTE", "pidLT", "pidLTE", "ppid", "ppidNEQ", "ppidIn", "ppidNotIn", "ppidGT", "ppidGTE", "ppidLT", "ppidLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "principal", "principalNEQ", "principalIn", "principalNotIn", "principalGT", "principalGTE", "principalLT", "principalLTE", "principalContains", "principalHasPrefix", "principalHasSuffix", "principalEqualFold", "principalContainsFold", "path", "pathNEQ", "pathIn", "pathNotIn", "pathGT", "pathGTE", "pathLT", "pathLTE", "pathContains", "pathHasPrefix", "pathHasSuffix", "pathIsNil", "pathNotNil", "pathEqualFold", "pathContainsFold", "cmd", "cmdNEQ", "cmdIn", "cmdNotIn", "cmdGT", "cmdGTE", "cmdLT", "cmdLTE", "cmdContains", "cmdHasPrefix", "cmdHasSuffix", "cmdIsNil", "cmdNotNil", "cmdEqualFold", "cmdContainsFold", "env", "envNEQ", "envIn", "envNotIn", "envGT", "envGTE", "envLT", "envLTE", "envContains", "envHasPrefix", "envHasSuffix", "envIsNil", "envNotNil", "envEqualFold", "envContainsFold", "cwd", "cwdNEQ", "cwdIn", "cwdNotIn", "cwdGT", "cwdGTE", "cwdLT", "cwdLTE", "cwdContains", "cwdHasPrefix", "cwdHasSuffix", "cwdIsNil", "cwdNotNil", "cwdEqualFold", "cwdContainsFold", "status", "statusNEQ", "statusIn", "statusNotIn", "startTime", "startTimeNEQ", "startTimeIn", "startTimeNotIn", "startTimeGT", "startTimeGTE", "startTimeLT", "startTimeLTE", "startTimeIsNil", "startTimeNotNil", "hasHost", "hasHostWith", "hasTask", "hasTaskWith", "hasShellTask", "hasShellTaskWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -22039,6 +22072,76 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 				return it, err
 			}
 			it.StatusNotIn = data
+		case "startTime":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTime = data
+		case "startTimeNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeNEQ"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeNEQ = data
+		case "startTimeIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeIn"))
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeIn = data
+		case "startTimeNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeNotIn"))
+			data, err := ec.unmarshalOUint642ᚕuint64ᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeNotIn = data
+		case "startTimeGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeGT"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeGT = data
+		case "startTimeGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeGTE"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeGTE = data
+		case "startTimeLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeLT"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeLT = data
+		case "startTimeLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeLTE"))
+			data, err := ec.unmarshalOUint642ᚖuint64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeLTE = data
+		case "startTimeIsNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeIsNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeIsNil = data
+		case "startTimeNotNil":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTimeNotNil"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.StartTimeNotNil = data
 		case "hasHost":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasHost"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -33047,6 +33150,8 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "startTime":
+			out.Values[i] = ec._HostProcess_startTime(ctx, field, obj)
 		case "host":
 			field := field
 
