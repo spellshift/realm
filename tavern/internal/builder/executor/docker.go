@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -315,7 +316,70 @@ func prepareMountDir(spec BuildSpec) (string, error) {
 		}
 	}
 
+	// Extract downloaded tome tar.gz archives into per-tome subdirectories.
+	for _, t := range spec.Tomes {
+		tomeDir := filepath.Join(tomesDir, fmt.Sprintf("%d", t.ID))
+		if err := os.MkdirAll(tomeDir, 0o755); err != nil {
+			return tmpDir, fmt.Errorf("creating tome dir %d: %w", t.ID, err)
+		}
+
+		if err := extractTomeArchive(t.Contents, tomeDir); err != nil {
+			return tmpDir, fmt.Errorf("extracting tome %d: %w", t.ID, err)
+		}
+
+		// Write params as a JSON file if present.
+		if t.Params != "" {
+			if err := os.WriteFile(filepath.Join(tomeDir, "params.json"), []byte(t.Params), 0o644); err != nil {
+				return tmpDir, fmt.Errorf("writing params for tome %d: %w", t.ID, err)
+			}
+		}
+	}
+
 	return tmpDir, nil
+}
+
+// extractTomeArchive decompresses a tar.gz archive and extracts all regular
+// files into destDir, preserving their path names and creating subdirectories
+// as needed.
+func extractTomeArchive(data []byte, destDir string) error {
+	gr, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("opening gzip reader: %w", err)
+	}
+	defer gr.Close()
+
+	tr := tar.NewReader(gr)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("reading tar entry: %w", err)
+		}
+		if hdr.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		destPath := filepath.Join(destDir, hdr.Name)
+
+		// Create parent directories for nested asset paths.
+		if dir := filepath.Dir(destPath); dir != destDir {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
+				return fmt.Errorf("creating dir for %s: %w", hdr.Name, err)
+			}
+		}
+
+		content, err := io.ReadAll(tr)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", hdr.Name, err)
+		}
+		if err := os.WriteFile(destPath, content, 0o644); err != nil {
+			return fmt.Errorf("writing %s: %w", hdr.Name, err)
+		}
+	}
+
+	return nil
 }
 
 // extractArtifact copies a file from a stopped container using the Docker API.

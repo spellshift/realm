@@ -35,6 +35,19 @@ type BuildSpec struct {
 	// TomesDir is a local directory containing tome files to copy into
 	// the container at /mnt/tomes.
 	TomesDir string
+
+	// Tomes contains packaged tome data downloaded via the DownloadTome RPC.
+	// Each entry's Contents is a tar.gz archive that gets extracted into
+	// /mnt/tomes/<ID>/ inside the container.
+	Tomes []TomeData
+}
+
+// TomeData represents a single tome's packaged content downloaded from the server.
+type TomeData struct {
+	ID       int64
+	Name     string
+	Contents []byte // tar.gz archive of main.eldritch + assets
+	Params   string
 }
 
 // BuildResult holds the results of a build execution, including any extracted artifacts.

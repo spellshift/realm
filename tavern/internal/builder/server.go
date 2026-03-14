@@ -132,6 +132,23 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			return nil, fmt.Errorf("failed to marshal IMIX config: %w", err)
 		}
 
+		// Build tome metadata (IDs, names, params) for the response.
+		// Tome content is downloaded separately via DownloadTome RPC.
+		var protoTomes []*builderpb.Tome
+		for _, pt := range profile.Tomes {
+			tomeEntity, err := s.graph.Tome.Get(ctx, pt.TomeID)
+			if err != nil {
+				slog.WarnContext(ctx, "failed to load tome for build task",
+					"task_id", taskID, "tome_id", pt.TomeID, "error", err)
+				continue
+			}
+			protoTomes = append(protoTomes, &builderpb.Tome{
+				Id:     int64(pt.TomeID),
+				Name:   tomeEntity.Name,
+				Params: pt.Params,
+			})
+		}
+
 		resp.Tasks = append(resp.Tasks, &builderpb.BuildTaskSpec{
 			Id:              int64(claimedTask.ID),
 			TargetOs:        claimedTask.TargetOs.String(),
@@ -144,6 +161,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 				fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes)),
 				fmt.Sprintf("ARTIFACT_PATH=%s", string(claimedTask.ArtifactPath)),
 			},
+			Tomes: protoTomes,
 		})
 	}
 
@@ -344,6 +362,96 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 	return stream.SendAndClose(&builderpb.UploadBuildArtifactResponse{
 		AssetId: int64(asset.ID),
 	})
+}
+
+// DownloadTome streams a tome's packaged content (tar.gz) to the builder client in chunks.
+// The builder must own the task referenced in the request, and the tome must be part of
+// the task's build profile.
+func (s *Server) DownloadTome(req *builderpb.DownloadTomeRequest, stream builderpb.Builder_DownloadTomeServer) error {
+	ctx := stream.Context()
+
+	b, ok := BuilderFromContext(ctx)
+	if !ok {
+		return status.Error(codes.Unauthenticated, "builder not authenticated")
+	}
+
+	if req.TaskId == 0 {
+		return status.Error(codes.InvalidArgument, "task_id is required")
+	}
+	if req.TomeId == 0 {
+		return status.Error(codes.InvalidArgument, "tome_id is required")
+	}
+
+	// Validate task ownership.
+	bt, err := s.graph.BuildTask.Get(ctx, int(req.TaskId))
+	if err != nil {
+		return status.Errorf(codes.NotFound, "build task %d not found: %v", req.TaskId, err)
+	}
+	btBuilder, err := bt.QueryBuilder().Only(ctx)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to query builder for task %d: %v", req.TaskId, err)
+	}
+	if btBuilder.ID != b.ID {
+		return status.Errorf(codes.PermissionDenied, "build task %d is not assigned to this builder", req.TaskId)
+	}
+
+	// Verify the tome is part of the task's build profile.
+	profile, err := bt.Profile(ctx)
+	if err != nil || profile == nil {
+		return status.Errorf(codes.Internal, "failed to load build profile for task %d: %v", req.TaskId, err)
+	}
+	tomeFound := false
+	for _, pt := range profile.Tomes {
+		if int64(pt.TomeID) == req.TomeId {
+			tomeFound = true
+			break
+		}
+	}
+	if !tomeFound {
+		return status.Errorf(codes.InvalidArgument, "tome %d is not part of the build profile for task %d", req.TomeId, req.TaskId)
+	}
+
+	// Package the tome into a tar.gz archive.
+	data, err := PackageTome(ctx, s.graph, int(req.TomeId))
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to package tome %d: %v", req.TomeId, err)
+	}
+
+	// Get the tome name for the first message.
+	tomeEntity, err := s.graph.Tome.Get(ctx, int(req.TomeId))
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to load tome %d: %v", req.TomeId, err)
+	}
+
+	// Stream the data in 1MB chunks.
+	const chunkSize = 1 * 1024 * 1024
+	for i := 0; i < len(data); i += chunkSize {
+		end := i + chunkSize
+		if end > len(data) {
+			end = len(data)
+		}
+
+		msg := &builderpb.DownloadTomeResponse{
+			Chunk: data[i:end],
+		}
+		// Include the name on the first message only.
+		if i == 0 {
+			msg.Name = tomeEntity.Name
+		}
+
+		if err := stream.Send(msg); err != nil {
+			return status.Errorf(codes.Internal, "failed to send tome chunk: %v", err)
+		}
+	}
+
+	slog.InfoContext(ctx, "tome downloaded",
+		"task_id", req.TaskId,
+		"tome_id", req.TomeId,
+		"builder_id", b.ID,
+		"size", len(data),
+	)
+
+	return nil
 }
 
 // flushStreamOutput appends output and error to the build task in the database.

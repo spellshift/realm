@@ -11,6 +11,22 @@ enum TargetFormat {
     TARGET_FORMAT_WINDOWS_SERVICE = 3;
 }
 
+message Tome {
+    int64 id = 1;
+    string name = 2;
+    string params = 3;
+}
+
+message DownloadTomeRequest {
+    int64 task_id = 1;
+    int64 tome_id = 2;
+}
+
+message DownloadTomeResponse {
+    string name = 1;
+    bytes chunk = 2;
+}
+
 message ClaimBuildTasksRequest {}
 
 message BuildTaskSpec {
@@ -22,6 +38,7 @@ message BuildTaskSpec {
     string pre_build_script = 7;
     string post_build_script = 8;
     repeated string env = 9;
+    repeated Tome tomes = 10;
 }
 
 message ClaimBuildTasksResponse {
@@ -52,4 +69,5 @@ service Builder {
     rpc ClaimBuildTasks(ClaimBuildTasksRequest) returns (ClaimBuildTasksResponse) {}
     rpc StreamBuildTaskOutput(stream StreamBuildTaskOutputRequest) returns (StreamBuildTaskOutputResponse) {}
     rpc UploadBuildArtifact(stream UploadBuildArtifactRequest) returns (UploadBuildArtifactResponse) {}
+    rpc DownloadTome(DownloadTomeRequest) returns (stream DownloadTomeResponse) {}
 }
