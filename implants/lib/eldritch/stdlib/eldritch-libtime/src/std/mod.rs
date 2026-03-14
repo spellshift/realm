@@ -24,7 +24,7 @@ impl TimeLibrary for StdTimeLibrary {
         now_impl::now()
     }
 
-    fn sleep(&self, secs: i64) -> Result<(), String> {
+    fn sleep(&self, secs: f64) -> Result<(), String> {
         sleep_impl::sleep(secs)
     }
 }
