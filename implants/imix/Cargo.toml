@@ -48,6 +48,12 @@ async-trait = { workspace = true }
 shelter = "=0.1.2"
 windows-service = { workspace = true }
 windows = { version = "0.51.1", features = ["Win32_System_Threading"] }
+dinvoke_rs = "=0.2.0"
+dinvoke = "=0.2.0"
+dinvoke_data = "=0.2.0"
+dinvoke_overload = "=0.2.0"
+dmanager = "=0.2.0"
+manualmap = "=0.2.0"
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 static_vcruntime = { workspace = true }
