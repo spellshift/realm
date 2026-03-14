@@ -45,6 +45,7 @@ rand = { workspace = true }
 async-trait = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
+shelter = "=0.1.2"
 windows-service = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]

