@@ -132,23 +132,19 @@ async fn test_imix_agent_report_process_list() {
     let mut transport = MockTransport::default();
     transport.expect_is_active().returning(|| true);
 
-    transport.expect_clone_box().returning(|| {
-        let mut t = MockTransport::default();
-        t.expect_is_active().returning(|| true);
-        t.expect_report_process_list()
-            .times(1)
-            .returning(|_| Ok(c2::ReportProcessListResponse {}));
-        Box::new(t)
-    });
+    transport
+        .expect_report_process_list()
+        .times(1)
+        .returning(|_| Ok(c2::ReportProcessListResponse {}));
 
     let handle = tokio::runtime::Handle::current();
     let registry = Arc::new(TaskRegistry::new());
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
     let agent = ImixAgent::new(Config::default(), Box::new(transport), handle, registry, tx);
 
-    let agent_clone = agent.clone();
-    std::thread::spawn(move || {
-        let _ = agent_clone.report_process_list(c2::ReportProcessListRequest {
+    // 1. Report process list (should buffer)
+    agent
+        .report_process_list(c2::ReportProcessListRequest {
             list: None,
             context: Some(c2::report_process_list_request::Context::TaskContext(
                 c2::TaskContext {
@@ -156,10 +152,11 @@ async fn test_imix_agent_report_process_list() {
                     jwt: "some jwt".to_string(),
                 },
             )),
-        });
-    })
-    .join()
-    .unwrap();
+        })
+        .unwrap();
+
+    // 2. Flush outputs (should drain buffer and call transport)
+    agent.flush_outputs().await;
 }
 
 #[tokio::test]

@@ -1,12 +1,14 @@
 package builder
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/url"
 	"time"
@@ -211,6 +213,25 @@ func claimAndExecuteTasks(ctx context.Context, client builderpb.BuilderClient, e
 // executeTask runs a single build task through the executor, streaming output
 // and errors back to the server via the StreamBuildTaskOutput RPC.
 func executeTask(ctx context.Context, client builderpb.BuilderClient, exec executor.Executor, task *builderpb.BuildTaskSpec) {
+	// Download tomes before starting the build.
+	var tomes []executor.TomeData
+	for _, t := range task.Tomes {
+		name, data, err := downloadTome(ctx, client, task.Id, t.Id)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to download tome",
+				"task_id", task.Id, "tome_id", t.Id, "error", err)
+			return
+		}
+		tomes = append(tomes, executor.TomeData{
+			ID:       t.Id,
+			Name:     name,
+			Contents: data,
+			Params:   t.Params,
+		})
+		slog.InfoContext(ctx, "tome downloaded",
+			"task_id", task.Id, "tome_id", t.Id, "name", name, "size", len(data))
+	}
+
 	stream, err := client.StreamBuildTaskOutput(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open build output stream",
@@ -264,12 +285,16 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 	// Run the build through the executor.
 	// The executor closes both channels when done.
 	result, buildErr := exec.Build(ctx, executor.BuildSpec{
-		TaskID:       task.Id,
-		TargetOS:     task.TargetOs,
-		BuildImage:   task.BuildImage,
-		BuildScript:  task.BuildScript,
-		ArtifactPath: task.ArtifactPath,
-		Env:          task.Env,
+		TaskID:         task.Id,
+		TargetOS:       task.TargetOs,
+		BuildImage:     task.BuildImage,
+		BuildScript:    task.BuildScript,
+		ArtifactPath:   task.ArtifactPath,
+		Env:            task.Env,
+		SetupScript:    task.SetupScript,
+		PreBuildScript:  task.PreBuildScript,
+		PostBuildScript: task.PostBuildScript,
+		Tomes:          tomes,
 	}, outputCh, errorCh)
 
 	// Wait for the collector goroutine to drain remaining channel data.
@@ -359,4 +384,42 @@ func uploadArtifact(ctx context.Context, client builderpb.BuilderClient, taskID 
 	)
 
 	return nil
+}
+
+// downloadTome streams a tome's tar.gz content from the server via the
+// DownloadTome RPC, returning the tome name and accumulated data.
+func downloadTome(ctx context.Context, client builderpb.BuilderClient, taskID int64, tomeID int64) (string, []byte, error) {
+	stream, err := client.DownloadTome(ctx, &builderpb.DownloadTomeRequest{
+		TaskId: taskID,
+		TomeId: tomeID,
+	})
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to open tome download stream: %w", err)
+	}
+
+	var (
+		name string
+		buf  bytes.Buffer
+	)
+
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to receive tome chunk: %w", err)
+		}
+
+		if resp.Name != "" {
+			name = resp.Name
+		}
+		buf.Write(resp.Chunk)
+	}
+
+	if buf.Len() == 0 {
+		return "", nil, fmt.Errorf("empty tome data for tome %d", tomeID)
+	}
+
+	return name, buf.Bytes(), nil
 }

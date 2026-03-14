@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -28,6 +29,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -51,6 +53,11 @@ var beaconImplementors = []string{"Beacon", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Beacon) IsNode() {}
+
+var buildprofileImplementors = []string{"BuildProfile", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*BuildProfile) IsNode() {}
 
 var buildtaskImplementors = []string{"BuildTask", "Node"}
 
@@ -106,6 +113,11 @@ var repositoryImplementors = []string{"Repository", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Repository) IsNode() {}
+
+var scheduledtaskImplementors = []string{"ScheduledTask", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ScheduledTask) IsNode() {}
 
 var screenshotImplementors = []string{"Screenshot", "Node"}
 
@@ -218,6 +230,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			}
 		}
 		return query.Only(ctx)
+	case buildprofile.Table:
+		query := c.BuildProfile.Query().
+			Where(buildprofile.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, buildprofileImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case buildtask.Table:
 		query := c.BuildTask.Query().
 			Where(buildtask.ID(id))
@@ -313,6 +334,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(repository.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, repositoryImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case scheduledtask.Table:
+		query := c.ScheduledTask.Query().
+			Where(scheduledtask.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, scheduledtaskImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -473,6 +503,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Beacon.Query().
 			Where(beacon.IDIn(ids...))
 		query, err := query.CollectFields(ctx, beaconImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case buildprofile.Table:
+		query := c.BuildProfile.Query().
+			Where(buildprofile.IDIn(ids...))
+		query, err := query.CollectFields(ctx, buildprofileImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -649,6 +695,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Repository.Query().
 			Where(repository.IDIn(ids...))
 		query, err := query.CollectFields(ctx, repositoryImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case scheduledtask.Table:
+		query := c.ScheduledTask.Query().
+			Where(scheduledtask.IDIn(ids...))
+		query, err := query.CollectFields(ctx, scheduledtaskImplementors...)
 		if err != nil {
 			return nil, err
 		}

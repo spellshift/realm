@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use pb::c2::transport::Type as TransportType;
-use pb::{c2::*, config::Config};
-use std::sync::mpsc::{Receiver, Sender};
+use pb::config::Config;
 
 #[cfg(any(feature = "grpc", feature = "http1"))]
 mod tls_utils;

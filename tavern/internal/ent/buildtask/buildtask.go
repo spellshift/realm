@@ -27,12 +27,8 @@ const (
 	FieldTargetOs = "target_os"
 	// FieldTargetFormat holds the string denoting the target_format field in the database.
 	FieldTargetFormat = "target_format"
-	// FieldBuildImage holds the string denoting the build_image field in the database.
-	FieldBuildImage = "build_image"
 	// FieldBuildScript holds the string denoting the build_script field in the database.
 	FieldBuildScript = "build_script"
-	// FieldTransports holds the string denoting the transports field in the database.
-	FieldTransports = "transports"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
@@ -51,8 +47,14 @@ const (
 	FieldExitCode = "exit_code"
 	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
 	FieldArtifactPath = "artifact_path"
+	// FieldSetupscript holds the string denoting the setupscript field in the database.
+	FieldSetupscript = "setupscript"
+	// FieldUnique holds the string denoting the unique field in the database.
+	FieldUnique = "unique"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
+	// EdgeProfile holds the string denoting the profile edge name in mutations.
+	EdgeProfile = "profile"
 	// EdgeArtifact holds the string denoting the artifact edge name in mutations.
 	EdgeArtifact = "artifact"
 	// Table holds the table name of the buildtask in the database.
@@ -64,6 +66,13 @@ const (
 	BuilderInverseTable = "builders"
 	// BuilderColumn is the table column denoting the builder relation/edge.
 	BuilderColumn = "build_task_builder"
+	// ProfileTable is the table that holds the profile relation/edge.
+	ProfileTable = "build_tasks"
+	// ProfileInverseTable is the table name for the BuildProfile entity.
+	// It exists in this package in order to avoid circular dependency with the "buildprofile" package.
+	ProfileInverseTable = "build_profiles"
+	// ProfileColumn is the table column denoting the profile relation/edge.
+	ProfileColumn = "build_task_profile"
 	// ArtifactTable is the table that holds the artifact relation/edge.
 	ArtifactTable = "build_tasks"
 	// ArtifactInverseTable is the table name for the Asset entity.
@@ -80,9 +89,7 @@ var Columns = []string{
 	FieldLastModifiedAt,
 	FieldTargetOs,
 	FieldTargetFormat,
-	FieldBuildImage,
 	FieldBuildScript,
-	FieldTransports,
 	FieldClaimedAt,
 	FieldStartedAt,
 	FieldFinishedAt,
@@ -92,12 +99,15 @@ var Columns = []string{
 	FieldErrorSize,
 	FieldExitCode,
 	FieldArtifactPath,
+	FieldSetupscript,
+	FieldUnique,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"build_task_builder",
+	"build_task_profile",
 	"build_task_artifact",
 }
 
@@ -129,8 +139,6 @@ var (
 	DefaultLastModifiedAt func() time.Time
 	// UpdateDefaultLastModifiedAt holds the default value on update for the "last_modified_at" field.
 	UpdateDefaultLastModifiedAt func() time.Time
-	// BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
-	BuildImageValidator func(string) error
 	// BuildScriptValidator is a validator for the "build_script" field. It is called by the builders before save.
 	BuildScriptValidator func(string) error
 	// DefaultOutputSize holds the default value on creation for the "output_size" field.
@@ -191,11 +199,6 @@ func ByTargetFormat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTargetFormat, opts...).ToFunc()
 }
 
-// ByBuildImage orders the results by the build_image field.
-func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBuildImage, opts...).ToFunc()
-}
-
 // ByBuildScript orders the results by the build_script field.
 func ByBuildScript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBuildScript, opts...).ToFunc()
@@ -246,10 +249,27 @@ func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
 }
 
+// BySetupscript orders the results by the setupscript field.
+func BySetupscript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSetupscript, opts...).ToFunc()
+}
+
+// ByUnique orders the results by the unique field.
+func ByUnique(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUnique, opts...).ToFunc()
+}
+
 // ByBuilderField orders the results by builder field.
 func ByBuilderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newBuilderStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByProfileField orders the results by profile field.
+func ByProfileField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProfileStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -264,6 +284,13 @@ func newBuilderStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BuilderInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, BuilderTable, BuilderColumn),
+	)
+}
+func newProfileStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProfileInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ProfileTable, ProfileColumn),
 	)
 }
 func newArtifactStep() *sqlgraph.Step {

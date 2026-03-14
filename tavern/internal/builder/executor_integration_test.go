@@ -71,17 +71,18 @@ func TestExecutorIntegration_ClaimAndExecuteWithMock(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
+	profile := graph.BuildProfile.Create().
+		SetName("defaultprofile").
+		SetBuildImage("golang:1.21").
+		SetDescription("The default profile").
+		SaveX(ctx)
+
 	// Create a build task
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
+		SetProfileID(profile.ID).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -219,17 +220,17 @@ func TestExecutorIntegration_ClaimAndExecuteWithMockError(t *testing.T) {
 	builders, err := graph.Builder.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
+	profile := graph.BuildProfile.Create().
+		SetName("defaultprofile2").
+		SetBuildImage("golang:1.21").
+		SetDescription("The default profile2").
+		SaveX(ctx)
 
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
+		SetProfileID(profile.ID).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -373,16 +374,17 @@ func TestExecutorIntegration_StreamBuildOutput(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
+	profile := graph.BuildProfile.Create().
+		SetName("defaultprofile3").
+		SetBuildImage("golang:1.21").
+		SetDescription("The default profile3").
+		SaveX(ctx)
+
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
+		SetProfileID(profile.ID).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -506,16 +508,17 @@ func TestExecutorIntegration_StreamBuildOutputWithError(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
+	profile := graph.BuildProfile.Create().
+		SetName("defaultprofile4").
+		SetBuildImage("golang:1.21").
+		SetDescription("The default profile4").
+		SaveX(ctx)
+
 	bt := graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-		SetBuildImage("golang:1.21").
 		SetBuildScript("go build ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
+		SetProfileID(profile.ID).
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)
 
@@ -636,16 +639,17 @@ func TestExecutorIntegration_UploadBuildArtifact(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, builders, 1)
 
+	profile := graph.BuildProfile.Create().
+		SetName("defaultprofile5").
+		SetBuildImage("golang:1.21").
+		SetDescription("The default profile5").
+		SaveX(ctx)
+
 	graph.BuildTask.Create().
 		SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 		SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-		SetBuildImage("golang:1.21").
 		SetBuildScript("go build -o /app/output/binary ./...").
-		SetTransports([]builderpb.BuildTaskTransport{{
-			URI:   "https://callback.example.com",
-			Interval:      5,
-			Type: c2pb.Transport_TRANSPORT_GRPC,
-		}}).
+		SetProfileID(profile.ID).
 		SetArtifactPath("/app/output/binary").
 		SetBuilderID(builders[0].ID).
 		SaveX(ctx)

@@ -30,7 +30,7 @@ def process_list():
         rows.append([
             str(proc['pid']),
             str(proc['ppid']),
-            proc.get('username', 'unknown'),
+            proc.get('principal', 'unknown'),
             current_proc_command.replace("\n", "\\n")
         ])
 

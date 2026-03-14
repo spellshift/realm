@@ -35,7 +35,7 @@ pub fn process_list(
     list: Vec<BTreeMap<String, Value>>,
 ) -> Result<(), String> {
     let mut processes = Vec::new();
-    for d in list {
+    for d in list.iter() {
         let pid = d
             .get("pid")
             .and_then(|v| match v {
@@ -79,6 +79,13 @@ pub fn process_list(
 
         let status = map_status(status_str);
 
+        let start_time = d
+            .get("start_time")
+            .and_then(|v| match v {
+                Value::Int(i) => Some(*i as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
         processes.push(eldritch::Process {
             pid,
             ppid,
@@ -89,6 +96,7 @@ pub fn process_list(
             env,
             cwd,
             status,
+            start_time,
         });
     }
 

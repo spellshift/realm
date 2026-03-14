@@ -10,12 +10,12 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -67,20 +67,6 @@ func (btu *BuildTaskUpdate) SetNillableTargetFormat(bf *builderpb.TargetFormat) 
 	return btu
 }
 
-// SetBuildImage sets the "build_image" field.
-func (btu *BuildTaskUpdate) SetBuildImage(s string) *BuildTaskUpdate {
-	btu.mutation.SetBuildImage(s)
-	return btu
-}
-
-// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
-func (btu *BuildTaskUpdate) SetNillableBuildImage(s *string) *BuildTaskUpdate {
-	if s != nil {
-		btu.SetBuildImage(*s)
-	}
-	return btu
-}
-
 // SetBuildScript sets the "build_script" field.
 func (btu *BuildTaskUpdate) SetBuildScript(s string) *BuildTaskUpdate {
 	btu.mutation.SetBuildScript(s)
@@ -92,18 +78,6 @@ func (btu *BuildTaskUpdate) SetNillableBuildScript(s *string) *BuildTaskUpdate {
 	if s != nil {
 		btu.SetBuildScript(*s)
 	}
-	return btu
-}
-
-// SetTransports sets the "transports" field.
-func (btu *BuildTaskUpdate) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
-	btu.mutation.SetTransports(btt)
-	return btu
-}
-
-// AppendTransports appends btt to the "transports" field.
-func (btu *BuildTaskUpdate) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdate {
-	btu.mutation.AppendTransports(btt)
 	return btu
 }
 
@@ -296,6 +270,46 @@ func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
 	return btu
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (btu *BuildTaskUpdate) SetSetupscript(s string) *BuildTaskUpdate {
+	btu.mutation.SetSetupscript(s)
+	return btu
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableSetupscript(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetSetupscript(*s)
+	}
+	return btu
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (btu *BuildTaskUpdate) ClearSetupscript() *BuildTaskUpdate {
+	btu.mutation.ClearSetupscript()
+	return btu
+}
+
+// SetUnique sets the "unique" field.
+func (btu *BuildTaskUpdate) SetUnique(s string) *BuildTaskUpdate {
+	btu.mutation.SetUnique(s)
+	return btu
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableUnique(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetUnique(*s)
+	}
+	return btu
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (btu *BuildTaskUpdate) ClearUnique() *BuildTaskUpdate {
+	btu.mutation.ClearUnique()
+	return btu
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -305,6 +319,17 @@ func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 // SetBuilder sets the "builder" edge to the Builder entity.
 func (btu *BuildTaskUpdate) SetBuilder(b *Builder) *BuildTaskUpdate {
 	return btu.SetBuilderID(b.ID)
+}
+
+// SetProfileID sets the "profile" edge to the BuildProfile entity by ID.
+func (btu *BuildTaskUpdate) SetProfileID(id int) *BuildTaskUpdate {
+	btu.mutation.SetProfileID(id)
+	return btu
+}
+
+// SetProfile sets the "profile" edge to the BuildProfile entity.
+func (btu *BuildTaskUpdate) SetProfile(b *BuildProfile) *BuildTaskUpdate {
+	return btu.SetProfileID(b.ID)
 }
 
 // SetArtifactID sets the "artifact" edge to the Asset entity by ID.
@@ -334,6 +359,12 @@ func (btu *BuildTaskUpdate) Mutation() *BuildTaskMutation {
 // ClearBuilder clears the "builder" edge to the Builder entity.
 func (btu *BuildTaskUpdate) ClearBuilder() *BuildTaskUpdate {
 	btu.mutation.ClearBuilder()
+	return btu
+}
+
+// ClearProfile clears the "profile" edge to the BuildProfile entity.
+func (btu *BuildTaskUpdate) ClearProfile() *BuildTaskUpdate {
+	btu.mutation.ClearProfile()
 	return btu
 }
 
@@ -397,11 +428,6 @@ func (btu *BuildTaskUpdate) check() error {
 			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
 		}
 	}
-	if v, ok := btu.mutation.BuildImage(); ok {
-		if err := buildtask.BuildImageValidator(v); err != nil {
-			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
-		}
-	}
 	if v, ok := btu.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
@@ -419,6 +445,9 @@ func (btu *BuildTaskUpdate) check() error {
 	}
 	if btu.mutation.BuilderCleared() && len(btu.mutation.BuilderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BuildTask.builder"`)
+	}
+	if btu.mutation.ProfileCleared() && len(btu.mutation.ProfileIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "BuildTask.profile"`)
 	}
 	return nil
 }
@@ -444,19 +473,8 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := btu.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
 	}
-	if value, ok := btu.mutation.BuildImage(); ok {
-		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
-	}
 	if value, ok := btu.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
-	}
-	if value, ok := btu.mutation.Transports(); ok {
-		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
-	}
-	if value, ok := btu.mutation.AppendedTransports(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTransports, value)
-		})
 	}
 	if value, ok := btu.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -515,6 +533,18 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if btu.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
 	}
+	if value, ok := btu.mutation.Setupscript(); ok {
+		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
+	}
+	if btu.mutation.SetupscriptCleared() {
+		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
+	}
+	if value, ok := btu.mutation.Unique(); ok {
+		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
+	}
+	if btu.mutation.UniqueCleared() {
+		_spec.ClearField(buildtask.FieldUnique, field.TypeString)
+	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -537,6 +567,35 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if btu.mutation.ProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ProfileTable,
+			Columns: []string{buildtask.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btu.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ProfileTable,
+			Columns: []string{buildtask.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -627,20 +686,6 @@ func (btuo *BuildTaskUpdateOne) SetNillableTargetFormat(bf *builderpb.TargetForm
 	return btuo
 }
 
-// SetBuildImage sets the "build_image" field.
-func (btuo *BuildTaskUpdateOne) SetBuildImage(s string) *BuildTaskUpdateOne {
-	btuo.mutation.SetBuildImage(s)
-	return btuo
-}
-
-// SetNillableBuildImage sets the "build_image" field if the given value is not nil.
-func (btuo *BuildTaskUpdateOne) SetNillableBuildImage(s *string) *BuildTaskUpdateOne {
-	if s != nil {
-		btuo.SetBuildImage(*s)
-	}
-	return btuo
-}
-
 // SetBuildScript sets the "build_script" field.
 func (btuo *BuildTaskUpdateOne) SetBuildScript(s string) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuildScript(s)
@@ -652,18 +697,6 @@ func (btuo *BuildTaskUpdateOne) SetNillableBuildScript(s *string) *BuildTaskUpda
 	if s != nil {
 		btuo.SetBuildScript(*s)
 	}
-	return btuo
-}
-
-// SetTransports sets the "transports" field.
-func (btuo *BuildTaskUpdateOne) SetTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
-	btuo.mutation.SetTransports(btt)
-	return btuo
-}
-
-// AppendTransports appends btt to the "transports" field.
-func (btuo *BuildTaskUpdateOne) AppendTransports(btt []builderpb.BuildTaskTransport) *BuildTaskUpdateOne {
-	btuo.mutation.AppendTransports(btt)
 	return btuo
 }
 
@@ -856,6 +889,46 @@ func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (btuo *BuildTaskUpdateOne) SetSetupscript(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetSetupscript(s)
+	return btuo
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableSetupscript(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetSetupscript(*s)
+	}
+	return btuo
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (btuo *BuildTaskUpdateOne) ClearSetupscript() *BuildTaskUpdateOne {
+	btuo.mutation.ClearSetupscript()
+	return btuo
+}
+
+// SetUnique sets the "unique" field.
+func (btuo *BuildTaskUpdateOne) SetUnique(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetUnique(s)
+	return btuo
+}
+
+// SetNillableUnique sets the "unique" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableUnique(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetUnique(*s)
+	}
+	return btuo
+}
+
+// ClearUnique clears the value of the "unique" field.
+func (btuo *BuildTaskUpdateOne) ClearUnique() *BuildTaskUpdateOne {
+	btuo.mutation.ClearUnique()
+	return btuo
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -865,6 +938,17 @@ func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 // SetBuilder sets the "builder" edge to the Builder entity.
 func (btuo *BuildTaskUpdateOne) SetBuilder(b *Builder) *BuildTaskUpdateOne {
 	return btuo.SetBuilderID(b.ID)
+}
+
+// SetProfileID sets the "profile" edge to the BuildProfile entity by ID.
+func (btuo *BuildTaskUpdateOne) SetProfileID(id int) *BuildTaskUpdateOne {
+	btuo.mutation.SetProfileID(id)
+	return btuo
+}
+
+// SetProfile sets the "profile" edge to the BuildProfile entity.
+func (btuo *BuildTaskUpdateOne) SetProfile(b *BuildProfile) *BuildTaskUpdateOne {
+	return btuo.SetProfileID(b.ID)
 }
 
 // SetArtifactID sets the "artifact" edge to the Asset entity by ID.
@@ -894,6 +978,12 @@ func (btuo *BuildTaskUpdateOne) Mutation() *BuildTaskMutation {
 // ClearBuilder clears the "builder" edge to the Builder entity.
 func (btuo *BuildTaskUpdateOne) ClearBuilder() *BuildTaskUpdateOne {
 	btuo.mutation.ClearBuilder()
+	return btuo
+}
+
+// ClearProfile clears the "profile" edge to the BuildProfile entity.
+func (btuo *BuildTaskUpdateOne) ClearProfile() *BuildTaskUpdateOne {
+	btuo.mutation.ClearProfile()
 	return btuo
 }
 
@@ -970,11 +1060,6 @@ func (btuo *BuildTaskUpdateOne) check() error {
 			return &ValidationError{Name: "target_format", err: fmt.Errorf(`ent: validator failed for field "BuildTask.target_format": %w`, err)}
 		}
 	}
-	if v, ok := btuo.mutation.BuildImage(); ok {
-		if err := buildtask.BuildImageValidator(v); err != nil {
-			return &ValidationError{Name: "build_image", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_image": %w`, err)}
-		}
-	}
 	if v, ok := btuo.mutation.BuildScript(); ok {
 		if err := buildtask.BuildScriptValidator(v); err != nil {
 			return &ValidationError{Name: "build_script", err: fmt.Errorf(`ent: validator failed for field "BuildTask.build_script": %w`, err)}
@@ -992,6 +1077,9 @@ func (btuo *BuildTaskUpdateOne) check() error {
 	}
 	if btuo.mutation.BuilderCleared() && len(btuo.mutation.BuilderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "BuildTask.builder"`)
+	}
+	if btuo.mutation.ProfileCleared() && len(btuo.mutation.ProfileIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "BuildTask.profile"`)
 	}
 	return nil
 }
@@ -1034,19 +1122,8 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if value, ok := btuo.mutation.TargetFormat(); ok {
 		_spec.SetField(buildtask.FieldTargetFormat, field.TypeEnum, value)
 	}
-	if value, ok := btuo.mutation.BuildImage(); ok {
-		_spec.SetField(buildtask.FieldBuildImage, field.TypeString, value)
-	}
 	if value, ok := btuo.mutation.BuildScript(); ok {
 		_spec.SetField(buildtask.FieldBuildScript, field.TypeString, value)
-	}
-	if value, ok := btuo.mutation.Transports(); ok {
-		_spec.SetField(buildtask.FieldTransports, field.TypeJSON, value)
-	}
-	if value, ok := btuo.mutation.AppendedTransports(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, buildtask.FieldTransports, value)
-		})
 	}
 	if value, ok := btuo.mutation.ClaimedAt(); ok {
 		_spec.SetField(buildtask.FieldClaimedAt, field.TypeTime, value)
@@ -1105,6 +1182,18 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	if btuo.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
 	}
+	if value, ok := btuo.mutation.Setupscript(); ok {
+		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
+	}
+	if btuo.mutation.SetupscriptCleared() {
+		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
+	}
+	if value, ok := btuo.mutation.Unique(); ok {
+		_spec.SetField(buildtask.FieldUnique, field.TypeString, value)
+	}
+	if btuo.mutation.UniqueCleared() {
+		_spec.ClearField(buildtask.FieldUnique, field.TypeString)
+	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1127,6 +1216,35 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(builder.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if btuo.mutation.ProfileCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ProfileTable,
+			Columns: []string{buildtask.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := btuo.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   buildtask.ProfileTable,
+			Columns: []string{buildtask.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(buildprofile.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

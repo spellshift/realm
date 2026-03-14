@@ -99,10 +99,46 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BuildProfile struct {
+		BuildImage      func(childComplexity int) int
+		Buildtasks      func(childComplexity int) int
+		Description     func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Name            func(childComplexity int) int
+		Postbuildscript func(childComplexity int) int
+		Prebuildscript  func(childComplexity int) int
+		Setupscript     func(childComplexity int) int
+		Tomes           func(childComplexity int) int
+		Transports      func(childComplexity int) int
+		Unique          func(childComplexity int) int
+	}
+
+	BuildProfileConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BuildProfileEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	BuildProfileTome struct {
+		Params func(childComplexity int) int
+		TomeID func(childComplexity int) int
+	}
+
+	BuildProfileTransport struct {
+		Extra    func(childComplexity int) int
+		Interval func(childComplexity int) int
+		Type     func(childComplexity int) int
+		URI      func(childComplexity int) int
+	}
+
 	BuildTask struct {
 		Artifact       func(childComplexity int) int
 		ArtifactPath   func(childComplexity int) int
-		BuildImage     func(childComplexity int) int
 		BuildScript    func(childComplexity int) int
 		Builder        func(childComplexity int) int
 		ClaimedAt      func(childComplexity int) int
@@ -115,10 +151,12 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
+		Profile        func(childComplexity int) int
+		Setupscript    func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
-		Transports     func(childComplexity int) int
+		Unique         func(childComplexity int) int
 	}
 
 	BuildTaskConnection struct {
@@ -132,15 +170,8 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
-	BuildTaskTransport struct {
-		Extra    func(childComplexity int) int
-		Interval func(childComplexity int) int
-		Type     func(childComplexity int) int
-		URI      func(childComplexity int) int
-	}
-
 	Builder struct {
-		BuildTasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		Buildtasks       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		CreatedAt        func(childComplexity int) int
 		ID               func(childComplexity int) int
 		Identifier       func(childComplexity int) int
@@ -277,6 +308,7 @@ type ComplexityRoot struct {
 		Ppid           func(childComplexity int) int
 		Principal      func(childComplexity int) int
 		ShellTask      func(childComplexity int) int
+		StartTime      func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Task           func(childComplexity int) int
 	}
@@ -316,27 +348,29 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask  func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink       func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest      func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
-		CreateRepository func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateShell      func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag        func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome       func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder    func(childComplexity int, builderID int) int
-		DeleteTome       func(childComplexity int, tomeID int) int
-		DisableLink      func(childComplexity int, linkID int) int
-		DropAllData      func(childComplexity int) int
-		ImportRepository func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder  func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey  func(childComplexity int) int
-		UpdateBeacon     func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost       func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink       func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag        func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome       func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser       func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask  func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag            func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome           func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder        func(childComplexity int, builderID int) int
+		DeleteTome           func(childComplexity int, tomeID int) int
+		DisableLink          func(childComplexity int, linkID int) int
+		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
+		DropAllData          func(childComplexity int) int
+		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey      func(childComplexity int) int
+		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome           func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser           func(childComplexity int, userID int, input ent.UpdateUserInput) int
 	}
 
 	PageInfo struct {
@@ -370,22 +404,24 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Assets       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
-		Beacons      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
-		BuildTasks   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
-		Builders     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
-		Hosts        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		Me           func(childComplexity int) int
-		Node         func(childComplexity int, id int) int
-		Nodes        func(childComplexity int, ids []int) int
-		Portals      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
-		Quests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
-		Repositories func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
-		Shells       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		Tags         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
-		Tasks        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
-		Users        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
+		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		BuildProfiles  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) int
+		BuildTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
+		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
+		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Me             func(childComplexity int) int
+		Node           func(childComplexity int, id int) int
+		Nodes          func(childComplexity int, ids []int) int
+		Portals        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
+		Quests         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		Repositories   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.RepositoryOrder, where *ent.RepositoryWhereInput) int
+		ScheduledTasks func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
+		Shells         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
+		Tasks          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		Users          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 	}
 
 	Quest struct {
@@ -398,6 +434,7 @@ type ComplexityRoot struct {
 		Name                func(childComplexity int) int
 		ParamDefsAtCreation func(childComplexity int) int
 		Parameters          func(childComplexity int) int
+		ScheduledTask       func(childComplexity int) int
 		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tome                func(childComplexity int) int
 	}
@@ -437,6 +474,33 @@ type ComplexityRoot struct {
 	}
 
 	RepositoryEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ScheduledTask struct {
+		CreatedAt              func(childComplexity int) int
+		Description            func(childComplexity int) int
+		Disabled               func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		LastModifiedAt         func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		Parameters             func(childComplexity int) int
+		Quests                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+		RunOnFirstHostCallback func(childComplexity int) int
+		RunOnNewBeaconCallback func(childComplexity int) int
+		RunOnSchedule          func(childComplexity int) int
+		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Tome                   func(childComplexity int) int
+	}
+
+	ScheduledTaskConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ScheduledTaskEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -568,23 +632,19 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
-		Assets                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
-		Author                 func(childComplexity int) int
-		CreatedAt              func(childComplexity int) int
-		Description            func(childComplexity int) int
-		Eldritch               func(childComplexity int) int
-		ID                     func(childComplexity int) int
-		LastModifiedAt         func(childComplexity int) int
-		Name                   func(childComplexity int) int
-		ParamDefs              func(childComplexity int) int
-		Repository             func(childComplexity int) int
-		RunOnFirstHostCallback func(childComplexity int) int
-		RunOnNewBeaconCallback func(childComplexity int) int
-		RunOnSchedule          func(childComplexity int) int
-		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		SupportModel           func(childComplexity int) int
-		Tactic                 func(childComplexity int) int
-		Uploader               func(childComplexity int) int
+		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Author         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		Eldritch       func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		ParamDefs      func(childComplexity int) int
+		Repository     func(childComplexity int) int
+		SupportModel   func(childComplexity int) int
+		Tactic         func(childComplexity int) int
+		Uploader       func(childComplexity int) int
 	}
 
 	TomeConnection struct {
@@ -892,6 +952,160 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
 
+	case "BuildProfile.buildImage":
+		if e.complexity.BuildProfile.BuildImage == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.BuildImage(childComplexity), true
+
+	case "BuildProfile.buildtasks":
+		if e.complexity.BuildProfile.Buildtasks == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Buildtasks(childComplexity), true
+
+	case "BuildProfile.description":
+		if e.complexity.BuildProfile.Description == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Description(childComplexity), true
+
+	case "BuildProfile.id":
+		if e.complexity.BuildProfile.ID == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.ID(childComplexity), true
+
+	case "BuildProfile.name":
+		if e.complexity.BuildProfile.Name == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Name(childComplexity), true
+
+	case "BuildProfile.postbuildscript":
+		if e.complexity.BuildProfile.Postbuildscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Postbuildscript(childComplexity), true
+
+	case "BuildProfile.prebuildscript":
+		if e.complexity.BuildProfile.Prebuildscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Prebuildscript(childComplexity), true
+
+	case "BuildProfile.setupscript":
+		if e.complexity.BuildProfile.Setupscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Setupscript(childComplexity), true
+
+	case "BuildProfile.tomes":
+		if e.complexity.BuildProfile.Tomes == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Tomes(childComplexity), true
+
+	case "BuildProfile.transports":
+		if e.complexity.BuildProfile.Transports == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Transports(childComplexity), true
+
+	case "BuildProfile.unique":
+		if e.complexity.BuildProfile.Unique == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Unique(childComplexity), true
+
+	case "BuildProfileConnection.edges":
+		if e.complexity.BuildProfileConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileConnection.Edges(childComplexity), true
+
+	case "BuildProfileConnection.pageInfo":
+		if e.complexity.BuildProfileConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileConnection.PageInfo(childComplexity), true
+
+	case "BuildProfileConnection.totalCount":
+		if e.complexity.BuildProfileConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileConnection.TotalCount(childComplexity), true
+
+	case "BuildProfileEdge.cursor":
+		if e.complexity.BuildProfileEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileEdge.Cursor(childComplexity), true
+
+	case "BuildProfileEdge.node":
+		if e.complexity.BuildProfileEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileEdge.Node(childComplexity), true
+
+	case "BuildProfileTome.params":
+		if e.complexity.BuildProfileTome.Params == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTome.Params(childComplexity), true
+
+	case "BuildProfileTome.tomeID":
+		if e.complexity.BuildProfileTome.TomeID == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTome.TomeID(childComplexity), true
+
+	case "BuildProfileTransport.extra":
+		if e.complexity.BuildProfileTransport.Extra == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Extra(childComplexity), true
+
+	case "BuildProfileTransport.interval":
+		if e.complexity.BuildProfileTransport.Interval == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Interval(childComplexity), true
+
+	case "BuildProfileTransport.type":
+		if e.complexity.BuildProfileTransport.Type == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.Type(childComplexity), true
+
+	case "BuildProfileTransport.uri":
+		if e.complexity.BuildProfileTransport.URI == nil {
+			break
+		}
+
+		return e.complexity.BuildProfileTransport.URI(childComplexity), true
+
 	case "BuildTask.artifact":
 		if e.complexity.BuildTask.Artifact == nil {
 			break
@@ -905,13 +1119,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.ArtifactPath(childComplexity), true
-
-	case "BuildTask.buildImage":
-		if e.complexity.BuildTask.BuildImage == nil {
-			break
-		}
-
-		return e.complexity.BuildTask.BuildImage(childComplexity), true
 
 	case "BuildTask.buildScript":
 		if e.complexity.BuildTask.BuildScript == nil {
@@ -997,6 +1204,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.OutputSize(childComplexity), true
 
+	case "BuildTask.profile":
+		if e.complexity.BuildTask.Profile == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Profile(childComplexity), true
+
+	case "BuildTask.setupscript":
+		if e.complexity.BuildTask.Setupscript == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Setupscript(childComplexity), true
+
 	case "BuildTask.startedAt":
 		if e.complexity.BuildTask.StartedAt == nil {
 			break
@@ -1018,12 +1239,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTask.TargetOs(childComplexity), true
 
-	case "BuildTask.transports":
-		if e.complexity.BuildTask.Transports == nil {
+	case "BuildTask.unique":
+		if e.complexity.BuildTask.Unique == nil {
 			break
 		}
 
-		return e.complexity.BuildTask.Transports(childComplexity), true
+		return e.complexity.BuildTask.Unique(childComplexity), true
 
 	case "BuildTaskConnection.edges":
 		if e.complexity.BuildTaskConnection.Edges == nil {
@@ -1060,45 +1281,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildTaskEdge.Node(childComplexity), true
 
-	case "BuildTaskTransport.extra":
-		if e.complexity.BuildTaskTransport.Extra == nil {
+	case "Builder.buildtasks":
+		if e.complexity.Builder.Buildtasks == nil {
 			break
 		}
 
-		return e.complexity.BuildTaskTransport.Extra(childComplexity), true
-
-	case "BuildTaskTransport.interval":
-		if e.complexity.BuildTaskTransport.Interval == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.Interval(childComplexity), true
-
-	case "BuildTaskTransport.type":
-		if e.complexity.BuildTaskTransport.Type == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.Type(childComplexity), true
-
-	case "BuildTaskTransport.uri":
-		if e.complexity.BuildTaskTransport.URI == nil {
-			break
-		}
-
-		return e.complexity.BuildTaskTransport.URI(childComplexity), true
-
-	case "Builder.buildTasks":
-		if e.complexity.Builder.BuildTasks == nil {
-			break
-		}
-
-		args, err := ec.field_Builder_buildTasks_args(ctx, rawArgs)
+		args, err := ec.field_Builder_buildtasks_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Builder.BuildTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
+		return e.complexity.Builder.Buildtasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildTaskOrder), args["where"].(*ent.BuildTaskWhereInput)), true
 
 	case "Builder.createdAt":
 		if e.complexity.Builder.CreatedAt == nil {
@@ -1767,6 +1960,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.HostProcess.ShellTask(childComplexity), true
 
+	case "HostProcess.startTime":
+		if e.complexity.HostProcess.StartTime == nil {
+			break
+		}
+
+		return e.complexity.HostProcess.StartTime(childComplexity), true
+
 	case "HostProcess.status":
 		if e.complexity.HostProcess.Status == nil {
 			break
@@ -1974,6 +2174,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.CreateRepository(childComplexity, args["input"].(ent.CreateRepositoryInput)), true
 
+	case "Mutation.createScheduledTask":
+		if e.complexity.Mutation.CreateScheduledTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createScheduledTask_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateScheduledTask(childComplexity, args["input"].(ent.CreateScheduledTaskInput)), true
+
 	case "Mutation.createShell":
 		if e.complexity.Mutation.CreateShell == nil {
 			break
@@ -2045,6 +2257,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.DisableLink(childComplexity, args["linkID"].(int)), true
+
+	case "Mutation.disableScheduledTask":
+		if e.complexity.Mutation.DisableScheduledTask == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_disableScheduledTask_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DisableScheduledTask(childComplexity, args["scheduledTaskID"].(int)), true
 
 	case "Mutation.dropAllData":
 		if e.complexity.Mutation.DropAllData == nil {
@@ -2311,6 +2535,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Beacons(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconOrder), args["where"].(*ent.BeaconWhereInput)), true
 
+	case "Query.buildProfiles":
+		if e.complexity.Query.BuildProfiles == nil {
+			break
+		}
+
+		args, err := ec.field_Query_buildProfiles_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BuildProfiles(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BuildProfileOrder), args["where"].(*ent.BuildProfileWhereInput)), true
+
 	case "Query.buildTasks":
 		if e.complexity.Query.BuildTasks == nil {
 			break
@@ -2413,6 +2649,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Repositories(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.RepositoryOrder), args["where"].(*ent.RepositoryWhereInput)), true
+
+	case "Query.scheduledTasks":
+		if e.complexity.Query.ScheduledTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Query_scheduledTasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ScheduledTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScheduledTaskOrder), args["where"].(*ent.ScheduledTaskWhereInput)), true
 
 	case "Query.shells":
 		if e.complexity.Query.Shells == nil {
@@ -2536,6 +2784,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Quest.Parameters(childComplexity), true
+
+	case "Quest.scheduledTask":
+		if e.complexity.Quest.ScheduledTask == nil {
+			break
+		}
+
+		return e.complexity.Quest.ScheduledTask(childComplexity), true
 
 	case "Quest.tasks":
 		if e.complexity.Quest.Tasks == nil {
@@ -2707,6 +2962,142 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
+
+	case "ScheduledTask.createdAt":
+		if e.complexity.ScheduledTask.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.CreatedAt(childComplexity), true
+
+	case "ScheduledTask.description":
+		if e.complexity.ScheduledTask.Description == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Description(childComplexity), true
+
+	case "ScheduledTask.disabled":
+		if e.complexity.ScheduledTask.Disabled == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Disabled(childComplexity), true
+
+	case "ScheduledTask.id":
+		if e.complexity.ScheduledTask.ID == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.ID(childComplexity), true
+
+	case "ScheduledTask.lastModifiedAt":
+		if e.complexity.ScheduledTask.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.LastModifiedAt(childComplexity), true
+
+	case "ScheduledTask.name":
+		if e.complexity.ScheduledTask.Name == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Name(childComplexity), true
+
+	case "ScheduledTask.parameters":
+		if e.complexity.ScheduledTask.Parameters == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Parameters(childComplexity), true
+
+	case "ScheduledTask.quests":
+		if e.complexity.ScheduledTask.Quests == nil {
+			break
+		}
+
+		args, err := ec.field_ScheduledTask_quests_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ScheduledTask.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "ScheduledTask.runOnFirstHostCallback":
+		if e.complexity.ScheduledTask.RunOnFirstHostCallback == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnFirstHostCallback(childComplexity), true
+
+	case "ScheduledTask.runOnNewBeaconCallback":
+		if e.complexity.ScheduledTask.RunOnNewBeaconCallback == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnNewBeaconCallback(childComplexity), true
+
+	case "ScheduledTask.runOnSchedule":
+		if e.complexity.ScheduledTask.RunOnSchedule == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnSchedule(childComplexity), true
+
+	case "ScheduledTask.scheduledHosts":
+		if e.complexity.ScheduledTask.ScheduledHosts == nil {
+			break
+		}
+
+		args, err := ec.field_ScheduledTask_scheduledHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ScheduledTask.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
+
+	case "ScheduledTask.tome":
+		if e.complexity.ScheduledTask.Tome == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Tome(childComplexity), true
+
+	case "ScheduledTaskConnection.edges":
+		if e.complexity.ScheduledTaskConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.Edges(childComplexity), true
+
+	case "ScheduledTaskConnection.pageInfo":
+		if e.complexity.ScheduledTaskConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.PageInfo(childComplexity), true
+
+	case "ScheduledTaskConnection.totalCount":
+		if e.complexity.ScheduledTaskConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.TotalCount(childComplexity), true
+
+	case "ScheduledTaskEdge.cursor":
+		if e.complexity.ScheduledTaskEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskEdge.Cursor(childComplexity), true
+
+	case "ScheduledTaskEdge.node":
+		if e.complexity.ScheduledTaskEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskEdge.Node(childComplexity), true
 
 	case "Screenshot.createdAt":
 		if e.complexity.Screenshot.CreatedAt == nil {
@@ -3390,39 +3781,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Tome.Repository(childComplexity), true
 
-	case "Tome.runOnFirstHostCallback":
-		if e.complexity.Tome.RunOnFirstHostCallback == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnFirstHostCallback(childComplexity), true
-
-	case "Tome.runOnNewBeaconCallback":
-		if e.complexity.Tome.RunOnNewBeaconCallback == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnNewBeaconCallback(childComplexity), true
-
-	case "Tome.runOnSchedule":
-		if e.complexity.Tome.RunOnSchedule == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnSchedule(childComplexity), true
-
-	case "Tome.scheduledHosts":
-		if e.complexity.Tome.ScheduledHosts == nil {
-			break
-		}
-
-		args, err := ec.field_Tome_scheduledHosts_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Tome.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
-
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -3604,12 +3962,16 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAssetWhereInput,
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
+		ec.unmarshalInputBuildProfileOrder,
+		ec.unmarshalInputBuildProfileTomeInput,
+		ec.unmarshalInputBuildProfileTransportInput,
+		ec.unmarshalInputBuildProfileWhereInput,
 		ec.unmarshalInputBuildTaskOrder,
-		ec.unmarshalInputBuildTaskTransportInput,
 		ec.unmarshalInputBuildTaskWhereInput,
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
+		ec.unmarshalInputCreateBuildProfileInput,
 		ec.unmarshalInputCreateBuildTaskInput,
 		ec.unmarshalInputCreateBuilderInput,
 		ec.unmarshalInputCreateDeviceAuthInput,
@@ -3617,6 +3979,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
+		ec.unmarshalInputCreateScheduledTaskInput,
 		ec.unmarshalInputCreateShellInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
@@ -3639,6 +4002,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
+		ec.unmarshalInputScheduledTaskOrder,
+		ec.unmarshalInputScheduledTaskWhereInput,
 		ec.unmarshalInputScreenshotOrder,
 		ec.unmarshalInputScreenshotWhereInput,
 		ec.unmarshalInputShellOrder,
@@ -3656,6 +4021,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
+		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
@@ -4349,6 +4715,237 @@ input BeaconWhereInput {
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
 }
+type BuildProfile implements Node {
+  id: ID!
+  """
+  The build profiles name
+  """
+  name: String!
+  """
+  A user facing build profile description.
+  """
+  description: String!
+  """
+  The transports builds should use in order of priority.
+  """
+  transports: [BuildProfileTransport!]!
+  """
+  Docker container image name to use for the build.
+  """
+  buildImage: String!
+  """
+  Bash script to run before build command
+  """
+  prebuildscript: String!
+  """
+  Bash script to run before prebuild script
+  """
+  setupscript: String!
+  """
+  Bash script to run after build command
+  """
+  postbuildscript: String!
+  """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
+  """
+  The tomes to include in builds using this profile.
+  """
+  tomes: [BuildProfileTome!]
+  """
+  Build Tasks that have used this profile
+  """
+  buildtasks: [BuildTask!]
+}
+"""
+A connection to a list of items.
+"""
+type BuildProfileConnection {
+  """
+  A list of edges.
+  """
+  edges: [BuildProfileEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BuildProfileEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: BuildProfile
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for BuildProfile connections
+"""
+input BuildProfileOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order BuildProfiles.
+  """
+  field: BuildProfileOrderField!
+}
+"""
+Properties by which BuildProfile connections can be ordered.
+"""
+enum BuildProfileOrderField {
+  NAME
+}
+"""
+BuildProfileWhereInput is used for filtering BuildProfile objects.
+Input was generated by ent.
+"""
+input BuildProfileWhereInput {
+  not: BuildProfileWhereInput
+  and: [BuildProfileWhereInput!]
+  or: [BuildProfileWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  build_image field predicates
+  """
+  buildImage: String
+  buildImageNEQ: String
+  buildImageIn: [String!]
+  buildImageNotIn: [String!]
+  buildImageGT: String
+  buildImageGTE: String
+  buildImageLT: String
+  buildImageLTE: String
+  buildImageContains: String
+  buildImageHasPrefix: String
+  buildImageHasSuffix: String
+  buildImageEqualFold: String
+  buildImageContainsFold: String
+  """
+  prebuildscript field predicates
+  """
+  prebuildscript: String
+  prebuildscriptNEQ: String
+  prebuildscriptIn: [String!]
+  prebuildscriptNotIn: [String!]
+  prebuildscriptGT: String
+  prebuildscriptGTE: String
+  prebuildscriptLT: String
+  prebuildscriptLTE: String
+  prebuildscriptContains: String
+  prebuildscriptHasPrefix: String
+  prebuildscriptHasSuffix: String
+  prebuildscriptEqualFold: String
+  prebuildscriptContainsFold: String
+  """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
+  """
+  postbuildscript field predicates
+  """
+  postbuildscript: String
+  postbuildscriptNEQ: String
+  postbuildscriptIn: [String!]
+  postbuildscriptNotIn: [String!]
+  postbuildscriptGT: String
+  postbuildscriptGTE: String
+  postbuildscriptLT: String
+  postbuildscriptLTE: String
+  postbuildscriptContains: String
+  postbuildscriptHasPrefix: String
+  postbuildscriptHasSuffix: String
+  postbuildscriptEqualFold: String
+  postbuildscriptContainsFold: String
+  """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
+  """
+  buildtasks edge predicates
+  """
+  hasBuildtasks: Boolean
+  hasBuildtasksWith: [BuildTaskWhereInput!]
+}
 type BuildTask implements Node {
   id: ID!
   """
@@ -4368,17 +4965,9 @@ type BuildTask implements Node {
   """
   targetFormat: BuildTaskTargetFormat!
   """
-  Docker container image name to use for the build.
-  """
-  buildImage: String!
-  """
   The derived script to execute inside the build container.
   """
   buildScript: String!
-  """
-  List of transport configurations for the IMIX agent.
-  """
-  transports: [BuildTaskTransport!]!
   """
   Timestamp of when a builder claimed this task, null if unclaimed.
   """
@@ -4416,9 +5005,21 @@ type BuildTask implements Node {
   """
   artifactPath: String
   """
+  The setup script executed inside the build container.
+  """
+  setupscript: String
+  """
+  JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
+  """
+  unique: String
+  """
   The builder assigned to execute this build task.
   """
   builder: Builder!
+  """
+  The profile assigned to this build Task
+  """
+  profile: BuildProfile!
   """
   The compiled artifact produced by this build task, stored as an Asset.
   """
@@ -4545,22 +5146,6 @@ input BuildTaskWhereInput {
   targetFormatNEQ: BuildTaskTargetFormat
   targetFormatIn: [BuildTaskTargetFormat!]
   targetFormatNotIn: [BuildTaskTargetFormat!]
-  """
-  build_image field predicates
-  """
-  buildImage: String
-  buildImageNEQ: String
-  buildImageIn: [String!]
-  buildImageNotIn: [String!]
-  buildImageGT: String
-  buildImageGTE: String
-  buildImageLT: String
-  buildImageLTE: String
-  buildImageContains: String
-  buildImageHasPrefix: String
-  buildImageHasSuffix: String
-  buildImageEqualFold: String
-  buildImageContainsFold: String
   """
   build_script field predicates
   """
@@ -4706,10 +5291,51 @@ input BuildTaskWhereInput {
   artifactPathEqualFold: String
   artifactPathContainsFold: String
   """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptIsNil: Boolean
+  setupscriptNotNil: Boolean
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
+  """
+  unique field predicates
+  """
+  unique: String
+  uniqueNEQ: String
+  uniqueIn: [String!]
+  uniqueNotIn: [String!]
+  uniqueGT: String
+  uniqueGTE: String
+  uniqueLT: String
+  uniqueLTE: String
+  uniqueContains: String
+  uniqueHasPrefix: String
+  uniqueHasSuffix: String
+  uniqueIsNil: Boolean
+  uniqueNotNil: Boolean
+  uniqueEqualFold: String
+  uniqueContainsFold: String
+  """
   builder edge predicates
   """
   hasBuilder: Boolean
   hasBuilderWith: [BuilderWhereInput!]
+  """
+  profile edge predicates
+  """
+  hasProfile: Boolean
+  hasProfileWith: [BuildProfileWhereInput!]
   """
   artifact edge predicates
   """
@@ -4742,7 +5368,7 @@ type Builder implements Node {
   Timestamp of the builder's last ClaimBuildTasks call. Null if never seen.
   """
   lastSeenAt: Time
-  buildTasks(
+  buildtasks(
     """
     Returns the elements in the list that come after the specified cursor.
     """
@@ -4912,10 +5538,10 @@ input BuilderWhereInput {
   lastSeenAtIsNil: Boolean
   lastSeenAtNotNil: Boolean
   """
-  build_tasks edge predicates
+  buildtasks edge predicates
   """
-  hasBuildTasks: Boolean
-  hasBuildTasksWith: [BuildTaskWhereInput!]
+  hasBuildtasks: Boolean
+  hasBuildtasksWith: [BuildTaskWhereInput!]
 }
 """
 CreateBuilderInput is used for create Builder object.
@@ -5023,6 +5649,42 @@ input CreateRepositoryInput {
   url: String!
 }
 """
+CreateScheduledTaskInput is used for create ScheduledTask object.
+Input was generated by ent.
+"""
+input CreateScheduledTaskInput {
+  """
+  Name of the scheduled task
+  """
+  name: String!
+  """
+  Information about the scheduled task
+  """
+  description: String!
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
+  tomeID: ID!
+  scheduledHostIDs: [ID!]
+}
+"""
 CreateShellInput is used for create Shell object.
 Input was generated by ent.
 """
@@ -5070,18 +5732,6 @@ input CreateTomeInput {
   """
   tactic: TomeTactic
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -5090,7 +5740,6 @@ input CreateTomeInput {
   """
   eldritch: String!
   assetIDs: [ID!]
-  scheduledHostIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -6066,6 +6715,10 @@ type HostProcess implements Node {
   """
   status: HostProcessStatus!
   """
+  The process start time.
+  """
+  startTime: Uint64
+  """
   Host the process was reported on.
   """
   host: Host!
@@ -6130,6 +6783,7 @@ enum HostProcessOrderField {
   PROCESS_ID
   PARENT_PROCESS_ID
   NAME
+  PROCESS_START_TIME
 }
 """
 HostProcessStatus is enum for the field status
@@ -6324,6 +6978,19 @@ input HostProcessWhereInput {
   statusNEQ: HostProcessStatus
   statusIn: [HostProcessStatus!]
   statusNotIn: [HostProcessStatus!]
+  """
+  start_time field predicates
+  """
+  startTime: Uint64
+  startTimeNEQ: Uint64
+  startTimeIn: [Uint64!]
+  startTimeNotIn: [Uint64!]
+  startTimeGT: Uint64
+  startTimeGTE: Uint64
+  startTimeLT: Uint64
+  startTimeLTE: Uint64
+  startTimeIsNil: Boolean
+  startTimeNotNil: Boolean
   """
   host edge predicates
   """
@@ -7034,6 +7701,10 @@ type Quest implements Node {
   User that created the quest if available.
   """
   creator: User
+  """
+  The scheduled task that created this quest, if any.
+  """
+  scheduledTask: ScheduledTask
 }
 """
 A connection to a list of items.
@@ -7217,6 +7888,11 @@ input QuestWhereInput {
   """
   hasCreator: Boolean
   hasCreatorWith: [UserWhereInput!]
+  """
+  scheduled_task edge predicates
+  """
+  hasScheduledTask: Boolean
+  hasScheduledTaskWith: [ScheduledTaskWhereInput!]
 }
 type Repository implements Node {
   id: ID!
@@ -7423,6 +8099,300 @@ input RepositoryWhereInput {
   """
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
+}
+type ScheduledTask implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Name of the scheduled task
+  """
+  name: String!
+  """
+  Information about the scheduled task
+  """
+  description: String!
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean!
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean!
+  """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String!
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean!
+  """
+  The Tome that this ScheduledTask will run.
+  """
+  tome: Tome!
+  scheduledHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+  quests(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Quests returned from the connection.
+    """
+    orderBy: [QuestOrder!]
+
+    """
+    Filtering options for Quests returned from the connection.
+    """
+    where: QuestWhereInput
+  ): QuestConnection!
+}
+"""
+A connection to a list of items.
+"""
+type ScheduledTaskConnection {
+  """
+  A list of edges.
+  """
+  edges: [ScheduledTaskEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ScheduledTaskEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ScheduledTask
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for ScheduledTask connections
+"""
+input ScheduledTaskOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ScheduledTasks.
+  """
+  field: ScheduledTaskOrderField!
+}
+"""
+Properties by which ScheduledTask connections can be ordered.
+"""
+enum ScheduledTaskOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+}
+"""
+ScheduledTaskWhereInput is used for filtering ScheduledTask objects.
+Input was generated by ent.
+"""
+input ScheduledTaskWhereInput {
+  not: ScheduledTaskWhereInput
+  and: [ScheduledTaskWhereInput!]
+  or: [ScheduledTaskWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  run_on_new_beacon_callback field predicates
+  """
+  runOnNewBeaconCallback: Boolean
+  runOnNewBeaconCallbackNEQ: Boolean
+  """
+  run_on_first_host_callback field predicates
+  """
+  runOnFirstHostCallback: Boolean
+  runOnFirstHostCallbackNEQ: Boolean
+  """
+  parameters field predicates
+  """
+  parameters: String
+  parametersNEQ: String
+  parametersIn: [String!]
+  parametersNotIn: [String!]
+  parametersGT: String
+  parametersGTE: String
+  parametersLT: String
+  parametersLTE: String
+  parametersContains: String
+  parametersHasPrefix: String
+  parametersHasSuffix: String
+  parametersIsNil: Boolean
+  parametersNotNil: Boolean
+  parametersEqualFold: String
+  parametersContainsFold: String
+  """
+  run_on_schedule field predicates
+  """
+  runOnSchedule: String
+  runOnScheduleNEQ: String
+  runOnScheduleIn: [String!]
+  runOnScheduleNotIn: [String!]
+  runOnScheduleGT: String
+  runOnScheduleGTE: String
+  runOnScheduleLT: String
+  runOnScheduleLTE: String
+  runOnScheduleContains: String
+  runOnScheduleHasPrefix: String
+  runOnScheduleHasSuffix: String
+  runOnScheduleEqualFold: String
+  runOnScheduleContainsFold: String
+  """
+  disabled field predicates
+  """
+  disabled: Boolean
+  disabledNEQ: Boolean
+  """
+  tome edge predicates
+  """
+  hasTome: Boolean
+  hasTomeWith: [TomeWhereInput!]
+  """
+  scheduled_hosts edge predicates
+  """
+  hasScheduledHosts: Boolean
+  hasScheduledHostsWith: [HostWhereInput!]
+  """
+  quests edge predicates
+  """
+  hasQuests: Boolean
+  hasQuestsWith: [QuestWhereInput!]
 }
 type Screenshot implements Node {
   id: ID!
@@ -8738,18 +9708,6 @@ type Tome implements Node {
   """
   tactic: TomeTactic!
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean!
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean!
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String!
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -8796,37 +9754,6 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
-  scheduledHosts(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Hosts returned from the connection.
-    """
-    orderBy: [HostOrder!]
-
-    """
-    Filtering options for Hosts returned from the connection.
-    """
-    where: HostWhereInput
-  ): HostConnection!
 }
 """
 A connection to a list of items.
@@ -9011,32 +9938,6 @@ input TomeWhereInput {
   tacticIn: [TomeTactic!]
   tacticNotIn: [TomeTactic!]
   """
-  run_on_new_beacon_callback field predicates
-  """
-  runOnNewBeaconCallback: Boolean
-  runOnNewBeaconCallbackNEQ: Boolean
-  """
-  run_on_first_host_callback field predicates
-  """
-  runOnFirstHostCallback: Boolean
-  runOnFirstHostCallbackNEQ: Boolean
-  """
-  run_on_schedule field predicates
-  """
-  runOnSchedule: String
-  runOnScheduleNEQ: String
-  runOnScheduleIn: [String!]
-  runOnScheduleNotIn: [String!]
-  runOnScheduleGT: String
-  runOnScheduleGTE: String
-  runOnScheduleLT: String
-  runOnScheduleLTE: String
-  runOnScheduleContains: String
-  runOnScheduleHasPrefix: String
-  runOnScheduleHasSuffix: String
-  runOnScheduleEqualFold: String
-  runOnScheduleContainsFold: String
-  """
   param_defs field predicates
   """
   paramDefs: String
@@ -9085,11 +9986,6 @@ input TomeWhereInput {
   """
   hasRepository: Boolean
   hasRepositoryWith: [RepositoryWhereInput!]
-  """
-  scheduled_hosts edge predicates
-  """
-  hasScheduledHosts: Boolean
-  hasScheduledHostsWith: [HostWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -9191,6 +10087,48 @@ input UpdateLinkInput {
   clearCreator: Boolean
 }
 """
+UpdateScheduledTaskInput is used for update ScheduledTask object.
+Input was generated by ent.
+"""
+input UpdateScheduledTaskInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Name of the scheduled task
+  """
+  name: String
+  """
+  Information about the scheduled task
+  """
+  description: String
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Value of parameters that will be used when creating quests from this scheduled task (as a JSON string).
+  """
+  parameters: String
+  clearParameters: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  """
+  If true, this scheduled task will not be run.
+  """
+  disabled: Boolean
+  addScheduledHostIDs: [ID!]
+  removeScheduledHostIDs: [ID!]
+  clearScheduledHosts: Boolean
+}
+"""
 UpdateTagInput is used for update Tag object.
 Input was generated by ent.
 """
@@ -9237,18 +10175,6 @@ input UpdateTomeInput {
   """
   tactic: TomeTactic
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -9260,9 +10186,6 @@ input UpdateTomeInput {
   addAssetIDs: [ID!]
   removeAssetIDs: [ID!]
   clearAssets: Boolean
-  addScheduledHostIDs: [ID!]
-  removeScheduledHostIDs: [ID!]
-  clearScheduledHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.
@@ -9747,6 +10670,25 @@ scalar Uint64
 
     """Filtering options for Shells returned from the connection."""
     where: ShellWhereInput): ShellConnection! @requireRole(role: USER)
+  buildProfiles(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for BuildProfiles returned from the connection."""
+    orderBy: [BuildProfileOrder!]
+
+    """Filtering options for BuildProfiles returned from the connection."""
+    where: BuildProfileWhereInput
+  ): BuildProfileConnection! @requireRole(role: USER)
   buildTasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -9785,6 +10727,25 @@ scalar Uint64
     """Filtering options for Builders returned from the connection."""
     where: BuilderWhereInput
   ): BuilderConnection! @requireRole(role: ADMIN)
+  scheduledTasks(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for ScheduledTasks returned from the connection."""
+    orderBy: [ScheduledTaskOrder!]
+
+    """Filtering options for ScheduledTasks returned from the connection."""
+    where: ScheduledTaskWhereInput
+  ): ScheduledTaskConnection! @requireRole(role: USER)
   me: User!
 }
 `, BuiltIn: false},
@@ -9861,6 +10822,12 @@ scalar Uint64
     # BuildTask
     ###
     createBuildTask(input: CreateBuildTaskInput!): BuildTask! @requireRole(role: ADMIN)
+
+    ###
+    # ScheduledTask
+    ###
+    createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
+    disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {
@@ -9914,7 +10881,7 @@ input ImportRepositoryInput {
 }
 
 """A single transport configuration for a build task."""
-type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildTaskTransport") {
+type BuildProfileTransport @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileTransport") {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -9929,7 +10896,7 @@ type BuildTaskTransport @goModel(model: "realm.pub/tavern/internal/builder/build
 }
 
 """Input for a single transport configuration."""
-input BuildTaskTransportInput {
+input BuildProfileTransportInput {
   """The URI for the IMIX agent."""
   uri: String!
 
@@ -9943,6 +10910,24 @@ input BuildTaskTransportInput {
   extra: String
 }
 
+"""A tome configuration in a build profile."""
+type BuildProfileTome @goModel(model: "realm.pub/tavern/internal/builder/builderpb.BuildProfileTome") {
+  """The ID of the tome to include."""
+  tomeID: Int!
+
+  """JSON-encoded parameters for the tome."""
+  params: String!
+}
+
+"""Input for a tome configuration in a build profile."""
+input BuildProfileTomeInput {
+  """The ID of the tome to include."""
+  tomeID: ID!
+
+  """JSON-encoded parameters for the tome."""
+  params: String!
+}
+
 """Input for creating a new build task."""
 input CreateBuildTaskInput {
   """The target operating system for the build."""
@@ -9954,11 +10939,56 @@ input CreateBuildTaskInput {
   """Docker container image name to use for the build. Defaults to spellshift/devcontainer:main."""
   buildImage: String
 
-  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
-  transports: [BuildTaskTransportInput!]
+  """ID of the build profile to use. Transports, preBuildScript, and postBuildScript default to the profile's values unless explicitly overridden."""
+  profileID: ID!
+
+  """List of transport configurations. Overrides profile transports if both are set. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildProfileTransportInput!]
+
+  """List of tomes to embed in the agent."""
+  tomes: [BuildProfileTomeInput]
 
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
+
+  """Script to run during setup phase. Overrides profile setupScript if both are set."""
+  setupScript: String
+
+  """Script to run before the build command. Overrides profile preBuildScript if both are set."""
+  preBuildScript: String
+
+  """Script to run after the build command. Overrides profile postBuildScript if both are set."""
+  postBuildScript: String
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
+}
+
+"""Input for creating a new build profile."""
+input CreateBuildProfileInput {
+  """The name of the build profile."""
+  name: String!
+
+  """A user facing build profile description."""
+  description: String!
+
+  """List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000."""
+  transports: [BuildProfileTransportInput!]
+
+  """Bash script to run before the build command."""
+  prebuildscript: String!
+
+  """Bash script to run before the prebuild script."""
+  setupscript: String!
+
+  """Bash script to run after the build command."""
+  postbuildscript: String!
+
+  """List of tomes to include in builds using this profile."""
+  tomes: [BuildProfileTomeInput!]
+
+  """JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."""
+  unique: String
 }
 
 """Output returned when registering a new builder."""
