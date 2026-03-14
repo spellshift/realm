@@ -3,8 +3,6 @@ package builder
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
@@ -19,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/namegen"
 )
 
 // Server implements the Builder gRPC service.
@@ -334,16 +333,17 @@ func (s *Server) UploadBuildArtifact(stream builderpb.Builder_UploadBuildArtifac
 		return status.Errorf(codes.Internal, "failed to load build task for asset naming: %v", err)
 	}
 
-	// Generate 6 random bytes for a unique suffix.
-	randomBytes := make([]byte, 3)
-	if _, err := rand.Read(randomBytes); err != nil {
-		return status.Errorf(codes.Internal, "failed to generate random suffix: %v", err)
+	profile, err := bt.Profile(ctx)
+	if err != nil || profile == nil {
+		return status.Errorf(codes.Internal, "failed to load build profile for task %d: %v", taskID, err)
 	}
-	randomSuffix := hex.EncodeToString(randomBytes)
+
+	profileName := strings.ReplaceAll(strings.ToLower(profile.Name), " ", "-")
+	randomName := namegen.NewSimple()
 
 	osName := strings.ToLower(strings.TrimPrefix(bt.TargetOs.String(), "PLATFORM_"))
 	formatName := strings.ToLower(strings.TrimPrefix(bt.TargetFormat.String(), "TARGET_FORMAT_"))
-	assetName := fmt.Sprintf("build/%s/%s/imix-%s", osName, formatName, randomSuffix)
+	assetName := fmt.Sprintf("build/%s/%s/imix-%s-%s", osName, formatName, profileName, randomName)
 	asset, err := s.graph.Asset.Create().
 		SetName(assetName).
 		SetContent(buf.Bytes()).
