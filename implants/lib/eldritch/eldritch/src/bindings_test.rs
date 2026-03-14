@@ -111,9 +111,7 @@ fn test_sys_bindings() {
             "is_windows",
             "list_users",
             "shell",
-            "write_reg_hex",
-            "write_reg_int",
-            "write_reg_str",
+            "write_reg",
         ],
     );
 }

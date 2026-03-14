@@ -3,8 +3,8 @@ def pad_key(key, max_len):
     return res
 
 
-def get_registry(hive, path):
-    res = sys.get_reg(hive, path)
+def get_registry(path):
+    res = sys.get_reg(path)
     key_lengths = [len(i) for i in res.keys()]
     max_len = 0
     if len(key_lengths) != 0:
@@ -15,5 +15,5 @@ def get_registry(hive, path):
         print(f"{pk} : {v}")
 
 
-get_registry(input_params['hive'], input_params['path'])
+get_registry(input_params['path'])
 print()

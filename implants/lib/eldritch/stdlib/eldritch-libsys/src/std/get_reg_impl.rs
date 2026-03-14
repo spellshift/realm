@@ -2,41 +2,26 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use anyhow::Result;
 
+#[cfg(target_os = "windows")]
+use crate::std::reg_utils::parse_registry_path;
+
 #[cfg(not(target_os = "windows"))]
-pub fn get_reg(_reghive: String, _regpath: String) -> Result<BTreeMap<String, String>> {
+pub fn get_reg(_path: String) -> Result<BTreeMap<String, String>> {
     Err(anyhow::anyhow!(
         "This OS isn't supported by the get_reg function. Only windows systems are supported"
     ))
 }
 
 #[cfg(target_os = "windows")]
-pub fn get_reg(reghive: String, regpath: String) -> Result<BTreeMap<String, String>> {
+pub fn get_reg(path: String) -> Result<BTreeMap<String, String>> {
     let mut tmp_res = BTreeMap::new();
 
     use winreg::{RegKey, RegValue, enums::*};
-    //Accepted values for reghive :
-    //HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS
 
-    let ihive: isize = match reghive.as_ref() {
-        "HKEY_CLASSES_ROOT" => HKEY_CLASSES_ROOT,
-        "HKEY_CURRENT_USER" => HKEY_CURRENT_USER,
-        "HKEY_LOCAL_MACHINE" => HKEY_LOCAL_MACHINE,
-        "HKEY_USERS" => HKEY_USERS,
-        "HKEY_PERFORMANCE_DATA" => HKEY_PERFORMANCE_DATA,
-        "HKEY_PERFORMANCE_TEXT" => HKEY_PERFORMANCE_TEXT,
-        "HKEY_PERFORMANCE_NLSTEXT" => HKEY_PERFORMANCE_NLSTEXT,
-        "HKEY_CURRENT_CONFIG" => HKEY_CURRENT_CONFIG,
-        "HKEY_DYN_DATA" => HKEY_DYN_DATA,
-        "HKEY_CURRENT_USER_LOCAL_SETTINGS" => HKEY_CURRENT_USER_LOCAL_SETTINGS,
-        _ => {
-            return Err(anyhow::anyhow!(
-                "RegHive can only be one of the following values - HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_PERFORMANCE_DATA, HKEY_PERFORMANCE_TEXT, HKEY_PERFORMANCE_NLSTEXT, HKEY_CURRENT_CONFIG, HKEY_DYN_DATA, HKEY_CURRENT_USER_LOCAL_SETTINGS "
-            ));
-        }
-    };
+    let (ihive, subkey_str) = parse_registry_path(&path)?;
 
     let hive = RegKey::predef(ihive);
-    let subkey = hive.open_subkey(regpath)?;
+    let subkey = hive.open_subkey(subkey_str)?;
 
     for result in subkey.enum_values() {
         let (key, val): (String, RegValue) = result?;
@@ -63,7 +48,7 @@ mod tests {
         let (nkey, _ndisp) = hkcu.create_subkey(format!("SOFTWARE\\{}", id))?;
         nkey.set_value("FOO", &"BAR")?;
 
-        let ares = get_reg("HKEY_CURRENT_USER".to_string(), format!("SOFTWARE\\{}", id))?;
+        let ares = get_reg(format!("HKCU\\SOFTWARE\\{}", id))?;
         let val2 = ares.get("FOO").unwrap();
         //delete temp regkey
         hkcu.delete_subkey(format!("SOFTWARE\\{}", id))?;
@@ -76,7 +61,7 @@ mod tests {
     #[test]
     #[cfg(not(target_os = "windows"))]
     fn test_get_reg_non_windows() {
-        let res = super::get_reg("HKEY_CURRENT_USER".into(), "SOFTWARE".into());
+        let res = super::get_reg("HKCU\\SOFTWARE".into());
         assert!(res.is_err());
         assert!(
             res.unwrap_err()
