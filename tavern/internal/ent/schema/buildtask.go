@@ -97,6 +97,12 @@ func (BuildTask) Fields() []ent.Field {
 		field.String("artifact_path").
 			Optional().
 			Comment("Path inside the container where the build artifact is located. Derived from target_os if not set."),
+		field.Text("setupscript").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("The setup script executed inside the build container."),
 	}
 }
 

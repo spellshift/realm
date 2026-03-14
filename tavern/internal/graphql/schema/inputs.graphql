@@ -119,6 +119,9 @@ input CreateBuildTaskInput {
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
+  """Script to run during setup phase. Overrides profile setupScript if both are set."""
+  setupScript: String
+
   """Script to run before the build command. Overrides profile preBuildScript if both are set."""
   preBuildScript: String
 
@@ -139,6 +142,9 @@ input CreateBuildProfileInput {
 
   """Bash script to run before the build command."""
   prebuildscript: String!
+
+  """Bash script to run before the prebuild script."""
+  setupscript: String!
 
   """Bash script to run after the build command."""
   postbuildscript: String!

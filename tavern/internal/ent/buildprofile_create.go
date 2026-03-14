@@ -69,6 +69,20 @@ func (bpc *BuildProfileCreate) SetNillablePrebuildscript(s *string) *BuildProfil
 	return bpc
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (bpc *BuildProfileCreate) SetSetupscript(s string) *BuildProfileCreate {
+	bpc.mutation.SetSetupscript(s)
+	return bpc
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillableSetupscript(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetSetupscript(*s)
+	}
+	return bpc
+}
+
 // SetPostbuildscript sets the "postbuildscript" field.
 func (bpc *BuildProfileCreate) SetPostbuildscript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPostbuildscript(s)
@@ -151,6 +165,10 @@ func (bpc *BuildProfileCreate) defaults() {
 		v := buildprofile.DefaultPrebuildscript
 		bpc.mutation.SetPrebuildscript(v)
 	}
+	if _, ok := bpc.mutation.Setupscript(); !ok {
+		v := buildprofile.DefaultSetupscript
+		bpc.mutation.SetSetupscript(v)
+	}
 	if _, ok := bpc.mutation.Postbuildscript(); !ok {
 		v := buildprofile.DefaultPostbuildscript
 		bpc.mutation.SetPostbuildscript(v)
@@ -178,6 +196,9 @@ func (bpc *BuildProfileCreate) check() error {
 	}
 	if _, ok := bpc.mutation.Prebuildscript(); !ok {
 		return &ValidationError{Name: "prebuildscript", err: errors.New(`ent: missing required field "BuildProfile.prebuildscript"`)}
+	}
+	if _, ok := bpc.mutation.Setupscript(); !ok {
+		return &ValidationError{Name: "setupscript", err: errors.New(`ent: missing required field "BuildProfile.setupscript"`)}
 	}
 	if _, ok := bpc.mutation.Postbuildscript(); !ok {
 		return &ValidationError{Name: "postbuildscript", err: errors.New(`ent: missing required field "BuildProfile.postbuildscript"`)}
@@ -228,6 +249,10 @@ func (bpc *BuildProfileCreate) createSpec() (*BuildProfile, *sqlgraph.CreateSpec
 	if value, ok := bpc.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
 		_node.Prebuildscript = value
+	}
+	if value, ok := bpc.mutation.Setupscript(); ok {
+		_spec.SetField(buildprofile.FieldSetupscript, field.TypeString, value)
+		_node.Setupscript = value
 	}
 	if value, ok := bpc.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
@@ -362,6 +387,18 @@ func (u *BuildProfileUpsert) SetPrebuildscript(v string) *BuildProfileUpsert {
 // UpdatePrebuildscript sets the "prebuildscript" field to the value that was provided on create.
 func (u *BuildProfileUpsert) UpdatePrebuildscript() *BuildProfileUpsert {
 	u.SetExcluded(buildprofile.FieldPrebuildscript)
+	return u
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildProfileUpsert) SetSetupscript(v string) *BuildProfileUpsert {
+	u.Set(buildprofile.FieldSetupscript, v)
+	return u
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildProfileUpsert) UpdateSetupscript() *BuildProfileUpsert {
+	u.SetExcluded(buildprofile.FieldSetupscript)
 	return u
 }
 
@@ -502,6 +539,20 @@ func (u *BuildProfileUpsertOne) SetPrebuildscript(v string) *BuildProfileUpsertO
 func (u *BuildProfileUpsertOne) UpdatePrebuildscript() *BuildProfileUpsertOne {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePrebuildscript()
+	})
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildProfileUpsertOne) SetSetupscript(v string) *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetSetupscript(v)
+	})
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertOne) UpdateSetupscript() *BuildProfileUpsertOne {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateSetupscript()
 	})
 }
 
@@ -811,6 +862,20 @@ func (u *BuildProfileUpsertBulk) SetPrebuildscript(v string) *BuildProfileUpsert
 func (u *BuildProfileUpsertBulk) UpdatePrebuildscript() *BuildProfileUpsertBulk {
 	return u.Update(func(s *BuildProfileUpsert) {
 		s.UpdatePrebuildscript()
+	})
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildProfileUpsertBulk) SetSetupscript(v string) *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.SetSetupscript(v)
+	})
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildProfileUpsertBulk) UpdateSetupscript() *BuildProfileUpsertBulk {
+	return u.Update(func(s *BuildProfileUpsert) {
+		s.UpdateSetupscript()
 	})
 }
 

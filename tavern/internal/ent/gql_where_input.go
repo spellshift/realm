@@ -1146,6 +1146,21 @@ type BuildProfileWhereInput struct {
 	PrebuildscriptEqualFold    *string  `json:"prebuildscriptEqualFold,omitempty"`
 	PrebuildscriptContainsFold *string  `json:"prebuildscriptContainsFold,omitempty"`
 
+	// "setupscript" field predicates.
+	Setupscript             *string  `json:"setupscript,omitempty"`
+	SetupscriptNEQ          *string  `json:"setupscriptNEQ,omitempty"`
+	SetupscriptIn           []string `json:"setupscriptIn,omitempty"`
+	SetupscriptNotIn        []string `json:"setupscriptNotIn,omitempty"`
+	SetupscriptGT           *string  `json:"setupscriptGT,omitempty"`
+	SetupscriptGTE          *string  `json:"setupscriptGTE,omitempty"`
+	SetupscriptLT           *string  `json:"setupscriptLT,omitempty"`
+	SetupscriptLTE          *string  `json:"setupscriptLTE,omitempty"`
+	SetupscriptContains     *string  `json:"setupscriptContains,omitempty"`
+	SetupscriptHasPrefix    *string  `json:"setupscriptHasPrefix,omitempty"`
+	SetupscriptHasSuffix    *string  `json:"setupscriptHasSuffix,omitempty"`
+	SetupscriptEqualFold    *string  `json:"setupscriptEqualFold,omitempty"`
+	SetupscriptContainsFold *string  `json:"setupscriptContainsFold,omitempty"`
+
 	// "postbuildscript" field predicates.
 	Postbuildscript             *string  `json:"postbuildscript,omitempty"`
 	PostbuildscriptNEQ          *string  `json:"postbuildscriptNEQ,omitempty"`
@@ -1417,6 +1432,45 @@ func (i *BuildProfileWhereInput) P() (predicate.BuildProfile, error) {
 	if i.PrebuildscriptContainsFold != nil {
 		predicates = append(predicates, buildprofile.PrebuildscriptContainsFold(*i.PrebuildscriptContainsFold))
 	}
+	if i.Setupscript != nil {
+		predicates = append(predicates, buildprofile.SetupscriptEQ(*i.Setupscript))
+	}
+	if i.SetupscriptNEQ != nil {
+		predicates = append(predicates, buildprofile.SetupscriptNEQ(*i.SetupscriptNEQ))
+	}
+	if len(i.SetupscriptIn) > 0 {
+		predicates = append(predicates, buildprofile.SetupscriptIn(i.SetupscriptIn...))
+	}
+	if len(i.SetupscriptNotIn) > 0 {
+		predicates = append(predicates, buildprofile.SetupscriptNotIn(i.SetupscriptNotIn...))
+	}
+	if i.SetupscriptGT != nil {
+		predicates = append(predicates, buildprofile.SetupscriptGT(*i.SetupscriptGT))
+	}
+	if i.SetupscriptGTE != nil {
+		predicates = append(predicates, buildprofile.SetupscriptGTE(*i.SetupscriptGTE))
+	}
+	if i.SetupscriptLT != nil {
+		predicates = append(predicates, buildprofile.SetupscriptLT(*i.SetupscriptLT))
+	}
+	if i.SetupscriptLTE != nil {
+		predicates = append(predicates, buildprofile.SetupscriptLTE(*i.SetupscriptLTE))
+	}
+	if i.SetupscriptContains != nil {
+		predicates = append(predicates, buildprofile.SetupscriptContains(*i.SetupscriptContains))
+	}
+	if i.SetupscriptHasPrefix != nil {
+		predicates = append(predicates, buildprofile.SetupscriptHasPrefix(*i.SetupscriptHasPrefix))
+	}
+	if i.SetupscriptHasSuffix != nil {
+		predicates = append(predicates, buildprofile.SetupscriptHasSuffix(*i.SetupscriptHasSuffix))
+	}
+	if i.SetupscriptEqualFold != nil {
+		predicates = append(predicates, buildprofile.SetupscriptEqualFold(*i.SetupscriptEqualFold))
+	}
+	if i.SetupscriptContainsFold != nil {
+		predicates = append(predicates, buildprofile.SetupscriptContainsFold(*i.SetupscriptContainsFold))
+	}
 	if i.Postbuildscript != nil {
 		predicates = append(predicates, buildprofile.PostbuildscriptEQ(*i.Postbuildscript))
 	}
@@ -1667,6 +1721,23 @@ type BuildTaskWhereInput struct {
 	ArtifactPathNotNil       bool     `json:"artifactPathNotNil,omitempty"`
 	ArtifactPathEqualFold    *string  `json:"artifactPathEqualFold,omitempty"`
 	ArtifactPathContainsFold *string  `json:"artifactPathContainsFold,omitempty"`
+
+	// "setupscript" field predicates.
+	Setupscript             *string  `json:"setupscript,omitempty"`
+	SetupscriptNEQ          *string  `json:"setupscriptNEQ,omitempty"`
+	SetupscriptIn           []string `json:"setupscriptIn,omitempty"`
+	SetupscriptNotIn        []string `json:"setupscriptNotIn,omitempty"`
+	SetupscriptGT           *string  `json:"setupscriptGT,omitempty"`
+	SetupscriptGTE          *string  `json:"setupscriptGTE,omitempty"`
+	SetupscriptLT           *string  `json:"setupscriptLT,omitempty"`
+	SetupscriptLTE          *string  `json:"setupscriptLTE,omitempty"`
+	SetupscriptContains     *string  `json:"setupscriptContains,omitempty"`
+	SetupscriptHasPrefix    *string  `json:"setupscriptHasPrefix,omitempty"`
+	SetupscriptHasSuffix    *string  `json:"setupscriptHasSuffix,omitempty"`
+	SetupscriptIsNil        bool     `json:"setupscriptIsNil,omitempty"`
+	SetupscriptNotNil       bool     `json:"setupscriptNotNil,omitempty"`
+	SetupscriptEqualFold    *string  `json:"setupscriptEqualFold,omitempty"`
+	SetupscriptContainsFold *string  `json:"setupscriptContainsFold,omitempty"`
 
 	// "builder" edge predicates.
 	HasBuilder     *bool                `json:"hasBuilder,omitempty"`
@@ -2189,6 +2260,51 @@ func (i *BuildTaskWhereInput) P() (predicate.BuildTask, error) {
 	}
 	if i.ArtifactPathContainsFold != nil {
 		predicates = append(predicates, buildtask.ArtifactPathContainsFold(*i.ArtifactPathContainsFold))
+	}
+	if i.Setupscript != nil {
+		predicates = append(predicates, buildtask.SetupscriptEQ(*i.Setupscript))
+	}
+	if i.SetupscriptNEQ != nil {
+		predicates = append(predicates, buildtask.SetupscriptNEQ(*i.SetupscriptNEQ))
+	}
+	if len(i.SetupscriptIn) > 0 {
+		predicates = append(predicates, buildtask.SetupscriptIn(i.SetupscriptIn...))
+	}
+	if len(i.SetupscriptNotIn) > 0 {
+		predicates = append(predicates, buildtask.SetupscriptNotIn(i.SetupscriptNotIn...))
+	}
+	if i.SetupscriptGT != nil {
+		predicates = append(predicates, buildtask.SetupscriptGT(*i.SetupscriptGT))
+	}
+	if i.SetupscriptGTE != nil {
+		predicates = append(predicates, buildtask.SetupscriptGTE(*i.SetupscriptGTE))
+	}
+	if i.SetupscriptLT != nil {
+		predicates = append(predicates, buildtask.SetupscriptLT(*i.SetupscriptLT))
+	}
+	if i.SetupscriptLTE != nil {
+		predicates = append(predicates, buildtask.SetupscriptLTE(*i.SetupscriptLTE))
+	}
+	if i.SetupscriptContains != nil {
+		predicates = append(predicates, buildtask.SetupscriptContains(*i.SetupscriptContains))
+	}
+	if i.SetupscriptHasPrefix != nil {
+		predicates = append(predicates, buildtask.SetupscriptHasPrefix(*i.SetupscriptHasPrefix))
+	}
+	if i.SetupscriptHasSuffix != nil {
+		predicates = append(predicates, buildtask.SetupscriptHasSuffix(*i.SetupscriptHasSuffix))
+	}
+	if i.SetupscriptIsNil {
+		predicates = append(predicates, buildtask.SetupscriptIsNil())
+	}
+	if i.SetupscriptNotNil {
+		predicates = append(predicates, buildtask.SetupscriptNotNil())
+	}
+	if i.SetupscriptEqualFold != nil {
+		predicates = append(predicates, buildtask.SetupscriptEqualFold(*i.SetupscriptEqualFold))
+	}
+	if i.SetupscriptContainsFold != nil {
+		predicates = append(predicates, buildtask.SetupscriptContainsFold(*i.SetupscriptContainsFold))
 	}
 
 	if i.HasBuilder != nil {

@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+ 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
@@ -36,6 +38,9 @@ func (BuildProfile) Fields() []ent.Field {
 		field.String("prebuildscript").
 			Default("echo 'no prebuild set'").
 			Comment("Bash script to run before build command"),
+		field.String("setupscript").
+			Default(fmt.Sprintf("cd /home/vscode && git clone %s realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true", builder.DefaultRealmRepoURL)).
+			Comment("Bash script to run before prebuild script"),
 		field.String("postbuildscript").
 			Default("echo 'no postbuild set'").
 			Comment("Bash script to run after build command"),

@@ -61,6 +61,8 @@ type CreateBuildProfileInput struct {
 	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
 	// Bash script to run before the build command.
 	Prebuildscript string `json:"prebuildscript"`
+	// Bash script to run before the prebuild script.
+	Setupscript string `json:"setupscript"`
 	// Bash script to run after the build command.
 	Postbuildscript string `json:"postbuildscript"`
 	// List of tomes to include in builds using this profile.
@@ -83,6 +85,8 @@ type CreateBuildTaskInput struct {
 	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
+	// Script to run during setup phase. Overrides profile setupScript if both are set.
+	SetupScript *string `json:"setupScript,omitempty"`
 	// Script to run before the build command. Overrides profile preBuildScript if both are set.
 	PreBuildScript *string `json:"preBuildScript,omitempty"`
 	// Script to run after the build command. Overrides profile postBuildScript if both are set.

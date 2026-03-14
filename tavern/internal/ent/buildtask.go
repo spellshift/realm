@@ -50,6 +50,8 @@ type BuildTask struct {
 	ExitCode *int `json:"exit_code,omitempty"`
 	// Path inside the container where the build artifact is located. Derived from target_os if not set.
 	ArtifactPath string `json:"artifact_path,omitempty"`
+	// The setup script executed inside the build container.
+	Setupscript string `json:"setupscript,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the BuildTaskQuery when eager-loading is set.
 	Edges               BuildTaskEdges `json:"edges"`
@@ -118,7 +120,7 @@ func (*BuildTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new(c2pb.Host_Platform)
 		case buildtask.FieldID, buildtask.FieldOutputSize, buildtask.FieldErrorSize, buildtask.FieldExitCode:
 			values[i] = new(sql.NullInt64)
-		case buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath:
+		case buildtask.FieldBuildScript, buildtask.FieldOutput, buildtask.FieldError, buildtask.FieldArtifactPath, buildtask.FieldSetupscript:
 			values[i] = new(sql.NullString)
 		case buildtask.FieldCreatedAt, buildtask.FieldLastModifiedAt, buildtask.FieldClaimedAt, buildtask.FieldStartedAt, buildtask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -233,6 +235,12 @@ func (bt *BuildTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field artifact_path", values[i])
 			} else if value.Valid {
 				bt.ArtifactPath = value.String
+			}
+		case buildtask.FieldSetupscript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field setupscript", values[i])
+			} else if value.Valid {
+				bt.Setupscript = value.String
 			}
 		case buildtask.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -349,6 +357,9 @@ func (bt *BuildTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("artifact_path=")
 	builder.WriteString(bt.ArtifactPath)
+	builder.WriteString(", ")
+	builder.WriteString("setupscript=")
+	builder.WriteString(bt.Setupscript)
 	builder.WriteByte(')')
 	return builder.String()
 }

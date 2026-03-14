@@ -291,6 +291,7 @@ func executeTask(ctx context.Context, client builderpb.BuilderClient, exec execu
 		BuildScript:    task.BuildScript,
 		ArtifactPath:   task.ArtifactPath,
 		Env:            task.Env,
+		SetupScript:    task.SetupScript,
 		PreBuildScript:  task.PreBuildScript,
 		PostBuildScript: task.PostBuildScript,
 		Tomes:          tomes,

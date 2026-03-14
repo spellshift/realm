@@ -8,6 +8,7 @@ The builder package orchestrates agent compilation for target platforms. It conn
 - Add e2e testsq
 - Figure out if the dupe NameInput is needed with Name in inputs.graphql
 - BuildProfile structs are spreak across models and builderpb can we consolidate these
+- [x] Streamline the buildScript with a setupScript and buildScript
 
 ### Architectural
 - Add a way for the server to interrupt and cancel a build.

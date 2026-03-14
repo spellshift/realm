@@ -270,6 +270,26 @@ func (btu *BuildTaskUpdate) ClearArtifactPath() *BuildTaskUpdate {
 	return btu
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (btu *BuildTaskUpdate) SetSetupscript(s string) *BuildTaskUpdate {
+	btu.mutation.SetSetupscript(s)
+	return btu
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (btu *BuildTaskUpdate) SetNillableSetupscript(s *string) *BuildTaskUpdate {
+	if s != nil {
+		btu.SetSetupscript(*s)
+	}
+	return btu
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (btu *BuildTaskUpdate) ClearSetupscript() *BuildTaskUpdate {
+	btu.mutation.ClearSetupscript()
+	return btu
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btu *BuildTaskUpdate) SetBuilderID(id int) *BuildTaskUpdate {
 	btu.mutation.SetBuilderID(id)
@@ -492,6 +512,12 @@ func (btu *BuildTaskUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if btu.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
+	if value, ok := btu.mutation.Setupscript(); ok {
+		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
+	}
+	if btu.mutation.SetupscriptCleared() {
+		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
 	}
 	if btu.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -837,6 +863,26 @@ func (btuo *BuildTaskUpdateOne) ClearArtifactPath() *BuildTaskUpdateOne {
 	return btuo
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (btuo *BuildTaskUpdateOne) SetSetupscript(s string) *BuildTaskUpdateOne {
+	btuo.mutation.SetSetupscript(s)
+	return btuo
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (btuo *BuildTaskUpdateOne) SetNillableSetupscript(s *string) *BuildTaskUpdateOne {
+	if s != nil {
+		btuo.SetSetupscript(*s)
+	}
+	return btuo
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (btuo *BuildTaskUpdateOne) ClearSetupscript() *BuildTaskUpdateOne {
+	btuo.mutation.ClearSetupscript()
+	return btuo
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btuo *BuildTaskUpdateOne) SetBuilderID(id int) *BuildTaskUpdateOne {
 	btuo.mutation.SetBuilderID(id)
@@ -1089,6 +1135,12 @@ func (btuo *BuildTaskUpdateOne) sqlSave(ctx context.Context) (_node *BuildTask, 
 	}
 	if btuo.mutation.ArtifactPathCleared() {
 		_spec.ClearField(buildtask.FieldArtifactPath, field.TypeString)
+	}
+	if value, ok := btuo.mutation.Setupscript(); ok {
+		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
+	}
+	if btuo.mutation.SetupscriptCleared() {
+		_spec.ClearField(buildtask.FieldSetupscript, field.TypeString)
 	}
 	if btuo.mutation.BuilderCleared() {
 		edge := &sqlgraph.EdgeSpec{

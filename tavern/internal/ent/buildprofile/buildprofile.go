@@ -23,6 +23,8 @@ const (
 	FieldBuildImage = "build_image"
 	// FieldPrebuildscript holds the string denoting the prebuildscript field in the database.
 	FieldPrebuildscript = "prebuildscript"
+	// FieldSetupscript holds the string denoting the setupscript field in the database.
+	FieldSetupscript = "setupscript"
 	// FieldPostbuildscript holds the string denoting the postbuildscript field in the database.
 	FieldPostbuildscript = "postbuildscript"
 	// FieldTomes holds the string denoting the tomes field in the database.
@@ -48,6 +50,7 @@ var Columns = []string{
 	FieldTransports,
 	FieldBuildImage,
 	FieldPrebuildscript,
+	FieldSetupscript,
 	FieldPostbuildscript,
 	FieldTomes,
 }
@@ -71,6 +74,8 @@ var (
 	BuildImageValidator func(string) error
 	// DefaultPrebuildscript holds the default value on creation for the "prebuildscript" field.
 	DefaultPrebuildscript string
+	// DefaultSetupscript holds the default value on creation for the "setupscript" field.
+	DefaultSetupscript string
 	// DefaultPostbuildscript holds the default value on creation for the "postbuildscript" field.
 	DefaultPostbuildscript string
 )
@@ -101,6 +106,11 @@ func ByBuildImage(opts ...sql.OrderTermOption) OrderOption {
 // ByPrebuildscript orders the results by the prebuildscript field.
 func ByPrebuildscript(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrebuildscript, opts...).ToFunc()
+}
+
+// BySetupscript orders the results by the setupscript field.
+func BySetupscript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSetupscript, opts...).ToFunc()
 }
 
 // ByPostbuildscript orders the results by the postbuildscript field.

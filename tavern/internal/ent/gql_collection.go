@@ -730,6 +730,11 @@ func (bp *BuildProfileQuery) collectField(ctx context.Context, oneNode bool, opC
 				selectedFields = append(selectedFields, buildprofile.FieldPrebuildscript)
 				fieldSeen[buildprofile.FieldPrebuildscript] = struct{}{}
 			}
+		case "setupscript":
+			if _, ok := fieldSeen[buildprofile.FieldSetupscript]; !ok {
+				selectedFields = append(selectedFields, buildprofile.FieldSetupscript)
+				fieldSeen[buildprofile.FieldSetupscript] = struct{}{}
+			}
 		case "postbuildscript":
 			if _, ok := fieldSeen[buildprofile.FieldPostbuildscript]; !ok {
 				selectedFields = append(selectedFields, buildprofile.FieldPostbuildscript)
@@ -932,6 +937,11 @@ func (bt *BuildTaskQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			if _, ok := fieldSeen[buildtask.FieldArtifactPath]; !ok {
 				selectedFields = append(selectedFields, buildtask.FieldArtifactPath)
 				fieldSeen[buildtask.FieldArtifactPath] = struct{}{}
+			}
+		case "setupscript":
+			if _, ok := fieldSeen[buildtask.FieldSetupscript]; !ok {
+				selectedFields = append(selectedFields, buildtask.FieldSetupscript)
+				fieldSeen[buildtask.FieldSetupscript] = struct{}{}
 			}
 		case "id":
 		case "__typename":

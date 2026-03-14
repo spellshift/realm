@@ -423,7 +423,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		}
 	}
 
-	// Resolve pre/post build scripts: input > profile > nil
+	// Resolve pre/post build scripts: input > profile > default
 	preBuildScript := input.PreBuildScript
 	if preBuildScript == nil && profile.Prebuildscript != "" {
 		preBuildScript = &profile.Prebuildscript
@@ -431,6 +431,12 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	postBuildScript := input.PostBuildScript
 	if postBuildScript == nil && profile.Postbuildscript != "" {
 		postBuildScript = &profile.Postbuildscript
+	}
+
+	// Resolve setup script: input > profile > default
+	setupScript := input.SetupScript
+	if setupScript == nil && profile.Setupscript != "" {
+		setupScript = &profile.Setupscript
 	}
 
 	artifactPath := builder.DeriveArtifactPath(input.TargetOs)
@@ -444,7 +450,7 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	}
 
 	// 4. Derive the build script from configuration
-	buildScript, err := builder.GenerateBuildScript(input.TargetOs, targetFormat)
+	buildScript, err := builder.BuildCommand(input.TargetOs, targetFormat)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate build script: %w", err)
 	}
@@ -491,6 +497,10 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 		SetBuildScript(buildScript).
 		SetProfile(profile)
 
+	if setupScript != nil {
+		create.SetSetupscript(*setupScript)
+	}
+
 	bt, err := create.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create build task: %w", err)
@@ -532,6 +542,7 @@ func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.
 		SetTransports(transports).
 		SetTomes(tomes).
 		SetPrebuildscript(input.Prebuildscript).
+		SetSetupscript(input.Setupscript).
 		SetPostbuildscript(input.Postbuildscript).
 		Save(ctx)
 }

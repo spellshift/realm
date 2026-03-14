@@ -606,6 +606,10 @@ type BuildProfile implements Node {
   """
   prebuildscript: String!
   """
+  Bash script to run before prebuild script
+  """
+  setupscript: String!
+  """
   Bash script to run after build command
   """
   postbuildscript: String!
@@ -751,6 +755,22 @@ input BuildProfileWhereInput {
   prebuildscriptEqualFold: String
   prebuildscriptContainsFold: String
   """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
+  """
   postbuildscript field predicates
   """
   postbuildscript: String
@@ -830,6 +850,10 @@ type BuildTask implements Node {
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
+  """
+  The setup script executed inside the build container.
+  """
+  setupscript: String
   """
   The builder assigned to execute this build task.
   """
@@ -1108,6 +1132,24 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
+  """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptIsNil: Boolean
+  setupscriptNotNil: Boolean
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
   """
   builder edge predicates
   """

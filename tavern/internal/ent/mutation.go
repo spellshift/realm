@@ -2133,6 +2133,7 @@ type BuildProfileMutation struct {
 	appendtransports  []builderpb.BuildProfileTransport
 	build_image       *string
 	prebuildscript    *string
+	setupscript       *string
 	postbuildscript   *string
 	tomes             *[]builderpb.BuildProfileTome
 	appendtomes       []builderpb.BuildProfileTome
@@ -2438,6 +2439,42 @@ func (m *BuildProfileMutation) ResetPrebuildscript() {
 	m.prebuildscript = nil
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (m *BuildProfileMutation) SetSetupscript(s string) {
+	m.setupscript = &s
+}
+
+// Setupscript returns the value of the "setupscript" field in the mutation.
+func (m *BuildProfileMutation) Setupscript() (r string, exists bool) {
+	v := m.setupscript
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSetupscript returns the old "setupscript" field's value of the BuildProfile entity.
+// If the BuildProfile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildProfileMutation) OldSetupscript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSetupscript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSetupscript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSetupscript: %w", err)
+	}
+	return oldValue.Setupscript, nil
+}
+
+// ResetSetupscript resets all changes to the "setupscript" field.
+func (m *BuildProfileMutation) ResetSetupscript() {
+	m.setupscript = nil
+}
+
 // SetPostbuildscript sets the "postbuildscript" field.
 func (m *BuildProfileMutation) SetPostbuildscript(s string) {
 	m.postbuildscript = &s
@@ -2627,7 +2664,7 @@ func (m *BuildProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildProfileMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.name != nil {
 		fields = append(fields, buildprofile.FieldName)
 	}
@@ -2642,6 +2679,9 @@ func (m *BuildProfileMutation) Fields() []string {
 	}
 	if m.prebuildscript != nil {
 		fields = append(fields, buildprofile.FieldPrebuildscript)
+	}
+	if m.setupscript != nil {
+		fields = append(fields, buildprofile.FieldSetupscript)
 	}
 	if m.postbuildscript != nil {
 		fields = append(fields, buildprofile.FieldPostbuildscript)
@@ -2667,6 +2707,8 @@ func (m *BuildProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.BuildImage()
 	case buildprofile.FieldPrebuildscript:
 		return m.Prebuildscript()
+	case buildprofile.FieldSetupscript:
+		return m.Setupscript()
 	case buildprofile.FieldPostbuildscript:
 		return m.Postbuildscript()
 	case buildprofile.FieldTomes:
@@ -2690,6 +2732,8 @@ func (m *BuildProfileMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldBuildImage(ctx)
 	case buildprofile.FieldPrebuildscript:
 		return m.OldPrebuildscript(ctx)
+	case buildprofile.FieldSetupscript:
+		return m.OldSetupscript(ctx)
 	case buildprofile.FieldPostbuildscript:
 		return m.OldPostbuildscript(ctx)
 	case buildprofile.FieldTomes:
@@ -2737,6 +2781,13 @@ func (m *BuildProfileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPrebuildscript(v)
+		return nil
+	case buildprofile.FieldSetupscript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSetupscript(v)
 		return nil
 	case buildprofile.FieldPostbuildscript:
 		v, ok := value.(string)
@@ -2824,6 +2875,9 @@ func (m *BuildProfileMutation) ResetField(name string) error {
 		return nil
 	case buildprofile.FieldPrebuildscript:
 		m.ResetPrebuildscript()
+		return nil
+	case buildprofile.FieldSetupscript:
+		m.ResetSetupscript()
 		return nil
 	case buildprofile.FieldPostbuildscript:
 		m.ResetPostbuildscript()
@@ -2942,6 +2996,7 @@ type BuildTaskMutation struct {
 	exit_code        *int
 	addexit_code     *int
 	artifact_path    *string
+	setupscript      *string
 	clearedFields    map[string]struct{}
 	builder          *int
 	clearedbuilder   bool
@@ -3708,6 +3763,55 @@ func (m *BuildTaskMutation) ResetArtifactPath() {
 	delete(m.clearedFields, buildtask.FieldArtifactPath)
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (m *BuildTaskMutation) SetSetupscript(s string) {
+	m.setupscript = &s
+}
+
+// Setupscript returns the value of the "setupscript" field in the mutation.
+func (m *BuildTaskMutation) Setupscript() (r string, exists bool) {
+	v := m.setupscript
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSetupscript returns the old "setupscript" field's value of the BuildTask entity.
+// If the BuildTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildTaskMutation) OldSetupscript(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSetupscript is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSetupscript requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSetupscript: %w", err)
+	}
+	return oldValue.Setupscript, nil
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (m *BuildTaskMutation) ClearSetupscript() {
+	m.setupscript = nil
+	m.clearedFields[buildtask.FieldSetupscript] = struct{}{}
+}
+
+// SetupscriptCleared returns if the "setupscript" field was cleared in this mutation.
+func (m *BuildTaskMutation) SetupscriptCleared() bool {
+	_, ok := m.clearedFields[buildtask.FieldSetupscript]
+	return ok
+}
+
+// ResetSetupscript resets all changes to the "setupscript" field.
+func (m *BuildTaskMutation) ResetSetupscript() {
+	m.setupscript = nil
+	delete(m.clearedFields, buildtask.FieldSetupscript)
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by id.
 func (m *BuildTaskMutation) SetBuilderID(id int) {
 	m.builder = &id
@@ -3859,7 +3963,7 @@ func (m *BuildTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildTaskMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, buildtask.FieldCreatedAt)
 	}
@@ -3902,6 +4006,9 @@ func (m *BuildTaskMutation) Fields() []string {
 	if m.artifact_path != nil {
 		fields = append(fields, buildtask.FieldArtifactPath)
 	}
+	if m.setupscript != nil {
+		fields = append(fields, buildtask.FieldSetupscript)
+	}
 	return fields
 }
 
@@ -3938,6 +4045,8 @@ func (m *BuildTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.ExitCode()
 	case buildtask.FieldArtifactPath:
 		return m.ArtifactPath()
+	case buildtask.FieldSetupscript:
+		return m.Setupscript()
 	}
 	return nil, false
 }
@@ -3975,6 +4084,8 @@ func (m *BuildTaskMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldExitCode(ctx)
 	case buildtask.FieldArtifactPath:
 		return m.OldArtifactPath(ctx)
+	case buildtask.FieldSetupscript:
+		return m.OldSetupscript(ctx)
 	}
 	return nil, fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -4082,6 +4193,13 @@ func (m *BuildTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetArtifactPath(v)
 		return nil
+	case buildtask.FieldSetupscript:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSetupscript(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)
 }
@@ -4172,6 +4290,9 @@ func (m *BuildTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(buildtask.FieldArtifactPath) {
 		fields = append(fields, buildtask.FieldArtifactPath)
 	}
+	if m.FieldCleared(buildtask.FieldSetupscript) {
+		fields = append(fields, buildtask.FieldSetupscript)
+	}
 	return fields
 }
 
@@ -4206,6 +4327,9 @@ func (m *BuildTaskMutation) ClearField(name string) error {
 		return nil
 	case buildtask.FieldArtifactPath:
 		m.ClearArtifactPath()
+		return nil
+	case buildtask.FieldSetupscript:
+		m.ClearSetupscript()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask nullable field %s", name)
@@ -4256,6 +4380,9 @@ func (m *BuildTaskMutation) ResetField(name string) error {
 		return nil
 	case buildtask.FieldArtifactPath:
 		m.ResetArtifactPath()
+		return nil
+	case buildtask.FieldSetupscript:
+		m.ResetSetupscript()
 		return nil
 	}
 	return fmt.Errorf("unknown BuildTask field %s", name)

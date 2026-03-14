@@ -24,8 +24,12 @@ type BuildSpec struct {
 	// in the form "KEY=VALUE".
 	Env []string
 
+	// SetupScript is a shell script to run during the setup phase.
+	// Written to /mnt/scripts/0_setup.sh inside the container.
+	SetupScript string
+
 	// PreBuildScript is a shell script to run before the build command.
-	// Written to /mnt/scripts/0_pre_build.sh inside the container.
+	// Written to /mnt/scripts/1_pre_build.sh inside the container.
 	PreBuildScript string
 
 	// PostBuildScript is a shell script to run after the build command.

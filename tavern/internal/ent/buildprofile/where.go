@@ -73,6 +73,11 @@ func Prebuildscript(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPrebuildscript, v))
 }
 
+// Setupscript applies equality check predicate on the "setupscript" field. It's identical to SetupscriptEQ.
+func Setupscript(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldSetupscript, v))
+}
+
 // Postbuildscript applies equality check predicate on the "postbuildscript" field. It's identical to PostbuildscriptEQ.
 func Postbuildscript(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldEQ(FieldPostbuildscript, v))
@@ -336,6 +341,71 @@ func PrebuildscriptEqualFold(v string) predicate.BuildProfile {
 // PrebuildscriptContainsFold applies the ContainsFold predicate on the "prebuildscript" field.
 func PrebuildscriptContainsFold(v string) predicate.BuildProfile {
 	return predicate.BuildProfile(sql.FieldContainsFold(FieldPrebuildscript, v))
+}
+
+// SetupscriptEQ applies the EQ predicate on the "setupscript" field.
+func SetupscriptEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEQ(FieldSetupscript, v))
+}
+
+// SetupscriptNEQ applies the NEQ predicate on the "setupscript" field.
+func SetupscriptNEQ(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNEQ(FieldSetupscript, v))
+}
+
+// SetupscriptIn applies the In predicate on the "setupscript" field.
+func SetupscriptIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldIn(FieldSetupscript, vs...))
+}
+
+// SetupscriptNotIn applies the NotIn predicate on the "setupscript" field.
+func SetupscriptNotIn(vs ...string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldNotIn(FieldSetupscript, vs...))
+}
+
+// SetupscriptGT applies the GT predicate on the "setupscript" field.
+func SetupscriptGT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGT(FieldSetupscript, v))
+}
+
+// SetupscriptGTE applies the GTE predicate on the "setupscript" field.
+func SetupscriptGTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldGTE(FieldSetupscript, v))
+}
+
+// SetupscriptLT applies the LT predicate on the "setupscript" field.
+func SetupscriptLT(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLT(FieldSetupscript, v))
+}
+
+// SetupscriptLTE applies the LTE predicate on the "setupscript" field.
+func SetupscriptLTE(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldLTE(FieldSetupscript, v))
+}
+
+// SetupscriptContains applies the Contains predicate on the "setupscript" field.
+func SetupscriptContains(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContains(FieldSetupscript, v))
+}
+
+// SetupscriptHasPrefix applies the HasPrefix predicate on the "setupscript" field.
+func SetupscriptHasPrefix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasPrefix(FieldSetupscript, v))
+}
+
+// SetupscriptHasSuffix applies the HasSuffix predicate on the "setupscript" field.
+func SetupscriptHasSuffix(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldHasSuffix(FieldSetupscript, v))
+}
+
+// SetupscriptEqualFold applies the EqualFold predicate on the "setupscript" field.
+func SetupscriptEqualFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldEqualFold(FieldSetupscript, v))
+}
+
+// SetupscriptContainsFold applies the ContainsFold predicate on the "setupscript" field.
+func SetupscriptContainsFold(v string) predicate.BuildProfile {
+	return predicate.BuildProfile(sql.FieldContainsFold(FieldSetupscript, v))
 }
 
 // PostbuildscriptEQ applies the EQ predicate on the "postbuildscript" field.

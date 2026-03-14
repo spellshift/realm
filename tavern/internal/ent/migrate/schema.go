@@ -71,6 +71,7 @@ var (
 		{Name: "transports", Type: field.TypeJSON},
 		{Name: "build_image", Type: field.TypeString, Default: "spellshift/devcontainer:main"},
 		{Name: "prebuildscript", Type: field.TypeString, Default: "echo 'no prebuild set'"},
+		{Name: "setupscript", Type: field.TypeString, Default: "cd /home/vscode && git clone https://github.com/spellshift/realm.git realm && cd realm/implants/imix && rm -rf install_scripts/* && cp -r /mnt/tomes/* install_scripts/ 2>/dev/null || true"},
 		{Name: "postbuildscript", Type: field.TypeString, Default: "echo 'no postbuild set'"},
 		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
 	}
@@ -97,6 +98,7 @@ var (
 		{Name: "error_size", Type: field.TypeInt, Default: 0},
 		{Name: "exit_code", Type: field.TypeInt, Nullable: true},
 		{Name: "artifact_path", Type: field.TypeString, Nullable: true},
+		{Name: "setupscript", Type: field.TypeString, Nullable: true, Size: 2147483647, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "build_task_builder", Type: field.TypeInt},
 		{Name: "build_task_profile", Type: field.TypeInt},
 		{Name: "build_task_artifact", Type: field.TypeInt, Nullable: true},
@@ -109,19 +111,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "build_tasks_builders_builder",
-				Columns:    []*schema.Column{BuildTasksColumns[15]},
+				Columns:    []*schema.Column{BuildTasksColumns[16]},
 				RefColumns: []*schema.Column{BuildersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_build_profiles_profile",
-				Columns:    []*schema.Column{BuildTasksColumns[16]},
+				Columns:    []*schema.Column{BuildTasksColumns[17]},
 				RefColumns: []*schema.Column{BuildProfilesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "build_tasks_assets_artifact",
-				Columns:    []*schema.Column{BuildTasksColumns[17]},
+				Columns:    []*schema.Column{BuildTasksColumns[18]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

@@ -98,6 +98,20 @@ func (bpu *BuildProfileUpdate) SetNillablePrebuildscript(s *string) *BuildProfil
 	return bpu
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (bpu *BuildProfileUpdate) SetSetupscript(s string) *BuildProfileUpdate {
+	bpu.mutation.SetSetupscript(s)
+	return bpu
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (bpu *BuildProfileUpdate) SetNillableSetupscript(s *string) *BuildProfileUpdate {
+	if s != nil {
+		bpu.SetSetupscript(*s)
+	}
+	return bpu
+}
+
 // SetPostbuildscript sets the "postbuildscript" field.
 func (bpu *BuildProfileUpdate) SetPostbuildscript(s string) *BuildProfileUpdate {
 	bpu.mutation.SetPostbuildscript(s)
@@ -239,6 +253,9 @@ func (bpu *BuildProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := bpu.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
+	}
+	if value, ok := bpu.mutation.Setupscript(); ok {
+		_spec.SetField(buildprofile.FieldSetupscript, field.TypeString, value)
 	}
 	if value, ok := bpu.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)
@@ -383,6 +400,20 @@ func (bpuo *BuildProfileUpdateOne) SetPrebuildscript(s string) *BuildProfileUpda
 func (bpuo *BuildProfileUpdateOne) SetNillablePrebuildscript(s *string) *BuildProfileUpdateOne {
 	if s != nil {
 		bpuo.SetPrebuildscript(*s)
+	}
+	return bpuo
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (bpuo *BuildProfileUpdateOne) SetSetupscript(s string) *BuildProfileUpdateOne {
+	bpuo.mutation.SetSetupscript(s)
+	return bpuo
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (bpuo *BuildProfileUpdateOne) SetNillableSetupscript(s *string) *BuildProfileUpdateOne {
+	if s != nil {
+		bpuo.SetSetupscript(*s)
 	}
 	return bpuo
 }
@@ -558,6 +589,9 @@ func (bpuo *BuildProfileUpdateOne) sqlSave(ctx context.Context) (_node *BuildPro
 	}
 	if value, ok := bpuo.mutation.Prebuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPrebuildscript, field.TypeString, value)
+	}
+	if value, ok := bpuo.mutation.Setupscript(); ok {
+		_spec.SetField(buildprofile.FieldSetupscript, field.TypeString, value)
 	}
 	if value, ok := bpuo.mutation.Postbuildscript(); ok {
 		_spec.SetField(buildprofile.FieldPostbuildscript, field.TypeString, value)

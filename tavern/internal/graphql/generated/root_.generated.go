@@ -107,6 +107,7 @@ type ComplexityRoot struct {
 		Name            func(childComplexity int) int
 		Postbuildscript func(childComplexity int) int
 		Prebuildscript  func(childComplexity int) int
+		Setupscript     func(childComplexity int) int
 		Tomes           func(childComplexity int) int
 		Transports      func(childComplexity int) int
 	}
@@ -150,6 +151,7 @@ type ComplexityRoot struct {
 		Output         func(childComplexity int) int
 		OutputSize     func(childComplexity int) int
 		Profile        func(childComplexity int) int
+		Setupscript    func(childComplexity int) int
 		StartedAt      func(childComplexity int) int
 		TargetFormat   func(childComplexity int) int
 		TargetOs       func(childComplexity int) int
@@ -996,6 +998,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.BuildProfile.Prebuildscript(childComplexity), true
 
+	case "BuildProfile.setupscript":
+		if e.complexity.BuildProfile.Setupscript == nil {
+			break
+		}
+
+		return e.complexity.BuildProfile.Setupscript(childComplexity), true
+
 	case "BuildProfile.tomes":
 		if e.complexity.BuildProfile.Tomes == nil {
 			break
@@ -1191,6 +1200,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BuildTask.Profile(childComplexity), true
+
+	case "BuildTask.setupscript":
+		if e.complexity.BuildTask.Setupscript == nil {
+			break
+		}
+
+		return e.complexity.BuildTask.Setupscript(childComplexity), true
 
 	case "BuildTask.startedAt":
 		if e.complexity.BuildTask.StartedAt == nil {
@@ -4717,6 +4733,10 @@ type BuildProfile implements Node {
   """
   prebuildscript: String!
   """
+  Bash script to run before prebuild script
+  """
+  setupscript: String!
+  """
   Bash script to run after build command
   """
   postbuildscript: String!
@@ -4862,6 +4882,22 @@ input BuildProfileWhereInput {
   prebuildscriptEqualFold: String
   prebuildscriptContainsFold: String
   """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
+  """
   postbuildscript field predicates
   """
   postbuildscript: String
@@ -4941,6 +4977,10 @@ type BuildTask implements Node {
   Path inside the container where the build artifact is located. Derived from target_os if not set.
   """
   artifactPath: String
+  """
+  The setup script executed inside the build container.
+  """
+  setupscript: String
   """
   The builder assigned to execute this build task.
   """
@@ -5219,6 +5259,24 @@ input BuildTaskWhereInput {
   artifactPathNotNil: Boolean
   artifactPathEqualFold: String
   artifactPathContainsFold: String
+  """
+  setupscript field predicates
+  """
+  setupscript: String
+  setupscriptNEQ: String
+  setupscriptIn: [String!]
+  setupscriptNotIn: [String!]
+  setupscriptGT: String
+  setupscriptGTE: String
+  setupscriptLT: String
+  setupscriptLTE: String
+  setupscriptContains: String
+  setupscriptHasPrefix: String
+  setupscriptHasSuffix: String
+  setupscriptIsNil: Boolean
+  setupscriptNotNil: Boolean
+  setupscriptEqualFold: String
+  setupscriptContainsFold: String
   """
   builder edge predicates
   """
@@ -10844,6 +10902,9 @@ input CreateBuildTaskInput {
   """Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS."""
   artifactPath: String
 
+  """Script to run during setup phase. Overrides profile setupScript if both are set."""
+  setupScript: String
+
   """Script to run before the build command. Overrides profile preBuildScript if both are set."""
   preBuildScript: String
 
@@ -10864,6 +10925,9 @@ input CreateBuildProfileInput {
 
   """Bash script to run before the build command."""
   prebuildscript: String!
+
+  """Bash script to run before the prebuild script."""
+  setupscript: String!
 
   """Bash script to run after the build command."""
   postbuildscript: String!

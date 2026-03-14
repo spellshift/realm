@@ -47,6 +47,8 @@ const (
 	FieldExitCode = "exit_code"
 	// FieldArtifactPath holds the string denoting the artifact_path field in the database.
 	FieldArtifactPath = "artifact_path"
+	// FieldSetupscript holds the string denoting the setupscript field in the database.
+	FieldSetupscript = "setupscript"
 	// EdgeBuilder holds the string denoting the builder edge name in mutations.
 	EdgeBuilder = "builder"
 	// EdgeProfile holds the string denoting the profile edge name in mutations.
@@ -95,6 +97,7 @@ var Columns = []string{
 	FieldErrorSize,
 	FieldExitCode,
 	FieldArtifactPath,
+	FieldSetupscript,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "build_tasks"
@@ -241,6 +244,11 @@ func ByExitCode(opts ...sql.OrderTermOption) OrderOption {
 // ByArtifactPath orders the results by the artifact_path field.
 func ByArtifactPath(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldArtifactPath, opts...).ToFunc()
+}
+
+// BySetupscript orders the results by the setupscript field.
+func BySetupscript(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSetupscript, opts...).ToFunc()
 }
 
 // ByBuilderField orders the results by builder field.

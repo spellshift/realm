@@ -39,6 +39,7 @@ message BuildTaskSpec {
     string post_build_script = 8;
     repeated string env = 9;
     repeated Tome tomes = 10;
+    string setup_script = 11;
 }
 
 message ClaimBuildTasksResponse {

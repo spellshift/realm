@@ -199,6 +199,20 @@ func (btc *BuildTaskCreate) SetNillableArtifactPath(s *string) *BuildTaskCreate 
 	return btc
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (btc *BuildTaskCreate) SetSetupscript(s string) *BuildTaskCreate {
+	btc.mutation.SetSetupscript(s)
+	return btc
+}
+
+// SetNillableSetupscript sets the "setupscript" field if the given value is not nil.
+func (btc *BuildTaskCreate) SetNillableSetupscript(s *string) *BuildTaskCreate {
+	if s != nil {
+		btc.SetSetupscript(*s)
+	}
+	return btc
+}
+
 // SetBuilderID sets the "builder" edge to the Builder entity by ID.
 func (btc *BuildTaskCreate) SetBuilderID(id int) *BuildTaskCreate {
 	btc.mutation.SetBuilderID(id)
@@ -438,6 +452,10 @@ func (btc *BuildTaskCreate) createSpec() (*BuildTask, *sqlgraph.CreateSpec) {
 	if value, ok := btc.mutation.ArtifactPath(); ok {
 		_spec.SetField(buildtask.FieldArtifactPath, field.TypeString, value)
 		_node.ArtifactPath = value
+	}
+	if value, ok := btc.mutation.Setupscript(); ok {
+		_spec.SetField(buildtask.FieldSetupscript, field.TypeString, value)
+		_node.Setupscript = value
 	}
 	if nodes := btc.mutation.BuilderIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -758,6 +776,24 @@ func (u *BuildTaskUpsert) ClearArtifactPath() *BuildTaskUpsert {
 	return u
 }
 
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildTaskUpsert) SetSetupscript(v string) *BuildTaskUpsert {
+	u.Set(buildtask.FieldSetupscript, v)
+	return u
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildTaskUpsert) UpdateSetupscript() *BuildTaskUpsert {
+	u.SetExcluded(buildtask.FieldSetupscript)
+	return u
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (u *BuildTaskUpsert) ClearSetupscript() *BuildTaskUpsert {
+	u.SetNull(buildtask.FieldSetupscript)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1052,6 +1088,27 @@ func (u *BuildTaskUpsertOne) UpdateArtifactPath() *BuildTaskUpsertOne {
 func (u *BuildTaskUpsertOne) ClearArtifactPath() *BuildTaskUpsertOne {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearArtifactPath()
+	})
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildTaskUpsertOne) SetSetupscript(v string) *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetSetupscript(v)
+	})
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildTaskUpsertOne) UpdateSetupscript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateSetupscript()
+	})
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (u *BuildTaskUpsertOne) ClearSetupscript() *BuildTaskUpsertOne {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearSetupscript()
 	})
 }
 
@@ -1515,6 +1572,27 @@ func (u *BuildTaskUpsertBulk) UpdateArtifactPath() *BuildTaskUpsertBulk {
 func (u *BuildTaskUpsertBulk) ClearArtifactPath() *BuildTaskUpsertBulk {
 	return u.Update(func(s *BuildTaskUpsert) {
 		s.ClearArtifactPath()
+	})
+}
+
+// SetSetupscript sets the "setupscript" field.
+func (u *BuildTaskUpsertBulk) SetSetupscript(v string) *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.SetSetupscript(v)
+	})
+}
+
+// UpdateSetupscript sets the "setupscript" field to the value that was provided on create.
+func (u *BuildTaskUpsertBulk) UpdateSetupscript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.UpdateSetupscript()
+	})
+}
+
+// ClearSetupscript clears the value of the "setupscript" field.
+func (u *BuildTaskUpsertBulk) ClearSetupscript() *BuildTaskUpsertBulk {
+	return u.Update(func(s *BuildTaskUpsert) {
+		s.ClearSetupscript()
 	})
 }
 

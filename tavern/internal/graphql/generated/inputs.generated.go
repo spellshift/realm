@@ -475,7 +475,7 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "transports", "prebuildscript", "postbuildscript", "tomes"}
+	fieldsInOrder := [...]string{"name", "description", "transports", "prebuildscript", "setupscript", "postbuildscript", "tomes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -510,6 +510,13 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 				return it, err
 			}
 			it.Prebuildscript = data
+		case "setupscript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setupscript"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Setupscript = data
 		case "postbuildscript":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postbuildscript"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -537,7 +544,7 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "profileID", "transports", "tomes", "artifactPath", "preBuildScript", "postBuildScript"}
+	fieldsInOrder := [...]string{"targetOS", "targetFormat", "buildImage", "profileID", "transports", "tomes", "artifactPath", "setupScript", "preBuildScript", "postBuildScript"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -593,6 +600,13 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 				return it, err
 			}
 			it.ArtifactPath = data
+		case "setupScript":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("setupScript"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SetupScript = data
 		case "preBuildScript":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("preBuildScript"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)

@@ -156,6 +156,7 @@ func (s *Server) ClaimBuildTasks(ctx context.Context, req *builderpb.ClaimBuildT
 			ArtifactPath:    claimedTask.ArtifactPath,
 			PreBuildScript:  profile.Prebuildscript,
 			PostBuildScript: profile.Postbuildscript,
+			SetupScript:     claimedTask.Setupscript,
 			Env:             []string{
 				fmt.Sprintf("IMIX_CONFIG=%s", string(cfgBytes)),
 				fmt.Sprintf("ARTIFACT_PATH=%s", string(claimedTask.ArtifactPath)),

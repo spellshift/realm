@@ -117,8 +117,12 @@ func init() {
 	buildprofileDescPrebuildscript := buildprofileFields[4].Descriptor()
 	// buildprofile.DefaultPrebuildscript holds the default value on creation for the prebuildscript field.
 	buildprofile.DefaultPrebuildscript = buildprofileDescPrebuildscript.Default.(string)
+	// buildprofileDescSetupscript is the schema descriptor for setupscript field.
+	buildprofileDescSetupscript := buildprofileFields[5].Descriptor()
+	// buildprofile.DefaultSetupscript holds the default value on creation for the setupscript field.
+	buildprofile.DefaultSetupscript = buildprofileDescSetupscript.Default.(string)
 	// buildprofileDescPostbuildscript is the schema descriptor for postbuildscript field.
-	buildprofileDescPostbuildscript := buildprofileFields[5].Descriptor()
+	buildprofileDescPostbuildscript := buildprofileFields[6].Descriptor()
 	// buildprofile.DefaultPostbuildscript holds the default value on creation for the postbuildscript field.
 	buildprofile.DefaultPostbuildscript = buildprofileDescPostbuildscript.Default.(string)
 	buildtaskMixin := schema.BuildTask{}.Mixin()

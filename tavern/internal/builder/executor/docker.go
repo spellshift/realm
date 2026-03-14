@@ -270,9 +270,16 @@ func prepareMountDir(spec BuildSpec) (string, error) {
 		return tmpDir, fmt.Errorf("creating tomes dir: %w", err)
 	}
 
+	// Write setup script.
+	if spec.SetupScript != "" {
+		if err := os.WriteFile(filepath.Join(scriptsDir, "0_setup.sh"), []byte(spec.SetupScript), 0o755); err != nil {
+			return tmpDir, fmt.Errorf("writing setup script: %w", err)
+		}
+	}
+ 
 	// Write pre-build script.
 	if spec.PreBuildScript != "" {
-		if err := os.WriteFile(filepath.Join(scriptsDir, "0_pre_build.sh"), []byte(spec.PreBuildScript), 0o755); err != nil {
+		if err := os.WriteFile(filepath.Join(scriptsDir, "1_pre_build.sh"), []byte(spec.PreBuildScript), 0o755); err != nil {
 			return tmpDir, fmt.Errorf("writing pre-build script: %w", err)
 		}
 	}

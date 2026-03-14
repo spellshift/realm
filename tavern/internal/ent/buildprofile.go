@@ -28,6 +28,8 @@ type BuildProfile struct {
 	BuildImage string `json:"build_image,omitempty"`
 	// Bash script to run before build command
 	Prebuildscript string `json:"prebuildscript,omitempty"`
+	// Bash script to run before prebuild script
+	Setupscript string `json:"setupscript,omitempty"`
 	// Bash script to run after build command
 	Postbuildscript string `json:"postbuildscript,omitempty"`
 	// The tomes to include in builds using this profile.
@@ -69,7 +71,7 @@ func (*BuildProfile) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case buildprofile.FieldID:
 			values[i] = new(sql.NullInt64)
-		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldPostbuildscript:
+		case buildprofile.FieldName, buildprofile.FieldDescription, buildprofile.FieldBuildImage, buildprofile.FieldPrebuildscript, buildprofile.FieldSetupscript, buildprofile.FieldPostbuildscript:
 			values[i] = new(sql.NullString)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -123,6 +125,12 @@ func (bp *BuildProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field prebuildscript", values[i])
 			} else if value.Valid {
 				bp.Prebuildscript = value.String
+			}
+		case buildprofile.FieldSetupscript:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field setupscript", values[i])
+			} else if value.Valid {
+				bp.Setupscript = value.String
 			}
 		case buildprofile.FieldPostbuildscript:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -193,6 +201,9 @@ func (bp *BuildProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("prebuildscript=")
 	builder.WriteString(bp.Prebuildscript)
+	builder.WriteString(", ")
+	builder.WriteString("setupscript=")
+	builder.WriteString(bp.Setupscript)
 	builder.WriteString(", ")
 	builder.WriteString("postbuildscript=")
 	builder.WriteString(bp.Postbuildscript)
