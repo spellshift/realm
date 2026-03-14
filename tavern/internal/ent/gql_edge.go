@@ -108,10 +108,30 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (bp *BuildProfile) Buildtasks(ctx context.Context) (result []*BuildTask, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = bp.NamedBuildtasks(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = bp.Edges.BuildtasksOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = bp.QueryBuildtasks().All(ctx)
+	}
+	return result, err
+}
+
 func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	result, err := bt.Edges.BuilderOrErr()
 	if IsNotLoaded(err) {
 		result, err = bt.QueryBuilder().Only(ctx)
+	}
+	return result, err
+}
+
+func (bt *BuildTask) Profile(ctx context.Context) (*BuildProfile, error) {
+	result, err := bt.Edges.ProfileOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryProfile().Only(ctx)
 	}
 	return result, err
 }
@@ -124,7 +144,7 @@ func (bt *BuildTask) Artifact(ctx context.Context) (*Asset, error) {
 	return result, MaskNotFound(err)
 }
 
-func (b *Builder) BuildTasks(
+func (b *Builder) Buildtasks(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BuildTaskOrder, where *BuildTaskWhereInput,
 ) (*BuildTaskConnection, error) {
 	opts := []BuildTaskPaginateOption{
@@ -133,7 +153,7 @@ func (b *Builder) BuildTasks(
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
 	totalCount, hasTotalCount := b.Edges.totalCount[0][alias]
-	if nodes, err := b.NamedBuildTasks(alias); err == nil || hasTotalCount {
+	if nodes, err := b.NamedBuildtasks(alias); err == nil || hasTotalCount {
 		pager, err := newBuildTaskPager(opts, last != nil)
 		if err != nil {
 			return nil, err
@@ -142,7 +162,7 @@ func (b *Builder) BuildTasks(
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return b.QueryBuildTasks().Paginate(ctx, after, first, before, last, opts...)
+	return b.QueryBuildtasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (da *DeviceAuth) User(ctx context.Context) (*User, error) {

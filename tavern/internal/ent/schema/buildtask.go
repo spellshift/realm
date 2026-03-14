@@ -37,20 +37,12 @@ func (BuildTask) Fields() []ent.Field {
 				entgql.Type("BuildTaskTargetFormat"),
 			).
 			Comment("The output format for the build (BIN, CDYLIB, WINDOWS_SERVICE)."),
-		field.String("build_image").
-			NotEmpty().
-			Comment("Docker container image name to use for the build."),
 		field.Text("build_script").
 			NotEmpty().
 			SchemaType(map[string]string{
 				dialect.MySQL: "LONGTEXT",
 			}).
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput),
-			).
 			Comment("The derived script to execute inside the build container."),
-		field.JSON("transports", []builderpb.BuildTaskTransport{}).
-			Comment("List of transport configurations for the IMIX agent."),
 		field.Time("claimed_at").
 			Optional().
 			Annotations(
@@ -104,10 +96,19 @@ func (BuildTask) Fields() []ent.Field {
 			Comment("Exit code from the build container process. Null if the build has not finished."),
 		field.String("artifact_path").
 			Optional().
-			Annotations(
-				entgql.Skip(entgql.SkipMutationCreateInput),
-			).
 			Comment("Path inside the container where the build artifact is located. Derived from target_os if not set."),
+		field.Text("setupscript").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("The setup script executed inside the build container."),
+		field.Text("unique").
+			Optional().
+			SchemaType(map[string]string{
+				dialect.MySQL: "LONGTEXT",
+			}).
+			Comment("JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE."),
 	}
 }
 
@@ -115,12 +116,13 @@ func (BuildTask) Fields() []ent.Field {
 func (BuildTask) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("builder", Builder.Type).
-			Annotations(
-				entsql.OnDelete(entsql.Cascade),
-			).
 			Required().
 			Unique().
 			Comment("The builder assigned to execute this build task."),
+		edge.To("profile", BuildProfile.Type).
+			Required().
+			Unique().
+			Comment("The profile assigned to this build Task"),
 		edge.To("artifact", Asset.Type).
 			Unique().
 			Comment("The compiled artifact produced by this build task, stored as an Asset."),
