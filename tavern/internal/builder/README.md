@@ -6,8 +6,6 @@ The builder package orchestrates agent compilation for target platforms. It conn
 - Add host_uniqueness
 - Add guardrails
 - Add e2e testsq
-- Use human readable names for payloads
-- Use profile name in payload builds
 - Figure out if the dupe NameInput is needed with Name in inputs.graphql
 - BuildProfile structs are spreak across models and builderpb can we consolidate these
 
