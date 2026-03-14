@@ -21,7 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
-	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
 )
@@ -49,16 +49,17 @@ func init() {
 
 func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
-	candidateTomes, err := srv.graph.Tome.Query().
-		Where(tome.Or(
-			tome.RunOnNewBeaconCallback(true),
-			tome.RunOnFirstHostCallback(true),
-			tome.RunOnScheduleNEQ(""),
+	candidateTasks, err := srv.graph.ScheduledTask.Query().
+		Where(scheduledtask.Or(
+			scheduledtask.RunOnNewBeaconCallback(true),
+			scheduledtask.RunOnFirstHostCallback(true),
+			scheduledtask.RunOnScheduleNEQ(""),
 		)).
+		WithTome().
 		All(ctx)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to query candidate tomes for automation", "err", err)
+		slog.ErrorContext(ctx, "failed to query candidate scheduled tasks for automation", "err", err)
 		metricTomeAutomationErrors.Inc()
 		return
 	}
@@ -67,7 +68,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cutoff := now.Add(interval)
 
-	for _, t := range candidateTomes {
+	for _, t := range candidateTasks {
 		shouldRun := false
 
 		// Check RunOnNewBeaconCallback
@@ -108,7 +109,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 					// Check scheduled_hosts constraint
 					hostCount, err := t.QueryScheduledHosts().Count(ctx)
 					if err != nil {
-						slog.ErrorContext(ctx, "failed to count scheduled hosts for automation", "err", err, "tome_id", t.ID)
+						slog.ErrorContext(ctx, "failed to count scheduled hosts for automation", "err", err, "scheduled_task_id", t.ID)
 						metricTomeAutomationErrors.Inc()
 						continue
 					}
@@ -119,7 +120,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 							Where(host.ID(hostID)).
 							Exist(ctx)
 						if err != nil {
-							slog.ErrorContext(ctx, "failed to check host existence for automation", "err", err, "tome_id", t.ID)
+							slog.ErrorContext(ctx, "failed to check host existence for automation", "err", err, "scheduled_task_id", t.ID)
 							metricTomeAutomationErrors.Inc()
 							continue
 						}
@@ -134,21 +135,21 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			}
 		}
 
-		if shouldRun {
-			selectedTomes[t.ID] = t
+		if shouldRun && t.Edges.Tome != nil {
+			selectedTomes[t.Edges.Tome.ID] = t.Edges.Tome
 		}
 	}
 
 	// Create Quest and Task for each selected Tome
-	for _, t := range selectedTomes {
+	for _, tome := range selectedTomes {
 		q, err := srv.graph.Quest.Create().
-			SetName(fmt.Sprintf("Automated: %s", t.Name)).
-			SetTome(t).
-			SetParamDefsAtCreation(t.ParamDefs).
-			SetEldritchAtCreation(t.Eldritch).
+			SetName(fmt.Sprintf("Automated: %s", tome.Name)).
+			SetTome(tome).
+			SetParamDefsAtCreation(tome.ParamDefs).
+			SetEldritchAtCreation(tome.Eldritch).
 			Save(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "tome_id", t.ID)
+			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "tome_id", tome.ID)
 			metricTomeAutomationErrors.Inc()
 			continue
 		}

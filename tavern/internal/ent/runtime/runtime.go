@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
@@ -385,6 +386,37 @@ func init() {
 	repositoryDescPrivateKey := repositoryFields[2].Descriptor()
 	// repository.PrivateKeyValidator is a validator for the "private_key" field. It is called by the builders before save.
 	repository.PrivateKeyValidator = repositoryDescPrivateKey.Validators[0].(func(string) error)
+	scheduledtaskMixin := schema.ScheduledTask{}.Mixin()
+	scheduledtaskMixinFields0 := scheduledtaskMixin[0].Fields()
+	_ = scheduledtaskMixinFields0
+	scheduledtaskFields := schema.ScheduledTask{}.Fields()
+	_ = scheduledtaskFields
+	// scheduledtaskDescCreatedAt is the schema descriptor for created_at field.
+	scheduledtaskDescCreatedAt := scheduledtaskMixinFields0[0].Descriptor()
+	// scheduledtask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	scheduledtask.DefaultCreatedAt = scheduledtaskDescCreatedAt.Default.(func() time.Time)
+	// scheduledtaskDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	scheduledtaskDescLastModifiedAt := scheduledtaskMixinFields0[1].Descriptor()
+	// scheduledtask.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	scheduledtask.DefaultLastModifiedAt = scheduledtaskDescLastModifiedAt.Default.(func() time.Time)
+	// scheduledtask.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	scheduledtask.UpdateDefaultLastModifiedAt = scheduledtaskDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// scheduledtaskDescName is the schema descriptor for name field.
+	scheduledtaskDescName := scheduledtaskFields[0].Descriptor()
+	// scheduledtask.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	scheduledtask.NameValidator = scheduledtaskDescName.Validators[0].(func(string) error)
+	// scheduledtaskDescRunOnNewBeaconCallback is the schema descriptor for run_on_new_beacon_callback field.
+	scheduledtaskDescRunOnNewBeaconCallback := scheduledtaskFields[2].Descriptor()
+	// scheduledtask.DefaultRunOnNewBeaconCallback holds the default value on creation for the run_on_new_beacon_callback field.
+	scheduledtask.DefaultRunOnNewBeaconCallback = scheduledtaskDescRunOnNewBeaconCallback.Default.(bool)
+	// scheduledtaskDescRunOnFirstHostCallback is the schema descriptor for run_on_first_host_callback field.
+	scheduledtaskDescRunOnFirstHostCallback := scheduledtaskFields[3].Descriptor()
+	// scheduledtask.DefaultRunOnFirstHostCallback holds the default value on creation for the run_on_first_host_callback field.
+	scheduledtask.DefaultRunOnFirstHostCallback = scheduledtaskDescRunOnFirstHostCallback.Default.(bool)
+	// scheduledtaskDescRunOnSchedule is the schema descriptor for run_on_schedule field.
+	scheduledtaskDescRunOnSchedule := scheduledtaskFields[4].Descriptor()
+	// scheduledtask.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
+	scheduledtask.DefaultRunOnSchedule = scheduledtaskDescRunOnSchedule.Default.(string)
 	screenshotMixin := schema.Screenshot{}.Mixin()
 	screenshotHooks := schema.Screenshot{}.Hooks()
 	screenshot.Hooks[0] = screenshotHooks[0]
@@ -496,24 +528,12 @@ func init() {
 	tomeDescName := tomeFields[0].Descriptor()
 	// tome.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tome.NameValidator = tomeDescName.Validators[0].(func(string) error)
-	// tomeDescRunOnNewBeaconCallback is the schema descriptor for run_on_new_beacon_callback field.
-	tomeDescRunOnNewBeaconCallback := tomeFields[5].Descriptor()
-	// tome.DefaultRunOnNewBeaconCallback holds the default value on creation for the run_on_new_beacon_callback field.
-	tome.DefaultRunOnNewBeaconCallback = tomeDescRunOnNewBeaconCallback.Default.(bool)
-	// tomeDescRunOnFirstHostCallback is the schema descriptor for run_on_first_host_callback field.
-	tomeDescRunOnFirstHostCallback := tomeFields[6].Descriptor()
-	// tome.DefaultRunOnFirstHostCallback holds the default value on creation for the run_on_first_host_callback field.
-	tome.DefaultRunOnFirstHostCallback = tomeDescRunOnFirstHostCallback.Default.(bool)
-	// tomeDescRunOnSchedule is the schema descriptor for run_on_schedule field.
-	tomeDescRunOnSchedule := tomeFields[7].Descriptor()
-	// tome.DefaultRunOnSchedule holds the default value on creation for the run_on_schedule field.
-	tome.DefaultRunOnSchedule = tomeDescRunOnSchedule.Default.(string)
 	// tomeDescParamDefs is the schema descriptor for param_defs field.
-	tomeDescParamDefs := tomeFields[8].Descriptor()
+	tomeDescParamDefs := tomeFields[5].Descriptor()
 	// tome.ParamDefsValidator is a validator for the "param_defs" field. It is called by the builders before save.
 	tome.ParamDefsValidator = tomeDescParamDefs.Validators[0].(func(string) error)
 	// tomeDescHash is the schema descriptor for hash field.
-	tomeDescHash := tomeFields[9].Descriptor()
+	tomeDescHash := tomeFields[6].Descriptor()
 	// tome.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	tome.HashValidator = tomeDescHash.Validators[0].(func(string) error)
 	userFields := schema.User{}.Fields()

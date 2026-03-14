@@ -25,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -105,6 +106,7 @@ func checkColumn(table, column string) error {
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
+			scheduledtask.Table:  scheduledtask.ValidColumn,
 			screenshot.Table:     screenshot.ValidColumn,
 			shell.Table:          shell.ValidColumn,
 			shelltask.Table:      shelltask.ValidColumn,

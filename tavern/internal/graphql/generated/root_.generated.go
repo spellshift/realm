@@ -441,6 +441,30 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	ScheduledTask struct {
+		CreatedAt              func(childComplexity int) int
+		Description            func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		LastModifiedAt         func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		RunOnFirstHostCallback func(childComplexity int) int
+		RunOnNewBeaconCallback func(childComplexity int) int
+		RunOnSchedule          func(childComplexity int) int
+		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		Tome                   func(childComplexity int) int
+	}
+
+	ScheduledTaskConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ScheduledTaskEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Screenshot struct {
 		CreatedAt      func(childComplexity int) int
 		Hash           func(childComplexity int) int
@@ -568,23 +592,19 @@ type ComplexityRoot struct {
 	}
 
 	Tome struct {
-		Assets                 func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
-		Author                 func(childComplexity int) int
-		CreatedAt              func(childComplexity int) int
-		Description            func(childComplexity int) int
-		Eldritch               func(childComplexity int) int
-		ID                     func(childComplexity int) int
-		LastModifiedAt         func(childComplexity int) int
-		Name                   func(childComplexity int) int
-		ParamDefs              func(childComplexity int) int
-		Repository             func(childComplexity int) int
-		RunOnFirstHostCallback func(childComplexity int) int
-		RunOnNewBeaconCallback func(childComplexity int) int
-		RunOnSchedule          func(childComplexity int) int
-		ScheduledHosts         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
-		SupportModel           func(childComplexity int) int
-		Tactic                 func(childComplexity int) int
-		Uploader               func(childComplexity int) int
+		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
+		Author         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Description    func(childComplexity int) int
+		Eldritch       func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		ParamDefs      func(childComplexity int) int
+		Repository     func(childComplexity int) int
+		SupportModel   func(childComplexity int) int
+		Tactic         func(childComplexity int) int
+		Uploader       func(childComplexity int) int
 	}
 
 	TomeConnection struct {
@@ -2708,6 +2728,116 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.RepositoryEdge.Node(childComplexity), true
 
+	case "ScheduledTask.createdAt":
+		if e.complexity.ScheduledTask.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.CreatedAt(childComplexity), true
+
+	case "ScheduledTask.description":
+		if e.complexity.ScheduledTask.Description == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Description(childComplexity), true
+
+	case "ScheduledTask.id":
+		if e.complexity.ScheduledTask.ID == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.ID(childComplexity), true
+
+	case "ScheduledTask.lastModifiedAt":
+		if e.complexity.ScheduledTask.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.LastModifiedAt(childComplexity), true
+
+	case "ScheduledTask.name":
+		if e.complexity.ScheduledTask.Name == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Name(childComplexity), true
+
+	case "ScheduledTask.runOnFirstHostCallback":
+		if e.complexity.ScheduledTask.RunOnFirstHostCallback == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnFirstHostCallback(childComplexity), true
+
+	case "ScheduledTask.runOnNewBeaconCallback":
+		if e.complexity.ScheduledTask.RunOnNewBeaconCallback == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnNewBeaconCallback(childComplexity), true
+
+	case "ScheduledTask.runOnSchedule":
+		if e.complexity.ScheduledTask.RunOnSchedule == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.RunOnSchedule(childComplexity), true
+
+	case "ScheduledTask.scheduledHosts":
+		if e.complexity.ScheduledTask.ScheduledHosts == nil {
+			break
+		}
+
+		args, err := ec.field_ScheduledTask_scheduledHosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ScheduledTask.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
+
+	case "ScheduledTask.tome":
+		if e.complexity.ScheduledTask.Tome == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Tome(childComplexity), true
+
+	case "ScheduledTaskConnection.edges":
+		if e.complexity.ScheduledTaskConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.Edges(childComplexity), true
+
+	case "ScheduledTaskConnection.pageInfo":
+		if e.complexity.ScheduledTaskConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.PageInfo(childComplexity), true
+
+	case "ScheduledTaskConnection.totalCount":
+		if e.complexity.ScheduledTaskConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskConnection.TotalCount(childComplexity), true
+
+	case "ScheduledTaskEdge.cursor":
+		if e.complexity.ScheduledTaskEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskEdge.Cursor(childComplexity), true
+
+	case "ScheduledTaskEdge.node":
+		if e.complexity.ScheduledTaskEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTaskEdge.Node(childComplexity), true
+
 	case "Screenshot.createdAt":
 		if e.complexity.Screenshot.CreatedAt == nil {
 			break
@@ -3390,39 +3520,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Tome.Repository(childComplexity), true
 
-	case "Tome.runOnFirstHostCallback":
-		if e.complexity.Tome.RunOnFirstHostCallback == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnFirstHostCallback(childComplexity), true
-
-	case "Tome.runOnNewBeaconCallback":
-		if e.complexity.Tome.RunOnNewBeaconCallback == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnNewBeaconCallback(childComplexity), true
-
-	case "Tome.runOnSchedule":
-		if e.complexity.Tome.RunOnSchedule == nil {
-			break
-		}
-
-		return e.complexity.Tome.RunOnSchedule(childComplexity), true
-
-	case "Tome.scheduledHosts":
-		if e.complexity.Tome.ScheduledHosts == nil {
-			break
-		}
-
-		args, err := ec.field_Tome_scheduledHosts_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Tome.ScheduledHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
-
 	case "Tome.supportModel":
 		if e.complexity.Tome.SupportModel == nil {
 			break
@@ -3617,6 +3714,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateLinkInput,
 		ec.unmarshalInputCreateQuestInput,
 		ec.unmarshalInputCreateRepositoryInput,
+		ec.unmarshalInputCreateScheduledTaskInput,
 		ec.unmarshalInputCreateShellInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
@@ -3639,6 +3737,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputQuestWhereInput,
 		ec.unmarshalInputRepositoryOrder,
 		ec.unmarshalInputRepositoryWhereInput,
+		ec.unmarshalInputScheduledTaskOrder,
+		ec.unmarshalInputScheduledTaskWhereInput,
 		ec.unmarshalInputScreenshotOrder,
 		ec.unmarshalInputScreenshotWhereInput,
 		ec.unmarshalInputShellOrder,
@@ -3656,6 +3756,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
+		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
 		ec.unmarshalInputUpdateUserInput,
@@ -5023,6 +5124,34 @@ input CreateRepositoryInput {
   url: String!
 }
 """
+CreateScheduledTaskInput is used for create ScheduledTask object.
+Input was generated by ent.
+"""
+input CreateScheduledTaskInput {
+  """
+  Name of the scheduled task
+  """
+  name: String!
+  """
+  Information about the scheduled task
+  """
+  description: String!
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  tomeID: ID!
+  scheduledHostIDs: [ID!]
+}
+"""
 CreateShellInput is used for create Shell object.
 Input was generated by ent.
 """
@@ -5070,18 +5199,6 @@ input CreateTomeInput {
   """
   tactic: TomeTactic
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -5090,7 +5207,6 @@ input CreateTomeInput {
   """
   eldritch: String!
   assetIDs: [ID!]
-  scheduledHostIDs: [ID!]
 }
 """
 Define a Relay Cursor type:
@@ -7424,6 +7540,233 @@ input RepositoryWhereInput {
   hasOwner: Boolean
   hasOwnerWith: [UserWhereInput!]
 }
+type ScheduledTask implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Name of the scheduled task
+  """
+  name: String!
+  """
+  Information about the scheduled task
+  """
+  description: String!
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean!
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean!
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String!
+  """
+  The Tome that this ScheduledTask will run.
+  """
+  tome: Tome!
+  scheduledHosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection!
+}
+"""
+A connection to a list of items.
+"""
+type ScheduledTaskConnection {
+  """
+  A list of edges.
+  """
+  edges: [ScheduledTaskEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ScheduledTaskEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ScheduledTask
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for ScheduledTask connections
+"""
+input ScheduledTaskOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ScheduledTasks.
+  """
+  field: ScheduledTaskOrderField!
+}
+"""
+Properties by which ScheduledTask connections can be ordered.
+"""
+enum ScheduledTaskOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+}
+"""
+ScheduledTaskWhereInput is used for filtering ScheduledTask objects.
+Input was generated by ent.
+"""
+input ScheduledTaskWhereInput {
+  not: ScheduledTaskWhereInput
+  and: [ScheduledTaskWhereInput!]
+  or: [ScheduledTaskWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  description field predicates
+  """
+  description: String
+  descriptionNEQ: String
+  descriptionIn: [String!]
+  descriptionNotIn: [String!]
+  descriptionGT: String
+  descriptionGTE: String
+  descriptionLT: String
+  descriptionLTE: String
+  descriptionContains: String
+  descriptionHasPrefix: String
+  descriptionHasSuffix: String
+  descriptionEqualFold: String
+  descriptionContainsFold: String
+  """
+  run_on_new_beacon_callback field predicates
+  """
+  runOnNewBeaconCallback: Boolean
+  runOnNewBeaconCallbackNEQ: Boolean
+  """
+  run_on_first_host_callback field predicates
+  """
+  runOnFirstHostCallback: Boolean
+  runOnFirstHostCallbackNEQ: Boolean
+  """
+  run_on_schedule field predicates
+  """
+  runOnSchedule: String
+  runOnScheduleNEQ: String
+  runOnScheduleIn: [String!]
+  runOnScheduleNotIn: [String!]
+  runOnScheduleGT: String
+  runOnScheduleGTE: String
+  runOnScheduleLT: String
+  runOnScheduleLTE: String
+  runOnScheduleContains: String
+  runOnScheduleHasPrefix: String
+  runOnScheduleHasSuffix: String
+  runOnScheduleEqualFold: String
+  runOnScheduleContainsFold: String
+  """
+  tome edge predicates
+  """
+  hasTome: Boolean
+  hasTomeWith: [TomeWhereInput!]
+  """
+  scheduled_hosts edge predicates
+  """
+  hasScheduledHosts: Boolean
+  hasScheduledHostsWith: [HostWhereInput!]
+}
 type Screenshot implements Node {
   id: ID!
   """
@@ -8738,18 +9081,6 @@ type Tome implements Node {
   """
   tactic: TomeTactic!
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean!
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean!
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String!
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -8796,37 +9127,6 @@ type Tome implements Node {
   Repository from which this Tome was imported (may be null).
   """
   repository: Repository
-  scheduledHosts(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Ordering options for Hosts returned from the connection.
-    """
-    orderBy: [HostOrder!]
-
-    """
-    Filtering options for Hosts returned from the connection.
-    """
-    where: HostWhereInput
-  ): HostConnection!
 }
 """
 A connection to a list of items.
@@ -9011,32 +9311,6 @@ input TomeWhereInput {
   tacticIn: [TomeTactic!]
   tacticNotIn: [TomeTactic!]
   """
-  run_on_new_beacon_callback field predicates
-  """
-  runOnNewBeaconCallback: Boolean
-  runOnNewBeaconCallbackNEQ: Boolean
-  """
-  run_on_first_host_callback field predicates
-  """
-  runOnFirstHostCallback: Boolean
-  runOnFirstHostCallbackNEQ: Boolean
-  """
-  run_on_schedule field predicates
-  """
-  runOnSchedule: String
-  runOnScheduleNEQ: String
-  runOnScheduleIn: [String!]
-  runOnScheduleNotIn: [String!]
-  runOnScheduleGT: String
-  runOnScheduleGTE: String
-  runOnScheduleLT: String
-  runOnScheduleLTE: String
-  runOnScheduleContains: String
-  runOnScheduleHasPrefix: String
-  runOnScheduleHasSuffix: String
-  runOnScheduleEqualFold: String
-  runOnScheduleContainsFold: String
-  """
   param_defs field predicates
   """
   paramDefs: String
@@ -9085,11 +9359,6 @@ input TomeWhereInput {
   """
   hasRepository: Boolean
   hasRepositoryWith: [RepositoryWhereInput!]
-  """
-  scheduled_hosts edge predicates
-  """
-  hasScheduledHosts: Boolean
-  hasScheduledHostsWith: [HostWhereInput!]
 }
 """
 UpdateBeaconInput is used for update Beacon object.
@@ -9191,6 +9460,39 @@ input UpdateLinkInput {
   clearCreator: Boolean
 }
 """
+UpdateScheduledTaskInput is used for update ScheduledTask object.
+Input was generated by ent.
+"""
+input UpdateScheduledTaskInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Name of the scheduled task
+  """
+  name: String
+  """
+  Information about the scheduled task
+  """
+  description: String
+  """
+  If true, this tome will automatically be queued for all new Beacon callbacks.
+  """
+  runOnNewBeaconCallback: Boolean
+  """
+  If true, this tome will automatically be queued for the first new callback on a Host.
+  """
+  runOnFirstHostCallback: Boolean
+  """
+  Cron-like schedule for this tome to be automatically queued.
+  """
+  runOnSchedule: String
+  addScheduledHostIDs: [ID!]
+  removeScheduledHostIDs: [ID!]
+  clearScheduledHosts: Boolean
+}
+"""
 UpdateTagInput is used for update Tag object.
 Input was generated by ent.
 """
@@ -9237,18 +9539,6 @@ input UpdateTomeInput {
   """
   tactic: TomeTactic
   """
-  If true, this tome will automatically be queued for all new Beacon callbacks.
-  """
-  runOnNewBeaconCallback: Boolean
-  """
-  If true, this tome will automatically be queued for the first new callback on a Host.
-  """
-  runOnFirstHostCallback: Boolean
-  """
-  Cron-like schedule for this tome to be automatically queued.
-  """
-  runOnSchedule: String
-  """
   JSON string describing what parameters are used with the tome. Requires a list of JSON objects, one for each parameter.
   """
   paramDefs: String
@@ -9260,9 +9550,6 @@ input UpdateTomeInput {
   addAssetIDs: [ID!]
   removeAssetIDs: [ID!]
   clearAssets: Boolean
-  addScheduledHostIDs: [ID!]
-  removeScheduledHostIDs: [ID!]
-  clearScheduledHosts: Boolean
 }
 """
 UpdateUserInput is used for update User object.

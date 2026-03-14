@@ -165,6 +165,18 @@ func (f RepositoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RepositoryMutation", m)
 }
 
+// The ScheduledTaskFunc type is an adapter to allow the use of ordinary
+// function as ScheduledTask mutator.
+type ScheduledTaskFunc func(context.Context, *ent.ScheduledTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ScheduledTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ScheduledTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ScheduledTaskMutation", m)
+}
+
 // The ScreenshotFunc type is an adapter to allow the use of ordinary
 // function as Screenshot mutator.
 type ScreenshotFunc func(context.Context, *ent.ScreenshotMutation) (ent.Value, error)
