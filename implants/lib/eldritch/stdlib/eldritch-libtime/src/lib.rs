@@ -47,7 +47,7 @@ pub trait TimeLibrary {
     /// Pauses execution for the specified number of seconds.
     ///
     /// **Parameters**
-    /// - `secs` (`float`): Seconds to sleep.
+    /// - `secs` (`int`): Seconds to sleep.
     ///
     /// **Returns**
     /// - `None`

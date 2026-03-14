@@ -7,16 +7,12 @@ use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use spin::RwLock;
 
 pub fn post(
-    mut uri: String,
+    uri: String,
     body: Option<String>,
     form: Option<BTreeMap<String, String>>,
     headers: Option<BTreeMap<String, String>>,
     allow_insecure: Option<bool>,
 ) -> Result<BTreeMap<String, Value>, String> {
-    if !uri.starts_with("http://") && !uri.starts_with("https://") {
-        uri = format!("https://{}", uri);
-    }
-
     let client = reqwest::blocking::Client::builder()
         .danger_accept_invalid_certs(allow_insecure.unwrap_or(false))
         .build()
@@ -95,24 +91,6 @@ mod tests {
         let res = post(url, Some("request body".into()), None, None, None).unwrap();
 
         assert_eq!(res.get("status_code").unwrap(), &Value::Int(201));
-    }
-
-    #[test]
-    fn test_post_default_https() {
-        // If we provide an unroutable domain, it will fail to connect but should try https.
-        let res = post(
-            "this-domain-will-not-exist-ever-123.com".to_string(),
-            None,
-            None,
-            None,
-            None,
-        );
-        let err = res.unwrap_err();
-        assert!(
-            err.contains("https://this-domain-will-not-exist-ever-123.com"),
-            "Error message should indicate it tried https://this-domain-will-not-exist-ever-123.com, but was: {}",
-            err
-        );
     }
 
     #[test]

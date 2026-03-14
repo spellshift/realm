@@ -37,6 +37,6 @@ mod tests {
             time.format_to_readable(123, "any".into()).unwrap(),
             "1970-01-01 00:00:00"
         );
-        assert!(time.sleep(10.0).is_ok());
+        assert!(time.sleep(10).is_ok());
     }
 }

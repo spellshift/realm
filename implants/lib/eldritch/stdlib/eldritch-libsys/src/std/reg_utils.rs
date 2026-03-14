@@ -1,4 +1,6 @@
 use alloc::string::{String, ToString};
+
+#[cfg(target_os = "windows")]
 use anyhow::Result;
 
 #[cfg(target_os = "windows")]

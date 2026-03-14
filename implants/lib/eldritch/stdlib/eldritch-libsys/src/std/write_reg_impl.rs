@@ -1,4 +1,6 @@
-use alloc::string::{String, ToString};
+use alloc::string::String;
+#[cfg(target_os = "windows")]
+use alloc::string::ToString;
 #[cfg(target_os = "windows")]
 use alloc::vec::Vec;
 use anyhow::Result;
