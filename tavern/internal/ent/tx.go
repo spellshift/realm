@@ -16,6 +16,8 @@ type Tx struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BuildProfile is the client for interacting with the BuildProfile builders.
+	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
@@ -187,6 +189,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
+	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)

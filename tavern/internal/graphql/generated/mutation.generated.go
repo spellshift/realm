@@ -1887,12 +1887,8 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_targetOs(ctx, field)
 			case "targetFormat":
 				return ec.fieldContext_BuildTask_targetFormat(ctx, field)
-			case "buildImage":
-				return ec.fieldContext_BuildTask_buildImage(ctx, field)
 			case "buildScript":
 				return ec.fieldContext_BuildTask_buildScript(ctx, field)
-			case "transports":
-				return ec.fieldContext_BuildTask_transports(ctx, field)
 			case "claimedAt":
 				return ec.fieldContext_BuildTask_claimedAt(ctx, field)
 			case "startedAt":
@@ -1911,8 +1907,14 @@ func (ec *executionContext) fieldContext_Mutation_createBuildTask(ctx context.Co
 				return ec.fieldContext_BuildTask_exitCode(ctx, field)
 			case "artifactPath":
 				return ec.fieldContext_BuildTask_artifactPath(ctx, field)
+			case "setupscript":
+				return ec.fieldContext_BuildTask_setupscript(ctx, field)
+			case "unique":
+				return ec.fieldContext_BuildTask_unique(ctx, field)
 			case "builder":
 				return ec.fieldContext_BuildTask_builder(ctx, field)
+			case "profile":
+				return ec.fieldContext_BuildTask_profile(ctx, field)
 			case "artifact":
 				return ec.fieldContext_BuildTask_artifact(ctx, field)
 			}
