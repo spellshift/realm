@@ -231,35 +231,6 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and relay that back to the c2. This means even long running tasks will report their status as new data comes in.
 
-
-## Identifying unique hosts
-
-Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be not ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
-
-Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
-
-We recommend that you use the `File` for the most reliability:
-
-- Exists across reboots
-- Guaranteed to be unique per host (because the bot creates it)
-- Can be used by multiple instances of the beacon on the same host.
-
-If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
-
-For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
-
-If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
-This isn't ideal as in the UI each new beacon will appear as though it were on a new host.
-
-To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environment variable at build time.
-
-`IMIX_UNIQUE` should be a list of JSON objects with `type` as a required field with args as an optional field.
-
-By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}},{"type":"macaddr"}]'`
-
-To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
-If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
-
 ## Guardrails
 
 Guardrails allow operators to ensure that Imix only runs on approved or expected hosts. This is particularly useful for preventing accidental execution in the wrong environment or ensuring that a payload only activates when specific conditions are met (e.g., a specific file exists, a process is running, or a registry key is set).
@@ -303,3 +274,73 @@ export IMIX_GUARDRAILS='[
 *   `registry` (Windows only): Checks if a specific registry key or value exists.
     *   `subkey` (string, required): The path to the registry subkey under `HKEY_CURRENT_USER` or `HKEY_LOCAL_MACHINE`.
     *   `value_name` (string, optional): The name of a specific value to look for within the subkey. If omitted, only checks if the subkey itself exists.
+- **`env`**: Uses the `IMIX_HOST_ID` environment variable at runtime.
+- **`file`**: Uses a unique ID generated and saved to a file on disk. Accepts an optional `args` parameter `path_override` to specify a custom file path.
+- **`macaddr`**: Uses the MAC address of the first non-loopback network interface.
+- **`registry`**: Uses a registry key (Windows only). Must be enabled via `win_service` feature flag. Accepts `args` parameters `subkey` and optionally `value_name`.
+
+## Identifying unique hosts
+
+Imix communicates which host it's on to Tavern enabling operators to reliably perform per host actions. The default way that imix does this is through a file on disk. We recognize that this may be not ideal for many situations so we've also provided an environment override and made it easy for admins managing a realm deployment to change how the bot determines uniqueness.
+
+Imix uses the `host_unique` library under `implants/lib/host_unique` to determine which host it's on. The `id` function will fail over all available options returning the first successful ID. If a method is unable to determine the uniqueness of a host it should return `None`.
+
+We recommend that you use the `File` for the most reliability:
+
+- Exists across reboots
+- Guaranteed to be unique per host (because the bot creates it)
+- Can be used by multiple instances of the beacon on the same host.
+
+If you cannot use the `File` selector we highly recommend manually setting the `Env` selector with the environment variable `IMIX_HOST_ID`. This will override the `File` one avoiding writes to disk but must be managed by the operators.
+
+For Windows hosts, a `Registry` selector is available, but must be enabled before compilation. See the [imix dev guide](/dev-guide/imix#host-selector) on how to enable it.
+
+If all uniqueness selectors fail imix will randomly generate a UUID to avoid crashing.
+This isn't ideal as in the UI each new beacon will appear as though it were on a new host.
+
+To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environment variable at build time.
+
+`IMIX_UNIQUE` should be a JSON array containing a list of JSON objects, where `type` is a required field and `args` is an optional field. The `args` object structure is dependent on the `type` selected. The selectors will be evaluated in the order they are specified.
+
+### Available Selectors
+
+To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
+If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
+
+### Default Behavior
+
+By default `IMIX_UNIQUE` is equivalent to the following:
+
+```bash
+export IMIX_UNIQUE='[
+  {"type": "env"},
+  {"type": "file"},
+  {"type": "file", "args": {"path_override": "/etc/system-id"}},
+  {"type": "macaddr"}
+]'
+```
+*(Note: the JSON must be minified/single-line when passed as an environment variable in practice. This is formatted for readability.)*
+
+### Example: Prioritize Stealth
+
+To prioritize stealth we recommend removing the file uniqueness selectors to prevent dropping arbitrary files to disk. Imix will first try checking the `IMIX_HOST_ID` environment variable, and if it is not set, it will fallback to using the network interface's MAC address.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'
+```
+
+### Example: VM Cloning Without Sysprep
+
+If you know the environment will have VMs cloned without sysprep (resulting in duplicate MAC addresses across instances), we recommend prioritizing the file selectors and removing `macaddr`:
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'
+```
+
+### Example: Registry Key (Windows)
+
+On Windows, you can optionally configure Imix to fetch the uniqueness ID from a registry value. Note that the `registry` type is only valid for Windows targets.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWARE\\MyCompany","value_name":"InstallID"}}]'
+```

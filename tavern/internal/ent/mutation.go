@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -59,6 +60,7 @@ const (
 	TypePortal         = "Portal"
 	TypeQuest          = "Quest"
 	TypeRepository     = "Repository"
+	TypeScheduledTask  = "ScheduledTask"
 	TypeScreenshot     = "Screenshot"
 	TypeShell          = "Shell"
 	TypeShellTask      = "ShellTask"
@@ -11139,6 +11141,8 @@ type QuestMutation struct {
 	clearedtasks           bool
 	creator                *int
 	clearedcreator         bool
+	scheduled_task         *int
+	clearedscheduled_task  bool
 	done                   bool
 	oldValue               func(context.Context) (*Quest, error)
 	predicates             []predicate.Quest
@@ -11668,6 +11672,45 @@ func (m *QuestMutation) ResetCreator() {
 	m.clearedcreator = false
 }
 
+// SetScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by id.
+func (m *QuestMutation) SetScheduledTaskID(id int) {
+	m.scheduled_task = &id
+}
+
+// ClearScheduledTask clears the "scheduled_task" edge to the ScheduledTask entity.
+func (m *QuestMutation) ClearScheduledTask() {
+	m.clearedscheduled_task = true
+}
+
+// ScheduledTaskCleared reports if the "scheduled_task" edge to the ScheduledTask entity was cleared.
+func (m *QuestMutation) ScheduledTaskCleared() bool {
+	return m.clearedscheduled_task
+}
+
+// ScheduledTaskID returns the "scheduled_task" edge ID in the mutation.
+func (m *QuestMutation) ScheduledTaskID() (id int, exists bool) {
+	if m.scheduled_task != nil {
+		return *m.scheduled_task, true
+	}
+	return
+}
+
+// ScheduledTaskIDs returns the "scheduled_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ScheduledTaskID instead. It exists only for internal usage by the builders.
+func (m *QuestMutation) ScheduledTaskIDs() (ids []int) {
+	if id := m.scheduled_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetScheduledTask resets all changes to the "scheduled_task" edge.
+func (m *QuestMutation) ResetScheduledTask() {
+	m.scheduled_task = nil
+	m.clearedscheduled_task = false
+}
+
 // Where appends a list predicates to the QuestMutation builder.
 func (m *QuestMutation) Where(ps ...predicate.Quest) {
 	m.predicates = append(m.predicates, ps...)
@@ -11907,7 +11950,7 @@ func (m *QuestMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *QuestMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.tome != nil {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -11919,6 +11962,9 @@ func (m *QuestMutation) AddedEdges() []string {
 	}
 	if m.creator != nil {
 		edges = append(edges, quest.EdgeCreator)
+	}
+	if m.scheduled_task != nil {
+		edges = append(edges, quest.EdgeScheduledTask)
 	}
 	return edges
 }
@@ -11945,13 +11991,17 @@ func (m *QuestMutation) AddedIDs(name string) []ent.Value {
 		if id := m.creator; id != nil {
 			return []ent.Value{*id}
 		}
+	case quest.EdgeScheduledTask:
+		if id := m.scheduled_task; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *QuestMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtasks != nil {
 		edges = append(edges, quest.EdgeTasks)
 	}
@@ -11974,7 +12024,7 @@ func (m *QuestMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *QuestMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedtome {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -11986,6 +12036,9 @@ func (m *QuestMutation) ClearedEdges() []string {
 	}
 	if m.clearedcreator {
 		edges = append(edges, quest.EdgeCreator)
+	}
+	if m.clearedscheduled_task {
+		edges = append(edges, quest.EdgeScheduledTask)
 	}
 	return edges
 }
@@ -12002,6 +12055,8 @@ func (m *QuestMutation) EdgeCleared(name string) bool {
 		return m.clearedtasks
 	case quest.EdgeCreator:
 		return m.clearedcreator
+	case quest.EdgeScheduledTask:
+		return m.clearedscheduled_task
 	}
 	return false
 }
@@ -12018,6 +12073,9 @@ func (m *QuestMutation) ClearEdge(name string) error {
 		return nil
 	case quest.EdgeCreator:
 		m.ClearCreator()
+		return nil
+	case quest.EdgeScheduledTask:
+		m.ClearScheduledTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest unique edge %s", name)
@@ -12038,6 +12096,9 @@ func (m *QuestMutation) ResetEdge(name string) error {
 		return nil
 	case quest.EdgeCreator:
 		m.ResetCreator()
+		return nil
+	case quest.EdgeScheduledTask:
+		m.ResetScheduledTask()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest edge %s", name)
@@ -12811,6 +12872,1021 @@ func (m *RepositoryMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Repository edge %s", name)
+}
+
+// ScheduledTaskMutation represents an operation that mutates the ScheduledTask nodes in the graph.
+type ScheduledTaskMutation struct {
+	config
+	op                         Op
+	typ                        string
+	id                         *int
+	created_at                 *time.Time
+	last_modified_at           *time.Time
+	name                       *string
+	description                *string
+	run_on_new_beacon_callback *bool
+	run_on_first_host_callback *bool
+	parameters                 *string
+	run_on_schedule            *string
+	disabled                   *bool
+	clearedFields              map[string]struct{}
+	tome                       *int
+	clearedtome                bool
+	scheduled_hosts            map[int]struct{}
+	removedscheduled_hosts     map[int]struct{}
+	clearedscheduled_hosts     bool
+	quests                     map[int]struct{}
+	removedquests              map[int]struct{}
+	clearedquests              bool
+	done                       bool
+	oldValue                   func(context.Context) (*ScheduledTask, error)
+	predicates                 []predicate.ScheduledTask
+}
+
+var _ ent.Mutation = (*ScheduledTaskMutation)(nil)
+
+// scheduledtaskOption allows management of the mutation configuration using functional options.
+type scheduledtaskOption func(*ScheduledTaskMutation)
+
+// newScheduledTaskMutation creates new mutation for the ScheduledTask entity.
+func newScheduledTaskMutation(c config, op Op, opts ...scheduledtaskOption) *ScheduledTaskMutation {
+	m := &ScheduledTaskMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeScheduledTask,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withScheduledTaskID sets the ID field of the mutation.
+func withScheduledTaskID(id int) scheduledtaskOption {
+	return func(m *ScheduledTaskMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ScheduledTask
+		)
+		m.oldValue = func(ctx context.Context) (*ScheduledTask, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ScheduledTask.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withScheduledTask sets the old ScheduledTask of the mutation.
+func withScheduledTask(node *ScheduledTask) scheduledtaskOption {
+	return func(m *ScheduledTaskMutation) {
+		m.oldValue = func(context.Context) (*ScheduledTask, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ScheduledTaskMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ScheduledTaskMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ScheduledTaskMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ScheduledTaskMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ScheduledTask.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ScheduledTaskMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ScheduledTaskMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ScheduledTaskMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *ScheduledTaskMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *ScheduledTaskMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *ScheduledTaskMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *ScheduledTaskMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *ScheduledTaskMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *ScheduledTaskMutation) ResetName() {
+	m.name = nil
+}
+
+// SetDescription sets the "description" field.
+func (m *ScheduledTaskMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *ScheduledTaskMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *ScheduledTaskMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
+func (m *ScheduledTaskMutation) SetRunOnNewBeaconCallback(b bool) {
+	m.run_on_new_beacon_callback = &b
+}
+
+// RunOnNewBeaconCallback returns the value of the "run_on_new_beacon_callback" field in the mutation.
+func (m *ScheduledTaskMutation) RunOnNewBeaconCallback() (r bool, exists bool) {
+	v := m.run_on_new_beacon_callback
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnNewBeaconCallback returns the old "run_on_new_beacon_callback" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldRunOnNewBeaconCallback(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnNewBeaconCallback is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnNewBeaconCallback requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnNewBeaconCallback: %w", err)
+	}
+	return oldValue.RunOnNewBeaconCallback, nil
+}
+
+// ResetRunOnNewBeaconCallback resets all changes to the "run_on_new_beacon_callback" field.
+func (m *ScheduledTaskMutation) ResetRunOnNewBeaconCallback() {
+	m.run_on_new_beacon_callback = nil
+}
+
+// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
+func (m *ScheduledTaskMutation) SetRunOnFirstHostCallback(b bool) {
+	m.run_on_first_host_callback = &b
+}
+
+// RunOnFirstHostCallback returns the value of the "run_on_first_host_callback" field in the mutation.
+func (m *ScheduledTaskMutation) RunOnFirstHostCallback() (r bool, exists bool) {
+	v := m.run_on_first_host_callback
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnFirstHostCallback returns the old "run_on_first_host_callback" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldRunOnFirstHostCallback(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnFirstHostCallback is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnFirstHostCallback requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnFirstHostCallback: %w", err)
+	}
+	return oldValue.RunOnFirstHostCallback, nil
+}
+
+// ResetRunOnFirstHostCallback resets all changes to the "run_on_first_host_callback" field.
+func (m *ScheduledTaskMutation) ResetRunOnFirstHostCallback() {
+	m.run_on_first_host_callback = nil
+}
+
+// SetParameters sets the "parameters" field.
+func (m *ScheduledTaskMutation) SetParameters(s string) {
+	m.parameters = &s
+}
+
+// Parameters returns the value of the "parameters" field in the mutation.
+func (m *ScheduledTaskMutation) Parameters() (r string, exists bool) {
+	v := m.parameters
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParameters returns the old "parameters" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldParameters(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParameters is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParameters requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParameters: %w", err)
+	}
+	return oldValue.Parameters, nil
+}
+
+// ClearParameters clears the value of the "parameters" field.
+func (m *ScheduledTaskMutation) ClearParameters() {
+	m.parameters = nil
+	m.clearedFields[scheduledtask.FieldParameters] = struct{}{}
+}
+
+// ParametersCleared returns if the "parameters" field was cleared in this mutation.
+func (m *ScheduledTaskMutation) ParametersCleared() bool {
+	_, ok := m.clearedFields[scheduledtask.FieldParameters]
+	return ok
+}
+
+// ResetParameters resets all changes to the "parameters" field.
+func (m *ScheduledTaskMutation) ResetParameters() {
+	m.parameters = nil
+	delete(m.clearedFields, scheduledtask.FieldParameters)
+}
+
+// SetRunOnSchedule sets the "run_on_schedule" field.
+func (m *ScheduledTaskMutation) SetRunOnSchedule(s string) {
+	m.run_on_schedule = &s
+}
+
+// RunOnSchedule returns the value of the "run_on_schedule" field in the mutation.
+func (m *ScheduledTaskMutation) RunOnSchedule() (r string, exists bool) {
+	v := m.run_on_schedule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunOnSchedule returns the old "run_on_schedule" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldRunOnSchedule(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunOnSchedule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunOnSchedule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunOnSchedule: %w", err)
+	}
+	return oldValue.RunOnSchedule, nil
+}
+
+// ResetRunOnSchedule resets all changes to the "run_on_schedule" field.
+func (m *ScheduledTaskMutation) ResetRunOnSchedule() {
+	m.run_on_schedule = nil
+}
+
+// SetDisabled sets the "disabled" field.
+func (m *ScheduledTaskMutation) SetDisabled(b bool) {
+	m.disabled = &b
+}
+
+// Disabled returns the value of the "disabled" field in the mutation.
+func (m *ScheduledTaskMutation) Disabled() (r bool, exists bool) {
+	v := m.disabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabled returns the old "disabled" field's value of the ScheduledTask entity.
+// If the ScheduledTask object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ScheduledTaskMutation) OldDisabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabled: %w", err)
+	}
+	return oldValue.Disabled, nil
+}
+
+// ResetDisabled resets all changes to the "disabled" field.
+func (m *ScheduledTaskMutation) ResetDisabled() {
+	m.disabled = nil
+}
+
+// SetTomeID sets the "tome" edge to the Tome entity by id.
+func (m *ScheduledTaskMutation) SetTomeID(id int) {
+	m.tome = &id
+}
+
+// ClearTome clears the "tome" edge to the Tome entity.
+func (m *ScheduledTaskMutation) ClearTome() {
+	m.clearedtome = true
+}
+
+// TomeCleared reports if the "tome" edge to the Tome entity was cleared.
+func (m *ScheduledTaskMutation) TomeCleared() bool {
+	return m.clearedtome
+}
+
+// TomeID returns the "tome" edge ID in the mutation.
+func (m *ScheduledTaskMutation) TomeID() (id int, exists bool) {
+	if m.tome != nil {
+		return *m.tome, true
+	}
+	return
+}
+
+// TomeIDs returns the "tome" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TomeID instead. It exists only for internal usage by the builders.
+func (m *ScheduledTaskMutation) TomeIDs() (ids []int) {
+	if id := m.tome; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTome resets all changes to the "tome" edge.
+func (m *ScheduledTaskMutation) ResetTome() {
+	m.tome = nil
+	m.clearedtome = false
+}
+
+// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by ids.
+func (m *ScheduledTaskMutation) AddScheduledHostIDs(ids ...int) {
+	if m.scheduled_hosts == nil {
+		m.scheduled_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.scheduled_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScheduledHosts clears the "scheduled_hosts" edge to the Host entity.
+func (m *ScheduledTaskMutation) ClearScheduledHosts() {
+	m.clearedscheduled_hosts = true
+}
+
+// ScheduledHostsCleared reports if the "scheduled_hosts" edge to the Host entity was cleared.
+func (m *ScheduledTaskMutation) ScheduledHostsCleared() bool {
+	return m.clearedscheduled_hosts
+}
+
+// RemoveScheduledHostIDs removes the "scheduled_hosts" edge to the Host entity by IDs.
+func (m *ScheduledTaskMutation) RemoveScheduledHostIDs(ids ...int) {
+	if m.removedscheduled_hosts == nil {
+		m.removedscheduled_hosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.scheduled_hosts, ids[i])
+		m.removedscheduled_hosts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScheduledHosts returns the removed IDs of the "scheduled_hosts" edge to the Host entity.
+func (m *ScheduledTaskMutation) RemovedScheduledHostsIDs() (ids []int) {
+	for id := range m.removedscheduled_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScheduledHostsIDs returns the "scheduled_hosts" edge IDs in the mutation.
+func (m *ScheduledTaskMutation) ScheduledHostsIDs() (ids []int) {
+	for id := range m.scheduled_hosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScheduledHosts resets all changes to the "scheduled_hosts" edge.
+func (m *ScheduledTaskMutation) ResetScheduledHosts() {
+	m.scheduled_hosts = nil
+	m.clearedscheduled_hosts = false
+	m.removedscheduled_hosts = nil
+}
+
+// AddQuestIDs adds the "quests" edge to the Quest entity by ids.
+func (m *ScheduledTaskMutation) AddQuestIDs(ids ...int) {
+	if m.quests == nil {
+		m.quests = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.quests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearQuests clears the "quests" edge to the Quest entity.
+func (m *ScheduledTaskMutation) ClearQuests() {
+	m.clearedquests = true
+}
+
+// QuestsCleared reports if the "quests" edge to the Quest entity was cleared.
+func (m *ScheduledTaskMutation) QuestsCleared() bool {
+	return m.clearedquests
+}
+
+// RemoveQuestIDs removes the "quests" edge to the Quest entity by IDs.
+func (m *ScheduledTaskMutation) RemoveQuestIDs(ids ...int) {
+	if m.removedquests == nil {
+		m.removedquests = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.quests, ids[i])
+		m.removedquests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedQuests returns the removed IDs of the "quests" edge to the Quest entity.
+func (m *ScheduledTaskMutation) RemovedQuestsIDs() (ids []int) {
+	for id := range m.removedquests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// QuestsIDs returns the "quests" edge IDs in the mutation.
+func (m *ScheduledTaskMutation) QuestsIDs() (ids []int) {
+	for id := range m.quests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetQuests resets all changes to the "quests" edge.
+func (m *ScheduledTaskMutation) ResetQuests() {
+	m.quests = nil
+	m.clearedquests = false
+	m.removedquests = nil
+}
+
+// Where appends a list predicates to the ScheduledTaskMutation builder.
+func (m *ScheduledTaskMutation) Where(ps ...predicate.ScheduledTask) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ScheduledTaskMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ScheduledTaskMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ScheduledTask, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ScheduledTaskMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ScheduledTaskMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ScheduledTask).
+func (m *ScheduledTaskMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ScheduledTaskMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, scheduledtask.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, scheduledtask.FieldLastModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, scheduledtask.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, scheduledtask.FieldDescription)
+	}
+	if m.run_on_new_beacon_callback != nil {
+		fields = append(fields, scheduledtask.FieldRunOnNewBeaconCallback)
+	}
+	if m.run_on_first_host_callback != nil {
+		fields = append(fields, scheduledtask.FieldRunOnFirstHostCallback)
+	}
+	if m.parameters != nil {
+		fields = append(fields, scheduledtask.FieldParameters)
+	}
+	if m.run_on_schedule != nil {
+		fields = append(fields, scheduledtask.FieldRunOnSchedule)
+	}
+	if m.disabled != nil {
+		fields = append(fields, scheduledtask.FieldDisabled)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ScheduledTaskMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case scheduledtask.FieldCreatedAt:
+		return m.CreatedAt()
+	case scheduledtask.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case scheduledtask.FieldName:
+		return m.Name()
+	case scheduledtask.FieldDescription:
+		return m.Description()
+	case scheduledtask.FieldRunOnNewBeaconCallback:
+		return m.RunOnNewBeaconCallback()
+	case scheduledtask.FieldRunOnFirstHostCallback:
+		return m.RunOnFirstHostCallback()
+	case scheduledtask.FieldParameters:
+		return m.Parameters()
+	case scheduledtask.FieldRunOnSchedule:
+		return m.RunOnSchedule()
+	case scheduledtask.FieldDisabled:
+		return m.Disabled()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ScheduledTaskMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case scheduledtask.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case scheduledtask.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case scheduledtask.FieldName:
+		return m.OldName(ctx)
+	case scheduledtask.FieldDescription:
+		return m.OldDescription(ctx)
+	case scheduledtask.FieldRunOnNewBeaconCallback:
+		return m.OldRunOnNewBeaconCallback(ctx)
+	case scheduledtask.FieldRunOnFirstHostCallback:
+		return m.OldRunOnFirstHostCallback(ctx)
+	case scheduledtask.FieldParameters:
+		return m.OldParameters(ctx)
+	case scheduledtask.FieldRunOnSchedule:
+		return m.OldRunOnSchedule(ctx)
+	case scheduledtask.FieldDisabled:
+		return m.OldDisabled(ctx)
+	}
+	return nil, fmt.Errorf("unknown ScheduledTask field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ScheduledTaskMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case scheduledtask.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case scheduledtask.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case scheduledtask.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case scheduledtask.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case scheduledtask.FieldRunOnNewBeaconCallback:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnNewBeaconCallback(v)
+		return nil
+	case scheduledtask.FieldRunOnFirstHostCallback:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnFirstHostCallback(v)
+		return nil
+	case scheduledtask.FieldParameters:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParameters(v)
+		return nil
+	case scheduledtask.FieldRunOnSchedule:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunOnSchedule(v)
+		return nil
+	case scheduledtask.FieldDisabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabled(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ScheduledTask field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ScheduledTaskMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ScheduledTaskMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ScheduledTaskMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ScheduledTask numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ScheduledTaskMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(scheduledtask.FieldParameters) {
+		fields = append(fields, scheduledtask.FieldParameters)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ScheduledTaskMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ScheduledTaskMutation) ClearField(name string) error {
+	switch name {
+	case scheduledtask.FieldParameters:
+		m.ClearParameters()
+		return nil
+	}
+	return fmt.Errorf("unknown ScheduledTask nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ScheduledTaskMutation) ResetField(name string) error {
+	switch name {
+	case scheduledtask.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case scheduledtask.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case scheduledtask.FieldName:
+		m.ResetName()
+		return nil
+	case scheduledtask.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case scheduledtask.FieldRunOnNewBeaconCallback:
+		m.ResetRunOnNewBeaconCallback()
+		return nil
+	case scheduledtask.FieldRunOnFirstHostCallback:
+		m.ResetRunOnFirstHostCallback()
+		return nil
+	case scheduledtask.FieldParameters:
+		m.ResetParameters()
+		return nil
+	case scheduledtask.FieldRunOnSchedule:
+		m.ResetRunOnSchedule()
+		return nil
+	case scheduledtask.FieldDisabled:
+		m.ResetDisabled()
+		return nil
+	}
+	return fmt.Errorf("unknown ScheduledTask field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ScheduledTaskMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.tome != nil {
+		edges = append(edges, scheduledtask.EdgeTome)
+	}
+	if m.scheduled_hosts != nil {
+		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.quests != nil {
+		edges = append(edges, scheduledtask.EdgeQuests)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ScheduledTaskMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case scheduledtask.EdgeTome:
+		if id := m.tome; id != nil {
+			return []ent.Value{*id}
+		}
+	case scheduledtask.EdgeScheduledHosts:
+		ids := make([]ent.Value, 0, len(m.scheduled_hosts))
+		for id := range m.scheduled_hosts {
+			ids = append(ids, id)
+		}
+		return ids
+	case scheduledtask.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.quests))
+		for id := range m.quests {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ScheduledTaskMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedscheduled_hosts != nil {
+		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.removedquests != nil {
+		edges = append(edges, scheduledtask.EdgeQuests)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ScheduledTaskMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case scheduledtask.EdgeScheduledHosts:
+		ids := make([]ent.Value, 0, len(m.removedscheduled_hosts))
+		for id := range m.removedscheduled_hosts {
+			ids = append(ids, id)
+		}
+		return ids
+	case scheduledtask.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.removedquests))
+		for id := range m.removedquests {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ScheduledTaskMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedtome {
+		edges = append(edges, scheduledtask.EdgeTome)
+	}
+	if m.clearedscheduled_hosts {
+		edges = append(edges, scheduledtask.EdgeScheduledHosts)
+	}
+	if m.clearedquests {
+		edges = append(edges, scheduledtask.EdgeQuests)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ScheduledTaskMutation) EdgeCleared(name string) bool {
+	switch name {
+	case scheduledtask.EdgeTome:
+		return m.clearedtome
+	case scheduledtask.EdgeScheduledHosts:
+		return m.clearedscheduled_hosts
+	case scheduledtask.EdgeQuests:
+		return m.clearedquests
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ScheduledTaskMutation) ClearEdge(name string) error {
+	switch name {
+	case scheduledtask.EdgeTome:
+		m.ClearTome()
+		return nil
+	}
+	return fmt.Errorf("unknown ScheduledTask unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ScheduledTaskMutation) ResetEdge(name string) error {
+	switch name {
+	case scheduledtask.EdgeTome:
+		m.ResetTome()
+		return nil
+	case scheduledtask.EdgeScheduledHosts:
+		m.ResetScheduledHosts()
+		return nil
+	case scheduledtask.EdgeQuests:
+		m.ResetQuests()
+		return nil
+	}
+	return fmt.Errorf("unknown ScheduledTask edge %s", name)
 }
 
 // ScreenshotMutation represents an operation that mutates the Screenshot nodes in the graph.
@@ -17880,36 +18956,30 @@ func (m *TaskMutation) ResetEdge(name string) error {
 // TomeMutation represents an operation that mutates the Tome nodes in the graph.
 type TomeMutation struct {
 	config
-	op                         Op
-	typ                        string
-	id                         *int
-	created_at                 *time.Time
-	last_modified_at           *time.Time
-	name                       *string
-	description                *string
-	author                     *string
-	support_model              *tome.SupportModel
-	tactic                     *tome.Tactic
-	run_on_new_beacon_callback *bool
-	run_on_first_host_callback *bool
-	run_on_schedule            *string
-	param_defs                 *string
-	hash                       *string
-	eldritch                   *string
-	clearedFields              map[string]struct{}
-	assets                     map[int]struct{}
-	removedassets              map[int]struct{}
-	clearedassets              bool
-	uploader                   *int
-	cleareduploader            bool
-	repository                 *int
-	clearedrepository          bool
-	scheduled_hosts            map[int]struct{}
-	removedscheduled_hosts     map[int]struct{}
-	clearedscheduled_hosts     bool
-	done                       bool
-	oldValue                   func(context.Context) (*Tome, error)
-	predicates                 []predicate.Tome
+	op                Op
+	typ               string
+	id                *int
+	created_at        *time.Time
+	last_modified_at  *time.Time
+	name              *string
+	description       *string
+	author            *string
+	support_model     *tome.SupportModel
+	tactic            *tome.Tactic
+	param_defs        *string
+	hash              *string
+	eldritch          *string
+	clearedFields     map[string]struct{}
+	assets            map[int]struct{}
+	removedassets     map[int]struct{}
+	clearedassets     bool
+	uploader          *int
+	cleareduploader   bool
+	repository        *int
+	clearedrepository bool
+	done              bool
+	oldValue          func(context.Context) (*Tome, error)
+	predicates        []predicate.Tome
 }
 
 var _ ent.Mutation = (*TomeMutation)(nil)
@@ -18262,114 +19332,6 @@ func (m *TomeMutation) ResetTactic() {
 	m.tactic = nil
 }
 
-// SetRunOnNewBeaconCallback sets the "run_on_new_beacon_callback" field.
-func (m *TomeMutation) SetRunOnNewBeaconCallback(b bool) {
-	m.run_on_new_beacon_callback = &b
-}
-
-// RunOnNewBeaconCallback returns the value of the "run_on_new_beacon_callback" field in the mutation.
-func (m *TomeMutation) RunOnNewBeaconCallback() (r bool, exists bool) {
-	v := m.run_on_new_beacon_callback
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRunOnNewBeaconCallback returns the old "run_on_new_beacon_callback" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldRunOnNewBeaconCallback(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRunOnNewBeaconCallback is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRunOnNewBeaconCallback requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRunOnNewBeaconCallback: %w", err)
-	}
-	return oldValue.RunOnNewBeaconCallback, nil
-}
-
-// ResetRunOnNewBeaconCallback resets all changes to the "run_on_new_beacon_callback" field.
-func (m *TomeMutation) ResetRunOnNewBeaconCallback() {
-	m.run_on_new_beacon_callback = nil
-}
-
-// SetRunOnFirstHostCallback sets the "run_on_first_host_callback" field.
-func (m *TomeMutation) SetRunOnFirstHostCallback(b bool) {
-	m.run_on_first_host_callback = &b
-}
-
-// RunOnFirstHostCallback returns the value of the "run_on_first_host_callback" field in the mutation.
-func (m *TomeMutation) RunOnFirstHostCallback() (r bool, exists bool) {
-	v := m.run_on_first_host_callback
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRunOnFirstHostCallback returns the old "run_on_first_host_callback" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldRunOnFirstHostCallback(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRunOnFirstHostCallback is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRunOnFirstHostCallback requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRunOnFirstHostCallback: %w", err)
-	}
-	return oldValue.RunOnFirstHostCallback, nil
-}
-
-// ResetRunOnFirstHostCallback resets all changes to the "run_on_first_host_callback" field.
-func (m *TomeMutation) ResetRunOnFirstHostCallback() {
-	m.run_on_first_host_callback = nil
-}
-
-// SetRunOnSchedule sets the "run_on_schedule" field.
-func (m *TomeMutation) SetRunOnSchedule(s string) {
-	m.run_on_schedule = &s
-}
-
-// RunOnSchedule returns the value of the "run_on_schedule" field in the mutation.
-func (m *TomeMutation) RunOnSchedule() (r string, exists bool) {
-	v := m.run_on_schedule
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRunOnSchedule returns the old "run_on_schedule" field's value of the Tome entity.
-// If the Tome object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TomeMutation) OldRunOnSchedule(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRunOnSchedule is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRunOnSchedule requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRunOnSchedule: %w", err)
-	}
-	return oldValue.RunOnSchedule, nil
-}
-
-// ResetRunOnSchedule resets all changes to the "run_on_schedule" field.
-func (m *TomeMutation) ResetRunOnSchedule() {
-	m.run_on_schedule = nil
-}
-
 // SetParamDefs sets the "param_defs" field.
 func (m *TomeMutation) SetParamDefs(s string) {
 	m.param_defs = &s
@@ -18623,60 +19585,6 @@ func (m *TomeMutation) ResetRepository() {
 	m.clearedrepository = false
 }
 
-// AddScheduledHostIDs adds the "scheduled_hosts" edge to the Host entity by ids.
-func (m *TomeMutation) AddScheduledHostIDs(ids ...int) {
-	if m.scheduled_hosts == nil {
-		m.scheduled_hosts = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.scheduled_hosts[ids[i]] = struct{}{}
-	}
-}
-
-// ClearScheduledHosts clears the "scheduled_hosts" edge to the Host entity.
-func (m *TomeMutation) ClearScheduledHosts() {
-	m.clearedscheduled_hosts = true
-}
-
-// ScheduledHostsCleared reports if the "scheduled_hosts" edge to the Host entity was cleared.
-func (m *TomeMutation) ScheduledHostsCleared() bool {
-	return m.clearedscheduled_hosts
-}
-
-// RemoveScheduledHostIDs removes the "scheduled_hosts" edge to the Host entity by IDs.
-func (m *TomeMutation) RemoveScheduledHostIDs(ids ...int) {
-	if m.removedscheduled_hosts == nil {
-		m.removedscheduled_hosts = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.scheduled_hosts, ids[i])
-		m.removedscheduled_hosts[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedScheduledHosts returns the removed IDs of the "scheduled_hosts" edge to the Host entity.
-func (m *TomeMutation) RemovedScheduledHostsIDs() (ids []int) {
-	for id := range m.removedscheduled_hosts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ScheduledHostsIDs returns the "scheduled_hosts" edge IDs in the mutation.
-func (m *TomeMutation) ScheduledHostsIDs() (ids []int) {
-	for id := range m.scheduled_hosts {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetScheduledHosts resets all changes to the "scheduled_hosts" edge.
-func (m *TomeMutation) ResetScheduledHosts() {
-	m.scheduled_hosts = nil
-	m.clearedscheduled_hosts = false
-	m.removedscheduled_hosts = nil
-}
-
 // Where appends a list predicates to the TomeMutation builder.
 func (m *TomeMutation) Where(ps ...predicate.Tome) {
 	m.predicates = append(m.predicates, ps...)
@@ -18711,7 +19619,7 @@ func (m *TomeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TomeMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, tome.FieldCreatedAt)
 	}
@@ -18732,15 +19640,6 @@ func (m *TomeMutation) Fields() []string {
 	}
 	if m.tactic != nil {
 		fields = append(fields, tome.FieldTactic)
-	}
-	if m.run_on_new_beacon_callback != nil {
-		fields = append(fields, tome.FieldRunOnNewBeaconCallback)
-	}
-	if m.run_on_first_host_callback != nil {
-		fields = append(fields, tome.FieldRunOnFirstHostCallback)
-	}
-	if m.run_on_schedule != nil {
-		fields = append(fields, tome.FieldRunOnSchedule)
 	}
 	if m.param_defs != nil {
 		fields = append(fields, tome.FieldParamDefs)
@@ -18773,12 +19672,6 @@ func (m *TomeMutation) Field(name string) (ent.Value, bool) {
 		return m.SupportModel()
 	case tome.FieldTactic:
 		return m.Tactic()
-	case tome.FieldRunOnNewBeaconCallback:
-		return m.RunOnNewBeaconCallback()
-	case tome.FieldRunOnFirstHostCallback:
-		return m.RunOnFirstHostCallback()
-	case tome.FieldRunOnSchedule:
-		return m.RunOnSchedule()
 	case tome.FieldParamDefs:
 		return m.ParamDefs()
 	case tome.FieldHash:
@@ -18808,12 +19701,6 @@ func (m *TomeMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldSupportModel(ctx)
 	case tome.FieldTactic:
 		return m.OldTactic(ctx)
-	case tome.FieldRunOnNewBeaconCallback:
-		return m.OldRunOnNewBeaconCallback(ctx)
-	case tome.FieldRunOnFirstHostCallback:
-		return m.OldRunOnFirstHostCallback(ctx)
-	case tome.FieldRunOnSchedule:
-		return m.OldRunOnSchedule(ctx)
 	case tome.FieldParamDefs:
 		return m.OldParamDefs(ctx)
 	case tome.FieldHash:
@@ -18877,27 +19764,6 @@ func (m *TomeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTactic(v)
-		return nil
-	case tome.FieldRunOnNewBeaconCallback:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRunOnNewBeaconCallback(v)
-		return nil
-	case tome.FieldRunOnFirstHostCallback:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRunOnFirstHostCallback(v)
-		return nil
-	case tome.FieldRunOnSchedule:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRunOnSchedule(v)
 		return nil
 	case tome.FieldParamDefs:
 		v, ok := value.(string)
@@ -18999,15 +19865,6 @@ func (m *TomeMutation) ResetField(name string) error {
 	case tome.FieldTactic:
 		m.ResetTactic()
 		return nil
-	case tome.FieldRunOnNewBeaconCallback:
-		m.ResetRunOnNewBeaconCallback()
-		return nil
-	case tome.FieldRunOnFirstHostCallback:
-		m.ResetRunOnFirstHostCallback()
-		return nil
-	case tome.FieldRunOnSchedule:
-		m.ResetRunOnSchedule()
-		return nil
 	case tome.FieldParamDefs:
 		m.ResetParamDefs()
 		return nil
@@ -19023,7 +19880,7 @@ func (m *TomeMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TomeMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.assets != nil {
 		edges = append(edges, tome.EdgeAssets)
 	}
@@ -19032,9 +19889,6 @@ func (m *TomeMutation) AddedEdges() []string {
 	}
 	if m.repository != nil {
 		edges = append(edges, tome.EdgeRepository)
-	}
-	if m.scheduled_hosts != nil {
-		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -19057,24 +19911,15 @@ func (m *TomeMutation) AddedIDs(name string) []ent.Value {
 		if id := m.repository; id != nil {
 			return []ent.Value{*id}
 		}
-	case tome.EdgeScheduledHosts:
-		ids := make([]ent.Value, 0, len(m.scheduled_hosts))
-		for id := range m.scheduled_hosts {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TomeMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.removedassets != nil {
 		edges = append(edges, tome.EdgeAssets)
-	}
-	if m.removedscheduled_hosts != nil {
-		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -19089,19 +19934,13 @@ func (m *TomeMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case tome.EdgeScheduledHosts:
-		ids := make([]ent.Value, 0, len(m.removedscheduled_hosts))
-		for id := range m.removedscheduled_hosts {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TomeMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 3)
 	if m.clearedassets {
 		edges = append(edges, tome.EdgeAssets)
 	}
@@ -19110,9 +19949,6 @@ func (m *TomeMutation) ClearedEdges() []string {
 	}
 	if m.clearedrepository {
 		edges = append(edges, tome.EdgeRepository)
-	}
-	if m.clearedscheduled_hosts {
-		edges = append(edges, tome.EdgeScheduledHosts)
 	}
 	return edges
 }
@@ -19127,8 +19963,6 @@ func (m *TomeMutation) EdgeCleared(name string) bool {
 		return m.cleareduploader
 	case tome.EdgeRepository:
 		return m.clearedrepository
-	case tome.EdgeScheduledHosts:
-		return m.clearedscheduled_hosts
 	}
 	return false
 }
@@ -19159,9 +19993,6 @@ func (m *TomeMutation) ResetEdge(name string) error {
 		return nil
 	case tome.EdgeRepository:
 		m.ResetRepository()
-		return nil
-	case tome.EdgeScheduledHosts:
-		m.ResetScheduledHosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Tome edge %s", name)
