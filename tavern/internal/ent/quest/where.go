@@ -547,29 +547,6 @@ func HasCreatorWith(preds ...predicate.User) predicate.Quest {
 	})
 }
 
-// HasScheduledTask applies the HasEdge predicate on the "scheduled_task" edge.
-func HasScheduledTask() predicate.Quest {
-	return predicate.Quest(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ScheduledTaskTable, ScheduledTaskColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasScheduledTaskWith applies the HasEdge predicate on the "scheduled_task" edge with a given conditions (other predicates).
-func HasScheduledTaskWith(preds ...predicate.ScheduledTask) predicate.Quest {
-	return predicate.Quest(func(s *sql.Selector) {
-		step := newScheduledTaskStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Quest) predicate.Quest {
 	return predicate.Quest(sql.AndPredicates(predicates...))

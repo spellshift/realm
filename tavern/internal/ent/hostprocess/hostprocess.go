@@ -39,8 +39,6 @@ const (
 	FieldCwd = "cwd"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldStartTime holds the string denoting the start_time field in the database.
-	FieldStartTime = "start_time"
 	// EdgeHost holds the string denoting the host edge name in mutations.
 	EdgeHost = "host"
 	// EdgeTask holds the string denoting the task edge name in mutations.
@@ -86,7 +84,6 @@ var Columns = []string{
 	FieldEnv,
 	FieldCwd,
 	FieldStatus,
-	FieldStartTime,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "host_processes"
@@ -195,11 +192,6 @@ func ByCwd(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
-}
-
-// ByStartTime orders the results by the start_time field.
-func ByStartTime(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStartTime, opts...).ToFunc()
 }
 
 // ByHostField orders the results by host field.

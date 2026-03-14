@@ -81,29 +81,6 @@ impl CryptoLibrary for CryptoLibraryFake {
     fn to_json(&self, content: Value) -> Result<String, String> {
         Ok(format!("{:?}", content))
     }
-
-    fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        let mut encoded: Vec<u8> = Vec::with_capacity(content.len() * 2);
-        for c in content.encode_utf16() {
-            let bytes = c.to_le_bytes();
-            encoded.push(bytes[0]);
-            encoded.push(bytes[1]);
-        }
-        Ok(encoded)
-    }
-
-    fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        if content.len() % 2 != 0 {
-            return Err("Input bytes length must be a multiple of 2".into());
-        }
-
-        let utf16_units: Vec<u16> = content
-            .chunks_exact(2)
-            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
-            .collect();
-
-        String::from_utf16(&utf16_units).map_err(|e| format!("Invalid UTF-16: {}", e))
-    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

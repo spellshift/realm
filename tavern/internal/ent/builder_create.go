@@ -100,19 +100,19 @@ func (bc *BuilderCreate) SetNillableLastSeenAt(t *time.Time) *BuilderCreate {
 	return bc
 }
 
-// AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by IDs.
-func (bc *BuilderCreate) AddBuildtaskIDs(ids ...int) *BuilderCreate {
-	bc.mutation.AddBuildtaskIDs(ids...)
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
+func (bc *BuilderCreate) AddBuildTaskIDs(ids ...int) *BuilderCreate {
+	bc.mutation.AddBuildTaskIDs(ids...)
 	return bc
 }
 
-// AddBuildtasks adds the "buildtasks" edges to the BuildTask entity.
-func (bc *BuilderCreate) AddBuildtasks(b ...*BuildTask) *BuilderCreate {
+// AddBuildTasks adds the "build_tasks" edges to the BuildTask entity.
+func (bc *BuilderCreate) AddBuildTasks(b ...*BuildTask) *BuilderCreate {
 	ids := make([]int, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
-	return bc.AddBuildtaskIDs(ids...)
+	return bc.AddBuildTaskIDs(ids...)
 }
 
 // Mutation returns the BuilderMutation object of the builder.
@@ -241,12 +241,12 @@ func (bc *BuilderCreate) createSpec() (*Builder, *sqlgraph.CreateSpec) {
 		_spec.SetField(builder.FieldLastSeenAt, field.TypeTime, value)
 		_node.LastSeenAt = &value
 	}
-	if nodes := bc.mutation.BuildtasksIDs(); len(nodes) > 0 {
+	if nodes := bc.mutation.BuildTasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),

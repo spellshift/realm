@@ -202,33 +202,6 @@ func (hpu *HostProcessUpdate) SetNillableStatus(es *epb.Process_Status) *HostPro
 	return hpu
 }
 
-// SetStartTime sets the "start_time" field.
-func (hpu *HostProcessUpdate) SetStartTime(u uint64) *HostProcessUpdate {
-	hpu.mutation.ResetStartTime()
-	hpu.mutation.SetStartTime(u)
-	return hpu
-}
-
-// SetNillableStartTime sets the "start_time" field if the given value is not nil.
-func (hpu *HostProcessUpdate) SetNillableStartTime(u *uint64) *HostProcessUpdate {
-	if u != nil {
-		hpu.SetStartTime(*u)
-	}
-	return hpu
-}
-
-// AddStartTime adds u to the "start_time" field.
-func (hpu *HostProcessUpdate) AddStartTime(u int64) *HostProcessUpdate {
-	hpu.mutation.AddStartTime(u)
-	return hpu
-}
-
-// ClearStartTime clears the value of the "start_time" field.
-func (hpu *HostProcessUpdate) ClearStartTime() *HostProcessUpdate {
-	hpu.mutation.ClearStartTime()
-	return hpu
-}
-
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hpu *HostProcessUpdate) SetHostID(id int) *HostProcessUpdate {
 	hpu.mutation.SetHostID(id)
@@ -414,15 +387,6 @@ func (hpu *HostProcessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := hpu.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := hpu.mutation.StartTime(); ok {
-		_spec.SetField(hostprocess.FieldStartTime, field.TypeUint64, value)
-	}
-	if value, ok := hpu.mutation.AddedStartTime(); ok {
-		_spec.AddField(hostprocess.FieldStartTime, field.TypeUint64, value)
-	}
-	if hpu.mutation.StartTimeCleared() {
-		_spec.ClearField(hostprocess.FieldStartTime, field.TypeUint64)
 	}
 	if hpu.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -701,33 +665,6 @@ func (hpuo *HostProcessUpdateOne) SetNillableStatus(es *epb.Process_Status) *Hos
 	return hpuo
 }
 
-// SetStartTime sets the "start_time" field.
-func (hpuo *HostProcessUpdateOne) SetStartTime(u uint64) *HostProcessUpdateOne {
-	hpuo.mutation.ResetStartTime()
-	hpuo.mutation.SetStartTime(u)
-	return hpuo
-}
-
-// SetNillableStartTime sets the "start_time" field if the given value is not nil.
-func (hpuo *HostProcessUpdateOne) SetNillableStartTime(u *uint64) *HostProcessUpdateOne {
-	if u != nil {
-		hpuo.SetStartTime(*u)
-	}
-	return hpuo
-}
-
-// AddStartTime adds u to the "start_time" field.
-func (hpuo *HostProcessUpdateOne) AddStartTime(u int64) *HostProcessUpdateOne {
-	hpuo.mutation.AddStartTime(u)
-	return hpuo
-}
-
-// ClearStartTime clears the value of the "start_time" field.
-func (hpuo *HostProcessUpdateOne) ClearStartTime() *HostProcessUpdateOne {
-	hpuo.mutation.ClearStartTime()
-	return hpuo
-}
-
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hpuo *HostProcessUpdateOne) SetHostID(id int) *HostProcessUpdateOne {
 	hpuo.mutation.SetHostID(id)
@@ -943,15 +880,6 @@ func (hpuo *HostProcessUpdateOne) sqlSave(ctx context.Context) (_node *HostProce
 	}
 	if value, ok := hpuo.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
-	}
-	if value, ok := hpuo.mutation.StartTime(); ok {
-		_spec.SetField(hostprocess.FieldStartTime, field.TypeUint64, value)
-	}
-	if value, ok := hpuo.mutation.AddedStartTime(); ok {
-		_spec.AddField(hostprocess.FieldStartTime, field.TypeUint64, value)
-	}
-	if hpuo.mutation.StartTimeCleared() {
-		_spec.ClearField(hostprocess.FieldStartTime, field.TypeUint64)
 	}
 	if hpuo.mutation.HostCleared() {
 		edge := &sqlgraph.EdgeSpec{

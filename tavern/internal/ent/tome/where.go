@@ -80,6 +80,21 @@ func Author(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldAuthor, v))
 }
 
+// RunOnNewBeaconCallback applies equality check predicate on the "run_on_new_beacon_callback" field. It's identical to RunOnNewBeaconCallbackEQ.
+func RunOnNewBeaconCallback(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnNewBeaconCallback, v))
+}
+
+// RunOnFirstHostCallback applies equality check predicate on the "run_on_first_host_callback" field. It's identical to RunOnFirstHostCallbackEQ.
+func RunOnFirstHostCallback(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnFirstHostCallback, v))
+}
+
+// RunOnSchedule applies equality check predicate on the "run_on_schedule" field. It's identical to RunOnScheduleEQ.
+func RunOnSchedule(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnSchedule, v))
+}
+
 // ParamDefs applies equality check predicate on the "param_defs" field. It's identical to ParamDefsEQ.
 func ParamDefs(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
@@ -410,6 +425,91 @@ func TacticNotIn(vs ...Tactic) predicate.Tome {
 	return predicate.Tome(sql.FieldNotIn(FieldTactic, vs...))
 }
 
+// RunOnNewBeaconCallbackEQ applies the EQ predicate on the "run_on_new_beacon_callback" field.
+func RunOnNewBeaconCallbackEQ(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnNewBeaconCallback, v))
+}
+
+// RunOnNewBeaconCallbackNEQ applies the NEQ predicate on the "run_on_new_beacon_callback" field.
+func RunOnNewBeaconCallbackNEQ(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldRunOnNewBeaconCallback, v))
+}
+
+// RunOnFirstHostCallbackEQ applies the EQ predicate on the "run_on_first_host_callback" field.
+func RunOnFirstHostCallbackEQ(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnFirstHostCallback, v))
+}
+
+// RunOnFirstHostCallbackNEQ applies the NEQ predicate on the "run_on_first_host_callback" field.
+func RunOnFirstHostCallbackNEQ(v bool) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldRunOnFirstHostCallback, v))
+}
+
+// RunOnScheduleEQ applies the EQ predicate on the "run_on_schedule" field.
+func RunOnScheduleEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEQ(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleNEQ applies the NEQ predicate on the "run_on_schedule" field.
+func RunOnScheduleNEQ(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldNEQ(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleIn applies the In predicate on the "run_on_schedule" field.
+func RunOnScheduleIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldIn(FieldRunOnSchedule, vs...))
+}
+
+// RunOnScheduleNotIn applies the NotIn predicate on the "run_on_schedule" field.
+func RunOnScheduleNotIn(vs ...string) predicate.Tome {
+	return predicate.Tome(sql.FieldNotIn(FieldRunOnSchedule, vs...))
+}
+
+// RunOnScheduleGT applies the GT predicate on the "run_on_schedule" field.
+func RunOnScheduleGT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGT(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleGTE applies the GTE predicate on the "run_on_schedule" field.
+func RunOnScheduleGTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldGTE(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleLT applies the LT predicate on the "run_on_schedule" field.
+func RunOnScheduleLT(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLT(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleLTE applies the LTE predicate on the "run_on_schedule" field.
+func RunOnScheduleLTE(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldLTE(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleContains applies the Contains predicate on the "run_on_schedule" field.
+func RunOnScheduleContains(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContains(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleHasPrefix applies the HasPrefix predicate on the "run_on_schedule" field.
+func RunOnScheduleHasPrefix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasPrefix(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleHasSuffix applies the HasSuffix predicate on the "run_on_schedule" field.
+func RunOnScheduleHasSuffix(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldHasSuffix(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleEqualFold applies the EqualFold predicate on the "run_on_schedule" field.
+func RunOnScheduleEqualFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldEqualFold(FieldRunOnSchedule, v))
+}
+
+// RunOnScheduleContainsFold applies the ContainsFold predicate on the "run_on_schedule" field.
+func RunOnScheduleContainsFold(v string) predicate.Tome {
+	return predicate.Tome(sql.FieldContainsFold(FieldRunOnSchedule, v))
+}
+
 // ParamDefsEQ applies the EQ predicate on the "param_defs" field.
 func ParamDefsEQ(v string) predicate.Tome {
 	return predicate.Tome(sql.FieldEQ(FieldParamDefs, v))
@@ -676,6 +776,29 @@ func HasRepository() predicate.Tome {
 func HasRepositoryWith(preds ...predicate.Repository) predicate.Tome {
 	return predicate.Tome(func(s *sql.Selector) {
 		step := newRepositoryStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasScheduledHosts applies the HasEdge predicate on the "scheduled_hosts" edge.
+func HasScheduledHosts() predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ScheduledHostsTable, ScheduledHostsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasScheduledHostsWith applies the HasEdge predicate on the "scheduled_hosts" edge with a given conditions (other predicates).
+func HasScheduledHostsWith(preds ...predicate.Host) predicate.Tome {
+	return predicate.Tome(func(s *sql.Selector) {
+		step := newScheduledHostsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -65,7 +65,6 @@ cargo test
 # Regenerate code after ent schemas, GraphQL, or frontend changes
 go generate ./...
 ```
-**Note** If go generate fails run it a second time.
 
 ### Formatting
 

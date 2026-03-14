@@ -15,7 +15,6 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -24,19 +23,18 @@ import (
 // QuestQuery is the builder for querying Quest entities.
 type QuestQuery struct {
 	config
-	ctx               *QueryContext
-	order             []quest.OrderOption
-	inters            []Interceptor
-	predicates        []predicate.Quest
-	withTome          *TomeQuery
-	withBundle        *AssetQuery
-	withTasks         *TaskQuery
-	withCreator       *UserQuery
-	withScheduledTask *ScheduledTaskQuery
-	withFKs           bool
-	modifiers         []func(*sql.Selector)
-	loadTotal         []func(context.Context, []*Quest) error
-	withNamedTasks    map[string]*TaskQuery
+	ctx            *QueryContext
+	order          []quest.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Quest
+	withTome       *TomeQuery
+	withBundle     *AssetQuery
+	withTasks      *TaskQuery
+	withCreator    *UserQuery
+	withFKs        bool
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Quest) error
+	withNamedTasks map[string]*TaskQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -154,28 +152,6 @@ func (qq *QuestQuery) QueryCreator() *UserQuery {
 			sqlgraph.From(quest.Table, quest.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, quest.CreatorTable, quest.CreatorColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryScheduledTask chains the current query on the "scheduled_task" edge.
-func (qq *QuestQuery) QueryScheduledTask() *ScheduledTaskQuery {
-	query := (&ScheduledTaskClient{config: qq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := qq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := qq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(quest.Table, quest.FieldID, selector),
-			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, quest.ScheduledTaskTable, quest.ScheduledTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
 		return fromU, nil
@@ -370,16 +346,15 @@ func (qq *QuestQuery) Clone() *QuestQuery {
 		return nil
 	}
 	return &QuestQuery{
-		config:            qq.config,
-		ctx:               qq.ctx.Clone(),
-		order:             append([]quest.OrderOption{}, qq.order...),
-		inters:            append([]Interceptor{}, qq.inters...),
-		predicates:        append([]predicate.Quest{}, qq.predicates...),
-		withTome:          qq.withTome.Clone(),
-		withBundle:        qq.withBundle.Clone(),
-		withTasks:         qq.withTasks.Clone(),
-		withCreator:       qq.withCreator.Clone(),
-		withScheduledTask: qq.withScheduledTask.Clone(),
+		config:      qq.config,
+		ctx:         qq.ctx.Clone(),
+		order:       append([]quest.OrderOption{}, qq.order...),
+		inters:      append([]Interceptor{}, qq.inters...),
+		predicates:  append([]predicate.Quest{}, qq.predicates...),
+		withTome:    qq.withTome.Clone(),
+		withBundle:  qq.withBundle.Clone(),
+		withTasks:   qq.withTasks.Clone(),
+		withCreator: qq.withCreator.Clone(),
 		// clone intermediate query.
 		sql:  qq.sql.Clone(),
 		path: qq.path,
@@ -427,17 +402,6 @@ func (qq *QuestQuery) WithCreator(opts ...func(*UserQuery)) *QuestQuery {
 		opt(query)
 	}
 	qq.withCreator = query
-	return qq
-}
-
-// WithScheduledTask tells the query-builder to eager-load the nodes that are connected to
-// the "scheduled_task" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestQuery) WithScheduledTask(opts ...func(*ScheduledTaskQuery)) *QuestQuery {
-	query := (&ScheduledTaskClient{config: qq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	qq.withScheduledTask = query
 	return qq
 }
 
@@ -520,15 +484,14 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 		nodes       = []*Quest{}
 		withFKs     = qq.withFKs
 		_spec       = qq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [4]bool{
 			qq.withTome != nil,
 			qq.withBundle != nil,
 			qq.withTasks != nil,
 			qq.withCreator != nil,
-			qq.withScheduledTask != nil,
 		}
 	)
-	if qq.withTome != nil || qq.withBundle != nil || qq.withCreator != nil || qq.withScheduledTask != nil {
+	if qq.withTome != nil || qq.withBundle != nil || qq.withCreator != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -577,12 +540,6 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 	if query := qq.withCreator; query != nil {
 		if err := qq.loadCreator(ctx, query, nodes, nil,
 			func(n *Quest, e *User) { n.Edges.Creator = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := qq.withScheduledTask; query != nil {
-		if err := qq.loadScheduledTask(ctx, query, nodes, nil,
-			func(n *Quest, e *ScheduledTask) { n.Edges.ScheduledTask = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -721,38 +678,6 @@ func (qq *QuestQuery) loadCreator(ctx context.Context, query *UserQuery, nodes [
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "quest_creator" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-func (qq *QuestQuery) loadScheduledTask(ctx context.Context, query *ScheduledTaskQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *ScheduledTask)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Quest)
-	for i := range nodes {
-		if nodes[i].scheduled_task_quests == nil {
-			continue
-		}
-		fk := *nodes[i].scheduled_task_quests
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(scheduledtask.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "scheduled_task_quests" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

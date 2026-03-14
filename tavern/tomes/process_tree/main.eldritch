@@ -22,7 +22,7 @@ def depth_first_search(visited, process_tree, current_proc_pid, padding, process
             print(
                 pad_pid(current_proc_pid) +
                 pad_pid(process_list_dictionary[current_proc_pid]["ppid"]) +
-                pad_username(process_list_dictionary[current_proc_pid].get("principal", "unknown")) +
+                pad_username(process_list_dictionary[current_proc_pid]["username"]) +
                 padding_string +
                 process_list_dictionary[current_proc_pid]["command"].replace(
                     "\n", "\\n")

@@ -14,16 +14,8 @@ import (
 	"realm.pub/tavern/internal/ent"
 )
 
-// Input for a tome configuration in a build profile.
-type BuildProfileTomeInput struct {
-	// The ID of the tome to include.
-	TomeID int `json:"tomeID"`
-	// JSON-encoded parameters for the tome.
-	Params string `json:"params"`
-}
-
 // Input for a single transport configuration.
-type BuildProfileTransportInput struct {
+type BuildTaskTransportInput struct {
 	// The URI for the IMIX agent.
 	URI string `json:"uri"`
 	// The callback interval in seconds.
@@ -51,26 +43,6 @@ type ClaimTasksInput struct {
 	AgentIdentifier string `json:"agentIdentifier"`
 }
 
-// Input for creating a new build profile.
-type CreateBuildProfileInput struct {
-	// The name of the build profile.
-	Name string `json:"name"`
-	// A user facing build profile description.
-	Description string `json:"description"`
-	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
-	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
-	// Bash script to run before the build command.
-	Prebuildscript string `json:"prebuildscript"`
-	// Bash script to run before the prebuild script.
-	Setupscript string `json:"setupscript"`
-	// Bash script to run after the build command.
-	Postbuildscript string `json:"postbuildscript"`
-	// List of tomes to include in builds using this profile.
-	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
-	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
-	Unique *string `json:"unique,omitempty"`
-}
-
 // Input for creating a new build task.
 type CreateBuildTaskInput struct {
 	// The target operating system for the build.
@@ -79,22 +51,10 @@ type CreateBuildTaskInput struct {
 	TargetFormat *builderpb.TargetFormat `json:"targetFormat,omitempty"`
 	// Docker container image name to use for the build. Defaults to spellshift/devcontainer:main.
 	BuildImage *string `json:"buildImage,omitempty"`
-	// ID of the build profile to use. Transports, preBuildScript, and postBuildScript default to the profile's values unless explicitly overridden.
-	ProfileID int `json:"profileID"`
-	// List of transport configurations. Overrides profile transports if both are set. Defaults to a single gRPC transport at http://127.0.0.1:8000.
-	Transports []*BuildProfileTransportInput `json:"transports,omitempty"`
-	// List of tomes to embed in the agent.
-	Tomes []*BuildProfileTomeInput `json:"tomes,omitempty"`
+	// List of transport configurations. Defaults to a single gRPC transport at http://127.0.0.1:8000.
+	Transports []*BuildTaskTransportInput `json:"transports,omitempty"`
 	// Path inside the build container to extract the artifact from. Defaults to the derived path based on target OS.
 	ArtifactPath *string `json:"artifactPath,omitempty"`
-	// Script to run during setup phase. Overrides profile setupScript if both are set.
-	SetupScript *string `json:"setupScript,omitempty"`
-	// Script to run before the build command. Overrides profile preBuildScript if both are set.
-	PreBuildScript *string `json:"preBuildScript,omitempty"`
-	// Script to run after the build command. Overrides profile postBuildScript if both are set.
-	PostBuildScript *string `json:"postBuildScript,omitempty"`
-	// JSON-encoded arbitrary data to be passed to the agent execution environment via IMIX_UNIQUE.
-	Unique *string `json:"unique,omitempty"`
 }
 
 type ImportRepositoryInput struct {

@@ -2,31 +2,15 @@ use ::std::fs;
 use ::std::path::Path;
 use alloc::format;
 use alloc::string::String;
-use glob::glob;
 
 pub fn remove(path: String) -> Result<(), String> {
-    if path.contains('*') || path.contains('?') || path.contains('[') {
-        let paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        for entry in paths {
-            if let Ok(match_path) = entry {
-                if match_path.is_dir() {
-                    fs::remove_dir_all(&match_path)
-                } else {
-                    fs::remove_file(&match_path)
-                }
-                .map_err(|e| format!("Failed to remove {}: {e}", match_path.to_string_lossy()))?;
-            }
-        }
-        Ok(())
+    let p = Path::new(&path);
+    if p.is_dir() {
+        fs::remove_dir_all(p)
     } else {
-        let p = Path::new(&path);
-        if p.is_dir() {
-            fs::remove_dir_all(p)
-        } else {
-            fs::remove_file(p)
-        }
-        .map_err(|e| format!("Failed to remove {path}: {e}"))
+        fs::remove_file(p)
     }
+    .map_err(|e| format!("Failed to remove {path}: {e}"))
 }
 
 #[cfg(test)]

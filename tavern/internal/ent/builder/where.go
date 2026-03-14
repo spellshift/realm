@@ -340,21 +340,21 @@ func LastSeenAtNotNil() predicate.Builder {
 	return predicate.Builder(sql.FieldNotNull(FieldLastSeenAt))
 }
 
-// HasBuildtasks applies the HasEdge predicate on the "buildtasks" edge.
-func HasBuildtasks() predicate.Builder {
+// HasBuildTasks applies the HasEdge predicate on the "build_tasks" edge.
+func HasBuildTasks() predicate.Builder {
 	return predicate.Builder(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, BuildtasksTable, BuildtasksColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, BuildTasksTable, BuildTasksColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasBuildtasksWith applies the HasEdge predicate on the "buildtasks" edge with a given conditions (other predicates).
-func HasBuildtasksWith(preds ...predicate.BuildTask) predicate.Builder {
+// HasBuildTasksWith applies the HasEdge predicate on the "build_tasks" edge with a given conditions (other predicates).
+func HasBuildTasksWith(preds ...predicate.BuildTask) predicate.Builder {
 	return predicate.Builder(func(s *sql.Selector) {
-		step := newBuildtasksStep()
+		step := newBuildTasksStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

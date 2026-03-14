@@ -13,7 +13,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
-	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -165,25 +164,6 @@ func (qc *QuestCreate) SetNillableCreatorID(id *int) *QuestCreate {
 // SetCreator sets the "creator" edge to the User entity.
 func (qc *QuestCreate) SetCreator(u *User) *QuestCreate {
 	return qc.SetCreatorID(u.ID)
-}
-
-// SetScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID.
-func (qc *QuestCreate) SetScheduledTaskID(id int) *QuestCreate {
-	qc.mutation.SetScheduledTaskID(id)
-	return qc
-}
-
-// SetNillableScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID if the given value is not nil.
-func (qc *QuestCreate) SetNillableScheduledTaskID(id *int) *QuestCreate {
-	if id != nil {
-		qc = qc.SetScheduledTaskID(*id)
-	}
-	return qc
-}
-
-// SetScheduledTask sets the "scheduled_task" edge to the ScheduledTask entity.
-func (qc *QuestCreate) SetScheduledTask(s *ScheduledTask) *QuestCreate {
-	return qc.SetScheduledTaskID(s.ID)
 }
 
 // Mutation returns the QuestMutation object of the builder.
@@ -376,23 +356,6 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.quest_creator = &nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := qc.mutation.ScheduledTaskIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   quest.ScheduledTaskTable,
-			Columns: []string{quest.ScheduledTaskColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_node.scheduled_task_quests = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

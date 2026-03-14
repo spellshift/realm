@@ -1,28 +1,8 @@
 use ::std::path::Path;
-use alloc::format;
 use alloc::string::String;
-use glob::glob;
 
 pub fn is_dir(path: String) -> Result<bool, String> {
-    if path.contains('*') || path.contains('?') || path.contains('[') {
-        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        let first_match = paths.next();
-        let second_match = paths.next();
-
-        if second_match.is_some() {
-            return Err(format!(
-                "Globbing not supported for multiple paths (pattern: {path})"
-            ));
-        }
-
-        if let Some(Ok(match_path)) = first_match {
-            Ok(match_path.is_dir())
-        } else {
-            Ok(false)
-        }
-    } else {
-        Ok(Path::new(&path).is_dir())
-    }
+    Ok(Path::new(&path).is_dir())
 }
 
 #[cfg(test)]

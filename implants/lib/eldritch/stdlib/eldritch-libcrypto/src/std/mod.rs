@@ -9,9 +9,7 @@ pub mod aes_decrypt_impl;
 pub mod aes_encrypt_file_impl;
 pub mod aes_encrypt_impl;
 pub mod decode_b64_impl;
-pub mod decode_utf16le_impl;
 pub mod encode_b64_impl;
-pub mod encode_utf16le_impl;
 pub mod from_json_impl;
 pub mod hash_file_impl;
 pub mod is_json_impl;
@@ -75,13 +73,5 @@ impl CryptoLibrary for StdCryptoLibrary {
 
     fn to_json(&self, content: Value) -> Result<String, String> {
         to_json_impl::to_json(content)
-    }
-
-    fn encode_utf16le(&self, content: String) -> Result<Vec<u8>, String> {
-        encode_utf16le_impl::encode_utf16le(content)
-    }
-
-    fn decode_utf16le(&self, content: Vec<u8>) -> Result<String, String> {
-        decode_utf16le_impl::decode_utf16le(content)
     }
 }

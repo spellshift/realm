@@ -14,7 +14,6 @@ dns = []
 [dependencies]
 anyhow = { workspace = true }
 host_unique = { workspace = true }
-guardrails = { workspace = true }
 log = { workspace = true }
 netdev = { workspace = true }
 prost = { workspace = true }

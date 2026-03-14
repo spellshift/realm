@@ -88,8 +88,6 @@ pub struct Process {
     pub cwd: ::prost::alloc::string::String,
     #[prost(enumeration = "process::Status", tag = "9")]
     pub status: i32,
-    #[prost(uint64, tag = "10")]
-    pub start_time: u64,
 }
 /// Nested message and enum types in `Process`.
 pub mod process {

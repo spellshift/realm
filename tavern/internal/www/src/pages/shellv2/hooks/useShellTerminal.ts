@@ -538,7 +538,7 @@ export const useShellTerminal = (
 
         adapter.current.init();
 
-        const handleData = (data: string, isPaste: boolean = false) => {
+        const handleData = (data: string) => {
             // Check for late checkin and block input
             if (isLateCheckinRef.current) return;
             // Check for connection status and block input
@@ -550,7 +550,7 @@ export const useShellTerminal = (
             if (!term) return;
 
             // If completions are showing, handle navigation
-            if (completionsRef.current.show && !isPaste) {
+            if (completionsRef.current.show) {
                 if (code === 9) { // Tab: cycle or apply if single
                     const list = completionsRef.current.list;
                     if (list.length === 1) {
@@ -770,22 +770,20 @@ export const useShellTerminal = (
             }
 
             if (code === 0) { // Ctrl+Space
-                if (!isPaste) {
-                    const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
-                    if (res) {
-                        if (res.suggestions.length > 0) {
-                            updateCompletionsUI(res.suggestions, res.start, true, 0);
-                        } else {
-                            updateCompletionsUI(["no suggestions"], state.cursorPos, true, 0);
-                        }
+                const res = adapter.current?.complete(state.inputBuffer, state.cursorPos);
+                if (res) {
+                    if (res.suggestions.length > 0) {
+                        updateCompletionsUI(res.suggestions, res.start, true, 0);
+                    } else {
+                        updateCompletionsUI(["no suggestions"], state.cursorPos, true, 0);
                     }
                 }
                 return;
             }
 
             if (code === 9) { // Tab
-                // Indent if line is empty or whitespace or inside a string (or if we are pasting)
-                if (isPaste || !state.inputBuffer.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
+                // Indent if line is empty or whitespace or inside a string
+                if (!state.inputBuffer.trim() || isInsideString(state.inputBuffer, state.cursorPos)) {
                     const indent = "    ";
                     state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + indent + state.inputBuffer.slice(state.cursorPos);
                     state.cursorPos += 4;
@@ -867,7 +865,7 @@ export const useShellTerminal = (
             }
 
             // Trigger completion updates if needed
-            if (!isPaste && (completionsRef.current.show || code === 46 /* . */)) {
+            if (completionsRef.current.show || code === 46 /* . */) {
                 if (state.inputBuffer.endsWith("(") || code === 40 /* ( */) {
                     if (completionsRef.current.show) {
                         updateCompletionsUI([], 0, false, 0);
@@ -895,10 +893,10 @@ export const useShellTerminal = (
                 // Normalize newlines to \r so they trigger the "Enter" key code (13)
                 const normalized = data.replace(/\r\n/g, "\r").replace(/\n/g, "\r");
                 for (const char of normalized) {
-                    handleData(char, true);
+                    handleData(char);
                 }
             } else {
-                handleData(data, false);
+                handleData(data);
             }
         });
 

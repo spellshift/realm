@@ -59,10 +59,6 @@ pub fn list() -> Result<Vec<BTreeMap<String, Value>>, String> {
             "name".to_string(),
             Value::String(process.name().to_string()),
         );
-        map.insert(
-            "start_time".to_string(),
-            Value::Int(process.start_time() as i64),
-        );
 
         list.push(map);
     }
@@ -100,7 +96,6 @@ mod tests {
             assert!(process.contains_key("path"));
             assert!(process.contains_key("principal"));
             assert!(process.contains_key("status"));
-            assert!(process.contains_key("start_time"));
         }
     }
 }

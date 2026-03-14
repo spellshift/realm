@@ -79,8 +79,7 @@ func (srv *Server) ReportProcessList(ctx context.Context, req *c2pb.ReportProces
 			SetCmd(proc.Cmd).
 			SetEnv(proc.Env).
 			SetCwd(proc.Cwd).
-			SetStatus(proc.Status).
-			SetStartTime(proc.StartTime)
+			SetStatus(proc.Status)
 
 		if task != nil {
 			builder.SetTaskID(task.ID)

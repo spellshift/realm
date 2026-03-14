@@ -55,7 +55,6 @@ message Process {
         STATUS_UNINTERUPTIBLE_DISK_SLEEP = 13;
     }
     Status status = 9;
-    uint64 start_time = 10;
 }
 
 // ProcessList of running processes on the host system.

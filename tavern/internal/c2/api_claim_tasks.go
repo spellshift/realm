@@ -17,11 +17,11 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/host"
-	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
 )
@@ -49,33 +49,25 @@ func init() {
 
 func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
 	// Tome Automation Logic
-	candidateTasks, err := srv.graph.ScheduledTask.Query().
-		Where(
-			scheduledtask.Disabled(false),
-			scheduledtask.Or(
-				scheduledtask.RunOnNewBeaconCallback(true),
-				scheduledtask.RunOnFirstHostCallback(true),
-				scheduledtask.RunOnScheduleNEQ(""),
-			),
-			scheduledtask.Or(
-				scheduledtask.Not(scheduledtask.HasScheduledHosts()),
-				scheduledtask.HasScheduledHostsWith(host.ID(hostID)),
-			),
-		).
-		WithTome().
+	candidateTomes, err := srv.graph.Tome.Query().
+		Where(tome.Or(
+			tome.RunOnNewBeaconCallback(true),
+			tome.RunOnFirstHostCallback(true),
+			tome.RunOnScheduleNEQ(""),
+		)).
 		All(ctx)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to query candidate scheduled tasks for automation", "err", err)
+		slog.ErrorContext(ctx, "failed to query candidate tomes for automation", "err", err)
 		metricTomeAutomationErrors.Inc()
 		return
 	}
 
-	selectedTasks := make(map[int]*ent.ScheduledTask)
+	selectedTomes := make(map[int]*ent.Tome)
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
 	cutoff := now.Add(interval)
 
-	for _, t := range candidateTasks {
+	for _, t := range candidateTomes {
 		shouldRun := false
 
 		// Check RunOnNewBeaconCallback
@@ -113,7 +105,28 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 				}
 
 				if isMatch {
-					shouldRun = true
+					// Check scheduled_hosts constraint
+					hostCount, err := t.QueryScheduledHosts().Count(ctx)
+					if err != nil {
+						slog.ErrorContext(ctx, "failed to count scheduled hosts for automation", "err", err, "tome_id", t.ID)
+						metricTomeAutomationErrors.Inc()
+						continue
+					}
+					if hostCount == 0 {
+						shouldRun = true
+					} else {
+						hostExists, err := t.QueryScheduledHosts().
+							Where(host.ID(hostID)).
+							Exist(ctx)
+						if err != nil {
+							slog.ErrorContext(ctx, "failed to check host existence for automation", "err", err, "tome_id", t.ID)
+							metricTomeAutomationErrors.Inc()
+							continue
+						}
+						if hostExists {
+							shouldRun = true
+						}
+					}
 				}
 			} else {
 				// Don't log cron parse errors for now, as it might be spammy if stored in DB
@@ -121,32 +134,24 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			}
 		}
 
-		if shouldRun && t.Edges.Tome != nil {
-			selectedTasks[t.ID] = t
+		if shouldRun {
+			selectedTomes[t.ID] = t
 		}
 	}
 
-	// Create Quest and Task for each selected ScheduledTask
-	for _, st := range selectedTasks {
-		tome := st.Edges.Tome
-		questCreate := srv.graph.Quest.Create().
-			SetName(fmt.Sprintf("Automated: %s", st.Name)).
-			SetTome(tome).
-			SetParameters(st.Parameters).
-			SetParamDefsAtCreation(tome.ParamDefs).
-			SetEldritchAtCreation(tome.Eldritch)
-		if st.Parameters != "" {
-			questCreate.SetParameters(st.Parameters)
-		}
-		q, err := questCreate.Save(ctx)
+	// Create Quest and Task for each selected Tome
+	for _, t := range selectedTomes {
+		q, err := srv.graph.Quest.Create().
+			SetName(fmt.Sprintf("Automated: %s", t.Name)).
+			SetTome(t).
+			SetParamDefsAtCreation(t.ParamDefs).
+			SetEldritchAtCreation(t.Eldritch).
+			Save(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "scheduled_task_id", st.ID, "tome_id", tome.ID)
+			slog.ErrorContext(ctx, "failed to create automated quest", "err", err, "tome_id", t.ID)
 			metricTomeAutomationErrors.Inc()
 			continue
 		}
-
-		// Link quest to scheduled task
-		srv.graph.ScheduledTask.UpdateOneID(st.ID).AddQuests(q).Save(ctx)
 
 		_, err = srv.graph.Task.Create().
 			SetQuest(q).

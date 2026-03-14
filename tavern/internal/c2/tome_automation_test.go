@@ -34,58 +34,38 @@ func TestHandleTomeAutomation(t *testing.T) {
 
 	// 1. Setup Tomes
 	// T1: New Beacon Only
-	t1 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Tome New Beacon").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('new beacon')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("ST New Beacon").
-		SetDescription("Test").
-		SetTome(t1).
 		SetRunOnNewBeaconCallback(true).
 		SaveX(ctx)
 
 	// T2: New Host Only
-	t2 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Tome New Host").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('new host')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("ST New Host").
-		SetDescription("Test").
-		SetTome(t2).
 		SetRunOnFirstHostCallback(true).
 		SaveX(ctx)
 
 	// T3: Schedule Matching (Every minute)
-	t3 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Tome Schedule Match").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('schedule')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("ST Schedule Match").
-		SetDescription("Test").
-		SetTome(t3).
 		SetRunOnSchedule("* * * * *").
 		SaveX(ctx)
 
 	// T4: Schedule Matching with Host Restriction (Allowed)
-	t4 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Tome Schedule Restricted Allowed").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('schedule restricted')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("ST Schedule Restricted Allowed").
-		SetDescription("Test").
-		SetTome(t4).
 		SetRunOnSchedule("* * * * *").
 		AddScheduledHosts(h).
 		SaveX(ctx)
@@ -96,16 +76,11 @@ func TestHandleTomeAutomation(t *testing.T) {
 		SetPlatform(c2pb.Host_PLATFORM_LINUX).
 		SaveX(ctx)
 
-	t5 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Tome Schedule Restricted Denied").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('schedule denied')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("ST Schedule Restricted Denied").
-		SetDescription("Test").
-		SetTome(t5).
 		SetRunOnSchedule("* * * * *").
 		AddScheduledHosts(otherHost).
 		SaveX(ctx)
@@ -202,16 +177,11 @@ func TestHandleTomeAutomation_Deduplication(t *testing.T) {
 		SaveX(ctx)
 
 	// Tome with ALL triggers enabled
-	t1 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Super Tome").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('super')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("Super ST").
-		SetDescription("Test").
-		SetTome(t1).
 		SetRunOnNewBeaconCallback(true).
 		SetRunOnFirstHostCallback(true).
 		SetRunOnSchedule("* * * * *").
@@ -245,16 +215,11 @@ func TestHandleTomeAutomation_IntervalWindow(t *testing.T) {
 		SaveX(ctx)
 
 	// Schedule: 3:01:00 PM -> "1 15 * * *"
-	t1 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Scheduled Tome").
 		SetDescription("Test").
 		SetAuthor("Test Author").
 		SetEldritch("print('schedule')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("Scheduled ST").
-		SetDescription("Test").
-		SetTome(t1).
 		SetRunOnSchedule("1 15 * * *").
 		SaveX(ctx)
 
@@ -293,16 +258,11 @@ func TestHandleTomeAutomation_CronRange(t *testing.T) {
 	b := client.Beacon.Create().SetIdentifier("b").SetHost(h).SetTransport(c2pb.Transport_TRANSPORT_HTTP1).SaveX(ctx)
 
 	// Range Schedule: "* 6-12 * * *" (Every minute of hours 6-12)
-	t1 := client.Tome.Create().
+	client.Tome.Create().
 		SetName("Range Tome").
 		SetDescription("Test").
 		SetAuthor("Test").
 		SetEldritch("print('range')").
-		SaveX(ctx)
-	client.ScheduledTask.Create().
-		SetName("Range ST").
-		SetDescription("Test").
-		SetTome(t1).
 		SetRunOnSchedule("* 6-12 * * *").
 		SaveX(ctx)
 

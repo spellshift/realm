@@ -15,7 +15,6 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
-	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
@@ -26,7 +25,6 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
-	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -96,7 +94,6 @@ func checkColumn(table, column string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			asset.Table:          asset.ValidColumn,
 			beacon.Table:         beacon.ValidColumn,
-			buildprofile.Table:   buildprofile.ValidColumn,
 			buildtask.Table:      buildtask.ValidColumn,
 			builder.Table:        builder.ValidColumn,
 			deviceauth.Table:     deviceauth.ValidColumn,
@@ -108,7 +105,6 @@ func checkColumn(table, column string) error {
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
-			scheduledtask.Table:  scheduledtask.ValidColumn,
 			screenshot.Table:     screenshot.ValidColumn,
 			shell.Table:          shell.ValidColumn,
 			shelltask.Table:      shelltask.ValidColumn,

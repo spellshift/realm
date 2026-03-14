@@ -51,7 +51,7 @@ func (Builder) Fields() []ent.Field {
 // Edges of the Builder.
 func (Builder) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("buildtasks", BuildTask.Type).
+		edge.From("build_tasks", BuildTask.Type).
 			Ref("builder").
 			Annotations(
 				entgql.Skip(entgql.SkipMutationCreateInput),

@@ -40,23 +40,23 @@ type Builder struct {
 // BuilderEdges holds the relations/edges for other nodes in the graph.
 type BuilderEdges struct {
 	// Build tasks assigned to this builder.
-	Buildtasks []*BuildTask `json:"buildtasks,omitempty"`
+	BuildTasks []*BuildTask `json:"build_tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 	// totalCount holds the count of the edges above.
 	totalCount [1]map[string]int
 
-	namedBuildtasks map[string][]*BuildTask
+	namedBuildTasks map[string][]*BuildTask
 }
 
-// BuildtasksOrErr returns the Buildtasks value or an error if the edge
+// BuildTasksOrErr returns the BuildTasks value or an error if the edge
 // was not loaded in eager-loading.
-func (e BuilderEdges) BuildtasksOrErr() ([]*BuildTask, error) {
+func (e BuilderEdges) BuildTasksOrErr() ([]*BuildTask, error) {
 	if e.loadedTypes[0] {
-		return e.Buildtasks, nil
+		return e.BuildTasks, nil
 	}
-	return nil, &NotLoadedError{edge: "buildtasks"}
+	return nil, &NotLoadedError{edge: "build_tasks"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -145,9 +145,9 @@ func (b *Builder) Value(name string) (ent.Value, error) {
 	return b.selectValues.Get(name)
 }
 
-// QueryBuildtasks queries the "buildtasks" edge of the Builder entity.
-func (b *Builder) QueryBuildtasks() *BuildTaskQuery {
-	return NewBuilderClient(b.config).QueryBuildtasks(b)
+// QueryBuildTasks queries the "build_tasks" edge of the Builder entity.
+func (b *Builder) QueryBuildTasks() *BuildTaskQuery {
+	return NewBuilderClient(b.config).QueryBuildTasks(b)
 }
 
 // Update returns a builder for updating this Builder.
@@ -196,27 +196,27 @@ func (b *Builder) String() string {
 	return builder.String()
 }
 
-// NamedBuildtasks returns the Buildtasks named value or an error if the edge was not
+// NamedBuildTasks returns the BuildTasks named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (b *Builder) NamedBuildtasks(name string) ([]*BuildTask, error) {
-	if b.Edges.namedBuildtasks == nil {
+func (b *Builder) NamedBuildTasks(name string) ([]*BuildTask, error) {
+	if b.Edges.namedBuildTasks == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := b.Edges.namedBuildtasks[name]
+	nodes, ok := b.Edges.namedBuildTasks[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (b *Builder) appendNamedBuildtasks(name string, edges ...*BuildTask) {
-	if b.Edges.namedBuildtasks == nil {
-		b.Edges.namedBuildtasks = make(map[string][]*BuildTask)
+func (b *Builder) appendNamedBuildTasks(name string, edges ...*BuildTask) {
+	if b.Edges.namedBuildTasks == nil {
+		b.Edges.namedBuildTasks = make(map[string][]*BuildTask)
 	}
 	if len(edges) == 0 {
-		b.Edges.namedBuildtasks[name] = []*BuildTask{}
+		b.Edges.namedBuildTasks[name] = []*BuildTask{}
 	} else {
-		b.Edges.namedBuildtasks[name] = append(b.Edges.namedBuildtasks[name], edges...)
+		b.Edges.namedBuildTasks[name] = append(b.Edges.namedBuildTasks[name], edges...)
 	}
 }
 

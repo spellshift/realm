@@ -513,18 +513,6 @@ The **crypto.decode_b64** method encodes the given text using the given base64 d
 - URL_SAFE
 - URL_SAFE_NO_PAD
 
-### crypto.encode_utf16le
-
-`crypto.encode_utf16le(content: str) -> Bytes`
-
-The **crypto.encode_utf16le** method encodes a UTF-8 string into UTF-16LE bytes, which are commonly used in Windows environments.
-
-### crypto.decode_utf16le
-
-`crypto.decode_utf16le(content: Bytes) -> str`
-
-The **crypto.decode_utf16le** method decodes UTF-16LE bytes into a standard UTF-8 string. Errors if the bytes are not valid UTF-16.
-
 ### crypto.from_json
 
 `crypto.from_json(content: str) -> Value`

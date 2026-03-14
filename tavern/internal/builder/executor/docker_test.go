@@ -102,7 +102,7 @@ func TestDockerExecutor_Build_MultiLineOutput(t *testing.T) {
 	for line := range outputCh {
 		output = append(output, line)
 	}
-	assert.Equal(t, []string{"==> Running /mnt/scripts/4_build.sh", "line1", "line2", "line3"}, output)
+	assert.Equal(t, []string{"line1", "line2", "line3"}, output)
 }
 
 func TestDockerExecutor_Build_StderrOutput(t *testing.T) {
@@ -230,9 +230,8 @@ func TestDockerExecutor_Build_StreamsOutputInRealTime(t *testing.T) {
 	wg.Wait()
 
 	require.NoError(t, err)
-	require.Len(t, output, 6)
-	assert.Equal(t, "==> Running /mnt/scripts/4_build.sh", output[0])
-	for i, line := range output[1:] {
-		assert.True(t, strings.HasPrefix(line, "line_"), "unexpected line %d: %s", i+1, line)
+	require.Len(t, output, 5)
+	for i, line := range output {
+		assert.True(t, strings.HasPrefix(line, "line_"), "unexpected line %d: %s", i, line)
 	}
 }

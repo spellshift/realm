@@ -202,10 +202,6 @@ impl Interpreter {
         self.call_stack.clear();
         self.current_func_name = "<module>".to_string();
 
-        if let Err(e) = exec::hoist_functions(self, &stmts) {
-            return Err(self.format_error(input, e));
-        }
-
         for stmt in stmts {
             match &stmt.kind {
                 // Special case: if top-level statement is an expression, return its value

@@ -83,19 +83,19 @@ func (bu *BuilderUpdate) ClearLastSeenAt() *BuilderUpdate {
 	return bu
 }
 
-// AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by IDs.
-func (bu *BuilderUpdate) AddBuildtaskIDs(ids ...int) *BuilderUpdate {
-	bu.mutation.AddBuildtaskIDs(ids...)
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
+func (bu *BuilderUpdate) AddBuildTaskIDs(ids ...int) *BuilderUpdate {
+	bu.mutation.AddBuildTaskIDs(ids...)
 	return bu
 }
 
-// AddBuildtasks adds the "buildtasks" edges to the BuildTask entity.
-func (bu *BuilderUpdate) AddBuildtasks(b ...*BuildTask) *BuilderUpdate {
+// AddBuildTasks adds the "build_tasks" edges to the BuildTask entity.
+func (bu *BuilderUpdate) AddBuildTasks(b ...*BuildTask) *BuilderUpdate {
 	ids := make([]int, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
-	return bu.AddBuildtaskIDs(ids...)
+	return bu.AddBuildTaskIDs(ids...)
 }
 
 // Mutation returns the BuilderMutation object of the builder.
@@ -103,25 +103,25 @@ func (bu *BuilderUpdate) Mutation() *BuilderMutation {
 	return bu.mutation
 }
 
-// ClearBuildtasks clears all "buildtasks" edges to the BuildTask entity.
-func (bu *BuilderUpdate) ClearBuildtasks() *BuilderUpdate {
-	bu.mutation.ClearBuildtasks()
+// ClearBuildTasks clears all "build_tasks" edges to the BuildTask entity.
+func (bu *BuilderUpdate) ClearBuildTasks() *BuilderUpdate {
+	bu.mutation.ClearBuildTasks()
 	return bu
 }
 
-// RemoveBuildtaskIDs removes the "buildtasks" edge to BuildTask entities by IDs.
-func (bu *BuilderUpdate) RemoveBuildtaskIDs(ids ...int) *BuilderUpdate {
-	bu.mutation.RemoveBuildtaskIDs(ids...)
+// RemoveBuildTaskIDs removes the "build_tasks" edge to BuildTask entities by IDs.
+func (bu *BuilderUpdate) RemoveBuildTaskIDs(ids ...int) *BuilderUpdate {
+	bu.mutation.RemoveBuildTaskIDs(ids...)
 	return bu
 }
 
-// RemoveBuildtasks removes "buildtasks" edges to BuildTask entities.
-func (bu *BuilderUpdate) RemoveBuildtasks(b ...*BuildTask) *BuilderUpdate {
+// RemoveBuildTasks removes "build_tasks" edges to BuildTask entities.
+func (bu *BuilderUpdate) RemoveBuildTasks(b ...*BuildTask) *BuilderUpdate {
 	ids := make([]int, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
-	return bu.RemoveBuildtaskIDs(ids...)
+	return bu.RemoveBuildTaskIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -189,12 +189,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if bu.mutation.LastSeenAtCleared() {
 		_spec.ClearField(builder.FieldLastSeenAt, field.TypeTime)
 	}
-	if bu.mutation.BuildtasksCleared() {
+	if bu.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
@@ -202,12 +202,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.RemovedBuildtasksIDs(); len(nodes) > 0 && !bu.mutation.BuildtasksCleared() {
+	if nodes := bu.mutation.RemovedBuildTasksIDs(); len(nodes) > 0 && !bu.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
@@ -218,12 +218,12 @@ func (bu *BuilderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := bu.mutation.BuildtasksIDs(); len(nodes) > 0 {
+	if nodes := bu.mutation.BuildTasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
@@ -306,19 +306,19 @@ func (buo *BuilderUpdateOne) ClearLastSeenAt() *BuilderUpdateOne {
 	return buo
 }
 
-// AddBuildtaskIDs adds the "buildtasks" edge to the BuildTask entity by IDs.
-func (buo *BuilderUpdateOne) AddBuildtaskIDs(ids ...int) *BuilderUpdateOne {
-	buo.mutation.AddBuildtaskIDs(ids...)
+// AddBuildTaskIDs adds the "build_tasks" edge to the BuildTask entity by IDs.
+func (buo *BuilderUpdateOne) AddBuildTaskIDs(ids ...int) *BuilderUpdateOne {
+	buo.mutation.AddBuildTaskIDs(ids...)
 	return buo
 }
 
-// AddBuildtasks adds the "buildtasks" edges to the BuildTask entity.
-func (buo *BuilderUpdateOne) AddBuildtasks(b ...*BuildTask) *BuilderUpdateOne {
+// AddBuildTasks adds the "build_tasks" edges to the BuildTask entity.
+func (buo *BuilderUpdateOne) AddBuildTasks(b ...*BuildTask) *BuilderUpdateOne {
 	ids := make([]int, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
-	return buo.AddBuildtaskIDs(ids...)
+	return buo.AddBuildTaskIDs(ids...)
 }
 
 // Mutation returns the BuilderMutation object of the builder.
@@ -326,25 +326,25 @@ func (buo *BuilderUpdateOne) Mutation() *BuilderMutation {
 	return buo.mutation
 }
 
-// ClearBuildtasks clears all "buildtasks" edges to the BuildTask entity.
-func (buo *BuilderUpdateOne) ClearBuildtasks() *BuilderUpdateOne {
-	buo.mutation.ClearBuildtasks()
+// ClearBuildTasks clears all "build_tasks" edges to the BuildTask entity.
+func (buo *BuilderUpdateOne) ClearBuildTasks() *BuilderUpdateOne {
+	buo.mutation.ClearBuildTasks()
 	return buo
 }
 
-// RemoveBuildtaskIDs removes the "buildtasks" edge to BuildTask entities by IDs.
-func (buo *BuilderUpdateOne) RemoveBuildtaskIDs(ids ...int) *BuilderUpdateOne {
-	buo.mutation.RemoveBuildtaskIDs(ids...)
+// RemoveBuildTaskIDs removes the "build_tasks" edge to BuildTask entities by IDs.
+func (buo *BuilderUpdateOne) RemoveBuildTaskIDs(ids ...int) *BuilderUpdateOne {
+	buo.mutation.RemoveBuildTaskIDs(ids...)
 	return buo
 }
 
-// RemoveBuildtasks removes "buildtasks" edges to BuildTask entities.
-func (buo *BuilderUpdateOne) RemoveBuildtasks(b ...*BuildTask) *BuilderUpdateOne {
+// RemoveBuildTasks removes "build_tasks" edges to BuildTask entities.
+func (buo *BuilderUpdateOne) RemoveBuildTasks(b ...*BuildTask) *BuilderUpdateOne {
 	ids := make([]int, len(b))
 	for i := range b {
 		ids[i] = b[i].ID
 	}
-	return buo.RemoveBuildtaskIDs(ids...)
+	return buo.RemoveBuildTaskIDs(ids...)
 }
 
 // Where appends a list predicates to the BuilderUpdate builder.
@@ -442,12 +442,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 	if buo.mutation.LastSeenAtCleared() {
 		_spec.ClearField(builder.FieldLastSeenAt, field.TypeTime)
 	}
-	if buo.mutation.BuildtasksCleared() {
+	if buo.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
@@ -455,12 +455,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.RemovedBuildtasksIDs(); len(nodes) > 0 && !buo.mutation.BuildtasksCleared() {
+	if nodes := buo.mutation.RemovedBuildTasksIDs(); len(nodes) > 0 && !buo.mutation.BuildTasksCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),
@@ -471,12 +471,12 @@ func (buo *BuilderUpdateOne) sqlSave(ctx context.Context) (_node *Builder, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := buo.mutation.BuildtasksIDs(); len(nodes) > 0 {
+	if nodes := buo.mutation.BuildTasksIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   builder.BuildtasksTable,
-			Columns: []string{builder.BuildtasksColumn},
+			Table:   builder.BuildTasksTable,
+			Columns: []string{builder.BuildTasksColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(buildtask.FieldID, field.TypeInt),

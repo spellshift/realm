@@ -2,7 +2,6 @@ package graphql_test
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -32,25 +31,16 @@ func TestCreateBuildTask(t *testing.T) {
 	)
 	gqlClient := client.New(srv, client.Path("/graphql"))
 
-	// Create a default build profile for use across tests
-	defaultProfile := graph.BuildProfile.Create().
-		SetName("test-profile").
-		SetDescription("Test build profile").
-		SaveX(ctx)
-	defaultProfileID := strconv.Itoa(defaultProfile.ID)
-
 	mutFull := `mutation createBuildTask($input: CreateBuildTaskInput!) {
 		createBuildTask(input: $input) {
 			id
 			targetOs
 			targetFormat
+			buildImage
 			buildScript
+			transports { uri interval type extra }
 			artifactPath
 			builder { id }
-			profile {
-				buildImage
-				transports { uri interval type extra }
-			}
 		}
 	}`
 	mutIDOnly := `mutation createBuildTask($input: CreateBuildTaskInput!) {
@@ -66,8 +56,7 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-			"targetOS":  "PLATFORM_LINUX",
-			"profileID": defaultProfileID,
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
@@ -87,8 +76,7 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-			"targetOS":  "PLATFORM_LINUX",
-			"profileID": defaultProfileID,
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no builder available")
@@ -110,36 +98,40 @@ func TestCreateBuildTask(t *testing.T) {
 				ID           string
 				TargetOs     string
 				TargetFormat string
+				BuildImage   string
 				BuildScript  string
+				Transports   []struct {
+					URI      string
+					Interval int
+					Type     string
+					Extra    *string
+				}
 				ArtifactPath string
 				Builder      struct {
 					ID string
 				}
-				Profile struct {
-					BuildImage string
-					Transports []struct {
-						URI      string
-						Interval int
-						Type     string
-						Extra    *string
-					}
-				}
 			}
 		}
 		err := gqlClient.Post(mutFull, &resp, client.Var("input", map[string]any{
-			"targetOS":  "PLATFORM_LINUX",
-			"profileID": defaultProfileID,
+			"targetOS": "PLATFORM_LINUX",
+			"transports": []map[string]any{
+				{
+					"uri":   "https://callback.example.com",
+					"interval":      10,
+					"type": "TRANSPORT_GRPC",
+				},
+			},
 		}))
 		require.NoError(t, err)
 		require.NotEmpty(t, resp.CreateBuildTask.ID)
 		assert.Equal(t, "PLATFORM_LINUX", resp.CreateBuildTask.TargetOs)
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
-		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.Profile.BuildImage)
+		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
 		assert.Contains(t, resp.CreateBuildTask.BuildScript, "cargo build")
-		require.Len(t, resp.CreateBuildTask.Profile.Transports, 1)
-		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Profile.Transports[0].URI)
-		assert.Equal(t, 5, resp.CreateBuildTask.Profile.Transports[0].Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Profile.Transports[0].Type)
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "https://callback.example.com", resp.CreateBuildTask.Transports[0].URI)
+		assert.Equal(t, 10, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 
 		// Verify the builder edge
@@ -161,41 +153,36 @@ func TestCreateBuildTask(t *testing.T) {
 
 		var resp struct {
 			CreateBuildTask struct {
-				ID           string
+				ID         string
 				TargetFormat string
-				ArtifactPath string
-				Profile      struct {
-					BuildImage string
-					Transports []struct {
-						URI      string
-						Interval int
-						Type     string
-					}
+				BuildImage   string
+				Transports []struct {
+					URI      string
+					Interval int
+					Type     string
 				}
+				ArtifactPath string
 			}
 		}
-		// Only specify targetOS and profileID; all other fields should get defaults.
+		// Only specify targetOS; all other fields should get defaults.
 		err := gqlClient.Post(`mutation createBuildTask($input: CreateBuildTaskInput!) {
 			createBuildTask(input: $input) {
 				id
 				targetFormat
+				buildImage
+				transports { uri interval type }
 				artifactPath
-				profile {
-					buildImage
-					transports { uri interval type }
-				}
 			}
 		}`, &resp, client.Var("input", map[string]any{
-			"targetOS":  "PLATFORM_LINUX",
-			"profileID": defaultProfileID,
+			"targetOS": "PLATFORM_LINUX",
 		}))
 		require.NoError(t, err)
 		assert.Equal(t, "TARGET_FORMAT_BIN", resp.CreateBuildTask.TargetFormat)
-		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.Profile.BuildImage)
-		require.Len(t, resp.CreateBuildTask.Profile.Transports, 1)
-		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Profile.Transports[0].URI)
-		assert.Equal(t, 5, resp.CreateBuildTask.Profile.Transports[0].Interval)
-		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Profile.Transports[0].Type)
+		assert.Equal(t, "spellshift/devcontainer:main", resp.CreateBuildTask.BuildImage)
+		require.Len(t, resp.CreateBuildTask.Transports, 1)
+		assert.Equal(t, "http://127.0.0.1:8000", resp.CreateBuildTask.Transports[0].URI)
+		assert.Equal(t, 5, resp.CreateBuildTask.Transports[0].Interval)
+		assert.Equal(t, "TRANSPORT_GRPC", resp.CreateBuildTask.Transports[0].Type)
 		assert.Contains(t, resp.CreateBuildTask.ArtifactPath, "x86_64-unknown-linux-musl")
 	})
 
@@ -223,7 +210,6 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
-			"profileID":    defaultProfileID,
 			"artifactPath": "/custom/path/to/binary",
 		}))
 		require.NoError(t, err)
@@ -255,8 +241,7 @@ func TestCreateBuildTask(t *testing.T) {
 				}
 			}
 			err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
-				"targetOS":  "PLATFORM_LINUX",
-				"profileID": defaultProfileID,
+				"targetOS": "PLATFORM_LINUX",
 			}))
 			require.NoError(t, err)
 
@@ -289,7 +274,6 @@ func TestCreateBuildTask(t *testing.T) {
 		// cdylib is not supported on Linux
 		err := gqlClient.Post(mutIDOnly, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_LINUX",
-			"profileID":    defaultProfileID,
 			"targetFormat": "TARGET_FORMAT_CDYLIB",
 		}))
 		require.Error(t, err)
@@ -322,7 +306,6 @@ func TestCreateBuildTask(t *testing.T) {
 			}
 		}`, &resp, client.Var("input", map[string]any{
 			"targetOS":     "PLATFORM_WINDOWS",
-			"profileID":    defaultProfileID,
 			"targetFormat": "TARGET_FORMAT_WINDOWS_SERVICE",
 		}))
 		require.NoError(t, err)
