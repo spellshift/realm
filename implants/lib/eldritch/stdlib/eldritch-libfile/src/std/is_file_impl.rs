@@ -6,8 +6,17 @@ use glob::glob;
 pub fn is_file(path: String) -> Result<bool, String> {
     if path.contains('*') || path.contains('?') || path.contains('[') {
         let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        if let Some(Ok(first_match)) = paths.next() {
-            Ok(first_match.is_file())
+        let first_match = paths.next();
+        let second_match = paths.next();
+
+        if second_match.is_some() {
+            return Err(format!(
+                "Globbing not supported for multiple paths (pattern: {path})"
+            ));
+        }
+
+        if let Some(Ok(match_path)) = first_match {
+            Ok(match_path.is_file())
         } else {
             Ok(false)
         }
