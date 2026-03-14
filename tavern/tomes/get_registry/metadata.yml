@@ -7,4 +7,4 @@ paramdefs:
 - name: path
   type: string
   label: Registry key path
-  placeholder: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion" # Single backslash can be used too but you may encounter issues if you specify "\x64" as that's hex.
+  placeholder: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
