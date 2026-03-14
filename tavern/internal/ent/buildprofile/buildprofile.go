@@ -5,6 +5,7 @@ package buildprofile
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/builder/builderpb"
 )
 
 const (
@@ -62,10 +63,16 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultTransports holds the default value on creation for the "transports" field.
+	DefaultTransports []builderpb.BuildProfileTransport
 	// DefaultBuildImage holds the default value on creation for the "build_image" field.
 	DefaultBuildImage string
 	// BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	BuildImageValidator func(string) error
+	// DefaultPrebuildscript holds the default value on creation for the "prebuildscript" field.
+	DefaultPrebuildscript string
+	// DefaultPostbuildscript holds the default value on creation for the "postbuildscript" field.
+	DefaultPostbuildscript string
 )
 
 // OrderOption defines the ordering options for the BuildProfile queries.

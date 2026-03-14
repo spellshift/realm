@@ -27,14 +27,17 @@ func (BuildProfile) Fields() []ent.Field {
 		field.String("description").
 			Comment("A user facing build profile description."),
 		field.JSON("transports", []builderpb.BuildProfileTransport{}).
+			Default(builder.DefaultTransports).
 			Comment("The transports builds should use in order of priority."),
 		field.String("build_image").
 			NotEmpty().
 			Default(builder.DefaultBuildImage).
 			Comment("Docker container image name to use for the build."),
 		field.String("prebuildscript").
+			Default("echo 'no prebuild set'").
 			Comment("Bash script to run before build command"),
 		field.String("postbuildscript").
+			Default("echo 'no postbuild set'").
 			Comment("Bash script to run after build command"),
 		field.JSON("tomes", []builderpb.BuildProfileTome{}).
 			Optional().

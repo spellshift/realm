@@ -5,6 +5,7 @@ package runtime
 import (
 	"time"
 
+	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -102,12 +103,24 @@ func init() {
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
 	buildprofileFields := schema.BuildProfile{}.Fields()
 	_ = buildprofileFields
+	// buildprofileDescTransports is the schema descriptor for transports field.
+	buildprofileDescTransports := buildprofileFields[2].Descriptor()
+	// buildprofile.DefaultTransports holds the default value on creation for the transports field.
+	buildprofile.DefaultTransports = buildprofileDescTransports.Default.([]builderpb.BuildProfileTransport)
 	// buildprofileDescBuildImage is the schema descriptor for build_image field.
 	buildprofileDescBuildImage := buildprofileFields[3].Descriptor()
 	// buildprofile.DefaultBuildImage holds the default value on creation for the build_image field.
 	buildprofile.DefaultBuildImage = buildprofileDescBuildImage.Default.(string)
 	// buildprofile.BuildImageValidator is a validator for the "build_image" field. It is called by the builders before save.
 	buildprofile.BuildImageValidator = buildprofileDescBuildImage.Validators[0].(func(string) error)
+	// buildprofileDescPrebuildscript is the schema descriptor for prebuildscript field.
+	buildprofileDescPrebuildscript := buildprofileFields[4].Descriptor()
+	// buildprofile.DefaultPrebuildscript holds the default value on creation for the prebuildscript field.
+	buildprofile.DefaultPrebuildscript = buildprofileDescPrebuildscript.Default.(string)
+	// buildprofileDescPostbuildscript is the schema descriptor for postbuildscript field.
+	buildprofileDescPostbuildscript := buildprofileFields[5].Descriptor()
+	// buildprofile.DefaultPostbuildscript holds the default value on creation for the postbuildscript field.
+	buildprofile.DefaultPostbuildscript = buildprofileDescPostbuildscript.Default.(string)
 	buildtaskMixin := schema.BuildTask{}.Mixin()
 	buildtaskHooks := schema.BuildTask{}.Hooks()
 	buildtask.Hooks[0] = buildtaskHooks[0]

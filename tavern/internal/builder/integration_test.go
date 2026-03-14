@@ -152,6 +152,8 @@ func TestBuilderE2E(t *testing.T) {
 
 	profile := graph.BuildProfile.Create().
 		SetName("default").
+		SetBuildImage("rust:1.75").
+		SetDescription("The default profile").
 		SaveX(ctx)
 
 	// 10. Test: ClaimBuildTasks returns unclaimed tasks and marks them as claimed
@@ -171,6 +173,8 @@ func TestBuilderE2E(t *testing.T) {
 		authClient := builderpb.NewBuilderClient(conn)
 		explictProfile := graph.BuildProfile.Create().
 			SetName("explicit").
+			SetBuildImage("golang:1.21").
+			SetDescription("An explicit profile").
 			SetTransports([]builderpb.BuildProfileTransport{{
 				URI:   "https://callback.example.com",
 				Interval:      10,
@@ -182,7 +186,6 @@ func TestBuilderE2E(t *testing.T) {
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-			SetBuildImage("golang:1.21").
 			SetBuildScript("echo hello && go build ./...").
 			SetBuilderID(builders[0].ID).
 			SetProfileID(explictProfile.ID).
@@ -238,7 +241,6 @@ func TestBuilderE2E(t *testing.T) {
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_MACOS).
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-			SetBuildImage("rust:1.75").
 			SetBuildScript("cargo build --release").
 			SetProfileID(profile.ID).
 			SetBuilderID(builders[0].ID).
@@ -294,7 +296,6 @@ func TestBuilderE2E(t *testing.T) {
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_LINUX).
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-			SetBuildImage("golang:1.21").
 			SetBuildScript("go build ./...").
 			SetProfileID(profile.ID).
 			SetBuilderID(builders[0].ID).
@@ -372,7 +373,6 @@ func TestBuilderE2E(t *testing.T) {
 		bt := graph.BuildTask.Create().
 			SetTargetOs(c2pb.Host_PLATFORM_WINDOWS).
 			SetTargetFormat(builderpb.TargetFormat_TARGET_FORMAT_BIN).
-			SetBuildImage("mcr.microsoft.com/windows:ltsc2022").
 			SetBuildScript("msbuild /t:Build").
 			SetProfileID(profile.ID).
 			SetBuilderID(secondBuilder).

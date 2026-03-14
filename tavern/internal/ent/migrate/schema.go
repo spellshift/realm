@@ -70,8 +70,8 @@ var (
 		{Name: "description", Type: field.TypeString},
 		{Name: "transports", Type: field.TypeJSON},
 		{Name: "build_image", Type: field.TypeString, Default: "spellshift/devcontainer:main"},
-		{Name: "prebuildscript", Type: field.TypeString},
-		{Name: "postbuildscript", Type: field.TypeString},
+		{Name: "prebuildscript", Type: field.TypeString, Default: "echo 'no prebuild set'"},
+		{Name: "postbuildscript", Type: field.TypeString, Default: "echo 'no postbuild set'"},
 		{Name: "tomes", Type: field.TypeJSON, Nullable: true},
 	}
 	// BuildProfilesTable holds the schema information for the "build_profiles" table.

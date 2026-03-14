@@ -61,9 +61,25 @@ func (bpc *BuildProfileCreate) SetPrebuildscript(s string) *BuildProfileCreate {
 	return bpc
 }
 
+// SetNillablePrebuildscript sets the "prebuildscript" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillablePrebuildscript(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetPrebuildscript(*s)
+	}
+	return bpc
+}
+
 // SetPostbuildscript sets the "postbuildscript" field.
 func (bpc *BuildProfileCreate) SetPostbuildscript(s string) *BuildProfileCreate {
 	bpc.mutation.SetPostbuildscript(s)
+	return bpc
+}
+
+// SetNillablePostbuildscript sets the "postbuildscript" field if the given value is not nil.
+func (bpc *BuildProfileCreate) SetNillablePostbuildscript(s *string) *BuildProfileCreate {
+	if s != nil {
+		bpc.SetPostbuildscript(*s)
+	}
 	return bpc
 }
 
@@ -123,9 +139,21 @@ func (bpc *BuildProfileCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (bpc *BuildProfileCreate) defaults() {
+	if _, ok := bpc.mutation.Transports(); !ok {
+		v := buildprofile.DefaultTransports
+		bpc.mutation.SetTransports(v)
+	}
 	if _, ok := bpc.mutation.BuildImage(); !ok {
 		v := buildprofile.DefaultBuildImage
 		bpc.mutation.SetBuildImage(v)
+	}
+	if _, ok := bpc.mutation.Prebuildscript(); !ok {
+		v := buildprofile.DefaultPrebuildscript
+		bpc.mutation.SetPrebuildscript(v)
+	}
+	if _, ok := bpc.mutation.Postbuildscript(); !ok {
+		v := buildprofile.DefaultPostbuildscript
+		bpc.mutation.SetPostbuildscript(v)
 	}
 }
 
