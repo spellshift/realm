@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -68,6 +69,8 @@ type Client struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// ScheduledTask is the client for interacting with the ScheduledTask builders.
+	ScheduledTask *ScheduledTaskClient
 	// Screenshot is the client for interacting with the Screenshot builders.
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
@@ -108,6 +111,7 @@ func (c *Client) init() {
 	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
+	c.ScheduledTask = NewScheduledTaskClient(c.config)
 	c.Screenshot = NewScreenshotClient(c.config)
 	c.Shell = NewShellClient(c.config)
 	c.ShellTask = NewShellTaskClient(c.config)
@@ -220,6 +224,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		ScheduledTask:  NewScheduledTaskClient(cfg),
 		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
@@ -259,6 +264,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
+		ScheduledTask:  NewScheduledTaskClient(cfg),
 		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
@@ -297,8 +303,8 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
-		c.Repository, c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome,
-		c.User,
+		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
+		c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -310,8 +316,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Asset, c.Beacon, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
 		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
-		c.Repository, c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome,
-		c.User,
+		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
+		c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -346,6 +352,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Quest.mutate(ctx, m)
 	case *RepositoryMutation:
 		return c.Repository.mutate(ctx, m)
+	case *ScheduledTaskMutation:
+		return c.ScheduledTask.mutate(ctx, m)
 	case *ScreenshotMutation:
 		return c.Screenshot.mutate(ctx, m)
 	case *ShellMutation:
@@ -2515,6 +2523,22 @@ func (c *QuestClient) QueryCreator(q *Quest) *UserQuery {
 	return query
 }
 
+// QueryScheduledTask queries the scheduled_task edge of a Quest.
+func (c *QuestClient) QueryScheduledTask(q *Quest) *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, id),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.ScheduledTaskTable, quest.ScheduledTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *QuestClient) Hooks() []Hook {
 	return c.hooks.Quest
@@ -2703,6 +2727,187 @@ func (c *RepositoryClient) mutate(ctx context.Context, m *RepositoryMutation) (V
 		return (&RepositoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Repository mutation op: %q", m.Op())
+	}
+}
+
+// ScheduledTaskClient is a client for the ScheduledTask schema.
+type ScheduledTaskClient struct {
+	config
+}
+
+// NewScheduledTaskClient returns a client for the ScheduledTask from the given config.
+func NewScheduledTaskClient(c config) *ScheduledTaskClient {
+	return &ScheduledTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `scheduledtask.Hooks(f(g(h())))`.
+func (c *ScheduledTaskClient) Use(hooks ...Hook) {
+	c.hooks.ScheduledTask = append(c.hooks.ScheduledTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `scheduledtask.Intercept(f(g(h())))`.
+func (c *ScheduledTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ScheduledTask = append(c.inters.ScheduledTask, interceptors...)
+}
+
+// Create returns a builder for creating a ScheduledTask entity.
+func (c *ScheduledTaskClient) Create() *ScheduledTaskCreate {
+	mutation := newScheduledTaskMutation(c.config, OpCreate)
+	return &ScheduledTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ScheduledTask entities.
+func (c *ScheduledTaskClient) CreateBulk(builders ...*ScheduledTaskCreate) *ScheduledTaskCreateBulk {
+	return &ScheduledTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScheduledTaskClient) MapCreateBulk(slice any, setFunc func(*ScheduledTaskCreate, int)) *ScheduledTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScheduledTaskCreateBulk{err: fmt.Errorf("calling to ScheduledTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScheduledTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScheduledTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ScheduledTask.
+func (c *ScheduledTaskClient) Update() *ScheduledTaskUpdate {
+	mutation := newScheduledTaskMutation(c.config, OpUpdate)
+	return &ScheduledTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScheduledTaskClient) UpdateOne(st *ScheduledTask) *ScheduledTaskUpdateOne {
+	mutation := newScheduledTaskMutation(c.config, OpUpdateOne, withScheduledTask(st))
+	return &ScheduledTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScheduledTaskClient) UpdateOneID(id int) *ScheduledTaskUpdateOne {
+	mutation := newScheduledTaskMutation(c.config, OpUpdateOne, withScheduledTaskID(id))
+	return &ScheduledTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ScheduledTask.
+func (c *ScheduledTaskClient) Delete() *ScheduledTaskDelete {
+	mutation := newScheduledTaskMutation(c.config, OpDelete)
+	return &ScheduledTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScheduledTaskClient) DeleteOne(st *ScheduledTask) *ScheduledTaskDeleteOne {
+	return c.DeleteOneID(st.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScheduledTaskClient) DeleteOneID(id int) *ScheduledTaskDeleteOne {
+	builder := c.Delete().Where(scheduledtask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScheduledTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for ScheduledTask.
+func (c *ScheduledTaskClient) Query() *ScheduledTaskQuery {
+	return &ScheduledTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScheduledTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ScheduledTask entity by its id.
+func (c *ScheduledTaskClient) Get(ctx context.Context, id int) (*ScheduledTask, error) {
+	return c.Query().Where(scheduledtask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScheduledTaskClient) GetX(ctx context.Context, id int) *ScheduledTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTome queries the tome edge of a ScheduledTask.
+func (c *ScheduledTaskClient) QueryTome(st *ScheduledTask) *TomeQuery {
+	query := (&TomeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
+			sqlgraph.To(tome.Table, tome.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, scheduledtask.TomeTable, scheduledtask.TomeColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScheduledHosts queries the scheduled_hosts edge of a ScheduledTask.
+func (c *ScheduledTaskClient) QueryScheduledHosts(st *ScheduledTask) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.ScheduledHostsTable, scheduledtask.ScheduledHostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryQuests queries the quests edge of a ScheduledTask.
+func (c *ScheduledTaskClient) QueryQuests(st *ScheduledTask) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.QuestsTable, scheduledtask.QuestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ScheduledTaskClient) Hooks() []Hook {
+	return c.hooks.ScheduledTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScheduledTaskClient) Interceptors() []Interceptor {
+	return c.inters.ScheduledTask
+}
+
+func (c *ScheduledTaskClient) mutate(ctx context.Context, m *ScheduledTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScheduledTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScheduledTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScheduledTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScheduledTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ScheduledTask mutation op: %q", m.Op())
 	}
 }
 
@@ -3897,22 +4102,6 @@ func (c *TomeClient) QueryRepository(t *Tome) *RepositoryQuery {
 	return query
 }
 
-// QueryScheduledHosts queries the scheduled_hosts edge of a Tome.
-func (c *TomeClient) QueryScheduledHosts(t *Tome) *HostQuery {
-	query := (&HostClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := t.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(tome.Table, tome.FieldID, id),
-			sqlgraph.To(host.Table, host.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, tome.ScheduledHostsTable, tome.ScheduledHostsColumn),
-		)
-		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *TomeClient) Hooks() []Hook {
 	hooks := c.hooks.Tome
@@ -4124,12 +4313,12 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
-		HostProcess, Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask,
-		Tag, Task, Tome, User []ent.Hook
+		HostProcess, Link, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
+		ShellTask, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
 		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
-		HostProcess, Link, Portal, Quest, Repository, Screenshot, Shell, ShellTask,
-		Tag, Task, Tome, User []ent.Interceptor
+		HostProcess, Link, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
+		ShellTask, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

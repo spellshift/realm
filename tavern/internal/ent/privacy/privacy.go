@@ -422,6 +422,30 @@ func (f RepositoryMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Muta
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.RepositoryMutation", m)
 }
 
+// The ScheduledTaskQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ScheduledTaskQueryRuleFunc func(context.Context, *ent.ScheduledTaskQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ScheduledTaskQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ScheduledTaskQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ScheduledTaskQuery", q)
+}
+
+// The ScheduledTaskMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ScheduledTaskMutationRuleFunc func(context.Context, *ent.ScheduledTaskMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ScheduledTaskMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ScheduledTaskMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ScheduledTaskMutation", m)
+}
+
 // The ScreenshotQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ScreenshotQueryRuleFunc func(context.Context, *ent.ScreenshotQuery) error

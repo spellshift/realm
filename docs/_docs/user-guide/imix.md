@@ -253,9 +253,49 @@ This isn't ideal as in the UI each new beacon will appear as though it were on a
 
 To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environment variable at build time.
 
-`IMIX_UNIQUE` should be a list of JSON objects with `type` as a required field with args as an optional field.
+`IMIX_UNIQUE` should be a JSON array containing a list of JSON objects, where `type` is a required field and `args` is an optional field. The `args` object structure is dependent on the `type` selected. The selectors will be evaluated in the order they are specified.
 
-By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}},{"type":"macaddr"}]'`
+### Available Selectors
 
-To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
-If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
+- **`env`**: Uses the `IMIX_HOST_ID` environment variable at runtime.
+- **`file`**: Uses a unique ID generated and saved to a file on disk. Accepts an optional `args` parameter `path_override` to specify a custom file path.
+- **`macaddr`**: Uses the MAC address of the first non-loopback network interface.
+- **`registry`**: Uses a registry key (Windows only). Must be enabled via `win_service` feature flag. Accepts `args` parameters `subkey` and optionally `value_name`.
+
+### Default Behavior
+
+By default `IMIX_UNIQUE` is equivalent to the following:
+
+```bash
+export IMIX_UNIQUE='[
+  {"type": "env"},
+  {"type": "file"},
+  {"type": "file", "args": {"path_override": "/etc/system-id"}},
+  {"type": "macaddr"}
+]'
+```
+*(Note: the JSON must be minified/single-line when passed as an environment variable in practice. This is formatted for readability.)*
+
+### Example: Prioritize Stealth
+
+To prioritize stealth we recommend removing the file uniqueness selectors to prevent dropping arbitrary files to disk. Imix will first try checking the `IMIX_HOST_ID` environment variable, and if it is not set, it will fallback to using the network interface's MAC address.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'
+```
+
+### Example: VM Cloning Without Sysprep
+
+If you know the environment will have VMs cloned without sysprep (resulting in duplicate MAC addresses across instances), we recommend prioritizing the file selectors and removing `macaddr`:
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'
+```
+
+### Example: Registry Key (Windows)
+
+On Windows, you can optionally configure Imix to fetch the uniqueness ID from a registry value. Note that the `registry` type is only valid for Windows targets.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWARE\\MyCompany","value_name":"InstallID"}}]'
+```
