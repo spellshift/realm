@@ -131,8 +131,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 	// Create user
 	u, err := client.User.Create().
-		// Use a random or timestamp-based ID to avoid unique constraint failures on reuse
-		SetOauthID(fmt.Sprintf("testuser-%d", time.Now().UnixNano())).
+		SetOauthID("testuser").
 		SetName("Test User").
 		SetPhotoURL("http://example.com/photo.jpg"). // Required field
 		Save(ctx)
@@ -143,7 +142,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 	// Create Host (Required by Beacon)
 	h, err := client.Host.Create().
 		SetName("testhost").
-		SetIdentifier(fmt.Sprintf("host1-%d", time.Now().UnixNano())).
+		SetIdentifier("host1").
 		SetPrimaryIP("127.0.0.1").
 		SetPlatform(c2pb.Host_PLATFORM_LINUX).
 		Save(ctx)
@@ -153,7 +152,7 @@ func CreateTask(ctx context.Context, client *ent.Client) (int, error) {
 
 	// Create beacon
 	b, err := client.Beacon.Create().
-		SetIdentifier(fmt.Sprintf("testbeacon-%d", time.Now().UnixNano())).
+		SetIdentifier("testbeacon").
 		SetHost(h).
 		SetTransport(c2pb.Transport_TRANSPORT_HTTP1).
 		Save(ctx)
