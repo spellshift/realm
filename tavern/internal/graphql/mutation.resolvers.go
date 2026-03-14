@@ -512,49 +512,6 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 	return bt, nil
 }
 
-// CreateBuildProfile is the resolver for the createBuildProfile field.
-func (r *mutationResolver) CreateBuildProfile(ctx context.Context, input models.CreateBuildProfileInput) (*ent.BuildProfile, error) {
-	transports := builder.DefaultTransports
-	if len(input.Transports) > 0 {
-		transports = make([]builderpb.BuildProfileTransport, len(input.Transports))
-		for i, t := range input.Transports {
-			var extra string
-			if t.Extra != nil {
-				extra = *t.Extra
-			}
-			transports[i] = builderpb.BuildProfileTransport{
-				URI:      t.URI,
-				Interval: t.Interval,
-				Type:     c2pb.Transport_Type(t.Type),
-				Extra:    extra,
-			}
-		}
-	}
-
-	tomes := make([]builderpb.BuildProfileTome, len(input.Tomes))
-	for i, tome := range input.Tomes {
-		tomes[i] = builderpb.BuildProfileTome{
-			TomeID: tome.TomeID,
-			Params: tome.Params,
-		}
-	}
-
-	create := r.client.BuildProfile.Create().
-		SetName(input.Name).
-		SetDescription(input.Description).
-		SetTransports(transports).
-		SetTomes(tomes).
-		SetPrebuildscript(input.Prebuildscript).
-		SetSetupscript(input.Setupscript).
-		SetPostbuildscript(input.Postbuildscript)
-
-	if input.Unique != nil {
-		create.SetUnique(*input.Unique)
-	}
-
-	return create.Save(ctx)
-}
-
 // CreateScheduledTask is the resolver for the createScheduledTask field.
 func (r *mutationResolver) CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error) {
 	return r.client.ScheduledTask.Create().SetInput(input).Save(ctx)

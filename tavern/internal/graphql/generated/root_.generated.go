@@ -406,6 +406,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
+		BuildProfiles  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) int
 		BuildTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildTaskOrder, where *ent.BuildTaskWhereInput) int
 		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
 		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
@@ -2112,18 +2113,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
-
-	case "Mutation.createBuildProfile":
-		if e.complexity.Mutation.CreateBuildProfile == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createBuildProfile_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateBuildProfile(childComplexity, args["input"].(models.CreateBuildProfileInput)), true
 
 	case "Mutation.createBuildTask":
 		if e.complexity.Mutation.CreateBuildTask == nil {

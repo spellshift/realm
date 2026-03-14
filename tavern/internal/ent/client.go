@@ -4485,13 +4485,14 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
-		HostProcess, Link, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
-		ShellTask, Tag, Task, Tome, User []ent.Hook
+		Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
+		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
+		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Asset, Beacon, BuildTask, Builder, DeviceAuth, Host, HostCredential, HostFile,
-		HostProcess, Link, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
-		ShellTask, Tag, Task, Tome, User []ent.Interceptor
+		Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
+		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
+		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome,
+		User []ent.Interceptor
 	}
 )
