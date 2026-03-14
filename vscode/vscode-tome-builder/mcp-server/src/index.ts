@@ -1,24 +1,70 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  Tool,
+    CallToolRequestSchema,
+    ListToolsRequestSchema,
+    Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { DOCS, EXAMPLES } from "./assets.js";
+import { z } from "zod";
+import * as fs from 'fs';
+import * as path from 'path';
+
+// --- Helper Functions for Runtime File Reading ---
+
+const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/spellshift/realm/main";
+
+async function readDocFile(relativePath: string): Promise<string> {
+    const url = `${GITHUB_RAW_BASE}/${relativePath}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            return `Error fetching documentation from GitHub: HTTP ${response.status}`;
+        }
+        return await response.text();
+    } catch (e) {
+        return `Error fetching documentation: ${e}`;
+    }
+}
+
+async function readExample(tomeName: string): Promise<{ metadata: string, script: string }> {
+    const tomeDirUrl = `${GITHUB_RAW_BASE}/tavern/tomes/${tomeName}`;
+    try {
+        const [metaRes, scriptRes] = await Promise.all([
+            fetch(`${tomeDirUrl}/metadata.yml`),
+            fetch(`${tomeDirUrl}/main.eldritch`)
+        ]);
+
+        if (!metaRes.ok || !scriptRes.ok) {
+            return {
+                metadata: `Error fetching metadata.yml: HTTP ${metaRes.status}`,
+                script: `Error fetching main.eldritch: HTTP ${scriptRes.status}`
+            };
+        }
+
+        const metadata = await metaRes.text();
+        const script = await scriptRes.text();
+
+        return { metadata, script };
+    } catch (e) {
+        return {
+            metadata: `Network error fetching metadata: ${e}`,
+            script: `Network error fetching script: ${e}`
+        };
+    }
+}
 
 // --- Server Setup ---
 
 const server = new Server(
-  {
-    name: "tome-builder",
-    version: "1.0.0",
-  },
-  {
-    capabilities: {
-      tools: {},
+    {
+        name: "tome-builder",
+        version: "1.0.0",
     },
-  }
+    {
+        capabilities: {
+            tools: {},
+        },
+    }
 );
 
 // Define Tools
@@ -46,8 +92,8 @@ const getTomeExamplesTool: Tool = {
         properties: {
             topic: {
                 type: "string",
-                enum: Object.keys(EXAMPLES),
-                description: "The name of the tome example to retrieve."
+                enum: ["file_write", "persist_service"],
+                description: "The example to retrieve. 'file_write' is simple, 'persist_service' is complex (templates, os checks)."
             }
         },
         required: ["topic"]
@@ -78,35 +124,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     if (name === "get_documentation") {
         const topic = (args as any).topic;
+
+        const SYSTEM_PROMPTS = `
+        === CRITICAL AI ELDRITCH PROMPT INSTRUCTIONS ===
+        1. ALWAYS use \`eprint(...)\` for logging errors to stderr. NEVER use \`print("error: ...")\`.
+        2. \`print(...)\` is STRICTLY reserved for actual stdout data output.
+        3. Do NOT hallucinate Python standard libraries (e.g. no \`os\`, \`subprocess\`, \`json\`). You MUST use the Eldritch APIs defined below.
+        ================================================
+        \n\n`;
+
         if (topic === "tomes") {
+            const content = await readDocFile('docs/_docs/user-guide/tomes.md');
             return {
-                content: [{ type: "text", text: DOCS.tomes }],
+                content: [{ type: "text", text: SYSTEM_PROMPTS + content }],
             };
         } else if (topic === "eldritch") {
+            const content = await readDocFile('docs/_docs/user-guide/eldritch.md');
             return {
-                content: [{ type: "text", text: DOCS.eldritch }],
+                content: [{ type: "text", text: SYSTEM_PROMPTS + content }],
             };
         }
         return { content: [], isError: true };
     }
 
     if (name === "get_tome_examples") {
-        const topic = (args as any).topic as string;
-        const example = EXAMPLES[topic];
+        const topic = (args as any).topic;
+        const SYSTEM_PROMPTS = `
+        === CRITICAL AI ELDRITCH PROMPT INSTRUCTIONS ===
+        1. ALWAYS use \`eprint(...)\` for logging errors to stderr. NEVER use \`print("error: ...")\`.
+        2. \`print(...)\` is STRICTLY reserved for actual stdout data output.
+        3. Do NOT hallucinate Python standard libraries (e.g. no \`os\`, \`subprocess\`, \`json\`). You MUST use the Eldritch APIs defined below.
+        ================================================
+        \n\n`;
 
-        if (example) {
+        if (topic === "file_write") {
+            const example = await readExample('file_write');
             return {
                 content: [
-                    { type: "text", text: "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: SYSTEM_PROMPTS + "## metadata.yml\n" + example.metadata },
+                    { type: "text", text: "## main.eldritch\n" + example.script }
+                ]
+            };
+        } else if (topic === "persist_service") {
+            const example = await readExample('persist_service');
+            return {
+                content: [
+                    { type: "text", text: SYSTEM_PROMPTS + "## metadata.yml\n" + example.metadata },
                     { type: "text", text: "## main.eldritch\n" + example.script }
                 ]
             };
         }
-
-         return {
-            content: [{ type: "text", text: `Example '${topic}' not found. Available: ${Object.keys(EXAMPLES).join(", ")}` }],
-            isError: true
-        };
+        return { content: [], isError: true };
     }
 
     if (name === "validate_tome_structure") {
@@ -137,12 +205,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Tome MCP Server running on stdio");
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Tome MCP Server running on stdio");
 }
 
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
+    console.error("Fatal error in main():", error);
+    process.exit(1);
 });

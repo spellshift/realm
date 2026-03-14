@@ -4,3 +4,7 @@ node_modules/
 .vscode-test/
 *.vsix
 mcp-server/src/assets.ts
+
+# Ignore auto-generated MCP configurations
+.vscode/cline_mcp_settings.json
+.vscode/mcp.json
