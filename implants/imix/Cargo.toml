@@ -18,7 +18,7 @@ tokio-console = ["dep:console-subscriber", "tokio/tracing"]
 
 [dependencies]
 tokio = { workspace = true, features = [
-    "rt-multi-thread",
+    "rt",
     "macros",
     "sync",
     "time",

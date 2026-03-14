@@ -36,23 +36,52 @@ test('End-to-end sleep obfuscation test', async ({ page }) => {
 
       // Requires SeDebugPrivilege (admin). In a typical CI this might be available.
       // If it fails, the test will correctly throw an error (since we removed try-catch).
-      try {
-        execSync(`powershell -Command "rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump ${pid} ${dumpPath} full"`);
+      // Use a custom C# script in PowerShell to enable SeDebugPrivilege and call MiniDumpWriteDump
+      // This is required to dump memory without failing due to missing privileges in CI
+      const psScript = `
+$code = @"
+using System;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.IO;
 
-        // Use Select-String to stream-search the file and avoid OOM issues from loading the whole file into memory.
-        console.log('Checking dump for IOCs');
-        const checkCmd = `powershell -Command "if (Select-String -Path '${dumpPath}' -Pattern 'eldritch' -Quiet) { Write-Output 'FOUND' } else { Write-Output 'NOT_FOUND' }"`;
+public class Dumper {
+    [DllImport("dbghelp.dll", EntryPoint = "MiniDumpWriteDump", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+    static extern bool MiniDumpWriteDump(IntPtr hProcess, uint processId, SafeHandle hFile, uint dumpType, IntPtr expParam, IntPtr userStreamParam, IntPtr extParam);
 
-        const result = execSync(checkCmd).toString().trim();
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
 
-        // This assertion MUST NOT be inside a try-catch, so if it fails, the test fails.
-        expect(result).toBe('NOT_FOUND');
+    public static void Dump(int pid, string path) {
+        IntPtr handle = OpenProcess(0x0400 | 0x0010, false, pid);
+        using (FileStream fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.Write)) {
+            MiniDumpWriteDump(handle, (uint)pid, fs.SafeFileHandle, 2, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        }
+    }
+}
+"@
+Add-Type -TypeDefinition $code -Language CSharp
+[Dumper]::Dump(${pid}, '${dumpPath}')
+`;
+      const scriptPath = `C:\\Windows\\Temp\\dump_${pid}.ps1`;
+      const fs = require('fs');
+      fs.writeFileSync(scriptPath, psScript);
 
-        // Cleanup
-        execSync(`del ${dumpPath}`);
-      } catch (e) {
-         console.log("Memory scan skipped or failed due to lack of debug privileges. Marking as passed for environments without procdump capabilities.");
-      }
+      // Must not use try/catch to silence failures. If we can't dump memory, the test should fail.
+      execSync(`powershell -ExecutionPolicy Bypass -File ${scriptPath}`);
+
+      // Use Select-String to stream-search the file and avoid OOM issues from loading the whole file into memory.
+      console.log('Checking dump for IOCs');
+      const checkCmd = `powershell -Command "if (Select-String -Path '${dumpPath}' -Pattern 'eldritch' -Quiet) { Write-Output 'FOUND' } else { Write-Output 'NOT_FOUND' }"`;
+
+      const scanResult = execSync(checkCmd).toString().trim();
+
+      // Cleanup
+      execSync(`del ${dumpPath}`);
+      execSync(`del ${scriptPath}`);
+
+      // The string "eldritch" should not be present in the memory dump
+      expect(scanResult).toBe('NOT_FOUND');
     } else {
        console.log('No imix process found on Windows.');
        // If no process is found, fail the test
