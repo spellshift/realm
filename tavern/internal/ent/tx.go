@@ -38,6 +38,8 @@ type Tx struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// ScheduledTask is the client for interacting with the ScheduledTask builders.
+	ScheduledTask *ScheduledTaskClient
 	// Screenshot is the client for interacting with the Screenshot builders.
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
@@ -196,6 +198,7 @@ func (tx *Tx) init() {
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
+	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)

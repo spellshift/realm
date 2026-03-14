@@ -158,7 +158,7 @@ var (
 		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
-		{Name: "tome_scheduled_hosts", Type: field.TypeInt, Nullable: true},
+		{Name: "scheduled_task_scheduled_hosts", Type: field.TypeInt, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
 	HostsTable = &schema.Table{
@@ -167,9 +167,9 @@ var (
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "hosts_tomes_scheduled_hosts",
+				Symbol:     "hosts_scheduled_tasks_scheduled_hosts",
 				Columns:    []*schema.Column{HostsColumns[10]},
-				RefColumns: []*schema.Column{TomesColumns[0]},
+				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -408,6 +408,7 @@ var (
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},
+		{Name: "scheduled_task_quests", Type: field.TypeInt, Nullable: true},
 	}
 	// QuestsTable holds the schema information for the "quests" table.
 	QuestsTable = &schema.Table{
@@ -431,6 +432,12 @@ var (
 				Symbol:     "quests_users_creator",
 				Columns:    []*schema.Column{QuestsColumns[9]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "quests_scheduled_tasks_quests",
+				Columns:    []*schema.Column{QuestsColumns[10]},
+				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -457,6 +464,34 @@ var (
 				Columns:    []*schema.Column{RepositoriesColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ScheduledTasksColumns holds the columns for the "scheduled_tasks" table.
+	ScheduledTasksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString},
+		{Name: "run_on_new_beacon_callback", Type: field.TypeBool, Default: false},
+		{Name: "run_on_first_host_callback", Type: field.TypeBool, Default: false},
+		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
+		{Name: "disabled", Type: field.TypeBool, Default: false},
+		{Name: "scheduled_task_tome", Type: field.TypeInt},
+	}
+	// ScheduledTasksTable holds the schema information for the "scheduled_tasks" table.
+	ScheduledTasksTable = &schema.Table{
+		Name:       "scheduled_tasks",
+		Columns:    ScheduledTasksColumns,
+		PrimaryKey: []*schema.Column{ScheduledTasksColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "scheduled_tasks_tomes_tome",
+				Columns:    []*schema.Column{ScheduledTasksColumns[10]},
+				RefColumns: []*schema.Column{TomesColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -628,9 +663,6 @@ var (
 		{Name: "author", Type: field.TypeString},
 		{Name: "support_model", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "FIRST_PARTY", "COMMUNITY"}, Default: "UNSPECIFIED"},
 		{Name: "tactic", Type: field.TypeEnum, Enums: []string{"UNSPECIFIED", "RECON", "RESOURCE_DEVELOPMENT", "INITIAL_ACCESS", "EXECUTION", "PERSISTENCE", "PRIVILEGE_ESCALATION", "DEFENSE_EVASION", "CREDENTIAL_ACCESS", "DISCOVERY", "LATERAL_MOVEMENT", "COLLECTION", "COMMAND_AND_CONTROL", "EXFILTRATION", "IMPACT"}, Default: "UNSPECIFIED"},
-		{Name: "run_on_new_beacon_callback", Type: field.TypeBool, Default: false},
-		{Name: "run_on_first_host_callback", Type: field.TypeBool, Default: false},
-		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
 		{Name: "param_defs", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "hash", Type: field.TypeString, Size: 100},
 		{Name: "eldritch", Type: field.TypeString, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
@@ -645,13 +677,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tomes_users_uploader",
-				Columns:    []*schema.Column{TomesColumns[14]},
+				Columns:    []*schema.Column{TomesColumns[11]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "tomes_repositories_repository",
-				Columns:    []*schema.Column{TomesColumns[15]},
+				Columns:    []*schema.Column{TomesColumns[12]},
 				RefColumns: []*schema.Column{RepositoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -773,6 +805,7 @@ var (
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
+		ScheduledTasksTable,
 		ScreenshotsTable,
 		ShellsTable,
 		ShellTasksTable,
@@ -807,7 +840,7 @@ func init() {
 	DeviceAuthsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	HostsTable.ForeignKeys[0].RefTable = TomesTable
+	HostsTable.ForeignKeys[0].RefTable = ScheduledTasksTable
 	HostsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -847,12 +880,17 @@ func init() {
 	QuestsTable.ForeignKeys[0].RefTable = TomesTable
 	QuestsTable.ForeignKeys[1].RefTable = AssetsTable
 	QuestsTable.ForeignKeys[2].RefTable = UsersTable
+	QuestsTable.ForeignKeys[3].RefTable = ScheduledTasksTable
 	QuestsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	RepositoriesTable.ForeignKeys[0].RefTable = UsersTable
 	RepositoriesTable.Annotation = &entsql.Annotation{
 		Table:     "repositories",
+		Collation: "utf8mb4_general_ci",
+	}
+	ScheduledTasksTable.ForeignKeys[0].RefTable = TomesTable
+	ScheduledTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	ScreenshotsTable.ForeignKeys[0].RefTable = HostsTable
