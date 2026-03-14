@@ -42,7 +42,7 @@ type C2Client interface {
 	//   - "file-size": The number of bytes contained by the file.
 	//
 	// If no associated file can be found, a NotFound status error is returned.
-	FetchAsset(ctx context.Context, in *FetchAssetRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FetchAssetResponse], error)
+	FetchAsset(ctx context.Context, in *FetchAssetRequest, opts ...grpc.CallOption) (C2_FetchAssetClient, error)
 	// Report a credential from the host to the server.
 	ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
@@ -52,16 +52,16 @@ type C2Client interface {
 	//
 	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
 	// Any existing files at the provided path for the host are replaced.
-	ReportFile(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[ReportFileRequest, ReportFileResponse], error)
+	ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_ReportFileClient, error)
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error)
 	// Report execution output.
 	ReportOutput(ctx context.Context, in *ReportOutputRequest, opts ...grpc.CallOption) (*ReportOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
-	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ReverseShellRequest, ReverseShellResponse], error)
+	ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C2_ReverseShellClient, error)
 	// Open a portal bi-directional stream.
-	CreatePortal(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CreatePortalRequest, CreatePortalResponse], error)
+	CreatePortal(ctx context.Context, opts ...grpc.CallOption) (C2_CreatePortalClient, error)
 }
 
 type c2Client struct {
@@ -98,8 +98,22 @@ func (c *c2Client) FetchAsset(ctx context.Context, in *FetchAssetRequest, opts .
 	return x, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type C2_FetchAssetClient = grpc.ServerStreamingClient[FetchAssetResponse]
+type C2_FetchAssetClient interface {
+	Recv() (*FetchAssetResponse, error)
+	grpc.ClientStream
+}
+
+type c2FetchAssetClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2FetchAssetClient) Recv() (*FetchAssetResponse, error) {
+	m := new(FetchAssetResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
 
 func (c *c2Client) ReportCredential(ctx context.Context, in *ReportCredentialRequest, opts ...grpc.CallOption) (*ReportCredentialResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -121,8 +135,30 @@ func (c *c2Client) ReportFile(ctx context.Context, opts ...grpc.CallOption) (C2_
 	return x, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type C2_ReportFileClient = grpc.ClientStreamingClient[ReportFileRequest, ReportFileResponse]
+type C2_ReportFileClient interface {
+	Send(*ReportFileRequest) error
+	CloseAndRecv() (*ReportFileResponse, error)
+	grpc.ClientStream
+}
+
+type c2ReportFileClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2ReportFileClient) Send(m *ReportFileRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2ReportFileClient) CloseAndRecv() (*ReportFileResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(ReportFileResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
 
 func (c *c2Client) ReportProcessList(ctx context.Context, in *ReportProcessListRequest, opts ...grpc.CallOption) (*ReportProcessListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -154,8 +190,27 @@ func (c *c2Client) ReverseShell(ctx context.Context, opts ...grpc.CallOption) (C
 	return x, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type C2_ReverseShellClient = grpc.BidiStreamingClient[ReverseShellRequest, ReverseShellResponse]
+type C2_ReverseShellClient interface {
+	Send(*ReverseShellRequest) error
+	Recv() (*ReverseShellResponse, error)
+	grpc.ClientStream
+}
+
+type c2ReverseShellClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2ReverseShellClient) Send(m *ReverseShellRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2ReverseShellClient) Recv() (*ReverseShellResponse, error) {
+	m := new(ReverseShellResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
 
 func (c *c2Client) CreatePortal(ctx context.Context, opts ...grpc.CallOption) (C2_CreatePortalClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -167,12 +222,31 @@ func (c *c2Client) CreatePortal(ctx context.Context, opts ...grpc.CallOption) (C
 	return x, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type C2_CreatePortalClient = grpc.BidiStreamingClient[CreatePortalRequest, CreatePortalResponse]
+type C2_CreatePortalClient interface {
+	Send(*CreatePortalRequest) error
+	Recv() (*CreatePortalResponse, error)
+	grpc.ClientStream
+}
+
+type c2CreatePortalClient struct {
+	grpc.ClientStream
+}
+
+func (x *c2CreatePortalClient) Send(m *CreatePortalRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *c2CreatePortalClient) Recv() (*CreatePortalResponse, error) {
+	m := new(CreatePortalResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
 
 // C2Server is the server API for C2 service.
 // All implementations must embed UnimplementedC2Server
-// for forward compatibility.
+// for forward compatibility
 type C2Server interface {
 	// Contact the server for new tasks to execute.
 	ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error)
@@ -183,7 +257,7 @@ type C2Server interface {
 	//   - "file-size": The number of bytes contained by the file.
 	//
 	// If no associated file can be found, a NotFound status error is returned.
-	FetchAsset(*FetchAssetRequest, grpc.ServerStreamingServer[FetchAssetResponse]) error
+	FetchAsset(*FetchAssetRequest, C2_FetchAssetServer) error
 	// Report a credential from the host to the server.
 	ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error)
 	// Report a file from the host to the server.
@@ -193,52 +267,48 @@ type C2Server interface {
 	//
 	// Content is provided as chunks, the size of which are up to the agent to define (based on memory constraints).
 	// Any existing files at the provided path for the host are replaced.
-	ReportFile(grpc.ClientStreamingServer[ReportFileRequest, ReportFileResponse]) error
+	ReportFile(C2_ReportFileServer) error
 	// Report the active list of running processes. This list will replace any previously reported
 	// lists for the same host.
 	ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error)
 	// Report execution output.
 	ReportOutput(context.Context, *ReportOutputRequest) (*ReportOutputResponse, error)
 	// Open a reverse shell bi-directional stream.
-	ReverseShell(grpc.BidiStreamingServer[ReverseShellRequest, ReverseShellResponse]) error
+	ReverseShell(C2_ReverseShellServer) error
 	// Open a portal bi-directional stream.
-	CreatePortal(grpc.BidiStreamingServer[CreatePortalRequest, CreatePortalResponse]) error
+	CreatePortal(C2_CreatePortalServer) error
 	mustEmbedUnimplementedC2Server()
 }
 
-// UnimplementedC2Server must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedC2Server struct{}
+// UnimplementedC2Server must be embedded to have forward compatible implementations.
+type UnimplementedC2Server struct {
+}
 
 func (UnimplementedC2Server) ClaimTasks(context.Context, *ClaimTasksRequest) (*ClaimTasksResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ClaimTasks not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimTasks not implemented")
 }
-func (UnimplementedC2Server) FetchAsset(*FetchAssetRequest, grpc.ServerStreamingServer[FetchAssetResponse]) error {
-	return status.Error(codes.Unimplemented, "method FetchAsset not implemented")
+func (UnimplementedC2Server) FetchAsset(*FetchAssetRequest, C2_FetchAssetServer) error {
+	return status.Errorf(codes.Unimplemented, "method FetchAsset not implemented")
 }
 func (UnimplementedC2Server) ReportCredential(context.Context, *ReportCredentialRequest) (*ReportCredentialResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReportCredential not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ReportCredential not implemented")
 }
-func (UnimplementedC2Server) ReportFile(grpc.ClientStreamingServer[ReportFileRequest, ReportFileResponse]) error {
-	return status.Error(codes.Unimplemented, "method ReportFile not implemented")
+func (UnimplementedC2Server) ReportFile(C2_ReportFileServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReportFile not implemented")
 }
 func (UnimplementedC2Server) ReportProcessList(context.Context, *ReportProcessListRequest) (*ReportProcessListResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReportProcessList not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ReportProcessList not implemented")
 }
 func (UnimplementedC2Server) ReportOutput(context.Context, *ReportOutputRequest) (*ReportOutputResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReportOutput not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ReportOutput not implemented")
 }
-func (UnimplementedC2Server) ReverseShell(grpc.BidiStreamingServer[ReverseShellRequest, ReverseShellResponse]) error {
-	return status.Error(codes.Unimplemented, "method ReverseShell not implemented")
+func (UnimplementedC2Server) ReverseShell(C2_ReverseShellServer) error {
+	return status.Errorf(codes.Unimplemented, "method ReverseShell not implemented")
 }
-func (UnimplementedC2Server) CreatePortal(grpc.BidiStreamingServer[CreatePortalRequest, CreatePortalResponse]) error {
-	return status.Error(codes.Unimplemented, "method CreatePortal not implemented")
+func (UnimplementedC2Server) CreatePortal(C2_CreatePortalServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreatePortal not implemented")
 }
 func (UnimplementedC2Server) mustEmbedUnimplementedC2Server() {}
-func (UnimplementedC2Server) testEmbeddedByValue()            {}
 
 // UnsafeC2Server may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to C2Server will
@@ -277,8 +347,18 @@ func _C2_FetchAsset_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(C2Server).FetchAsset(m, &c2FetchAssetServer{ServerStream: stream})
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type C2_FetchAssetServer = grpc.ServerStreamingServer[FetchAssetResponse]
+type C2_FetchAssetServer interface {
+	Send(*FetchAssetResponse) error
+	grpc.ServerStream
+}
+
+type c2FetchAssetServer struct {
+	grpc.ServerStream
+}
+
+func (x *c2FetchAssetServer) Send(m *FetchAssetResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
 
 func _C2_ReportCredential_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportCredentialRequest)
