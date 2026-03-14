@@ -2300,6 +2300,11 @@ func (hp *HostProcessQuery) collectField(ctx context.Context, oneNode bool, opCt
 				selectedFields = append(selectedFields, hostprocess.FieldStatus)
 				fieldSeen[hostprocess.FieldStatus] = struct{}{}
 			}
+		case "startTime":
+			if _, ok := fieldSeen[hostprocess.FieldStartTime]; !ok {
+				selectedFields = append(selectedFields, hostprocess.FieldStartTime)
+				fieldSeen[hostprocess.FieldStartTime] = struct{}{}
+			}
 		case "id":
 		case "__typename":
 		default:

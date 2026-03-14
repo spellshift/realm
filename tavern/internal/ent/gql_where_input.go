@@ -4431,6 +4431,18 @@ type HostProcessWhereInput struct {
 	StatusIn    []epb.Process_Status `json:"statusIn,omitempty"`
 	StatusNotIn []epb.Process_Status `json:"statusNotIn,omitempty"`
 
+	// "start_time" field predicates.
+	StartTime       *uint64  `json:"startTime,omitempty"`
+	StartTimeNEQ    *uint64  `json:"startTimeNEQ,omitempty"`
+	StartTimeIn     []uint64 `json:"startTimeIn,omitempty"`
+	StartTimeNotIn  []uint64 `json:"startTimeNotIn,omitempty"`
+	StartTimeGT     *uint64  `json:"startTimeGT,omitempty"`
+	StartTimeGTE    *uint64  `json:"startTimeGTE,omitempty"`
+	StartTimeLT     *uint64  `json:"startTimeLT,omitempty"`
+	StartTimeLTE    *uint64  `json:"startTimeLTE,omitempty"`
+	StartTimeIsNil  bool     `json:"startTimeIsNil,omitempty"`
+	StartTimeNotNil bool     `json:"startTimeNotNil,omitempty"`
+
 	// "host" edge predicates.
 	HasHost     *bool             `json:"hasHost,omitempty"`
 	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
@@ -4904,6 +4916,36 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 	}
 	if len(i.StatusNotIn) > 0 {
 		predicates = append(predicates, hostprocess.StatusNotIn(i.StatusNotIn...))
+	}
+	if i.StartTime != nil {
+		predicates = append(predicates, hostprocess.StartTimeEQ(*i.StartTime))
+	}
+	if i.StartTimeNEQ != nil {
+		predicates = append(predicates, hostprocess.StartTimeNEQ(*i.StartTimeNEQ))
+	}
+	if len(i.StartTimeIn) > 0 {
+		predicates = append(predicates, hostprocess.StartTimeIn(i.StartTimeIn...))
+	}
+	if len(i.StartTimeNotIn) > 0 {
+		predicates = append(predicates, hostprocess.StartTimeNotIn(i.StartTimeNotIn...))
+	}
+	if i.StartTimeGT != nil {
+		predicates = append(predicates, hostprocess.StartTimeGT(*i.StartTimeGT))
+	}
+	if i.StartTimeGTE != nil {
+		predicates = append(predicates, hostprocess.StartTimeGTE(*i.StartTimeGTE))
+	}
+	if i.StartTimeLT != nil {
+		predicates = append(predicates, hostprocess.StartTimeLT(*i.StartTimeLT))
+	}
+	if i.StartTimeLTE != nil {
+		predicates = append(predicates, hostprocess.StartTimeLTE(*i.StartTimeLTE))
+	}
+	if i.StartTimeIsNil {
+		predicates = append(predicates, hostprocess.StartTimeIsNil())
+	}
+	if i.StartTimeNotNil {
+		predicates = append(predicates, hostprocess.StartTimeNotNil())
 	}
 
 	if i.HasHost != nil {
