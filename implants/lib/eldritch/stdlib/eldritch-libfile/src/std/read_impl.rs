@@ -20,18 +20,23 @@ pub fn impl_read_utf8_utf16(path: String) -> Result<String, String> {
 }
 
 pub fn read(path: String) -> Result<String, String> {
-    let target_path = if path.contains('*') || path.contains('?') || path.contains('[') {
-        let mut paths = glob(&path).map_err(|e| format!("Invalid glob pattern {path}: {e}"))?;
-        if let Some(Ok(first_match)) = paths.next() {
-            first_match.to_string_lossy().into_owned()
-        } else {
+    if path.contains('*') || path.contains('?') || path.contains('[') {
+        let paths: Vec<_> = glob(&path)
+            .map_err(|e| format!("Invalid glob pattern {path}: {e}"))?
+            .collect();
+        if paths.is_empty() {
             return Err(format!("No files found matching pattern {path}"));
         }
+        let mut result = String::new();
+        for entry in paths {
+            let matched_path = entry.map_err(|e| format!("Glob error: {e}"))?;
+            let content = impl_read_utf8_utf16(matched_path.to_string_lossy().into_owned())?;
+            result.push_str(&content);
+        }
+        Ok(result)
     } else {
-        path.clone()
-    };
-
-    impl_read_utf8_utf16(target_path)
+        impl_read_utf8_utf16(path)
+    }
 }
 
 #[cfg(test)]
