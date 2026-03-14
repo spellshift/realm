@@ -53,6 +53,13 @@ func (HostProcess) Fields() []ent.Field {
 		field.Enum("status").
 			GoType(epb.Process_Status(0)).
 			Comment("Current process status."),
+		field.Uint64("start_time").
+			Optional().
+			Annotations(
+				entgql.Type("Uint64"),
+				entgql.OrderField("PROCESS_START_TIME"),
+			).
+			Comment("The process start time."),
 	}
 }
 

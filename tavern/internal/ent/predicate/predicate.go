@@ -12,6 +12,9 @@ type Asset func(*sql.Selector)
 // Beacon is the predicate function for beacon builders.
 type Beacon func(*sql.Selector)
 
+// BuildProfile is the predicate function for buildprofile builders.
+type BuildProfile func(*sql.Selector)
+
 // BuildTask is the predicate function for buildtask builders.
 type BuildTask func(*sql.Selector)
 
@@ -44,6 +47,9 @@ type Quest func(*sql.Selector)
 
 // Repository is the predicate function for repository builders.
 type Repository func(*sql.Selector)
+
+// ScheduledTask is the predicate function for scheduledtask builders.
+type ScheduledTask func(*sql.Selector)
 
 // Screenshot is the predicate function for screenshot builders.
 type Screenshot func(*sql.Selector)

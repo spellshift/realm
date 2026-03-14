@@ -82,6 +82,13 @@ func (Quest) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("User that created the quest if available."),
+		edge.From("scheduled_task", ScheduledTask.Type).
+			Ref("quests").
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("The scheduled task that created this quest, if any."),
 	}
 }
 
