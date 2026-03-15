@@ -18,26 +18,26 @@ export const PageWrapper = () => {
 
   return (
     <AccessGate>
-      <CreateQuestModalProvider>
-        <div>
-          {sidebarMinimized ?
-            <MinimizedSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
-            :
-            <FullSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
-          }
-          <MobileNav currNavItem={currNavItem} sidebarOpen={sidebarOpen} handleSidebarOpen={setSidebarOpen} />
+      <div>
+        {sidebarMinimized ?
+          <MinimizedSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
+          :
+          <FullSidebarNav currNavItem={currNavItem} handleSidebarMinimized={setSidebarMinimized} />
+        }
+        <MobileNav currNavItem={currNavItem} sidebarOpen={sidebarOpen} handleSidebarOpen={setSidebarOpen} />
 
-          <main className={classNames("py-4", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
-            <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">
-              <FilterProvider>
-                <SortsProvider>
+        <main className={classNames("py-4", sidebarMinimized ? "lg:ml-24" : "lg:ml-72")}>
+          <div className="px-4 sm:px-6 xl:px-8 flex flex-col gap-4">
+            <FilterProvider>
+              <SortsProvider>
+                <CreateQuestModalProvider>
                   <Outlet />
-                </SortsProvider>
-              </FilterProvider>
-            </div>
-          </main>
-        </div>
-      </CreateQuestModalProvider>
+                </CreateQuestModalProvider>
+              </SortsProvider>
+            </FilterProvider>
+          </div>
+        </main>
+      </div>
     </AccessGate>
   )
 }

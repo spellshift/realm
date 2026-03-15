@@ -3,7 +3,7 @@ import { useMemo} from "react";
 import { sub } from "date-fns";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { getBeaconFilterNameByTypes } from "../../../utils/utils";
-import { PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
+import { OrderDirection, PrincipalAdminTypes, SupportedTransports } from "../../../utils/enums";
 import { GET_BEACON_IDS_QUERY } from "../../../utils/queries";
 import {
     BeaconIdNode,
@@ -150,6 +150,7 @@ function buildBeaconIdsQuery({
 
     return {
         where,
+        orderBy: [{ field: "CREATED_AT", direction: OrderDirection.Desc }],
     };
 }
 

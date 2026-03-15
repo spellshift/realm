@@ -163,11 +163,11 @@ export const TomeTable = ({
         <div className="flex flex-col gap-2">
             {showFilters && (
                 <div className="grid grid-cols-2 gap-2">
-                    <TomeFilterBar setFiltersSelected={setTomeFields} filtersSelected={tomeFields} />
                     <FreeTextSearch
-                        placeholder="Tome name description & params"
+                        placeholder="Tome name, description & params"
                         setSearch={setTomeMultiSearch}
                     />
+                    <TomeFilterBar setFiltersSelected={setTomeFields} filtersSelected={tomeFields} />
                 </div>
             )}
             {tomeIds.length === 0 ? (
