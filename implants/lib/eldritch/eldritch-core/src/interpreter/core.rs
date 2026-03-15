@@ -182,7 +182,12 @@ impl Interpreter {
         // Check for lexer errors first to maintain behavior
         for token in &tokens {
             if let TokenKind::Error(msg) = &token.kind {
-                return Err(format!("Lexer Error: {}", msg));
+                let err = EldritchError::new(
+                    EldritchErrorKind::SyntaxError,
+                    &format!("Lexer Error: {}", msg),
+                    token.span,
+                );
+                return Err(self.format_error(input, err));
             }
         }
 
