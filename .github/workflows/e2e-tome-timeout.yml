@@ -1,4 +1,4 @@
-name: E2E REPL Test 🧪
+name: E2E Tome Timeout Test 🧪
 
 on:
   workflow_dispatch: ~
@@ -9,7 +9,7 @@ on:
   merge_group:
 
 jobs:
-  e2e_repl_test:
+  e2e_tome_timeout_test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -83,7 +83,7 @@ jobs:
     - name: 🧪 Run E2E Tests
       working-directory: tests/e2e
       run: |
-        npx playwright test tests/repl.spec.ts
+        npx playwright test tests/tome_timeout.spec.ts
     - name: 📂 Upload Service Logs
       if: always() # Runs even if tests fail
       uses: actions/upload-artifact@v4
