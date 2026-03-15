@@ -90,6 +90,7 @@ pub const RUN_ONCE: bool = run_once!();
 fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
     match uri.split(":").next().unwrap_or("unspecified") {
         "dns" => crate::c2::transport::Type::TransportDns,
+        "icmp" => crate::c2::transport::Type::TransportIcmp,
         "http1" => crate::c2::transport::Type::TransportHttp1,
         "https1" => crate::c2::transport::Type::TransportHttp1,
         "https" => crate::c2::transport::Type::TransportGrpc,

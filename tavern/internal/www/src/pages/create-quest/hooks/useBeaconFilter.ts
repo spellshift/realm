@@ -130,13 +130,15 @@ export const useBeaconFilter = (beacons: Array<BeaconNode>, selectedBeacons: Sel
             const principals = Object.values(PrincipalAdminTypes) as Array<string>;
             const hosts = {} as { [key: string]: BeaconNode };
 
-            // Transport priority: GRPC > HTTP1 > DNS
+            // Transport priority: GRPC > HTTP1 > ICMP > DNS
             const getTransportPriority = (transport: string | undefined): number => {
                 if (!transport) return 0;
                 switch (transport) {
                     case SupportedTransports.GRPC:
-                        return 3;
+                        return 4;
                     case SupportedTransports.HTTP1:
+                        return 3;
+                    case SupportedTransports.ICMP:
                         return 2;
                     case SupportedTransports.DNS:
                         return 1;
