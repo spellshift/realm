@@ -16,6 +16,8 @@ type Tx struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BuildProfile is the client for interacting with the BuildProfile builders.
+	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
@@ -38,6 +40,8 @@ type Tx struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// ScheduledTask is the client for interacting with the ScheduledTask builders.
+	ScheduledTask *ScheduledTaskClient
 	// Screenshot is the client for interacting with the Screenshot builders.
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
@@ -185,6 +189,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
+	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
@@ -196,6 +201,7 @@ func (tx *Tx) init() {
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
+	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)

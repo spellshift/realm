@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/predicate"
 )
@@ -25,6 +26,7 @@ type BuildTaskQuery struct {
 	inters       []Interceptor
 	predicates   []predicate.BuildTask
 	withBuilder  *BuilderQuery
+	withProfile  *BuildProfileQuery
 	withArtifact *AssetQuery
 	withFKs      bool
 	modifiers    []func(*sql.Selector)
@@ -80,6 +82,28 @@ func (btq *BuildTaskQuery) QueryBuilder() *BuilderQuery {
 			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
 			sqlgraph.To(builder.Table, builder.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.BuilderTable, buildtask.BuilderColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProfile chains the current query on the "profile" edge.
+func (btq *BuildTaskQuery) QueryProfile() *BuildProfileQuery {
+	query := (&BuildProfileClient{config: btq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := btq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := btq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(buildtask.Table, buildtask.FieldID, selector),
+			sqlgraph.To(buildprofile.Table, buildprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, buildtask.ProfileTable, buildtask.ProfileColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(btq.driver.Dialect(), step)
 		return fromU, nil
@@ -302,6 +326,7 @@ func (btq *BuildTaskQuery) Clone() *BuildTaskQuery {
 		inters:       append([]Interceptor{}, btq.inters...),
 		predicates:   append([]predicate.BuildTask{}, btq.predicates...),
 		withBuilder:  btq.withBuilder.Clone(),
+		withProfile:  btq.withProfile.Clone(),
 		withArtifact: btq.withArtifact.Clone(),
 		// clone intermediate query.
 		sql:  btq.sql.Clone(),
@@ -317,6 +342,17 @@ func (btq *BuildTaskQuery) WithBuilder(opts ...func(*BuilderQuery)) *BuildTaskQu
 		opt(query)
 	}
 	btq.withBuilder = query
+	return btq
+}
+
+// WithProfile tells the query-builder to eager-load the nodes that are connected to
+// the "profile" edge. The optional arguments are used to configure the query builder of the edge.
+func (btq *BuildTaskQuery) WithProfile(opts ...func(*BuildProfileQuery)) *BuildTaskQuery {
+	query := (&BuildProfileClient{config: btq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	btq.withProfile = query
 	return btq
 }
 
@@ -410,12 +446,13 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 		nodes       = []*BuildTask{}
 		withFKs     = btq.withFKs
 		_spec       = btq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			btq.withBuilder != nil,
+			btq.withProfile != nil,
 			btq.withArtifact != nil,
 		}
 	)
-	if btq.withBuilder != nil || btq.withArtifact != nil {
+	if btq.withBuilder != nil || btq.withProfile != nil || btq.withArtifact != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -445,6 +482,12 @@ func (btq *BuildTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*B
 	if query := btq.withBuilder; query != nil {
 		if err := btq.loadBuilder(ctx, query, nodes, nil,
 			func(n *BuildTask, e *Builder) { n.Edges.Builder = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := btq.withProfile; query != nil {
+		if err := btq.loadProfile(ctx, query, nodes, nil,
+			func(n *BuildTask, e *BuildProfile) { n.Edges.Profile = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -487,6 +530,38 @@ func (btq *BuildTaskQuery) loadBuilder(ctx context.Context, query *BuilderQuery,
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "build_task_builder" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (btq *BuildTaskQuery) loadProfile(ctx context.Context, query *BuildProfileQuery, nodes []*BuildTask, init func(*BuildTask), assign func(*BuildTask, *BuildProfile)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*BuildTask)
+	for i := range nodes {
+		if nodes[i].build_task_profile == nil {
+			continue
+		}
+		fk := *nodes[i].build_task_profile
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(buildprofile.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "build_task_profile" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

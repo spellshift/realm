@@ -67,11 +67,6 @@ func LastModifiedAt(v time.Time) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldLastModifiedAt, v))
 }
 
-// BuildImage applies equality check predicate on the "build_image" field. It's identical to BuildImageEQ.
-func BuildImage(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldBuildImage, v))
-}
-
 // BuildScript applies equality check predicate on the "build_script" field. It's identical to BuildScriptEQ.
 func BuildScript(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldBuildScript, v))
@@ -120,6 +115,16 @@ func ExitCode(v int) predicate.BuildTask {
 // ArtifactPath applies equality check predicate on the "artifact_path" field. It's identical to ArtifactPathEQ.
 func ArtifactPath(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldEQ(FieldArtifactPath, v))
+}
+
+// Setupscript applies equality check predicate on the "setupscript" field. It's identical to SetupscriptEQ.
+func Setupscript(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldSetupscript, v))
+}
+
+// Unique applies equality check predicate on the "unique" field. It's identical to UniqueEQ.
+func Unique(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldUnique, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -240,71 +245,6 @@ func TargetFormatIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 // TargetFormatNotIn applies the NotIn predicate on the "target_format" field.
 func TargetFormatNotIn(vs ...builderpb.TargetFormat) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldNotIn(FieldTargetFormat, vs...))
-}
-
-// BuildImageEQ applies the EQ predicate on the "build_image" field.
-func BuildImageEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEQ(FieldBuildImage, v))
-}
-
-// BuildImageNEQ applies the NEQ predicate on the "build_image" field.
-func BuildImageNEQ(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNEQ(FieldBuildImage, v))
-}
-
-// BuildImageIn applies the In predicate on the "build_image" field.
-func BuildImageIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldIn(FieldBuildImage, vs...))
-}
-
-// BuildImageNotIn applies the NotIn predicate on the "build_image" field.
-func BuildImageNotIn(vs ...string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldNotIn(FieldBuildImage, vs...))
-}
-
-// BuildImageGT applies the GT predicate on the "build_image" field.
-func BuildImageGT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGT(FieldBuildImage, v))
-}
-
-// BuildImageGTE applies the GTE predicate on the "build_image" field.
-func BuildImageGTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldGTE(FieldBuildImage, v))
-}
-
-// BuildImageLT applies the LT predicate on the "build_image" field.
-func BuildImageLT(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLT(FieldBuildImage, v))
-}
-
-// BuildImageLTE applies the LTE predicate on the "build_image" field.
-func BuildImageLTE(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldLTE(FieldBuildImage, v))
-}
-
-// BuildImageContains applies the Contains predicate on the "build_image" field.
-func BuildImageContains(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContains(FieldBuildImage, v))
-}
-
-// BuildImageHasPrefix applies the HasPrefix predicate on the "build_image" field.
-func BuildImageHasPrefix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasPrefix(FieldBuildImage, v))
-}
-
-// BuildImageHasSuffix applies the HasSuffix predicate on the "build_image" field.
-func BuildImageHasSuffix(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldHasSuffix(FieldBuildImage, v))
-}
-
-// BuildImageEqualFold applies the EqualFold predicate on the "build_image" field.
-func BuildImageEqualFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldEqualFold(FieldBuildImage, v))
-}
-
-// BuildImageContainsFold applies the ContainsFold predicate on the "build_image" field.
-func BuildImageContainsFold(v string) predicate.BuildTask {
-	return predicate.BuildTask(sql.FieldContainsFold(FieldBuildImage, v))
 }
 
 // BuildScriptEQ applies the EQ predicate on the "build_script" field.
@@ -877,6 +817,156 @@ func ArtifactPathContainsFold(v string) predicate.BuildTask {
 	return predicate.BuildTask(sql.FieldContainsFold(FieldArtifactPath, v))
 }
 
+// SetupscriptEQ applies the EQ predicate on the "setupscript" field.
+func SetupscriptEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldSetupscript, v))
+}
+
+// SetupscriptNEQ applies the NEQ predicate on the "setupscript" field.
+func SetupscriptNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldSetupscript, v))
+}
+
+// SetupscriptIn applies the In predicate on the "setupscript" field.
+func SetupscriptIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldSetupscript, vs...))
+}
+
+// SetupscriptNotIn applies the NotIn predicate on the "setupscript" field.
+func SetupscriptNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldSetupscript, vs...))
+}
+
+// SetupscriptGT applies the GT predicate on the "setupscript" field.
+func SetupscriptGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldSetupscript, v))
+}
+
+// SetupscriptGTE applies the GTE predicate on the "setupscript" field.
+func SetupscriptGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldSetupscript, v))
+}
+
+// SetupscriptLT applies the LT predicate on the "setupscript" field.
+func SetupscriptLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldSetupscript, v))
+}
+
+// SetupscriptLTE applies the LTE predicate on the "setupscript" field.
+func SetupscriptLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldSetupscript, v))
+}
+
+// SetupscriptContains applies the Contains predicate on the "setupscript" field.
+func SetupscriptContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldSetupscript, v))
+}
+
+// SetupscriptHasPrefix applies the HasPrefix predicate on the "setupscript" field.
+func SetupscriptHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldSetupscript, v))
+}
+
+// SetupscriptHasSuffix applies the HasSuffix predicate on the "setupscript" field.
+func SetupscriptHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldSetupscript, v))
+}
+
+// SetupscriptIsNil applies the IsNil predicate on the "setupscript" field.
+func SetupscriptIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldSetupscript))
+}
+
+// SetupscriptNotNil applies the NotNil predicate on the "setupscript" field.
+func SetupscriptNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldSetupscript))
+}
+
+// SetupscriptEqualFold applies the EqualFold predicate on the "setupscript" field.
+func SetupscriptEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldSetupscript, v))
+}
+
+// SetupscriptContainsFold applies the ContainsFold predicate on the "setupscript" field.
+func SetupscriptContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldSetupscript, v))
+}
+
+// UniqueEQ applies the EQ predicate on the "unique" field.
+func UniqueEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEQ(FieldUnique, v))
+}
+
+// UniqueNEQ applies the NEQ predicate on the "unique" field.
+func UniqueNEQ(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNEQ(FieldUnique, v))
+}
+
+// UniqueIn applies the In predicate on the "unique" field.
+func UniqueIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIn(FieldUnique, vs...))
+}
+
+// UniqueNotIn applies the NotIn predicate on the "unique" field.
+func UniqueNotIn(vs ...string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotIn(FieldUnique, vs...))
+}
+
+// UniqueGT applies the GT predicate on the "unique" field.
+func UniqueGT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGT(FieldUnique, v))
+}
+
+// UniqueGTE applies the GTE predicate on the "unique" field.
+func UniqueGTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldGTE(FieldUnique, v))
+}
+
+// UniqueLT applies the LT predicate on the "unique" field.
+func UniqueLT(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLT(FieldUnique, v))
+}
+
+// UniqueLTE applies the LTE predicate on the "unique" field.
+func UniqueLTE(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldLTE(FieldUnique, v))
+}
+
+// UniqueContains applies the Contains predicate on the "unique" field.
+func UniqueContains(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContains(FieldUnique, v))
+}
+
+// UniqueHasPrefix applies the HasPrefix predicate on the "unique" field.
+func UniqueHasPrefix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasPrefix(FieldUnique, v))
+}
+
+// UniqueHasSuffix applies the HasSuffix predicate on the "unique" field.
+func UniqueHasSuffix(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldHasSuffix(FieldUnique, v))
+}
+
+// UniqueIsNil applies the IsNil predicate on the "unique" field.
+func UniqueIsNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldIsNull(FieldUnique))
+}
+
+// UniqueNotNil applies the NotNil predicate on the "unique" field.
+func UniqueNotNil() predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldNotNull(FieldUnique))
+}
+
+// UniqueEqualFold applies the EqualFold predicate on the "unique" field.
+func UniqueEqualFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldEqualFold(FieldUnique, v))
+}
+
+// UniqueContainsFold applies the ContainsFold predicate on the "unique" field.
+func UniqueContainsFold(v string) predicate.BuildTask {
+	return predicate.BuildTask(sql.FieldContainsFold(FieldUnique, v))
+}
+
 // HasBuilder applies the HasEdge predicate on the "builder" edge.
 func HasBuilder() predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {
@@ -892,6 +982,29 @@ func HasBuilder() predicate.BuildTask {
 func HasBuilderWith(preds ...predicate.Builder) predicate.BuildTask {
 	return predicate.BuildTask(func(s *sql.Selector) {
 		step := newBuilderStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProfile applies the HasEdge predicate on the "profile" edge.
+func HasProfile() predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProfileTable, ProfileColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProfileWith applies the HasEdge predicate on the "profile" edge with a given conditions (other predicates).
+func HasProfileWith(preds ...predicate.BuildProfile) predicate.BuildTask {
+	return predicate.BuildTask(func(s *sql.Selector) {
+		step := newProfileStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

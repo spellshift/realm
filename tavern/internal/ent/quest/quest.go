@@ -34,6 +34,8 @@ const (
 	EdgeTasks = "tasks"
 	// EdgeCreator holds the string denoting the creator edge name in mutations.
 	EdgeCreator = "creator"
+	// EdgeScheduledTask holds the string denoting the scheduled_task edge name in mutations.
+	EdgeScheduledTask = "scheduled_task"
 	// Table holds the table name of the quest in the database.
 	Table = "quests"
 	// TomeTable is the table that holds the tome relation/edge.
@@ -64,6 +66,13 @@ const (
 	CreatorInverseTable = "users"
 	// CreatorColumn is the table column denoting the creator relation/edge.
 	CreatorColumn = "quest_creator"
+	// ScheduledTaskTable is the table that holds the scheduled_task relation/edge.
+	ScheduledTaskTable = "quests"
+	// ScheduledTaskInverseTable is the table name for the ScheduledTask entity.
+	// It exists in this package in order to avoid circular dependency with the "scheduledtask" package.
+	ScheduledTaskInverseTable = "scheduled_tasks"
+	// ScheduledTaskColumn is the table column denoting the scheduled_task relation/edge.
+	ScheduledTaskColumn = "scheduled_task_quests"
 )
 
 // Columns holds all SQL columns for quest fields.
@@ -83,6 +92,7 @@ var ForeignKeys = []string{
 	"quest_tome",
 	"quest_bundle",
 	"quest_creator",
+	"scheduled_task_quests",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -187,6 +197,13 @@ func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByScheduledTaskField orders the results by scheduled_task field.
+func ByScheduledTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScheduledTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTomeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -213,5 +230,12 @@ func newCreatorStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CreatorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
+	)
+}
+func newScheduledTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScheduledTaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ScheduledTaskTable, ScheduledTaskColumn),
 	)
 }

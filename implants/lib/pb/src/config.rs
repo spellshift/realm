@@ -1,4 +1,5 @@
 use anyhow::Context;
+use guardrails::Guardrail;
 use host_unique::HostIDSelector;
 use url::Url;
 use uuid::Uuid;
@@ -196,6 +197,24 @@ fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
     final_res
 }
 
+fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
+    let final_res = match option_env!("IMIX_GUARDRAILS") {
+        Some(json) => {
+            if let Some(res) = guardrails::from_imix_guardrails(json.to_owned()) {
+                return res;
+            } else {
+                #[cfg(debug_assertions)]
+                log::error!(
+                    "Error parsing guardrails string (should have been caught at build time)"
+                );
+                return guardrails::defaults();
+            }
+        }
+        None => guardrails::defaults(),
+    };
+    final_res
+}
+
 /*
  * Config methods.
  */
@@ -226,6 +245,13 @@ impl Config {
             transports,
             active_index: 0,
         };
+
+        let guardrails = parse_guardrails();
+        if !guardrails::check_guardrails(guardrails) {
+            #[cfg(debug_assertions)]
+            log::error!("Guardrails failed, exiting");
+            std::process::exit(0);
+        }
 
         let info = crate::c2::Beacon {
             identifier: beacon_id,

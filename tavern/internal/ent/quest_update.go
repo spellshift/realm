@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -136,6 +137,25 @@ func (qu *QuestUpdate) SetCreator(u *User) *QuestUpdate {
 	return qu.SetCreatorID(u.ID)
 }
 
+// SetScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID.
+func (qu *QuestUpdate) SetScheduledTaskID(id int) *QuestUpdate {
+	qu.mutation.SetScheduledTaskID(id)
+	return qu
+}
+
+// SetNillableScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID if the given value is not nil.
+func (qu *QuestUpdate) SetNillableScheduledTaskID(id *int) *QuestUpdate {
+	if id != nil {
+		qu = qu.SetScheduledTaskID(*id)
+	}
+	return qu
+}
+
+// SetScheduledTask sets the "scheduled_task" edge to the ScheduledTask entity.
+func (qu *QuestUpdate) SetScheduledTask(s *ScheduledTask) *QuestUpdate {
+	return qu.SetScheduledTaskID(s.ID)
+}
+
 // Mutation returns the QuestMutation object of the builder.
 func (qu *QuestUpdate) Mutation() *QuestMutation {
 	return qu.mutation
@@ -177,6 +197,12 @@ func (qu *QuestUpdate) RemoveTasks(t ...*Task) *QuestUpdate {
 // ClearCreator clears the "creator" edge to the User entity.
 func (qu *QuestUpdate) ClearCreator() *QuestUpdate {
 	qu.mutation.ClearCreator()
+	return qu
+}
+
+// ClearScheduledTask clears the "scheduled_task" edge to the ScheduledTask entity.
+func (qu *QuestUpdate) ClearScheduledTask() *QuestUpdate {
+	qu.mutation.ClearScheduledTask()
 	return qu
 }
 
@@ -396,6 +422,35 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if qu.mutation.ScheduledTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.ScheduledTaskTable,
+			Columns: []string{quest.ScheduledTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := qu.mutation.ScheduledTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.ScheduledTaskTable,
+			Columns: []string{quest.ScheduledTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, qu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{quest.Label}
@@ -520,6 +575,25 @@ func (quo *QuestUpdateOne) SetCreator(u *User) *QuestUpdateOne {
 	return quo.SetCreatorID(u.ID)
 }
 
+// SetScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID.
+func (quo *QuestUpdateOne) SetScheduledTaskID(id int) *QuestUpdateOne {
+	quo.mutation.SetScheduledTaskID(id)
+	return quo
+}
+
+// SetNillableScheduledTaskID sets the "scheduled_task" edge to the ScheduledTask entity by ID if the given value is not nil.
+func (quo *QuestUpdateOne) SetNillableScheduledTaskID(id *int) *QuestUpdateOne {
+	if id != nil {
+		quo = quo.SetScheduledTaskID(*id)
+	}
+	return quo
+}
+
+// SetScheduledTask sets the "scheduled_task" edge to the ScheduledTask entity.
+func (quo *QuestUpdateOne) SetScheduledTask(s *ScheduledTask) *QuestUpdateOne {
+	return quo.SetScheduledTaskID(s.ID)
+}
+
 // Mutation returns the QuestMutation object of the builder.
 func (quo *QuestUpdateOne) Mutation() *QuestMutation {
 	return quo.mutation
@@ -561,6 +635,12 @@ func (quo *QuestUpdateOne) RemoveTasks(t ...*Task) *QuestUpdateOne {
 // ClearCreator clears the "creator" edge to the User entity.
 func (quo *QuestUpdateOne) ClearCreator() *QuestUpdateOne {
 	quo.mutation.ClearCreator()
+	return quo
+}
+
+// ClearScheduledTask clears the "scheduled_task" edge to the ScheduledTask entity.
+func (quo *QuestUpdateOne) ClearScheduledTask() *QuestUpdateOne {
+	quo.mutation.ClearScheduledTask()
 	return quo
 }
 
@@ -803,6 +883,35 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if quo.mutation.ScheduledTaskCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.ScheduledTaskTable,
+			Columns: []string{quest.ScheduledTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := quo.mutation.ScheduledTaskIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.ScheduledTaskTable,
+			Columns: []string{quest.ScheduledTaskColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

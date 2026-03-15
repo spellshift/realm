@@ -20,7 +20,7 @@ const (
 )
 
 // DefaultTransports is the default transport configuration for a build task.
-var DefaultTransports = []builderpb.BuildTaskTransport{{
+var DefaultTransports = []builderpb.BuildProfileTransport{{
 	URI:   "http://127.0.0.1:8000",
 	Interval:      5,
 	Type: c2pb.Transport_TRANSPORT_GRPC,
@@ -123,23 +123,4 @@ func DeriveArtifactPath(os c2pb.Host_Platform) string {
 		return "/home/vscode/realm/implants/target/release/imix"
 	}
 	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix", target)
-}
-
-// GenerateBuildScript generates the full build script from the build configuration.
-// It clones the repository and runs the build command. The IMIX configuration
-// is passed via the IMIX_CONFIG environment variable rather than being written
-// to a file in the build script.
-func GenerateBuildScript(os c2pb.Host_Platform, format TargetFormat) (string, error) {
-	buildCmd, err := BuildCommand(os, format)
-	if err != nil {
-		return "", err
-	}
-
-	script := fmt.Sprintf(
-		`cd /home/vscode && git clone %s realm && cd realm/implants/imix && %s`,
-		DefaultRealmRepoURL,
-		buildCmd,
-	)
-
-	return script, nil
 }

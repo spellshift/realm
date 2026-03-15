@@ -5,6 +5,7 @@ members = [
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
+    "lib/guardrails",
     "lib/netstat",
     "lib/eldritch/eldritch-core",
     "lib/eldritch/eldritch-macros",
@@ -34,6 +35,7 @@ resolver = "2"
 [workspace.dependencies]
 transport = { path = "./lib/transport" }
 host_unique = { path = "./lib/host_unique" }
+guardrails = { path = "./lib/guardrails" }
 pb = { path = "./lib/pb" }
 netstat = { path = "./lib/netstat" }
 
