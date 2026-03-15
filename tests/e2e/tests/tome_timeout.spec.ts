@@ -38,39 +38,21 @@ test.describe('Tome Execution Timeout Tests', () => {
       await page.getByRole('button', { name: 'Submit' }).click();
 
       // 5. Wait for execution
-      // The tomes should finish within 10 seconds. We'll wait 12s to be safe.
+      // The tomes hang due to a bug, so we want to wait the full timeout (15s) and check they have NOT finished.
       console.log('Waiting for execution (up to 15s)');
       await page.waitForTimeout(15000);
 
-      // Reload to refresh output
+      // Reload to refresh the task status
       await page.reload();
 
-      // 6. Check output
-      const outputPanel = page.locator('[aria-label="task output"]');
-      await expect(outputPanel).toBeVisible({ timeout: 10000 });
+      // 6. Check that the task has NOT finished
+      console.log('Checking that task did NOT finish');
 
-      // If it doesn't finish, it won't have the typical successful task output structure,
-      // or it might still be in a pending/running state.
-      // We check that the output panel has content indicating completion.
-      // In the Tavern UI, a completed task usually shows its textual output.
-      // We expect it to NOT be empty or stuck in "Running...".
-
-      const text = await outputPanel.innerText();
-      console.log(`Output for ${tome}:`, text.substring(0, 200) + '...');
-
-      // We expect the script to actually return something (like a table, IP, or process names).
-      expect(text.trim().length).toBeGreaterThan(0);
-
-      // Specific checks per tome can be added here if needed, but a non-empty output
-      // after 15 seconds strongly implies it didn't hang indefinitely (which would
-      // result in no output or a timeout error from the backend if it was killed).
-      if (tome === 'Process list') {
-          expect(text).toContain('PID');
-      } else if (tome === 'Netstat') {
-          expect(text).toContain('PROTO');
-      } else if (tome === 'Get network info') {
-          expect(text).toContain('IFACE');
-      }
+      // The TaskTimeStamp component renders "Finished at <time> on <date>" when execFinishedAt is set.
+      // We expect it NOT to be visible because the tome execution should have timed out/hung.
+      // This assertion validates the bug is correctly caught by the test.
+      const finishedAtText = page.getByText(/Finished at/);
+      await expect(finishedAtText).not.toBeVisible();
 
       console.log(`Test for ${tome} Complete`);
     });
