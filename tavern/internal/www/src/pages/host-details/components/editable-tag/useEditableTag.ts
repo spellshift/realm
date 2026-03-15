@@ -1,6 +1,5 @@
 import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
-import { GET_HOST_QUERY } from "../../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 import { GET_TAG_OPTIONS } from "./useTagOptions";

@@ -39,7 +39,7 @@ export function CreateQuestModalProvider({ children }: { children: React.ReactNo
             navigate(`/tasks/${questId}`)
         }
         closeModal();
-    }, [closeModal]);
+    }, [closeModal, navigate]);
 
     const handleSetOpen = useCallback((open: boolean) => {
         if (!open) {

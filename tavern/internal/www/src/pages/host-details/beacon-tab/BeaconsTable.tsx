@@ -21,7 +21,7 @@ interface BeaconsTableProps {
 
 export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: BeaconsTableProps) => {
     const { openModal } = useCreateQuestModal();
-    const [_, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
     const currentDate = useMemo(() => new Date(), []);
     const principalColors = Object.values(PrincipalAdminTypes);
 
@@ -178,7 +178,7 @@ export const BeaconsTable = ({ beaconIds, hasMore = false, onLoadMore }: Beacons
                 </div>
             ),
         },
-    ], [currentDate, principalColors]);
+    ], [currentDate, principalColors, openModal, setSearchParams]);
 
     return (
         <VirtualizedTable<BeaconNode, BeaconDetailQueryResponse>

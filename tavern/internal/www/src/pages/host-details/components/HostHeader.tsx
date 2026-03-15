@@ -6,7 +6,7 @@ import { FileTerminal } from "lucide-react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const HostHeader = () => {
-    const [_, setSearchParams] = useSearchParams();
+    const [, setSearchParams] = useSearchParams();
     const { openModal } = useCreateQuestModal();
     const { data: host } = useHost();
 

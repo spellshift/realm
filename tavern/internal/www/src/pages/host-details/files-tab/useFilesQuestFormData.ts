@@ -35,7 +35,7 @@ function buildFormData(
     const beaconId = getPriotizedBeaconId(beacons);
 
     return {
-        name: `Populate ${hostName} Process list`,
+        name: `Populate ${hostName} Report file`,
         tomeId: tome.id,
         params: buildParams(tome.paramDefs),
         beacons: beaconId ? [beaconId] : [],
@@ -87,7 +87,7 @@ export const useFilesQuestFormData = () => {
 
         const beacons = beaconData?.beacons?.edges?.map((e) => e.node) || [];
         return buildFormData(host.name, tome, beacons, initialFilters);
-    }, [host?.id, tomeData, fetchBeacons]);
+    }, [host?.id, host?.name, tomeData, fetchBeacons, initialFilters]);
 
     return { fetchFormData, loading };
 };

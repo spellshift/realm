@@ -28,7 +28,7 @@ export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilte
         initial.forEach(f => filterMap.set(f.id, f));
 
         return Array.from(filterMap.values());
-    }, []);
+    }, [filters.beaconFields, initialFilters?.beaconFields]);
 
     const [typeFilters, setTypeFilters] = useState<FilterBarOption[]>(computedInitialFilters);
     const [viewOnlySelected, setViewOnlySelected] = useState(false);

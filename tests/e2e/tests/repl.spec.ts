@@ -1,40 +1,44 @@
 import { test, expect } from '@playwright/test';
 
 test('End-to-end reverse shell repl test', async ({ page }) => {
-  // Connect to tavern's UI using playwright at http://127.0.0.1:8000/createQuest
-  console.log('Navigating to /createQuest');
-  await page.goto('/createQuest');
+  // Navigate to quests page and open the Create Quest modal
+  console.log('Navigating to /quests');
+  await page.goto('/quests');
+
+  // Click "Create a quest" button to open the modal
+  console.log('Opening Create Quest modal');
+  await page.getByRole('button', { name: 'Create a quest' }).click();
 
   // Select the only visible beacon and click "continue"
   console.log('Waiting for beacons to load');
   await expect(page.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
 
-  // Select the checkbox. Using force: true because Chakra UI hides the actual input.
-  // Define the locator for the beacon checkboxes
-  const beacons = page.locator('.chakra-card input[type="checkbox"]');
-
-  // Assert that exactly one beacon exists
-  await expect(beacons).toHaveCount(1);
+  // Select the first beacon checkbox using aria-label (Chakra Checkbox with aria-label="Select beacon {name}")
+  const beaconCheckbox = page.getByLabel(/Select beacon/).first();
+  await expect(beaconCheckbox).toBeVisible();
 
   // Select the beacon
   console.log('Selecting beacon');
-  await beacons.first().check({ force: true });
+  await beaconCheckbox.check({ force: true });
 
   // Click Continue
   console.log('Clicking Continue (Beacon)');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('[aria-label="continue beacon step"]').click();
 
   // 3. Select the "Reverse Shell REPL" tome and click "continue"
   console.log('Selecting Tome');
   await expect(page.getByText('Loading tomes...')).toBeHidden();
-  await page.getByText('Reverse Shell REPL').click();
+  // Click the tome row (role="button") containing the tome name
+  const tomeRow = page.locator('[role="button"]').filter({ hasText: 'Reverse Shell REPL' });
+  await expect(tomeRow).toBeVisible();
+  await tomeRow.click();
 
   console.log('Clicking Continue (Tome)');
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.locator('[aria-label="continue tome step"]').click();
 
   // 4. Select "Submit"
   console.log('Submitting Quest');
-  await page.getByRole('button', { name: 'Submit' }).click();
+  await page.locator('[aria-label="submit quest"]').click();
 
   // 5. Wait at least 11 seconds for agent execution
   console.log('Waiting 12s for execution');

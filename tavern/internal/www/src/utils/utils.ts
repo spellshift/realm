@@ -7,7 +7,6 @@ const pathToNavItem: Record<string, PageNavItem> = {
     '/dashboard': PageNavItem.dashboard,
     '/quests': PageNavItem.quests,
     '/tasks': PageNavItem.tasks,
-    '/createQuest': PageNavItem.createQuest,
     '/hosts': PageNavItem.hosts,
     '/tomes': PageNavItem.tomes,
     '/assets': PageNavItem.assets,

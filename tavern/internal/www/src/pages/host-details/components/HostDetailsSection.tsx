@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ComputerDesktopIcon, MapPinIcon, TagIcon } from "@heroicons/react/20/solid";
 import { useHost } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";

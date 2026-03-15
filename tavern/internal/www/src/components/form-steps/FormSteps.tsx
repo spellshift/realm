@@ -22,7 +22,7 @@ export const FormSteps = (props: Props) => {
 
   return (
     <nav aria-label="Progress">
-      <ol role="list" className="overflow-hidden">
+      <ol className="overflow-hidden">
         {steps.map((step, stepIdx) => {
           const status = currStep > step.step ? StepStatus.Complete : currStep === step.step ? StepStatus.Current : StepStatus.Upcoming;
 

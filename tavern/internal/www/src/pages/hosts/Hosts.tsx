@@ -5,7 +5,7 @@ import { HostsTable } from "./HostsTable";
 import { useHostIds } from "./useHostIds";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
 import { PageNavItem } from "../../utils/enums";
-import { FileTerminal, SquareTerminal } from "lucide-react";
+import { FileTerminal } from "lucide-react";
 
 const Hosts = () => {
     const {
