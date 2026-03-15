@@ -3,22 +3,18 @@ import { useSearchParams } from "react-router-dom";
 import { HostContextProvider } from "../../context/HostContext";
 import HostDetailsSection from "./components/HostDetailsSection";
 import HostTabs from "./components/HostTabs";
-import CredentialTab from "./components/CredentialTab";
+import { CredentialTab } from "./credential-tab";
 import { HostTaskTab } from "./task-tab";
-import HostBreadcrumbs from "./components/HostBreadcrumbs";
 import { BeaconTab } from "./beacon-tab";
 import { ProcessTab } from "./process-tab";
 import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
-import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
-import Button from "../../components/tavern-base-ui/button/Button";
-import { FileTerminal } from "lucide-react";
+import HostHeader from "./components/HostHeader";
 
 const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
 
 const HostDetails = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { openModal } = useCreateQuestModal();
 
     const tabParam = searchParams.get("tab");
     const selectedIndex = Math.max(0, TAB_NAMES.indexOf(tabParam as typeof TAB_NAMES[number]));
@@ -29,24 +25,7 @@ const HostDetails = () => {
 
     return (
         <HostContextProvider>
-            <div className="flex flex-row justify-between w-full items-center">
-                <HostBreadcrumbs />
-                <div>
-                    <Button
-                        leftIcon={<FileTerminal className="w-5 h-5" />}
-                        buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => {
-                            openModal({
-                                onComplete: () => {
-                                    setSearchParams({ tab: "tasks" });
-                                }
-                            });
-                        }}
-                    >
-                        Create a quest
-                    </Button>
-                </div>
-            </div>
+            <HostHeader />
             <HostDetailsSection />
             <div className="flex flex-col mt-2">
                 <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>

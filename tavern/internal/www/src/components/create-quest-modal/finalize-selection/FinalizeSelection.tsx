@@ -4,7 +4,7 @@ import Button from "../../tavern-base-ui/button/Button";
 import FormTextField from "../../tavern-base-ui/FormTextField";
 import { ModalQuestFormikProps } from "../types";
 import { BeaconTable } from "../beacon-selection/BeaconTable";
-import { TomeTable } from "../tome-selection/TomeTable";
+import { TomeTableWrapper } from "../tome-selection/TomeTableWrapper";
 import { CopyableKeyValues } from "../../copyable-key-values";
 
 interface FinalizeSelectionProps {
@@ -44,7 +44,7 @@ export const FinalizeSelection = ({
             {/* Tome Section */}
             <div className="flex flex-col gap-3">
                 <Heading size="sm">Tome</Heading>
-                <TomeTable
+                <TomeTableWrapper
                     tomeIds={tomeIds}
                     showFilters={false}
                     emptyMessage="No tome selected"

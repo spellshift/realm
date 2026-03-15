@@ -1,5 +1,6 @@
 import { DocumentNode } from "@apollo/client";
 import { FieldInputParams } from "../../utils/interfacesUI";
+import { Filters } from "../FilterContext";
 
 export interface CreateQuestInitialData {
     name?: string;
@@ -7,6 +8,7 @@ export interface CreateQuestInitialData {
     params?: FieldInputParams[];
     beacons?: string[];
     initialStep?: 0 | 1 | 2;
+    initialFilters?: Partial<Filters>;
 }
 
 // RefetchQuery can be a DocumentNode or a string (operation name)

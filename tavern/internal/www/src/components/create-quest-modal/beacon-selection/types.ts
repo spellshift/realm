@@ -1,6 +1,7 @@
 import { BeaconNode } from "../../../utils/interfacesQuery";
 import { FilterBarOption } from "../../../utils/interfacesUI";
 import { ModalQuestFormikProps } from "../types";
+import { Filters } from "../../../context/FilterContext";
 
 export interface BeaconTableProps {
     beaconIds: string[];
@@ -14,6 +15,7 @@ export interface BeaconSelectionStepProps {
     setOpen: (state: boolean) => any;
     setCurrStep: (step: number) => void;
     formik: ModalQuestFormikProps;
+    initialFilters?: Partial<Filters>;
 }
 
 export interface BeaconSelectionRowProps {

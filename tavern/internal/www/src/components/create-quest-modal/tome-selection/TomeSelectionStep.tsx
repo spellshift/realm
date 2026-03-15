@@ -5,9 +5,9 @@ import { safelyJsonParse } from "../../../utils/utils";
 import { TomeSelectionStepProps } from "./types";
 import { ConfigureParams } from "./ConfigureParams";
 import { StepControls } from "./StepControls";
-import { TomeTable } from "./TomeTable";
+import { TomeTableWrapper } from "./TomeTableWrapper";
 
-export const TomeSelectionStep = ({ setCurrStep, formik }: TomeSelectionStepProps) => {
+export const TomeSelectionStep = ({ setCurrStep, formik, initialFilters }: TomeSelectionStepProps) => {
     const selectedTomeId = formik.values.tomeId;
 
     const handleSelectTome = useCallback(
@@ -28,10 +28,11 @@ export const TomeSelectionStep = ({ setCurrStep, formik }: TomeSelectionStepProp
                 </p>
             </div>
 
-            <TomeTable
+            <TomeTableWrapper
                 selectable={true}
                 selectedTomeId={selectedTomeId}
                 onSelectTome={handleSelectTome}
+                initialFilters={initialFilters}
             />
 
             {selectedTomeId && <ConfigureParams formik={formik} />}

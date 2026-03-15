@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useLazyQuery } from "@apollo/client";
 import { sub } from "date-fns";
 import { useHost } from "../../../../context/HostContext";
@@ -13,6 +13,7 @@ import {
     BeaconIdNode,
     BeaconIdEdge,
 } from "../../../../utils/interfacesQuery";
+import { Filters } from "../../../../context/FilterContext";
 
 interface BeaconQueryResponse {
     beacons: {
@@ -28,7 +29,8 @@ function buildParams(paramDefs: string | null): FieldInputParams[] {
 function buildFormData(
     hostName: string,
     tome: TomeIdNode,
-    beacons: BeaconIdNode[]
+    beacons: BeaconIdNode[],
+    initialFilters?: Partial<Filters>
 ): CreateQuestInitialData {
     const beaconId = getPriotizedBeaconId(beacons);
 
@@ -37,6 +39,7 @@ function buildFormData(
         tomeId: tome.id,
         params: buildParams(tome.paramDefs),
         beacons: beaconId ? [beaconId] : [],
+        initialFilters: initialFilters
     };
 }
 
@@ -51,6 +54,20 @@ export const useProcessQuestFormData = () => {
         GET_ONLINE_HOST_BEACONS_QUERY,
         { fetchPolicy: "network-only" }
     );
+
+    const initialFilters = useMemo(() => {
+        if (!host) return undefined;
+        return {
+            beaconFields: [{
+                id: host.id,
+                name: host.name,
+                value: host.id,
+                label: host.name,
+                kind: "host",
+            }],
+            tomeMultiSearch: "Process list"
+        };
+    }, [host]);
 
     const fetchFormData = useCallback(async (): Promise<CreateQuestInitialData | undefined> => {
         const tome = tomeData?.tomes?.edges?.[0]?.node;
@@ -68,8 +85,8 @@ export const useProcessQuestFormData = () => {
         });
 
         const beacons = beaconData?.beacons?.edges?.map((e) => e.node) || [];
-        return buildFormData(host.name, tome, beacons);
-    }, [host?.id, host?.name, tomeData, fetchBeacons]);
+        return buildFormData(host.name, tome, beacons, initialFilters);
+    }, [host?.id, host?.name, tomeData, fetchBeacons, initialFilters]);
 
     return { fetchFormData, loading };
 };

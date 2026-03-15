@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     Heading,
     FormLabel,
@@ -14,9 +14,23 @@ import { useOnlineBeaconIds } from "./useOnlineBeaconIds";
 import { BeaconTable } from "./BeaconTable";
 import { BeaconSelectionStepProps } from "./types";
 import { MinusIcon, PlusIcon } from "lucide-react";
+import { useFilters } from "../../../context/FilterContext";
 
-export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen }: BeaconSelectionStepProps) => {
-    const [typeFilters, setTypeFilters] = useState<FilterBarOption[]>([]);
+export const BeaconSelectionStep = ({ setCurrStep, formik, setOpen, initialFilters }: BeaconSelectionStepProps) => {
+    const { filters } = useFilters();
+
+    const computedInitialFilters = useMemo(() => {
+        const contextFilters = filters.beaconFields;
+        const initial = initialFilters?.beaconFields || [];
+
+        const filterMap = new Map<string, FilterBarOption>();
+        contextFilters.forEach(f => filterMap.set(f.id, f));
+        initial.forEach(f => filterMap.set(f.id, f));
+
+        return Array.from(filterMap.values());
+    }, []);
+
+    const [typeFilters, setTypeFilters] = useState<FilterBarOption[]>(computedInitialFilters);
     const [viewOnlySelected, setViewOnlySelected] = useState(false);
     const [viewOnePerHost, setViewOnePerHost] = useState(false);
 

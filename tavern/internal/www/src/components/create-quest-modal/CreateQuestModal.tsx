@@ -12,6 +12,7 @@ import { BeaconSelectionStep } from "./beacon-selection";
 import { TomeSelectionStep } from "./tome-selection";
 import { FinalizeSelection } from "./finalize-selection";
 import { CreateQuestInitialData, RefetchQuery } from "../../context/CreateQuestModalContext";
+import { Filters } from "../../context/FilterContext";
 
 interface CreateQuestModalProps {
     isOpen: boolean;
@@ -52,6 +53,7 @@ interface StepConfig {
         formik: ModalQuestFormikProps;
         loading?: boolean;
         setOpen: (arg: any) => any;
+        initialFilters?: Partial<Filters>;
     }>;
 }
 
@@ -87,7 +89,14 @@ const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete, refetc
             if (questId) {
                 toast({
                     title: "Quest queued",
-                    description: "The quest has been successfully queued.",
+                    description: (
+                        <div className="flex flex-row gap-2 items-center">
+                            Quest has successfully queued. 
+                            <a href={`/tasks/${questId}`} className="underline font-medium">
+                                View quest
+                            </a>
+                        </div>
+                    ),
                     status: "success",
                     duration: 5000,
                     isClosable: true,
@@ -120,6 +129,7 @@ const CreateQuestModal = ({ isOpen, setOpen, initialFormData, onComplete, refetc
                                 formik={formik}
                                 loading={loading}
                                 setOpen={setOpen}
+                                initialFilters={initialFormData?.initialFilters}
                             />
                         )}
                     </div>
