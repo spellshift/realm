@@ -39,6 +39,8 @@ mod platform {
             }
             let pkt = build_icmp_echo_request(id, seq, payload);
             let addr = sockaddr_in {
+                #[cfg(target_os = "macos")]
+                sin_len: mem::size_of::<sockaddr_in>() as u8,
                 sin_family: AF_INET as _,
                 sin_port: 0,
                 sin_addr: in_addr {
@@ -109,6 +111,8 @@ mod platform {
             }
             let pkt = build_icmp_echo_request(id, seq, payload);
             let addr = sockaddr_in {
+                #[cfg(target_os = "macos")]
+                sin_len: mem::size_of::<sockaddr_in>() as u8,
                 sin_family: AF_INET as _,
                 sin_port: 0,
                 sin_addr: in_addr {
