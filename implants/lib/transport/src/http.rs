@@ -204,6 +204,8 @@ impl HTTP {
                 }
             }
 
+            let data_sent = !messages.is_empty();
+
             // Prepare the body with encoded gRPC frames
             let mut request_body = BytesMut::new();
             for msg in messages {
@@ -228,11 +230,17 @@ impl HTTP {
                 .body(hyper_legacy::Body::from(request_body.freeze()))
                 .context("Failed to build HTTP request")?;
 
-            let response = match self.send_and_validate(req).await {
-                Ok(resp) => resp,
-                Err(err) => {
+            let response = match tokio::time::timeout(std::time::Duration::from_secs(30), self.send_and_validate(req)).await {
+                Ok(Ok(resp)) => resp,
+                Ok(Err(err)) => {
                     #[cfg(debug_assertions)]
                     log::error!("Failed to send short poll HTTP request: {}", err);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+                Err(_) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Short poll HTTP request timed out after 30s");
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     continue;
                 }
@@ -242,6 +250,7 @@ impl HTTP {
             // We cannot use stream_grpc_frames here because its handler closure is synchronous,
             // and tokio::sync::mpsc::Sender requires async send (blocking_send panics in async context).
             let body_bytes = Self::read_response_body(response).await;
+            let mut data_received = false;
             let result: Result<()> = match body_bytes {
                 Ok(bytes) => {
                     #[cfg(debug_assertions)]
@@ -255,6 +264,7 @@ impl HTTP {
                         grpc_frame::FrameHeader::extract_frame(&mut buffer)
                     {
                         frame_count += 1;
+                        data_received = true;
                         #[cfg(debug_assertions)]
                         log::debug!("Extracted frame {} from short poll response ({} bytes)", frame_count, encrypted_message.len());
 
@@ -288,10 +298,15 @@ impl HTTP {
             if let Err(err) = result {
                 #[cfg(debug_assertions)]
                 log::error!("Failed to process response frames: {}", err);
+                break;
             }
 
             // Adding a small delay to prevent tight loop spinning if rx channel isn't busy
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            if data_sent || data_received {
+                tokio::task::yield_now().await;
+            } else {
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            }
         }
 
         Ok(())
@@ -309,6 +324,7 @@ impl HTTP {
             .method(hyper_legacy::Method::POST)
             .uri(uri)
             .header("Content-Type", "application/grpc")
+            .header("Connection", "close")
     }
 
     /// Send HTTP request and validate status code
