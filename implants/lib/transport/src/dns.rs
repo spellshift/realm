@@ -14,7 +14,7 @@ const MAX_DNS_NAME_LENGTH: usize = 253;
 const DNS_RESPONSE_BUF_SIZE: usize = 4096;
 const DNS_QUERY_TIMEOUT_SECS: u64 = 5; // DNS query timeout in seconds
 
-use crate::conv::{CONV_ID_LENGTH, MAX_RETRIES_PER_CHUNK, SEND_WINDOW_SIZE};
+use crate::conv;
 const MAX_DATA_SIZE: usize = 50 * 1024 * 1024; // 50MB max data size
 
 /// DNS record type for queries
@@ -52,16 +52,6 @@ impl DNS {
         pb::xchacha::decode_with_chacha::<Req, Resp>(data)
     }
 
-    /// Generate unique conversation ID
-    fn generate_conv_id() -> String {
-        crate::conv::generate_conv_id()
-    }
-
-    /// Calculate CRC32 checksum
-    fn calculate_crc32(data: &[u8]) -> u32 {
-        crate::conv::calculate_crc32(data)
-    }
-
     /// Calculate maximum data size that will fit in DNS query
     fn calculate_max_chunk_size(&self, total_chunks: u32) -> usize {
         // DNS limit: total_length <= 253
@@ -85,7 +75,7 @@ impl DNS {
         let sample_packet = ConvPacket {
             r#type: PacketType::Data as i32,
             sequence: total_chunks,
-            conversation_id: "a".repeat(CONV_ID_LENGTH),
+            conversation_id: "a".repeat(conv::CONV_ID_LENGTH),
             data: vec![],
             crc32: 0xFFFFFFFF,
             acks: vec![],
@@ -411,7 +401,7 @@ impl DNS {
             })
         };
 
-        let data_crc = Self::calculate_crc32(request_data);
+        let data_crc = conv::calculate_crc32(request_data);
 
         #[cfg(debug_assertions)]
         log::debug!(
@@ -540,7 +530,7 @@ impl DNS {
                     sequence: seq_u32,
                     conversation_id: conv_id_clone,
                     data: chunk.clone(),
-                    crc32: Self::calculate_crc32(&chunk),
+                    crc32: conv::calculate_crc32(&chunk),
                     acks: vec![],
                     nacks: vec![],
                 };
@@ -551,8 +541,8 @@ impl DNS {
 
             send_tasks.push(task);
 
-            // Limit concurrent tasks to SEND_WINDOW_SIZE
-            if send_tasks.len() >= SEND_WINDOW_SIZE {
+            // Limit concurrent tasks to conv::SEND_WINDOW_SIZE
+            if send_tasks.len() >= conv::SEND_WINDOW_SIZE {
                 if let Some(task) = send_tasks.first_mut() {
                     if let Ok(task_result) = task.await {
                         self.handle_chunk_task_result(
@@ -629,7 +619,7 @@ impl DNS {
     ) -> Result<()> {
         use std::collections::HashMap;
 
-        let mut retry_counts: HashMap<u32, u32> = HashMap::new();
+        let mut retry_counts: HashMap<u32, usize> = HashMap::new();
 
         while !nack_set.is_empty() {
             let nacks_to_retry: Vec<u32> = nack_set.drain().collect();
@@ -637,7 +627,7 @@ impl DNS {
             for nack_seq in nacks_to_retry {
                 // Check retry limit
                 let retries = retry_counts.entry(nack_seq).or_insert(0);
-                if *retries >= MAX_RETRIES_PER_CHUNK as u32 {
+                if *retries >= conv::MAX_RETRIES_PER_CHUNK {
                     return Err(anyhow::anyhow!(
                         "Max retries exceeded for chunk {}",
                         nack_seq
@@ -650,7 +640,7 @@ impl DNS {
                     "DNS: Retrying chunk {} (attempt {}/{}) for conv_id={}",
                     nack_seq,
                     *retries,
-                    MAX_RETRIES_PER_CHUNK,
+                    conv::MAX_RETRIES_PER_CHUNK,
                     conv_id
                 );
 
@@ -665,7 +655,7 @@ impl DNS {
                         sequence: nack_seq,
                         conversation_id: conv_id.to_string(),
                         data: chunk.clone(),
-                        crc32: Self::calculate_crc32(chunk),
+                        crc32: conv::calculate_crc32(chunk),
                         acks: vec![],
                         nacks: vec![],
                     };
@@ -828,7 +818,7 @@ impl DNS {
             full_response.extend_from_slice(&chunk_data);
         }
 
-        let actual_crc = Self::calculate_crc32(&full_response);
+        let actual_crc = conv::calculate_crc32(&full_response);
         if actual_crc != expected_crc {
             return Err(anyhow::anyhow!(
                 "Response CRC mismatch for conv_id={}: expected {:#x}, got {:#x}",
@@ -857,7 +847,7 @@ impl DNS {
             })?;
 
         // Generate conversation ID
-        let conv_id = Self::generate_conv_id();
+        let conv_id = conv::generate_conv_id();
 
         // Send INIT packet
         self.send_init_packet(
@@ -1176,14 +1166,14 @@ mod tests {
     #[test]
     fn test_crc32_basic() {
         let data = b"test data for CRC validation";
-        let crc = DNS::calculate_crc32(data);
+        let crc = conv::calculate_crc32(data);
 
         // Verify same data produces same CRC
-        let crc2 = DNS::calculate_crc32(data);
+        let crc2 = conv::calculate_crc32(data);
         assert_eq!(crc, crc2);
 
         // Verify different data produces different CRC
-        let crc3 = DNS::calculate_crc32(b"test datA for CRC validation");
+        let crc3 = conv::calculate_crc32(b"test datA for CRC validation");
         assert_ne!(crc, crc3);
     }
 
@@ -1191,19 +1181,19 @@ mod tests {
     fn test_crc32_known_value() {
         // CRC32 IEEE of "123456789" is 0xCBF43926
         let data = b"123456789";
-        let crc = DNS::calculate_crc32(data);
+        let crc = conv::calculate_crc32(data);
         assert_eq!(crc, 0xCBF43926);
     }
 
     #[test]
     fn test_generate_conv_id_length() {
-        let conv_id = DNS::generate_conv_id();
-        assert_eq!(conv_id.len(), CONV_ID_LENGTH);
+        let conv_id = conv::generate_conv_id();
+        assert_eq!(conv_id.len(), conv::CONV_ID_LENGTH);
     }
 
     #[test]
     fn test_generate_conv_id_charset() {
-        let conv_id = DNS::generate_conv_id();
+        let conv_id = conv::generate_conv_id();
         for c in conv_id.chars() {
             assert!(c.is_ascii_lowercase() || c.is_ascii_digit());
         }
@@ -1211,8 +1201,8 @@ mod tests {
 
     #[test]
     fn test_generate_conv_id_uniqueness() {
-        let id1 = DNS::generate_conv_id();
-        let id2 = DNS::generate_conv_id();
+        let id1 = conv::generate_conv_id();
+        let id2 = conv::generate_conv_id();
         // Statistically, two random 8-char IDs should not be equal
         assert_ne!(id1, id2);
     }
@@ -1368,7 +1358,7 @@ mod tests {
             sequence: 1,
             conversation_id: "test1234".to_string(),
             data: vec![0xAA; 50], // 50 bytes of data
-            crc32: DNS::calculate_crc32(&vec![0xAA; 50]),
+            crc32: conv::calculate_crc32(&vec![0xAA; 50]),
             acks: vec![],
             nacks: vec![],
         };
@@ -1493,7 +1483,7 @@ mod tests {
         assert!(chunk_size > 0);
         assert_eq!(total_chunks, 1); // Even empty data needs 1 chunk
                                      // CRC is deterministic - just verify it's calculated
-        assert_eq!(crc, DNS::calculate_crc32(&[]));
+        assert_eq!(crc, conv::calculate_crc32(&[]));
     }
 
     #[test]
@@ -1509,7 +1499,7 @@ mod tests {
 
         assert!(chunk_size > 0);
         assert!(total_chunks >= 1);
-        assert_eq!(crc, DNS::calculate_crc32(&data));
+        assert_eq!(crc, conv::calculate_crc32(&data));
     }
 
     #[test]

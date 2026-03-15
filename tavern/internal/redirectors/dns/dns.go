@@ -39,6 +39,8 @@ const (
 	txtMaxChunkSize = 255
 
 	// Benign DNS response configuration
+	// IP address returned for non-C2 A record queries to avoid NXDOMAIN responses
+	// which can interfere with recursive DNS lookups (e.g., Cloudflare)
 	benignARecordIP = "0.0.0.0"
 
 	// Async protocol configuration
@@ -172,12 +174,16 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 
 	packet, err := r.decodePacket(subdomain)
 	if err != nil {
+		// For A record queries, return benign IP instead of NXDOMAIN
+		// Cloudflare does recursive lookups on subdomain components - if we return NXDOMAIN
+		// for the parent subdomain, it won't forward the full TXT query
 		slog.Debug("ignoring non-C2 query", "domain", domain, "error", err)
 		if queryType == aRecordType {
 			slog.Debug("returning benign A record for non-C2 subdomain", "domain", domain)
 			r.sendDNSResponse(conn, addr, transactionID, domain, queryType, net.ParseIP(benignARecordIP).To4())
 			return
 		}
+		// For other types, return NXDOMAIN
 		r.sendErrorResponse(conn, addr, transactionID)
 		return
 	}
@@ -192,6 +198,7 @@ func (r *Redirector) handleDNSQuery(ctx context.Context, conn *net.UDPConn, addr
 		return
 	}
 
+	// Validate packet type is within valid range (protobuf can unmarshal garbage data)
 	if packet.Type < convpb.PacketType_PACKET_TYPE_INIT || packet.Type > convpb.PacketType_PACKET_TYPE_COMPLETE {
 		slog.Debug("ignoring packet with invalid type", "type", packet.Type, "domain", domain)
 		if queryType == aRecordType {
