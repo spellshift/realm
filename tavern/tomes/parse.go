@@ -41,12 +41,13 @@ func (paramDef ParamDefinition) Validate() error {
 
 // MetadataDefinition defines the contents that should be present in all tome metadata.yml files
 type MetadataDefinition struct {
-	Name         string `yaml:"name"`
-	Description  string `yaml:"description"`
-	Author       string `yaml:"author"`
-	SupportModel string `yaml:"support_model"`
-	Tactic       string `yaml:"tactic"`
-	ParamDefs    []ParamDefinition
+	Name          string `yaml:"name"`
+	Description   string `yaml:"description"`
+	Author        string `yaml:"author"`
+	SupportModel  string `yaml:"support_model"`
+	Tactic        string `yaml:"tactic"`
+	RunOnSchedule string `yaml:"run_on_schedule"`
+	ParamDefs     []ParamDefinition
 }
 
 // Validate ensures the Tome metadata has been properly configured.
@@ -166,6 +167,7 @@ func UploadTomes(ctx context.Context, graph *ent.Client, fileSystem fs.ReadDirFS
 			SetParamDefs(string(paramdefs)).
 			SetSupportModel(tome.SupportModel(metadata.SupportModel)).
 			SetTactic(tome.Tactic(metadata.Tactic)).
+			SetRunOnSchedule(metadata.RunOnSchedule).
 			SetEldritch(eldritch).
 			AddAssets(tomeAssets...).
 			Save(ctx); err != nil {
