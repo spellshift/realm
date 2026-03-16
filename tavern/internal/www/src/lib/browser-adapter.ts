@@ -146,36 +146,40 @@ export class BrowserWasmAdapter {
             return { status: "error", message: "REPL not initialized" };
         }
 
-        const lines = text.split('\n');
-        let finalResult: ExecutionResult = { status: "complete" };
-
-        for (const line of lines) {
-            const resultJson = this.repl.input(line);
-            try {
-                const result = JSON.parse(resultJson);
-
-                if (result.status === "complete") {
-                    if (this.isWsOpen && this.ws) {
-                        this.ws.send(JSON.stringify({
-                            kind: WebsocketMessageKind.Input,
-                            input: result.payload
-                        }));
-                    } else {
-                        return { status: "error", message: "WebSocket not connected" };
-                    }
-                    finalResult = { status: "complete" };
-                } else if (result.status === "incomplete") {
-                    finalResult = { status: "incomplete", prompt: result.prompt };
-                } else {
-                    return { status: "error", message: result.message };
-                }
-            } catch (e) {
-                console.error("Failed to parse REPL result", e);
-                return { status: "error", message: "Internal REPL error" };
-            }
+        // Just pass the entire pasted text into the repl at once.
+        // If the block is complete, it will return "complete" with the whole block.
+        // We append an extra newline to ensure it evaluates blocks that end without one.
+        let textToInput = text;
+        if (!textToInput.endsWith('\n')) {
+            textToInput += '\n';
         }
 
-        return finalResult;
+        // BrowserRepl handles parsing the entire string into its internal buffer,
+        // so we can just call it once with the full string block.
+        const resultJson = this.repl.input(textToInput);
+
+        try {
+            const result = JSON.parse(resultJson);
+
+            if (result.status === "complete") {
+                if (this.isWsOpen && this.ws) {
+                    this.ws.send(JSON.stringify({
+                        kind: WebsocketMessageKind.Input,
+                        input: result.payload
+                    }));
+                } else {
+                    return { status: "error", message: "WebSocket not connected" };
+                }
+                return { status: "complete" };
+            } else if (result.status === "incomplete") {
+                return { status: "incomplete", prompt: result.prompt };
+            } else {
+                return { status: "error", message: result.message };
+            }
+        } catch (e) {
+            console.error("Failed to parse REPL result", e);
+            return { status: "error", message: "Internal REPL error" };
+        }
     }
 
     complete(line: string, cursor: number): { suggestions: string[], start: number } {
