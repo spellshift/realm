@@ -141,6 +141,43 @@ export class BrowserWasmAdapter {
         }
     }
 
+    paste_input(text: string): ExecutionResult {
+        if (!this.repl) {
+            return { status: "error", message: "REPL not initialized" };
+        }
+
+        const lines = text.split('\n');
+        let finalResult: ExecutionResult = { status: "complete" };
+
+        for (const line of lines) {
+            const resultJson = this.repl.input(line);
+            try {
+                const result = JSON.parse(resultJson);
+
+                if (result.status === "complete") {
+                    if (this.isWsOpen && this.ws) {
+                        this.ws.send(JSON.stringify({
+                            kind: WebsocketMessageKind.Input,
+                            input: result.payload
+                        }));
+                    } else {
+                        return { status: "error", message: "WebSocket not connected" };
+                    }
+                    finalResult = { status: "complete" };
+                } else if (result.status === "incomplete") {
+                    finalResult = { status: "incomplete", prompt: result.prompt };
+                } else {
+                    return { status: "error", message: result.message };
+                }
+            } catch (e) {
+                console.error("Failed to parse REPL result", e);
+                return { status: "error", message: "Internal REPL error" };
+            }
+        }
+
+        return finalResult;
+    }
+
     complete(line: string, cursor: number): { suggestions: string[], start: number } {
         if (!this.repl) return { suggestions: [], start: cursor };
         const resultJson = this.repl.complete(line, cursor);
