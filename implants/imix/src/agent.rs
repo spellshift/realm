@@ -296,10 +296,6 @@ impl ImixAgent {
             let guard = self.transport.read().await;
             if let Some(ref t) = *guard {
                 if t.is_active() {
-                    log::debug!(
-                        "transport guard is active for {:?}",
-                        t.clone_box().get_type()
-                    );
                     return Ok(t.clone_box());
                 }
             }
