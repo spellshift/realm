@@ -87,14 +87,21 @@ test('End-to-end asset upload and execution test', async ({ page }) => {
   // 15. Select the "HTTP GET file and execute" tome
   console.log('Selecting Tome');
   await expect(page.getByText('Loading tomes...')).toBeHidden();
-  // Click the tome row (role="button") containing the tome name
-  const tomeRow = page.locator('[role="button"]').filter({ hasText: 'HTTP GET file and execute' });
+
+  // Search for the tome first (virtualized table doesn't show all items)
+  const dialog = page.locator('[role="dialog"]');
+  const searchInput = dialog.getByPlaceholder('Tome name, description & params');
+  await searchInput.fill('HTTP GET file and execute');
+  await page.waitForTimeout(500); // Wait for search results to filter
+
+  // Click the tome row (role="button") containing the tome name - scoped to dialog
+  const tomeRow = dialog.locator('[role="button"]').filter({ hasText: 'HTTP GET file and execute' });
   await expect(tomeRow).toBeVisible();
   await tomeRow.click();
 
   // 16. Fill in the url parameter with the generated link
   console.log('Filling parameters');
-  await page.locator('textarea[name="url"]').fill(downloadUrl);
+  await page.getByPlaceholder('https://example.com/executable_file').fill(downloadUrl);
 
   // 17. Click Continue (Tome Step)
   console.log('Clicking Continue (Tome)');

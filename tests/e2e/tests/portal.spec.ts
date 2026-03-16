@@ -28,8 +28,15 @@ test('End-to-end portal provisioning test', async ({ page }) => {
   // 3. Select the "SOCKS5 Relay" tome and click "continue"
   console.log('Selecting Tome');
   await expect(page.getByText('Loading tomes...')).toBeHidden();
-  // Click the tome row (role="button") containing the tome name
-  const tomeRow = page.locator('[role="button"]').filter({ hasText: 'SOCKS5 Relay' });
+
+  // Search for the tome first (virtualized table doesn't show all items)
+  const dialog = page.locator('[role="dialog"]');
+  const searchInput = dialog.getByPlaceholder('Tome name, description & params');
+  await searchInput.fill('SOCKS5 Relay');
+  await page.waitForTimeout(500); // Wait for search results to filter
+
+  // Click the tome row (role="button") containing the tome name - scoped to dialog
+  const tomeRow = dialog.locator('[role="button"]').filter({ hasText: 'SOCKS5 Relay' });
   await expect(tomeRow).toBeVisible();
   await tomeRow.click();
 
