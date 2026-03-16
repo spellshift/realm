@@ -25,7 +25,7 @@ const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 #[derive(Clone)]
 pub struct ImixAgent {
     config: Arc<RwLock<Config>>,
-    transport: Arc<RwLock<Option<Box<dyn Transport + Send + Sync>>>>,
+    transport: Arc<RwLock<Box<dyn Transport + Send + Sync>>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
@@ -48,7 +48,7 @@ impl ImixAgent {
 
         Self {
             config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(None)),
+            transport: Arc::new(RwLock::new(transport::init_transport())),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -124,8 +124,8 @@ impl ImixAgent {
         cfg.refresh_primary_ip();
     }
 
-    // Updates the shared transport with a new instance (None = disconnected)
-    pub async fn update_transport(&self, t: Option<Box<dyn Transport + Send + Sync>>) {
+    // Updates the shared transport with a new instance
+    pub async fn update_transport(&self, t: Box<dyn Transport + Send + Sync>) {
         let mut transport = self.transport.write().await;
         *transport = t;
     }
@@ -217,9 +217,10 @@ impl ImixAgent {
         }
 
         let mut transport_guard = self.transport.write().await;
-        let Some(ref mut transport) = *transport_guard else {
+        let transport = &mut *transport_guard;
+        if !transport.is_active() {
             return;
-        };
+        }
 
         for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
@@ -294,10 +295,8 @@ impl ImixAgent {
         // 1. Check shared transport
         {
             let guard = self.transport.read().await;
-            if let Some(ref t) = *guard {
-                if t.is_active() {
-                    return Ok(t.clone_box());
-                }
+            if guard.is_active() {
+                return Ok(guard.clone_box());
             }
         }
         // 2. Create new transport from config
@@ -314,9 +313,7 @@ impl ImixAgent {
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
         let mut transport_guard = self.transport.write().await;
-        let transport = transport_guard
-            .as_mut()
-            .ok_or_else(|| anyhow::anyhow!("No transport configured"))?;
+        let transport = &mut *transport_guard;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
             beacon: beacon_info,
@@ -630,13 +627,7 @@ impl Agent for ImixAgent {
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async {
-            Ok(self
-                .transport
-                .read()
-                .await
-                .as_ref()
-                .map(|t| t.list_available())
-                .unwrap_or_default())
+            Ok(self.transport.read().await.list_available())
         })
     }
 

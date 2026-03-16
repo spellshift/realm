@@ -25,6 +25,19 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
+/// Returns an empty (disconnected) transport using the default (gRPC) transport type.
+/// Use this to initialize or reset transport state without an active connection.
+pub fn init_transport() -> Box<dyn Transport + Send + Sync> {
+    #[cfg(feature = "grpc")]
+    return Box::new(grpc::GRPC::init());
+    #[cfg(all(not(feature = "grpc"), feature = "http1"))]
+    return Box::new(http::HTTP::init());
+    #[cfg(all(not(feature = "grpc"), not(feature = "http1"), feature = "dns"))]
+    return Box::new(dns::DNS::init());
+    #[cfg(not(any(feature = "grpc", feature = "http1", feature = "dns")))]
+    compile_error!("At least one transport feature must be enabled");
+}
+
 pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Sync>> {
     // Extract transport type from config
     let transport_type = config
