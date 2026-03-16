@@ -626,9 +626,7 @@ impl Agent for ImixAgent {
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        self.block_on(async {
-            Ok(self.transport.read().await.list_available())
-        })
+        self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {
