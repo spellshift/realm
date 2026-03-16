@@ -25,7 +25,7 @@ members = [
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
-    "lib/portals/portal-stream",
+    "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
