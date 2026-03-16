@@ -47,6 +47,7 @@ pub(crate) fn builtin_eval_func(
         depth: interp.depth + 1,
         call_stack: interp.call_stack.clone(),
         current_func_name: "<eval>".to_string(),
+        buffer: String::new(),
         is_scope_owner: false,
     };
 
