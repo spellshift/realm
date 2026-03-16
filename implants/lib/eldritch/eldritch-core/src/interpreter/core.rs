@@ -1,4 +1,12 @@
 use super::super::ast::{BuiltinFn, Environment, Value};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum InterpretResult {
+    Complete(Value),
+    NeedsMoreInput,
+    Error(String),
+}
+
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
 use super::super::token::{Span, TokenKind};
@@ -33,6 +41,7 @@ pub struct Interpreter {
     pub depth: usize,
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
+    pub buffer: String,
     pub is_scope_owner: bool,
 }
 
@@ -72,6 +81,7 @@ impl Interpreter {
             depth: 0,
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
+            buffer: String::new(),
             is_scope_owner: true,
         };
 
@@ -175,14 +185,48 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
-        let mut lexer = Lexer::new(input.to_string());
+    pub fn is_unexpected_eof(&self, error: &EldritchError, input: &str) -> bool {
+        let msg = error.message.to_lowercase();
+        // Check if error is at or near the end of the input
+        let is_at_end = error.span.start >= input.trim_end().len();
+
+        // Exclude specific error messages that are not EOF related
+        if msg.contains("expected newline") || msg.contains("expected indentation") {
+            return false;
+        }
+
+        // Common EOF-related error messages
+        let is_eof_msg = msg.contains("expected")
+            && (msg.contains("after")
+                || msg.contains("before")
+                || msg.contains(")")
+                || msg.contains("]")
+                || msg.contains("}"))
+            || msg.contains("unterminated string")
+            || msg.contains("unmatched");
+
+        is_at_end || is_eof_msg
+    }
+
+    pub fn interpret_chunk(&mut self, chunk: &str) -> InterpretResult {
+        if !self.buffer.is_empty() {
+            self.buffer.push('\n');
+        }
+        self.buffer.push_str(chunk);
+
+        let input = self.buffer.clone();
+
+        let mut lexer = Lexer::new(input.clone());
         let tokens = lexer.scan_tokens();
 
         // Check for lexer errors first to maintain behavior
         for token in &tokens {
             if let TokenKind::Error(msg) = &token.kind {
-                return Err(format!("Lexer Error: {}", msg));
+                if msg.contains("Unterminated string literal") || msg.contains("Unmatched '{'") {
+                    return InterpretResult::NeedsMoreInput;
+                }
+                self.buffer.clear();
+                return InterpretResult::Error(format!("Lexer Error: {}", msg));
             }
         }
 
@@ -190,12 +234,17 @@ impl Interpreter {
         let (stmts, errors) = parser.parse();
 
         if !errors.is_empty() {
-            // If we have parsing errors, we return the first one formatted
-            // Or maybe a combined list? Usually first is enough to abort execution.
-            // The prompt says "interpreter does not attempt to evaluate / execute statements from ASTs with error tokens"
-            return Err(self.format_error(input, errors[0].clone()));
+            let error = &errors[0];
+            if self.is_unexpected_eof(error, &input) {
+                return InterpretResult::NeedsMoreInput;
+            }
+
+            let err_msg = self.format_error(&input, error.clone());
+            self.buffer.clear();
+            return InterpretResult::Error(err_msg);
         }
 
+        self.buffer.clear();
         let mut last_val = Value::None;
 
         // Reset state for fresh run
@@ -203,7 +252,7 @@ impl Interpreter {
         self.current_func_name = "<module>".to_string();
 
         if let Err(e) = exec::hoist_functions(self, &stmts) {
-            return Err(self.format_error(input, e));
+            return InterpretResult::Error(self.format_error(&input, e));
         }
 
         for stmt in stmts {
@@ -215,7 +264,7 @@ impl Interpreter {
                     match res {
                         Ok(v) => last_val = v,
                         Err(e) => {
-                            return Err(self.format_error(input, e));
+                            return InterpretResult::Error(self.format_error(&input, e));
                         }
                     }
                 }
@@ -226,18 +275,35 @@ impl Interpreter {
                             if let Flow::Return(v) = &self.flow {
                                 let ret = v.clone();
                                 self.flow = Flow::Next;
-                                return Ok(ret);
+                                return InterpretResult::Complete(ret);
                             }
                             last_val = Value::None;
                         }
                         Err(e) => {
-                            return Err(self.format_error(input, e));
+                            return InterpretResult::Error(self.format_error(&input, e));
                         }
                     }
                 }
             }
         }
-        Ok(last_val)
+
+        InterpretResult::Complete(last_val)
+    }
+
+    pub fn interpret(&mut self, input: &str) -> Result<Value, String> {
+        // Backup the current buffer state if any, though normally interpret() is standalone
+        let old_buffer = self.buffer.clone();
+        self.buffer.clear();
+
+        let result = self.interpret_chunk(input);
+
+        self.buffer = old_buffer;
+
+        match result {
+            InterpretResult::Complete(val) => Ok(val),
+            InterpretResult::NeedsMoreInput => Err("Unexpected EOF".to_string()),
+            InterpretResult::Error(err) => Err(err),
+        }
     }
 
     pub(crate) fn format_error(&self, source: &str, error: EldritchError) -> String {
