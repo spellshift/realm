@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -154,6 +155,15 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 	case err := <-errCh:
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
+		if options.CachePath != "" {
+			if err := os.MkdirAll(filepath.Dir(options.CachePath), 0700); err != nil {
+				slog.WarnContext(ctx, "failed to create credential cache directory", "path", options.CachePath, "error", err)
+			} else if err := os.WriteFile(options.CachePath, []byte(token), 0600); err != nil {
+				slog.WarnContext(ctx, "failed to write credential cache", "path", options.CachePath, "error", err)
+			} else {
+				slog.Debug("Saved authentication credentials to cache", "path", options.CachePath)
+			}
+		}
 		return token, nil
 	}
 }

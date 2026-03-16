@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -153,12 +155,22 @@ func TestAuthenticate(t *testing.T) {
 				return err
 			})
 
+			// Setup Cache
+			cachePath := filepath.Join(t.TempDir(), "test_cache")
+
 			// Authenticate
-			token, err := auth.Authenticate(ctx, browser, tc.tavernURL)
+			token, err := auth.Authenticate(ctx, browser, tc.tavernURL, auth.WithCacheFile(cachePath))
 
 			// Assertions
 			assert.Equal(t, tc.wantAccessToken, string(token))
 			assert.ErrorIs(t, err, tc.wantError)
+
+			// Assert Cache Written
+			if err == nil {
+				cacheContent, cacheErr := os.ReadFile(cachePath)
+				assert.NoError(t, cacheErr)
+				assert.Equal(t, tc.wantAccessToken, string(cacheContent))
+			}
 		})
 	}
 }
