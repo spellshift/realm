@@ -205,10 +205,11 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     let status_url = format!("{}/status", base_uri);
 
     // Make a GET request to /status
-    let response = match reqwest::blocking::get(&status_url) {
+    let client = reqwest::blocking::Client::builder().no_proxy().build().unwrap();
+    let response = match client.get(&status_url).send() {
         Ok(resp) => resp,
         Err(e) => {
-            println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
+            println!("cargo:warning=Failed to connect to {}: {:?}", status_url, e);
             return;
         }
     };
