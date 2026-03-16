@@ -5,7 +5,6 @@ use alloc::string::String;
 
 impl StdAssetsLibrary {
     pub fn copy_impl(&self, src: String, dest: String) -> Result<(), String> {
-        log::debug!("copy_impl {}", src);
         let bytes = self.read_binary_impl(&src).map_err(|e| e.to_string())?;
         let mut file = std::fs::File::create(dest).map_err(|e| e.to_string())?;
         file.write_all(&bytes).map_err(|e| e.to_string())?;

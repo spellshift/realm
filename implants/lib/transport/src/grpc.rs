@@ -179,8 +179,6 @@ impl Transport for GRPC {
     ) -> Result<()> {
         #[cfg(debug_assertions)]
         let filename = request.name.clone();
-        #[cfg(debug_assertions)]
-        log::debug!("grpc fetching asset {}", filename);
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
         tokio::spawn(async move {

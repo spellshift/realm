@@ -275,13 +275,11 @@ impl ImixAgent {
     }
 
     pub async fn rotate_callback_uri(&self) {
-        log::debug!("Rotating callback");
         let mut cfg = self.config.write().await;
         if let Some(info) = cfg.info.as_mut()
             && let Some(available_transports) = info.available_transports.as_mut()
         {
             let num_transports = available_transports.transports.len();
-            log::debug!("have {} transports", num_transports);
             if num_transports > 0 {
                 let current_idx = available_transports.active_index as usize;
                 available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
@@ -293,7 +291,6 @@ impl ImixAgent {
     // If the shared transport is active, returns a clone of it.
     // If not, creates a new one from config.
     async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
-        log::debug!("Get usable transport");
         // 1. Check shared transport
         {
             let guard = self.transport.read().await;
@@ -307,7 +304,6 @@ impl ImixAgent {
                 }
             }
         }
-        log::debug!("Creating a new transport");
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
         let t =
