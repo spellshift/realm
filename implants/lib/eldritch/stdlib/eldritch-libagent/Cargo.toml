@@ -18,3 +18,6 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 default = ["stdlib"]
 stdlib = ["dep:eldritch-agent", "dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
 fake_bindings = []
+
+[dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }

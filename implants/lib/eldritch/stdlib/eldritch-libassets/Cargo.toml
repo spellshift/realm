@@ -18,4 +18,5 @@ fake_bindings = []
 stdlib = ["dep:eldritch-agent", "dep:pb"]
 
 [dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }
 tempfile = "3.3"
