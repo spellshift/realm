@@ -73,8 +73,8 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
     /** Poll interval in milliseconds when row is visible (default: 5000) */
     pollInterval?: number;
 
-    /** Callback when a row is clicked */
-    onItemClick?: (id: string) => void;
+    /** Callback when a row is clicked. Receives the item ID and the fetched data (null if not loaded). */
+    onItemClick?: (id: string, data: TData | null) => void;
 
     /** Whether there are more items to load */
     hasMore?: boolean;
@@ -99,6 +99,12 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
 
     /** Minimum height in pixels */
     minHeight?: string;
+
+    /** Should header be hidden */
+    headerVisible?: boolean;
+
+    /** When true, container grows with content up to max height (uses maxHeight instead of fixed height) */
+    growWithContent?: boolean;
 }
 
 /**
@@ -119,8 +125,8 @@ export interface VirtualizedTableRowInternalProps<TData, TResponse> {
     isVisible: boolean;
     /** Poll interval in milliseconds when row is visible */
     pollInterval: number;
-    /** Callback when the row is clicked */
-    onRowClick?: (id: string) => void;
+    /** Callback when the row is clicked. Receives the item ID and the fetched data (null if not loaded). */
+    onRowClick?: (id: string, data: TData | null) => void;
     /** Minimum width for horizontal scrolling */
     minWidth: string;
     /** Grid template columns for row layout */
