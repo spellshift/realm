@@ -4,11 +4,16 @@ use anyhow::Result;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
+        log::debug!("ready_binary {}", name);
         let mut errors = alloc::vec::Vec::new();
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
+            log::debug!("trying backend");
             match backend.get(name) {
-                Ok(file) => return Ok(file),
+                Ok(file) => {
+                    log::debug!("Got file");
+                    return Ok(file);
+                }
                 Err(e) => errors.push(e.to_string()),
             }
         }

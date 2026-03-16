@@ -25,7 +25,7 @@ const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 #[derive(Clone)]
 pub struct ImixAgent {
     config: Arc<RwLock<Config>>,
-    transport: Arc<RwLock<Box<dyn Transport + Send + Sync>>>,
+    transport: Arc<RwLock<Option<Box<dyn Transport + Send + Sync>>>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
@@ -39,7 +39,6 @@ pub struct ImixAgent {
 impl ImixAgent {
     pub fn new(
         config: Config,
-        transport: Box<dyn Transport + Send + Sync>,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
@@ -49,7 +48,7 @@ impl ImixAgent {
 
         Self {
             config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(transport)),
+            transport: Arc::new(RwLock::new(None)),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -125,8 +124,8 @@ impl ImixAgent {
         cfg.refresh_primary_ip();
     }
 
-    // Updates the shared transport with a new instance
-    pub async fn update_transport(&self, t: Box<dyn Transport + Send + Sync>) {
+    // Updates the shared transport with a new instance (None = disconnected)
+    pub async fn update_transport(&self, t: Option<Box<dyn Transport + Send + Sync>>) {
         let mut transport = self.transport.write().await;
         *transport = t;
     }
@@ -217,7 +216,11 @@ impl ImixAgent {
             }
         }
 
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let Some(ref mut transport) = *transport_guard else {
+            return;
+        };
+
         for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
@@ -272,11 +275,13 @@ impl ImixAgent {
     }
 
     pub async fn rotate_callback_uri(&self) {
+        log::debug!("Rotating callback");
         let mut cfg = self.config.write().await;
         if let Some(info) = cfg.info.as_mut()
             && let Some(available_transports) = info.available_transports.as_mut()
         {
             let num_transports = available_transports.transports.len();
+            log::debug!("have {} transports", num_transports);
             if num_transports > 0 {
                 let current_idx = available_transports.active_index as usize;
                 available_transports.active_index = ((current_idx + 1) % num_transports) as u32;
@@ -288,14 +293,21 @@ impl ImixAgent {
     // If the shared transport is active, returns a clone of it.
     // If not, creates a new one from config.
     async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
+        log::debug!("Get usable transport");
         // 1. Check shared transport
         {
             let guard = self.transport.read().await;
-            if guard.is_active() {
-                return Ok(guard.clone_box());
+            if let Some(ref t) = *guard {
+                if t.is_active() {
+                    log::debug!(
+                        "transport guard is active for {:?}",
+                        t.clone_box().get_type()
+                    );
+                    return Ok(t.clone_box());
+                }
             }
         }
-
+        log::debug!("Creating a new transport");
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
         let t =
@@ -309,7 +321,10 @@ impl ImixAgent {
 
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = transport_guard
+            .as_mut()
+            .ok_or_else(|| anyhow::anyhow!("No transport configured"))?;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
             beacon: beacon_info,
@@ -622,7 +637,15 @@ impl Agent for ImixAgent {
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        self.block_on(async { Ok(self.transport.read().await.list_available()) })
+        self.block_on(async {
+            Ok(self
+                .transport
+                .read()
+                .await
+                .as_ref()
+                .map(|t| t.list_available())
+                .unwrap_or_default())
+        })
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {

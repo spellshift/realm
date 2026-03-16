@@ -66,22 +66,6 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
     }
 }
 
-pub fn empty_transport() -> Box<dyn Transport + Send + Sync> {
-    let mut config = Config::default();
-    config.info = Some(pb::c2::Beacon {
-        available_transports: Some(pb::c2::AvailableTransports {
-            transports: vec![pb::c2::Transport {
-                uri: "http://127.0.0.1".to_string(),
-                r#type: TransportType::TransportHttp1 as i32,
-                ..Default::default()
-            }],
-            active_index: 0,
-        }),
-        ..Default::default()
-    });
-    create_transport(config).expect("Failed to create empty transport")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
