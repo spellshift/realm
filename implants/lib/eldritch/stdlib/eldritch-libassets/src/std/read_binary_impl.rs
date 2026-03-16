@@ -4,14 +4,24 @@ use anyhow::Result;
 
 impl StdAssetsLibrary {
     pub fn read_binary_impl(&self, name: &str) -> Result<Vec<u8>> {
+        let mut errors = alloc::vec::Vec::new();
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
-            if let Ok(file) = backend.get(name) {
-                // Return immediately upon the first match
-                return Ok(file);
+            match backend.get(name) {
+                Ok(file) => return Ok(file),
+                Err(e) => errors.push(e.to_string()),
             }
         }
-        Err(anyhow::anyhow!("asset not found: {}", name))
+
+        if errors.is_empty() {
+            Err(anyhow::anyhow!("asset not found: {}", name))
+        } else {
+            Err(anyhow::anyhow!(
+                "Failed to read asset '{}': {}",
+                name,
+                errors.join("; ")
+            ))
+        }
     }
 }
 
