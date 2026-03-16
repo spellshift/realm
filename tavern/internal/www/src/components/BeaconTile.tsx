@@ -9,9 +9,10 @@ import { SupportedPlatforms, SupportedTransports } from "../utils/enums";
 type Props = {
     beacon: BeaconNode;
     isBeaconIconVisible?: boolean;
+    className?: string;
 }
 const BeaconTile = (props: Props) => {
-    const { beacon, isBeaconIconVisible } = props;
+    const { beacon, isBeaconIconVisible, className = "" } = props;
     const {
         host,
         principal,
@@ -21,7 +22,7 @@ const BeaconTile = (props: Props) => {
     const beaconOffline = checkIfBeaconOffline(beacon);
 
     return (
-        <div className=" flex flex-row gap-4">
+        <div className={`flex flex-row gap-4 ${className}`}>
             {isBeaconIconVisible && <BugAntIcon className="h-5 w-5 mt-2" />}
             <div className="flex flex-col gap-1 ">
                 <div className="text-gray-600">

@@ -21,6 +21,7 @@ export const useFileIds = (hostId: string) => {
         {
             variables: queryVariables,
             fetchPolicy: 'cache-and-network',
+            pollInterval: 5000,
         }
   );
 

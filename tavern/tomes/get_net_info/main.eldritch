@@ -1,7 +1,9 @@
+def rpad(s: str, n: int, c=" "):
+    return s + (n-len(s))*c
+
 def print_table(rows: list[list]):
+
     """Pretty print a table, auto adjusting width based on the row data"""
-    def rpad(s: str, n: int, c=" "):
-        return s + (n-len(s))*c
     # count columns
     counts = [0]*len(rows[0])
     for r in rows:

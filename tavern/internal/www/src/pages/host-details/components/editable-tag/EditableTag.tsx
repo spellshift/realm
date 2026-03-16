@@ -13,6 +13,13 @@ export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTa
     const { data } = useAuthorization();
     const { options, isLoading: optionsLoading } = useTagOptions(kind);
 
+    const customStyles = {
+        menu: (provided: any) => ({
+            ...provided,
+            zIndex: 20,
+        }),
+    };
+
     const canEdit = data?.me?.isAdmin || false;
     const {
         tagValue,
@@ -28,6 +35,7 @@ export default function EditableTag({ kind, tagSaved, hostId }: { kind: KindOfTa
         return (
             <div className="ml-6">
                 <CreatableSelect
+                    styles={customStyles}
                     isClearable
                     isDisabled={loading || optionsLoading}
                     isLoading={loading || optionsLoading}

@@ -9,7 +9,6 @@ export enum PageNavItem {
     documentation='Documentation',
     playground='API Playground',
     tasks='Tasks',
-    createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
     assets="Assets",
