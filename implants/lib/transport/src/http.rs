@@ -458,8 +458,6 @@ impl Transport for HTTP {
     ) -> Result<()> {
         #[cfg(debug_assertions)]
         let filename = request.name.clone();
-        #[cfg(debug_assertions)]
-        log::debug!("http1 fetching asset {}", filename);
 
         // Marshal and encrypt the request
         let request_bytes = marshal_with_codec::<FetchAssetRequest, FetchAssetResponse>(request)?;
