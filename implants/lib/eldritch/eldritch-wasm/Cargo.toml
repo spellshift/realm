@@ -41,7 +41,3 @@ wasm-bindgen = "0.2"
 
 [dev-dependencies]
 criterion = "0.5"
-
-[[bin]]
-name = "test_bin"
-path = "src/bin.rs"
