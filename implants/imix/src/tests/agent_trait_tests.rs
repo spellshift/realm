@@ -293,7 +293,12 @@ fn test_agent_config_platform_as_enum_variant_name() {
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
-    let agent = ImixAgent::new(config, runtime.handle().clone(), Arc::new(TaskRegistry::new()), tx);
+    let agent = ImixAgent::new(
+        config,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+        tx,
+    );
     runtime.block_on(agent.update_transport(Box::new(transport)));
 
     let map = agent.get_config().unwrap();
@@ -324,7 +329,12 @@ fn test_agent_config_active_transport_type_as_enum_variant_name() {
 
     let runtime = tokio::runtime::Runtime::new().unwrap();
     let (tx, _rx) = tokio::sync::mpsc::channel(1);
-    let agent = ImixAgent::new(config, runtime.handle().clone(), Arc::new(TaskRegistry::new()), tx);
+    let agent = ImixAgent::new(
+        config,
+        runtime.handle().clone(),
+        Arc::new(TaskRegistry::new()),
+        tx,
+    );
     runtime.block_on(agent.update_transport(Box::new(transport)));
 
     let map = agent.get_config().unwrap();

@@ -154,7 +154,12 @@ async fn test_report_large_file_via_eldritch() {
     let task_registry = Arc::new(TaskRegistry::new());
     let (shell_tx, _) = tokio::sync::mpsc::channel(100);
 
-    let agent = ImixAgent::new(config, tokio::runtime::Handle::current(), task_registry, shell_tx);
+    let agent = ImixAgent::new(
+        config,
+        tokio::runtime::Handle::current(),
+        task_registry,
+        shell_tx,
+    );
     agent.update_transport(fake_transport.clone_box()).await;
     let agent = Arc::new(agent);
 
