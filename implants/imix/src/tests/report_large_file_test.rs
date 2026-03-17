@@ -156,11 +156,11 @@ async fn test_report_large_file_via_eldritch() {
 
     let agent = ImixAgent::new(
         config,
-        fake_transport.clone_box(),
         tokio::runtime::Handle::current(),
         task_registry,
         shell_tx,
     );
+    agent.update_transport(fake_transport.clone_box()).await;
     let agent = Arc::new(agent);
 
     // 4. Call file report

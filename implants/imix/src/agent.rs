@@ -39,7 +39,6 @@ pub struct ImixAgent {
 impl ImixAgent {
     pub fn new(
         config: Config,
-        transport: Box<dyn Transport + Send + Sync>,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
@@ -49,7 +48,7 @@ impl ImixAgent {
 
         Self {
             config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(transport)),
+            transport: Arc::new(RwLock::new(transport::init_transport())),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
@@ -217,7 +216,12 @@ impl ImixAgent {
             }
         }
 
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
+        if !transport.is_active() {
+            return;
+        }
+
         for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
@@ -295,7 +299,6 @@ impl ImixAgent {
                 return Ok(guard.clone_box());
             }
         }
-
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
         let t =
@@ -309,7 +312,8 @@ impl ImixAgent {
 
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
             beacon: beacon_info,

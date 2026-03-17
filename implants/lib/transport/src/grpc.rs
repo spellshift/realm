@@ -179,7 +179,6 @@ impl Transport for GRPC {
     ) -> Result<()> {
         #[cfg(debug_assertions)]
         let filename = request.name.clone();
-
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
         tokio::spawn(async move {

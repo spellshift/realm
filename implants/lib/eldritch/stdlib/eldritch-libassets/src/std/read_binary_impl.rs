@@ -8,7 +8,9 @@ impl StdAssetsLibrary {
         // Iterate through the boxed trait objects (maintaining precedence order)
         for backend in &self.backends {
             match backend.get(name) {
-                Ok(file) => return Ok(file),
+                Ok(file) => {
+                    return Ok(file);
+                }
                 Err(e) => errors.push(e.to_string()),
             }
         }
