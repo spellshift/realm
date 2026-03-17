@@ -387,8 +387,10 @@ mod tests {
 
         let config = Config::default();
         let mut transport = MockTransport::default();
+        transport.expect_is_active().returning(|| true);
         transport.expect_clone_box().returning(|| {
             let mut t = MockTransport::default();
+            t.expect_is_active().returning(|| true);
             t.expect_report_output()
                 .withf(|req| {
                     if let Some(report_output_request::Message::ShellTaskOutput(m)) = &req.message {
@@ -406,13 +408,8 @@ mod tests {
         let task_registry = Arc::new(TaskRegistry::new());
 
         let (shell_tx, _shell_rx) = mpsc::channel(1);
-        let agent = Arc::new(ImixAgent::new(
-            config,
-            transport.clone_box(),
-            runtime_handle,
-            task_registry,
-            shell_tx,
-        ));
+        let agent = Arc::new(ImixAgent::new(config, runtime_handle, task_registry, shell_tx));
+        agent.update_transport(transport.clone_box()).await;
 
         let manager = ShellManager::new(agent.clone(), rx);
 
