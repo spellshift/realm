@@ -666,15 +666,13 @@ impl Agent for ImixAgent {
                 if let Some(pos) = available_transports
                     .transports
                     .iter()
-                    .position(|t| t.uri == parsed_transport.uri)
+                    .position(|t| t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type)
                 {
                     // Set active_index to existing transport
                     available_transports.active_index = pos as u32;
 
                     // We also want to update the settings if they were provided in the DSN
-                    // Let's replace the existing transport with the newly parsed one,
-                    // preserving type if it wasn't specified differently?
-                    // actually `parse_dsn` infers the transport type from the URI scheme.
+                    // Let's replace the existing transport with the newly parsed one
                     available_transports.transports[pos] = parsed_transport;
                 } else {
                     available_transports.transports.push(parsed_transport);
