@@ -17,6 +17,7 @@ import (
 
 	yaml "gopkg.in/yaml.v3"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/tomes"
 	"realm.pub/tavern/internal/builder"
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -232,6 +233,45 @@ func (r *mutationResolver) DeleteTome(ctx context.Context, tomeID int) (int, err
 		return 0, err
 	}
 	return tomeID, nil
+}
+
+// ClearTomes is the resolver for the clearTomes field.
+func (r *mutationResolver) ClearTomes(ctx context.Context) (bool, error) {
+	// Initialize Transaction
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to initialize transaction: %w", err)
+	}
+	client := tx.Client()
+
+	// Delete relevant ents in order to avoid foreign key constraints
+	if _, err := client.Task.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tasks: %w", err))
+	}
+	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
+	}
+	if _, err := client.Asset.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete assets: %w", err))
+	}
+	if _, err := client.Tome.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete tomes: %w", err))
+	}
+	if _, err := client.Repository.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete repositories: %w", err))
+	}
+
+	// Commit Transaction
+	if err := tx.Commit(); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to commit transaction: %w", err))
+	}
+
+	// Re-import first-party tomes
+	if err := tomes.UploadTomes(ctx, r.client, tomes.FileSystem); err != nil {
+		return false, fmt.Errorf("failed to upload default tomes: %w", err)
+	}
+
+	return true, nil
 }
 
 // CreateRepository is the resolver for the createRepository field.

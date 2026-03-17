@@ -28,6 +28,7 @@ type MutationResolver interface {
 	CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error)
 	UpdateTome(ctx context.Context, tomeID int, input ent.UpdateTomeInput) (*ent.Tome, error)
 	DeleteTome(ctx context.Context, tomeID int) (int, error)
+	ClearTomes(ctx context.Context) (bool, error)
 	CreateRepository(ctx context.Context, input ent.CreateRepositoryInput) (*ent.Repository, error)
 	ImportRepository(ctx context.Context, repoID int, input *models.ImportRepositoryInput) (*ent.Repository, error)
 	ResetUserAPIKey(ctx context.Context) (*ent.User, error)
@@ -1088,6 +1089,53 @@ func (ec *executionContext) fieldContext_Mutation_deleteTome(ctx context.Context
 	if fc.Args, err = ec.field_Mutation_deleteTome_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_clearTomes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_clearTomes,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().ClearTomes(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal bool
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_clearTomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -2203,6 +2251,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteTome":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteTome(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clearTomes":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_clearTomes(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

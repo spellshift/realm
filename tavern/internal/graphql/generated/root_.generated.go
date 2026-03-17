@@ -348,6 +348,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ClearTomes           func(childComplexity int) int
 		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
@@ -2113,6 +2114,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
+
+	case "Mutation.clearTomes":
+		if e.complexity.Mutation.ClearTomes == nil {
+			break
+		}
+
+		return e.complexity.Mutation.ClearTomes(childComplexity), true
 
 	case "Mutation.createBuildTask":
 		if e.complexity.Mutation.CreateBuildTask == nil {
@@ -10787,6 +10795,7 @@ scalar Uint64
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
+    clearTomes: Boolean! @requireRole(role: ADMIN)
 
     ###
     # Repository

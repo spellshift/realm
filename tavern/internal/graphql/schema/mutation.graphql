@@ -36,6 +36,7 @@ type Mutation {
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
     updateTome(tomeID: ID!, input: UpdateTomeInput!,): Tome! @requireRole(role: ADMIN)
     deleteTome(tomeID: ID!): ID! @requireRole(role: ADMIN)
+    clearTomes: Boolean! @requireRole(role: ADMIN)
 
     ###
     # Repository
