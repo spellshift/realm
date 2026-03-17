@@ -81,13 +81,14 @@ fn test_file_bindings() {
             "template",
             "timestomp",
             "write",
+            "write_binary",
         ],
     );
 }
 
 #[test]
 fn test_process_bindings() {
-    check_bindings("process", &["info", "kill", "list", "name", "netstat"]);
+    check_bindings("process", &["info", "kill", "list", "name", "netstat", "signal"]);
 }
 
 #[test]
@@ -151,7 +152,9 @@ fn test_crypto_bindings() {
             "aes_encrypt",
             "aes_encrypt_file",
             "decode_b64",
+            "decode_utf16le",
             "encode_b64",
+            "encode_utf16le",
             "from_json",
             "hash_file",
             "is_json",
@@ -212,6 +215,7 @@ fn test_agent_bindings() {
             "get_transport",
             "list_tasks",
             "list_transports",
+            "reset_transport",
             "set_callback_interval",
             "set_callback_uri",
             "stop_task",
