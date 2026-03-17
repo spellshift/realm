@@ -625,6 +625,18 @@ impl Agent for ImixAgent {
         })
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = 0;
+            }
+            Ok(())
+        })
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }

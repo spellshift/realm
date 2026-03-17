@@ -58,6 +58,10 @@ impl AgentLibrary for AgentLibraryFake {
         Ok("http".into())
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -133,6 +137,9 @@ impl Agent for AgentFake {
         Ok("http".into())
     }
     fn set_transport(&self, _transport: String) -> Result<(), String> {
+        Ok(())
+    }
+    fn reset_transport(&self) -> Result<(), String> {
         Ok(())
     }
     fn list_transports(&self) -> Result<Vec<String>, String> {
