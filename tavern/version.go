@@ -1,4 +1,4 @@
 package main
 
 // Version of Tavern being run
-const Version = "v0.3.2"
+const Version = "0.3.3"

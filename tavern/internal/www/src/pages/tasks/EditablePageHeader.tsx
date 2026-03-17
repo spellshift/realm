@@ -2,9 +2,9 @@ import { FC } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client";
-import { CreateQuestDropdown } from "../../components/create-quest-dropdown";
 import { QuestQueryTopLevel } from "../../utils/interfacesQuery";
 import { GET_QUEST_DETAIL_QUERY } from "../quests/queries";
+import { RerunQuestDropdown } from "./RerunQuestDropdown";
 
 export const EditablePageHeader: FC = () => {
     const { questId } = useParams();
@@ -33,15 +33,7 @@ export const EditablePageHeader: FC = () => {
         <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-row justify-between w-full items-center gap-2">
                 <Breadcrumbs pages={BreadcrumbsList} />
-                {questData && questData.tasks.edges && (
-                    <CreateQuestDropdown
-                        showLabel={true}
-                        name={questData.name}
-                        originalParms={questData.parameters || ""}
-                        tome={questData.tome}
-                        tasks={questData.tasks}
-                    />
-                )}
+                {questData && <RerunQuestDropdown quest={questData} />}
             </div>
         </div>
     );

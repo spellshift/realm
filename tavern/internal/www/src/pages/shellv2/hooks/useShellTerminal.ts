@@ -892,10 +892,59 @@ export const useShellTerminal = (
         termInstance.current.onData((data) => {
             // Check if this is a paste or multi-character sequence (not starting with ESC)
             if (data.length > 1 && data.charCodeAt(0) !== 27) {
-                // Normalize newlines to \r so they trigger the "Enter" key code (13)
-                const normalized = data.replace(/\r\n/g, "\r").replace(/\n/g, "\r");
-                for (const char of normalized) {
-                    handleData(char, true);
+                // Check for connection status and block input
+                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected") return;
+
+                const hasNewlines = data.includes('\r') || data.includes('\n');
+
+                if (hasNewlines) {
+                    // Normalize to \n for our adapter
+                    const normalized = data.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+                    const state = shellState.current;
+                    const term = termInstance.current;
+                    if (!term) return;
+
+                    // Write the pasted text to the terminal, formatting newlines appropriately
+                    const displayFormatted = normalized.replace(/\n/g, "\r\n");
+                    term.write(displayFormatted);
+                    term.write("\r\n"); // Ensure we're on a new line after paste
+
+                    // We need to prepend any existing input buffer to the paste
+                    const fullText = state.inputBuffer + normalized;
+                    state.currentBlock += fullText + "\n";
+
+                    // Call our new paste method
+                    const res = adapter.current?.paste_input(fullText);
+
+                    if (res?.status === "complete") {
+                        if (state.currentBlock.trim()) {
+                            state.history.push(state.currentBlock.trimEnd());
+                            saveHistory(state.history);
+                        }
+                        state.currentBlock = "";
+                        state.historyIndex = -1;
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                        state.prompt = ">>> ";
+                        term.write(state.prompt);
+                    } else if (res?.status === "incomplete") {
+                        state.prompt = res.prompt || ".. ";
+                        term.write(state.prompt);
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                    } else {
+                        term.write(`Error: ${res?.message}\r\n>>> `);
+                        state.currentBlock = "";
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                        state.prompt = ">>> ";
+                    }
+                    lastBufferHeight.current = 0;
+                } else {
+                    for (const char of data) {
+                        handleData(char, true);
+                    }
                 }
             } else {
                 handleData(data, false);

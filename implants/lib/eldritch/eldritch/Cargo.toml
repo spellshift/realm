@@ -73,6 +73,7 @@ stdlib = [
 ]
 
 [dev-dependencies]
+eldritch-mockagent = { path = "../testutils/eldritch-mockagent" }
 httptest = "0.16"
 
 [build-dependencies]

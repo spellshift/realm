@@ -10,6 +10,7 @@ eldritch-agent = { workspace = true, optional = true }
 pb = { workspace = true, optional = true }
 anyhow = { version = "1.0" }
 rust-embed = { version = "8.0" }
+log = { workspace = true }
 
 [features]
 default = ["std", "stdlib"]
@@ -18,4 +19,5 @@ fake_bindings = []
 stdlib = ["dep:eldritch-agent", "dep:pb"]
 
 [dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }
 tempfile = "3.3"

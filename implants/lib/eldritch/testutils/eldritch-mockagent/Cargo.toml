@@ -1,0 +1,8 @@
+[package]
+name = "eldritch-mockagent"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eldritch-agent = { path = "../../eldritch-agent" }
+pb = { path = "../../../pb" }

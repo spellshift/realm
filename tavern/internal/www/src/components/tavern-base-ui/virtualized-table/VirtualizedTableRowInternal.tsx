@@ -59,12 +59,23 @@ export function VirtualizedTableRowInternal<TData, TResponse>({
         onToggleExpand(itemId);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (onRowClick && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onRowClick(itemId, itemData);
+        }
+    };
+
     return (
         <div>
             <div
-                className={`${rowClassName} ${onRowClick ? "cursor-pointer" : ""}`}
+                className={`${rowClassName} ${onRowClick ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500" : ""}`}
                 style={{ gridTemplateColumns: fullGridTemplateColumns, minWidth }}
-                onClick={() => onRowClick?.(itemId)}
+                onClick={() => onRowClick?.(itemId, itemData)}
+                onKeyDown={handleKeyDown}
+                tabIndex={onRowClick ? 0 : undefined}
+                role={onRowClick ? "button" : undefined}
+                aria-label={onRowClick ? `Select row` : undefined}
             >
                 {supportsExpand && (
                     canExpand ? (

@@ -3,13 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import { HostContextProvider } from "../../context/HostContext";
 import HostDetailsSection from "./components/HostDetailsSection";
 import HostTabs from "./components/HostTabs";
-import CredentialTab from "./components/CredentialTab";
+import { CredentialTab } from "./credential-tab";
 import { HostTaskTab } from "./task-tab";
-import HostBreadcrumbs from "./components/HostBreadcrumbs";
 import { BeaconTab } from "./beacon-tab";
 import { ProcessTab } from "./process-tab";
 import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
+import HostHeader from "./components/HostHeader";
 
 const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
 
@@ -25,7 +25,7 @@ const HostDetails = () => {
 
     return (
         <HostContextProvider>
-            <HostBreadcrumbs />
+            <HostHeader />
             <HostDetailsSection />
             <div className="flex flex-col mt-2">
                 <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>

@@ -38,7 +38,7 @@ const FreeTextSearch = (props: Props) => {
 
     return (
         <div className="flex flex-col gap-1">
-            {labelVisible && <label className="text-gray-700"> {placeholder}</label>}
+            {labelVisible && <label className="text-gray-700 font-medium"> {placeholder}</label>}
             <InputGroup className=" border-gray-300">
                 <InputLeftElement pointerEvents='none'>
                     <SearchIcon color='gray.300' />

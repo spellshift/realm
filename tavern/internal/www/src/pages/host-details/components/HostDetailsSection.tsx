@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { ComputerDesktopIcon, MapPinIcon, TagIcon } from "@heroicons/react/20/solid";
 import { useHost } from "../../../context/HostContext";
 import PageHeader from "../../../components/tavern-base-ui/PageHeader";
-import TagModal from "./TagModal";
 import EditableTag from "./editable-tag/EditableTag";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import { Globe, Network } from "lucide-react";
@@ -10,7 +8,6 @@ import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms } from "../../../utils/enums";
 
 const HostDetailsSection = () => {
-    const [isOpen, setOpen] = useState(false);
     const { data: host } = useHost();
 
     const serviceTag = host?.tags?.edges && host.tags.edges[host.tags.edges.findIndex((tag) => tag.node.kind === "service")]?.node;
@@ -70,7 +67,6 @@ const HostDetailsSection = () => {
                     </div>
                 </div>
             </div>
-            {isOpen && <TagModal isOpen={isOpen} setOpen={setOpen} />}
         </div>
     );
 }

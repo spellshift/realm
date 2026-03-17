@@ -1,13 +1,12 @@
 import { add } from "date-fns";
-import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { OnlineOfflineFilterType, PageNavItem, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { BeaconEdge, BeaconIdNode, BeaconNode } from "./interfacesQuery";
+import { OnlineOfflineFilterType, PageNavItem, PrincipalAdminTypes, SupportedTransports, TomeFilterFieldKind } from "./enums";
 import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
 
 const pathToNavItem: Record<string, PageNavItem> = {
     '/dashboard': PageNavItem.dashboard,
     '/quests': PageNavItem.quests,
     '/tasks': PageNavItem.tasks,
-    '/createQuest': PageNavItem.createQuest,
     '/hosts': PageNavItem.hosts,
     '/tomes': PageNavItem.tomes,
     '/assets': PageNavItem.assets,
@@ -314,4 +313,29 @@ export const formatBytes = (bytes: number, decimals = 2) => {
     const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+export const TRANSPORT_PRIORITY: Record<string, number> = {
+    [SupportedTransports.GRPC]: 3,
+    [SupportedTransports.HTTP1]: 2,
+    [SupportedTransports.DNS]: 1,
+};
+
+export const ADMIN_PRINCIPALS = new Set(Object.values(PrincipalAdminTypes));
+
+export function getPriotizedBeaconId(beacons: BeaconIdNode[]): string | undefined {
+    if (beacons.length === 0) return undefined;
+
+    const scored = beacons.map((beacon) => ({
+        id: beacon.id,
+        isAdmin: ADMIN_PRINCIPALS.has(beacon.principal as PrincipalAdminTypes),
+        transportScore: TRANSPORT_PRIORITY[beacon.transport || ""] || 0,
+    }));
+
+    scored.sort((a, b) => {
+        if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1;
+        return b.transportScore - a.transportScore;
+    });
+
+    return scored[0].id;
 }

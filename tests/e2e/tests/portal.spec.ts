@@ -1,23 +1,25 @@
 import { test, expect } from '@playwright/test';
 
 test('End-to-end portal provisioning test', async ({ page }) => {
-  // Connect to tavern's UI using playwright at http://127.0.0.1:8000/createQuest
-  console.log('Navigating to /createQuest');
-  await page.goto('/createQuest');
+  // Navigate to quests page and open the Create Quest modal
+  console.log('Navigating to /quests');
+  await page.goto('/quests');
+
+  // Click "Create a quest" button to open the modal
+  console.log('Opening Create Quest modal');
+  await page.getByRole('button', { name: 'Create a quest' }).click();
 
   // Select the only visible beacon and click "continue"
   console.log('Waiting for beacons to load');
   await expect(page.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
 
-  // Define the locator for the beacon checkboxes
-  const beacons = page.locator('.chakra-card input[type="checkbox"]');
-
-  // Assert that exactly one beacon exists
-  await expect(beacons).toHaveCount(1);
+  // Select the first beacon checkbox using aria-label (Chakra Checkbox with aria-label="Select beacon {name}")
+  const beaconCheckbox = page.getByLabel(/Select beacon/).first();
+  await expect(beaconCheckbox).toBeVisible();
 
   // Select the beacon
   console.log('Selecting beacon');
-  await beacons.first().check({ force: true });
+  await beaconCheckbox.check({ force: true });
 
   // Click Continue
   console.log('Clicking Continue (Beacon)');
@@ -26,9 +28,17 @@ test('End-to-end portal provisioning test', async ({ page }) => {
   // 3. Select the "SOCKS5 Relay" tome and click "continue"
   console.log('Selecting Tome');
   await expect(page.getByText('Loading tomes...')).toBeHidden();
-  // Use exact match or check if it exists
-  await expect(page.getByText('SOCKS5 Relay')).toBeVisible();
-  await page.getByText('SOCKS5 Relay').click();
+
+  // Search for the tome first (virtualized table doesn't show all items)
+  const dialog = page.locator('[role="dialog"]');
+  const searchInput = dialog.getByPlaceholder('Tome name, description & params');
+  await searchInput.fill('SOCKS5 Relay');
+  await page.waitForTimeout(500); // Wait for search results to filter
+
+  // Click the tome row (role="button") containing the tome name - scoped to dialog
+  const tomeRow = dialog.locator('[role="button"]').filter({ hasText: 'SOCKS5 Relay' });
+  await expect(tomeRow).toBeVisible();
+  await tomeRow.click();
 
   console.log('Clicking Continue (Tome)');
   await page.locator('[aria-label="continue tome step"]').click();

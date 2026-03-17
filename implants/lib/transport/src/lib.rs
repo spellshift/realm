@@ -31,6 +31,19 @@ pub use mock::MockTransport;
 mod transport;
 pub use transport::Transport;
 
+/// Returns an empty (disconnected) transport using the default (gRPC) transport type.
+/// Use this to initialize or reset transport state without an active connection.
+pub fn init_transport() -> Box<dyn Transport + Send + Sync> {
+    #[cfg(feature = "grpc")]
+    return Box::new(grpc::GRPC::init());
+    #[cfg(all(not(feature = "grpc"), feature = "http1"))]
+    return Box::new(http::HTTP::init());
+    #[cfg(all(not(feature = "grpc"), not(feature = "http1"), feature = "dns"))]
+    return Box::new(dns::DNS::init());
+    #[cfg(not(any(feature = "grpc", feature = "http1", feature = "dns")))]
+    compile_error!("At least one transport feature must be enabled");
+}
+
 pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Sync>> {
     // Extract transport type from config
     let transport_type = config
@@ -76,22 +89,6 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             Err(anyhow!("Invalid or unspecified transport type"))
         }
     }
-}
-
-pub fn empty_transport() -> Box<dyn Transport + Send + Sync> {
-    let mut config = Config::default();
-    config.info = Some(pb::c2::Beacon {
-        available_transports: Some(pb::c2::AvailableTransports {
-            transports: vec![pb::c2::Transport {
-                uri: "http://127.0.0.1".to_string(),
-                r#type: TransportType::TransportHttp1 as i32,
-                ..Default::default()
-            }],
-            active_index: 0,
-        }),
-        ..Default::default()
-    });
-    create_transport(config).expect("Failed to create empty transport")
 }
 
 #[cfg(test)]
