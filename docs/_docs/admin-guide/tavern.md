@@ -181,13 +181,13 @@ tavern redirector --transport icmp --listen 0.0.0.0 http://localhost:8000
 Before starting the ICMP redirector, the Linux kernel's automatic ICMP echo reply must be disabled. Without this, the kernel responds to incoming ICMP echo requests by mirroring the payload back to the sender before the user-space redirector can act. Agents receive this kernel reply first and parse their own request payload as a response, breaking the protocol.
 
 ```bash
-echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_all
+echo 1 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_all
 ```
 
 The redirector will refuse to start if this is not set. To make the setting persistent across reboots:
 
 ```bash
-echo "net.ipv4.icmp_echo_ignore_all = 1" >> /etc/sysctl.conf
+echo "net.ipv4.icmp_echo_ignore_all = 1" | sudo tee -a /etc/sysctl.conf
 sysctl -p
 ```
 

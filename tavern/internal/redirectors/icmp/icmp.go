@@ -51,7 +51,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 		return fmt.Errorf("icmp redirector: failed to check icmp_echo_ignore_all: %w", err)
 	}
 	if strings.TrimSpace(string(val)) != "1" {
-		return fmt.Errorf("icmp redirector: kernel ICMP echo replies are enabled — run 'echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_all' on this host before starting the redirector")
+		return fmt.Errorf("icmp redirector: kernel ICMP echo replies are enabled — run 'echo 1 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_all' on this host before starting the redirector")
 	}
 
 	// listenOn is an IP address (no port for raw ICMP), e.g. "0.0.0.0"
