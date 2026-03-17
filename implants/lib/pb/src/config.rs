@@ -107,7 +107,7 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  *
  * Example: https://example.com?interval=10&extra={"key":"value"}&jitter=0.5
  */
-fn parse_transports(uri_string: &str) -> Vec<Transport> {
+pub fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
         .split(';')
         .filter(|s| !s.trim().is_empty())
@@ -122,7 +122,7 @@ fn parse_transports(uri_string: &str) -> Vec<Transport> {
  * Helper function to parse DSN query parameters
  * Returns a Transport struct
  */
-fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
+pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     // Parse as a URL to extract query parameters
     let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
