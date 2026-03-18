@@ -88,7 +88,10 @@ fn test_file_bindings() {
 
 #[test]
 fn test_process_bindings() {
-    check_bindings("process", &["info", "kill", "list", "name", "netstat", "signal"]);
+    check_bindings(
+        "process",
+        &["info", "kill", "list", "name", "netstat", "signal"],
+    );
 }
 
 #[test]
