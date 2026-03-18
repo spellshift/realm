@@ -154,6 +154,10 @@ impl Agent for MockAgent {
         Ok(())
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(Vec::new())
     }

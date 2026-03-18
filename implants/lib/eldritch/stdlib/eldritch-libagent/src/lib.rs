@@ -86,6 +86,16 @@ pub trait AgentLibrary {
     fn get_transport(&self) -> Result<String, String>;
 
     #[eldritch_method]
+    /// Resets the active transport.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if the transport could not be reset.
+    fn reset_transport(&self) -> Result<(), String>;
+
+    #[eldritch_method]
     /// Returns a list of available transport names.
     ///
     /// **Returns**
