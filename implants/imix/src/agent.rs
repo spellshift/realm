@@ -663,11 +663,9 @@ impl Agent for ImixAgent {
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
                 // Note: We compare against parsed_transport.uri because parse_dsn strips the query string
-                if let Some(pos) = available_transports
-                    .transports
-                    .iter()
-                    .position(|t| t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type)
-                {
+                if let Some(pos) = available_transports.transports.iter().position(|t| {
+                    t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type
+                }) {
                     // Set active_index to existing transport
                     available_transports.active_index = pos as u32;
 
