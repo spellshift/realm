@@ -3,6 +3,7 @@ import { Heading, Tooltip, useToast } from "@chakra-ui/react";
 import { Copy } from "lucide-react";
 
 import { FieldInputParams } from "../../utils/interfacesUI";
+import { toDisplayString } from "../../utils/utils";
 
 interface CopyableKeyValuesProps {
     params: FieldInputParams[];
@@ -41,14 +42,12 @@ export const CopyableKeyValues = ({
             <Heading size="sm">{heading}</Heading>
             <div className="rounded-md border border-gray-200 divide-y divide-gray-200">
                 {params.map((param) => {
-                    const hasValue = param.value !== undefined && param.value !== "";
-                    const valueStr = hasValue ? String(param.value) : "";
-                    const needsTruncation = valueStr.length > MAX_VALUE_LENGTH;
+                    const valueStr = toDisplayString(param.value);
 
                     return (
                         <div key={param.name} className="flex flex-row">
                             <div className="text-sm bg-gray-50 px-4 py-3 w-1/3 flex-shrink-0 border-r border-gray-200 text-wrap font-medium">{param.label}</div>
-                            {hasValue ? (
+                            {valueStr ? (
                                 <div
                                     className="flex-1 flex justify-end items-center px-4 py-3"
                                     onClick={() => handleCopy(valueStr)}
@@ -65,7 +64,7 @@ export const CopyableKeyValues = ({
                                     <Tooltip label={valueStr} bg="white" color="black">
                                         <div className="flex flex-row gap-2 items-center cursor-pointer hover:text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1 rounded">
                                             <code className="text-sm px-2 py-1 border border-gray-200 rounded text-wrap">
-                                                {needsTruncation ? truncateValue(valueStr) : valueStr}
+                                                {valueStr.length > MAX_VALUE_LENGTH ? truncateValue(valueStr) : valueStr}
                                             </code>
                                             <Copy className="w-3 h-3" />
                                         </div>
