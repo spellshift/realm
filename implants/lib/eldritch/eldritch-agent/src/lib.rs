@@ -39,6 +39,7 @@ pub trait Agent: Send + Sync {
     fn get_config(&self) -> Result<BTreeMap<String, String>, String>;
     fn get_transport(&self) -> Result<String, String>;
     fn set_transport(&self, transport: String) -> Result<(), String>;
+    fn reset_transport(&self) -> Result<(), String>;
     fn list_transports(&self) -> Result<Vec<String>, String>;
     fn get_callback_interval(&self) -> Result<u64, String>;
     fn set_callback_interval(&self, interval: u64) -> Result<(), String>;

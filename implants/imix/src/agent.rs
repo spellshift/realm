@@ -625,6 +625,18 @@ impl Agent for ImixAgent {
         })
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = 0;
+            }
+            Ok(())
+        })
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
@@ -654,40 +666,28 @@ impl Agent for ImixAgent {
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
+            // Parse the new URI to handle DSN format with query parameters
+            let parsed_transport = pb::config::parse_dsn(&uri)
+                .map_err(|e| format!("Failed to parse callback URI: {}", e))?;
+
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Check if URI already exists
-                if let Some(pos) = available_transports
-                    .transports
-                    .iter()
-                    .position(|t| t.uri == uri)
-                {
+                // Note: We compare against parsed_transport.uri because parse_dsn strips the query string
+                if let Some(pos) = available_transports.transports.iter().position(|t| {
+                    t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type
+                }) {
                     // Set active_index to existing transport
                     available_transports.active_index = pos as u32;
-                } else {
-                    // Get current transport as template
-                    let active_idx = available_transports.active_index as usize;
-                    let template = available_transports
-                        .transports
-                        .get(active_idx)
-                        .or_else(|| available_transports.transports.first())
-                        .cloned();
 
-                    if let Some(tmpl) = template {
-                        // Create new transport with the new URI
-                        let new_transport = pb::c2::Transport {
-                            uri,
-                            interval: tmpl.interval,
-                            r#type: tmpl.r#type,
-                            extra: tmpl.extra,
-                            jitter: tmpl.jitter,
-                        };
-                        available_transports.transports.push(new_transport);
-                        available_transports.active_index =
-                            (available_transports.transports.len() - 1) as u32;
-                    }
+                    // We also want to update the settings if they were provided in the DSN
+                    // Let's replace the existing transport with the newly parsed one
+                    available_transports.transports[pos] = parsed_transport;
+                } else {
+                    available_transports.transports.push(parsed_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
             Ok(())
