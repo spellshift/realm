@@ -417,17 +417,17 @@ impl ImixAgent {
 // Implement the Eldritch Agent Trait
 impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
+        // Transport uses std::sync::mpsc::Sender for fetch_asset
+        let (tx, rx) = std::sync::mpsc::channel();
         self.with_transport(|mut t| async move {
-            // Transport uses std::sync::mpsc::Sender for fetch_asset
-            let (tx, rx) = std::sync::mpsc::channel();
-            t.fetch_asset(req, tx).await?;
+            t.fetch_asset(req, tx).await
+        })?;
 
-            let mut data = Vec::new();
-            while let Ok(resp) = rx.recv() {
-                data.extend(resp.chunk);
-            }
-            Ok(data)
-        })
+        let mut data = Vec::new();
+        while let Ok(resp) = rx.recv() {
+            data.extend(resp.chunk);
+        }
+        Ok(data)
     }
 
     fn report_credential(
