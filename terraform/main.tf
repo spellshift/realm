@@ -40,7 +40,7 @@ variable "redirectors" {
 #   transport = "grpc",
 #   domain = "grpc.example.com"
 # },{
-#   transport = "http",
+#   transport = "http1",
 #   domain = "http1.example.com"
 # },{
 #   transport = "dns",
@@ -545,7 +545,7 @@ locals {
       "domain": redir.domain,
       "zone": lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
     }
-    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && (redir.transport == "http" || redir.transport == "grpc")
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && (redir.transport == "http1" || redir.transport == "grpc")
   ]
   redirector_zones_dns = [
     for redir in var.redirectors: {
@@ -560,7 +560,7 @@ locals {
   ]
   http_redirectors = [
     for redir in var.redirectors: redir
-    if redir.transport == "http" || redir.transport == "grpc"
+    if redir.transport == "http1" || redir.transport == "grpc"
   ]
   dns_redirectors = [
     for redir in var.redirectors: redir
