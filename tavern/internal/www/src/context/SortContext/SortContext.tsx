@@ -3,7 +3,7 @@ import { OrderDirection } from '../../utils/enums'
 import { OrderByField } from '../../utils/interfacesQuery'
 import { defaultSorts, sortablePageNavItems, Sorts } from './sortingUtils'
 
-const STORAGE_KEY = 'realm-sorting-v1.0'
+const STORAGE_KEY = 'realm-sorting-v1.1'
 
 function isValidOrderByField(item: any): item is OrderByField {
     return (

@@ -382,7 +382,9 @@ export interface ProcessNode {
     ppid: number;
     name: string;
     path: string | null;
+    cmd: string | null;
     status: string;
+    startTime: number | null;
     env: string | null;
     cwd: string | null;
 }
