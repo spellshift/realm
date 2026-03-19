@@ -376,10 +376,11 @@ def persist_service(service_name, service_desc, executable_path, executable_args
     else:
         print("OS not supported")
 
-def is_installed(path):
+def is_installed(paths):
     for p in process.list():
-        if p['path'] == path:
-            return True
+        for path in paths:
+            if p['path'] == path:
+                return True
     return False
 
 def get_executable_paths(name):
@@ -409,13 +410,10 @@ def parse_and_persist(config_data):
     if len(configs) < 1:
         print("Please add a service_config to your imix config")
     else:
-        
         for conf in configs:
             paths = get_executable_paths(conf['executable_name'])
-            for path in paths:
-                if is_installed(path):
-                    print("Already installed: " + path)
-                    return
+            if is_installed(paths):
+                return
         index = random.int(0, len(configs))
         conf = configs[index]
         paths = get_executable_paths(conf['executable_name'])
@@ -429,7 +427,7 @@ def parse_and_persist(config_data):
 
 
 """
-This script randomly chooses a services_configs to install a service 
+This script randomly chooses a services_configs to install a service
 On the local system. The config file specified for the install will be used
 by the imix agent. The imix binary itself will be copied to the install
 location. The original imix binary will still exist so you may wish to delete
