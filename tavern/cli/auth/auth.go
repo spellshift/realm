@@ -154,6 +154,12 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 	case err := <-errCh:
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
+		if options.CachePath != "" {
+			err := os.WriteFile(options.CachePath, []byte(token), 0600)
+			if err != nil {
+				slog.Warn("failed to write credential cache", "path", options.CachePath, "error", err)
+			}
+		}
 		return token, nil
 	}
 }
