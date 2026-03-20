@@ -189,7 +189,7 @@ func NewRDARevokeHandler(client *ent.Client) http.HandlerFunc {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		
+
 		var req RDAApproveRequest // Reuse same struct
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)

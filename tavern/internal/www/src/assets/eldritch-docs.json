@@ -365,7 +365,7 @@
   },
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
-    "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
+    "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error."
   },
   "file.write_binary": {
     "signature": "file.write_binary(path: str, content: Bytes) -> None",
