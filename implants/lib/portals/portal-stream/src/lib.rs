@@ -50,6 +50,28 @@ mod tests {
         } else {
             panic!("expected bytes payload");
         }
+
+        let tcp_mote = seq.new_tcp_mote(vec![4, 5, 6], "127.0.0.1".to_string(), 8080);
+        assert_eq!(tcp_mote.seq_id, 4);
+        assert_eq!(tcp_mote.stream_id, "test");
+        if let Some(Payload::Tcp(t)) = tcp_mote.payload {
+            assert_eq!(t.data, vec![4, 5, 6]);
+            assert_eq!(t.dst_addr, "127.0.0.1");
+            assert_eq!(t.dst_port, 8080);
+        } else {
+            panic!("expected tcp payload");
+        }
+
+        let udp_mote = seq.new_udp_mote(vec![7, 8, 9], "127.0.0.1".to_string(), 53);
+        assert_eq!(udp_mote.seq_id, 5);
+        assert_eq!(udp_mote.stream_id, "test");
+        if let Some(Payload::Udp(u)) = udp_mote.payload {
+            assert_eq!(u.data, vec![7, 8, 9]);
+            assert_eq!(u.dst_addr, "127.0.0.1");
+            assert_eq!(u.dst_port, 53);
+        } else {
+            panic!("expected udp payload");
+        }
     }
 
     #[test]
@@ -154,9 +176,12 @@ mod tests {
 
     #[test]
     fn test_writer() {
-        let mut output = Vec::new();
-        let writer_func = |mote: Mote| {
-            output.push(mote);
+        use std::sync::{Arc, Mutex};
+        let output = Arc::new(Mutex::new(Vec::new()));
+        let output_clone = output.clone();
+
+        let writer_func = move |mote: Mote| {
+            output_clone.lock().unwrap().push(mote);
             Ok(())
         };
 
@@ -164,8 +189,87 @@ mod tests {
         writer.write_bytes(vec![1], BytesPayloadKind::Data).unwrap();
         writer.write_bytes(vec![2], BytesPayloadKind::Data).unwrap();
 
-        assert_eq!(output.len(), 2);
-        assert_eq!(output[0].seq_id, 0);
-        assert_eq!(output[1].seq_id, 1);
+        {
+            let out = output.lock().unwrap();
+            assert_eq!(out.len(), 2);
+            assert_eq!(out[0].seq_id, 0);
+            assert_eq!(out[1].seq_id, 1);
+        }
+
+        writer
+            .write_tcp(vec![3], "127.0.0.1".to_string(), 80)
+            .unwrap();
+        {
+            let out = output.lock().unwrap();
+            assert_eq!(out.len(), 3);
+            assert_eq!(out[2].seq_id, 2);
+            if let Some(Payload::Tcp(t)) = &out[2].payload {
+                assert_eq!(t.data, vec![3]);
+                assert_eq!(t.dst_addr, "127.0.0.1");
+                assert_eq!(t.dst_port, 80);
+            } else {
+                panic!("expected tcp payload");
+            }
+        }
+
+        writer
+            .write_udp(vec![4], "127.0.0.1".to_string(), 53)
+            .unwrap();
+        {
+            let out = output.lock().unwrap();
+            assert_eq!(out.len(), 4);
+            assert_eq!(out[3].seq_id, 3);
+            if let Some(Payload::Udp(u)) = &out[3].payload {
+                assert_eq!(u.data, vec![4]);
+                assert_eq!(u.dst_addr, "127.0.0.1");
+                assert_eq!(u.dst_port, 53);
+            } else {
+                panic!("expected udp payload");
+            }
+        }
+    }
+
+    #[cfg(feature = "tokio")]
+    #[tokio::test]
+    async fn test_writer_async() {
+        let (tx, mut rx) = tokio::sync::mpsc::channel(10);
+        let mut writer = OrderedWriter::new_tokio("test", tx);
+
+        writer
+            .write_bytes_async(vec![1], BytesPayloadKind::Data)
+            .await
+            .unwrap();
+        writer
+            .write_tcp_async(vec![2], "127.0.0.1".to_string(), 80)
+            .await
+            .unwrap();
+        writer
+            .write_udp_async(vec![3], "127.0.0.1".to_string(), 53)
+            .await
+            .unwrap();
+
+        let mote1 = rx.recv().await.unwrap();
+        assert_eq!(mote1.seq_id, 0);
+        if let Some(Payload::Bytes(b)) = mote1.payload {
+            assert_eq!(b.data, vec![1]);
+        } else {
+            panic!("expected bytes payload");
+        }
+
+        let mote2 = rx.recv().await.unwrap();
+        assert_eq!(mote2.seq_id, 1);
+        if let Some(Payload::Tcp(t)) = mote2.payload {
+            assert_eq!(t.data, vec![2]);
+        } else {
+            panic!("expected tcp payload");
+        }
+
+        let mote3 = rx.recv().await.unwrap();
+        assert_eq!(mote3.seq_id, 2);
+        if let Some(Payload::Udp(u)) = mote3.payload {
+            assert_eq!(u.data, vec![3]);
+        } else {
+            panic!("expected udp payload");
+        }
     }
 }
