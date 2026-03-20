@@ -17,7 +17,7 @@ const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedS
     const user = data?.me;
 
     return (
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-24 lg:flex-col justify-between items-center bg-gray-900">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-24 lg:flex-col justify-between items-center bg-gray-900">
             {/* Sidebar component */}
             <div className="flex grow flex-col gap-y-5 overflow-y-auto px-6">
                 <div className='flex flex-col h-28 justify-center'>
