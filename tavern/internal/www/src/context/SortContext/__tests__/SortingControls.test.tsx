@@ -95,7 +95,7 @@ describe('SortingControls', () => {
     it('should render with default process sort settings', () => {
       render(<TestWrapper sortType={PageNavItem.processes} />);
 
-      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Process Id)');
+      expect(screen.getByTestId('popover-button')).toHaveTextContent('Sort (Process Start Time)');
       expect(screen.getByTestId('icon-up')).toBeInTheDocument();
     });
   });

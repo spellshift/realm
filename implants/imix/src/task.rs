@@ -178,6 +178,15 @@ fn execute_task(
         interp.interpret(&tome.eldritch)
     }));
 
+    // TODO: @Kcarretto remove this
+    // Send interpreter errors through the streaming error channel before closing it,
+    // ensuring errors are reported via the same path as eprint() output.
+    match &result {
+        Ok(Err(e)) => printer.report_error(e),
+        Err(e) => printer.report_error(&format!("panic: {e:?}")),
+        Ok(Ok(_)) => {}
+    }
+
     // Explicitly drop interp and printer to close channel
     drop(printer);
     drop(interp);
