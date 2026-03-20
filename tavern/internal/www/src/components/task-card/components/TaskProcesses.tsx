@@ -9,13 +9,14 @@ import { PrincipalAdminTypes } from "../../../utils/enums";
 import { ProcessNode } from "../../../utils/interfacesQuery";
 import { EmptyState, EmptyStateType } from "../../tavern-base-ui/EmptyState";
 import { ArrowRight } from "lucide-react";
+import { format } from "date-fns";
 
 const GET_TASK_PROCESS_IDS_QUERY = gql`
     query GetTaskProcessIds($taskId: ID!) {
         tasks(where: { id: $taskId }) {
             edges {
                 node {
-                    reportedProcesses(orderBy: { field: NAME, direction: DESC }) {
+                    reportedProcesses(orderBy: { field: PROCESS_START_TIME, direction: ASC }) {
                         edges {
                             node {
                                 id
@@ -43,7 +44,9 @@ const GET_TASK_PROCESS_DETAIL_QUERY = gql`
                                 ppid
                                 name
                                 path
+                                cmd
                                 status
+                                startTime
                             }
                         }
                     }
@@ -110,29 +113,21 @@ const TaskProcesses: FC<TaskProcessesProps> = ({ taskId, hostId }) => {
         return response?.tasks?.edges?.[0]?.node?.reportedProcesses?.edges?.[0]?.node || null;
     }, []);
 
+    const formatStatus = (status: string): string => {
+        return status.replace('STATUS_', '').toLowerCase().replace(/_/g, ' ');
+    };
+
+    // startTime is a Unix timestamp in seconds; JavaScript Date expects milliseconds
+    const formatStartTime = (startTime: number | null): string => {
+        if (!startTime) return '-';
+        return format(new Date(startTime * 1000), "yyyy-MM-dd HH:mm");
+    };
+
     const columns: VirtualizedTableColumn<ProcessNode>[] = useMemo(() => [
-        {
-            key: 'name',
-            label: 'Process name',
-            width: 'minmax(80px,1fr)',
-            render: (process: ProcessNode) => process.name
-        },
-        {
-            key: 'path',
-            label: 'Path',
-            width: 'minmax(100px,1fr)',
-            render: (process: ProcessNode) => (
-                <Tooltip label={process.path || ''} isDisabled={!process.path}>
-                    <div className="truncate text-sm text-gray-600">
-                        {process.path || '-'}
-                    </div>
-                </Tooltip>
-            ),
-        },
         {
             key: 'principal',
             label: 'User',
-            width: 'minmax(100px,1fr)',
+            width: 'minmax(80px,1fr)',
             render: (process: ProcessNode) => {
                 const principal = process.principal;
                 const color = principalColors.indexOf(principal as PrincipalAdminTypes) === -1 ? 'gray' : 'purple';
@@ -161,6 +156,30 @@ const TaskProcesses: FC<TaskProcessesProps> = ({ taskId, hostId }) => {
             label: 'PPID',
             width: 'minmax(50px,0.5fr)',
             render: (process: ProcessNode) => process.ppid,
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            width: 'minmax(70px,0.5fr)',
+            render: (process: ProcessNode) => formatStatus(process.status),
+        },
+        {
+            key: 'startTime',
+            label: 'Start Time',
+            width: 'minmax(100px,1fr)',
+            render: (process: ProcessNode) => formatStartTime(process.startTime),
+        },
+        {
+            key: 'cmd',
+            label: 'CMD',
+            width: 'minmax(120px,1.5fr)',
+            render: (process: ProcessNode) => (
+                <Tooltip label={process.cmd || process.name} isDisabled={!process.cmd && !process.name}>
+                    <div className="truncate text-sm text-gray-600">
+                        {process.cmd || process.name || '-'}
+                    </div>
+                </Tooltip>
+            ),
         },
     ], [principalColors]);
 
