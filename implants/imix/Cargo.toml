@@ -51,4 +51,5 @@ windows-service = { workspace = true }
 static_vcruntime = { workspace = true }
 
 [dev-dependencies]
+eldritch-mockagent = { path = "../lib/eldritch/testutils/eldritch-mockagent" }
 transport = { workspace = true, features = ["mock", "grpc"] }

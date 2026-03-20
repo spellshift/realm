@@ -176,7 +176,8 @@ fn execute_task(
     // Run Interpreter with panic protection
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         interp.interpret(&tome.eldritch)
-    }));
+    }))
+    .unwrap_or_else(|e| Err(format!("panic: {:?}", e)));
 
     // Explicitly drop interp and printer to close channel
     drop(printer);
@@ -195,12 +196,7 @@ fn execute_task(
     }
 
     // Handle result
-    match result {
-        Ok(exec_result) => report_result(context, exec_result, &agent),
-        Err(e) => {
-            report_panic(context, &agent, format!("panic: {e:?}"));
-        }
-    }
+    report_result(context, result, &agent);
 }
 
 fn setup_interpreter(
@@ -346,34 +342,6 @@ fn spawn_output_consumer(
             }
         }
     })
-}
-
-fn report_panic(context: Context, agent: &Arc<dyn Agent>, err: String) {
-    let (task_id, task_context) = match context {
-        Context::Task(tc) => (tc.task_id, tc),
-        _ => return, // Only reporting for TaskContext
-    };
-
-    match agent.report_output(ReportOutputRequest {
-        message: Some(report_output_request::Message::TaskOutput(
-            ReportTaskOutputMessage {
-                context: Some(task_context.clone()),
-                output: Some(TaskOutput {
-                    id: task_id,
-                    output: String::new(),
-                    error: Some(TaskError { msg: err }),
-                    exec_started_at: None,
-                    exec_finished_at: Some(Timestamp::from(SystemTime::now())),
-                }),
-            },
-        )),
-    }) {
-        Ok(_) => {}
-        Err(_e) => {
-            #[cfg(debug_assertions)]
-            log::error!("task={task_id} failed to report error: {_e}");
-        }
-    }
 }
 
 fn report_result(context: Context, result: Result<Value, String>, agent: &Arc<dyn Agent>) {
