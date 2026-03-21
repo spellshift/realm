@@ -79,7 +79,7 @@ func BenchmarkDecrypt(b *testing.B) {
 	b.SetBytes(int64(len(plaintext)))
 
 	for i := 0; i < b.N; i++ {
-		decrypted, _ := svc.Decrypt(payload)
+		decrypted, _, _ := svc.Decrypt(payload)
 		if len(decrypted) == 0 {
 			b.Fatal("Decrypt returned empty slice")
 		}
