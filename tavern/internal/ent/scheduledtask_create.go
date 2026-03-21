@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ScheduledTaskCreate is the builder for creating a ScheduledTask entity.
@@ -174,6 +175,25 @@ func (stc *ScheduledTaskCreate) AddQuests(q ...*Quest) *ScheduledTaskCreate {
 		ids[i] = q[i].ID
 	}
 	return stc.AddQuestIDs(ids...)
+}
+
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stc *ScheduledTaskCreate) SetCreatorID(id int) *ScheduledTaskCreate {
+	stc.mutation.SetCreatorID(id)
+	return stc
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (stc *ScheduledTaskCreate) SetNillableCreatorID(id *int) *ScheduledTaskCreate {
+	if id != nil {
+		stc = stc.SetCreatorID(*id)
+	}
+	return stc
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stc *ScheduledTaskCreate) SetCreator(u *User) *ScheduledTaskCreate {
+	return stc.SetCreatorID(u.ID)
 }
 
 // Mutation returns the ScheduledTaskMutation object of the builder.
@@ -386,6 +406,23 @@ func (stc *ScheduledTaskCreate) createSpec() (*ScheduledTask, *sqlgraph.CreateSp
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := stc.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   scheduledtask.CreatorTable,
+			Columns: []string{scheduledtask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.scheduled_task_creator = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

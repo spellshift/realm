@@ -14013,6 +14013,8 @@ type ScheduledTaskMutation struct {
 	quests                     map[int]struct{}
 	removedquests              map[int]struct{}
 	clearedquests              bool
+	creator                    *int
+	clearedcreator             bool
 	done                       bool
 	oldValue                   func(context.Context) (*ScheduledTask, error)
 	predicates                 []predicate.ScheduledTask
@@ -14600,6 +14602,45 @@ func (m *ScheduledTaskMutation) ResetQuests() {
 	m.removedquests = nil
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by id.
+func (m *ScheduledTaskMutation) SetCreatorID(id int) {
+	m.creator = &id
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (m *ScheduledTaskMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared reports if the "creator" edge to the User entity was cleared.
+func (m *ScheduledTaskMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the "creator" edge ID in the mutation.
+func (m *ScheduledTaskMutation) CreatorID() (id int, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the "creator" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *ScheduledTaskMutation) CreatorIDs() (ids []int) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator resets all changes to the "creator" edge.
+func (m *ScheduledTaskMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
 // Where appends a list predicates to the ScheduledTaskMutation builder.
 func (m *ScheduledTaskMutation) Where(ps ...predicate.ScheduledTask) {
 	m.predicates = append(m.predicates, ps...)
@@ -14878,7 +14919,7 @@ func (m *ScheduledTaskMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ScheduledTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tome != nil {
 		edges = append(edges, scheduledtask.EdgeTome)
 	}
@@ -14887,6 +14928,9 @@ func (m *ScheduledTaskMutation) AddedEdges() []string {
 	}
 	if m.quests != nil {
 		edges = append(edges, scheduledtask.EdgeQuests)
+	}
+	if m.creator != nil {
+		edges = append(edges, scheduledtask.EdgeCreator)
 	}
 	return edges
 }
@@ -14911,13 +14955,17 @@ func (m *ScheduledTaskMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case scheduledtask.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ScheduledTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedscheduled_hosts != nil {
 		edges = append(edges, scheduledtask.EdgeScheduledHosts)
 	}
@@ -14949,7 +14997,7 @@ func (m *ScheduledTaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ScheduledTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtome {
 		edges = append(edges, scheduledtask.EdgeTome)
 	}
@@ -14958,6 +15006,9 @@ func (m *ScheduledTaskMutation) ClearedEdges() []string {
 	}
 	if m.clearedquests {
 		edges = append(edges, scheduledtask.EdgeQuests)
+	}
+	if m.clearedcreator {
+		edges = append(edges, scheduledtask.EdgeCreator)
 	}
 	return edges
 }
@@ -14972,6 +15023,8 @@ func (m *ScheduledTaskMutation) EdgeCleared(name string) bool {
 		return m.clearedscheduled_hosts
 	case scheduledtask.EdgeQuests:
 		return m.clearedquests
+	case scheduledtask.EdgeCreator:
+		return m.clearedcreator
 	}
 	return false
 }
@@ -14982,6 +15035,9 @@ func (m *ScheduledTaskMutation) ClearEdge(name string) error {
 	switch name {
 	case scheduledtask.EdgeTome:
 		m.ClearTome()
+		return nil
+	case scheduledtask.EdgeCreator:
+		m.ClearCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown ScheduledTask unique edge %s", name)
@@ -14999,6 +15055,9 @@ func (m *ScheduledTaskMutation) ResetEdge(name string) error {
 		return nil
 	case scheduledtask.EdgeQuests:
 		m.ResetQuests()
+		return nil
+	case scheduledtask.EdgeCreator:
+		m.ResetCreator()
 		return nil
 	}
 	return fmt.Errorf("unknown ScheduledTask edge %s", name)
@@ -21116,29 +21175,32 @@ func (m *TomeMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int
-	name                 *string
-	oauth_id             *string
-	photo_url            *string
-	session_token        *string
-	access_token         *string
-	is_activated         *bool
-	is_admin             *bool
-	clearedFields        map[string]struct{}
-	tomes                map[int]struct{}
-	removedtomes         map[int]struct{}
-	clearedtomes         bool
-	active_shells        map[int]struct{}
-	removedactive_shells map[int]struct{}
-	clearedactive_shells bool
-	device_auths         map[int]struct{}
-	removeddevice_auths  map[int]struct{}
-	cleareddevice_auths  bool
-	done                 bool
-	oldValue             func(context.Context) (*User, error)
-	predicates           []predicate.User
+	op                     Op
+	typ                    string
+	id                     *int
+	name                   *string
+	oauth_id               *string
+	photo_url              *string
+	session_token          *string
+	access_token           *string
+	is_activated           *bool
+	is_admin               *bool
+	clearedFields          map[string]struct{}
+	tomes                  map[int]struct{}
+	removedtomes           map[int]struct{}
+	clearedtomes           bool
+	active_shells          map[int]struct{}
+	removedactive_shells   map[int]struct{}
+	clearedactive_shells   bool
+	device_auths           map[int]struct{}
+	removeddevice_auths    map[int]struct{}
+	cleareddevice_auths    bool
+	scheduled_tasks        map[int]struct{}
+	removedscheduled_tasks map[int]struct{}
+	clearedscheduled_tasks bool
+	done                   bool
+	oldValue               func(context.Context) (*User, error)
+	predicates             []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -21653,6 +21715,60 @@ func (m *UserMutation) ResetDeviceAuths() {
 	m.removeddevice_auths = nil
 }
 
+// AddScheduledTaskIDs adds the "scheduled_tasks" edge to the ScheduledTask entity by ids.
+func (m *UserMutation) AddScheduledTaskIDs(ids ...int) {
+	if m.scheduled_tasks == nil {
+		m.scheduled_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.scheduled_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScheduledTasks clears the "scheduled_tasks" edge to the ScheduledTask entity.
+func (m *UserMutation) ClearScheduledTasks() {
+	m.clearedscheduled_tasks = true
+}
+
+// ScheduledTasksCleared reports if the "scheduled_tasks" edge to the ScheduledTask entity was cleared.
+func (m *UserMutation) ScheduledTasksCleared() bool {
+	return m.clearedscheduled_tasks
+}
+
+// RemoveScheduledTaskIDs removes the "scheduled_tasks" edge to the ScheduledTask entity by IDs.
+func (m *UserMutation) RemoveScheduledTaskIDs(ids ...int) {
+	if m.removedscheduled_tasks == nil {
+		m.removedscheduled_tasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.scheduled_tasks, ids[i])
+		m.removedscheduled_tasks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScheduledTasks returns the removed IDs of the "scheduled_tasks" edge to the ScheduledTask entity.
+func (m *UserMutation) RemovedScheduledTasksIDs() (ids []int) {
+	for id := range m.removedscheduled_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScheduledTasksIDs returns the "scheduled_tasks" edge IDs in the mutation.
+func (m *UserMutation) ScheduledTasksIDs() (ids []int) {
+	for id := range m.scheduled_tasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScheduledTasks resets all changes to the "scheduled_tasks" edge.
+func (m *UserMutation) ResetScheduledTasks() {
+	m.scheduled_tasks = nil
+	m.clearedscheduled_tasks = false
+	m.removedscheduled_tasks = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -21888,7 +22004,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21897,6 +22013,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.device_auths != nil {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.scheduled_tasks != nil {
+		edges = append(edges, user.EdgeScheduledTasks)
 	}
 	return edges
 }
@@ -21923,13 +22042,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeScheduledTasks:
+		ids := make([]ent.Value, 0, len(m.scheduled_tasks))
+		for id := range m.scheduled_tasks {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21938,6 +22063,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removeddevice_auths != nil {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.removedscheduled_tasks != nil {
+		edges = append(edges, user.EdgeScheduledTasks)
 	}
 	return edges
 }
@@ -21964,13 +22092,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeScheduledTasks:
+		ids := make([]ent.Value, 0, len(m.removedscheduled_tasks))
+		for id := range m.removedscheduled_tasks {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21979,6 +22113,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.cleareddevice_auths {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.clearedscheduled_tasks {
+		edges = append(edges, user.EdgeScheduledTasks)
 	}
 	return edges
 }
@@ -21993,6 +22130,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedactive_shells
 	case user.EdgeDeviceAuths:
 		return m.cleareddevice_auths
+	case user.EdgeScheduledTasks:
+		return m.clearedscheduled_tasks
 	}
 	return false
 }
@@ -22017,6 +22156,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeDeviceAuths:
 		m.ResetDeviceAuths()
+		return nil
+	case user.EdgeScheduledTasks:
+		m.ResetScheduledTasks()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

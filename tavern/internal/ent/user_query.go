@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -22,19 +23,21 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                   *QueryContext
-	order                 []user.OrderOption
-	inters                []Interceptor
-	predicates            []predicate.User
-	withTomes             *TomeQuery
-	withActiveShells      *ShellQuery
-	withDeviceAuths       *DeviceAuthQuery
-	withFKs               bool
-	modifiers             []func(*sql.Selector)
-	loadTotal             []func(context.Context, []*User) error
-	withNamedTomes        map[string]*TomeQuery
-	withNamedActiveShells map[string]*ShellQuery
-	withNamedDeviceAuths  map[string]*DeviceAuthQuery
+	ctx                     *QueryContext
+	order                   []user.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.User
+	withTomes               *TomeQuery
+	withActiveShells        *ShellQuery
+	withDeviceAuths         *DeviceAuthQuery
+	withScheduledTasks      *ScheduledTaskQuery
+	withFKs                 bool
+	modifiers               []func(*sql.Selector)
+	loadTotal               []func(context.Context, []*User) error
+	withNamedTomes          map[string]*TomeQuery
+	withNamedActiveShells   map[string]*ShellQuery
+	withNamedDeviceAuths    map[string]*DeviceAuthQuery
+	withNamedScheduledTasks map[string]*ScheduledTaskQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -130,6 +133,28 @@ func (uq *UserQuery) QueryDeviceAuths() *DeviceAuthQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(deviceauth.Table, deviceauth.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, user.DeviceAuthsTable, user.DeviceAuthsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryScheduledTasks chains the current query on the "scheduled_tasks" edge.
+func (uq *UserQuery) QueryScheduledTasks() *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ScheduledTasksTable, user.ScheduledTasksColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -324,14 +349,15 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:           uq.config,
-		ctx:              uq.ctx.Clone(),
-		order:            append([]user.OrderOption{}, uq.order...),
-		inters:           append([]Interceptor{}, uq.inters...),
-		predicates:       append([]predicate.User{}, uq.predicates...),
-		withTomes:        uq.withTomes.Clone(),
-		withActiveShells: uq.withActiveShells.Clone(),
-		withDeviceAuths:  uq.withDeviceAuths.Clone(),
+		config:             uq.config,
+		ctx:                uq.ctx.Clone(),
+		order:              append([]user.OrderOption{}, uq.order...),
+		inters:             append([]Interceptor{}, uq.inters...),
+		predicates:         append([]predicate.User{}, uq.predicates...),
+		withTomes:          uq.withTomes.Clone(),
+		withActiveShells:   uq.withActiveShells.Clone(),
+		withDeviceAuths:    uq.withDeviceAuths.Clone(),
+		withScheduledTasks: uq.withScheduledTasks.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -368,6 +394,17 @@ func (uq *UserQuery) WithDeviceAuths(opts ...func(*DeviceAuthQuery)) *UserQuery 
 		opt(query)
 	}
 	uq.withDeviceAuths = query
+	return uq
+}
+
+// WithScheduledTasks tells the query-builder to eager-load the nodes that are connected to
+// the "scheduled_tasks" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithScheduledTasks(opts ...func(*ScheduledTaskQuery)) *UserQuery {
+	query := (&ScheduledTaskClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withScheduledTasks = query
 	return uq
 }
 
@@ -450,10 +487,11 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
 			uq.withDeviceAuths != nil,
+			uq.withScheduledTasks != nil,
 		}
 	)
 	if withFKs {
@@ -501,6 +539,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withScheduledTasks; query != nil {
+		if err := uq.loadScheduledTasks(ctx, query, nodes,
+			func(n *User) { n.Edges.ScheduledTasks = []*ScheduledTask{} },
+			func(n *User, e *ScheduledTask) { n.Edges.ScheduledTasks = append(n.Edges.ScheduledTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedTomes {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.appendNamedTomes(name) },
@@ -519,6 +564,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadDeviceAuths(ctx, query, nodes,
 			func(n *User) { n.appendNamedDeviceAuths(name) },
 			func(n *User, e *DeviceAuth) { n.appendNamedDeviceAuths(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedScheduledTasks {
+		if err := uq.loadScheduledTasks(ctx, query, nodes,
+			func(n *User) { n.appendNamedScheduledTasks(name) },
+			func(n *User, e *ScheduledTask) { n.appendNamedScheduledTasks(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -653,6 +705,37 @@ func (uq *UserQuery) loadDeviceAuths(ctx context.Context, query *DeviceAuthQuery
 	}
 	return nil
 }
+func (uq *UserQuery) loadScheduledTasks(ctx context.Context, query *ScheduledTaskQuery, nodes []*User, init func(*User), assign func(*User, *ScheduledTask)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ScheduledTask(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ScheduledTasksColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.scheduled_task_creator
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "scheduled_task_creator" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "scheduled_task_creator" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := uq.querySpec()
@@ -777,6 +860,20 @@ func (uq *UserQuery) WithNamedDeviceAuths(name string, opts ...func(*DeviceAuthQ
 		uq.withNamedDeviceAuths = make(map[string]*DeviceAuthQuery)
 	}
 	uq.withNamedDeviceAuths[name] = query
+	return uq
+}
+
+// WithNamedScheduledTasks tells the query-builder to eager-load the nodes that are connected to the "scheduled_tasks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedScheduledTasks(name string, opts ...func(*ScheduledTaskQuery)) *UserQuery {
+	query := (&ScheduledTaskClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedScheduledTasks == nil {
+		uq.withNamedScheduledTasks = make(map[string]*ScheduledTaskQuery)
+	}
+	uq.withNamedScheduledTasks[name] = query
 	return uq
 }
 

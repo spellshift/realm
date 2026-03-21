@@ -7431,6 +7431,10 @@ type ScheduledTaskWhereInput struct {
 	// "quests" edge predicates.
 	HasQuests     *bool              `json:"hasQuests,omitempty"`
 	HasQuestsWith []*QuestWhereInput `json:"hasQuestsWith,omitempty"`
+
+	// "creator" edge predicates.
+	HasCreator     *bool             `json:"hasCreator,omitempty"`
+	HasCreatorWith []*UserWhereInput `json:"hasCreatorWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7810,6 +7814,24 @@ func (i *ScheduledTaskWhereInput) P() (predicate.ScheduledTask, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, scheduledtask.HasQuestsWith(with...))
+	}
+	if i.HasCreator != nil {
+		p := scheduledtask.HasCreator()
+		if !*i.HasCreator {
+			p = scheduledtask.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCreatorWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasCreatorWith))
+		for _, w := range i.HasCreatorWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCreatorWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, scheduledtask.HasCreatorWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -10812,6 +10834,10 @@ type UserWhereInput struct {
 	// "device_auths" edge predicates.
 	HasDeviceAuths     *bool                   `json:"hasDeviceAuths,omitempty"`
 	HasDeviceAuthsWith []*DeviceAuthWhereInput `json:"hasDeviceAuthsWith,omitempty"`
+
+	// "scheduled_tasks" edge predicates.
+	HasScheduledTasks     *bool                      `json:"hasScheduledTasks,omitempty"`
+	HasScheduledTasksWith []*ScheduledTaskWhereInput `json:"hasScheduledTasksWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -11092,6 +11118,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasDeviceAuthsWith(with...))
+	}
+	if i.HasScheduledTasks != nil {
+		p := user.HasScheduledTasks()
+		if !*i.HasScheduledTasks {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScheduledTasksWith) > 0 {
+		with := make([]predicate.ScheduledTask, 0, len(i.HasScheduledTasksWith))
+		for _, w := range i.HasScheduledTasksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScheduledTasksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasScheduledTasksWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

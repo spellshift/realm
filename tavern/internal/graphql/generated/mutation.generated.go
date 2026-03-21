@@ -1304,6 +1304,8 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "scheduledTasks":
+				return ec.fieldContext_User_scheduledTasks(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -1372,6 +1374,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "scheduledTasks":
+				return ec.fieldContext_User_scheduledTasks(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -2004,6 +2008,8 @@ func (ec *executionContext) fieldContext_Mutation_createScheduledTask(ctx contex
 				return ec.fieldContext_ScheduledTask_scheduledHosts(ctx, field)
 			case "quests":
 				return ec.fieldContext_ScheduledTask_quests(ctx, field)
+			case "creator":
+				return ec.fieldContext_ScheduledTask_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScheduledTask", field.Name)
 		},
@@ -2091,6 +2097,8 @@ func (ec *executionContext) fieldContext_Mutation_disableScheduledTask(ctx conte
 				return ec.fieldContext_ScheduledTask_scheduledHosts(ctx, field)
 			case "quests":
 				return ec.fieldContext_ScheduledTask_quests(ctx, field)
+			case "creator":
+				return ec.fieldContext_ScheduledTask_creator(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScheduledTask", field.Name)
 		},

@@ -73,6 +73,12 @@ func (ScheduledTask) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Quests that were created from this scheduled task."),
+		edge.To("creator", User.Type).
+			Unique().
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+			).
+			Comment("User that created the scheduled task if available."),
 	}
 }
 

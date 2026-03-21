@@ -507,6 +507,7 @@ var (
 		{Name: "run_on_schedule", Type: field.TypeString, Default: ""},
 		{Name: "disabled", Type: field.TypeBool, Default: false},
 		{Name: "scheduled_task_tome", Type: field.TypeInt},
+		{Name: "scheduled_task_creator", Type: field.TypeInt, Nullable: true},
 	}
 	// ScheduledTasksTable holds the schema information for the "scheduled_tasks" table.
 	ScheduledTasksTable = &schema.Table{
@@ -519,6 +520,12 @@ var (
 				Columns:    []*schema.Column{ScheduledTasksColumns[10]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "scheduled_tasks_users_creator",
+				Columns:    []*schema.Column{ScheduledTasksColumns[11]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -922,6 +929,7 @@ func init() {
 		Collation: "utf8mb4_general_ci",
 	}
 	ScheduledTasksTable.ForeignKeys[0].RefTable = TomesTable
+	ScheduledTasksTable.ForeignKeys[1].RefTable = UsersTable
 	ScheduledTasksTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
