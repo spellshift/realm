@@ -27,13 +27,19 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 	mux.HandleFunc("/c2.C2/ReportFile", func(w http.ResponseWriter, r *http.Request) {
 		handleReportFileStreaming(w, r, upstream)
 	})
+	mux.HandleFunc("/c2.C2/ReverseShell", func(w http.ResponseWriter, r *http.Request) {
+		handleShortPollStreaming(w, r, upstream, reverseShellStream)
+	})
+	mux.HandleFunc("/c2.C2/CreatePortal", func(w http.ResponseWriter, r *http.Request) {
+		handleShortPollStreaming(w, r, upstream, createPortalStream)
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleHTTPRequest(w, r, upstream)
 	})
 
 	srv := &http.Server{
 		Addr:      listenOn,
-		Handler:   mux,
+		Handler:   closeConnectionMiddleware(mux),
 		TLSConfig: tlsConfig,
 	}
 
@@ -45,4 +51,11 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 
 	slog.Info("http1 redirector: HTTP started", "listen_on", listenOn)
 	return srv.ListenAndServe()
+}
+
+func closeConnectionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Connection", "close")
+		next.ServeHTTP(w, r)
+	})
 }
