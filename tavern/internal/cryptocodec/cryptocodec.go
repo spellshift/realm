@@ -13,8 +13,10 @@ import (
 	"github.com/cloudflare/circl/dh/x25519"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"golang.org/x/crypto/chacha20poly1305"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/mem"
+	"google.golang.org/grpc/status"
 )
 
 var session_pub_keys = NewSyncMap()
@@ -93,7 +95,10 @@ func (s StreamDecryptCodec) Marshal(v any) (mem.BufferSlice, error) {
 }
 
 func (s StreamDecryptCodec) Unmarshal(buf mem.BufferSlice, v any) error {
-	dec_buf, _ := s.Csvc.Decrypt(buf.Materialize())
+	dec_buf, _, err := s.Csvc.Decrypt(buf.Materialize())
+	if err != nil {
+		return status.Error(codes.Unauthenticated, "auth failure")
+	}
 
 	proto := encoding.GetCodecV2("proto")
 	if proto == nil {
@@ -140,10 +145,10 @@ func (csvc *CryptoSvc) generate_shared_key(client_pub_key_bytes []byte) []byte {
 	return shared_key
 }
 
-func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
+func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte, error) {
 	if len(in_arr) < x25519.Size {
 		slog.Error(fmt.Sprintf("input bytes too short %d expected at least %d", len(in_arr), x25519.Size))
-		return FAILURE_BYTES, FAILURE_BYTES
+		return FAILURE_BYTES, FAILURE_BYTES, fmt.Errorf("input bytes too short")
 	}
 
 	// CRITICAL FIX: Make a distinct copy of the public key.
@@ -155,7 +160,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	ids, err := goAllIds()
 	if err != nil {
 		slog.Error("failed to get goid")
-		return FAILURE_BYTES, FAILURE_BYTES
+		return FAILURE_BYTES, FAILURE_BYTES, err
 	}
 	session_pub_keys.Store(ids.Id, client_pub_key_bytes)
 
@@ -165,7 +170,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	aead, err := chacha20poly1305.NewX(derived_key)
 	if err != nil {
 		slog.Error(fmt.Sprintf("failed to create xchacha key %v", err))
-		return FAILURE_BYTES, FAILURE_BYTES
+		return FAILURE_BYTES, FAILURE_BYTES, err
 	}
 
 	// Progress in_arr buf
@@ -174,7 +179,7 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	// Read nonce & cipher text
 	if len(in_arr) < aead.NonceSize() {
 		slog.Error(fmt.Sprintf("input bytes to short %d expected at least %d", len(in_arr), aead.NonceSize()))
-		return FAILURE_BYTES, FAILURE_BYTES
+		return FAILURE_BYTES, FAILURE_BYTES, fmt.Errorf("input bytes too short")
 	}
 	nonce, ciphertext := in_arr[:aead.NonceSize()], in_arr[aead.NonceSize():]
 
@@ -182,10 +187,10 @@ func (csvc *CryptoSvc) Decrypt(in_arr []byte) ([]byte, []byte) {
 	plaintext, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		slog.Error(fmt.Sprintf("failed to decrypt %v", err))
-		return FAILURE_BYTES, FAILURE_BYTES
+		return FAILURE_BYTES, FAILURE_BYTES, err
 	}
 
-	return plaintext, client_pub_key_bytes
+	return plaintext, client_pub_key_bytes, nil
 }
 
 // TODO: Don't use [] ref.

@@ -107,8 +107,9 @@ func TestDecrypt(t *testing.T) {
 
 	// Test Decrypt
 	svc := NewCryptoSvc(serverPrivKey)
-	decrypted, pubKey := svc.Decrypt(payload)
+	decrypted, pubKey, err := svc.Decrypt(payload)
 
+	assert.NoError(t, err)
 	assert.Equal(t, plaintext, decrypted)
 	assert.Equal(t, clientPubKey, pubKey)
 }
@@ -118,7 +119,8 @@ func TestDecrypt_ShortInput(t *testing.T) {
 	require.NoError(t, err)
 	svc := NewCryptoSvc(serverPrivKey)
 
-	res, _ := svc.Decrypt([]byte{0x00})
+	res, _, err := svc.Decrypt([]byte{0x00})
+	assert.Error(t, err)
 	assert.Equal(t, FAILURE_BYTES, res)
 }
 
@@ -129,7 +131,8 @@ func TestDecrypt_ShortInputAfterKey(t *testing.T) {
 
 	// Input long enough for key (32 bytes) but not nonce
 	input := make([]byte, 32+1)
-	res, _ := svc.Decrypt(input)
+	res, _, err := svc.Decrypt(input)
+	assert.Error(t, err)
 	assert.Equal(t, FAILURE_BYTES, res)
 }
 
