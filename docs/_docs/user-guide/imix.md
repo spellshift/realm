@@ -131,7 +131,7 @@ For more complex setups, such as configuring multiple transports or specifying d
 ```yaml
 transports:
   - URI: <string>
-    type: <grpc|http1|dns>
+    type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
@@ -163,7 +163,7 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1` and `dns`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
@@ -195,7 +195,7 @@ This transport doesn't support eldritch functions that require bi-directional st
 
 ### dns
 
-The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
+The DNS transport enables covert C2 communication by tunneling `ConvPacket` traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
 
 This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
@@ -206,6 +206,17 @@ This transport doesn't support eldritch functions that require bi-directional st
 - `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
 
 *Note*: TXT records provide the best performance.
+
+
+### icmp
+
+The ICMP transport tunnels `ConvPacket` traffic through ICMP Echo Request/Reply packets. Raw protobuf bytes are carried directly in the echo payload, allowing up to 1400 byte chunks per packet.
+
+This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+*Note*: The URI must be the IPv4 address of the ICMP redirector, e.g. `icmp://192.168.1.1`. The redirector host must have kernel ICMP echo replies disabled - see the [ICMP Redirector](/admin-guide/tavern#icmp-redirector) section in the Tavern admin guide for setup instructions.
+
+**Extra Keys Supported:** None
 
 ## Logging
 

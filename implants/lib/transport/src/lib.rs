@@ -14,8 +14,14 @@ mod dns_resolver;
 #[cfg(feature = "http1")]
 mod http;
 
+#[cfg(any(feature = "dns", feature = "icmp"))]
+mod conv;
+
 #[cfg(feature = "dns")]
 mod dns;
+
+#[cfg(feature = "icmp")]
+mod icmp;
 
 #[cfg(feature = "mock")]
 mod mock;
@@ -72,6 +78,12 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             return Ok(Box::new(dns::DNS::new(config)?));
             #[cfg(not(feature = "dns"))]
             return Err(anyhow!("DNS transport not enabled"));
+        }
+        Ok(TransportType::TransportIcmp) => {
+            #[cfg(feature = "icmp")]
+            return Ok(Box::new(icmp::ICMP::new(config)?));
+            #[cfg(not(feature = "icmp"))]
+            return Err(anyhow!("ICMP transport not enabled"));
         }
         Ok(TransportType::TransportUnspecified) | Err(_) => {
             Err(anyhow!("Invalid or unspecified transport type"))

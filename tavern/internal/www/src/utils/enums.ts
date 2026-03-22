@@ -28,6 +28,7 @@ export enum SupportedTransports {
     DNS="TRANSPORT_DNS",
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
+    ICMP="TRANSPORT_ICMP",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 

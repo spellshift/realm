@@ -9,6 +9,7 @@ grpc = ["pb/grpc"]
 doh = ["dep:hickory-resolver"]
 http1 = ["pb/http1"]
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
+icmp = ["dep:rand", "dep:libc"]
 mock = ["dep:mockall"]
 
 [dependencies]
@@ -43,6 +44,13 @@ hickory-resolver = { version = "0.24", features = ["dns-over-https-rustls", "web
 base32 = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+libc = { workspace = true, optional = true }
 
 # [feature = mock]
 mockall = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { workspace = true, features = [
+	"Win32_Foundation",
+	"Win32_NetworkManagement_IpHelper",
+] }
