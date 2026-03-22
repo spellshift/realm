@@ -3059,6 +3059,22 @@ func (c *ScheduledTaskClient) QueryQuests(st *ScheduledTask) *QuestQuery {
 	return query
 }
 
+// QueryCreator queries the creator edge of a ScheduledTask.
+func (c *ScheduledTaskClient) QueryCreator(st *ScheduledTask) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := st.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, scheduledtask.CreatorTable, scheduledtask.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ScheduledTaskClient) Hooks() []Hook {
 	return c.hooks.ScheduledTask
@@ -4450,6 +4466,22 @@ func (c *UserClient) QueryDeviceAuths(u *User) *DeviceAuthQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(deviceauth.Table, deviceauth.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, user.DeviceAuthsTable, user.DeviceAuthsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScheduledTasks queries the scheduled_tasks edge of a User.
+func (c *UserClient) QueryScheduledTasks(u *User) *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ScheduledTasksTable, user.ScheduledTasksColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -141,6 +142,21 @@ func (uc *UserCreate) AddDeviceAuths(d ...*DeviceAuth) *UserCreate {
 		ids[i] = d[i].ID
 	}
 	return uc.AddDeviceAuthIDs(ids...)
+}
+
+// AddScheduledTaskIDs adds the "scheduled_tasks" edge to the ScheduledTask entity by IDs.
+func (uc *UserCreate) AddScheduledTaskIDs(ids ...int) *UserCreate {
+	uc.mutation.AddScheduledTaskIDs(ids...)
+	return uc
+}
+
+// AddScheduledTasks adds the "scheduled_tasks" edges to the ScheduledTask entity.
+func (uc *UserCreate) AddScheduledTasks(s ...*ScheduledTask) *UserCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddScheduledTaskIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -330,6 +346,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

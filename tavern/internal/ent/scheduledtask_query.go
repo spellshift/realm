@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ScheduledTaskQuery is the builder for querying ScheduledTask entities.
@@ -29,6 +30,7 @@ type ScheduledTaskQuery struct {
 	withTome                *TomeQuery
 	withScheduledHosts      *HostQuery
 	withQuests              *QuestQuery
+	withCreator             *UserQuery
 	withFKs                 bool
 	modifiers               []func(*sql.Selector)
 	loadTotal               []func(context.Context, []*ScheduledTask) error
@@ -129,6 +131,28 @@ func (stq *ScheduledTaskQuery) QueryQuests() *QuestQuery {
 			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, selector),
 			sqlgraph.To(quest.Table, quest.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.QuestsTable, scheduledtask.QuestsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCreator chains the current query on the "creator" edge.
+func (stq *ScheduledTaskQuery) QueryCreator() *UserQuery {
+	query := (&UserClient{config: stq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := stq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := stq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, scheduledtask.CreatorTable, scheduledtask.CreatorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(stq.driver.Dialect(), step)
 		return fromU, nil
@@ -331,6 +355,7 @@ func (stq *ScheduledTaskQuery) Clone() *ScheduledTaskQuery {
 		withTome:           stq.withTome.Clone(),
 		withScheduledHosts: stq.withScheduledHosts.Clone(),
 		withQuests:         stq.withQuests.Clone(),
+		withCreator:        stq.withCreator.Clone(),
 		// clone intermediate query.
 		sql:  stq.sql.Clone(),
 		path: stq.path,
@@ -367,6 +392,17 @@ func (stq *ScheduledTaskQuery) WithQuests(opts ...func(*QuestQuery)) *ScheduledT
 		opt(query)
 	}
 	stq.withQuests = query
+	return stq
+}
+
+// WithCreator tells the query-builder to eager-load the nodes that are connected to
+// the "creator" edge. The optional arguments are used to configure the query builder of the edge.
+func (stq *ScheduledTaskQuery) WithCreator(opts ...func(*UserQuery)) *ScheduledTaskQuery {
+	query := (&UserClient{config: stq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	stq.withCreator = query
 	return stq
 }
 
@@ -449,13 +485,14 @@ func (stq *ScheduledTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		nodes       = []*ScheduledTask{}
 		withFKs     = stq.withFKs
 		_spec       = stq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			stq.withTome != nil,
 			stq.withScheduledHosts != nil,
 			stq.withQuests != nil,
+			stq.withCreator != nil,
 		}
 	)
-	if stq.withTome != nil {
+	if stq.withTome != nil || stq.withCreator != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -499,6 +536,12 @@ func (stq *ScheduledTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 		if err := stq.loadQuests(ctx, query, nodes,
 			func(n *ScheduledTask) { n.Edges.Quests = []*Quest{} },
 			func(n *ScheduledTask, e *Quest) { n.Edges.Quests = append(n.Edges.Quests, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := stq.withCreator; query != nil {
+		if err := stq.loadCreator(ctx, query, nodes, nil,
+			func(n *ScheduledTask, e *User) { n.Edges.Creator = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -615,6 +658,38 @@ func (stq *ScheduledTaskQuery) loadQuests(ctx context.Context, query *QuestQuery
 			return fmt.Errorf(`unexpected referenced foreign-key "scheduled_task_quests" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (stq *ScheduledTaskQuery) loadCreator(ctx context.Context, query *UserQuery, nodes []*ScheduledTask, init func(*ScheduledTask), assign func(*ScheduledTask, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*ScheduledTask)
+	for i := range nodes {
+		if nodes[i].scheduled_task_creator == nil {
+			continue
+		}
+		fk := *nodes[i].scheduled_task_creator
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "scheduled_task_creator" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

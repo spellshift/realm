@@ -63,6 +63,7 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			),
 		).
 		WithTome().
+		WithCreator().
 		All(ctx)
 
 	if err != nil {
@@ -137,6 +138,9 @@ func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostI
 			SetEldritchAtCreation(tome.Eldritch)
 		if st.Parameters != "" {
 			questCreate.SetParameters(st.Parameters)
+		}
+		if st.Edges.Creator != nil {
+			questCreate.SetCreator(st.Edges.Creator)
 		}
 		q, err := questCreate.Save(ctx)
 		if err != nil {

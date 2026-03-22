@@ -38,6 +38,8 @@ const (
 	EdgeScheduledHosts = "scheduled_hosts"
 	// EdgeQuests holds the string denoting the quests edge name in mutations.
 	EdgeQuests = "quests"
+	// EdgeCreator holds the string denoting the creator edge name in mutations.
+	EdgeCreator = "creator"
 	// Table holds the table name of the scheduledtask in the database.
 	Table = "scheduled_tasks"
 	// TomeTable is the table that holds the tome relation/edge.
@@ -61,6 +63,13 @@ const (
 	QuestsInverseTable = "quests"
 	// QuestsColumn is the table column denoting the quests relation/edge.
 	QuestsColumn = "scheduled_task_quests"
+	// CreatorTable is the table that holds the creator relation/edge.
+	CreatorTable = "scheduled_tasks"
+	// CreatorInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	CreatorInverseTable = "users"
+	// CreatorColumn is the table column denoting the creator relation/edge.
+	CreatorColumn = "scheduled_task_creator"
 )
 
 // Columns holds all SQL columns for scheduledtask fields.
@@ -81,6 +90,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"scheduled_task_tome",
+	"scheduled_task_creator",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -206,6 +216,13 @@ func ByQuests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newQuestsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCreatorField orders the results by creator field.
+func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTomeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -225,5 +242,12 @@ func newQuestsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(QuestsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, QuestsTable, QuestsColumn),
+	)
+}
+func newCreatorStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CreatorInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
 	)
 }

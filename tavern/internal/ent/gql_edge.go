@@ -572,6 +572,14 @@ func (st *ScheduledTask) Quests(
 	return st.QueryQuests().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (st *ScheduledTask) Creator(ctx context.Context) (*User, error) {
+	result, err := st.Edges.CreatorOrErr()
+	if IsNotLoaded(err) {
+		result, err = st.QueryCreator().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (s *Screenshot) Host(ctx context.Context) (*Host, error) {
 	result, err := s.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -978,4 +986,25 @@ func (u *User) DeviceAuths(
 		return conn, nil
 	}
 	return u.QueryDeviceAuths().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) ScheduledTasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ScheduledTaskOrder, where *ScheduledTaskWhereInput,
+) (*ScheduledTaskConnection, error) {
+	opts := []ScheduledTaskPaginateOption{
+		WithScheduledTaskOrder(orderBy),
+		WithScheduledTaskFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[3][alias]
+	if nodes, err := u.NamedScheduledTasks(alias); err == nil || hasTotalCount {
+		pager, err := newScheduledTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ScheduledTaskConnection{Edges: []*ScheduledTaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryScheduledTasks().Paginate(ctx, after, first, before, last, opts...)
 }

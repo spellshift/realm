@@ -45,15 +45,18 @@ type UserEdges struct {
 	ActiveShells []*Shell `json:"active_shells,omitempty"`
 	// Device auths approved by the user.
 	DeviceAuths []*DeviceAuth `json:"device_auths,omitempty"`
+	// Scheduled tasks created by the user
+	ScheduledTasks []*ScheduledTask `json:"scheduled_tasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
-	namedTomes        map[string][]*Tome
-	namedActiveShells map[string][]*Shell
-	namedDeviceAuths  map[string][]*DeviceAuth
+	namedTomes          map[string][]*Tome
+	namedActiveShells   map[string][]*Shell
+	namedDeviceAuths    map[string][]*DeviceAuth
+	namedScheduledTasks map[string][]*ScheduledTask
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -81,6 +84,15 @@ func (e UserEdges) DeviceAuthsOrErr() ([]*DeviceAuth, error) {
 		return e.DeviceAuths, nil
 	}
 	return nil, &NotLoadedError{edge: "device_auths"}
+}
+
+// ScheduledTasksOrErr returns the ScheduledTasks value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ScheduledTasksOrErr() ([]*ScheduledTask, error) {
+	if e.loadedTypes[3] {
+		return e.ScheduledTasks, nil
+	}
+	return nil, &NotLoadedError{edge: "scheduled_tasks"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -192,6 +204,11 @@ func (u *User) QueryActiveShells() *ShellQuery {
 // QueryDeviceAuths queries the "device_auths" edge of the User entity.
 func (u *User) QueryDeviceAuths() *DeviceAuthQuery {
 	return NewUserClient(u.config).QueryDeviceAuths(u)
+}
+
+// QueryScheduledTasks queries the "scheduled_tasks" edge of the User entity.
+func (u *User) QueryScheduledTasks() *ScheduledTaskQuery {
+	return NewUserClient(u.config).QueryScheduledTasks(u)
 }
 
 // Update returns a builder for updating this User.
@@ -307,6 +324,30 @@ func (u *User) appendNamedDeviceAuths(name string, edges ...*DeviceAuth) {
 		u.Edges.namedDeviceAuths[name] = []*DeviceAuth{}
 	} else {
 		u.Edges.namedDeviceAuths[name] = append(u.Edges.namedDeviceAuths[name], edges...)
+	}
+}
+
+// NamedScheduledTasks returns the ScheduledTasks named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedScheduledTasks(name string) ([]*ScheduledTask, error) {
+	if u.Edges.namedScheduledTasks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedScheduledTasks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedScheduledTasks(name string, edges ...*ScheduledTask) {
+	if u.Edges.namedScheduledTasks == nil {
+		u.Edges.namedScheduledTasks = make(map[string][]*ScheduledTask)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedScheduledTasks[name] = []*ScheduledTask{}
+	} else {
+		u.Edges.namedScheduledTasks[name] = append(u.Edges.namedScheduledTasks[name], edges...)
 	}
 }
 

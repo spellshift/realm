@@ -32,6 +32,8 @@ const (
 	EdgeActiveShells = "active_shells"
 	// EdgeDeviceAuths holds the string denoting the device_auths edge name in mutations.
 	EdgeDeviceAuths = "device_auths"
+	// EdgeScheduledTasks holds the string denoting the scheduled_tasks edge name in mutations.
+	EdgeScheduledTasks = "scheduled_tasks"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// TomesTable is the table that holds the tomes relation/edge.
@@ -53,6 +55,13 @@ const (
 	DeviceAuthsInverseTable = "device_auths"
 	// DeviceAuthsColumn is the table column denoting the device_auths relation/edge.
 	DeviceAuthsColumn = "device_auth_user"
+	// ScheduledTasksTable is the table that holds the scheduled_tasks relation/edge.
+	ScheduledTasksTable = "scheduled_tasks"
+	// ScheduledTasksInverseTable is the table name for the ScheduledTask entity.
+	// It exists in this package in order to avoid circular dependency with the "scheduledtask" package.
+	ScheduledTasksInverseTable = "scheduled_tasks"
+	// ScheduledTasksColumn is the table column denoting the scheduled_tasks relation/edge.
+	ScheduledTasksColumn = "scheduled_task_creator"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -195,6 +204,20 @@ func ByDeviceAuths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newDeviceAuthsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByScheduledTasksCount orders the results by scheduled_tasks count.
+func ByScheduledTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScheduledTasksStep(), opts...)
+	}
+}
+
+// ByScheduledTasks orders the results by scheduled_tasks terms.
+func ByScheduledTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScheduledTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -214,5 +237,12 @@ func newDeviceAuthsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DeviceAuthsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, DeviceAuthsTable, DeviceAuthsColumn),
+	)
+}
+func newScheduledTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScheduledTasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ScheduledTasksTable, ScheduledTasksColumn),
 	)
 }

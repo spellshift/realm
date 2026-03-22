@@ -680,19 +680,22 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name                 *string
-	PhotoURL             *string
-	IsActivated          *bool
-	IsAdmin              *bool
-	ClearTomes           bool
-	AddTomeIDs           []int
-	RemoveTomeIDs        []int
-	ClearActiveShells    bool
-	AddActiveShellIDs    []int
-	RemoveActiveShellIDs []int
-	ClearDeviceAuths     bool
-	AddDeviceAuthIDs     []int
-	RemoveDeviceAuthIDs  []int
+	Name                   *string
+	PhotoURL               *string
+	IsActivated            *bool
+	IsAdmin                *bool
+	ClearTomes             bool
+	AddTomeIDs             []int
+	RemoveTomeIDs          []int
+	ClearActiveShells      bool
+	AddActiveShellIDs      []int
+	RemoveActiveShellIDs   []int
+	ClearDeviceAuths       bool
+	AddDeviceAuthIDs       []int
+	RemoveDeviceAuthIDs    []int
+	ClearScheduledTasks    bool
+	AddScheduledTaskIDs    []int
+	RemoveScheduledTaskIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -735,6 +738,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveDeviceAuthIDs; len(v) > 0 {
 		m.RemoveDeviceAuthIDs(v...)
+	}
+	if i.ClearScheduledTasks {
+		m.ClearScheduledTasks()
+	}
+	if v := i.AddScheduledTaskIDs; len(v) > 0 {
+		m.AddScheduledTaskIDs(v...)
+	}
+	if v := i.RemoveScheduledTaskIDs; len(v) > 0 {
+		m.RemoveScheduledTaskIDs(v...)
 	}
 }
 

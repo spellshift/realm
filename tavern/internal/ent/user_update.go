@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -159,6 +160,21 @@ func (uu *UserUpdate) AddDeviceAuths(d ...*DeviceAuth) *UserUpdate {
 	return uu.AddDeviceAuthIDs(ids...)
 }
 
+// AddScheduledTaskIDs adds the "scheduled_tasks" edge to the ScheduledTask entity by IDs.
+func (uu *UserUpdate) AddScheduledTaskIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddScheduledTaskIDs(ids...)
+	return uu
+}
+
+// AddScheduledTasks adds the "scheduled_tasks" edges to the ScheduledTask entity.
+func (uu *UserUpdate) AddScheduledTasks(s ...*ScheduledTask) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.AddScheduledTaskIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -225,6 +241,27 @@ func (uu *UserUpdate) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdate {
 		ids[i] = d[i].ID
 	}
 	return uu.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearScheduledTasks clears all "scheduled_tasks" edges to the ScheduledTask entity.
+func (uu *UserUpdate) ClearScheduledTasks() *UserUpdate {
+	uu.mutation.ClearScheduledTasks()
+	return uu
+}
+
+// RemoveScheduledTaskIDs removes the "scheduled_tasks" edge to ScheduledTask entities by IDs.
+func (uu *UserUpdate) RemoveScheduledTaskIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveScheduledTaskIDs(ids...)
+	return uu
+}
+
+// RemoveScheduledTasks removes "scheduled_tasks" edges to ScheduledTask entities.
+func (uu *UserUpdate) RemoveScheduledTasks(s ...*ScheduledTask) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.RemoveScheduledTaskIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -439,6 +476,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedScheduledTasksIDs(); len(nodes) > 0 && !uu.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -588,6 +670,21 @@ func (uuo *UserUpdateOne) AddDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
 	return uuo.AddDeviceAuthIDs(ids...)
 }
 
+// AddScheduledTaskIDs adds the "scheduled_tasks" edge to the ScheduledTask entity by IDs.
+func (uuo *UserUpdateOne) AddScheduledTaskIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddScheduledTaskIDs(ids...)
+	return uuo
+}
+
+// AddScheduledTasks adds the "scheduled_tasks" edges to the ScheduledTask entity.
+func (uuo *UserUpdateOne) AddScheduledTasks(s ...*ScheduledTask) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.AddScheduledTaskIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -654,6 +751,27 @@ func (uuo *UserUpdateOne) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
 		ids[i] = d[i].ID
 	}
 	return uuo.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearScheduledTasks clears all "scheduled_tasks" edges to the ScheduledTask entity.
+func (uuo *UserUpdateOne) ClearScheduledTasks() *UserUpdateOne {
+	uuo.mutation.ClearScheduledTasks()
+	return uuo
+}
+
+// RemoveScheduledTaskIDs removes the "scheduled_tasks" edge to ScheduledTask entities by IDs.
+func (uuo *UserUpdateOne) RemoveScheduledTaskIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveScheduledTaskIDs(ids...)
+	return uuo
+}
+
+// RemoveScheduledTasks removes "scheduled_tasks" edges to ScheduledTask entities.
+func (uuo *UserUpdateOne) RemoveScheduledTasks(s ...*ScheduledTask) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.RemoveScheduledTaskIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -891,6 +1009,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedScheduledTasksIDs(); len(nodes) > 0 && !uuo.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScheduledTasksTable,
+			Columns: []string{user.ScheduledTasksColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

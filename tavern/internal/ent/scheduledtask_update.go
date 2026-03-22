@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // ScheduledTaskUpdate is the builder for updating ScheduledTask entities.
@@ -182,6 +183,25 @@ func (stu *ScheduledTaskUpdate) AddQuests(q ...*Quest) *ScheduledTaskUpdate {
 	return stu.AddQuestIDs(ids...)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stu *ScheduledTaskUpdate) SetCreatorID(id int) *ScheduledTaskUpdate {
+	stu.mutation.SetCreatorID(id)
+	return stu
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (stu *ScheduledTaskUpdate) SetNillableCreatorID(id *int) *ScheduledTaskUpdate {
+	if id != nil {
+		stu = stu.SetCreatorID(*id)
+	}
+	return stu
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stu *ScheduledTaskUpdate) SetCreator(u *User) *ScheduledTaskUpdate {
+	return stu.SetCreatorID(u.ID)
+}
+
 // Mutation returns the ScheduledTaskMutation object of the builder.
 func (stu *ScheduledTaskUpdate) Mutation() *ScheduledTaskMutation {
 	return stu.mutation
@@ -233,6 +253,12 @@ func (stu *ScheduledTaskUpdate) RemoveQuests(q ...*Quest) *ScheduledTaskUpdate {
 		ids[i] = q[i].ID
 	}
 	return stu.RemoveQuestIDs(ids...)
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (stu *ScheduledTaskUpdate) ClearCreator() *ScheduledTaskUpdate {
+	stu.mutation.ClearCreator()
+	return stu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -447,6 +473,35 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if stu.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   scheduledtask.CreatorTable,
+			Columns: []string{scheduledtask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stu.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   scheduledtask.CreatorTable,
+			Columns: []string{scheduledtask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, stu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{scheduledtask.Label}
@@ -618,6 +673,25 @@ func (stuo *ScheduledTaskUpdateOne) AddQuests(q ...*Quest) *ScheduledTaskUpdateO
 	return stuo.AddQuestIDs(ids...)
 }
 
+// SetCreatorID sets the "creator" edge to the User entity by ID.
+func (stuo *ScheduledTaskUpdateOne) SetCreatorID(id int) *ScheduledTaskUpdateOne {
+	stuo.mutation.SetCreatorID(id)
+	return stuo
+}
+
+// SetNillableCreatorID sets the "creator" edge to the User entity by ID if the given value is not nil.
+func (stuo *ScheduledTaskUpdateOne) SetNillableCreatorID(id *int) *ScheduledTaskUpdateOne {
+	if id != nil {
+		stuo = stuo.SetCreatorID(*id)
+	}
+	return stuo
+}
+
+// SetCreator sets the "creator" edge to the User entity.
+func (stuo *ScheduledTaskUpdateOne) SetCreator(u *User) *ScheduledTaskUpdateOne {
+	return stuo.SetCreatorID(u.ID)
+}
+
 // Mutation returns the ScheduledTaskMutation object of the builder.
 func (stuo *ScheduledTaskUpdateOne) Mutation() *ScheduledTaskMutation {
 	return stuo.mutation
@@ -669,6 +743,12 @@ func (stuo *ScheduledTaskUpdateOne) RemoveQuests(q ...*Quest) *ScheduledTaskUpda
 		ids[i] = q[i].ID
 	}
 	return stuo.RemoveQuestIDs(ids...)
+}
+
+// ClearCreator clears the "creator" edge to the User entity.
+func (stuo *ScheduledTaskUpdateOne) ClearCreator() *ScheduledTaskUpdateOne {
+	stuo.mutation.ClearCreator()
+	return stuo
 }
 
 // Where appends a list predicates to the ScheduledTaskUpdate builder.
@@ -906,6 +986,35 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if stuo.mutation.CreatorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   scheduledtask.CreatorTable,
+			Columns: []string{scheduledtask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := stuo.mutation.CreatorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   scheduledtask.CreatorTable,
+			Columns: []string{scheduledtask.CreatorColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

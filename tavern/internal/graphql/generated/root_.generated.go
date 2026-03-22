@@ -480,6 +480,7 @@ type ComplexityRoot struct {
 
 	ScheduledTask struct {
 		CreatedAt              func(childComplexity int) int
+		Creator                func(childComplexity int) int
 		Description            func(childComplexity int) int
 		Disabled               func(childComplexity int) int
 		ID                     func(childComplexity int) int
@@ -659,15 +660,16 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		APIKey       func(childComplexity int) int
-		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		DeviceAuths  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
-		ID           func(childComplexity int) int
-		IsActivated  func(childComplexity int) int
-		IsAdmin      func(childComplexity int) int
-		Name         func(childComplexity int) int
-		PhotoURL     func(childComplexity int) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		APIKey         func(childComplexity int) int
+		ActiveShells   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		DeviceAuths    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
+		ID             func(childComplexity int) int
+		IsActivated    func(childComplexity int) int
+		IsAdmin        func(childComplexity int) int
+		Name           func(childComplexity int) int
+		PhotoURL       func(childComplexity int) int
+		ScheduledTasks func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
+		Tomes          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
 
 	UserConnection struct {
@@ -2970,6 +2972,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.ScheduledTask.CreatedAt(childComplexity), true
 
+	case "ScheduledTask.creator":
+		if e.complexity.ScheduledTask.Creator == nil {
+			break
+		}
+
+		return e.complexity.ScheduledTask.Creator(childComplexity), true
+
 	case "ScheduledTask.description":
 		if e.complexity.ScheduledTask.Description == nil {
 			break
@@ -3902,6 +3911,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.PhotoURL(childComplexity), true
+
+	case "User.scheduledTasks":
+		if e.complexity.User.ScheduledTasks == nil {
+			break
+		}
+
+		args, err := ec.field_User_scheduledTasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.ScheduledTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScheduledTaskOrder), args["where"].(*ent.ScheduledTaskWhereInput)), true
 
 	case "User.tomes":
 		if e.complexity.User.Tomes == nil {
@@ -8204,6 +8225,10 @@ type ScheduledTask implements Node {
     """
     where: QuestWhereInput
   ): QuestConnection!
+  """
+  User that created the scheduled task if available.
+  """
+  creator: User
 }
 """
 A connection to a list of items.
@@ -8393,6 +8418,11 @@ input ScheduledTaskWhereInput {
   """
   hasQuests: Boolean
   hasQuestsWith: [QuestWhereInput!]
+  """
+  creator edge predicates
+  """
+  hasCreator: Boolean
+  hasCreatorWith: [UserWhereInput!]
 }
 type Screenshot implements Node {
   id: ID!
@@ -10217,6 +10247,9 @@ input UpdateUserInput {
   addDeviceAuthIDs: [ID!]
   removeDeviceAuthIDs: [ID!]
   clearDeviceAuths: Boolean
+  addScheduledTaskIDs: [ID!]
+  removeScheduledTaskIDs: [ID!]
+  clearScheduledTasks: Boolean
 }
 type User implements Node {
   id: ID!
@@ -10329,6 +10362,37 @@ type User implements Node {
     """
     where: DeviceAuthWhereInput
   ): DeviceAuthConnection!
+  scheduledTasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ScheduledTasks returned from the connection.
+    """
+    orderBy: [ScheduledTaskOrder!]
+
+    """
+    Filtering options for ScheduledTasks returned from the connection.
+    """
+    where: ScheduledTaskWhereInput
+  ): ScheduledTaskConnection!
 }
 """
 A connection to a list of items.
@@ -10455,6 +10519,11 @@ input UserWhereInput {
   """
   hasDeviceAuths: Boolean
   hasDeviceAuthsWith: [DeviceAuthWhereInput!]
+  """
+  scheduled_tasks edge predicates
+  """
+  hasScheduledTasks: Boolean
+  hasScheduledTasksWith: [ScheduledTaskWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time

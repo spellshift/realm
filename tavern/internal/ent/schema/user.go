@@ -89,6 +89,13 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Device auths approved by the user."),
+		edge.From("scheduled_tasks", ScheduledTask.Type).
+			Ref("creator").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Scheduled tasks created by the user"),
 	}
 }
 

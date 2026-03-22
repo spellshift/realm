@@ -65,6 +65,9 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	if _, err := client.Quest.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete quests: %w", err))
 	}
+	if _, err := client.ScheduledTask.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete scheduled tasks: %w", err))
+	}
 	if _, err := client.Link.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete links: %w", err))
 	}
@@ -514,7 +517,15 @@ func (r *mutationResolver) CreateBuildTask(ctx context.Context, input models.Cre
 
 // CreateScheduledTask is the resolver for the createScheduledTask field.
 func (r *mutationResolver) CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error) {
-	return r.client.ScheduledTask.Create().SetInput(input).Save(ctx)
+	var creatorID *int
+	if creator := auth.UserFromContext(ctx); creator != nil {
+		creatorID = &creator.ID
+	}
+
+	return r.client.ScheduledTask.Create().
+		SetNillableCreatorID(creatorID).
+		SetInput(input).
+		Save(ctx)
 }
 
 // DisableScheduledTask is the resolver for the disableScheduledTask field.
