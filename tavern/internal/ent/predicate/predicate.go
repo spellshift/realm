@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Adventure is the predicate function for adventure builders.
+type Adventure func(*sql.Selector)
+
 // Asset is the predicate function for asset builders.
 type Asset func(*sql.Selector)
 

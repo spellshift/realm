@@ -12,6 +12,24 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
+// CreateAdventureInput represents a mutation input for creating adventures.
+type CreateAdventureInput struct {
+	Name *string
+}
+
+// Mutate applies the CreateAdventureInput on the AdventureMutation builder.
+func (i *CreateAdventureInput) Mutate(m *AdventureMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateAdventureInput on the AdventureCreate builder.
+func (c *AdventureCreate) SetInput(i CreateAdventureInput) *AdventureCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
 	LastModifiedAt *time.Time

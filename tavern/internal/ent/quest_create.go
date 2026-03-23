@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
@@ -184,6 +185,59 @@ func (qc *QuestCreate) SetNillableScheduledTaskID(id *int) *QuestCreate {
 // SetScheduledTask sets the "scheduled_task" edge to the ScheduledTask entity.
 func (qc *QuestCreate) SetScheduledTask(s *ScheduledTask) *QuestCreate {
 	return qc.SetScheduledTaskID(s.ID)
+}
+
+// SetAdventureID sets the "adventure" edge to the Adventure entity by ID.
+func (qc *QuestCreate) SetAdventureID(id int) *QuestCreate {
+	qc.mutation.SetAdventureID(id)
+	return qc
+}
+
+// SetNillableAdventureID sets the "adventure" edge to the Adventure entity by ID if the given value is not nil.
+func (qc *QuestCreate) SetNillableAdventureID(id *int) *QuestCreate {
+	if id != nil {
+		qc = qc.SetAdventureID(*id)
+	}
+	return qc
+}
+
+// SetAdventure sets the "adventure" edge to the Adventure entity.
+func (qc *QuestCreate) SetAdventure(a *Adventure) *QuestCreate {
+	return qc.SetAdventureID(a.ID)
+}
+
+// AddRelatedQuestIDs adds the "related_quests" edge to the Quest entity by IDs.
+func (qc *QuestCreate) AddRelatedQuestIDs(ids ...int) *QuestCreate {
+	qc.mutation.AddRelatedQuestIDs(ids...)
+	return qc
+}
+
+// AddRelatedQuests adds the "related_quests" edges to the Quest entity.
+func (qc *QuestCreate) AddRelatedQuests(q ...*Quest) *QuestCreate {
+	ids := make([]int, len(q))
+	for i := range q {
+		ids[i] = q[i].ID
+	}
+	return qc.AddRelatedQuestIDs(ids...)
+}
+
+// SetPreviousQuestID sets the "previous_quest" edge to the Quest entity by ID.
+func (qc *QuestCreate) SetPreviousQuestID(id int) *QuestCreate {
+	qc.mutation.SetPreviousQuestID(id)
+	return qc
+}
+
+// SetNillablePreviousQuestID sets the "previous_quest" edge to the Quest entity by ID if the given value is not nil.
+func (qc *QuestCreate) SetNillablePreviousQuestID(id *int) *QuestCreate {
+	if id != nil {
+		qc = qc.SetPreviousQuestID(*id)
+	}
+	return qc
+}
+
+// SetPreviousQuest sets the "previous_quest" edge to the Quest entity.
+func (qc *QuestCreate) SetPreviousQuest(q *Quest) *QuestCreate {
+	return qc.SetPreviousQuestID(q.ID)
 }
 
 // Mutation returns the QuestMutation object of the builder.
@@ -393,6 +447,56 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.scheduled_task_quests = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := qc.mutation.AdventureIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.AdventureTable,
+			Columns: []string{quest.AdventureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(adventure.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.adventure_quests = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := qc.mutation.RelatedQuestsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.RelatedQuestsTable,
+			Columns: []string{quest.RelatedQuestsColumn},
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := qc.mutation.PreviousQuestIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   quest.PreviousQuestTable,
+			Columns: []string{quest.PreviousQuestColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.quest_related_quests = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
