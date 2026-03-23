@@ -336,6 +336,7 @@ export const useShellTerminal = (
             },
             fontFamily: 'Menlo, Monaco, "Courier New", monospace',
             fontSize: 18,
+            scrollback: 500_000,
         });
 
         const fitAddon = new FitAddon();
