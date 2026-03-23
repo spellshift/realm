@@ -176,9 +176,9 @@ func TestBuilderE2E(t *testing.T) {
 			SetBuildImage("golang:1.21").
 			SetDescription("An explicit profile").
 			SetTransports([]builderpb.BuildProfileTransport{{
-				URI:   "https://callback.example.com",
-				Interval:      10,
-				Type: c2pb.Transport_TRANSPORT_GRPC,
+				URI:      "https://callback.example.com",
+				Interval: 10,
+				Type:     c2pb.Transport_TRANSPORT_GRPC,
 			}}).
 			SaveX(ctx)
 
