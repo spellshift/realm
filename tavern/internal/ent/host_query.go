@@ -20,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // HostQuery is the builder for querying Host entities.
@@ -35,6 +36,7 @@ type HostQuery struct {
 	withProcesses        *HostProcessQuery
 	withCredentials      *HostCredentialQuery
 	withScreenshots      *ScreenshotQuery
+	withFavoritedBy      *UserQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Host) error
@@ -44,6 +46,7 @@ type HostQuery struct {
 	withNamedProcesses   map[string]*HostProcessQuery
 	withNamedCredentials map[string]*HostCredentialQuery
 	withNamedScreenshots map[string]*ScreenshotQuery
+	withNamedFavoritedBy map[string]*UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -205,6 +208,28 @@ func (hq *HostQuery) QueryScreenshots() *ScreenshotQuery {
 			sqlgraph.From(host.Table, host.FieldID, selector),
 			sqlgraph.To(screenshot.Table, screenshot.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, host.ScreenshotsTable, host.ScreenshotsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFavoritedBy chains the current query on the "favoritedBy" edge.
+func (hq *HostQuery) QueryFavoritedBy() *UserQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.FavoritedByTable, host.FavoritedByPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
 		return fromU, nil
@@ -410,6 +435,7 @@ func (hq *HostQuery) Clone() *HostQuery {
 		withProcesses:   hq.withProcesses.Clone(),
 		withCredentials: hq.withCredentials.Clone(),
 		withScreenshots: hq.withScreenshots.Clone(),
+		withFavoritedBy: hq.withFavoritedBy.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -479,6 +505,17 @@ func (hq *HostQuery) WithScreenshots(opts ...func(*ScreenshotQuery)) *HostQuery 
 		opt(query)
 	}
 	hq.withScreenshots = query
+	return hq
+}
+
+// WithFavoritedBy tells the query-builder to eager-load the nodes that are connected to
+// the "favoritedBy" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithFavoritedBy(opts ...func(*UserQuery)) *HostQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withFavoritedBy = query
 	return hq
 }
 
@@ -561,13 +598,14 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		nodes       = []*Host{}
 		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
 			hq.withProcesses != nil,
 			hq.withCredentials != nil,
 			hq.withScreenshots != nil,
+			hq.withFavoritedBy != nil,
 		}
 	)
 	if withFKs {
@@ -636,6 +674,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withFavoritedBy; query != nil {
+		if err := hq.loadFavoritedBy(ctx, query, nodes,
+			func(n *Host) { n.Edges.FavoritedBy = []*User{} },
+			func(n *Host, e *User) { n.Edges.FavoritedBy = append(n.Edges.FavoritedBy, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -675,6 +720,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadScreenshots(ctx, query, nodes,
 			func(n *Host) { n.appendNamedScreenshots(name) },
 			func(n *Host, e *Screenshot) { n.appendNamedScreenshots(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedFavoritedBy {
+		if err := hq.loadFavoritedBy(ctx, query, nodes,
+			func(n *Host) { n.appendNamedFavoritedBy(name) },
+			func(n *Host, e *User) { n.appendNamedFavoritedBy(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -902,6 +954,67 @@ func (hq *HostQuery) loadScreenshots(ctx context.Context, query *ScreenshotQuery
 	}
 	return nil
 }
+func (hq *HostQuery) loadFavoritedBy(ctx context.Context, query *UserQuery, nodes []*Host, init func(*Host), assign func(*Host, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Host)
+	nids := make(map[int]map[*Host]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(host.FavoritedByTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(host.FavoritedByPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(host.FavoritedByPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(host.FavoritedByPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Host]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*User](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "favoritedBy" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -1068,6 +1181,20 @@ func (hq *HostQuery) WithNamedScreenshots(name string, opts ...func(*ScreenshotQ
 		hq.withNamedScreenshots = make(map[string]*ScreenshotQuery)
 	}
 	hq.withNamedScreenshots[name] = query
+	return hq
+}
+
+// WithNamedFavoritedBy tells the query-builder to eager-load the nodes that are connected to the "favoritedBy"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedFavoritedBy(name string, opts ...func(*UserQuery)) *HostQuery {
+	query := (&UserClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedFavoritedBy == nil {
+		hq.withNamedFavoritedBy = make(map[string]*UserQuery)
+	}
+	hq.withNamedFavoritedBy[name] = query
 	return hq
 }
 

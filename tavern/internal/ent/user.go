@@ -45,15 +45,18 @@ type UserEdges struct {
 	ActiveShells []*Shell `json:"active_shells,omitempty"`
 	// Device auths approved by the user.
 	DeviceAuths []*DeviceAuth `json:"device_auths,omitempty"`
+	// Hosts favorited by the user.
+	FavoriteHosts []*Host `json:"favoriteHosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
 
-	namedTomes        map[string][]*Tome
-	namedActiveShells map[string][]*Shell
-	namedDeviceAuths  map[string][]*DeviceAuth
+	namedTomes         map[string][]*Tome
+	namedActiveShells  map[string][]*Shell
+	namedDeviceAuths   map[string][]*DeviceAuth
+	namedFavoriteHosts map[string][]*Host
 }
 
 // TomesOrErr returns the Tomes value or an error if the edge
@@ -81,6 +84,15 @@ func (e UserEdges) DeviceAuthsOrErr() ([]*DeviceAuth, error) {
 		return e.DeviceAuths, nil
 	}
 	return nil, &NotLoadedError{edge: "device_auths"}
+}
+
+// FavoriteHostsOrErr returns the FavoriteHosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) FavoriteHostsOrErr() ([]*Host, error) {
+	if e.loadedTypes[3] {
+		return e.FavoriteHosts, nil
+	}
+	return nil, &NotLoadedError{edge: "favoriteHosts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -192,6 +204,11 @@ func (u *User) QueryActiveShells() *ShellQuery {
 // QueryDeviceAuths queries the "device_auths" edge of the User entity.
 func (u *User) QueryDeviceAuths() *DeviceAuthQuery {
 	return NewUserClient(u.config).QueryDeviceAuths(u)
+}
+
+// QueryFavoriteHosts queries the "favoriteHosts" edge of the User entity.
+func (u *User) QueryFavoriteHosts() *HostQuery {
+	return NewUserClient(u.config).QueryFavoriteHosts(u)
 }
 
 // Update returns a builder for updating this User.
@@ -307,6 +324,30 @@ func (u *User) appendNamedDeviceAuths(name string, edges ...*DeviceAuth) {
 		u.Edges.namedDeviceAuths[name] = []*DeviceAuth{}
 	} else {
 		u.Edges.namedDeviceAuths[name] = append(u.Edges.namedDeviceAuths[name], edges...)
+	}
+}
+
+// NamedFavoriteHosts returns the FavoriteHosts named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedFavoriteHosts(name string) ([]*Host, error) {
+	if u.Edges.namedFavoriteHosts == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedFavoriteHosts[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedFavoriteHosts(name string, edges ...*Host) {
+	if u.Edges.namedFavoriteHosts == nil {
+		u.Edges.namedFavoriteHosts = make(map[string][]*Host)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedFavoriteHosts[name] = []*Host{}
+	} else {
+		u.Edges.namedFavoriteHosts[name] = append(u.Edges.namedFavoriteHosts[name], edges...)
 	}
 }
 
