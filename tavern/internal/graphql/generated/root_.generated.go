@@ -432,6 +432,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Adventures     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AdventureOrder, where *ent.AdventureWhereInput) int
 		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		BuildProfiles  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) int
@@ -2677,6 +2678,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PortalEdge.Node(childComplexity), true
+
+	case "Query.adventures":
+		if e.complexity.Query.Adventures == nil {
+			break
+		}
+
+		args, err := ec.field_Query_adventures_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Adventures(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.AdventureOrder), args["where"].(*ent.AdventureWhereInput)), true
 
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
@@ -11051,6 +11064,25 @@ scalar Uint64
     """Filtering options for Quests returned from the connection."""
     where: QuestWhereInput
   ): QuestConnection! @requireRole(role: USER)
+  adventures(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Adventures returned from the connection."""
+    orderBy: [AdventureOrder!]
+
+    """Filtering options for Adventures returned from the connection."""
+    where: AdventureWhereInput
+  ): AdventureConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
