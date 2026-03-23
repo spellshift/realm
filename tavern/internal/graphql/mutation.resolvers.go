@@ -198,6 +198,24 @@ func (r *mutationResolver) UpdateHost(ctx context.Context, hostID int, input ent
 	return r.client.Host.UpdateOneID(hostID).SetInput(input).Save(ctx)
 }
 
+// FavoriteHost is the resolver for the favoriteHost field.
+func (r *mutationResolver) FavoriteHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).AddFavoritedByIDs(owner.ID).Save(ctx)
+}
+
+// UnfavoriteHost is the resolver for the unfavoriteHost field.
+func (r *mutationResolver) UnfavoriteHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).RemoveFavoritedByIDs(owner.ID).Save(ctx)
+}
+
 // CreateTag is the resolver for the createTag field.
 func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.Create().SetInput(input).Save(ctx)

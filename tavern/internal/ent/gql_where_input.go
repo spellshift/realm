@@ -3389,6 +3389,10 @@ type HostWhereInput struct {
 	// "screenshots" edge predicates.
 	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
 	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
+
+	// "favoritedBy" edge predicates.
+	HasFavoritedBy     *bool             `json:"hasFavoritedBy,omitempty"`
+	HasFavoritedByWith []*UserWhereInput `json:"hasFavoritedByWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3888,6 +3892,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasScreenshotsWith(with...))
+	}
+	if i.HasFavoritedBy != nil {
+		p := host.HasFavoritedBy()
+		if !*i.HasFavoritedBy {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFavoritedByWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasFavoritedByWith))
+		for _, w := range i.HasFavoritedByWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFavoritedByWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasFavoritedByWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -10812,6 +10834,10 @@ type UserWhereInput struct {
 	// "device_auths" edge predicates.
 	HasDeviceAuths     *bool                   `json:"hasDeviceAuths,omitempty"`
 	HasDeviceAuthsWith []*DeviceAuthWhereInput `json:"hasDeviceAuthsWith,omitempty"`
+
+	// "favoriteHosts" edge predicates.
+	HasFavoriteHosts     *bool             `json:"hasFavoriteHosts,omitempty"`
+	HasFavoriteHostsWith []*HostWhereInput `json:"hasFavoriteHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -11092,6 +11118,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasDeviceAuthsWith(with...))
+	}
+	if i.HasFavoriteHosts != nil {
+		p := user.HasFavoriteHosts()
+		if !*i.HasFavoriteHosts {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFavoriteHostsWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasFavoriteHostsWith))
+		for _, w := range i.HasFavoriteHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFavoriteHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasFavoriteHostsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

@@ -2010,6 +2010,37 @@ type Host implements Node {
     """
     where: ScreenshotWhereInput
   ): ScreenshotConnection!
+  favoritedby(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection! @goField(name: "FavoritedBy", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -3054,6 +3085,11 @@ input HostWhereInput {
   """
   hasScreenshots: Boolean
   hasScreenshotsWith: [ScreenshotWhereInput!]
+  """
+  favoritedBy edge predicates
+  """
+  hasFavoritedBy: Boolean
+  hasFavoritedByWith: [UserWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -5929,6 +5965,9 @@ input UpdateHostInput {
   addScreenshotIDs: [ID!]
   removeScreenshotIDs: [ID!]
   clearScreenshots: Boolean
+  addFavoritedByIDs: [ID!]
+  removeFavoritedByIDs: [ID!]
+  clearFavoritedBy: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -6090,6 +6129,9 @@ input UpdateUserInput {
   addDeviceAuthIDs: [ID!]
   removeDeviceAuthIDs: [ID!]
   clearDeviceAuths: Boolean
+  addFavoriteHostIDs: [ID!]
+  removeFavoriteHostIDs: [ID!]
+  clearFavoriteHosts: Boolean
 }
 type User implements Node {
   id: ID!
@@ -6202,6 +6244,37 @@ type User implements Node {
     """
     where: DeviceAuthWhereInput
   ): DeviceAuthConnection!
+  favoritehosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -6328,6 +6401,11 @@ input UserWhereInput {
   """
   hasDeviceAuths: Boolean
   hasDeviceAuthsWith: [DeviceAuthWhereInput!]
+  """
+  favoriteHosts edge predicates
+  """
+  hasFavoriteHosts: Boolean
+  hasFavoriteHostsWith: [HostWhereInput!]
 }
 input ClaimTasksInput {
   """The identity the beacon is authenticated as (e.g. 'root')"""
@@ -6549,6 +6627,8 @@ type Mutation {
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+    favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag

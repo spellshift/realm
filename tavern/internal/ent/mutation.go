@@ -6068,6 +6068,9 @@ type HostMutation struct {
 	screenshots        map[int]struct{}
 	removedscreenshots map[int]struct{}
 	clearedscreenshots bool
+	favoritedBy        map[int]struct{}
+	removedfavoritedBy map[int]struct{}
+	clearedfavoritedBy bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -6884,6 +6887,60 @@ func (m *HostMutation) ResetScreenshots() {
 	m.removedscreenshots = nil
 }
 
+// AddFavoritedByIDs adds the "favoritedBy" edge to the User entity by ids.
+func (m *HostMutation) AddFavoritedByIDs(ids ...int) {
+	if m.favoritedBy == nil {
+		m.favoritedBy = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.favoritedBy[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFavoritedBy clears the "favoritedBy" edge to the User entity.
+func (m *HostMutation) ClearFavoritedBy() {
+	m.clearedfavoritedBy = true
+}
+
+// FavoritedByCleared reports if the "favoritedBy" edge to the User entity was cleared.
+func (m *HostMutation) FavoritedByCleared() bool {
+	return m.clearedfavoritedBy
+}
+
+// RemoveFavoritedByIDs removes the "favoritedBy" edge to the User entity by IDs.
+func (m *HostMutation) RemoveFavoritedByIDs(ids ...int) {
+	if m.removedfavoritedBy == nil {
+		m.removedfavoritedBy = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.favoritedBy, ids[i])
+		m.removedfavoritedBy[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFavoritedBy returns the removed IDs of the "favoritedBy" edge to the User entity.
+func (m *HostMutation) RemovedFavoritedByIDs() (ids []int) {
+	for id := range m.removedfavoritedBy {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FavoritedByIDs returns the "favoritedBy" edge IDs in the mutation.
+func (m *HostMutation) FavoritedByIDs() (ids []int) {
+	for id := range m.favoritedBy {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFavoritedBy resets all changes to the "favoritedBy" edge.
+func (m *HostMutation) ResetFavoritedBy() {
+	m.favoritedBy = nil
+	m.clearedfavoritedBy = false
+	m.removedfavoritedBy = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -7186,7 +7243,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -7204,6 +7261,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.screenshots != nil {
 		edges = append(edges, host.EdgeScreenshots)
+	}
+	if m.favoritedBy != nil {
+		edges = append(edges, host.EdgeFavoritedBy)
 	}
 	return edges
 }
@@ -7248,13 +7308,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFavoritedBy:
+		ids := make([]ent.Value, 0, len(m.favoritedBy))
+		for id := range m.favoritedBy {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -7272,6 +7338,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedscreenshots != nil {
 		edges = append(edges, host.EdgeScreenshots)
+	}
+	if m.removedfavoritedBy != nil {
+		edges = append(edges, host.EdgeFavoritedBy)
 	}
 	return edges
 }
@@ -7316,13 +7385,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeFavoritedBy:
+		ids := make([]ent.Value, 0, len(m.removedfavoritedBy))
+		for id := range m.removedfavoritedBy {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -7340,6 +7415,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedscreenshots {
 		edges = append(edges, host.EdgeScreenshots)
+	}
+	if m.clearedfavoritedBy {
+		edges = append(edges, host.EdgeFavoritedBy)
 	}
 	return edges
 }
@@ -7360,6 +7438,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedcredentials
 	case host.EdgeScreenshots:
 		return m.clearedscreenshots
+	case host.EdgeFavoritedBy:
+		return m.clearedfavoritedBy
 	}
 	return false
 }
@@ -7393,6 +7473,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeScreenshots:
 		m.ResetScreenshots()
+		return nil
+	case host.EdgeFavoritedBy:
+		m.ResetFavoritedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
@@ -21136,6 +21219,9 @@ type UserMutation struct {
 	device_auths         map[int]struct{}
 	removeddevice_auths  map[int]struct{}
 	cleareddevice_auths  bool
+	favoriteHosts        map[int]struct{}
+	removedfavoriteHosts map[int]struct{}
+	clearedfavoriteHosts bool
 	done                 bool
 	oldValue             func(context.Context) (*User, error)
 	predicates           []predicate.User
@@ -21653,6 +21739,60 @@ func (m *UserMutation) ResetDeviceAuths() {
 	m.removeddevice_auths = nil
 }
 
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by ids.
+func (m *UserMutation) AddFavoriteHostIDs(ids ...int) {
+	if m.favoriteHosts == nil {
+		m.favoriteHosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.favoriteHosts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFavoriteHosts clears the "favoriteHosts" edge to the Host entity.
+func (m *UserMutation) ClearFavoriteHosts() {
+	m.clearedfavoriteHosts = true
+}
+
+// FavoriteHostsCleared reports if the "favoriteHosts" edge to the Host entity was cleared.
+func (m *UserMutation) FavoriteHostsCleared() bool {
+	return m.clearedfavoriteHosts
+}
+
+// RemoveFavoriteHostIDs removes the "favoriteHosts" edge to the Host entity by IDs.
+func (m *UserMutation) RemoveFavoriteHostIDs(ids ...int) {
+	if m.removedfavoriteHosts == nil {
+		m.removedfavoriteHosts = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.favoriteHosts, ids[i])
+		m.removedfavoriteHosts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFavoriteHosts returns the removed IDs of the "favoriteHosts" edge to the Host entity.
+func (m *UserMutation) RemovedFavoriteHostsIDs() (ids []int) {
+	for id := range m.removedfavoriteHosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FavoriteHostsIDs returns the "favoriteHosts" edge IDs in the mutation.
+func (m *UserMutation) FavoriteHostsIDs() (ids []int) {
+	for id := range m.favoriteHosts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFavoriteHosts resets all changes to the "favoriteHosts" edge.
+func (m *UserMutation) ResetFavoriteHosts() {
+	m.favoriteHosts = nil
+	m.clearedfavoriteHosts = false
+	m.removedfavoriteHosts = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -21888,7 +22028,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.tomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21897,6 +22037,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.device_auths != nil {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.favoriteHosts != nil {
+		edges = append(edges, user.EdgeFavoriteHosts)
 	}
 	return edges
 }
@@ -21923,13 +22066,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeFavoriteHosts:
+		ids := make([]ent.Value, 0, len(m.favoriteHosts))
+		for id := range m.favoriteHosts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtomes != nil {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21938,6 +22087,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removeddevice_auths != nil {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.removedfavoriteHosts != nil {
+		edges = append(edges, user.EdgeFavoriteHosts)
 	}
 	return edges
 }
@@ -21964,13 +22116,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeFavoriteHosts:
+		ids := make([]ent.Value, 0, len(m.removedfavoriteHosts))
+		for id := range m.removedfavoriteHosts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedtomes {
 		edges = append(edges, user.EdgeTomes)
 	}
@@ -21979,6 +22137,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.cleareddevice_auths {
 		edges = append(edges, user.EdgeDeviceAuths)
+	}
+	if m.clearedfavoriteHosts {
+		edges = append(edges, user.EdgeFavoriteHosts)
 	}
 	return edges
 }
@@ -21993,6 +22154,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedactive_shells
 	case user.EdgeDeviceAuths:
 		return m.cleareddevice_auths
+	case user.EdgeFavoriteHosts:
+		return m.clearedfavoriteHosts
 	}
 	return false
 }
@@ -22017,6 +22180,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeDeviceAuths:
 		m.ResetDeviceAuths()
+		return nil
+	case user.EdgeFavoriteHosts:
+		m.ResetFavoriteHosts()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
