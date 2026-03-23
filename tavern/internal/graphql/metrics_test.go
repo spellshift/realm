@@ -59,11 +59,11 @@ func TestMetrics_QuestTimelineChart(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	// Quest 3 at startTime + 3s (Bucket 3)
+	// Quest 3 at startTime + 3.5s (Unaligned! Should be perfectly aligned into Bucket 3)
 	_, err = client.Quest.Create().
 		SetName("quest3").
 		SetTome(tome1).
-		SetCreatedAt(startTime.Add(3 * time.Second)).
+		SetCreatedAt(startTime.Add(3500 * time.Millisecond)).
 		Save(ctx)
 	require.NoError(t, err)
 

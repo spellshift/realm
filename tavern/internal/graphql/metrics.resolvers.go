@@ -37,7 +37,7 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 
 	// Create buckets from start to endTime
 	var buckets []*models.QuestTimelineBucket
-	bucketMap := make(map[time.Time]*models.QuestTimelineBucket)
+	bucketMap := make(map[int64]*models.QuestTimelineBucket)
 
 	for t := start; t.Before(endTime) || t.Equal(endTime); t = t.Add(granularity) {
 		bucket := &models.QuestTimelineBucket{
@@ -46,7 +46,7 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 			GroupByTactic:  []*models.QuestTimelineTacticBucket{},
 		}
 		buckets = append(buckets, bucket)
-		bucketMap[t] = bucket
+		bucketMap[t.Unix()] = bucket
 	}
 
 	query := r.client.Quest.Query()
@@ -71,7 +71,7 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 	}
 
 	// Group quests into buckets
-	tacticCounts := make(map[time.Time]map[tome.Tactic]int)
+	tacticCounts := make(map[int64]map[tome.Tactic]int)
 	for _, q := range quests {
 		// Find the bucket timestamp for this quest
 		// We calculate the number of granularities since start
@@ -80,24 +80,26 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 			continue // Should not happen due to query filter, but just in case
 		}
 
-		bucketsPassed := int(diff / granularity)
-		bucketTime := start.Add(time.Duration(bucketsPassed) * granularity)
+		// Use time.Truncate to perfectly align the bucket time to the nearest exact granularity boundary.
+		// This avoids any int casting duration bugs or fractional integer rounding drift issues over long periods
+		// and strictly enforces "perfectly aligned" mapping.
+		bucketTime := start.Add(diff.Truncate(granularity))
 
-		if bucket, exists := bucketMap[bucketTime]; exists {
+		if bucket, exists := bucketMap[bucketTime.Unix()]; exists {
 			bucket.Count++
 
 			if q.Edges.Tome != nil {
-				if tacticCounts[bucketTime] == nil {
-					tacticCounts[bucketTime] = make(map[tome.Tactic]int)
+				if tacticCounts[bucketTime.Unix()] == nil {
+					tacticCounts[bucketTime.Unix()] = make(map[tome.Tactic]int)
 				}
-				tacticCounts[bucketTime][q.Edges.Tome.Tactic]++
+				tacticCounts[bucketTime.Unix()][q.Edges.Tome.Tactic]++
 			}
 		}
 	}
 
 	// Populate groupByTactic in buckets
 	for _, bucket := range buckets {
-		if counts, exists := tacticCounts[bucket.StartTimestamp]; exists {
+		if counts, exists := tacticCounts[bucket.StartTimestamp.Unix()]; exists {
 			for tactic, count := range counts {
 				bucket.GroupByTactic = append(bucket.GroupByTactic, &models.QuestTimelineTacticBucket{
 					Tactic: tactic,
