@@ -128,26 +128,22 @@ pub async fn run_reverse_shell_pty(
                 continue;
             }
 
-            if let Err(_err) = output_tx_clone
-                .blocking_send(ReverseShellRequest {
-                    context: context_val_clone.clone(),
-                    kind: ReverseShellMessageKind::Data.into(),
-                    data: buffer[..n].to_vec(),
-                })
-            {
+            if let Err(_err) = output_tx_clone.blocking_send(ReverseShellRequest {
+                context: context_val_clone.clone(),
+                kind: ReverseShellMessageKind::Data.into(),
+                data: buffer[..n].to_vec(),
+            }) {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty output failed to queue: {_err}");
                 break;
             }
 
             // Ping to flush
-            if let Err(_err) = output_tx_clone
-                .blocking_send(ReverseShellRequest {
-                    context: context_val_clone.clone(),
-                    kind: ReverseShellMessageKind::Ping.into(),
-                    data: Vec::new(),
-                })
-            {
+            if let Err(_err) = output_tx_clone.blocking_send(ReverseShellRequest {
+                context: context_val_clone.clone(),
+                kind: ReverseShellMessageKind::Ping.into(),
+                data: Vec::new(),
+            }) {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty ping failed: {_err}");
                 break;

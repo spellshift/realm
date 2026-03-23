@@ -230,7 +230,12 @@ impl HTTP {
                 .body(hyper_legacy::Body::from(request_body.freeze()))
                 .context("Failed to build HTTP request")?;
 
-            let response = match tokio::time::timeout(std::time::Duration::from_secs(30), self.send_and_validate(req)).await {
+            let response = match tokio::time::timeout(
+                std::time::Duration::from_secs(30),
+                self.send_and_validate(req),
+            )
+            .await
+            {
                 Ok(Ok(resp)) => resp,
                 Ok(Err(err)) => {
                     #[cfg(debug_assertions)]
@@ -266,7 +271,11 @@ impl HTTP {
                         frame_count += 1;
                         data_received = true;
                         #[cfg(debug_assertions)]
-                        log::debug!("Extracted frame {} from short poll response ({} bytes)", frame_count, encrypted_message.len());
+                        log::debug!(
+                            "Extracted frame {} from short poll response ({} bytes)",
+                            frame_count,
+                            encrypted_message.len()
+                        );
 
                         match unmarshal_with_codec::<Req, Resp>(&encrypted_message) {
                             Ok(response_msg) => {
