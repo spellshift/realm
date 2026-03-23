@@ -75,6 +75,9 @@ impl Agent for MockAgent {
     fn set_transport(&self, _transport: String) -> Result<(), String> {
         Ok(())
     }
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(vec!["mock".to_string()])
     }

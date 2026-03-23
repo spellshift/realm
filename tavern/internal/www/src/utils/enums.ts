@@ -101,7 +101,8 @@ export enum ProcessOrderField {
     LastModifiedAt = "LAST_MODIFIED_AT",
     Name = "NAME",
     ProcessId = "PROCESS_ID",
-    ParentProcessId= "PARENT_PROCESS_ID",
+    ParentProcessId = "PARENT_PROCESS_ID",
+    ProcessStartTime = "PROCESS_START_TIME",
 }
 
 export enum HostFileOrderField {

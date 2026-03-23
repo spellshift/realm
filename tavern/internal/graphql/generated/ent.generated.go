@@ -21,6 +21,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
+	"realm.pub/tavern/internal/graphql/models"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -47,6 +48,7 @@ type QueryResolver interface {
 	Builders(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) (*ent.BuilderConnection, error)
 	ScheduledTasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) (*ent.ScheduledTaskConnection, error)
 	Me(ctx context.Context) (*ent.User, error)
+	Metrics(ctx context.Context) (*models.Metrics, error)
 }
 type ShellTaskResolver interface {
 	SequenceID(ctx context.Context, obj *ent.ShellTask) (int, error)
@@ -315,6 +317,42 @@ func (ec *executionContext) field_Host_credentials_args(ctx context.Context, raw
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostCredentialWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Host_favoritedby_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOUserOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOUserWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1615,6 +1653,42 @@ func (ec *executionContext) field_User_deviceAuths_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_User_favoritehosts_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOHostOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOHostWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_User_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1971,6 +2045,8 @@ func (ec *executionContext) fieldContext_Asset_creator(_ context.Context, field 
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -2536,6 +2612,8 @@ func (ec *executionContext) fieldContext_Beacon_host(_ context.Context, field gr
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -4884,6 +4962,8 @@ func (ec *executionContext) fieldContext_DeviceAuth_user(_ context.Context, fiel
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -5654,6 +5734,55 @@ func (ec *executionContext) fieldContext_Host_screenshots(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Host_favoritedby(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_favoritedby,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.FavoritedBy(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
+		},
+		nil,
+		ec.marshalNUserConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Host_favoritedby(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Host",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_UserConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_UserConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_UserConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type UserConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Host_favoritedby_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HostConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5987,6 +6116,8 @@ func (ec *executionContext) fieldContext_HostCredential_host(_ context.Context, 
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -6359,6 +6490,8 @@ func (ec *executionContext) fieldContext_HostEdge_node(_ context.Context, field 
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -6770,6 +6903,8 @@ func (ec *executionContext) fieldContext_HostFile_host(_ context.Context, field 
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -7529,6 +7664,8 @@ func (ec *executionContext) fieldContext_HostProcess_host(_ context.Context, fie
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -8151,6 +8288,8 @@ func (ec *executionContext) fieldContext_Link_creator(_ context.Context, field g
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -8800,6 +8939,8 @@ func (ec *executionContext) fieldContext_Portal_owner(_ context.Context, field g
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -10166,10 +10307,63 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_metrics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_metrics,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().Metrics(ctx)
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *models.Metrics
+					return zeroVal, err
+				}
+				if ec.directives.RequireRole == nil {
+					var zeroVal *models.Metrics
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNMetrics2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐMetrics,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_metrics(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "questTimelineChart":
+				return ec.fieldContext_Metrics_questTimelineChart(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Metrics", field.Name)
 		},
 	}
 	return fc, nil
@@ -10681,6 +10875,8 @@ func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field 
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -11197,6 +11393,8 @@ func (ec *executionContext) fieldContext_Repository_owner(_ context.Context, fie
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -12249,6 +12447,8 @@ func (ec *executionContext) fieldContext_Screenshot_host(_ context.Context, fiel
 				return ec.fieldContext_Host_credentials(ctx, field)
 			case "screenshots":
 				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -12843,6 +13043,8 @@ func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field gr
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -13592,6 +13794,8 @@ func (ec *executionContext) fieldContext_ShellTask_creator(_ context.Context, fi
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -15519,6 +15723,8 @@ func (ec *executionContext) fieldContext_Tome_uploader(_ context.Context, field 
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -16056,6 +16262,55 @@ func (ec *executionContext) fieldContext_User_deviceAuths(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _User_favoritehosts(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_favoritehosts,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.FavoriteHosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
+		},
+		nil,
+		ec.marshalNHostConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_favoritehosts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_HostConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_HostConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_HostConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HostConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User_favoritehosts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_apiKey(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -16228,6 +16483,8 @@ func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field 
 				return ec.fieldContext_User_activeShells(ctx, field)
 			case "deviceAuths":
 				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -23841,7 +24098,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -24695,6 +24952,20 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasScreenshotsWith = data
+		case "hasFavoritedBy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFavoritedBy"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasFavoritedBy = data
+		case "hasFavoritedByWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFavoritedByWith"))
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasFavoritedByWith = data
 		}
 	}
 
@@ -31541,7 +31812,7 @@ func (ec *executionContext) unmarshalInputUpdateHostInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"lastModifiedAt", "name", "clearName", "addTagIDs", "removeTagIDs", "clearTags", "addBeaconIDs", "removeBeaconIDs", "clearBeacons", "addFileIDs", "removeFileIDs", "clearFiles", "addProcessIDs", "removeProcessIDs", "clearProcesses", "addCredentialIDs", "removeCredentialIDs", "clearCredentials", "addScreenshotIDs", "removeScreenshotIDs", "clearScreenshots"}
+	fieldsInOrder := [...]string{"lastModifiedAt", "name", "clearName", "addTagIDs", "removeTagIDs", "clearTags", "addBeaconIDs", "removeBeaconIDs", "clearBeacons", "addFileIDs", "removeFileIDs", "clearFiles", "addProcessIDs", "removeProcessIDs", "clearProcesses", "addCredentialIDs", "removeCredentialIDs", "clearCredentials", "addScreenshotIDs", "removeScreenshotIDs", "clearScreenshots", "addFavoritedByIDs", "removeFavoritedByIDs", "clearFavoritedBy"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -31695,6 +31966,27 @@ func (ec *executionContext) unmarshalInputUpdateHostInput(ctx context.Context, o
 				return it, err
 			}
 			it.ClearScreenshots = data
+		case "addFavoritedByIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addFavoritedByIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddFavoritedByIDs = data
+		case "removeFavoritedByIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeFavoritedByIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveFavoritedByIDs = data
+		case "clearFavoritedBy":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearFavoritedBy"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearFavoritedBy = data
 		}
 	}
 
@@ -32047,7 +32339,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths"}
+	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths", "addFavoriteHostIDs", "removeFavoriteHostIDs", "clearFavoriteHosts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -32145,6 +32437,27 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.ClearDeviceAuths = data
+		case "addFavoriteHostIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addFavoriteHostIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddFavoriteHostIDs = data
+		case "removeFavoriteHostIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeFavoriteHostIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveFavoriteHostIDs = data
+		case "clearFavoriteHosts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearFavoriteHosts"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearFavoriteHosts = data
 		}
 	}
 
@@ -32196,7 +32509,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -32532,6 +32845,20 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasDeviceAuthsWith = data
+		case "hasFavoriteHosts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFavoriteHosts"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasFavoriteHosts = data
+		case "hasFavoriteHostsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasFavoriteHostsWith"))
+			data, err := ec.unmarshalOHostWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasFavoriteHostsWith = data
 		}
 	}
 
@@ -34285,6 +34612,42 @@ func (ec *executionContext) _Host(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Host_screenshots(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "favoritedby":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Host_favoritedby(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -36223,6 +36586,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_me(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "metrics":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_metrics(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -39034,6 +39419,42 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._User_deviceAuths(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "favoritehosts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_favoritehosts(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

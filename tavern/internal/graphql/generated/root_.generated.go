@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"sync/atomic"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
@@ -36,6 +37,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	HostFile() HostFileResolver
+	Metrics() MetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	ShellTask() ShellTaskResolver
@@ -218,6 +220,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ExternalIP     func(childComplexity int) int
+		FavoritedBy    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -347,6 +350,10 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Metrics struct {
+		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
+	}
+
 	Mutation struct {
 		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
@@ -362,9 +369,11 @@ type ComplexityRoot struct {
 		DisableLink          func(childComplexity int, linkID int) int
 		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
 		DropAllData          func(childComplexity int) int
+		FavoriteHost         func(childComplexity int, hostID int) int
 		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
 		ResetUserAPIKey      func(childComplexity int) int
+		UnfavoriteHost       func(childComplexity int, hostID int) int
 		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
@@ -411,6 +420,7 @@ type ComplexityRoot struct {
 		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
 		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me             func(childComplexity int) int
+		Metrics        func(childComplexity int) int
 		Node           func(childComplexity int, id int) int
 		Nodes          func(childComplexity int, ids []int) int
 		Portals        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
@@ -448,6 +458,17 @@ type ComplexityRoot struct {
 	QuestEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	QuestTimelineBucket struct {
+		Count          func(childComplexity int) int
+		GroupByTactic  func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
+	QuestTimelineTacticBucket struct {
+		Count  func(childComplexity int) int
+		Tactic func(childComplexity int) int
 	}
 
 	RegisterBuilderOutput struct {
@@ -659,15 +680,16 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		APIKey       func(childComplexity int) int
-		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		DeviceAuths  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
-		ID           func(childComplexity int) int
-		IsActivated  func(childComplexity int) int
-		IsAdmin      func(childComplexity int) int
-		Name         func(childComplexity int) int
-		PhotoURL     func(childComplexity int) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		APIKey        func(childComplexity int) int
+		ActiveShells  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		DeviceAuths   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
+		FavoriteHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		ID            func(childComplexity int) int
+		IsActivated   func(childComplexity int) int
+		IsAdmin       func(childComplexity int) int
+		Name          func(childComplexity int) int
+		PhotoURL      func(childComplexity int) int
+		Tomes         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
 
 	UserConnection struct {
@@ -1499,6 +1521,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Host.ExternalIP(childComplexity), true
 
+	case "Host.favoritedby":
+		if e.complexity.Host.FavoritedBy == nil {
+			break
+		}
+
+		args, err := ec.field_Host_favoritedby_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.FavoritedBy(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
+
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
 			break
@@ -2114,6 +2148,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
+	case "Metrics.questTimelineChart":
+		if e.complexity.Metrics.QuestTimelineChart == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_questTimelineChart_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Metrics.QuestTimelineChart(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.QuestWhereInput)), true
+
 	case "Mutation.createBuildTask":
 		if e.complexity.Mutation.CreateBuildTask == nil {
 			break
@@ -2277,6 +2323,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DropAllData(childComplexity), true
 
+	case "Mutation.favoriteHost":
+		if e.complexity.Mutation.FavoriteHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_favoriteHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FavoriteHost(childComplexity, args["hostID"].(int)), true
+
 	case "Mutation.importRepository":
 		if e.complexity.Mutation.ImportRepository == nil {
 			break
@@ -2307,6 +2365,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ResetUserAPIKey(childComplexity), true
+
+	case "Mutation.unfavoriteHost":
+		if e.complexity.Mutation.UnfavoriteHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unfavoriteHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnfavoriteHost(childComplexity, args["hostID"].(int)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -2590,6 +2660,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Me(childComplexity), true
 
+	case "Query.metrics":
+		if e.complexity.Query.Metrics == nil {
+			break
+		}
+
+		return e.complexity.Query.Metrics(childComplexity), true
+
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
 			break
@@ -2845,6 +2922,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.QuestEdge.Node(childComplexity), true
+
+	case "QuestTimelineBucket.count":
+		if e.complexity.QuestTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.Count(childComplexity), true
+
+	case "QuestTimelineBucket.groupByTactic":
+		if e.complexity.QuestTimelineBucket.GroupByTactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.GroupByTactic(childComplexity), true
+
+	case "QuestTimelineBucket.startTimestamp":
+		if e.complexity.QuestTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "QuestTimelineTacticBucket.count":
+		if e.complexity.QuestTimelineTacticBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Count(childComplexity), true
+
+	case "QuestTimelineTacticBucket.tactic":
+		if e.complexity.QuestTimelineTacticBucket.Tactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Tactic(childComplexity), true
 
 	case "RegisterBuilderOutput.builder":
 		if e.complexity.RegisterBuilderOutput.Builder == nil {
@@ -3867,6 +3979,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.DeviceAuths(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.DeviceAuthOrder), args["where"].(*ent.DeviceAuthWhereInput)), true
+
+	case "User.favoritehosts":
+		if e.complexity.User.FavoriteHosts == nil {
+			break
+		}
+
+		args, err := ec.field_User_favoritehosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.FavoriteHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -6137,6 +6261,37 @@ type Host implements Node {
     """
     where: ScreenshotWhereInput
   ): ScreenshotConnection!
+  favoritedby(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection! @goField(name: "FavoritedBy", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -7181,6 +7336,11 @@ input HostWhereInput {
   """
   hasScreenshots: Boolean
   hasScreenshotsWith: [ScreenshotWhereInput!]
+  """
+  favoritedBy edge predicates
+  """
+  hasFavoritedBy: Boolean
+  hasFavoritedByWith: [UserWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -10056,6 +10216,9 @@ input UpdateHostInput {
   addScreenshotIDs: [ID!]
   removeScreenshotIDs: [ID!]
   clearScreenshots: Boolean
+  addFavoritedByIDs: [ID!]
+  removeFavoritedByIDs: [ID!]
+  clearFavoritedBy: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -10217,6 +10380,9 @@ input UpdateUserInput {
   addDeviceAuthIDs: [ID!]
   removeDeviceAuthIDs: [ID!]
   clearDeviceAuths: Boolean
+  addFavoriteHostIDs: [ID!]
+  removeFavoriteHostIDs: [ID!]
+  clearFavoriteHosts: Boolean
 }
 type User implements Node {
   id: ID!
@@ -10329,6 +10495,37 @@ type User implements Node {
     """
     where: DeviceAuthWhereInput
   ): DeviceAuthConnection!
+  favoritehosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -10455,6 +10652,11 @@ input UserWhereInput {
   """
   hasDeviceAuths: Boolean
   hasDeviceAuthsWith: [DeviceAuthWhereInput!]
+  """
+  favoriteHosts edge predicates
+  """
+  hasFavoriteHosts: Boolean
+  hasFavoriteHostsWith: [HostWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -10774,6 +10976,8 @@ scalar Uint64
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+    favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
@@ -11005,6 +11209,30 @@ type RegisterBuilderOutput {
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `extend type User {
   apiKey: String
+}
+`, BuiltIn: false},
+	{Name: "../schema/metrics.graphql", Input: `extend type Query {
+  metrics: Metrics! @requireRole(role: USER)
+}
+
+type Metrics {
+  questTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: QuestWhereInput
+  ): [QuestTimelineBucket!]!
+}
+
+type QuestTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByTactic: [QuestTimelineTacticBucket!]!
+}
+
+type QuestTimelineTacticBucket {
+  tactic: TomeTactic!
+  count: Int!
 }
 `, BuiltIn: false},
 }

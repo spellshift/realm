@@ -1,0 +1,23 @@
+extend type Query {
+  metrics: Metrics! @requireRole(role: USER)
+}
+
+type Metrics {
+  questTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: QuestWhereInput
+  ): [QuestTimelineBucket!]!
+}
+
+type QuestTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByTactic: [QuestTimelineTacticBucket!]!
+}
+
+type QuestTimelineTacticBucket {
+  tactic: TomeTactic!
+  count: Int!
+}

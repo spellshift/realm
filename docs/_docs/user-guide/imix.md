@@ -150,6 +150,10 @@ transports:
     type: "grpc"
     interval: 5
     extra: ""
+  - URI: "http1://127.0.0.1:8080"
+    type: "http1"
+    interval: 5
+    extra: ""
   - URI: "dns://*"
     type: "dns"
     interval: 10

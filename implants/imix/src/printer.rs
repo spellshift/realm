@@ -13,6 +13,13 @@ impl StreamPrinter {
     }
 }
 
+// TODO: @Kcarretto remove this
+impl StreamPrinter {
+    pub fn report_error(&self, s: &str) {
+        let _ = self.error_tx.send(format!("{}\n", s));
+    }
+}
+
 impl Printer for StreamPrinter {
     fn print_out(&self, _span: &Span, s: &str) {
         // We format with newline to match BufferPrinter behavior which separates lines

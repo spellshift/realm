@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { constructTomeParams } from "../../../utils/utils";
+import { constructTomeParams, toDisplayString } from "../../../utils/utils";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import { QuestNode } from "../../../utils/interfacesQuery";
 import { FieldInputParams } from "../../../utils/interfacesUI";
@@ -20,20 +20,21 @@ const TaskParameters: FC<TaskParametersType> = ({
                     {quest?.tome?.name}
                 </div>
                 {params.map((paramDef: FieldInputParams) => {
-                    if (paramDef.value) {
+                    const displayValue = toDisplayString(paramDef.value);
+                    if (displayValue) {
                         return (
                             <div className="flex flex-row gap-1 text-sm text-gray-600" key={paramDef.name}>
                                 <div className="font-semibold">
                                     {paramDef.name}:
                                 </div>
                                 <div className="break-all">
-                                    {paramDef.value}
+                                    {displayValue}
                                 </div>
                             </div>
                         )
                     }
                     else {
-                        return <div className="text-sm text-gray-600">Not available</div>;
+                        return <div className="text-sm text-gray-600" key={paramDef.name}>Not available</div>;
                     }
                 })}
             </div>

@@ -31,7 +31,7 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                 <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
             </div>
             <Transition.Root show={sidebarOpen} as={Fragment}>
-                <Dialog as="div" className="relative z-50 lg:hidden" onClose={handleSidebarOpen}>
+                <Dialog as="div" className="relative z-40 lg:hidden" onClose={handleSidebarOpen}>
                     <Transition.Child
                         as={Fragment}
                         enter="transition-opacity ease-linear duration-400"

@@ -7,4 +7,4 @@ paramdefs:
 - name: path
   label: Path of file/directory to remove
   type: string
-  placeholder: /var/log/auth.log, /home/foo/
+  placeholder: /var/log/auth.log or C:\Windows\

