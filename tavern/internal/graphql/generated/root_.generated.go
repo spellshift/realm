@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"sync/atomic"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
@@ -36,6 +37,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	HostFile() HostFileResolver
+	Metrics() MetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	ShellTask() ShellTaskResolver
@@ -347,6 +349,10 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Metrics struct {
+		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
+	}
+
 	Mutation struct {
 		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
@@ -411,6 +417,7 @@ type ComplexityRoot struct {
 		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
 		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me             func(childComplexity int) int
+		Metrics        func(childComplexity int) int
 		Node           func(childComplexity int, id int) int
 		Nodes          func(childComplexity int, ids []int) int
 		Portals        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
@@ -448,6 +455,17 @@ type ComplexityRoot struct {
 	QuestEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	QuestTimelineBucket struct {
+		Count          func(childComplexity int) int
+		GroupByTactic  func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
+	QuestTimelineTacticBucket struct {
+		Count  func(childComplexity int) int
+		Tactic func(childComplexity int) int
 	}
 
 	RegisterBuilderOutput struct {
@@ -2114,6 +2132,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
+	case "Metrics.questTimelineChart":
+		if e.complexity.Metrics.QuestTimelineChart == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_questTimelineChart_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Metrics.QuestTimelineChart(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.QuestWhereInput)), true
+
 	case "Mutation.createBuildTask":
 		if e.complexity.Mutation.CreateBuildTask == nil {
 			break
@@ -2590,6 +2620,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Me(childComplexity), true
 
+	case "Query.metrics":
+		if e.complexity.Query.Metrics == nil {
+			break
+		}
+
+		return e.complexity.Query.Metrics(childComplexity), true
+
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
 			break
@@ -2845,6 +2882,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.QuestEdge.Node(childComplexity), true
+
+	case "QuestTimelineBucket.count":
+		if e.complexity.QuestTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.Count(childComplexity), true
+
+	case "QuestTimelineBucket.groupByTactic":
+		if e.complexity.QuestTimelineBucket.GroupByTactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.GroupByTactic(childComplexity), true
+
+	case "QuestTimelineBucket.startTimestamp":
+		if e.complexity.QuestTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "QuestTimelineTacticBucket.count":
+		if e.complexity.QuestTimelineTacticBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Count(childComplexity), true
+
+	case "QuestTimelineTacticBucket.tactic":
+		if e.complexity.QuestTimelineTacticBucket.Tactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Tactic(childComplexity), true
 
 	case "RegisterBuilderOutput.builder":
 		if e.complexity.RegisterBuilderOutput.Builder == nil {
@@ -11005,6 +11077,30 @@ type RegisterBuilderOutput {
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `extend type User {
   apiKey: String
+}
+`, BuiltIn: false},
+	{Name: "../schema/metrics.graphql", Input: `extend type Query {
+  metrics: Metrics! @requireRole(role: USER)
+}
+
+type Metrics {
+  questTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: QuestWhereInput
+  ): [QuestTimelineBucket!]!
+}
+
+type QuestTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByTactic: [QuestTimelineTacticBucket!]!
+}
+
+type QuestTimelineTacticBucket {
+  tactic: TomeTactic!
+  count: Int!
 }
 `, BuiltIn: false},
 }
