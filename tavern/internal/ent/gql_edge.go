@@ -299,6 +299,27 @@ func (h *Host) Screenshots(
 	return h.QueryScreenshots().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (h *Host) FavoritedBy(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
+) (*UserConnection, error) {
+	opts := []UserPaginateOption{
+		WithUserOrder(orderBy),
+		WithUserFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[6][alias]
+	if nodes, err := h.NamedFavoritedBy(alias); err == nil || hasTotalCount {
+		pager, err := newUserPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &UserConnection{Edges: []*UserEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryFavoritedBy().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	result, err := hc.Edges.HostOrErr()
 	if IsNotLoaded(err) {
@@ -978,4 +999,25 @@ func (u *User) DeviceAuths(
 		return conn, nil
 	}
 	return u.QueryDeviceAuths().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) FavoriteHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
+) (*HostConnection, error) {
+	opts := []HostPaginateOption{
+		WithHostOrder(orderBy),
+		WithHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[3][alias]
+	if nodes, err := u.NamedFavoriteHosts(alias); err == nil || hasTotalCount {
+		pager, err := newHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryFavoriteHosts().Paginate(ctx, after, first, before, last, opts...)
 }

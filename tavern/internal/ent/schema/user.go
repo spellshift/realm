@@ -89,6 +89,12 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Device auths approved by the user."),
+		edge.To("favoriteHosts", Host.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Hosts favorited by the user."),
 	}
 }
 
