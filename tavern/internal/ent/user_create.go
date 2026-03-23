@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -141,6 +142,21 @@ func (uc *UserCreate) AddDeviceAuths(d ...*DeviceAuth) *UserCreate {
 		ids[i] = d[i].ID
 	}
 	return uc.AddDeviceAuthIDs(ids...)
+}
+
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uc *UserCreate) AddFavoriteHostIDs(ids ...int) *UserCreate {
+	uc.mutation.AddFavoriteHostIDs(ids...)
+	return uc
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uc *UserCreate) AddFavoriteHosts(h ...*Host) *UserCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uc.AddFavoriteHostIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -330,6 +346,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
