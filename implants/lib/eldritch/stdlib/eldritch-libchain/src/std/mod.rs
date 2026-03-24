@@ -25,10 +25,6 @@ impl StdChainLibrary {
 }
 
 impl ChainLibrary for StdChainLibrary {
-    fn uds(&self, path: String) -> Result<i64, String> {
-        chain_impl::uds(path, self.agent.clone()).map_err(|e| e.to_string())
-    }
-
     fn tcp(&self, addr: String) -> Result<i64, String> {
         chain_impl::tcp(addr, self.agent.clone()).map_err(|e| e.to_string())
     }

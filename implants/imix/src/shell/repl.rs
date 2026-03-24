@@ -5,7 +5,6 @@ use crate::agent::ImixAgent;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
-use eldritch_libchain::std::StdChainLibrary;
 use eldritch::repl::{Repl, ReplAction};
 use eldritch::{Interpreter, Printer, Span, Value};
 use pb::c2::{
@@ -283,7 +282,6 @@ pub async fn run_repl_reverse_shell(
                 Vec::new(),
                 backend,
             );
-        interpreter.register_lib(StdChainLibrary::new(Arc::new(agent.clone())));
 
         let mut repl = Repl::new();
         let stdout = VtWriter {

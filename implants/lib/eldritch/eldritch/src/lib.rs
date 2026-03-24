@@ -18,6 +18,7 @@ pub use eldritch_libregex as regex;
 pub use eldritch_libreport as report;
 pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
+pub use eldritch_libchain as chain;
 pub use eldritch_repl as repl;
 
 // Re-export core types
@@ -66,6 +67,8 @@ use crate::report::std::StdReportLibrary;
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
+#[cfg(feature = "stdlib")]
+use crate::chain::std::StdChainLibrary;
 
 #[cfg(feature = "fake_agent")]
 use crate::agent::fake::AgentLibraryFake;
@@ -115,8 +118,8 @@ impl Interpreter {
         }
     }
 
+    #[cfg(feature = "stdlib")]
     pub fn with_default_libs(mut self) -> Self {
-        #[cfg(feature = "stdlib")]
         {
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
@@ -172,6 +175,8 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
 
+        self.inner.register_lib(StdChainLibrary::new(agent.clone()));
+
         // Assets library
         let backend = Arc::new(crate::assets::std::AgentAssets::new(
             agent.clone(),
@@ -213,6 +218,8 @@ impl Interpreter {
 
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
+
+        self.inner.register_lib(StdChainLibrary::new(agent.clone()));
 
         let mut assets_lib = StdAssetsLibrary::new();
         // As with previously, remote assets can shadow the Embedded Assets

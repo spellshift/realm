@@ -343,10 +343,12 @@ impl ImixAgent {
                 let agent = self.clone();
                 self.runtime_handle.spawn(async move {
                     if let Ok(mut t) = agent.get_usable_transport().await {
-                        if let Err(e) = t.forward_raw(path.clone(), rx, tx).await {
-                            log::error!("Deferred forward_raw to {} failed: {}", path, e);
+                        if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
+                            #[cfg(debug_assertions)]
+                            log::error!("Deferred forward_raw to {} failed: {}", path, _e);
                         }
                     } else {
+                        #[cfg(debug_assertions)]
                         log::error!(
                             "Failed to get transport for deferred forward_raw to {}",
                             path

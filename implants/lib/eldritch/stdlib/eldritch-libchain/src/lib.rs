@@ -2,25 +2,14 @@ extern crate alloc;
 
 use eldritch_macros::{eldritch_library, eldritch_method};
 
-pub mod uds_impl;
 pub mod tcp_impl;
 
 #[cfg(feature = "stdlib")]
 pub mod std;
 
 #[eldritch_library("chain")]
-/// The `chain` library provides UDS and TCP chaining capabilities.
+/// The `chain` library provides TCP chaining capabilities.
 pub trait ChainLibrary {
-    #[eldritch_method]
-    /// Starts the agent proxy serving C2 on a Unix Socket.
-    ///
-    /// **Parameters**
-    /// - `path` (`str`): The Unix Socket path to listen on.
-    ///
-    /// **Returns**
-    /// - `int` Error code or 0 on success.
-    fn uds(&self, path: String) -> Result<i64, String>;
-
     #[eldritch_method]
     /// Starts the agent proxy serving C2 over a TCP connection.
     ///
