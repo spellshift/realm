@@ -97,7 +97,7 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     let config = agent.get_transport_config().await;
 
     let transport: Box<dyn transport::Transport + Send + Sync> =
-        match crate::transport_factory::create_transport(config) {
+        match transport::create_transport(config) {
             Ok(t) => t,
             Err(_e) => {
                 #[cfg(debug_assertions)]

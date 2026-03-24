@@ -7,7 +7,6 @@ pub mod printer;
 pub mod run;
 pub mod shell;
 pub mod task;
-pub mod transport_factory;
 pub mod version;
 
 #[unsafe(no_mangle)]

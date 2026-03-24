@@ -29,7 +29,6 @@ mod shell;
 mod task;
 #[cfg(test)]
 mod tests;
-mod transport_factory;
 mod version;
 
 #[tokio::main]
