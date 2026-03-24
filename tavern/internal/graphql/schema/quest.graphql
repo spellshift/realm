@@ -1,0 +1,26 @@
+extend type Quest {
+  """
+  Computed list of unique task outputs and errors for this quest.
+  """
+  diffs: [TaskDiff!]! @goField(forceResolver: true)
+}
+
+"""
+Represents a group of tasks within a quest that share the same output and error.
+"""
+type TaskDiff {
+  """
+  List of Task IDs that share the same output and error.
+  """
+  ids: [ID!]!
+
+  """
+  The output shared by these tasks.
+  """
+  output: String
+
+  """
+  The error shared by these tasks.
+  """
+  error: String
+}

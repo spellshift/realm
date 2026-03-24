@@ -143,6 +143,16 @@ type SubmitTaskResultInput struct {
 	Error *string `json:"error,omitempty"`
 }
 
+// Represents a group of tasks within a quest that share the same output and error.
+type TaskDiff struct {
+	// List of Task IDs that share the same output and error.
+	Ids []int `json:"ids"`
+	// The output shared by these tasks.
+	Output *string `json:"output,omitempty"`
+	// The error shared by these tasks.
+	Error *string `json:"error,omitempty"`
+}
+
 type Role string
 
 const (
