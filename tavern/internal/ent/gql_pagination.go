@@ -15,6 +15,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -117,6 +118,374 @@ func paginateLimit(first, last *int) int {
 		limit = *last + 1
 	}
 	return limit
+}
+
+// AdventureEdge is the edge representation of Adventure.
+type AdventureEdge struct {
+	Node   *Adventure `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// AdventureConnection is the connection containing edges to Adventure.
+type AdventureConnection struct {
+	Edges      []*AdventureEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *AdventureConnection) build(nodes []*Adventure, pager *adventurePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Adventure
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Adventure {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Adventure {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*AdventureEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &AdventureEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// AdventurePaginateOption enables pagination customization.
+type AdventurePaginateOption func(*adventurePager) error
+
+// WithAdventureOrder configures pagination ordering.
+func WithAdventureOrder(order []*AdventureOrder) AdventurePaginateOption {
+	return func(pager *adventurePager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithAdventureFilter configures pagination filter.
+func WithAdventureFilter(filter func(*AdventureQuery) (*AdventureQuery, error)) AdventurePaginateOption {
+	return func(pager *adventurePager) error {
+		if filter == nil {
+			return errors.New("AdventureQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type adventurePager struct {
+	reverse bool
+	order   []*AdventureOrder
+	filter  func(*AdventureQuery) (*AdventureQuery, error)
+}
+
+func newAdventurePager(opts []AdventurePaginateOption, reverse bool) (*adventurePager, error) {
+	pager := &adventurePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *adventurePager) applyFilter(query *AdventureQuery) (*AdventureQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *adventurePager) toCursor(a *Adventure) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(a).Value)
+	}
+	return Cursor{ID: a.ID, Value: cs_}
+}
+
+func (p *adventurePager) applyCursors(query *AdventureQuery, after, before *Cursor) (*AdventureQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultAdventureOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *adventurePager) applyOrder(query *AdventureQuery) *AdventureQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultAdventureOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultAdventureOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *adventurePager) orderExpr(query *AdventureQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultAdventureOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Adventure.
+func (a *AdventureQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...AdventurePaginateOption,
+) (*AdventureConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newAdventurePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if a, err = pager.applyFilter(a); err != nil {
+		return nil, err
+	}
+	conn := &AdventureConnection{Edges: []*AdventureEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := a.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if a, err = pager.applyCursors(a, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		a.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := a.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	a = pager.applyOrder(a)
+	nodes, err := a.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// AdventureOrderFieldCreatedAt orders Adventure by created_at.
+	AdventureOrderFieldCreatedAt = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.CreatedAt, nil
+		},
+		column: adventure.FieldCreatedAt,
+		toTerm: adventure.ByCreatedAt,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.CreatedAt,
+			}
+		},
+	}
+	// AdventureOrderFieldLastModifiedAt orders Adventure by last_modified_at.
+	AdventureOrderFieldLastModifiedAt = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.LastModifiedAt, nil
+		},
+		column: adventure.FieldLastModifiedAt,
+		toTerm: adventure.ByLastModifiedAt,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.LastModifiedAt,
+			}
+		},
+	}
+	// AdventureOrderFieldName orders Adventure by name.
+	AdventureOrderFieldName = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.Name, nil
+		},
+		column: adventure.FieldName,
+		toTerm: adventure.ByName,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f AdventureOrderField) String() string {
+	var str string
+	switch f.column {
+	case AdventureOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case AdventureOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case AdventureOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f AdventureOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *AdventureOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("AdventureOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *AdventureOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *AdventureOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *AdventureOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid AdventureOrderField", str)
+	}
+	return nil
+}
+
+// AdventureOrderField defines the ordering field of Adventure.
+type AdventureOrderField struct {
+	// Value extracts the ordering value from the given Adventure.
+	Value    func(*Adventure) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) adventure.OrderOption
+	toCursor func(*Adventure) Cursor
+}
+
+// AdventureOrder defines the ordering of Adventure.
+type AdventureOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *AdventureOrderField `json:"field"`
+}
+
+// DefaultAdventureOrder is the default ordering of Adventure.
+var DefaultAdventureOrder = &AdventureOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.ID, nil
+		},
+		column: adventure.FieldID,
+		toTerm: adventure.ByID,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{ID: a.ID}
+		},
+	},
+}
+
+// ToEdge converts Adventure into AdventureEdge.
+func (a *Adventure) ToEdge(order *AdventureOrder) *AdventureEdge {
+	if order == nil {
+		order = DefaultAdventureOrder
+	}
+	return &AdventureEdge{
+		Node:   a,
+		Cursor: order.Field.toCursor(a),
+	}
 }
 
 // AssetEdge is the edge representation of Asset.

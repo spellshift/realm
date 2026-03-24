@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -48,6 +49,7 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeAdventure      = "Adventure"
 	TypeAsset          = "Asset"
 	TypeBeacon         = "Beacon"
 	TypeBuildProfile   = "BuildProfile"
@@ -71,6 +73,533 @@ const (
 	TypeTome           = "Tome"
 	TypeUser           = "User"
 )
+
+// AdventureMutation represents an operation that mutates the Adventure nodes in the graph.
+type AdventureMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	name             *string
+	clearedFields    map[string]struct{}
+	quests           map[int]struct{}
+	removedquests    map[int]struct{}
+	clearedquests    bool
+	done             bool
+	oldValue         func(context.Context) (*Adventure, error)
+	predicates       []predicate.Adventure
+}
+
+var _ ent.Mutation = (*AdventureMutation)(nil)
+
+// adventureOption allows management of the mutation configuration using functional options.
+type adventureOption func(*AdventureMutation)
+
+// newAdventureMutation creates new mutation for the Adventure entity.
+func newAdventureMutation(c config, op Op, opts ...adventureOption) *AdventureMutation {
+	m := &AdventureMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAdventure,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAdventureID sets the ID field of the mutation.
+func withAdventureID(id int) adventureOption {
+	return func(m *AdventureMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Adventure
+		)
+		m.oldValue = func(ctx context.Context) (*Adventure, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Adventure.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAdventure sets the old Adventure of the mutation.
+func withAdventure(node *Adventure) adventureOption {
+	return func(m *AdventureMutation) {
+		m.oldValue = func(context.Context) (*Adventure, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AdventureMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AdventureMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AdventureMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AdventureMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Adventure.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AdventureMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AdventureMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Adventure entity.
+// If the Adventure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdventureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AdventureMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *AdventureMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *AdventureMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Adventure entity.
+// If the Adventure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdventureMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *AdventureMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetName sets the "name" field.
+func (m *AdventureMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *AdventureMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Adventure entity.
+// If the Adventure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdventureMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *AdventureMutation) ResetName() {
+	m.name = nil
+}
+
+// AddQuestIDs adds the "quests" edge to the Quest entity by ids.
+func (m *AdventureMutation) AddQuestIDs(ids ...int) {
+	if m.quests == nil {
+		m.quests = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.quests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearQuests clears the "quests" edge to the Quest entity.
+func (m *AdventureMutation) ClearQuests() {
+	m.clearedquests = true
+}
+
+// QuestsCleared reports if the "quests" edge to the Quest entity was cleared.
+func (m *AdventureMutation) QuestsCleared() bool {
+	return m.clearedquests
+}
+
+// RemoveQuestIDs removes the "quests" edge to the Quest entity by IDs.
+func (m *AdventureMutation) RemoveQuestIDs(ids ...int) {
+	if m.removedquests == nil {
+		m.removedquests = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.quests, ids[i])
+		m.removedquests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedQuests returns the removed IDs of the "quests" edge to the Quest entity.
+func (m *AdventureMutation) RemovedQuestsIDs() (ids []int) {
+	for id := range m.removedquests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// QuestsIDs returns the "quests" edge IDs in the mutation.
+func (m *AdventureMutation) QuestsIDs() (ids []int) {
+	for id := range m.quests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetQuests resets all changes to the "quests" edge.
+func (m *AdventureMutation) ResetQuests() {
+	m.quests = nil
+	m.clearedquests = false
+	m.removedquests = nil
+}
+
+// Where appends a list predicates to the AdventureMutation builder.
+func (m *AdventureMutation) Where(ps ...predicate.Adventure) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AdventureMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AdventureMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Adventure, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AdventureMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AdventureMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Adventure).
+func (m *AdventureMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AdventureMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, adventure.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, adventure.FieldLastModifiedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, adventure.FieldName)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AdventureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case adventure.FieldCreatedAt:
+		return m.CreatedAt()
+	case adventure.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case adventure.FieldName:
+		return m.Name()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AdventureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case adventure.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case adventure.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case adventure.FieldName:
+		return m.OldName(ctx)
+	}
+	return nil, fmt.Errorf("unknown Adventure field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdventureMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case adventure.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case adventure.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case adventure.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Adventure field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AdventureMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AdventureMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdventureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Adventure numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AdventureMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AdventureMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AdventureMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Adventure nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AdventureMutation) ResetField(name string) error {
+	switch name {
+	case adventure.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case adventure.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case adventure.FieldName:
+		m.ResetName()
+		return nil
+	}
+	return fmt.Errorf("unknown Adventure field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AdventureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.quests != nil {
+		edges = append(edges, adventure.EdgeQuests)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AdventureMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case adventure.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.quests))
+		for id := range m.quests {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AdventureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedquests != nil {
+		edges = append(edges, adventure.EdgeQuests)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AdventureMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case adventure.EdgeQuests:
+		ids := make([]ent.Value, 0, len(m.removedquests))
+		for id := range m.removedquests {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AdventureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedquests {
+		edges = append(edges, adventure.EdgeQuests)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AdventureMutation) EdgeCleared(name string) bool {
+	switch name {
+	case adventure.EdgeQuests:
+		return m.clearedquests
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AdventureMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Adventure unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AdventureMutation) ResetEdge(name string) error {
+	switch name {
+	case adventure.EdgeQuests:
+		m.ResetQuests()
+		return nil
+	}
+	return fmt.Errorf("unknown Adventure edge %s", name)
+}
 
 // AssetMutation represents an operation that mutates the Asset nodes in the graph.
 type AssetMutation struct {
@@ -12341,6 +12870,13 @@ type QuestMutation struct {
 	clearedcreator         bool
 	scheduled_task         *int
 	clearedscheduled_task  bool
+	adventure              *int
+	clearedadventure       bool
+	related_quests         map[int]struct{}
+	removedrelated_quests  map[int]struct{}
+	clearedrelated_quests  bool
+	previous_quest         *int
+	clearedprevious_quest  bool
 	done                   bool
 	oldValue               func(context.Context) (*Quest, error)
 	predicates             []predicate.Quest
@@ -12909,6 +13445,138 @@ func (m *QuestMutation) ResetScheduledTask() {
 	m.clearedscheduled_task = false
 }
 
+// SetAdventureID sets the "adventure" edge to the Adventure entity by id.
+func (m *QuestMutation) SetAdventureID(id int) {
+	m.adventure = &id
+}
+
+// ClearAdventure clears the "adventure" edge to the Adventure entity.
+func (m *QuestMutation) ClearAdventure() {
+	m.clearedadventure = true
+}
+
+// AdventureCleared reports if the "adventure" edge to the Adventure entity was cleared.
+func (m *QuestMutation) AdventureCleared() bool {
+	return m.clearedadventure
+}
+
+// AdventureID returns the "adventure" edge ID in the mutation.
+func (m *QuestMutation) AdventureID() (id int, exists bool) {
+	if m.adventure != nil {
+		return *m.adventure, true
+	}
+	return
+}
+
+// AdventureIDs returns the "adventure" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AdventureID instead. It exists only for internal usage by the builders.
+func (m *QuestMutation) AdventureIDs() (ids []int) {
+	if id := m.adventure; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAdventure resets all changes to the "adventure" edge.
+func (m *QuestMutation) ResetAdventure() {
+	m.adventure = nil
+	m.clearedadventure = false
+}
+
+// AddRelatedQuestIDs adds the "related_quests" edge to the Quest entity by ids.
+func (m *QuestMutation) AddRelatedQuestIDs(ids ...int) {
+	if m.related_quests == nil {
+		m.related_quests = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.related_quests[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRelatedQuests clears the "related_quests" edge to the Quest entity.
+func (m *QuestMutation) ClearRelatedQuests() {
+	m.clearedrelated_quests = true
+}
+
+// RelatedQuestsCleared reports if the "related_quests" edge to the Quest entity was cleared.
+func (m *QuestMutation) RelatedQuestsCleared() bool {
+	return m.clearedrelated_quests
+}
+
+// RemoveRelatedQuestIDs removes the "related_quests" edge to the Quest entity by IDs.
+func (m *QuestMutation) RemoveRelatedQuestIDs(ids ...int) {
+	if m.removedrelated_quests == nil {
+		m.removedrelated_quests = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.related_quests, ids[i])
+		m.removedrelated_quests[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRelatedQuests returns the removed IDs of the "related_quests" edge to the Quest entity.
+func (m *QuestMutation) RemovedRelatedQuestsIDs() (ids []int) {
+	for id := range m.removedrelated_quests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RelatedQuestsIDs returns the "related_quests" edge IDs in the mutation.
+func (m *QuestMutation) RelatedQuestsIDs() (ids []int) {
+	for id := range m.related_quests {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRelatedQuests resets all changes to the "related_quests" edge.
+func (m *QuestMutation) ResetRelatedQuests() {
+	m.related_quests = nil
+	m.clearedrelated_quests = false
+	m.removedrelated_quests = nil
+}
+
+// SetPreviousQuestID sets the "previous_quest" edge to the Quest entity by id.
+func (m *QuestMutation) SetPreviousQuestID(id int) {
+	m.previous_quest = &id
+}
+
+// ClearPreviousQuest clears the "previous_quest" edge to the Quest entity.
+func (m *QuestMutation) ClearPreviousQuest() {
+	m.clearedprevious_quest = true
+}
+
+// PreviousQuestCleared reports if the "previous_quest" edge to the Quest entity was cleared.
+func (m *QuestMutation) PreviousQuestCleared() bool {
+	return m.clearedprevious_quest
+}
+
+// PreviousQuestID returns the "previous_quest" edge ID in the mutation.
+func (m *QuestMutation) PreviousQuestID() (id int, exists bool) {
+	if m.previous_quest != nil {
+		return *m.previous_quest, true
+	}
+	return
+}
+
+// PreviousQuestIDs returns the "previous_quest" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PreviousQuestID instead. It exists only for internal usage by the builders.
+func (m *QuestMutation) PreviousQuestIDs() (ids []int) {
+	if id := m.previous_quest; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPreviousQuest resets all changes to the "previous_quest" edge.
+func (m *QuestMutation) ResetPreviousQuest() {
+	m.previous_quest = nil
+	m.clearedprevious_quest = false
+}
+
 // Where appends a list predicates to the QuestMutation builder.
 func (m *QuestMutation) Where(ps ...predicate.Quest) {
 	m.predicates = append(m.predicates, ps...)
@@ -13148,7 +13816,7 @@ func (m *QuestMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *QuestMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
 	if m.tome != nil {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -13163,6 +13831,15 @@ func (m *QuestMutation) AddedEdges() []string {
 	}
 	if m.scheduled_task != nil {
 		edges = append(edges, quest.EdgeScheduledTask)
+	}
+	if m.adventure != nil {
+		edges = append(edges, quest.EdgeAdventure)
+	}
+	if m.related_quests != nil {
+		edges = append(edges, quest.EdgeRelatedQuests)
+	}
+	if m.previous_quest != nil {
+		edges = append(edges, quest.EdgePreviousQuest)
 	}
 	return edges
 }
@@ -13193,15 +13870,32 @@ func (m *QuestMutation) AddedIDs(name string) []ent.Value {
 		if id := m.scheduled_task; id != nil {
 			return []ent.Value{*id}
 		}
+	case quest.EdgeAdventure:
+		if id := m.adventure; id != nil {
+			return []ent.Value{*id}
+		}
+	case quest.EdgeRelatedQuests:
+		ids := make([]ent.Value, 0, len(m.related_quests))
+		for id := range m.related_quests {
+			ids = append(ids, id)
+		}
+		return ids
+	case quest.EdgePreviousQuest:
+		if id := m.previous_quest; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *QuestMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
 	if m.removedtasks != nil {
 		edges = append(edges, quest.EdgeTasks)
+	}
+	if m.removedrelated_quests != nil {
+		edges = append(edges, quest.EdgeRelatedQuests)
 	}
 	return edges
 }
@@ -13216,13 +13910,19 @@ func (m *QuestMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case quest.EdgeRelatedQuests:
+		ids := make([]ent.Value, 0, len(m.removedrelated_quests))
+		for id := range m.removedrelated_quests {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *QuestMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 8)
 	if m.clearedtome {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -13237,6 +13937,15 @@ func (m *QuestMutation) ClearedEdges() []string {
 	}
 	if m.clearedscheduled_task {
 		edges = append(edges, quest.EdgeScheduledTask)
+	}
+	if m.clearedadventure {
+		edges = append(edges, quest.EdgeAdventure)
+	}
+	if m.clearedrelated_quests {
+		edges = append(edges, quest.EdgeRelatedQuests)
+	}
+	if m.clearedprevious_quest {
+		edges = append(edges, quest.EdgePreviousQuest)
 	}
 	return edges
 }
@@ -13255,6 +13964,12 @@ func (m *QuestMutation) EdgeCleared(name string) bool {
 		return m.clearedcreator
 	case quest.EdgeScheduledTask:
 		return m.clearedscheduled_task
+	case quest.EdgeAdventure:
+		return m.clearedadventure
+	case quest.EdgeRelatedQuests:
+		return m.clearedrelated_quests
+	case quest.EdgePreviousQuest:
+		return m.clearedprevious_quest
 	}
 	return false
 }
@@ -13274,6 +13989,12 @@ func (m *QuestMutation) ClearEdge(name string) error {
 		return nil
 	case quest.EdgeScheduledTask:
 		m.ClearScheduledTask()
+		return nil
+	case quest.EdgeAdventure:
+		m.ClearAdventure()
+		return nil
+	case quest.EdgePreviousQuest:
+		m.ClearPreviousQuest()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest unique edge %s", name)
@@ -13297,6 +14018,15 @@ func (m *QuestMutation) ResetEdge(name string) error {
 		return nil
 	case quest.EdgeScheduledTask:
 		m.ResetScheduledTask()
+		return nil
+	case quest.EdgeAdventure:
+		m.ResetAdventure()
+		return nil
+	case quest.EdgeRelatedQuests:
+		m.ResetRelatedQuests()
+		return nil
+	case quest.EdgePreviousQuest:
+		m.ResetPreviousQuest()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest edge %s", name)

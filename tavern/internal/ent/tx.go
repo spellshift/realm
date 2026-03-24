@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Adventure is the client for interacting with the Adventure builders.
+	Adventure *AdventureClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
@@ -187,6 +189,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Adventure = NewAdventureClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
 	tx.BuildProfile = NewBuildProfileClient(tx.config)
@@ -218,7 +221,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Asset.QueryXXX(), the query will be executed
+// applies a query, for example: Adventure.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.
