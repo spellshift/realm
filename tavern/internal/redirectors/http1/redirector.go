@@ -42,6 +42,7 @@ func (r *Redirector) Redirect(ctx context.Context, listenOn string, upstream *gr
 		Handler:   closeConnectionMiddleware(mux),
 		TLSConfig: tlsConfig,
 	}
+	srv.SetKeepAlivesEnabled(false)
 
 	if tlsConfig != nil {
 		slog.Debug("http1 redirector: TLS enabled", "listen_on", listenOn, "min_version", tlsConfig.MinVersion, "num_certificates", len(tlsConfig.Certificates))
