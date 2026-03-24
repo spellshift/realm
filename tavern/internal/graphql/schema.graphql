@@ -7215,6 +7215,15 @@ extend type Query {
   ): ScheduledTaskConnection! @requireRole(role: USER)
   me: User!
 }
+type TaskDiff {
+    ids: [ID!]!
+    output: String
+    error: String
+}
+
+extend type Quest {
+    diffs: [TaskDiff!]! @goField(forceResolver: true)
+}
 scalar Time
 scalar Uint64
 extend type User {

@@ -143,6 +143,12 @@ type SubmitTaskResultInput struct {
 	Error *string `json:"error,omitempty"`
 }
 
+type TaskDiff struct {
+	Ids    []int   `json:"ids"`
+	Output *string `json:"output,omitempty"`
+	Error  *string `json:"error,omitempty"`
+}
+
 type Role string
 
 const (
