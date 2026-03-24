@@ -18,14 +18,6 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
         .ok_or_else(|| anyhow!("No transports configured"))?;
 
     match TransportType::try_from(transport_type) {
-        Ok(TransportType::TransportUds) => {
-            #[cfg(feature = "uds")]
-            return Ok(Box::new(
-                pro_transports::uds::UdsTransport::new(config)?,
-            ));
-            #[cfg(not(feature = "uds"))]
-            return Err(anyhow!("UDS transport not enabled (build with --features uds)"));
-        }
         _ => transport::create_transport(config),
     }
 }

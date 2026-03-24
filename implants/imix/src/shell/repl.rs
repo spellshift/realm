@@ -5,6 +5,7 @@ use crate::agent::ImixAgent;
 use crossterm::{QueueableCommand, cursor, terminal};
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
+use eldritch_libchain::std::StdChainLibrary;
 use eldritch::repl::{Repl, ReplAction};
 use eldritch::{Interpreter, Printer, Span, Value};
 use pb::c2::{
@@ -17,7 +18,6 @@ use transport::Transport;
 use eldritch_agent::Context;
 
 use super::parser::InputParser;
-use eldritch_pro_utils::register_pro_interpreter;
 
 struct VtWriter {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
@@ -283,10 +283,7 @@ pub async fn run_repl_reverse_shell(
                 Vec::new(),
                 backend,
             );
-        register_pro_interpreter(
-            &mut interpreter,
-            Arc::new(agent.clone()) as Arc<dyn eldritch::agent::agent::Agent>,
-        );
+        interpreter.register_lib(StdChainLibrary::new(Arc::new(agent.clone())));
 
         let mut repl = Repl::new();
         let stdout = VtWriter {

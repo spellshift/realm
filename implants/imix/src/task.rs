@@ -1,5 +1,4 @@
 use alloc::collections::BTreeMap;
-use eldritch_pro_utils::register_pro_interpreter;
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::SystemTime;
@@ -8,6 +7,7 @@ use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmbeddedAssets;
 use eldritch::{Interpreter, Value, conversion::ToValue};
 use eldritch_agent::Context;
+use eldritch_libchain::std::StdChainLibrary;
 use pb::c2::{
     ReportOutputRequest, ReportTaskOutputMessage, Task, TaskContext, TaskError, TaskOutput,
     report_output_request,
@@ -227,7 +227,7 @@ fn setup_interpreter(
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
     // Register Task Context (Agent, Report, Assets)
     interp = interp.with_context(agent.clone(), context, remote_assets, backend);
-    register_pro_interpreter(&mut interp, agent);
+    interp.register_lib(StdChainLibrary::new(agent.clone()));
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

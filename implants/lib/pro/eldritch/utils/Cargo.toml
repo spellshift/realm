@@ -1,9 +1,0 @@
-[package]
-name = "eldritch-pro-utils"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-eldritch = { workspace = true, features = ["std", "stdlib"] }
-eldritch-agent = { workspace = true }
-eldritch-libchain = { workspace = true, features = ["stdlib"] }

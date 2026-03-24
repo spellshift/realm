@@ -27,8 +27,6 @@ members = [
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
     "lib/eldritch/stdlib/eldritch-libchain",
-    "lib/pro/eldritch/utils",
-    "lib/pro/transports",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -65,14 +63,7 @@ portal-stream = { path = "lib/portals/portal-stream" }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 
-# Eldritch pro — eldritch libraries that expose pro-only scripting capabilities.
-# eldritch-libchain: provides the `chain.uds()` and `chain.tcp()` scripting primitives used by
-#   Agent A to accept connections from Agent B and proxy C2 traffic upstream.
-# pro-transports: provides UdsTransport and TcpBindTransport, the client-side gRPC transports
-#   used by Agent B to send its C2 requests through Agent A's socket.
 eldritch-libchain = {path = "lib/eldritch/stdlib/eldritch-libchain",default-features = false }
-eldritch-pro-utils = {path = "lib/pro/eldritch/utils", default-features = false}
-pro-transports = {path = "lib/pro/transports", default-features = false}
 
 aes = "0.8.3"
 allocative = "0.3.2"

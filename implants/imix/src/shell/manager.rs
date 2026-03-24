@@ -9,7 +9,7 @@ use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
 use eldritch::{Interpreter, Printer, Span, Value};
 use eldritch_agent::Context;
-use eldritch_pro_utils::register_pro_interpreter;
+use eldritch_libchain::std::StdChainLibrary;
 use pb::c2::{
     ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask, ShellTaskContext,
     ShellTaskOutput, TaskError, report_output_request,
@@ -267,10 +267,7 @@ impl ShellManager {
                 Vec::new(),
                 backend,
             );
-        register_pro_interpreter(
-            &mut interpreter,
-            agent.clone() as std::sync::Arc<dyn eldritch_agent::Agent>,
-        );
+        interpreter.register_lib(StdChainLibrary::new(agent.clone()));
 
         while let Some(cmd) = rx.blocking_recv() {
             match cmd {
