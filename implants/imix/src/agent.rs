@@ -311,7 +311,7 @@ impl ImixAgent {
         }
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t = crate::transport_factory::create_transport(config)
+        let t = transport::create_transport(config)
             .context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
