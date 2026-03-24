@@ -20,6 +20,10 @@ state: |
     VALUES (8003,7000,1337,NULL,"I failed entirely","1","2023-03-04 14:51:13","2023-03-04 14:51:13");
   INSERT INTO `tasks` (id, quest_tasks, task_beacon, output, error, output_size, created_at, last_modified_at)
     VALUES (8004,7000,1337,"","","1","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `tasks` (id, quest_tasks, task_beacon, output, error, output_size, created_at, last_modified_at)
+    VALUES (8005,7000,1337,"A ",NULL,"1","2023-03-04 14:51:13","2023-03-04 14:51:13");
+  INSERT INTO `tasks` (id, quest_tasks, task_beacon, output, error, output_size, created_at, last_modified_at)
+    VALUES (8006,7000,1337,"B","","1","2023-03-04 14:51:13","2023-03-04 14:51:13");
 requestor:
   session_token: secretToken
 query: |
@@ -49,12 +53,12 @@ expected:
             - ids: ["8003"]
               output: null
               error: "I failed entirely"
-            - ids: ["8000"]
+            - ids: ["8000", "8005"]
               output: "A"
               error: null
             - ids: ["8002"]
               output: "A"
               error: "also this happened"
-            - ids: ["8001"]
+            - ids: ["8001", "8006"]
               output: "B"
               error: null
