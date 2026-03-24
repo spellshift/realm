@@ -19,7 +19,7 @@ import (
 
 type MutationResolver interface {
 	DropAllData(ctx context.Context) (bool, error)
-	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error)
+	CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error)
 	UpdateBeacon(ctx context.Context, beaconID int, input ent.UpdateBeaconInput) (*ent.Beacon, error)
 	CreateShell(ctx context.Context, input ent.CreateShellInput) (*ent.Shell, error)
 	UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error)
@@ -95,6 +95,11 @@ func (ec *executionContext) field_Mutation_createQuest_args(ctx context.Context,
 		return nil, err
 	}
 	args["input"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "prevNodeID", ec.unmarshalOID2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["prevNodeID"] = arg2
 	return args, nil
 }
 
@@ -405,7 +410,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 		ec.fieldContext_Mutation_createQuest,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput))
+			return ec.resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput), fc.Args["prevNodeID"].(*int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -464,6 +469,12 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_creator(ctx, field)
 			case "scheduledTask":
 				return ec.fieldContext_Quest_scheduledTask(ctx, field)
+			case "adventure":
+				return ec.fieldContext_Quest_adventure(ctx, field)
+			case "relatedQuests":
+				return ec.fieldContext_Quest_relatedQuests(ctx, field)
+			case "previousQuest":
+				return ec.fieldContext_Quest_previousQuest(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},

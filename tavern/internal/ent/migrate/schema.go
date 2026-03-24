@@ -9,6 +9,19 @@ import (
 )
 
 var (
+	// AdventuresColumns holds the columns for the "adventures" table.
+	AdventuresColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+	}
+	// AdventuresTable holds the schema information for the "adventures" table.
+	AdventuresTable = &schema.Table{
+		Name:       "adventures",
+		Columns:    AdventuresColumns,
+		PrimaryKey: []*schema.Column{AdventuresColumns[0]},
+	}
 	// AssetsColumns holds the columns for the "assets" table.
 	AssetsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -432,9 +445,11 @@ var (
 		{Name: "parameters", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "param_defs_at_creation", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
 		{Name: "eldritch_at_creation", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "adventure_quests", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_tome", Type: field.TypeInt},
 		{Name: "quest_bundle", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_creator", Type: field.TypeInt, Nullable: true},
+		{Name: "quest_related_quests", Type: field.TypeInt, Nullable: true},
 		{Name: "scheduled_task_quests", Type: field.TypeInt, Nullable: true},
 	}
 	// QuestsTable holds the schema information for the "quests" table.
@@ -444,26 +459,38 @@ var (
 		PrimaryKey: []*schema.Column{QuestsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "quests_tomes_tome",
+				Symbol:     "quests_adventures_quests",
 				Columns:    []*schema.Column{QuestsColumns[7]},
+				RefColumns: []*schema.Column{AdventuresColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "quests_tomes_tome",
+				Columns:    []*schema.Column{QuestsColumns[8]},
 				RefColumns: []*schema.Column{TomesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "quests_assets_bundle",
-				Columns:    []*schema.Column{QuestsColumns[8]},
+				Columns:    []*schema.Column{QuestsColumns[9]},
 				RefColumns: []*schema.Column{AssetsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "quests_users_creator",
-				Columns:    []*schema.Column{QuestsColumns[9]},
+				Columns:    []*schema.Column{QuestsColumns[10]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
+				Symbol:     "quests_quests_related_quests",
+				Columns:    []*schema.Column{QuestsColumns[11]},
+				RefColumns: []*schema.Column{QuestsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
 				Symbol:     "quests_scheduled_tasks_quests",
-				Columns:    []*schema.Column{QuestsColumns[10]},
+				Columns:    []*schema.Column{QuestsColumns[12]},
 				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -844,6 +871,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AdventuresTable,
 		AssetsTable,
 		BeaconsTable,
 		BuildProfilesTable,
@@ -874,6 +902,9 @@ var (
 )
 
 func init() {
+	AdventuresTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
 	AssetsTable.ForeignKeys[0].RefTable = UsersTable
 	AssetsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
@@ -935,10 +966,12 @@ func init() {
 	PortalsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	QuestsTable.ForeignKeys[0].RefTable = TomesTable
-	QuestsTable.ForeignKeys[1].RefTable = AssetsTable
-	QuestsTable.ForeignKeys[2].RefTable = UsersTable
-	QuestsTable.ForeignKeys[3].RefTable = ScheduledTasksTable
+	QuestsTable.ForeignKeys[0].RefTable = AdventuresTable
+	QuestsTable.ForeignKeys[1].RefTable = TomesTable
+	QuestsTable.ForeignKeys[2].RefTable = AssetsTable
+	QuestsTable.ForeignKeys[3].RefTable = UsersTable
+	QuestsTable.ForeignKeys[4].RefTable = QuestsTable
+	QuestsTable.ForeignKeys[5].RefTable = ScheduledTasksTable
 	QuestsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
