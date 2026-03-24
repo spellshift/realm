@@ -197,4 +197,13 @@ impl Agent for MockAgent {
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
         Ok(())
     }
+
+    fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
 }

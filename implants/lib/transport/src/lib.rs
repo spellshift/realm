@@ -22,6 +22,11 @@ mod mock;
 #[cfg(feature = "mock")]
 pub use mock::MockTransport;
 
+#[cfg(feature = "tcp-bind")]
+mod tcp_bind;
+#[cfg(feature = "tcp-bind")]
+pub use tcp_bind::TcpBindTransport;
+
 mod transport;
 pub use transport::Transport;
 
@@ -72,6 +77,15 @@ pub fn create_transport(config: Config) -> Result<Box<dyn Transport + Send + Syn
             return Ok(Box::new(dns::DNS::new(config)?));
             #[cfg(not(feature = "dns"))]
             return Err(anyhow!("DNS transport not enabled"));
+        }
+        Ok(TransportType::TransportUds) => {
+            Err(anyhow!("UDS transport is provided by pro-transports"))
+        }
+        Ok(TransportType::TransportTcpBind) => {
+            #[cfg(feature = "tcp-bind")]
+            return Ok(Box::new(tcp_bind::TcpBindTransport::new(config)?));
+            #[cfg(not(feature = "tcp-bind"))]
+            return Err(anyhow!("TCP Bind transport not enabled"));
         }
         Ok(TransportType::TransportUnspecified) | Err(_) => {
             Err(anyhow!("Invalid or unspecified transport type"))

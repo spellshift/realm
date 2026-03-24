@@ -108,7 +108,16 @@ impl Agent for MockAgent {
     fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
         Ok(())
     }
-    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }

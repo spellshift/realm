@@ -27,6 +27,8 @@ message Transport {
         TRANSPORT_GRPC = 1;
         TRANSPORT_HTTP1 = 2;
         TRANSPORT_DNS = 3;
+        TRANSPORT_UDS = 4;
+        TRANSPORT_TCP_BIND = 5;
     }
 
     Type type = 3;

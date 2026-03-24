@@ -153,4 +153,14 @@ pub trait Transport: Send + Sync {
     /// Returns a list of available transports that this instance can switch to or supports.
     #[allow(dead_code)]
     fn list_available(&self) -> Vec<String>;
+
+    /// Forward raw (pre-encrypted) bytes bidirectionally over a gRPC stream.
+    /// Used by chained transports (Agent A) to proxy C2 traffic from Agent B.
+    #[allow(dead_code)]
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()>;
 }

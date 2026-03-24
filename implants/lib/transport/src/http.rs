@@ -567,6 +567,115 @@ impl Transport for HTTP {
         "http"
     }
 
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        let uri = self.build_uri(&path)?;
+        let parts: Vec<&str> = path.split('/').collect();
+        let method_name = *parts.get(2).unwrap_or(&"");
+
+        match method_name {
+            "ClaimTasks" | "ReportCredential" | "ReportProcessList" | "ReportOutput" => {
+                let req_bytes = rx
+                    .recv()
+                    .await
+                    .ok_or_else(|| anyhow::anyhow!("No input for unary call"))?;
+                let req = self
+                    .request_builder(uri)
+                    .body(hyper_legacy::Body::from(req_bytes))
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let body_bytes = Self::read_response_body(response).await?;
+                tx.send(body_bytes.to_vec())
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+            }
+            "FetchAsset" => {
+                let req_bytes = rx
+                    .recv()
+                    .await
+                    .ok_or_else(|| anyhow::anyhow!("No input for FetchAsset"))?;
+                let req = self
+                    .request_builder(uri)
+                    .body(hyper_legacy::Body::from(req_bytes))
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let mut body = response.into_body();
+                let mut buffer = BytesMut::new();
+
+                loop {
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        let chunk = encrypted_message.to_vec();
+                        tx.send(chunk)
+                            .await
+                            .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+                    }
+
+                    match body.data().await {
+                        Some(Ok(chunk)) => {
+                            buffer.extend_from_slice(&chunk);
+                        }
+                        Some(Err(err)) => {
+                            return Err(anyhow::anyhow!("Failed to read chunk: {}", err))
+                        }
+                        None => break,
+                    }
+                }
+            }
+            "ReportFile" => {
+                let (mut req_tx, body) = hyper_legacy::Body::channel();
+
+                tokio::spawn(async move {
+                    while let Some(req_chunk) = rx.recv().await {
+                        let frame_header =
+                            grpc_frame::FrameHeader::new(req_chunk.len() as u32);
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(
+                                frame_header.encode().to_vec(),
+                            ))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(req_chunk))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                });
+
+                let req = self
+                    .request_builder(uri)
+                    .body(body)
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let body_bytes = Self::read_response_body(response).await?;
+                tx.send(body_bytes.to_vec())
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "Unsupported HTTP method for raw forwarding: {}",
+                    method_name
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn list_available(&self) -> Vec<String> {
         vec!["http".to_string()]
     }

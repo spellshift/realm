@@ -17,6 +17,7 @@ use transport::Transport;
 use eldritch_agent::Context;
 
 use super::parser::InputParser;
+use eldritch_pro_utils::register_pro_interpreter;
 
 struct VtWriter {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
@@ -276,7 +277,16 @@ pub async fn run_repl_reverse_shell(
         let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_context(Arc::new(agent), context.clone(), Vec::new(), backend); // Changed to with_context
+            .with_context(
+                Arc::new(agent.clone()) as Arc<dyn eldritch::agent::agent::Agent>,
+                context.clone(),
+                Vec::new(),
+                backend,
+            );
+        register_pro_interpreter(
+            &mut interpreter,
+            Arc::new(agent.clone()) as Arc<dyn eldritch::agent::agent::Agent>,
+        );
 
         let mut repl = Repl::new();
         let stdout = VtWriter {
