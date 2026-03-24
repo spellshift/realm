@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
@@ -36,9 +37,11 @@ type Quest struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the QuestQuery when eager-loading is set.
 	Edges                 QuestEdges `json:"edges"`
+	adventure_quests      *int
 	quest_tome            *int
 	quest_bundle          *int
 	quest_creator         *int
+	quest_related_quests  *int
 	scheduled_task_quests *int
 	selectValues          sql.SelectValues
 }
@@ -55,13 +58,20 @@ type QuestEdges struct {
 	Creator *User `json:"creator,omitempty"`
 	// The scheduled task that created this quest, if any.
 	ScheduledTask *ScheduledTask `json:"scheduled_task,omitempty"`
+	// Adventure that this quest belongs to
+	Adventure *Adventure `json:"adventure,omitempty"`
+	// Quests that are related to this quest
+	RelatedQuests []*Quest `json:"related_quests,omitempty"`
+	// The previous quest in the adventure
+	PreviousQuest *Quest `json:"previous_quest,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [8]bool
 	// totalCount holds the count of the edges above.
-	totalCount [5]map[string]int
+	totalCount [8]map[string]int
 
-	namedTasks map[string][]*Task
+	namedTasks         map[string][]*Task
+	namedRelatedQuests map[string][]*Quest
 }
 
 // TomeOrErr returns the Tome value or an error if the edge
@@ -117,6 +127,37 @@ func (e QuestEdges) ScheduledTaskOrErr() (*ScheduledTask, error) {
 	return nil, &NotLoadedError{edge: "scheduled_task"}
 }
 
+// AdventureOrErr returns the Adventure value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e QuestEdges) AdventureOrErr() (*Adventure, error) {
+	if e.Adventure != nil {
+		return e.Adventure, nil
+	} else if e.loadedTypes[5] {
+		return nil, &NotFoundError{label: adventure.Label}
+	}
+	return nil, &NotLoadedError{edge: "adventure"}
+}
+
+// RelatedQuestsOrErr returns the RelatedQuests value or an error if the edge
+// was not loaded in eager-loading.
+func (e QuestEdges) RelatedQuestsOrErr() ([]*Quest, error) {
+	if e.loadedTypes[6] {
+		return e.RelatedQuests, nil
+	}
+	return nil, &NotLoadedError{edge: "related_quests"}
+}
+
+// PreviousQuestOrErr returns the PreviousQuest value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e QuestEdges) PreviousQuestOrErr() (*Quest, error) {
+	if e.PreviousQuest != nil {
+		return e.PreviousQuest, nil
+	} else if e.loadedTypes[7] {
+		return nil, &NotFoundError{label: quest.Label}
+	}
+	return nil, &NotLoadedError{edge: "previous_quest"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Quest) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -128,13 +169,17 @@ func (*Quest) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case quest.FieldCreatedAt, quest.FieldLastModifiedAt:
 			values[i] = new(sql.NullTime)
-		case quest.ForeignKeys[0]: // quest_tome
+		case quest.ForeignKeys[0]: // adventure_quests
 			values[i] = new(sql.NullInt64)
-		case quest.ForeignKeys[1]: // quest_bundle
+		case quest.ForeignKeys[1]: // quest_tome
 			values[i] = new(sql.NullInt64)
-		case quest.ForeignKeys[2]: // quest_creator
+		case quest.ForeignKeys[2]: // quest_bundle
 			values[i] = new(sql.NullInt64)
-		case quest.ForeignKeys[3]: // scheduled_task_quests
+		case quest.ForeignKeys[3]: // quest_creator
+			values[i] = new(sql.NullInt64)
+		case quest.ForeignKeys[4]: // quest_related_quests
+			values[i] = new(sql.NullInt64)
+		case quest.ForeignKeys[5]: // scheduled_task_quests
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -195,26 +240,40 @@ func (q *Quest) assignValues(columns []string, values []any) error {
 			}
 		case quest.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field adventure_quests", value)
+			} else if value.Valid {
+				q.adventure_quests = new(int)
+				*q.adventure_quests = int(value.Int64)
+			}
+		case quest.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_tome", value)
 			} else if value.Valid {
 				q.quest_tome = new(int)
 				*q.quest_tome = int(value.Int64)
 			}
-		case quest.ForeignKeys[1]:
+		case quest.ForeignKeys[2]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_bundle", value)
 			} else if value.Valid {
 				q.quest_bundle = new(int)
 				*q.quest_bundle = int(value.Int64)
 			}
-		case quest.ForeignKeys[2]:
+		case quest.ForeignKeys[3]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field quest_creator", value)
 			} else if value.Valid {
 				q.quest_creator = new(int)
 				*q.quest_creator = int(value.Int64)
 			}
-		case quest.ForeignKeys[3]:
+		case quest.ForeignKeys[4]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field quest_related_quests", value)
+			} else if value.Valid {
+				q.quest_related_quests = new(int)
+				*q.quest_related_quests = int(value.Int64)
+			}
+		case quest.ForeignKeys[5]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field scheduled_task_quests", value)
 			} else if value.Valid {
@@ -257,6 +316,21 @@ func (q *Quest) QueryCreator() *UserQuery {
 // QueryScheduledTask queries the "scheduled_task" edge of the Quest entity.
 func (q *Quest) QueryScheduledTask() *ScheduledTaskQuery {
 	return NewQuestClient(q.config).QueryScheduledTask(q)
+}
+
+// QueryAdventure queries the "adventure" edge of the Quest entity.
+func (q *Quest) QueryAdventure() *AdventureQuery {
+	return NewQuestClient(q.config).QueryAdventure(q)
+}
+
+// QueryRelatedQuests queries the "related_quests" edge of the Quest entity.
+func (q *Quest) QueryRelatedQuests() *QuestQuery {
+	return NewQuestClient(q.config).QueryRelatedQuests(q)
+}
+
+// QueryPreviousQuest queries the "previous_quest" edge of the Quest entity.
+func (q *Quest) QueryPreviousQuest() *QuestQuery {
+	return NewQuestClient(q.config).QueryPreviousQuest(q)
 }
 
 // Update returns a builder for updating this Quest.
@@ -324,6 +398,30 @@ func (q *Quest) appendNamedTasks(name string, edges ...*Task) {
 		q.Edges.namedTasks[name] = []*Task{}
 	} else {
 		q.Edges.namedTasks[name] = append(q.Edges.namedTasks[name], edges...)
+	}
+}
+
+// NamedRelatedQuests returns the RelatedQuests named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (q *Quest) NamedRelatedQuests(name string) ([]*Quest, error) {
+	if q.Edges.namedRelatedQuests == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := q.Edges.namedRelatedQuests[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (q *Quest) appendNamedRelatedQuests(name string, edges ...*Quest) {
+	if q.Edges.namedRelatedQuests == nil {
+		q.Edges.namedRelatedQuests = make(map[string][]*Quest)
+	}
+	if len(edges) == 0 {
+		q.Edges.namedRelatedQuests[name] = []*Quest{}
+	} else {
+		q.Edges.namedRelatedQuests[name] = append(q.Edges.namedRelatedQuests[name], edges...)
 	}
 }
 

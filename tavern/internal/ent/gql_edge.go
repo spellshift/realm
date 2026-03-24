@@ -8,6 +8,27 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (a *Adventure) Quests(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*QuestOrder, where *QuestWhereInput,
+) (*QuestConnection, error) {
+	opts := []QuestPaginateOption{
+		WithQuestOrder(orderBy),
+		WithQuestFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := a.Edges.totalCount[0][alias]
+	if nodes, err := a.NamedQuests(alias); err == nil || hasTotalCount {
+		pager, err := newQuestPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &QuestConnection{Edges: []*QuestEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return a.QueryQuests().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (a *Asset) Tomes(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
 ) (*TomeConnection, error) {
@@ -510,6 +531,43 @@ func (q *Quest) ScheduledTask(ctx context.Context) (*ScheduledTask, error) {
 	result, err := q.Edges.ScheduledTaskOrErr()
 	if IsNotLoaded(err) {
 		result, err = q.QueryScheduledTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (q *Quest) Adventure(ctx context.Context) (*Adventure, error) {
+	result, err := q.Edges.AdventureOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryAdventure().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (q *Quest) RelatedQuests(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*QuestOrder, where *QuestWhereInput,
+) (*QuestConnection, error) {
+	opts := []QuestPaginateOption{
+		WithQuestOrder(orderBy),
+		WithQuestFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := q.Edges.totalCount[6][alias]
+	if nodes, err := q.NamedRelatedQuests(alias); err == nil || hasTotalCount {
+		pager, err := newQuestPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &QuestConnection{Edges: []*QuestEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return q.QueryRelatedQuests().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (q *Quest) PreviousQuest(ctx context.Context) (*Quest, error) {
+	result, err := q.Edges.PreviousQuestOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryPreviousQuest().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
