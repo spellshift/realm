@@ -97,12 +97,13 @@ The `docs/_docs/` folder contains three guides:
 
 ## Eldritch Standard Library
 
-The Eldritch DSL provides 12 modules:
+The Eldritch DSL provides 13 modules:
 
 | Module    | Purpose                              |
 |-----------|--------------------------------------|
 | `agent`   | Agent metadata and control           |
 | `assets`  | Embedded file access                 |
+| `chain`   | Multi-agent chaining                 |
 | `crypto`  | Encryption, decryption, hashing      |
 | `file`    | File system operations               |
 | `http`    | HTTP/HTTPS requests                  |
