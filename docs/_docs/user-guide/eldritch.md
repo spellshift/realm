@@ -459,6 +459,37 @@ The **assets.read** method returns a UTF-8 string representation of the asset fi
 
 ---
 
+## Chain
+
+The `chain` library enables multi-agent chaining by allowing one agent (Agent A) to proxy C2 traffic for another agent (Agent B). This is useful for establishing communication through intermediary agents in restricted networks.
+
+### chain.tcp
+
+`chain.tcp(addr: str) -> int`
+
+The **chain.tcp** method establishes a chain proxy over TCP, allowing Agent A to forward C2 messages to/from Agent B. Agent A connects to Agent B's bind TCP transport listener at the specified address and proxies gRPC traffic over HTTP/2.
+
+**Parameters:**
+- `addr`: The address and port where Agent B is listening for chain connections (e.g., `"192.168.1.100:8443"`)
+
+**Returns:**
+- `0` on successful initialization (the proxy runs asynchronously in the background)
+
+**Example:**
+
+```python
+# Agent A connects to Agent B's bind TCP listener and starts proxying traffic
+chain.tcp("192.168.1.100:8443")
+
+# Now Agent B's C2 messages flow through Agent A to Tavern
+```
+
+**Usage Pattern:**
+
+Agent A must have one of the standard transports (grpc, http1, dns) configured for its upstream connection to Tavern. Agent B is configured with a TCP bind transport to accept connections from Agent A on a TCP port.
+
+---
+
 ## Crypto
 
 The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing.

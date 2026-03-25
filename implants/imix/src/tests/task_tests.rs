@@ -22,6 +22,7 @@ impl MockAgent {
     }
 }
 
+#[async_trait::async_trait]
 impl Agent for MockAgent {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(vec![])
@@ -108,7 +109,16 @@ impl Agent for MockAgent {
     fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
         Ok(())
     }
-    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }

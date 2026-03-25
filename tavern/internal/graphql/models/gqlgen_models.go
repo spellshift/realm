@@ -12,6 +12,7 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/tome"
 )
 
 // Input for a tome configuration in a build profile.
@@ -101,6 +102,21 @@ type ImportRepositoryInput struct {
 	// Optionally, specify directories to include.
 	// Only tomes that have a main.eldritch in one of these directory prefixes will be included.
 	IncludeDirs []string `json:"includeDirs,omitempty"`
+}
+
+type Metrics struct {
+	QuestTimelineChart []*QuestTimelineBucket `json:"questTimelineChart"`
+}
+
+type QuestTimelineBucket struct {
+	Count          int                          `json:"count"`
+	StartTimestamp time.Time                    `json:"startTimestamp"`
+	GroupByTactic  []*QuestTimelineTacticBucket `json:"groupByTactic"`
+}
+
+type QuestTimelineTacticBucket struct {
+	Tactic tome.Tactic `json:"tactic"`
+	Count  int         `json:"count"`
 }
 
 // Output returned when registering a new builder.

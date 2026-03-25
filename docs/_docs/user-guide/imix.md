@@ -131,7 +131,7 @@ For more complex setups, such as configuring multiple transports or specifying d
 ```yaml
 transports:
   - URI: <string>
-    type: <grpc|http1|dns|icmp>
+    type: <grpc|http1|dns|icmp|tcp_bind>
     interval: <integer> # optional, seconds
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
@@ -150,6 +150,10 @@ transports:
     type: "grpc"
     interval: 5
     extra: ""
+  - URI: "http1://127.0.0.1:8080"
+    type: "http1"
+    interval: 5
+    extra: ""
   - URI: "dns://*"
     type: "dns"
     interval: 10
@@ -163,7 +167,7 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, `icmp`, and `tcp_bind`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
@@ -207,6 +211,36 @@ This transport doesn't support eldritch functions that require bi-directional st
 
 *Note*: TXT records provide the best performance.
 
+### tcp_bind
+
+The TCP Bind transport inverts the traditional C2 communication model: instead of the agent connecting outbound to the server, the agent binds to a local TCP port and waits for an upstream agent (or redirector) to connect inward.
+
+**Use Cases:**
+- Agent chaining: An upstream agent (Agent A) connects to a downstream agent's (Agent B) TCP bind port to proxy its C2 traffic
+- Network egress restrictions: When agents can't initiate outbound connections but can receive inbound connections
+- Multi-stage deployments: Establishing secure communication tunnels between agent stages
+
+**Configuration:**
+
+```yaml
+transports:
+  - type: tcp_bind
+    uri: tcp://0.0.0.0:8443    # Bind address and port
+```
+
+**Parameters:**
+- `uri`: The local address and port to bind on (e.g., `tcp://0.0.0.0:8443`). Use `0.0.0.0` to listen on all interfaces, or specify a specific IP for local-only binding.
+
+**Important Notes:**
+
+- **Inverted Nature**: The agent binds and listens; upstream agents or redirectors must initiate the connection. This reverses the typical agent-to-server model.
+- **Secure Channel**: TCP Bind is treated as a trusted local channel. Messages are sent as plain protobuf over the TCP connection; encryption (ChaCha20) is applied by the upstream agent when forwarding to Tavern.
+- **Agent Chaining**: Use with `chain.tcp()` in Eldritch to have one agent proxy traffic for another. For example:
+  - Agent B binds on `tcp://0.0.0.0:8443` with TCP Bind transport
+  - Agent A uses Eldritch to call `chain.tcp("192.168.1.100:8443")` to connect to Agent B
+  - Agent A proxies all of Agent B's C2 traffic upstream to Tavern
+- **Connection Persistence**: The TCP connection is maintained and reused across multiple C2 cycles. If the connection drops, a new upstream connection must be initiated.
+- **Not Suitable for Wide-Area Networks**: This transport is designed for local or trusted network chaining. For remote communication, use standard grpc, http1, or dns transports.
 
 ### icmp
 

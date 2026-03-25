@@ -26,7 +26,7 @@ fn create_interp() -> Interpreter {
     }
     #[cfg(not(feature = "stdlib"))]
     {
-        Interpreter::new().with_default_libs()
+        Interpreter::new()
     }
 }
 

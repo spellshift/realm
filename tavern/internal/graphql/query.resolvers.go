@@ -46,6 +46,23 @@ func (r *queryResolver) Quests(ctx context.Context, after *entgql.Cursor[int], f
 	return query.Paginate(ctx, after, first, before, last, ent.WithQuestOrder(orderBy))
 }
 
+// Adventures is the resolver for the adventures field.
+func (r *queryResolver) Adventures(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AdventureOrder, where *ent.AdventureWhereInput) (*ent.AdventureConnection, error) {
+	query, err := r.client.Adventure.Query().CollectFields(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect fields: %w", err)
+	}
+	if where != nil {
+		predicate, err := where.P()
+		if err != nil {
+			return nil, fmt.Errorf("failed to process where clause: %w", err)
+		}
+		query.Where(predicate)
+	}
+
+	return query.Paginate(ctx, after, first, before, last, ent.WithAdventureOrder(orderBy))
+}
+
 // Tasks is the resolver for the tasks field.
 func (r *queryResolver) Tasks(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) (*ent.TaskConnection, error) {
 	query, err := r.client.Task.Query().CollectFields(ctx)

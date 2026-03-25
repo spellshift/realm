@@ -724,6 +724,29 @@ func HasScreenshotsWith(preds ...predicate.Screenshot) predicate.Host {
 	})
 }
 
+// HasFavoritedBy applies the HasEdge predicate on the "favoritedBy" edge.
+func HasFavoritedBy() predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, FavoritedByTable, FavoritedByPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFavoritedByWith applies the HasEdge predicate on the "favoritedBy" edge with a given conditions (other predicates).
+func HasFavoritedByWith(preds ...predicate.User) predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := newFavoritedByStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Host) predicate.Host {
 	return predicate.Host(sql.AndPredicates(predicates...))

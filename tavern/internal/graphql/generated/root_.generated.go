@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"sync/atomic"
+	"time"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
@@ -36,6 +37,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	HostFile() HostFileResolver
+	Metrics() MetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	ShellTask() ShellTaskResolver
@@ -48,6 +50,25 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Adventure struct {
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Quests         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
+	}
+
+	AdventureConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	AdventureEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Asset struct {
 		CreatedAt      func(childComplexity int) int
 		Creator        func(childComplexity int) int
@@ -218,6 +239,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
 		ExternalIP     func(childComplexity int) int
+		FavoritedBy    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
 		ID             func(childComplexity int) int
 		Identifier     func(childComplexity int) int
@@ -347,11 +369,15 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Metrics struct {
+		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
+	}
+
 	Mutation struct {
 		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput) int
+		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
 		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
 		CreateScheduledTask  func(childComplexity int, input ent.CreateScheduledTaskInput) int
 		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
@@ -362,9 +388,11 @@ type ComplexityRoot struct {
 		DisableLink          func(childComplexity int, linkID int) int
 		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
 		DropAllData          func(childComplexity int) int
+		FavoriteHost         func(childComplexity int, hostID int) int
 		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
 		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
 		ResetUserAPIKey      func(childComplexity int) int
+		UnfavoriteHost       func(childComplexity int, hostID int) int
 		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
 		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
 		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
@@ -404,6 +432,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Adventures     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AdventureOrder, where *ent.AdventureWhereInput) int
 		Assets         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.AssetOrder, where *ent.AssetWhereInput) int
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		BuildProfiles  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuildProfileOrder, where *ent.BuildProfileWhereInput) int
@@ -411,6 +440,7 @@ type ComplexityRoot struct {
 		Builders       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BuilderOrder, where *ent.BuilderWhereInput) int
 		Hosts          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		Me             func(childComplexity int) int
+		Metrics        func(childComplexity int) int
 		Node           func(childComplexity int, id int) int
 		Nodes          func(childComplexity int, ids []int) int
 		Portals        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.PortalOrder, where *ent.PortalWhereInput) int
@@ -425,6 +455,7 @@ type ComplexityRoot struct {
 	}
 
 	Quest struct {
+		Adventure           func(childComplexity int) int
 		Bundle              func(childComplexity int) int
 		CreatedAt           func(childComplexity int) int
 		Creator             func(childComplexity int) int
@@ -434,6 +465,8 @@ type ComplexityRoot struct {
 		Name                func(childComplexity int) int
 		ParamDefsAtCreation func(childComplexity int) int
 		Parameters          func(childComplexity int) int
+		PreviousQuest       func(childComplexity int) int
+		RelatedQuests       func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.QuestOrder, where *ent.QuestWhereInput) int
 		ScheduledTask       func(childComplexity int) int
 		Tasks               func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TaskOrder, where *ent.TaskWhereInput) int
 		Tome                func(childComplexity int) int
@@ -448,6 +481,17 @@ type ComplexityRoot struct {
 	QuestEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	QuestTimelineBucket struct {
+		Count          func(childComplexity int) int
+		GroupByTactic  func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
+	QuestTimelineTacticBucket struct {
+		Count  func(childComplexity int) int
+		Tactic func(childComplexity int) int
 	}
 
 	RegisterBuilderOutput struct {
@@ -659,15 +703,16 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		APIKey       func(childComplexity int) int
-		ActiveShells func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
-		DeviceAuths  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
-		ID           func(childComplexity int) int
-		IsActivated  func(childComplexity int) int
-		IsAdmin      func(childComplexity int) int
-		Name         func(childComplexity int) int
-		PhotoURL     func(childComplexity int) int
-		Tomes        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
+		APIKey        func(childComplexity int) int
+		ActiveShells  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
+		DeviceAuths   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
+		FavoriteHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
+		ID            func(childComplexity int) int
+		IsActivated   func(childComplexity int) int
+		IsAdmin       func(childComplexity int) int
+		Name          func(childComplexity int) int
+		PhotoURL      func(childComplexity int) int
+		Tomes         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
 
 	UserConnection struct {
@@ -700,6 +745,81 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Adventure.createdAt":
+		if e.complexity.Adventure.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Adventure.CreatedAt(childComplexity), true
+
+	case "Adventure.id":
+		if e.complexity.Adventure.ID == nil {
+			break
+		}
+
+		return e.complexity.Adventure.ID(childComplexity), true
+
+	case "Adventure.lastModifiedAt":
+		if e.complexity.Adventure.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.Adventure.LastModifiedAt(childComplexity), true
+
+	case "Adventure.name":
+		if e.complexity.Adventure.Name == nil {
+			break
+		}
+
+		return e.complexity.Adventure.Name(childComplexity), true
+
+	case "Adventure.quests":
+		if e.complexity.Adventure.Quests == nil {
+			break
+		}
+
+		args, err := ec.field_Adventure_quests_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Adventure.Quests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
+	case "AdventureConnection.edges":
+		if e.complexity.AdventureConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.AdventureConnection.Edges(childComplexity), true
+
+	case "AdventureConnection.pageInfo":
+		if e.complexity.AdventureConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AdventureConnection.PageInfo(childComplexity), true
+
+	case "AdventureConnection.totalCount":
+		if e.complexity.AdventureConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.AdventureConnection.TotalCount(childComplexity), true
+
+	case "AdventureEdge.cursor":
+		if e.complexity.AdventureEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.AdventureEdge.Cursor(childComplexity), true
+
+	case "AdventureEdge.node":
+		if e.complexity.AdventureEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.AdventureEdge.Node(childComplexity), true
 
 	case "Asset.createdAt":
 		if e.complexity.Asset.CreatedAt == nil {
@@ -1499,6 +1619,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Host.ExternalIP(childComplexity), true
 
+	case "Host.favoritedby":
+		if e.complexity.Host.FavoritedBy == nil {
+			break
+		}
+
+		args, err := ec.field_Host_favoritedby_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Host.FavoritedBy(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
+
 	case "Host.files":
 		if e.complexity.Host.Files == nil {
 			break
@@ -2114,6 +2246,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.LinkEdge.Node(childComplexity), true
 
+	case "Metrics.questTimelineChart":
+		if e.complexity.Metrics.QuestTimelineChart == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_questTimelineChart_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Metrics.QuestTimelineChart(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.QuestWhereInput)), true
+
 	case "Mutation.createBuildTask":
 		if e.complexity.Mutation.CreateBuildTask == nil {
 			break
@@ -2160,7 +2304,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput)), true
+		return e.complexity.Mutation.CreateQuest(childComplexity, args["beaconIDs"].([]int), args["input"].(ent.CreateQuestInput), args["prevNodeID"].(*int)), true
 
 	case "Mutation.createRepository":
 		if e.complexity.Mutation.CreateRepository == nil {
@@ -2277,6 +2421,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.DropAllData(childComplexity), true
 
+	case "Mutation.favoriteHost":
+		if e.complexity.Mutation.FavoriteHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_favoriteHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FavoriteHost(childComplexity, args["hostID"].(int)), true
+
 	case "Mutation.importRepository":
 		if e.complexity.Mutation.ImportRepository == nil {
 			break
@@ -2307,6 +2463,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ResetUserAPIKey(childComplexity), true
+
+	case "Mutation.unfavoriteHost":
+		if e.complexity.Mutation.UnfavoriteHost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unfavoriteHost_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnfavoriteHost(childComplexity, args["hostID"].(int)), true
 
 	case "Mutation.updateBeacon":
 		if e.complexity.Mutation.UpdateBeacon == nil {
@@ -2511,6 +2679,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.PortalEdge.Node(childComplexity), true
 
+	case "Query.adventures":
+		if e.complexity.Query.Adventures == nil {
+			break
+		}
+
+		args, err := ec.field_Query_adventures_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Adventures(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.AdventureOrder), args["where"].(*ent.AdventureWhereInput)), true
+
 	case "Query.assets":
 		if e.complexity.Query.Assets == nil {
 			break
@@ -2589,6 +2769,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.metrics":
+		if e.complexity.Query.Metrics == nil {
+			break
+		}
+
+		return e.complexity.Query.Metrics(childComplexity), true
 
 	case "Query.node":
 		if e.complexity.Query.Node == nil {
@@ -2722,6 +2909,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.Users(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.UserOrder), args["where"].(*ent.UserWhereInput)), true
 
+	case "Quest.adventure":
+		if e.complexity.Quest.Adventure == nil {
+			break
+		}
+
+		return e.complexity.Quest.Adventure(childComplexity), true
+
 	case "Quest.bundle":
 		if e.complexity.Quest.Bundle == nil {
 			break
@@ -2785,6 +2979,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Quest.Parameters(childComplexity), true
 
+	case "Quest.previousQuest":
+		if e.complexity.Quest.PreviousQuest == nil {
+			break
+		}
+
+		return e.complexity.Quest.PreviousQuest(childComplexity), true
+
+	case "Quest.relatedQuests":
+		if e.complexity.Quest.RelatedQuests == nil {
+			break
+		}
+
+		args, err := ec.field_Quest_relatedQuests_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Quest.RelatedQuests(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.QuestOrder), args["where"].(*ent.QuestWhereInput)), true
+
 	case "Quest.scheduledTask":
 		if e.complexity.Quest.ScheduledTask == nil {
 			break
@@ -2845,6 +3058,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.QuestEdge.Node(childComplexity), true
+
+	case "QuestTimelineBucket.count":
+		if e.complexity.QuestTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.Count(childComplexity), true
+
+	case "QuestTimelineBucket.groupByTactic":
+		if e.complexity.QuestTimelineBucket.GroupByTactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.GroupByTactic(childComplexity), true
+
+	case "QuestTimelineBucket.startTimestamp":
+		if e.complexity.QuestTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "QuestTimelineTacticBucket.count":
+		if e.complexity.QuestTimelineTacticBucket.Count == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Count(childComplexity), true
+
+	case "QuestTimelineTacticBucket.tactic":
+		if e.complexity.QuestTimelineTacticBucket.Tactic == nil {
+			break
+		}
+
+		return e.complexity.QuestTimelineTacticBucket.Tactic(childComplexity), true
 
 	case "RegisterBuilderOutput.builder":
 		if e.complexity.RegisterBuilderOutput.Builder == nil {
@@ -3868,6 +4116,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.User.DeviceAuths(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.DeviceAuthOrder), args["where"].(*ent.DeviceAuthWhereInput)), true
 
+	case "User.favoritehosts":
+		if e.complexity.User.FavoriteHosts == nil {
+			break
+		}
+
+		args, err := ec.field_User_favoritehosts_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.FavoriteHosts(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostOrder), args["where"].(*ent.HostWhereInput)), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -3958,6 +4218,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputAdventureOrder,
+		ec.unmarshalInputAdventureWhereInput,
 		ec.unmarshalInputAssetOrder,
 		ec.unmarshalInputAssetWhereInput,
 		ec.unmarshalInputBeaconOrder,
@@ -3971,6 +4233,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBuilderOrder,
 		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
+		ec.unmarshalInputCreateAdventureInput,
 		ec.unmarshalInputCreateBuildProfileInput,
 		ec.unmarshalInputCreateBuildTaskInput,
 		ec.unmarshalInputCreateBuilderInput,
@@ -4132,6 +4395,166 @@ enum Role {
 }`, BuiltIn: false},
 	{Name: "../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+type Adventure implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Name of the adventure
+  """
+  name: String!
+  quests(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Quests returned from the connection.
+    """
+    orderBy: [QuestOrder!]
+
+    """
+    Filtering options for Quests returned from the connection.
+    """
+    where: QuestWhereInput
+  ): QuestConnection!
+}
+"""
+A connection to a list of items.
+"""
+type AdventureConnection {
+  """
+  A list of edges.
+  """
+  edges: [AdventureEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type AdventureEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Adventure
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Adventure connections
+"""
+input AdventureOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Adventures.
+  """
+  field: AdventureOrderField!
+}
+"""
+Properties by which Adventure connections can be ordered.
+"""
+enum AdventureOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  NAME
+}
+"""
+AdventureWhereInput is used for filtering Adventure objects.
+Input was generated by ent.
+"""
+input AdventureWhereInput {
+  not: AdventureWhereInput
+  and: [AdventureWhereInput!]
+  or: [AdventureWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  name field predicates
+  """
+  name: String
+  nameNEQ: String
+  nameIn: [String!]
+  nameNotIn: [String!]
+  nameGT: String
+  nameGTE: String
+  nameLT: String
+  nameLTE: String
+  nameContains: String
+  nameHasPrefix: String
+  nameHasSuffix: String
+  nameEqualFold: String
+  nameContainsFold: String
+  """
+  quests edge predicates
+  """
+  hasQuests: Boolean
+  hasQuestsWith: [QuestWhereInput!]
+}
 type Asset implements Node {
   id: ID!
   """
@@ -4543,6 +4966,8 @@ enum BeaconTransport_Type @goModel(model: "realm.pub/tavern/internal/c2/c2pb.Tra
   TRANSPORT_GRPC
   TRANSPORT_HTTP1
   TRANSPORT_ICMP
+  TRANSPORT_TCP_BIND
+  TRANSPORT_UDS
   TRANSPORT_UNSPECIFIED
 }
 """
@@ -5545,6 +5970,16 @@ input BuilderWhereInput {
   hasBuildtasksWith: [BuildTaskWhereInput!]
 }
 """
+CreateAdventureInput is used for create Adventure object.
+Input was generated by ent.
+"""
+input CreateAdventureInput {
+  """
+  Name of the adventure
+  """
+  name: String
+}
+"""
 CreateBuilderInput is used for create Builder object.
 Input was generated by ent.
 """
@@ -6138,6 +6573,37 @@ type Host implements Node {
     """
     where: ScreenshotWhereInput
   ): ScreenshotConnection!
+  favoritedby(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection! @goField(name: "FavoritedBy", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -7182,6 +7648,11 @@ input HostWhereInput {
   """
   hasScreenshots: Boolean
   hasScreenshotsWith: [ScreenshotWhereInput!]
+  """
+  favoritedBy edge predicates
+  """
+  hasFavoritedBy: Boolean
+  hasFavoritedByWith: [UserWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -7706,6 +8177,45 @@ type Quest implements Node {
   The scheduled task that created this quest, if any.
   """
   scheduledTask: ScheduledTask
+  """
+  Adventure that this quest belongs to
+  """
+  adventure: Adventure
+  relatedQuests(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Quests returned from the connection.
+    """
+    orderBy: [QuestOrder!]
+
+    """
+    Filtering options for Quests returned from the connection.
+    """
+    where: QuestWhereInput
+  ): QuestConnection!
+  """
+  The previous quest in the adventure
+  """
+  previousQuest: Quest
 }
 """
 A connection to a list of items.
@@ -7894,6 +8404,21 @@ input QuestWhereInput {
   """
   hasScheduledTask: Boolean
   hasScheduledTaskWith: [ScheduledTaskWhereInput!]
+  """
+  adventure edge predicates
+  """
+  hasAdventure: Boolean
+  hasAdventureWith: [AdventureWhereInput!]
+  """
+  related_quests edge predicates
+  """
+  hasRelatedQuests: Boolean
+  hasRelatedQuestsWith: [QuestWhereInput!]
+  """
+  previous_quest edge predicates
+  """
+  hasPreviousQuest: Boolean
+  hasPreviousQuestWith: [QuestWhereInput!]
 }
 type Repository implements Node {
   id: ID!
@@ -10057,6 +10582,9 @@ input UpdateHostInput {
   addScreenshotIDs: [ID!]
   removeScreenshotIDs: [ID!]
   clearScreenshots: Boolean
+  addFavoritedByIDs: [ID!]
+  removeFavoritedByIDs: [ID!]
+  clearFavoritedBy: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -10218,6 +10746,9 @@ input UpdateUserInput {
   addDeviceAuthIDs: [ID!]
   removeDeviceAuthIDs: [ID!]
   clearDeviceAuths: Boolean
+  addFavoriteHostIDs: [ID!]
+  removeFavoriteHostIDs: [ID!]
+  clearFavoriteHosts: Boolean
 }
 type User implements Node {
   id: ID!
@@ -10330,6 +10861,37 @@ type User implements Node {
     """
     where: DeviceAuthWhereInput
   ): DeviceAuthConnection!
+  favoritehosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -10456,6 +11018,11 @@ input UserWhereInput {
   """
   hasDeviceAuths: Boolean
   hasDeviceAuthsWith: [DeviceAuthWhereInput!]
+  """
+  favoriteHosts edge predicates
+  """
+  hasFavoriteHosts: Boolean
+  hasFavoriteHostsWith: [HostWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time
@@ -10500,6 +11067,25 @@ scalar Uint64
     """Filtering options for Quests returned from the connection."""
     where: QuestWhereInput
   ): QuestConnection! @requireRole(role: USER)
+  adventures(
+    """Returns the elements in the list that come after the specified cursor."""
+    after: Cursor
+
+    """Returns the first _n_ elements from the list."""
+    first: Int
+
+    """Returns the elements in the list that come before the specified cursor."""
+    before: Cursor
+
+    """Returns the last _n_ elements from the list."""
+    last: Int
+
+    """Ordering options for Adventures returned from the connection."""
+    orderBy: [AdventureOrder!]
+
+    """Filtering options for Adventures returned from the connection."""
+    where: AdventureWhereInput
+  ): AdventureConnection! @requireRole(role: USER)
   tasks(
     """Returns the elements in the list that come after the specified cursor."""
     after: Cursor
@@ -10759,7 +11345,7 @@ scalar Uint64
     ###
     # Quest
     ###
-    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!): Quest @requireRole(role: USER)
+    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!, prevNodeID: ID): Quest @requireRole(role: USER)
 
     ###
     # Beacon
@@ -10775,6 +11361,8 @@ scalar Uint64
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+    favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
@@ -11006,6 +11594,30 @@ type RegisterBuilderOutput {
 `, BuiltIn: false},
 	{Name: "../schema/user.graphql", Input: `extend type User {
   apiKey: String
+}
+`, BuiltIn: false},
+	{Name: "../schema/metrics.graphql", Input: `extend type Query {
+  metrics: Metrics! @requireRole(role: USER)
+}
+
+type Metrics {
+  questTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: QuestWhereInput
+  ): [QuestTimelineBucket!]!
+}
+
+type QuestTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByTactic: [QuestTimelineTacticBucket!]!
+}
+
+type QuestTimelineTacticBucket {
+  tactic: TomeTactic!
+  count: Int!
 }
 `, BuiltIn: false},
 }

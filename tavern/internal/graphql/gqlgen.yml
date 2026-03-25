@@ -6,6 +6,7 @@ schema:
   - schema/mutation.graphql
   - schema/inputs.graphql
   - schema/user.graphql
+  - schema/metrics.graphql
 
 model:
   package: models
@@ -67,3 +68,8 @@ models:
   BuildTaskTargetFormat:
     model:
       - realm.pub/tavern/internal/builder/builderpb.TargetFormat
+
+  Metrics:
+    fields:
+      questTimelineChart:
+        resolver: true

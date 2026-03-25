@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -44,6 +45,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Adventure is the client for interacting with the Adventure builders.
+	Adventure *AdventureClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
@@ -101,6 +104,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Adventure = NewAdventureClient(c.config)
 	c.Asset = NewAssetClient(c.config)
 	c.Beacon = NewBeaconClient(c.config)
 	c.BuildProfile = NewBuildProfileClient(c.config)
@@ -215,6 +219,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
+		Adventure:      NewAdventureClient(cfg),
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
 		BuildProfile:   NewBuildProfileClient(cfg),
@@ -256,6 +261,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:            ctx,
 		config:         cfg,
+		Adventure:      NewAdventureClient(cfg),
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
 		BuildProfile:   NewBuildProfileClient(cfg),
@@ -284,7 +290,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Asset.
+//		Adventure.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -307,10 +313,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
-		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
-		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.Adventure, c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder,
+		c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
+		c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell,
+		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -320,10 +326,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder, c.DeviceAuth, c.Host,
-		c.HostCredential, c.HostFile, c.HostProcess, c.Link, c.Portal, c.Quest,
-		c.Repository, c.ScheduledTask, c.Screenshot, c.Shell, c.ShellTask, c.Tag,
-		c.Task, c.Tome, c.User,
+		c.Adventure, c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder,
+		c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
+		c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell,
+		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -332,6 +338,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AdventureMutation:
+		return c.Adventure.mutate(ctx, m)
 	case *AssetMutation:
 		return c.Asset.mutate(ctx, m)
 	case *BeaconMutation:
@@ -378,6 +386,155 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AdventureClient is a client for the Adventure schema.
+type AdventureClient struct {
+	config
+}
+
+// NewAdventureClient returns a client for the Adventure from the given config.
+func NewAdventureClient(c config) *AdventureClient {
+	return &AdventureClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `adventure.Hooks(f(g(h())))`.
+func (c *AdventureClient) Use(hooks ...Hook) {
+	c.hooks.Adventure = append(c.hooks.Adventure, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `adventure.Intercept(f(g(h())))`.
+func (c *AdventureClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Adventure = append(c.inters.Adventure, interceptors...)
+}
+
+// Create returns a builder for creating a Adventure entity.
+func (c *AdventureClient) Create() *AdventureCreate {
+	mutation := newAdventureMutation(c.config, OpCreate)
+	return &AdventureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Adventure entities.
+func (c *AdventureClient) CreateBulk(builders ...*AdventureCreate) *AdventureCreateBulk {
+	return &AdventureCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AdventureClient) MapCreateBulk(slice any, setFunc func(*AdventureCreate, int)) *AdventureCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AdventureCreateBulk{err: fmt.Errorf("calling to AdventureClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AdventureCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AdventureCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Adventure.
+func (c *AdventureClient) Update() *AdventureUpdate {
+	mutation := newAdventureMutation(c.config, OpUpdate)
+	return &AdventureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AdventureClient) UpdateOne(a *Adventure) *AdventureUpdateOne {
+	mutation := newAdventureMutation(c.config, OpUpdateOne, withAdventure(a))
+	return &AdventureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AdventureClient) UpdateOneID(id int) *AdventureUpdateOne {
+	mutation := newAdventureMutation(c.config, OpUpdateOne, withAdventureID(id))
+	return &AdventureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Adventure.
+func (c *AdventureClient) Delete() *AdventureDelete {
+	mutation := newAdventureMutation(c.config, OpDelete)
+	return &AdventureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AdventureClient) DeleteOne(a *Adventure) *AdventureDeleteOne {
+	return c.DeleteOneID(a.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AdventureClient) DeleteOneID(id int) *AdventureDeleteOne {
+	builder := c.Delete().Where(adventure.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AdventureDeleteOne{builder}
+}
+
+// Query returns a query builder for Adventure.
+func (c *AdventureClient) Query() *AdventureQuery {
+	return &AdventureQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAdventure},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Adventure entity by its id.
+func (c *AdventureClient) Get(ctx context.Context, id int) (*Adventure, error) {
+	return c.Query().Where(adventure.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AdventureClient) GetX(ctx context.Context, id int) *Adventure {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryQuests queries the quests edge of a Adventure.
+func (c *AdventureClient) QueryQuests(a *Adventure) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(adventure.Table, adventure.FieldID, id),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, adventure.QuestsTable, adventure.QuestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AdventureClient) Hooks() []Hook {
+	return c.hooks.Adventure
+}
+
+// Interceptors returns the client interceptors.
+func (c *AdventureClient) Interceptors() []Interceptor {
+	return c.inters.Adventure
+}
+
+func (c *AdventureClient) mutate(ctx context.Context, m *AdventureMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AdventureCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AdventureUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AdventureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AdventureDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Adventure mutation op: %q", m.Op())
 	}
 }
 
@@ -1577,6 +1734,22 @@ func (c *HostClient) QueryScreenshots(h *Host) *ScreenshotQuery {
 	return query
 }
 
+// QueryFavoritedBy queries the favoritedBy edge of a Host.
+func (c *HostClient) QueryFavoritedBy(h *Host) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.FavoritedByTable, host.FavoritedByPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host
@@ -2705,6 +2878,54 @@ func (c *QuestClient) QueryScheduledTask(q *Quest) *ScheduledTaskQuery {
 			sqlgraph.From(quest.Table, quest.FieldID, id),
 			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, quest.ScheduledTaskTable, quest.ScheduledTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAdventure queries the adventure edge of a Quest.
+func (c *QuestClient) QueryAdventure(q *Quest) *AdventureQuery {
+	query := (&AdventureClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, id),
+			sqlgraph.To(adventure.Table, adventure.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.AdventureTable, quest.AdventureColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRelatedQuests queries the related_quests edge of a Quest.
+func (c *QuestClient) QueryRelatedQuests(q *Quest) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, id),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, quest.RelatedQuestsTable, quest.RelatedQuestsColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPreviousQuest queries the previous_quest edge of a Quest.
+func (c *QuestClient) QueryPreviousQuest(q *Quest) *QuestQuery {
+	query := (&QuestClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, id),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.PreviousQuestTable, quest.PreviousQuestColumn),
 		)
 		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
@@ -4457,6 +4678,22 @@ func (c *UserClient) QueryDeviceAuths(u *User) *DeviceAuthQuery {
 	return query
 }
 
+// QueryFavoriteHosts queries the favoriteHosts edge of a User.
+func (c *UserClient) QueryFavoriteHosts(u *User) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.FavoriteHostsTable, user.FavoriteHostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -4485,12 +4722,12 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
+		Adventure, Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
 		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
 		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
-		Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
+		Adventure, Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
 		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
 		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome,
 		User []ent.Interceptor

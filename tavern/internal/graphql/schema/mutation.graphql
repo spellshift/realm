@@ -7,7 +7,7 @@ type Mutation {
     ###
     # Quest
     ###
-    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!): Quest @requireRole(role: USER)
+    createQuest(beaconIDs: [ID!]!, input: CreateQuestInput!, prevNodeID: ID): Quest @requireRole(role: USER)
 
     ###
     # Beacon
@@ -23,6 +23,8 @@ type Mutation {
     # Host
     ###
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
+    favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag

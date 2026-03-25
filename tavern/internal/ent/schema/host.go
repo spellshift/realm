@@ -106,6 +106,13 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Screenshots reported from this host system."),
+		edge.From("favoritedBy", User.Type).
+			Ref("favoriteHosts").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Users who have favorited this host."),
 	}
 }
 

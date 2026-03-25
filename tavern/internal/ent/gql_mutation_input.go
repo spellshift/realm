@@ -12,6 +12,24 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
+// CreateAdventureInput represents a mutation input for creating adventures.
+type CreateAdventureInput struct {
+	Name *string
+}
+
+// Mutate applies the CreateAdventureInput on the AdventureMutation builder.
+func (i *CreateAdventureInput) Mutate(m *AdventureMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateAdventureInput on the AdventureCreate builder.
+func (c *AdventureCreate) SetInput(i CreateAdventureInput) *AdventureCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
 	LastModifiedAt *time.Time
@@ -128,27 +146,30 @@ func (c *DeviceAuthUpdateOne) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdat
 
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
-	LastModifiedAt      *time.Time
-	ClearName           bool
-	Name                *string
-	ClearTags           bool
-	AddTagIDs           []int
-	RemoveTagIDs        []int
-	ClearBeacons        bool
-	AddBeaconIDs        []int
-	RemoveBeaconIDs     []int
-	ClearFiles          bool
-	AddFileIDs          []int
-	RemoveFileIDs       []int
-	ClearProcesses      bool
-	AddProcessIDs       []int
-	RemoveProcessIDs    []int
-	ClearCredentials    bool
-	AddCredentialIDs    []int
-	RemoveCredentialIDs []int
-	ClearScreenshots    bool
-	AddScreenshotIDs    []int
-	RemoveScreenshotIDs []int
+	LastModifiedAt       *time.Time
+	ClearName            bool
+	Name                 *string
+	ClearTags            bool
+	AddTagIDs            []int
+	RemoveTagIDs         []int
+	ClearBeacons         bool
+	AddBeaconIDs         []int
+	RemoveBeaconIDs      []int
+	ClearFiles           bool
+	AddFileIDs           []int
+	RemoveFileIDs        []int
+	ClearProcesses       bool
+	AddProcessIDs        []int
+	RemoveProcessIDs     []int
+	ClearCredentials     bool
+	AddCredentialIDs     []int
+	RemoveCredentialIDs  []int
+	ClearScreenshots     bool
+	AddScreenshotIDs     []int
+	RemoveScreenshotIDs  []int
+	ClearFavoritedBy     bool
+	AddFavoritedByIDs    []int
+	RemoveFavoritedByIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -215,6 +236,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveScreenshotIDs; len(v) > 0 {
 		m.RemoveScreenshotIDs(v...)
+	}
+	if i.ClearFavoritedBy {
+		m.ClearFavoritedBy()
+	}
+	if v := i.AddFavoritedByIDs; len(v) > 0 {
+		m.AddFavoritedByIDs(v...)
+	}
+	if v := i.RemoveFavoritedByIDs; len(v) > 0 {
+		m.RemoveFavoritedByIDs(v...)
 	}
 }
 
@@ -680,19 +710,22 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name                 *string
-	PhotoURL             *string
-	IsActivated          *bool
-	IsAdmin              *bool
-	ClearTomes           bool
-	AddTomeIDs           []int
-	RemoveTomeIDs        []int
-	ClearActiveShells    bool
-	AddActiveShellIDs    []int
-	RemoveActiveShellIDs []int
-	ClearDeviceAuths     bool
-	AddDeviceAuthIDs     []int
-	RemoveDeviceAuthIDs  []int
+	Name                  *string
+	PhotoURL              *string
+	IsActivated           *bool
+	IsAdmin               *bool
+	ClearTomes            bool
+	AddTomeIDs            []int
+	RemoveTomeIDs         []int
+	ClearActiveShells     bool
+	AddActiveShellIDs     []int
+	RemoveActiveShellIDs  []int
+	ClearDeviceAuths      bool
+	AddDeviceAuthIDs      []int
+	RemoveDeviceAuthIDs   []int
+	ClearFavoriteHosts    bool
+	AddFavoriteHostIDs    []int
+	RemoveFavoriteHostIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -735,6 +768,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveDeviceAuthIDs; len(v) > 0 {
 		m.RemoveDeviceAuthIDs(v...)
+	}
+	if i.ClearFavoriteHosts {
+		m.ClearFavoriteHosts()
+	}
+	if v := i.AddFavoriteHostIDs; len(v) > 0 {
+		m.AddFavoriteHostIDs(v...)
+	}
+	if v := i.RemoveFavoriteHostIDs; len(v) > 0 {
+		m.RemoveFavoriteHostIDs(v...)
 	}
 }
 

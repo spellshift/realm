@@ -1148,6 +1148,17 @@ impl Transport for DNS {
         "dns"
     }
 
+    async fn forward_raw(
+        &mut self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!(
+            "DNS transport does not support raw forwarding"
+        ))
+    }
+
     fn list_available(&self) -> Vec<String> {
         vec!["dns".to_string()]
     }
