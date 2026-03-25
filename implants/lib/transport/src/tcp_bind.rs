@@ -2,8 +2,8 @@ use crate::Transport;
 use anyhow::{anyhow, Result};
 use pb::c2::*;
 use pb::config::Config;
-use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
+use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::GrpcMethod;
@@ -173,20 +173,17 @@ impl Transport for TcpBindTransport {
     ) -> Result<()> {
         let resp = self.fetch_asset_impl(request).await?;
         let mut stream = resp.into_inner();
-        tokio::spawn(async move {
-            loop {
-                let msg = match stream.message().await {
-                    Ok(maybe_msg) => match maybe_msg {
-                        Some(msg) => msg,
-                        None => break,
-                    },
-                    Err(_) => return,
-                };
-                if tx.send(msg).is_err() {
-                    return;
+        loop {
+            match stream.message().await {
+                Ok(Some(msg)) => {
+                    if tx.send(msg).is_err() {
+                        break;
+                    }
                 }
+                Ok(None) => break,
+                Err(_) => break,
             }
-        });
+        }
         Ok(())
     }
 
@@ -290,7 +287,9 @@ impl Transport for TcpBindTransport {
         _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
         _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
     ) -> Result<()> {
-        Err(anyhow!("TCP Bind transport raw forwarding not implemented yet"))
+        Err(anyhow!(
+            "TCP Bind transport raw forwarding not implemented yet"
+        ))
     }
 
     fn list_available(&self) -> Vec<String> {
@@ -392,8 +391,7 @@ impl TcpBindTransport {
     ) -> std::result::Result<tonic::Response<ReportProcessListResponse>, tonic::Status> {
         self.check_ready().await?;
         let codec = pb::xchacha::ChachaCodec::default();
-        let path =
-            tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
+        let path = tonic::codegen::http::uri::PathAndQuery::from_static(REPORT_PROCESS_LIST_PATH);
         let mut req = request.into_request();
         req.extensions_mut()
             .insert(GrpcMethod::new("c2.C2", "ReportProcessList"));

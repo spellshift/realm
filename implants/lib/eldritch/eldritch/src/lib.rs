@@ -8,6 +8,7 @@ extern crate std;
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
+pub use eldritch_libchain as chain;
 pub use eldritch_libcrypto as crypto;
 pub use eldritch_libfile as file;
 pub use eldritch_libhttp as http;
@@ -18,7 +19,6 @@ pub use eldritch_libregex as regex;
 pub use eldritch_libreport as report;
 pub use eldritch_libsys as sys;
 pub use eldritch_libtime as time;
-pub use eldritch_libchain as chain;
 pub use eldritch_repl as repl;
 
 // Re-export core types
@@ -48,6 +48,8 @@ pub use crate::assets::std::EmptyAssets;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
 #[cfg(feature = "stdlib")]
+use crate::chain::std::StdChainLibrary;
+#[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
 #[cfg(feature = "stdlib")]
 use crate::file::std::StdFileLibrary;
@@ -67,8 +69,6 @@ use crate::report::std::StdReportLibrary;
 use crate::sys::std::StdSysLibrary;
 #[cfg(feature = "stdlib")]
 use crate::time::std::StdTimeLibrary;
-#[cfg(feature = "stdlib")]
-use crate::chain::std::StdChainLibrary;
 
 #[cfg(feature = "fake_agent")]
 use crate::agent::fake::AgentLibraryFake;

@@ -22,6 +22,7 @@ impl MockAgent {
     }
 }
 
+#[async_trait::async_trait]
 impl Agent for MockAgent {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(vec![])
@@ -112,7 +113,7 @@ impl Agent for MockAgent {
         Ok(())
     }
 
-    fn forward_raw(
+    async fn forward_raw(
         &self,
         _path: String,
         _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,

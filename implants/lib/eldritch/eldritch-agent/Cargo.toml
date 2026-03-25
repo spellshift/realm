@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 pb = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
+async-trait = { workspace = true }

