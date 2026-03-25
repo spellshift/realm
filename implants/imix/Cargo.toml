@@ -7,11 +7,12 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns", "doh"]
+default = ["install", "grpc", "http1", "dns", "doh", "tcp-bind"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
+tcp-bind = ["transport/tcp-bind"]
 win_service = []
 install = []
 tokio-console = ["dep:console-subscriber", "tokio/tracing"]
@@ -43,6 +44,7 @@ rust-embed = { workspace = true }
 console-subscriber = { workspace = true, optional = true }
 rand = { workspace = true }
 async-trait = { workspace = true }
+eldritch-libchain = { workspace = true, features = ["stdlib"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-service = { workspace = true }

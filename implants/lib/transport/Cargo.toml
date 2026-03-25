@@ -10,6 +10,7 @@ doh = ["dep:hickory-resolver"]
 http1 = ["pb/http1"]
 dns = ["dep:base32", "dep:rand", "dep:hickory-resolver", "dep:url"]
 mock = ["dep:mockall"]
+tcp-bind = ["tokio-stream/net"]
 
 [dependencies]
 pb = { workspace = true }

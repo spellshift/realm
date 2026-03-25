@@ -26,6 +26,7 @@ members = [
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
+    "lib/eldritch/stdlib/eldritch-libchain",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -58,6 +59,11 @@ eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-fe
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
+
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
+
+eldritch-libchain = {path = "lib/eldritch/stdlib/eldritch-libchain",default-features = false }
 
 aes = "0.8.3"
 allocative = "0.3.2"

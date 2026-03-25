@@ -261,7 +261,7 @@ impl ShellManager {
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
             .with_context(
-                agent.clone(),
+                agent.clone() as std::sync::Arc<dyn eldritch_agent::Agent>,
                 Context::ShellTask(shell_task_context),
                 Vec::new(),
                 backend,

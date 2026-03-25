@@ -94,6 +94,7 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
         "https1" => crate::c2::transport::Type::TransportHttp1,
         "https" => crate::c2::transport::Type::TransportGrpc,
         "http" => crate::c2::transport::Type::TransportGrpc,
+        "tcp" => crate::c2::transport::Type::TransportTcpBind,
         _ => crate::c2::transport::Type::TransportUnspecified,
     }
 }
