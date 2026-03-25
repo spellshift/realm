@@ -667,9 +667,20 @@ impl Transport for ICMP {
             .next()
             .unwrap_or("127.0.0.1");
 
-        let server_addr: Ipv4Addr = host
-            .parse()
-            .with_context(|| format!("invalid ICMP server address: {}", host))?;
+        let server_addr: Ipv4Addr = if let Ok(addr) = host.parse::<Ipv4Addr>() {
+            addr
+        } else {
+            use std::net::ToSocketAddrs;
+            format!("{}:0", host)
+                .to_socket_addrs()
+                .with_context(|| format!("failed to resolve ICMP server address: {}", host))?
+                .filter_map(|a| match a.ip() {
+                    std::net::IpAddr::V4(v4) => Some(v4),
+                    _ => None,
+                })
+                .next()
+                .with_context(|| format!("no IPv4 address found for ICMP server: {}", host))?
+        };
 
         let icmp_id: u16 = rand::thread_rng().gen();
 
@@ -826,6 +837,15 @@ impl Transport for ICMP {
 
     fn list_available(&self) -> Vec<String> {
         vec!["icmp".to_string()]
+    }
+
+    async fn forward_raw(
+        &mut self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        Err(anyhow!("ICMP transport does not support raw forwarding"))
     }
 }
 
