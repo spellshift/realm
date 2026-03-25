@@ -216,7 +216,7 @@ const TaskProcesses: FC<TaskProcessesProps> = ({ taskId, hostId }) => {
                 minHeight="200px"
                 minWidth="600px"
             />
-            <div className="flex justify-end py-1">
+            <div className="flex justify-end py-2">
                 <Link
                     to={`/hosts/${hostId}?tab=processes`}
                     className="inline-flex items-center gap-1 text-sm semi-bold text-gray-800 hover:text-purple-800"
