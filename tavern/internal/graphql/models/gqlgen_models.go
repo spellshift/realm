@@ -144,9 +144,10 @@ type SubmitTaskResultInput struct {
 }
 
 type TaskDiff struct {
-	Ids    []int   `json:"ids"`
-	Output *string `json:"output,omitempty"`
-	Error  *string `json:"error,omitempty"`
+	Ids            []int            `json:"ids"`
+	Output         *string          `json:"output,omitempty"`
+	Error          *string          `json:"error,omitempty"`
+	StructuredData []StructuredData `json:"structuredData"`
 }
 
 type Role string
@@ -199,6 +200,61 @@ func (e *Role) UnmarshalJSON(b []byte) error {
 }
 
 func (e Role) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type StructuredData string
+
+const (
+	StructuredDataFile    StructuredData = "FILE"
+	StructuredDataProcess StructuredData = "PROCESS"
+)
+
+var AllStructuredData = []StructuredData{
+	StructuredDataFile,
+	StructuredDataProcess,
+}
+
+func (e StructuredData) IsValid() bool {
+	switch e {
+	case StructuredDataFile, StructuredDataProcess:
+		return true
+	}
+	return false
+}
+
+func (e StructuredData) String() string {
+	return string(e)
+}
+
+func (e *StructuredData) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StructuredData(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StructuredData", str)
+	}
+	return nil
+}
+
+func (e StructuredData) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *StructuredData) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e StructuredData) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

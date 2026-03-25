@@ -673,9 +673,10 @@ type ComplexityRoot struct {
 	}
 
 	TaskDiff struct {
-		Error  func(childComplexity int) int
-		Ids    func(childComplexity int) int
-		Output func(childComplexity int) int
+		Error          func(childComplexity int) int
+		Ids            func(childComplexity int) int
+		Output         func(childComplexity int) int
+		StructuredData func(childComplexity int) int
 	}
 
 	TaskEdge struct {
@@ -3975,6 +3976,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.TaskDiff.Output(childComplexity), true
+
+	case "TaskDiff.structuredData":
+		if e.complexity.TaskDiff.StructuredData == nil {
+			break
+		}
+
+		return e.complexity.TaskDiff.StructuredData(childComplexity), true
 
 	case "TaskEdge.cursor":
 		if e.complexity.TaskEdge.Cursor == nil {
@@ -11653,10 +11661,16 @@ type QuestTimelineTacticBucket {
   count: Int!
 }
 `, BuiltIn: false},
-	{Name: "../schema/quest.graphql", Input: `type TaskDiff {
+	{Name: "../schema/quest.graphql", Input: `enum StructuredData {
+    FILE
+    PROCESS
+}
+
+type TaskDiff {
     ids: [ID!]!
     output: String
     error: String
+    structuredData: [StructuredData!]!
 }
 
 extend type Quest {

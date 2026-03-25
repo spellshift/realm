@@ -14,14 +14,9 @@ import (
 	"realm.pub/tavern/internal/graphql/models"
 )
 
-type outputErrorPair struct {
-	Output string
-	Error  string
-}
-
 // Diffs is the resolver for the diffs field.
 func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest) ([]*models.TaskDiff, error) {
-	tasks, err := obj.QueryTasks().All(ctx)
+	tasks, err := obj.QueryTasks().WithReportedFiles().WithReportedProcesses().All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -32,9 +27,14 @@ func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest) ([]*models.Ta
 		outStr := strings.TrimSpace(task.Output)
 		errStr := strings.TrimSpace(task.Error)
 
+		hasFile := len(task.Edges.ReportedFiles) > 0
+		hasProcess := len(task.Edges.ReportedProcesses) > 0
+
 		pair := outputErrorPair{
-			Output: outStr,
-			Error:  errStr,
+			Output:     outStr,
+			Error:      errStr,
+			HasFile:    hasFile,
+			HasProcess: hasProcess,
 		}
 
 		if diff, exists := diffMap[pair]; exists {
@@ -52,10 +52,19 @@ func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest) ([]*models.Ta
 				ePtr = &errorVal
 			}
 
+			structuredData := make([]models.StructuredData, 0)
+			if hasFile {
+				structuredData = append(structuredData, models.StructuredDataFile)
+			}
+			if hasProcess {
+				structuredData = append(structuredData, models.StructuredDataProcess)
+			}
+
 			diffMap[pair] = &models.TaskDiff{
-				Ids:    []int{task.ID},
-				Output: oPtr,
-				Error:  ePtr,
+				Ids:            []int{task.ID},
+				Output:         oPtr,
+				Error:          ePtr,
+				StructuredData: structuredData,
 			}
 		}
 	}
@@ -65,10 +74,16 @@ func (r *questResolver) Diffs(ctx context.Context, obj *ent.Quest) ([]*models.Ta
 	// Create an ordered slice of pairs to iterate over to guarantee deterministic output
 	var pairs []outputErrorPair
 	for p := range diffMap {
-	    pairs = append(pairs, p)
+		pairs = append(pairs, p)
 	}
 	sort.Slice(pairs, func(i, j int) bool {
 		if pairs[i].Output == pairs[j].Output {
+			if pairs[i].Error == pairs[j].Error {
+				if pairs[i].HasFile == pairs[j].HasFile {
+					return !pairs[i].HasProcess && pairs[j].HasProcess
+				}
+				return !pairs[i].HasFile && pairs[j].HasFile
+			}
 			return pairs[i].Error < pairs[j].Error
 		}
 		return pairs[i].Output < pairs[j].Output

@@ -115,6 +115,35 @@ func (ec *executionContext) fieldContext_TaskDiff_error(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _TaskDiff_structuredData(ctx context.Context, field graphql.CollectedField, obj *models.TaskDiff) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TaskDiff_structuredData,
+		func(ctx context.Context) (any, error) {
+			return obj.StructuredData, nil
+		},
+		nil,
+		ec.marshalNStructuredData2ᚕrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredDataᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TaskDiff_structuredData(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TaskDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type StructuredData does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -147,6 +176,11 @@ func (ec *executionContext) _TaskDiff(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._TaskDiff_output(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._TaskDiff_error(ctx, field, obj)
+		case "structuredData":
+			out.Values[i] = ec._TaskDiff_structuredData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -173,6 +207,75 @@ func (ec *executionContext) _TaskDiff(ctx context.Context, sel ast.SelectionSet,
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) unmarshalNStructuredData2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredData(ctx context.Context, v any) (models.StructuredData, error) {
+	var res models.StructuredData
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNStructuredData2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredData(ctx context.Context, sel ast.SelectionSet, v models.StructuredData) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNStructuredData2ᚕrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredDataᚄ(ctx context.Context, v any) ([]models.StructuredData, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]models.StructuredData, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNStructuredData2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredData(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNStructuredData2ᚕrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredDataᚄ(ctx context.Context, sel ast.SelectionSet, v []models.StructuredData) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStructuredData2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐStructuredData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
 
 func (ec *executionContext) marshalNTaskDiff2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTaskDiffᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.TaskDiff) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))

@@ -11643,6 +11643,8 @@ func (ec *executionContext) fieldContext_Quest_diffs(_ context.Context, field gr
 				return ec.fieldContext_TaskDiff_output(ctx, field)
 			case "error":
 				return ec.fieldContext_TaskDiff_error(ctx, field)
+			case "structuredData":
+				return ec.fieldContext_TaskDiff_structuredData(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type TaskDiff", field.Name)
 		},
