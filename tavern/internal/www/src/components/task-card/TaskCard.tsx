@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { CommandLineIcon, DocumentTextIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
-import { BookOpenIcon, FileText, ListVideo, Info, FileCog } from "lucide-react";
+import { BookOpenIcon, FileText, ListVideo, FileCog } from "lucide-react";
 import TaskResults from "./components/TaskResults";
 import TaskShells from "./components/TaskShells";
 import TaskProcesses from "./components/TaskProcesses";

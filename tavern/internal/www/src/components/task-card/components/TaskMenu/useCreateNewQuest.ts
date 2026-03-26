@@ -1,9 +1,11 @@
 import { useCallback } from "react";
 import { useCreateQuestModal } from "../../../../context/CreateQuestModalContext";
 import { TaskNode } from "../../../../utils/interfacesQuery";
+import { useQuestModalOptions } from "./useQuestModalOptions";
 
 export function useCreateNewQuest(task: TaskNode) {
     const { openModal } = useCreateQuestModal();
+    const questModalOptions = useQuestModalOptions();
 
     const handleCreateNewQuest = useCallback(() => {
         openModal({
@@ -11,9 +13,9 @@ export function useCreateNewQuest(task: TaskNode) {
                 beacons: [task.beacon.id],
                 initialStep: 1,
             },
-            navigateToQuest: true,
+            ...questModalOptions,
         });
-    }, [task, openModal]);
+    }, [task, openModal, questModalOptions]);
 
     return { handleCreateNewQuest };
 }
