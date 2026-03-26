@@ -131,7 +131,7 @@ For more complex setups, such as configuring multiple transports or specifying d
 ```yaml
 transports:
   - URI: <string>
-    type: <grpc|http1|dns|icmp|tcp_bind>
+    type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
