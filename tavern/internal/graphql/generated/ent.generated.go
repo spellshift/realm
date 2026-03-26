@@ -51,6 +51,9 @@ type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
 	Metrics(ctx context.Context) (*models.Metrics, error)
 }
+type QuestResolver interface {
+	Diffs(ctx context.Context, obj *ent.Quest) ([]*models.TaskDiff, error)
+}
 type ShellTaskResolver interface {
 	SequenceID(ctx context.Context, obj *ent.ShellTask) (int, error)
 }
@@ -11601,8 +11604,49 @@ func (ec *executionContext) fieldContext_Quest_previousQuest(_ context.Context, 
 				return ec.fieldContext_Quest_relatedQuests(ctx, field)
 			case "previousQuest":
 				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "diffs":
+				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Quest_diffs(ctx context.Context, field graphql.CollectedField, obj *ent.Quest) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Quest_diffs,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Quest().Diffs(ctx, obj)
+		},
+		nil,
+		ec.marshalNTaskDiff2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTaskDiffᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Quest_diffs(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Quest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ids":
+				return ec.fieldContext_TaskDiff_ids(ctx, field)
+			case "output":
+				return ec.fieldContext_TaskDiff_output(ctx, field)
+			case "error":
+				return ec.fieldContext_TaskDiff_error(ctx, field)
+			case "structuredData":
+				return ec.fieldContext_TaskDiff_structuredData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TaskDiff", field.Name)
 		},
 	}
 	return fc, nil
@@ -11765,6 +11809,8 @@ func (ec *executionContext) fieldContext_QuestEdge_node(_ context.Context, field
 				return ec.fieldContext_Quest_relatedQuests(ctx, field)
 			case "previousQuest":
 				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "diffs":
+				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
@@ -15515,6 +15561,8 @@ func (ec *executionContext) fieldContext_Task_quest(_ context.Context, field gra
 				return ec.fieldContext_Quest_relatedQuests(ctx, field)
 			case "previousQuest":
 				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "diffs":
+				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Quest", field.Name)
 		},
@@ -38240,6 +38288,42 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Quest_previousQuest(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "diffs":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Quest_diffs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 

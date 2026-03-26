@@ -40,6 +40,7 @@ type ResolverRoot interface {
 	Metrics() MetricsResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Quest() QuestResolver
 	ShellTask() ShellTaskResolver
 	User() UserResolver
 	ShellTaskWhereInput() ShellTaskWhereInputResolver
@@ -459,6 +460,7 @@ type ComplexityRoot struct {
 		Bundle              func(childComplexity int) int
 		CreatedAt           func(childComplexity int) int
 		Creator             func(childComplexity int) int
+		Diffs               func(childComplexity int) int
 		EldritchAtCreation  func(childComplexity int) int
 		ID                  func(childComplexity int) int
 		LastModifiedAt      func(childComplexity int) int
@@ -668,6 +670,13 @@ type ComplexityRoot struct {
 		Edges      func(childComplexity int) int
 		PageInfo   func(childComplexity int) int
 		TotalCount func(childComplexity int) int
+	}
+
+	TaskDiff struct {
+		Error          func(childComplexity int) int
+		Ids            func(childComplexity int) int
+		Output         func(childComplexity int) int
+		StructuredData func(childComplexity int) int
 	}
 
 	TaskEdge struct {
@@ -2937,6 +2946,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Quest.Creator(childComplexity), true
 
+	case "Quest.diffs":
+		if e.complexity.Quest.Diffs == nil {
+			break
+		}
+
+		return e.complexity.Quest.Diffs(childComplexity), true
+
 	case "Quest.eldritchAtCreation":
 		if e.complexity.Quest.EldritchAtCreation == nil {
 			break
@@ -3939,6 +3955,34 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.TaskConnection.TotalCount(childComplexity), true
+
+	case "TaskDiff.error":
+		if e.complexity.TaskDiff.Error == nil {
+			break
+		}
+
+		return e.complexity.TaskDiff.Error(childComplexity), true
+
+	case "TaskDiff.ids":
+		if e.complexity.TaskDiff.Ids == nil {
+			break
+		}
+
+		return e.complexity.TaskDiff.Ids(childComplexity), true
+
+	case "TaskDiff.output":
+		if e.complexity.TaskDiff.Output == nil {
+			break
+		}
+
+		return e.complexity.TaskDiff.Output(childComplexity), true
+
+	case "TaskDiff.structuredData":
+		if e.complexity.TaskDiff.StructuredData == nil {
+			break
+		}
+
+		return e.complexity.TaskDiff.StructuredData(childComplexity), true
 
 	case "TaskEdge.cursor":
 		if e.complexity.TaskEdge.Cursor == nil {
@@ -11618,6 +11662,22 @@ type QuestTimelineBucket {
 type QuestTimelineTacticBucket {
   tactic: TomeTactic!
   count: Int!
+}
+`, BuiltIn: false},
+	{Name: "../schema/quest.graphql", Input: `enum StructuredData {
+    FILE
+    PROCESS
+}
+
+type TaskDiff {
+    ids: [ID!]!
+    output: String
+    error: String
+    structuredData: [StructuredData!]!
+}
+
+extend type Quest {
+    diffs: [TaskDiff!]! @goField(forceResolver: true)
 }
 `, BuiltIn: false},
 }
