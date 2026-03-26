@@ -7,11 +7,12 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [features]
-default = ["install", "grpc", "http1", "dns", "doh", "tcp-bind"]
+default = ["install", "grpc", "http1", "dns", "doh", "icmp", "tcp-bind"]
 grpc = ["transport/grpc"]
 http1 = ["transport/http1"]
 dns = ["transport/dns"]
 doh = ["transport/doh"]
+icmp = ["transport/icmp"]
 tcp-bind = ["transport/tcp-bind"]
 win_service = []
 install = []

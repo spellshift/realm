@@ -45,8 +45,12 @@ variable "redirectors" {
 # },{
 #   transport = "dns",
 #   domain = "dns.example.com"
+# },{
+#   transport = "icmp",
+#   domain = "icmp.example.com"
 # }]
 # Note: For DNS an A record for example.com and dns.example.com will be created in addition to the NS record for dns.example.com
+# Note: For ICMP, each redirector gets its own VM with a unique IP. An A record is created per redirector enabling FQDN-based agent configuration (e.g. icmp://icmp.example.com).
 
 
 variable "tavern_container_image" {
@@ -567,6 +571,17 @@ locals {
     if redir.transport == "dns"
   ]
   dns_domain_dsn = trimsuffix(join("", [for redir in local.dns_redirectors: "domain=${redir.domain}&"]), "&")
+  icmp_redirectors = [
+    for redir in var.redirectors : redir
+    if redir.transport == "icmp"
+  ]
+  redirector_zones_icmp = [
+    for redir in var.redirectors : {
+      "domain" : redir.domain,
+      "zone" : lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "")
+    }
+    if lookup(local.domain_zone_map, local.redirectors_top_domains[redir.domain], "") != "" && redir.transport == "icmp"
+  ]
 }
 
 output "redir_domain_configuration" {
@@ -815,6 +830,107 @@ resource "google_compute_instance" "dns_redirector" {
     google_project_iam_member.redirector-logwriter-binding,
     google_project_service.compute_api
   ]
+}
+
+# Setup ICMP redirectors (one VM per redirector for unique IPs)
+locals {
+  icmp_gce_defs = [for redir in local.icmp_redirectors : yamlencode({
+    spec = {
+      containers = [{
+        image   = var.tavern_container_image
+        command = ["./tavern", "redirector", "--transport", "icmp", "--listen", "0.0.0.0", var.redirector_upstream]
+        env     = [{ name = "ENABLE_DEBUG_LOGGING", value = "" }]
+      }]
+      restartPolicy = "Always"
+    }
+  })]
+  icmp_user_data_def = <<EOT
+#cloud-config
+
+write_files:
+  - path: /etc/sysctl.d/99-icmp-ignore.conf
+    content: |
+      net.ipv4.icmp_echo_ignore_all = 1
+    permissions: '0644'
+runcmd:
+  - sysctl -p /etc/sysctl.d/99-icmp-ignore.conf
+EOT
+}
+
+resource "google_compute_firewall" "icmp_redirector_allow_icmp" {
+  count   = length(local.icmp_redirectors) > 0 ? 1 : 0
+  name    = "allow-icmp-to-redirector"
+  network = "default"
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges           = ["0.0.0.0/0"]
+  target_service_accounts = [google_service_account.svctavern_redirector.email]
+}
+
+resource "terraform_data" "icmp_redirector_metadata_hash" {
+  count = length(local.icmp_redirectors)
+  input = sha256("${local.icmp_gce_defs[count.index]}-${local.icmp_user_data_def}")
+}
+
+resource "google_compute_instance" "icmp_redirector" {
+  count        = length(local.icmp_redirectors)
+  name         = "tavern-redirector-icmp${count.index}"
+  machine_type = var.redirector_machine_type
+  zone         = "${var.gcp_region}-b"
+
+  boot_disk {
+    initialize_params {
+      image = var.redirector_boot_disk_image
+      size  = var.redirector_boot_disk_size
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {}
+  }
+
+  metadata = {
+    gce-container-declaration = local.icmp_gce_defs[count.index]
+    user-data                 = local.icmp_user_data_def
+  }
+
+  allow_stopping_for_update = true
+
+  service_account {
+    email  = google_service_account.svctavern_redirector.email
+    scopes = ["cloud-platform"]
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      terraform_data.icmp_redirector_metadata_hash[count.index]
+    ]
+  }
+
+  depends_on = [
+    google_project_iam_member.redirector-metricwriter-binding,
+    google_project_iam_member.redirector-logwriter-binding,
+    google_project_service.compute_api
+  ]
+}
+
+data "google_dns_managed_zone" "redir_dns_zone_icmp" {
+  count = length(local.redirector_zones_icmp)
+  name  = local.redirector_zones_icmp[count.index].zone
+}
+
+resource "google_dns_record_set" "redir_icmp_record_a" {
+  count = length(local.redirector_zones_icmp)
+  name  = format("%s.", local.redirector_zones_icmp[count.index].domain)
+  type  = "A"
+  ttl   = 300
+
+  managed_zone = data.google_dns_managed_zone.redir_dns_zone_icmp[count.index].name
+  rrdatas      = [google_compute_instance.icmp_redirector[count.index].network_interface[0].access_config[0].nat_ip]
 }
 
 # Setup auth and domain mappings

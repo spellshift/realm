@@ -110,11 +110,12 @@ By default Tavern only supports gRPC connections directly to the server. To enab
 
 ### Available Redirectors
 
-Realm includes three built-in redirector implementations:
+Realm includes four built-in redirector implementations:
 
 - **`grpc`** - Direct gRPC passthrough redirector
 - **`http1`** - HTTP/1.1 to gRPC redirector
 - **`dns`** - DNS to gRPC redirector
+- **`icmp`** - ICMP Echo to gRPC redirector
 
 ### Basic Usage
 
@@ -165,6 +166,35 @@ tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com&dom
 - **Maximum data size**: 50MB per request
 
 See the [DNS Transport Configuration](/user-guide/imix#dns-transport-configuration) section in the Imix user guide for more details on agent-side configuration.
+
+### ICMP Redirector
+
+The ICMP redirector tunnels C2 traffic through ICMP Echo Request/Reply packets.
+
+```bash
+# Start ICMP redirector, listening on all interfaces
+tavern redirector --transport icmp --listen 0.0.0.0 http://localhost:8000
+```
+
+**Host Configuration Requirements:**
+
+Before starting the ICMP redirector, the Linux kernel's automatic ICMP echo reply must be disabled. Without this, the kernel responds to incoming ICMP echo requests by mirroring the payload back to the sender before the user-space redirector can act. Agents receive this kernel reply first and parse their own request payload as a response, breaking the protocol.
+
+```bash
+echo 1 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_all
+```
+
+The redirector will refuse to start if this is not set. To make the setting persistent across reboots:
+
+```bash
+echo "net.ipv4.icmp_echo_ignore_all = 1" | sudo tee -a /etc/sysctl.conf
+sysctl -p
+```
+
+**Other requirements:**
+
+- Must run as root (raw ICMP sockets require `CAP_NET_RAW`)
+- Not supported on Windows hosts
 
 ### gRPC Redirector
 
