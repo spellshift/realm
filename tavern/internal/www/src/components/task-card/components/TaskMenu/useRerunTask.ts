@@ -2,9 +2,11 @@ import { useCallback } from "react";
 import { constructTomeParams } from "../../../../utils/utils";
 import { useCreateQuestModal } from "../../../../context/CreateQuestModalContext";
 import { TaskNode } from "../../../../utils/interfacesQuery";
+import { useQuestModalOptions } from "./useQuestModalOptions";
 
 export function useRerunTask(task: TaskNode) {
     const { openModal } = useCreateQuestModal();
+    const questModalOptions = useQuestModalOptions();
 
     const handleRerunTask = useCallback(() => {
         const params = constructTomeParams(task.quest.parameters, task.quest.tome?.paramDefs);
@@ -16,9 +18,9 @@ export function useRerunTask(task: TaskNode) {
                 params,
                 beacons: [task.beacon.id],
             },
-            navigateToQuest: true,
+            ...questModalOptions,
         });
-    }, [task, openModal]);
+    }, [task, openModal, questModalOptions]);
 
     return { handleRerunTask };
 }
