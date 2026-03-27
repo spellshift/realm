@@ -829,7 +829,7 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 
 `file.temp_file(name: Option<str>) -> str`
 
-The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
 
