@@ -840,6 +840,19 @@ If the destination file doesn't exist it will be created (if the parent director
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
 
+### file.template_str
+
+`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template = "Hello, {{ name }}!\n"
+result = file.template_str(template, {"name": "world"}, True)
+```
+
 ### file.timestomp
 
 `file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None`
