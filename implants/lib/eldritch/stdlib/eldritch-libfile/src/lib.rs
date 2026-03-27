@@ -328,6 +328,27 @@ pub trait FileLibrary {
     ) -> Result<(), String>;
 
     #[eldritch_method]
+    /// Renders a template string and writes it to a file.
+    ///
+    /// **Parameters**
+    /// - `template` (`str`): The template string to render.
+    /// - `dst` (`str`): Destination path for the rendered file.
+    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
+    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
+    ///
+    /// **Returns**
+    /// - Returns the template as a string
+    ///
+    /// **Errors**
+    /// - Returns an error string if the template cannot be parsed or written.
+    fn template_str(
+        &self,
+        template: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<String, String>;
+
+    #[eldritch_method]
     /// Timestomps a file.
     ///
     /// Modifies the timestamps (modified, access, creation) of a file.

@@ -34,6 +34,9 @@ notify = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 spin = { version = "0.10.0", features = ["mutex", "spin_mutex"] }
 
+[dev-dependencies]
+eldritch-libassets = { workspace = true }
+
 [target.'cfg(unix)'.dependencies]
 nix = { workspace = true, features = ["user", "fs"] }
 

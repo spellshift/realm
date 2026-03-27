@@ -355,6 +355,16 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
+    fn template_str(
+        &self,
+        _template: String,
+        _dst: String,
+        _args: BTreeMap<String, Value>,
+        _autoescape: bool,
+    ) -> Result<String, String> {
+        Ok(String::new())
+    }
+
     #[allow(unused_variables)]
     fn timestomp(
         &self,
