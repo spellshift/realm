@@ -8,6 +8,7 @@ use alloc::string::ToString;
 use anyhow::Result as AnyhowResult;
 #[cfg(feature = "stdlib")]
 use eldritch_core::Value;
+use tera::{Context as TeraContext, Tera};
 
 #[cfg(feature = "stdlib")]
 pub fn template_str(
@@ -24,8 +25,6 @@ fn template_str_impl(
     args: BTreeMap<String, Value>,
     autoescape: bool,
 ) -> AnyhowResult<String> {
-    use tera::{Context as TeraContext, Tera};
-
     let mut context = TeraContext::new();
     for (k, v) in args {
         // Convert Value to serde_json::Value

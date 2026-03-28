@@ -332,7 +332,6 @@ pub trait FileLibrary {
     ///
     /// **Parameters**
     /// - `template` (`str`): The template string to render.
-    /// - `dst` (`str`): Destination path for the rendered file.
     /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
     /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
     ///

@@ -358,7 +358,6 @@ impl FileLibrary for FileLibraryFake {
     fn template_str(
         &self,
         _template: String,
-        _dst: String,
         _args: BTreeMap<String, Value>,
         _autoescape: bool,
     ) -> Result<String, String> {
