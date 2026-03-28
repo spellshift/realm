@@ -832,7 +832,7 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
-
+  
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
