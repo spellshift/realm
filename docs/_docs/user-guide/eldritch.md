@@ -829,16 +829,29 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 
 `file.temp_file(name: Option<str>) -> str`
 
-The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
-
+  
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+### file.template_str
+
+`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template = "Hello, {{ name }}!\n"
+result = file.template_str(template, {"name": "world"}, True)
+```
 
 ### file.timestomp
 

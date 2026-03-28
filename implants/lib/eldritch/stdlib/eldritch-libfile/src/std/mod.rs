@@ -27,6 +27,7 @@ pub mod replace_all_impl;
 pub mod replace_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
+pub mod template_str_impl;
 pub mod timestomp_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
@@ -130,6 +131,15 @@ impl FileLibrary for StdFileLibrary {
         autoescape: bool,
     ) -> Result<(), String> {
         template_impl::template(template_path, dst, args, autoescape)
+    }
+
+    fn template_str(
+        &self,
+        template: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<String, String> {
+        template_str_impl::template_str(template, args, autoescape).map_err(|e| e.to_string())
     }
 
     fn timestomp(

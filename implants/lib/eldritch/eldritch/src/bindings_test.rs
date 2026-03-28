@@ -79,6 +79,7 @@ fn test_file_bindings() {
             "replace_all",
             "temp_file",
             "template",
+            "template_str",
             "timestomp",
             "write",
             "write_binary",
