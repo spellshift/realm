@@ -1,11 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"testing"
@@ -55,7 +53,7 @@ func startServer(t *testing.T, args []string) (int, func()) {
 	}
 }
 
-func testEcho(t *testing.T, port int, clientConfig *ssh.ClientConfig) {
+func testInteractiveShell(t *testing.T, port int, clientConfig *ssh.ClientConfig) {
 	conn, err := ssh.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port), clientConfig)
 	require.NoError(t, err)
 	defer conn.Close()
@@ -63,6 +61,14 @@ func testEcho(t *testing.T, port int, clientConfig *ssh.ClientConfig) {
 	session, err := conn.NewSession()
 	require.NoError(t, err)
 	defer session.Close()
+
+	// Request pseudo terminal
+	err = session.RequestPty("xterm", 80, 40, ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	})
+	require.NoError(t, err)
 
 	stdin, err := session.StdinPipe()
 	require.NoError(t, err)
@@ -73,19 +79,73 @@ func testEcho(t *testing.T, port int, clientConfig *ssh.ClientConfig) {
 	err = session.Shell()
 	require.NoError(t, err)
 
-	msg := []byte("hello world!\n")
-	_, err = stdin.Write(msg)
+	// Consume initial prompt
+	buf := make([]byte, 256)
+	n, err := stdout.Read(buf)
+	require.NoError(t, err)
+	require.Contains(t, string(buf[:n]), "sshecho> ")
+
+	readUntilPrompt := func() string {
+		out := make([]byte, 0, 1024)
+		for {
+			buf := make([]byte, 128)
+			n, err := stdout.Read(buf)
+			if err != nil {
+				break
+			}
+			out = append(out, buf[:n]...)
+			if len(out) >= 9 && string(out[len(out)-9:]) == "sshecho> " {
+				break
+			}
+		}
+		return string(out)
+	}
+
+	// Test "whoami" command
+	_, err = stdin.Write([]byte("whoami\r"))
 	require.NoError(t, err)
 
-	// Close stdin to signal end of input
-	err = stdin.Close()
+	outStr := readUntilPrompt()
+	require.Contains(t, outStr, "root\r")
+
+	// Test "ls" command
+	_, err = stdin.Write([]byte("ls\r"))
 	require.NoError(t, err)
 
-	var output bytes.Buffer
-	_, err = io.Copy(&output, stdout)
+	outStr = readUntilPrompt()
+	require.Contains(t, outStr, "bin dev proc lib home etc\r")
+
+	// Test "echo" command
+	_, err = stdin.Write([]byte("echo hello world\r"))
 	require.NoError(t, err)
 
-	require.Equal(t, msg, output.Bytes())
+	outStr = readUntilPrompt()
+	require.Contains(t, outStr, "hello world\r")
+
+	// Test "exit"
+	_, err = stdin.Write([]byte("exit\r"))
+	require.NoError(t, err)
+
+	// Shell should exit cleanly
+	err = session.Wait()
+	require.NoError(t, err)
+
+	// Test exec subsystem
+	session2, err := conn.NewSession()
+	require.NoError(t, err)
+	defer session2.Close()
+
+	out, err := session2.Output("whoami")
+	require.NoError(t, err)
+	require.Equal(t, string(out), "root\n")
+
+	session3, err := conn.NewSession()
+	require.NoError(t, err)
+	defer session3.Close()
+
+	out, err = session3.Output("echo hello world")
+	require.NoError(t, err)
+	require.Equal(t, string(out), "hello world\n")
 }
 
 func TestSSHEcho_NoAuth(t *testing.T) {
@@ -97,7 +157,7 @@ func TestSSHEcho_NoAuth(t *testing.T) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	testEcho(t, port, clientConfig)
+	testInteractiveShell(t, port, clientConfig)
 }
 
 func TestSSHEcho_PasswordAuth(t *testing.T) {
@@ -112,7 +172,7 @@ func TestSSHEcho_PasswordAuth(t *testing.T) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	testEcho(t, port, clientConfig)
+	testInteractiveShell(t, port, clientConfig)
 
 	// Test invalid password
 	invalidConfig := &ssh.ClientConfig{
@@ -159,7 +219,7 @@ func TestSSHEcho_PublicKeyAuth(t *testing.T) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	testEcho(t, port, clientConfig)
+	testInteractiveShell(t, port, clientConfig)
 
 	// Test invalid key
 	wrongPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)

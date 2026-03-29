@@ -9,10 +9,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/term"
 )
 
 func newApp() *cli.App {
@@ -164,22 +166,92 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 		}
 
 		go func() {
+			defer channel.Close()
+
 			for req := range requests {
 				switch req.Type {
-				case "shell", "exec", "pty-req":
+				case "pty-req":
+					log.Printf("Accepted request type: %s\n", req.Type)
 					req.Reply(true, nil)
+
+				case "shell":
+					log.Printf("Accepted request type: %s\n", req.Type)
+					req.Reply(true, nil)
+
+					// We can use golang.org/x/term to run a proper terminal emulator
+					// which allows the built-in `ssh` client to connect and interact
+					// with a prompt.
+					terminal := term.NewTerminal(channel, "sshecho> ")
+
+					go func() {
+						for {
+							line, err := terminal.ReadLine()
+							if err != nil {
+								if err != io.EOF {
+									log.Printf("terminal read error: %v\n", err)
+								}
+								return
+							}
+
+							line = strings.TrimSpace(line)
+							if line == "" {
+								continue
+							}
+
+							log.Printf("Received command: %q\n", line)
+
+							if line == "whoami" {
+								terminal.Write([]byte("root\r\n"))
+							} else if line == "ls" {
+								terminal.Write([]byte("bin dev proc lib home etc\r\n"))
+							} else if strings.HasPrefix(line, "echo ") {
+								msg := strings.TrimPrefix(line, "echo ")
+								terminal.Write([]byte(msg + "\r\n"))
+							} else if line == "exit" || line == "quit" {
+								channel.SendRequest("exit-status", false, ssh.Marshal(struct{ uint32 }{0}))
+								channel.Close()
+								return
+							} else {
+								terminal.Write([]byte(fmt.Sprintf("sshecho: %s: command not found\r\n", line)))
+							}
+						}
+					}()
+
+				case "exec":
+					log.Printf("Accepted request type: %s\n", req.Type)
+					req.Reply(true, nil)
+
+					var execReq struct {
+						Command string
+					}
+					if err := ssh.Unmarshal(req.Payload, &execReq); err != nil {
+						log.Printf("Failed to unmarshal exec payload: %v", err)
+						channel.Close()
+						return
+					}
+
+					line := strings.TrimSpace(execReq.Command)
+					log.Printf("Received exec command: %q\n", line)
+
+					if line == "whoami" {
+						channel.Write([]byte("root\n"))
+					} else if line == "ls" {
+						channel.Write([]byte("bin dev proc lib home etc\n"))
+					} else if strings.HasPrefix(line, "echo ") {
+						msg := strings.TrimPrefix(line, "echo ")
+						channel.Write([]byte(msg + "\n"))
+					} else {
+						channel.Write([]byte(fmt.Sprintf("sshecho: %s: command not found\n", line)))
+					}
+
+					channel.SendRequest("exit-status", false, ssh.Marshal(struct{ uint32 }{0}))
+					channel.Close()
+					return
+
 				default:
+					log.Printf("Rejected request type: %s\n", req.Type)
 					req.Reply(false, nil)
 				}
-			}
-		}()
-
-		// Echo loop
-		go func() {
-			defer channel.Close()
-			_, err := io.Copy(channel, channel)
-			if err != nil {
-				log.Printf("io.Copy error: %v\n", err)
 			}
 		}()
 	}
