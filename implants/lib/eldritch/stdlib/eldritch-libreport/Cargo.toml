@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-libreport"
-version = "0.3.2"
+version = "0.3.4"
 edition = "2024"
 
 [dependencies]
@@ -13,7 +13,7 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 glob = { workspace = true }
 log = { workspace = true }
 
-[target.'cfg(not(target_os = "linux"))'.dependencies]
+[target.'cfg(not(any(target_os = "linux", target_os = "freebsd")))'.dependencies]
 xcap = { workspace = true, optional = true }
 image = { version = "0.25", optional = true }
 

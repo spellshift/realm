@@ -9,7 +9,7 @@ const TaskResults = ({
                 {result && result.length > 0 ? (
                     <CodeBlock code={result} />
                 ) : (
-                    <div className="mt-2 text-gray-600">Not available</div>
+                    <div className="py-3 px-2 text-sm">Not available</div>
                 )}
             </div>
         </div>

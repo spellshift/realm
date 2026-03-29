@@ -101,6 +101,15 @@ impl Transport for FakeTransport {
         Ok(())
     }
 
+    async fn forward_raw(
+        &mut self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
     fn get_type(&mut self) -> pb::c2::transport::Type {
         pb::c2::transport::Type::TransportUnspecified
     }

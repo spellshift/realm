@@ -110,6 +110,30 @@ func DenyMutationOperationRule(op ent.Op) MutationRule {
 	return OnMutationOperation(rule, op)
 }
 
+// The AdventureQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type AdventureQueryRuleFunc func(context.Context, *ent.AdventureQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f AdventureQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.AdventureQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.AdventureQuery", q)
+}
+
+// The AdventureMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type AdventureMutationRuleFunc func(context.Context, *ent.AdventureMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f AdventureMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.AdventureMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AdventureMutation", m)
+}
+
 // The AssetQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type AssetQueryRuleFunc func(context.Context, *ent.AssetQuery) error

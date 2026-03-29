@@ -10,6 +10,7 @@ import (
 	"realm.pub/tavern/internal/builder/builderpb"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -34,6 +35,274 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
 )
+
+// AdventureWhereInput represents a where input for filtering Adventure queries.
+type AdventureWhereInput struct {
+	Predicates []predicate.Adventure  `json:"-"`
+	Not        *AdventureWhereInput   `json:"not,omitempty"`
+	Or         []*AdventureWhereInput `json:"or,omitempty"`
+	And        []*AdventureWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "quests" edge predicates.
+	HasQuests     *bool              `json:"hasQuests,omitempty"`
+	HasQuestsWith []*QuestWhereInput `json:"hasQuestsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *AdventureWhereInput) AddPredicates(predicates ...predicate.Adventure) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the AdventureWhereInput filter on the AdventureQuery builder.
+func (i *AdventureWhereInput) Filter(q *AdventureQuery) (*AdventureQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyAdventureWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyAdventureWhereInput is returned in case the AdventureWhereInput is empty.
+var ErrEmptyAdventureWhereInput = errors.New("ent: empty predicate AdventureWhereInput")
+
+// P returns a predicate for filtering adventures.
+// An error is returned if the input is empty or invalid.
+func (i *AdventureWhereInput) P() (predicate.Adventure, error) {
+	var predicates []predicate.Adventure
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, adventure.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Adventure, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, adventure.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Adventure, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, adventure.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, adventure.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, adventure.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, adventure.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, adventure.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, adventure.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, adventure.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, adventure.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, adventure.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, adventure.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, adventure.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, adventure.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, adventure.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, adventure.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, adventure.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, adventure.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, adventure.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, adventure.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, adventure.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, adventure.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, adventure.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, adventure.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, adventure.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, adventure.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, adventure.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, adventure.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, adventure.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, adventure.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, adventure.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, adventure.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, adventure.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, adventure.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, adventure.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, adventure.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, adventure.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, adventure.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, adventure.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, adventure.NameContainsFold(*i.NameContainsFold))
+	}
+
+	if i.HasQuests != nil {
+		p := adventure.HasQuests()
+		if !*i.HasQuests {
+			p = adventure.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasQuestsWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasQuestsWith))
+		for _, w := range i.HasQuestsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasQuestsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, adventure.HasQuestsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyAdventureWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return adventure.And(predicates...), nil
+	}
+}
 
 // AssetWhereInput represents a where input for filtering Asset queries.
 type AssetWhereInput struct {
@@ -3389,6 +3658,10 @@ type HostWhereInput struct {
 	// "screenshots" edge predicates.
 	HasScreenshots     *bool                   `json:"hasScreenshots,omitempty"`
 	HasScreenshotsWith []*ScreenshotWhereInput `json:"hasScreenshotsWith,omitempty"`
+
+	// "favoritedBy" edge predicates.
+	HasFavoritedBy     *bool             `json:"hasFavoritedBy,omitempty"`
+	HasFavoritedByWith []*UserWhereInput `json:"hasFavoritedByWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -3888,6 +4161,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasScreenshotsWith(with...))
+	}
+	if i.HasFavoritedBy != nil {
+		p := host.HasFavoritedBy()
+		if !*i.HasFavoritedBy {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFavoritedByWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasFavoritedByWith))
+		for _, w := range i.HasFavoritedByWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFavoritedByWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasFavoritedByWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6503,6 +6794,18 @@ type QuestWhereInput struct {
 	// "scheduled_task" edge predicates.
 	HasScheduledTask     *bool                      `json:"hasScheduledTask,omitempty"`
 	HasScheduledTaskWith []*ScheduledTaskWhereInput `json:"hasScheduledTaskWith,omitempty"`
+
+	// "adventure" edge predicates.
+	HasAdventure     *bool                  `json:"hasAdventure,omitempty"`
+	HasAdventureWith []*AdventureWhereInput `json:"hasAdventureWith,omitempty"`
+
+	// "related_quests" edge predicates.
+	HasRelatedQuests     *bool              `json:"hasRelatedQuests,omitempty"`
+	HasRelatedQuestsWith []*QuestWhereInput `json:"hasRelatedQuestsWith,omitempty"`
+
+	// "previous_quest" edge predicates.
+	HasPreviousQuest     *bool              `json:"hasPreviousQuest,omitempty"`
+	HasPreviousQuestWith []*QuestWhereInput `json:"hasPreviousQuestWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -6912,6 +7215,60 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, quest.HasScheduledTaskWith(with...))
+	}
+	if i.HasAdventure != nil {
+		p := quest.HasAdventure()
+		if !*i.HasAdventure {
+			p = quest.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAdventureWith) > 0 {
+		with := make([]predicate.Adventure, 0, len(i.HasAdventureWith))
+		for _, w := range i.HasAdventureWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAdventureWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, quest.HasAdventureWith(with...))
+	}
+	if i.HasRelatedQuests != nil {
+		p := quest.HasRelatedQuests()
+		if !*i.HasRelatedQuests {
+			p = quest.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasRelatedQuestsWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasRelatedQuestsWith))
+		for _, w := range i.HasRelatedQuestsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasRelatedQuestsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, quest.HasRelatedQuestsWith(with...))
+	}
+	if i.HasPreviousQuest != nil {
+		p := quest.HasPreviousQuest()
+		if !*i.HasPreviousQuest {
+			p = quest.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPreviousQuestWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasPreviousQuestWith))
+		for _, w := range i.HasPreviousQuestWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPreviousQuestWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, quest.HasPreviousQuestWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -10812,6 +11169,10 @@ type UserWhereInput struct {
 	// "device_auths" edge predicates.
 	HasDeviceAuths     *bool                   `json:"hasDeviceAuths,omitempty"`
 	HasDeviceAuthsWith []*DeviceAuthWhereInput `json:"hasDeviceAuthsWith,omitempty"`
+
+	// "favoriteHosts" edge predicates.
+	HasFavoriteHosts     *bool             `json:"hasFavoriteHosts,omitempty"`
+	HasFavoriteHostsWith []*HostWhereInput `json:"hasFavoriteHostsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -11092,6 +11453,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, user.HasDeviceAuthsWith(with...))
+	}
+	if i.HasFavoriteHosts != nil {
+		p := user.HasFavoriteHosts()
+		if !*i.HasFavoriteHosts {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFavoriteHostsWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasFavoriteHostsWith))
+		for _, w := range i.HasFavoriteHostsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFavoriteHostsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasFavoriteHostsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

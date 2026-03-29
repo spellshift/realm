@@ -51,6 +51,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
+	_ "realm.pub/tavern/internal/redirectors/icmp"
 )
 
 func init() {
@@ -337,10 +338,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/auth/rda/approve": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDAApproveHandler(client),
+			Handler: tavernhttp.NewRDAApproveHandler(client),
 		},
 		"/auth/rda/revoke": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDARevokeHandler(client),
+			Handler: tavernhttp.NewRDARevokeHandler(client),
 		},
 		"/api/auth/signout": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewSignoutHandler(),

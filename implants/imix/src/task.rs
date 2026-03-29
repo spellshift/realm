@@ -225,7 +225,7 @@ fn setup_interpreter(
     // Support embedded assets behind remote asset filenames
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
     // Register Task Context (Agent, Report, Assets)
-    interp = interp.with_context(agent, context, remote_assets, backend);
+    interp = interp.with_context(agent.clone(), context, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

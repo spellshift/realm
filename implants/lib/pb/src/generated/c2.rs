@@ -37,6 +37,9 @@ pub mod transport {
         TransportGrpc = 1,
         TransportHttp1 = 2,
         TransportDns = 3,
+        TransportUds = 4,
+        TransportTcpBind = 5,
+        TransportIcmp = 6,
     }
     impl Type {
         /// String value of the enum field names used in the ProtoBuf definition.
@@ -49,6 +52,9 @@ pub mod transport {
                 Self::TransportGrpc => "TRANSPORT_GRPC",
                 Self::TransportHttp1 => "TRANSPORT_HTTP1",
                 Self::TransportDns => "TRANSPORT_DNS",
+                Self::TransportUds => "TRANSPORT_UDS",
+                Self::TransportTcpBind => "TRANSPORT_TCP_BIND",
+                Self::TransportIcmp => "TRANSPORT_ICMP",
             }
         }
         /// Creates an enum from field names used in the ProtoBuf definition.
@@ -58,6 +64,9 @@ pub mod transport {
                 "TRANSPORT_GRPC" => Some(Self::TransportGrpc),
                 "TRANSPORT_HTTP1" => Some(Self::TransportHttp1),
                 "TRANSPORT_DNS" => Some(Self::TransportDns),
+                "TRANSPORT_UDS" => Some(Self::TransportUds),
+                "TRANSPORT_TCP_BIND" => Some(Self::TransportTcpBind),
+                "TRANSPORT_ICMP" => Some(Self::TransportIcmp),
                 _ => None,
             }
         }

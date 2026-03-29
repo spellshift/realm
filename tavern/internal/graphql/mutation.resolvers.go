@@ -90,7 +90,7 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 }
 
 // CreateQuest is the resolver for the createQuest field.
-func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput) (*ent.Quest, error) {
+func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) (*ent.Quest, error) {
 	// Ensure at least one Beacon ID provided
 	if len(beaconIDs) < 1 {
 		return nil, fmt.Errorf("must provide at least one beacon id")
@@ -141,15 +141,64 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 		creatorID = &creator.ID
 	}
 
+	// 6.5. Handle previous node if provided
+	var prevQuest *ent.Quest
+	var adventure *ent.Adventure
+
+	if prevNodeID != nil {
+		node, err := client.Noder(ctx, *prevNodeID)
+		if err == nil && node != nil {
+			switch n := node.(type) {
+			case *ent.Quest:
+				prevQuest = n
+			case *ent.Task:
+				prevQuest, _ = n.QueryQuest().Only(ctx)
+			case *ent.HostFile:
+				if task, err := n.QueryTask().Only(ctx); err == nil && task != nil {
+					prevQuest, _ = task.QueryQuest().Only(ctx)
+				}
+			case *ent.HostProcess:
+				if task, err := n.QueryTask().Only(ctx); err == nil && task != nil {
+					prevQuest, _ = task.QueryQuest().Only(ctx)
+				}
+			}
+		}
+
+		if prevQuest != nil {
+			// Find adventure for the previous quest
+			adventure, _ = prevQuest.QueryAdventure().Only(ctx)
+			if adventure == nil {
+				// Create a new adventure if one doesn't exist
+				adventure, err = client.Adventure.Create().Save(ctx)
+				if err != nil {
+					return nil, rollback(tx, fmt.Errorf("failed to create adventure: %w", err))
+				}
+				// Associate previous quest with the new adventure
+				_, err = client.Quest.UpdateOne(prevQuest).SetAdventure(adventure).Save(ctx)
+				if err != nil {
+					return nil, rollback(tx, fmt.Errorf("failed to update previous quest with adventure: %w", err))
+				}
+			}
+		}
+	}
+
 	// 7. Create Quest
-	quest, err := client.Quest.Create().
+	questCreator := client.Quest.Create().
 		SetInput(input).
 		SetNillableBundleID(bundleID).
 		SetEldritchAtCreation(questTome.Eldritch).
 		SetParamDefsAtCreation(questTome.ParamDefs).
 		SetTome(questTome).
-		SetNillableCreatorID(creatorID).
-		Save(ctx)
+		SetNillableCreatorID(creatorID)
+
+	if prevQuest != nil {
+		questCreator.SetPreviousQuest(prevQuest)
+	}
+	if adventure != nil {
+		questCreator.SetAdventure(adventure)
+	}
+
+	quest, err := questCreator.Save(ctx)
 	if err != nil {
 		return nil, rollback(tx, fmt.Errorf("failed to create quest: %w", err))
 	}
@@ -196,6 +245,24 @@ func (r *mutationResolver) CreateShell(ctx context.Context, input ent.CreateShel
 // UpdateHost is the resolver for the updateHost field.
 func (r *mutationResolver) UpdateHost(ctx context.Context, hostID int, input ent.UpdateHostInput) (*ent.Host, error) {
 	return r.client.Host.UpdateOneID(hostID).SetInput(input).Save(ctx)
+}
+
+// FavoriteHost is the resolver for the favoriteHost field.
+func (r *mutationResolver) FavoriteHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).AddFavoritedByIDs(owner.ID).Save(ctx)
+}
+
+// UnfavoriteHost is the resolver for the unfavoriteHost field.
+func (r *mutationResolver) UnfavoriteHost(ctx context.Context, hostID int) (*ent.Host, error) {
+	owner := auth.UserFromContext(ctx)
+	if owner == nil {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return r.client.Host.UpdateOneID(hostID).RemoveFavoritedByIDs(owner.ID).Save(ctx)
 }
 
 // CreateTag is the resolver for the createTag field.

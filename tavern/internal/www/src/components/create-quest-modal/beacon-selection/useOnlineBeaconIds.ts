@@ -63,7 +63,7 @@ export function useOnlineBeaconIds({
 /**
  * Filters beacons to show only one per host, prioritizing:
  * 1. Admin privileges (root, SYSTEM, Administrator)
- * 2. More reliable transports (GRPC > HTTP1 > DNS)
+ * 2. More reliable transports (GRPC > HTTP1 > ICMP > DNS)
  */
 function filterOnePerHost(beacons: BeaconIdNode[]): string[] {
     const adminPrincipals = Object.values(PrincipalAdminTypes) as string[];
@@ -73,8 +73,10 @@ function filterOnePerHost(beacons: BeaconIdNode[]): string[] {
         if (!transport) return 0;
         switch (transport) {
             case SupportedTransports.GRPC:
-                return 3;
+                return 4;
             case SupportedTransports.HTTP1:
+                return 3;
+            case SupportedTransports.ICMP:
                 return 2;
             case SupportedTransports.DNS:
                 return 1;

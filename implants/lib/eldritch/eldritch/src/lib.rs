@@ -8,6 +8,7 @@ extern crate std;
 // Re-exports from eldritch-stdlib
 pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
+pub use eldritch_libchain as chain;
 pub use eldritch_libcrypto as crypto;
 pub use eldritch_libfile as file;
 pub use eldritch_libhttp as http;
@@ -46,6 +47,8 @@ pub use crate::assets::std::EmbeddedAssets;
 pub use crate::assets::std::EmptyAssets;
 #[cfg(feature = "stdlib")]
 use crate::assets::std::StdAssetsLibrary;
+#[cfg(feature = "stdlib")]
+use crate::chain::std::StdChainLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
 #[cfg(feature = "stdlib")]
@@ -115,8 +118,8 @@ impl Interpreter {
         }
     }
 
+    #[cfg(feature = "stdlib")]
     pub fn with_default_libs(mut self) -> Self {
-        #[cfg(feature = "stdlib")]
         {
             self.inner.register_lib(StdCryptoLibrary);
             self.inner.register_lib(StdFileLibrary);
@@ -172,6 +175,8 @@ impl Interpreter {
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
 
+        self.inner.register_lib(StdChainLibrary::new(agent.clone()));
+
         // Assets library
         let backend = Arc::new(crate::assets::std::AgentAssets::new(
             agent.clone(),
@@ -213,6 +218,8 @@ impl Interpreter {
 
         let pivot_lib = StdPivotLibrary::new(agent.clone(), context.clone());
         self.inner.register_lib(pivot_lib);
+
+        self.inner.register_lib(StdChainLibrary::new(agent.clone()));
 
         let mut assets_lib = StdAssetsLibrary::new();
         // As with previously, remote assets can shadow the Embedded Assets

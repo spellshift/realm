@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/builder/builderpb"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
@@ -35,6 +36,27 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	adventureMixin := schema.Adventure{}.Mixin()
+	adventureMixinFields0 := adventureMixin[0].Fields()
+	_ = adventureMixinFields0
+	adventureFields := schema.Adventure{}.Fields()
+	_ = adventureFields
+	// adventureDescCreatedAt is the schema descriptor for created_at field.
+	adventureDescCreatedAt := adventureMixinFields0[0].Descriptor()
+	// adventure.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adventure.DefaultCreatedAt = adventureDescCreatedAt.Default.(func() time.Time)
+	// adventureDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	adventureDescLastModifiedAt := adventureMixinFields0[1].Descriptor()
+	// adventure.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	adventure.DefaultLastModifiedAt = adventureDescLastModifiedAt.Default.(func() time.Time)
+	// adventure.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	adventure.UpdateDefaultLastModifiedAt = adventureDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// adventureDescName is the schema descriptor for name field.
+	adventureDescName := adventureFields[0].Descriptor()
+	// adventure.DefaultName holds the default value on creation for the name field.
+	adventure.DefaultName = adventureDescName.Default.(func() string)
+	// adventure.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	adventure.NameValidator = adventureDescName.Validators[0].(func(string) error)
 	assetMixin := schema.Asset{}.Mixin()
 	assetHooks := schema.Asset{}.Hooks()
 	asset.Hooks[0] = assetHooks[0]
