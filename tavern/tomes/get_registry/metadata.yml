@@ -4,11 +4,7 @@ author: hulto
 support_model: FIRST_PARTY
 tactic: RECON
 paramdefs:
-- name: hive
-  type: string
-  label: Registry hive
-  placeholder: "HKEY_LOCAL_MACHINE"
 - name: path
   type: string
   label: Registry key path
-  placeholder: "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" # Single backslash can be used too but you may encounter issues if you specify "\x64" as that's hex.
+  placeholder: "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion"

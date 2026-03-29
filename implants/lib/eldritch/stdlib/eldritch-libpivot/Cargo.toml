@@ -1,6 +1,6 @@
 [package]
 name = "eldritch-libpivot"
-version = "0.3.2"
+version = "0.3.4"
 edition = "2024"
 
 [dependencies]
@@ -28,6 +28,7 @@ pb = { workspace = true, optional = true }
 listeners = { workspace = true, optional = true }
 
 [dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }
 tempfile = { workspace = true }
 eldritch-agent = { workspace = true }
 

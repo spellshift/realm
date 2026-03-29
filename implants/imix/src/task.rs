@@ -178,6 +178,15 @@ fn execute_task(
         interp.interpret(&tome.eldritch)
     }));
 
+    // TODO: @Kcarretto remove this
+    // Send interpreter errors through the streaming error channel before closing it,
+    // ensuring errors are reported via the same path as eprint() output.
+    match &result {
+        Ok(Err(e)) => printer.report_error(e),
+        Err(e) => printer.report_error(&format!("panic: {e:?}")),
+        Ok(Ok(_)) => {}
+    }
+
     // Explicitly drop interp and printer to close channel
     drop(printer);
     drop(interp);
@@ -216,7 +225,7 @@ fn setup_interpreter(
     // Support embedded assets behind remote asset filenames
     let backend = Arc::new(EmbeddedAssets::<crate::assets::Asset>::new());
     // Register Task Context (Agent, Report, Assets)
-    interp = interp.with_context(agent, context, remote_assets, backend);
+    interp = interp.with_context(agent.clone(), context, remote_assets, backend);
 
     // Inject input_params
     let params_map: BTreeMap<String, String> = tome

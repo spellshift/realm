@@ -30,6 +30,10 @@ const (
 	EdgeTomes = "tomes"
 	// EdgeActiveShells holds the string denoting the active_shells edge name in mutations.
 	EdgeActiveShells = "active_shells"
+	// EdgeDeviceAuths holds the string denoting the device_auths edge name in mutations.
+	EdgeDeviceAuths = "device_auths"
+	// EdgeFavoriteHosts holds the string denoting the favoritehosts edge name in mutations.
+	EdgeFavoriteHosts = "favoriteHosts"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// TomesTable is the table that holds the tomes relation/edge.
@@ -44,6 +48,18 @@ const (
 	// ActiveShellsInverseTable is the table name for the Shell entity.
 	// It exists in this package in order to avoid circular dependency with the "shell" package.
 	ActiveShellsInverseTable = "shells"
+	// DeviceAuthsTable is the table that holds the device_auths relation/edge.
+	DeviceAuthsTable = "device_auths"
+	// DeviceAuthsInverseTable is the table name for the DeviceAuth entity.
+	// It exists in this package in order to avoid circular dependency with the "deviceauth" package.
+	DeviceAuthsInverseTable = "device_auths"
+	// DeviceAuthsColumn is the table column denoting the device_auths relation/edge.
+	DeviceAuthsColumn = "device_auth_user"
+	// FavoriteHostsTable is the table that holds the favoriteHosts relation/edge. The primary key declared below.
+	FavoriteHostsTable = "user_favoriteHosts"
+	// FavoriteHostsInverseTable is the table name for the Host entity.
+	// It exists in this package in order to avoid circular dependency with the "host" package.
+	FavoriteHostsInverseTable = "hosts"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -68,6 +84,9 @@ var (
 	// ActiveShellsPrimaryKey and ActiveShellsColumn2 are the table columns denoting the
 	// primary key for the active_shells relation (M2M).
 	ActiveShellsPrimaryKey = []string{"shell_id", "user_id"}
+	// FavoriteHostsPrimaryKey and FavoriteHostsColumn2 are the table columns denoting the
+	// primary key for the favoriteHosts relation (M2M).
+	FavoriteHostsPrimaryKey = []string{"user_id", "host_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -172,6 +191,34 @@ func ByActiveShells(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newActiveShellsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByDeviceAuthsCount orders the results by device_auths count.
+func ByDeviceAuthsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDeviceAuthsStep(), opts...)
+	}
+}
+
+// ByDeviceAuths orders the results by device_auths terms.
+func ByDeviceAuths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDeviceAuthsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByFavoriteHostsCount orders the results by favoriteHosts count.
+func ByFavoriteHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFavoriteHostsStep(), opts...)
+	}
+}
+
+// ByFavoriteHosts orders the results by favoriteHosts terms.
+func ByFavoriteHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFavoriteHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -184,5 +231,19 @@ func newActiveShellsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ActiveShellsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2M, true, ActiveShellsTable, ActiveShellsPrimaryKey...),
+	)
+}
+func newDeviceAuthsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DeviceAuthsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, DeviceAuthsTable, DeviceAuthsColumn),
+	)
+}
+func newFavoriteHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FavoriteHostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, FavoriteHostsTable, FavoriteHostsPrimaryKey...),
 	)
 }

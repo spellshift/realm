@@ -428,3 +428,111 @@ export const GET_HOST_CREDENTIALS = gql`
             }
         }
 }`;
+
+export const GET_BEACON_IDS_QUERY = gql`
+    query GetBeaconIds(
+        $where: BeaconWhereInput
+        $first: Int
+        $last: Int
+        $after: Cursor
+        $before: Cursor
+        $orderBy: [BeaconOrder!]
+    ) {
+        beacons(
+            where: $where
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+            orderBy: $orderBy
+        ) {
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges {
+                node {
+                    id
+                    principal
+                    transport
+                    host {
+                        id
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_BEACON_DETAIL_QUERY = gql`
+    query GetBeaconDetail($id: ID!) {
+        beacons(where: { id: $id }, first: 1) {
+            edges {
+                node {
+                    id
+                    name
+                    principal
+                    lastSeenAt
+                    interval
+                    transport
+                    host {
+                        id
+                        name
+                        primaryIP
+                        externalIP
+                        platform
+                        tags {
+                            edges {
+                                node {
+                                    id
+                                    kind
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_TOME_IDS_QUERY = gql`
+    query GetTomeIds($where: TomeWhereInput) {
+        tomes(where: $where) {
+            edges {
+                node {
+                    id
+                    name
+                    paramDefs
+                }
+            }
+        }
+    }
+`;
+
+export const GET_TOME_DETAIL_QUERY = gql`
+    query GetTomeDetail($id: ID!) {
+        tomes(where: { id: $id }, first: 1) {
+            edges {
+                node {
+                    id
+                    name
+                    paramDefs
+                    tactic
+                    eldritch
+                    supportModel
+                    description
+                    uploader {
+                        id
+                        name
+                        photoURL
+                    }
+                }
+            }
+        }
+    }
+`;

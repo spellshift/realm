@@ -22,6 +22,7 @@ const (
 	Builder_ClaimBuildTasks_FullMethodName       = "/builder.Builder/ClaimBuildTasks"
 	Builder_StreamBuildTaskOutput_FullMethodName = "/builder.Builder/StreamBuildTaskOutput"
 	Builder_UploadBuildArtifact_FullMethodName   = "/builder.Builder/UploadBuildArtifact"
+	Builder_DownloadTome_FullMethodName          = "/builder.Builder/DownloadTome"
 )
 
 // BuilderClient is the client API for Builder service.
@@ -31,6 +32,7 @@ type BuilderClient interface {
 	ClaimBuildTasks(ctx context.Context, in *ClaimBuildTasksRequest, opts ...grpc.CallOption) (*ClaimBuildTasksResponse, error)
 	StreamBuildTaskOutput(ctx context.Context, opts ...grpc.CallOption) (Builder_StreamBuildTaskOutputClient, error)
 	UploadBuildArtifact(ctx context.Context, opts ...grpc.CallOption) (Builder_UploadBuildArtifactClient, error)
+	DownloadTome(ctx context.Context, in *DownloadTomeRequest, opts ...grpc.CallOption) (Builder_DownloadTomeClient, error)
 }
 
 type builderClient struct {
@@ -121,6 +123,39 @@ func (x *builderUploadBuildArtifactClient) CloseAndRecv() (*UploadBuildArtifactR
 	return m, nil
 }
 
+func (c *builderClient) DownloadTome(ctx context.Context, in *DownloadTomeRequest, opts ...grpc.CallOption) (Builder_DownloadTomeClient, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Builder_ServiceDesc.Streams[2], Builder_DownloadTome_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &builderDownloadTomeClient{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Builder_DownloadTomeClient interface {
+	Recv() (*DownloadTomeResponse, error)
+	grpc.ClientStream
+}
+
+type builderDownloadTomeClient struct {
+	grpc.ClientStream
+}
+
+func (x *builderDownloadTomeClient) Recv() (*DownloadTomeResponse, error) {
+	m := new(DownloadTomeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BuilderServer is the server API for Builder service.
 // All implementations must embed UnimplementedBuilderServer
 // for forward compatibility
@@ -128,6 +163,7 @@ type BuilderServer interface {
 	ClaimBuildTasks(context.Context, *ClaimBuildTasksRequest) (*ClaimBuildTasksResponse, error)
 	StreamBuildTaskOutput(Builder_StreamBuildTaskOutputServer) error
 	UploadBuildArtifact(Builder_UploadBuildArtifactServer) error
+	DownloadTome(*DownloadTomeRequest, Builder_DownloadTomeServer) error
 	mustEmbedUnimplementedBuilderServer()
 }
 
@@ -143,6 +179,9 @@ func (UnimplementedBuilderServer) StreamBuildTaskOutput(Builder_StreamBuildTaskO
 }
 func (UnimplementedBuilderServer) UploadBuildArtifact(Builder_UploadBuildArtifactServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadBuildArtifact not implemented")
+}
+func (UnimplementedBuilderServer) DownloadTome(*DownloadTomeRequest, Builder_DownloadTomeServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadTome not implemented")
 }
 func (UnimplementedBuilderServer) mustEmbedUnimplementedBuilderServer() {}
 
@@ -227,6 +266,27 @@ func (x *builderUploadBuildArtifactServer) Recv() (*UploadBuildArtifactRequest, 
 	return m, nil
 }
 
+func _Builder_DownloadTome_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadTomeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BuilderServer).DownloadTome(m, &builderDownloadTomeServer{ServerStream: stream})
+}
+
+type Builder_DownloadTomeServer interface {
+	Send(*DownloadTomeResponse) error
+	grpc.ServerStream
+}
+
+type builderDownloadTomeServer struct {
+	grpc.ServerStream
+}
+
+func (x *builderDownloadTomeServer) Send(m *DownloadTomeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Builder_ServiceDesc is the grpc.ServiceDesc for Builder service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,6 +309,11 @@ var Builder_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "UploadBuildArtifact",
 			Handler:       _Builder_UploadBuildArtifact_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadTome",
+			Handler:       _Builder_DownloadTome_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "builder.proto",

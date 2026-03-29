@@ -17,6 +17,7 @@ import (
 	"github.com/gorilla/websocket"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -249,8 +250,11 @@ func (h *Handler) getShellForRequest(r *http.Request) (*ent.Shell, error) {
 func (h *Handler) pollForOpenPortals(ctx context.Context, sh *ent.Shell, portalCh chan<- *ent.Portal, errCh chan<- *WebsocketErrorMessage) {
 	// Closure to poll a single time for open portals
 	poll := func() {
-		portal, err := sh.QueryPortals().
-			Where(portal.ClosedAtIsNil()).
+		portal, err := h.graph.Portal.Query().
+			Where(
+				portal.HasBeaconWith(beacon.IDEQ(sh.Edges.Beacon.ID)),
+				portal.ClosedAtIsNil(),
+			).
 			Order(portal.ByCreatedAt(sql.OrderDesc())).
 			First(ctx)
 		if err != nil && !ent.IsNotFound(err) {
@@ -568,9 +572,9 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 			}
 
 			// If stream_id matches, we send standard output
-			// We check for bytes payload as it indicates output.
-			bytesPayload := mote.GetBytes()
-			if bytesPayload != nil {
+			// We check for shell payload as it indicates output.
+			shellPayload := mote.GetShell()
+			if shellPayload != nil && (shellPayload.Output != "" || shellPayload.Error != "") {
 				// It's output.
 				task, err := h.graph.ShellTask.Query().
 					Where(
@@ -587,34 +591,55 @@ func (h *Handler) writeMessagesFromShell(ctx context.Context, session *ShellSess
 
 				if mote.StreamId == streamID {
 					// Local stream output
-					outputMsg := NewWebsocketTaskOutputMessage(task)
-					if _, sent := sentTasks[task.ID]; !sent {
-						outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), string(bytesPayload.Data))
-						sentTasks[task.ID] = struct{}{}
-					} else {
-						outputMsg.Output = string(bytesPayload.Data) // Use real-time chunk
+					if shellPayload.Output != "" {
+						outputMsg := NewWebsocketTaskOutputMessage(task)
+						if _, sent := sentTasks[task.ID]; !sent {
+							outputMsg.Output = fmt.Sprintf("[+] %s\n%s", truncateInput(task.Input), shellPayload.Output)
+							sentTasks[task.ID] = struct{}{}
+						} else {
+							outputMsg.Output = shellPayload.Output // Use real-time chunk
+						}
+						taskOutputCh <- outputMsg
 					}
-					taskOutputCh <- outputMsg
+					if shellPayload.Error != "" {
+						errMsg := NewWebsocketTaskErrorMessage(task)
+						if _, sent := sentTasks[task.ID]; !sent {
+							errMsg.Error = fmt.Sprintf("[!] %s\n%s", truncateInput(task.Input), shellPayload.Error)
+							sentTasks[task.ID] = struct{}{}
+						} else {
+							errMsg.Error = shellPayload.Error // Use real-time chunk
+						}
+						taskErrCh <- errMsg
+					}
 				} else {
 					// Other stream output
-					if _, sent := sentTasks[task.ID]; !sent {
-						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
-						// Custom formatting
-						creatorName := "Unknown"
-						if task.Edges.Creator != nil {
-							creatorName = task.Edges.Creator.Name
+					if shellPayload.Output != "" || shellPayload.Error != "" {
+						var payloadData string
+						if shellPayload.Output != "" {
+							payloadData = shellPayload.Output
+						} else {
+							payloadData = shellPayload.Error
 						}
 
-						otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
-						otherStreamMsg.Output += string(bytesPayload.Data)
+						if _, sent := sentTasks[task.ID]; !sent {
+							otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+							// Custom formatting
+							creatorName := "Unknown"
+							if task.Edges.Creator != nil {
+								creatorName = task.Edges.Creator.Name
+							}
 
-						otherStreamCh <- otherStreamMsg
-						sentTasks[task.ID] = struct{}{}
-					} else {
-						// Already sent header. Send additional data.
-						otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
-						otherStreamMsg.Output = string(bytesPayload.Data)
-						otherStreamCh <- otherStreamMsg
+							otherStreamMsg.Output = fmt.Sprintf("\x1b[34m[@%s]\x1b[0m[+] %s\n", creatorName, truncateInput(task.Input))
+							otherStreamMsg.Output += payloadData
+
+							otherStreamCh <- otherStreamMsg
+							sentTasks[task.ID] = struct{}{}
+						} else {
+							// Already sent header. Send additional data.
+							otherStreamMsg := NewWebsocketTaskOutputFromOtherStreamMessage(task)
+							otherStreamMsg.Output = payloadData
+							otherStreamCh <- otherStreamMsg
+						}
 					}
 				}
 			}
@@ -688,7 +713,7 @@ func truncateInput(input string) string {
 
 // truncateShellMacro removes the macro wrapper added in eldritch to make shell output more readable in the frontend.
 // This is needed because the macro adds a lot of boilerplate that clutters the input display in the frontend.
-// See expand_macros() in eldritch-wasm/src/headless.rs for how we do this macro.
+// See expand_macros() in eldritch-wasm/src/browser.rs for how we do this macro.
 func truncateShellMacro(input string) string {
 	expandedMacroPrefix := "for _nonomacroclowntown in range(1):\n\t_nonomacroclowntown = "
 	expandedMacroSuffix := "print(_nonomacroclowntown['stdout']);print(_nonomacroclowntown['stderr'])\n"

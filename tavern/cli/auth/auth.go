@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -56,7 +57,27 @@ func (f BrowserFunc) OpenURL(tavernURL string) error {
 //
 // After authenticating, the resulting Token may be used to authenticate to Tavern for HTTP requests.
 // This should be done by calling the `Authenticate(request)` method on the returned token.
-func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token, error) {
+func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts ...AuthOption) (Token, error) {
+	options := applyOptions(opts...)
+
+	// 1. Check Environment Variable
+	if options.EnvAPIKeyName != "" {
+		if token := os.Getenv(options.EnvAPIKeyName); token != "" {
+			return Token(token), nil
+		}
+	}
+
+	// 2. Check Cache File
+	if options.CachePath != "" {
+		tokenData, err := os.ReadFile(options.CachePath)
+		if err == nil {
+			slog.Debug("Loaded authentication credentials from cache", "path", options.CachePath)
+			return Token(tokenData), nil
+		} else if !os.IsNotExist(err) {
+			slog.Warn("failed to read credential cache", "path", options.CachePath, "error", err)
+		}
+	}
+
 	// Create Listener
 	conn, err := net.Listen("tcp", ":0")
 	if err != nil {
@@ -113,9 +134,17 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 		wg.Wait()
 	}()
 
-	// Open Browser
-	if err := browser.OpenURL(accessTokenRedirURL.String()); err != nil {
-		return Token(""), fmt.Errorf("failed to open browser for authentication flow: %w", err)
+	// Try to open the browser
+	if browser != nil {
+		err = browser.OpenURL(accessTokenRedirURL.String())
+	} else {
+		err = fmt.Errorf("no browser provided")
+	}
+
+	// Fallback to Remote Device Authentication if browser fails
+	if err != nil {
+		slog.WarnContext(ctx, "failed to open browser, falling back to remote device authentication", "error", err)
+		go AuthenticateRemoteDevice(ctx, tavernURL, tokenCh, errCh)
 	}
 
 	// Wait for Token, Error, or Cancellation
@@ -125,6 +154,12 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string) (Token
 	case err := <-errCh:
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
+		if options.CachePath != "" {
+			err := os.WriteFile(options.CachePath, []byte(token), 0600)
+			if err != nil {
+				slog.Warn("failed to write credential cache", "path", options.CachePath, "error", err)
+			}
+		}
 		return token, nil
 	}
 }

@@ -115,13 +115,21 @@ fn test_tuple_slicing_extended() {
 }
 
 #[test]
-fn test_bytes_slicing_not_supported() {
-    assert::fail(
+fn test_bytes_slicing() {
+    assert::pass(
         r#"
         b = b"012345"
-        b[::2]
+        assert_eq(b[0:6], b)
+        assert_eq(b[:], b)
+        assert_eq(b[0:3], b"012")
+        assert_eq(b[3:], b"345")
+        assert_eq(b[:3], b"012")
+        assert_eq(b[::2], b"024")
+        assert_eq(b[::-1], b"543210")
+        assert_eq(b[-3:], b"345")
+        assert_eq(b[100:], b"")
+        assert_eq(b[-100:], b"012345")
     "#,
-        "'bytes' object is not subscriptable",
     );
 }
 

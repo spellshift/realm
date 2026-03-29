@@ -12,14 +12,20 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Adventure is the client for interacting with the Adventure builders.
+	Adventure *AdventureClient
 	// Asset is the client for interacting with the Asset builders.
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BuildProfile is the client for interacting with the BuildProfile builders.
+	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
 	BuildTask *BuildTaskClient
 	// Builder is the client for interacting with the Builder builders.
 	Builder *BuilderClient
+	// DeviceAuth is the client for interacting with the DeviceAuth builders.
+	DeviceAuth *DeviceAuthClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -36,6 +42,8 @@ type Tx struct {
 	Quest *QuestClient
 	// Repository is the client for interacting with the Repository builders.
 	Repository *RepositoryClient
+	// ScheduledTask is the client for interacting with the ScheduledTask builders.
+	ScheduledTask *ScheduledTaskClient
 	// Screenshot is the client for interacting with the Screenshot builders.
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
@@ -181,10 +189,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Adventure = NewAdventureClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
+	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
+	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)
 	tx.HostFile = NewHostFileClient(tx.config)
@@ -193,6 +204,7 @@ func (tx *Tx) init() {
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
+	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)
@@ -209,7 +221,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Asset.QueryXXX(), the query will be executed
+// applies a query, for example: Adventure.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

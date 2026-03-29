@@ -34,6 +34,14 @@ const (
 	EdgeTasks = "tasks"
 	// EdgeCreator holds the string denoting the creator edge name in mutations.
 	EdgeCreator = "creator"
+	// EdgeScheduledTask holds the string denoting the scheduled_task edge name in mutations.
+	EdgeScheduledTask = "scheduled_task"
+	// EdgeAdventure holds the string denoting the adventure edge name in mutations.
+	EdgeAdventure = "adventure"
+	// EdgeRelatedQuests holds the string denoting the related_quests edge name in mutations.
+	EdgeRelatedQuests = "related_quests"
+	// EdgePreviousQuest holds the string denoting the previous_quest edge name in mutations.
+	EdgePreviousQuest = "previous_quest"
 	// Table holds the table name of the quest in the database.
 	Table = "quests"
 	// TomeTable is the table that holds the tome relation/edge.
@@ -64,6 +72,28 @@ const (
 	CreatorInverseTable = "users"
 	// CreatorColumn is the table column denoting the creator relation/edge.
 	CreatorColumn = "quest_creator"
+	// ScheduledTaskTable is the table that holds the scheduled_task relation/edge.
+	ScheduledTaskTable = "quests"
+	// ScheduledTaskInverseTable is the table name for the ScheduledTask entity.
+	// It exists in this package in order to avoid circular dependency with the "scheduledtask" package.
+	ScheduledTaskInverseTable = "scheduled_tasks"
+	// ScheduledTaskColumn is the table column denoting the scheduled_task relation/edge.
+	ScheduledTaskColumn = "scheduled_task_quests"
+	// AdventureTable is the table that holds the adventure relation/edge.
+	AdventureTable = "quests"
+	// AdventureInverseTable is the table name for the Adventure entity.
+	// It exists in this package in order to avoid circular dependency with the "adventure" package.
+	AdventureInverseTable = "adventures"
+	// AdventureColumn is the table column denoting the adventure relation/edge.
+	AdventureColumn = "adventure_quests"
+	// RelatedQuestsTable is the table that holds the related_quests relation/edge.
+	RelatedQuestsTable = "quests"
+	// RelatedQuestsColumn is the table column denoting the related_quests relation/edge.
+	RelatedQuestsColumn = "quest_related_quests"
+	// PreviousQuestTable is the table that holds the previous_quest relation/edge.
+	PreviousQuestTable = "quests"
+	// PreviousQuestColumn is the table column denoting the previous_quest relation/edge.
+	PreviousQuestColumn = "quest_related_quests"
 )
 
 // Columns holds all SQL columns for quest fields.
@@ -80,9 +110,12 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "quests"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"adventure_quests",
 	"quest_tome",
 	"quest_bundle",
 	"quest_creator",
+	"quest_related_quests",
+	"scheduled_task_quests",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -187,6 +220,41 @@ func ByCreatorField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newCreatorStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByScheduledTaskField orders the results by scheduled_task field.
+func ByScheduledTaskField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScheduledTaskStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAdventureField orders the results by adventure field.
+func ByAdventureField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAdventureStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByRelatedQuestsCount orders the results by related_quests count.
+func ByRelatedQuestsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRelatedQuestsStep(), opts...)
+	}
+}
+
+// ByRelatedQuests orders the results by related_quests terms.
+func ByRelatedQuests(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRelatedQuestsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByPreviousQuestField orders the results by previous_quest field.
+func ByPreviousQuestField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPreviousQuestStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newTomeStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -213,5 +281,33 @@ func newCreatorStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CreatorInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CreatorTable, CreatorColumn),
+	)
+}
+func newScheduledTaskStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScheduledTaskInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ScheduledTaskTable, ScheduledTaskColumn),
+	)
+}
+func newAdventureStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AdventureInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, AdventureTable, AdventureColumn),
+	)
+}
+func newRelatedQuestsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RelatedQuestsTable, RelatedQuestsColumn),
+	)
+}
+func newPreviousQuestStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PreviousQuestTable, PreviousQuestColumn),
 	)
 }

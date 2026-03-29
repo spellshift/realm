@@ -12,10 +12,13 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -24,6 +27,7 @@ import (
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -91,10 +95,13 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			adventure.Table:      adventure.ValidColumn,
 			asset.Table:          asset.ValidColumn,
 			beacon.Table:         beacon.ValidColumn,
+			buildprofile.Table:   buildprofile.ValidColumn,
 			buildtask.Table:      buildtask.ValidColumn,
 			builder.Table:        builder.ValidColumn,
+			deviceauth.Table:     deviceauth.ValidColumn,
 			host.Table:           host.ValidColumn,
 			hostcredential.Table: hostcredential.ValidColumn,
 			hostfile.Table:       hostfile.ValidColumn,
@@ -103,6 +110,7 @@ func checkColumn(table, column string) error {
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
+			scheduledtask.Table:  scheduledtask.ValidColumn,
 			screenshot.Table:     screenshot.ValidColumn,
 			shell.Table:          shell.ValidColumn,
 			shelltask.Table:      shelltask.ValidColumn,

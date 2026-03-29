@@ -9,7 +9,6 @@ export enum PageNavItem {
     documentation='Documentation',
     playground='API Playground',
     tasks='Tasks',
-    createQuest= 'Create new quest',
     hosts="Hosts",
     tomes="Tomes",
     assets="Assets",
@@ -29,6 +28,7 @@ export enum SupportedTransports {
     DNS="TRANSPORT_DNS",
     GRPC="TRANSPORT_GRPC",
     HTTP1="TRANSPORT_HTTP1",
+    ICMP="TRANSPORT_ICMP",
     Transport_Unspecified="TRANSPORT_UNSPECIFIED"
 }
 
@@ -102,7 +102,8 @@ export enum ProcessOrderField {
     LastModifiedAt = "LAST_MODIFIED_AT",
     Name = "NAME",
     ProcessId = "PROCESS_ID",
-    ParentProcessId= "PARENT_PROCESS_ID",
+    ParentProcessId = "PARENT_PROCESS_ID",
+    ProcessStartTime = "PROCESS_START_TIME",
 }
 
 export enum HostFileOrderField {

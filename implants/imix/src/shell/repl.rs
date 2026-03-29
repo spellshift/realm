@@ -18,13 +18,12 @@ use eldritch_agent::Context;
 
 use super::parser::InputParser;
 
-struct VtWriter<T: Transport> {
+struct VtWriter {
     tx: tokio::sync::mpsc::Sender<ReverseShellRequest>,
     context: Context,
-    _phantom: std::marker::PhantomData<T>,
 }
 
-impl<T: Transport> Write for VtWriter<T> {
+impl Write for VtWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let context_val = match &self.context {
             Context::Task(tc) => Some(reverse_shell_request::Context::TaskContext(tc.clone())),
@@ -99,10 +98,10 @@ fn render<W: Write>(
     Ok(())
 }
 
-pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
+pub async fn run_repl_reverse_shell(
     context: Context,
-    mut transport: T,
-    agent: ImixAgent<T>,
+    mut transport: Box<dyn Transport + Send + Sync>,
+    agent: ImixAgent,
 ) -> anyhow::Result<()> {
     // Channels to manage gRPC stream
     let (output_tx, output_rx) = tokio::sync::mpsc::channel(100);
@@ -277,13 +276,17 @@ pub async fn run_repl_reverse_shell<T: Transport + Send + Sync + 'static>(
         let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_context(Arc::new(agent), context.clone(), Vec::new(), backend); // Changed to with_context
+            .with_context(
+                Arc::new(agent.clone()) as Arc<dyn eldritch::agent::agent::Agent>,
+                context.clone(),
+                Vec::new(),
+                backend,
+            );
 
         let mut repl = Repl::new();
-        let stdout = VtWriter::<T> {
+        let stdout = VtWriter {
             tx: output_tx.clone(),
             context: context.clone(),
-            _phantom: std::marker::PhantomData,
         };
         let mut stdout = BufWriter::new(stdout);
 

@@ -15,7 +15,7 @@ use super::utils::parse_error_kind;
 use super::{MAX_RECURSION_DEPTH, evaluate};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -296,7 +296,7 @@ pub(crate) fn call_function(
                 let old_flow = interp.flow.clone();
                 interp.flow = Flow::Next;
 
-                execute_stmts(interp, &body)?;
+                let exec_result = execute_stmts(interp, &body);
 
                 let ret_val = if let Flow::Return(v) = &interp.flow {
                     v.clone()
@@ -305,6 +305,8 @@ pub(crate) fn call_function(
                 };
                 interp.env = original_env;
                 interp.flow = old_flow;
+
+                exec_result?;
                 Ok(ret_val)
             })();
             interp.depth -= 1;

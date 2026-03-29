@@ -28,29 +28,17 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
         return response?.hosts?.edges?.[0]?.node?.processes?.edges?.[0]?.node || null;
     }, []);
 
+    // startTime is a Unix timestamp in seconds; JavaScript Date expects milliseconds
+    const formatStartTime = (startTime: number | null): string => {
+        if (!startTime) return '-';
+        return format(new Date(startTime * 1000), "yyyy-MM-dd HH:mm");
+    };
+
     const columns: VirtualizedTableColumn<ProcessNode>[] = useMemo(() => [
-        {
-            key: 'name',
-            label: 'Process name',
-            width: 'minmax(80px,1fr)',
-            render: (process: ProcessNode) => process.name
-        },
-        {
-            key: 'path',
-            label: 'Path',
-            width: 'minmax(100px,1fr)',
-            render: (process: ProcessNode) => (
-                <Tooltip label={process.path || ''} isDisabled={!process.path}>
-                    <div className="truncate text-sm text-gray-600">
-                        {process.path || '-'}
-                    </div>
-                </Tooltip>
-            ),
-        },
         {
             key: 'principal',
             label: 'User',
-            width: 'minmax(120px,1fr)',
+            width: 'minmax(100px,1fr)',
             render: (process: ProcessNode) => {
                 const principal = process.principal;
                 const color = principalColors.indexOf(principal as PrincipalAdminTypes) === -1 ? 'gray' : 'purple';
@@ -71,13 +59,13 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
         {
             key: 'pid',
             label: 'PID',
-            width: 'minmax(80px,0.5fr)',
+            width: 'minmax(70px,0.5fr)',
             render: (process: ProcessNode) => process.pid,
         },
         {
             key: 'ppid',
             label: 'PPID',
-            width: 'minmax(80px,0.5fr)',
+            width: 'minmax(70px,0.5fr)',
             render: (process: ProcessNode) => process.ppid,
         },
         {
@@ -87,9 +75,27 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
             render: (process: ProcessNode) => formatStatus(process.status),
         },
         {
+            key: 'startTime',
+            label: 'Start Time',
+            width: 'minmax(120px,1fr)',
+            render: (process: ProcessNode) => formatStartTime(process.startTime),
+        },
+        {
+            key: 'cmd',
+            label: 'CMD',
+            width: 'minmax(150px,2fr)',
+            render: (process: ProcessNode) => (
+                <Tooltip label={process.cmd || process.name} isDisabled={!process.cmd && !process.name}>
+                    <div className="truncate text-sm text-gray-600">
+                        {process.cmd || process.name || '-'}
+                    </div>
+                </Tooltip>
+            ),
+        },
+        {
             key: 'lastModifiedAt',
             label: 'Last Reported',
-            width: 'minmax(80px,1fr)',
+            width: 'minmax(120px,1fr)',
             render: (process: ProcessNode) => format(new Date(process.lastModifiedAt), "yyyy-MM-dd HH:mm"),
         },
     ], [principalColors]);
@@ -101,7 +107,7 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
             query={GET_PROCESS_DETAIL_QUERY}
             getVariables={getVariables}
             extractData={extractData}
-            estimateRowSize={73}
+            estimateRowSize={80}
             overscan={5}
             height="60vh"
         />

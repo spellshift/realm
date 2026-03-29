@@ -140,6 +140,20 @@ func (hpc *HostProcessCreate) SetStatus(es epb.Process_Status) *HostProcessCreat
 	return hpc
 }
 
+// SetStartTime sets the "start_time" field.
+func (hpc *HostProcessCreate) SetStartTime(u uint64) *HostProcessCreate {
+	hpc.mutation.SetStartTime(u)
+	return hpc
+}
+
+// SetNillableStartTime sets the "start_time" field if the given value is not nil.
+func (hpc *HostProcessCreate) SetNillableStartTime(u *uint64) *HostProcessCreate {
+	if u != nil {
+		hpc.SetStartTime(*u)
+	}
+	return hpc
+}
+
 // SetHostID sets the "host" edge to the Host entity by ID.
 func (hpc *HostProcessCreate) SetHostID(id int) *HostProcessCreate {
 	hpc.mutation.SetHostID(id)
@@ -340,6 +354,10 @@ func (hpc *HostProcessCreate) createSpec() (*HostProcess, *sqlgraph.CreateSpec) 
 	if value, ok := hpc.mutation.Status(); ok {
 		_spec.SetField(hostprocess.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := hpc.mutation.StartTime(); ok {
+		_spec.SetField(hostprocess.FieldStartTime, field.TypeUint64, value)
+		_node.StartTime = value
 	}
 	if nodes := hpc.mutation.HostIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -600,6 +618,30 @@ func (u *HostProcessUpsert) UpdateStatus() *HostProcessUpsert {
 	return u
 }
 
+// SetStartTime sets the "start_time" field.
+func (u *HostProcessUpsert) SetStartTime(v uint64) *HostProcessUpsert {
+	u.Set(hostprocess.FieldStartTime, v)
+	return u
+}
+
+// UpdateStartTime sets the "start_time" field to the value that was provided on create.
+func (u *HostProcessUpsert) UpdateStartTime() *HostProcessUpsert {
+	u.SetExcluded(hostprocess.FieldStartTime)
+	return u
+}
+
+// AddStartTime adds v to the "start_time" field.
+func (u *HostProcessUpsert) AddStartTime(v uint64) *HostProcessUpsert {
+	u.Add(hostprocess.FieldStartTime, v)
+	return u
+}
+
+// ClearStartTime clears the value of the "start_time" field.
+func (u *HostProcessUpsert) ClearStartTime() *HostProcessUpsert {
+	u.SetNull(hostprocess.FieldStartTime)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -824,6 +866,34 @@ func (u *HostProcessUpsertOne) SetStatus(v epb.Process_Status) *HostProcessUpser
 func (u *HostProcessUpsertOne) UpdateStatus() *HostProcessUpsertOne {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStartTime sets the "start_time" field.
+func (u *HostProcessUpsertOne) SetStartTime(v uint64) *HostProcessUpsertOne {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.SetStartTime(v)
+	})
+}
+
+// AddStartTime adds v to the "start_time" field.
+func (u *HostProcessUpsertOne) AddStartTime(v uint64) *HostProcessUpsertOne {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.AddStartTime(v)
+	})
+}
+
+// UpdateStartTime sets the "start_time" field to the value that was provided on create.
+func (u *HostProcessUpsertOne) UpdateStartTime() *HostProcessUpsertOne {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.UpdateStartTime()
+	})
+}
+
+// ClearStartTime clears the value of the "start_time" field.
+func (u *HostProcessUpsertOne) ClearStartTime() *HostProcessUpsertOne {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.ClearStartTime()
 	})
 }
 
@@ -1217,6 +1287,34 @@ func (u *HostProcessUpsertBulk) SetStatus(v epb.Process_Status) *HostProcessUpse
 func (u *HostProcessUpsertBulk) UpdateStatus() *HostProcessUpsertBulk {
 	return u.Update(func(s *HostProcessUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetStartTime sets the "start_time" field.
+func (u *HostProcessUpsertBulk) SetStartTime(v uint64) *HostProcessUpsertBulk {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.SetStartTime(v)
+	})
+}
+
+// AddStartTime adds v to the "start_time" field.
+func (u *HostProcessUpsertBulk) AddStartTime(v uint64) *HostProcessUpsertBulk {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.AddStartTime(v)
+	})
+}
+
+// UpdateStartTime sets the "start_time" field to the value that was provided on create.
+func (u *HostProcessUpsertBulk) UpdateStartTime() *HostProcessUpsertBulk {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.UpdateStartTime()
+	})
+}
+
+// ClearStartTime clears the value of the "start_time" field.
+func (u *HostProcessUpsertBulk) ClearStartTime() *HostProcessUpsertBulk {
+	return u.Update(func(s *HostProcessUpsert) {
+		s.ClearStartTime()
 	})
 }
 

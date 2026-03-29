@@ -447,15 +447,46 @@ The **assets.list** method returns a list of asset names that the agent is aware
 
 ### assets.read_binary
 
-`assets.read_binary(src: str) -> List<int>`
+`assets.read_binary(src: str) -> Bytes`
 
-The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes.
+The **assets.read_binary** method returns a list of bytes representing the asset files bytes.
 
 ### assets.read
 
 `assets.read(src: str) -> str`
 
 The **assets.read** method returns a UTF-8 string representation of the asset file.
+
+---
+
+## Chain
+
+The `chain` library enables multi-agent chaining by allowing one agent (Agent A) to proxy C2 traffic for another agent (Agent B). This is useful for establishing communication through intermediary agents in restricted networks.
+
+### chain.tcp
+
+`chain.tcp(addr: str) -> int`
+
+The **chain.tcp** method establishes a chain proxy over TCP, allowing Agent A to forward C2 messages to/from Agent B. Agent A connects to Agent B's bind TCP transport listener at the specified address and proxies gRPC traffic over HTTP/2.
+
+**Parameters:**
+- `addr`: The address and port where Agent B is listening for chain connections (e.g., `"192.168.1.100:8443"`)
+
+**Returns:**
+- `0` on successful initialization (the proxy runs asynchronously in the background)
+
+**Example:**
+
+```python
+# Agent A connects to Agent B's bind TCP listener and starts proxying traffic
+chain.tcp("192.168.1.100:8443")
+
+# Now Agent B's C2 messages flow through Agent A to Tavern
+```
+
+**Usage Pattern:**
+
+Agent A must have one of the standard transports (grpc, http1, dns) configured for its upstream connection to Tavern. Agent B is configured with a TCP bind transport to accept connections from Agent A on a TCP port.
 
 ---
 
@@ -512,6 +543,18 @@ The **crypto.decode_b64** method encodes the given text using the given base64 d
 - STANDARD_NO_PAD
 - URL_SAFE
 - URL_SAFE_NO_PAD
+
+### crypto.encode_utf16le
+
+`crypto.encode_utf16le(content: str) -> Bytes`
+
+The **crypto.encode_utf16le** method encodes a UTF-8 string into UTF-16LE bytes, which are commonly used in Windows environments.
+
+### crypto.decode_utf16le
+
+`crypto.decode_utf16le(content: Bytes) -> str`
+
+The **crypto.decode_utf16le** method decodes UTF-16LE bytes into a standard UTF-8 string. Errors if the bytes are not valid UTF-16.
 
 ### crypto.from_json
 
@@ -753,7 +796,7 @@ file.read("\\\\127.0.0.1\\c$\\Windows\\Temp\\metadata.yml") # Read file over Win
 
 ### file.read_binary
 
-`file.read(path: str) -> List<int>`
+`file.read_binary(path: str) -> Bytes`
 
 The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.
 This function supports globbing with `*` for example:
@@ -786,16 +829,29 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 
 `file.temp_file(name: Option<str>) -> str`
 
-The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
 ### file.template
-
+  
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+### file.template_str
+
+`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template = "Hello, {{ name }}!\n"
+result = file.template_str(template, {"name": "world"}, True)
+```
 
 ### file.timestomp
 
@@ -811,6 +867,20 @@ It can use specific timestamps (epoch seconds or string format) or copy timestam
 The **file.write** method writes to a given file path with the given content.
 If a file already exists at this path, the method will overwite it. If a directory
 already exists at the path the method will error.
+
+### file.write_binary
+
+`file.write_binary(path: str, content: Bytes) -> None`
+
+The **file.write_binary** method writes binary content to a given file path.
+If a file already exists at this path, the method will overwrite it. If a directory
+already exists at the path the method will error.
+
+```python
+# Write bytes returned from file.read_binary to another file
+data = file.read_binary("/etc/passwd")
+file.write_binary("/tmp/passwd_copy", data)
+```
 
 ### file.find
 
@@ -1429,105 +1499,23 @@ sys.shell("ls /nofile")
 }
 ```
 
-### sys.write_reg_hex
+### sys.write_reg
 
-`sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
+`sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool`
 
-The **sys.write_reg_hex** method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.
+The **sys.write_reg** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.
 An example is below:
 
 ```python
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","deadbeef")
+$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_SZ","BAR1")
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","deadbeef")
+$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_BINARY","deadbeef")
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE","deadbeef")
+$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_DWORD",12345678)
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ","deadbeef")
+$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
 True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","dead,beef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","deadbeef")
-True
-$> sys.write_reg_hex("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","deadbeefdeadbeef")
-True
-```
-
-### sys.write_reg_int
-
-`sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool`
-
-The **sys.write_reg_int** method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.
-An example is below:
-
-```python
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST",12345678)
-True
-$> sys.write_reg_int("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD",12345678)
-True
-```
-
-### sys.write_reg_str
-
-`sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool`
-
-The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.
-An example is below:
-
-```python
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_SZ","BAR1")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_BINARY","DEADBEEF")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_NONE","DEADBEEF")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_EXPAND_SZ","BAR2")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD","12345678")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_DWORD_BIG_ENDIAN","12345678")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_LINK","A PLAIN STRING")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_MULTI_SZ","BAR1,BAR2,BAR3")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_LIST","DEADBEEF")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_FULL_RESOURCE_DESCRIPTOR","DEADBEEF")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_RESOURCE_REQUIREMENTS_LIST","DEADBEEF")
-True
-$> sys.write_reg_str("HKEY_CURRENT_USER","SOFTWARE\\TEST1","FOO1","REG_QWORD","1234567812345678")
+$> sys.write_reg("HKCU\SOFTWARE\TEST1","FOO1","REG_QWORD",12345678)
 True
 ```
 
@@ -1569,6 +1557,6 @@ The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This us
 
 ### time.sleep
 
-`time.sleep(secs: int)`
+`time.sleep(secs: float)`
 
 The **time.sleep** method sleeps the task for the given number of seconds.

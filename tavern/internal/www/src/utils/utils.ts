@@ -1,13 +1,12 @@
 import { add } from "date-fns";
-import { BeaconEdge, BeaconNode } from "./interfacesQuery";
-import { OnlineOfflineFilterType, PageNavItem, PrincipalAdminTypes, TomeFilterFieldKind } from "./enums";
+import { BeaconEdge, BeaconIdNode, BeaconNode } from "./interfacesQuery";
+import { OnlineOfflineFilterType, PageNavItem, PrincipalAdminTypes, SupportedTransports, TomeFilterFieldKind } from "./enums";
 import { FilterBarOption, OnlineOfflineStatus, FieldInputParams, TomeFiltersByType } from "./interfacesUI";
 
 const pathToNavItem: Record<string, PageNavItem> = {
     '/dashboard': PageNavItem.dashboard,
     '/quests': PageNavItem.quests,
     '/tasks': PageNavItem.tasks,
-    '/createQuest': PageNavItem.createQuest,
     '/hosts': PageNavItem.hosts,
     '/tomes': PageNavItem.tomes,
     '/assets': PageNavItem.assets,
@@ -54,6 +53,46 @@ export const safelyJsonParse = (value: string) => {
         }
     }
     return { error, params };
+};
+
+/**
+ * Ensures a value is a plain object (not an array or primitive).
+ * This prevents accidental access to Array.prototype methods (like "filter", "map")
+ * when indexing by string keys.
+ */
+export const asPlainObject = (value: unknown): Record<string, unknown> => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        return value as Record<string, unknown>;
+    }
+    return {};
+};
+
+/**
+ * Safely converts a value to a displayable string for rendering in React.
+ * Handles functions, objects, arrays, and other non-primitive types that
+ * cannot be rendered directly as React children.
+ */
+export const toDisplayString = (value: unknown): string | null => {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+    if (typeof value === "string") {
+        return value;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+        return String(value);
+    }
+    if (typeof value === "function") {
+        return null;
+    }
+    if (typeof value === "object") {
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return null;
+        }
+    }
+    return String(value);
 };
 
 export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>): {
@@ -217,7 +256,7 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
         return [];
     }
 
-    const paramValues = JSON.parse(questParamamters) || {};
+    const paramValues = asPlainObject(JSON.parse(questParamamters));
     const paramFields = JSON.parse(tomeParameters || "") || [];
 
     const fieldWithValue = paramFields.map((field: FieldInputParams) => {
@@ -230,10 +269,11 @@ export function constructTomeParams(questParamamters?: string | null, tomeParame
     return fieldWithValue;
 }
 export function combineTomeValueAndFields(paramValues: { [key: string]: any }, paramFields: Array<FieldInputParams>): Array<FieldInputParams> {
+    const safeParamValues = asPlainObject(paramValues);
     const fieldWithValue = paramFields.map((field: FieldInputParams) => {
         return {
             ...field,
-            value: paramValues[field.name] || ""
+            value: safeParamValues[field.name] || ""
         }
     })
 
@@ -314,4 +354,29 @@ export const formatBytes = (bytes: number, decimals = 2) => {
     const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+export const TRANSPORT_PRIORITY: Record<string, number> = {
+    [SupportedTransports.GRPC]: 3,
+    [SupportedTransports.HTTP1]: 2,
+    [SupportedTransports.DNS]: 1,
+};
+
+export const ADMIN_PRINCIPALS = new Set(Object.values(PrincipalAdminTypes));
+
+export function getPriotizedBeaconId(beacons: BeaconIdNode[]): string | undefined {
+    if (beacons.length === 0) return undefined;
+
+    const scored = beacons.map((beacon) => ({
+        id: beacon.id,
+        isAdmin: ADMIN_PRINCIPALS.has(beacon.principal as PrincipalAdminTypes),
+        transportScore: TRANSPORT_PRIORITY[beacon.transport || ""] || 0,
+    }));
+
+    scored.sort((a, b) => {
+        if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1;
+        return b.transportScore - a.transportScore;
+    });
+
+    return scored[0].id;
 }

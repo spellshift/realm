@@ -4,48 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"google.golang.org/grpc/metadata"
 	"realm.pub/tavern/cli/auth"
 )
 
-// EnvAPIToken is the name of the environment variable to optionally provide an API token
-const EnvAPIToken = "TAVERN_API_TOKEN"
+// EnvAPIKey is the name of the environment variable to optionally provide an API key
+const EnvAPIKey = "TAVERN_API_TOKEN"
 
 func getAuthToken(ctx context.Context, tavernURL, cachePath string) (auth.Token, error) {
-	if token := os.Getenv(EnvAPIToken); token != "" {
-		return auth.Token(token), nil
-	}
-
-	tokenData, err := os.ReadFile(cachePath)
-	if os.IsNotExist(err) {
-		token, err := auth.Authenticate(
-			ctx,
-			auth.BrowserFunc(
-				func(url string) error {
-					fmt.Printf("\n\nTavern Authentication URL: %s\n\n", url)
-					return nil
-				},
-			),
-			tavernURL,
-		)
-		if err != nil {
-			return auth.Token(""), err
-		}
-
-		if err := os.WriteFile(cachePath, []byte(token), 0640); err != nil {
-			log.Printf("[WARN] Failed to save token to credential cache (%q): %v", cachePath, err)
-		}
-		return token, nil
-	}
-	if err != nil {
-		return auth.Token(""), fmt.Errorf("failed to read credential cache (%q): %v", cachePath, err)
-	}
-
-	log.Printf("Loaded authentication credentials from %q", cachePath)
-	return auth.Token(strings.TrimSpace(string(tokenData))), nil
+	return auth.Authenticate(
+		ctx,
+		auth.DefaultBrowser{},
+		tavernURL,
+		auth.WithAPIKeyFromEnv(EnvAPIKey),
+		auth.WithCacheFile(cachePath),
+	)
 }
 
 func authGRPCContext(ctx context.Context, upstream string, authCachePath string) context.Context {

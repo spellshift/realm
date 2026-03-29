@@ -10,16 +10,16 @@ import (
 	"testing"
 	"time"
 
+	"database/sql"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"database/sql"
 	"github.com/stretchr/testify/require"
 	_ "gocloud.dev/pubsub/mempubsub"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
-	entsql "entgo.io/ent/dialect/sql"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -236,10 +236,9 @@ func TestInteractiveShell(t *testing.T) {
 	outMote := &portalpb.Mote{
 		StreamId: task.StreamID,
 		SeqId:    task.SequenceID,
-		Payload: &portalpb.Mote_Bytes{
-			Bytes: &portalpb.BytesPayload{
-				Data: []byte(outputData),
-				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA,
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Output: outputData,
 			},
 		},
 	}
@@ -421,13 +420,13 @@ func TestOtherStreamOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4. Inject Output
+	outputData := "rebooting..."
 	outMote := &portalpb.Mote{
 		StreamId: otherStreamID,
 		SeqId:    1,
-		Payload: &portalpb.Mote_Bytes{
-			Bytes: &portalpb.BytesPayload{
-				Data: []byte("rebooting..."),
-				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_DATA,
+		Payload: &portalpb.Mote_Shell{
+			Shell: &portalpb.ShellPayload{
+				Output: outputData,
 			},
 		},
 	}

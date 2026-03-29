@@ -46,12 +46,28 @@ export const GET_PROCESS_DETAIL_QUERY = gql`
                                 ppid
                                 name
                                 path
+                                cmd
                                 status
+                                startTime
                                 env
                                 cwd
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_ONLINE_HOST_BEACONS_QUERY = gql`
+    query GetOnlineHostBeacons($where: BeaconWhereInput) {
+        beacons(where: $where) {
+            edges {
+                node {
+                    id
+                    principal
+                    transport
                 }
             }
         }

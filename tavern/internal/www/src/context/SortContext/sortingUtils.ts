@@ -60,8 +60,8 @@ export const defaultSorts: Sorts = {
         field: AssetOrderField.CreatedAt
     },
     [PageNavItem.processes]: {
-        direction: OrderDirection.Desc,
-        field: ProcessOrderField.LastModifiedAt
+        direction: OrderDirection.Asc,
+        field: ProcessOrderField.ProcessStartTime
     },
     [PageNavItem.files]: {
         direction: OrderDirection.Asc,

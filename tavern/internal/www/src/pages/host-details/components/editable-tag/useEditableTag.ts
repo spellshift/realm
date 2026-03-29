@@ -1,9 +1,9 @@
 import { gql, useMutation } from "@apollo/client";
 import { useState } from "react";
-import { GET_HOST_QUERY } from "../../../../utils/queries";
 import { useToast } from "@chakra-ui/react";
 import { FilterBarOption, KindOfTag } from "../../../../utils/interfacesUI";
 import { GET_TAG_OPTIONS } from "./useTagOptions";
+import { GET_HOST_CONTEXT_QUERY } from "../../../../context/HostContext";
 
 export const useEditableTag = (kind: KindOfTag) => {
     const toast = useToast();
@@ -33,7 +33,7 @@ export const useEditableTag = (kind: KindOfTag) => {
 
     const [updateHostMutation] = useMutation(UPDATE_HOST_TAGS, {
         refetchQueries: [
-            GET_HOST_QUERY,
+            GET_HOST_CONTEXT_QUERY,
             GET_TAG_OPTIONS
         ],
       });

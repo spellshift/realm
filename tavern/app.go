@@ -46,10 +46,12 @@ import (
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/portals/portalpb"
 	"realm.pub/tavern/tomes"
+	"realm.pub/tavern/tools"
 
 	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
+	_ "realm.pub/tavern/internal/redirectors/icmp"
 )
 
 func init() {
@@ -257,6 +259,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	}
 
 	// Load Default Tomes
+	// Load Tools
+	if err := tools.UploadTools(ctx, client, tools.FileSystem); err != nil {
+		slog.ErrorContext(ctx, "failed to upload tools", "err", err)
+	}
+
 	if cfg.IsDefaultTomeImportEnabled() {
 		if err := tomes.UploadTomes(ctx, client, tomes.FileSystem); err != nil {
 			slog.ErrorContext(ctx, "failed to upload default tomes", "err", err)
@@ -317,6 +324,27 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
 			Handler:              newStatusHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/rda/code": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDACodeHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/rda/token": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewRDATokenHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/auth/rda/approve": tavernhttp.Endpoint{
+			Handler: tavernhttp.NewRDAApproveHandler(client),
+		},
+		"/auth/rda/revoke": tavernhttp.Endpoint{
+			Handler: tavernhttp.NewRDARevokeHandler(client),
+		},
+		"/api/auth/signout": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewSignoutHandler(),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},

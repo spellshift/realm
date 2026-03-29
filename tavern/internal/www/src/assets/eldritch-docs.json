@@ -200,12 +200,20 @@
     "description": "The **assets.list** method returns a list of asset names that the agent is aware of."
   },
   "assets.read_binary": {
-    "signature": "assets.read_binary(src: str) -> List<int>",
-    "description": "The **assets.read_binary** method returns a list of u32 numbers representing the asset files bytes."
+    "signature": "assets.read_binary(src: str) -> Bytes",
+    "description": "The **assets.read_binary** method returns a list of bytes representing the asset files bytes."
   },
   "assets.read": {
     "signature": "assets.read(src: str) -> str",
     "description": "The **assets.read** method returns a UTF-8 string representation of the asset file.\n---"
+  },
+  "chain": {
+    "signature": "chain",
+    "description": "The `chain` library enables multi-agent chaining by allowing one agent (Agent A) to proxy C2 traffic for another agent (Agent B). This is useful for establishing communication through intermediary agents in restricted networks."
+  },
+  "chain.tcp": {
+    "signature": "chain.tcp(addr: str) -> int",
+    "description": "The **chain.tcp** method establishes a chain proxy over TCP, allowing Agent A to forward C2 messages to/from Agent B. Agent A connects to Agent B's bind TCP transport listener at the specified address and proxies gRPC traffic over HTTP/2.\n**Parameters:**\n- `addr`: The address and port where Agent B is listening for chain connections (e.g., `\"192.168.1.100:8443\"`)\n**Returns:**\n- `0` on successful initialization (the proxy runs asynchronously in the background)\n**Example:**\n```python\n# Agent A connects to Agent B's bind TCP listener and starts proxying traffic\nchain.tcp(\"192.168.1.100:8443\")\n# Now Agent B's C2 messages flow through Agent A to Tavern\n```\n**Usage Pattern:**\nAgent A must have one of the standard transports (grpc, http1, dns) configured for its upstream connection to Tavern. Agent B is configured with a TCP bind transport to accept connections from Agent A on a TCP port.\n---"
   },
   "crypto": {
     "signature": "crypto",
@@ -234,6 +242,14 @@
   "crypto.decode_b64": {
     "signature": "crypto.decode_b64(content: str, decode_type: Optional<str>) -> str",
     "description": "The **crypto.decode_b64** method encodes the given text using the given base64 decoding method. Valid methods include:\n- STANDARD (default)\n- STANDARD_NO_PAD\n- URL_SAFE\n- URL_SAFE_NO_PAD"
+  },
+  "crypto.encode_utf16le": {
+    "signature": "crypto.encode_utf16le(content: str) -> Bytes",
+    "description": "The **crypto.encode_utf16le** method encodes a UTF-8 string into UTF-16LE bytes, which are commonly used in Windows environments."
+  },
+  "crypto.decode_utf16le": {
+    "signature": "crypto.decode_utf16le(content: Bytes) -> str",
+    "description": "The **crypto.decode_utf16le** method decodes UTF-16LE bytes into a standard UTF-8 string. Errors if the bytes are not valid UTF-16."
   },
   "crypto.from_json": {
     "signature": "crypto.from_json(content: str) -> Value",
@@ -328,7 +344,7 @@
     "description": "The **file.read** method will read the contents of a file. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.read_binary": {
-    "signature": "file.read(path: str) -> List<int>",
+    "signature": "file.read_binary(path: str) -> Bytes",
     "description": "The **file.read_binary** method will read the contents of a file, **returning as a list of bytes**. If the file or directory doesn't exist the method will error to avoid this ensure the file exists, and you have permission to read it.\nThis function supports globbing with `*` for example:\n```python\nfile.read_binary(\"/home/*/.bash_history\") # Read all files called .bash_history in sub dirs of `/home/`\nfile.read_binary(\"/etc/*ssh*\") # Read the contents of all files that have `ssh` in the name. Will error if a dir is found.\nfile.read_binary(\"\\\\\\\\127.0.0.1\\\\c$\\\\Windows\\\\Temp\\\\metadata.yml\") # Read file over Windows UNC\n```"
   },
   "file.remove": {
@@ -358,6 +374,10 @@
   "file.write": {
     "signature": "file.write(path: str, content: str) -> None",
     "description": "The **file.write** method writes to a given file path with the given content.\nIf a file already exists at this path, the method will overwite it. If a directory\nalready exists at the path the method will error."
+  },
+  "file.write_binary": {
+    "signature": "file.write_binary(path: str, content: Bytes) -> None",
+    "description": "The **file.write_binary** method writes binary content to a given file path.\nIf a file already exists at this path, the method will overwrite it. If a directory\nalready exists at the path the method will error.\n```python\n# Write bytes returned from file.read_binary to another file\ndata = file.read_binary(\"/etc/passwd\")\nfile.write_binary(\"/tmp/passwd_copy\", data)\n```"
   },
   "file.find": {
     "signature": "file.find(path: str, name: Option<str>, file_type: Option<str>, permissions: Option<int>, modified_time: Option<int>, create_time: Option<int>) -> List<str>",
@@ -591,17 +611,9 @@
     "signature": "sys.shell(cmd: str) -> Dict",
     "description": "The **sys.shell** Given a string run it in a native interpreter. On MacOS, Linux, and *nix/bsd systems this is `/bin/bash -c <your command>`. On Windows this is `cmd /C <your command>`. Stdout, stderr, and the status code will be returned to you as a dictionary with keys: `stdout`, `stderr`, `status`. For example:\n```python\nsys.shell(\"whoami\")\n{\n\"stdout\":\"root\\n\",\n\"stderr\":\"\",\n\"status\":0,\n}\nsys.shell(\"ls /nofile\")\n{\n\"stdout\":\"\",\n\"stderr\":\"ls: cannot access '/nofile': No such file or directory\\n\",\n\"status\":2,\n}\n```"
   },
-  "sys.write_reg_hex": {
-    "signature": "sys.write_reg_hex(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool",
-    "description": "The **sys.write_reg_hex** method returns `True` if registry values are written to the requested registry path and accepts a hexstring as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"dead,beef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"deadbeef\")\nTrue\n$> sys.write_reg_hex(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"deadbeefdeadbeef\")\nTrue\n```"
-  },
-  "sys.write_reg_int": {
-    "signature": "sys.write_reg_int(reghive: str, regpath: str, regname: str, regtype: str, regvalue: int) -> Bool",
-    "description": "The **sys.write_reg_int** method returns `True` if registry values are written to the requested registry path and accepts an integer as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",12345678)\nTrue\n$> sys.write_reg_int(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```"
-  },
-  "sys.write_reg_str": {
-    "signature": "sys.write_reg_str(reghive: str, regpath: str, regname: str, regtype: str, regvalue: str) -> Bool",
-    "description": "The **sys.write_reg_str** method returns `True` if registry values are written to the requested registry path and accepts a string as the value argument.\nAn example is below:\n```python\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_BINARY\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_NONE\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_EXPAND_SZ\",\"BAR2\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_DWORD_BIG_ENDIAN\",\"12345678\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_LINK\",\"A PLAIN STRING\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_FULL_RESOURCE_DESCRIPTOR\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_RESOURCE_REQUIREMENTS_LIST\",\"DEADBEEF\")\nTrue\n$> sys.write_reg_str(\"HKEY_CURRENT_USER\",\"SOFTWARE\\\\TEST1\",\"FOO1\",\"REG_QWORD\",\"1234567812345678\")\nTrue\n```"
+  "sys.write_reg": {
+    "signature": "sys.write_reg(path: str, regname: str, regtype: str, regvalue: any) -> Bool",
+    "description": "The **sys.write_reg** method returns `True` if registry values are written to the requested registry path. It accepts dynamically-typed values depending on the specific registry type.\nAn example is below:\n```python\n$> sys.write_reg(\"HKCU\\SOFTWARE\\TEST1\",\"FOO1\",\"REG_SZ\",\"BAR1\")\nTrue\n$> sys.write_reg(\"HKCU\\SOFTWARE\\TEST1\",\"FOO1\",\"REG_BINARY\",\"deadbeef\")\nTrue\n$> sys.write_reg(\"HKCU\\SOFTWARE\\TEST1\",\"FOO1\",\"REG_DWORD\",12345678)\nTrue\n$> sys.write_reg(\"HKCU\\SOFTWARE\\TEST1\",\"FOO1\",\"REG_MULTI_SZ\",\"BAR1,BAR2,BAR3\")\nTrue\n$> sys.write_reg(\"HKCU\\SOFTWARE\\TEST1\",\"FOO1\",\"REG_QWORD\",12345678)\nTrue\n```"
   },
   "time": {
     "signature": "time",
@@ -620,7 +632,7 @@
     "description": "The **time.now** method returns the time since UNIX EPOCH (Jan 01 1970). This uses the local system time."
   },
   "time.sleep": {
-    "signature": "time.sleep(secs: int)",
+    "signature": "time.sleep(secs: float)",
     "description": "The **time.sleep** method sleeps the task for the given number of seconds."
   }
 }

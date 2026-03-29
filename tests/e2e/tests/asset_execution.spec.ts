@@ -60,45 +60,58 @@ test('End-to-end asset upload and execution test', async ({ page }) => {
   // Close the modal
   await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-  // 10. Navigate to /createQuest
-  console.log('Navigating to /createQuest');
-  await page.goto('/createQuest');
+  // 10. Navigate to /quests and open Create Quest modal
+  console.log('Navigating to /quests');
+  await page.goto('/quests');
 
-  // 11. Wait for beacons to load
+  // 11. Click "Create a quest" button to open the modal
+  console.log('Opening Create Quest modal');
+  await page.getByRole('button', { name: 'Create a quest' }).click();
+
+  // 12. Wait for beacons to load
   console.log('Waiting for beacons to load');
   await expect(page.getByText('Loading beacons...')).toBeHidden({ timeout: 15000 });
 
-  const beacons = page.locator('.chakra-card input[type="checkbox"]');
-  // There might be more than 1 beacon if we restarted the agent multiple times or other tests ran
-  await expect(beacons.first()).toBeVisible();
+  // Select the first beacon checkbox using aria-label (Chakra Checkbox with aria-label="Select beacon {name}")
+  const beaconCheckbox = page.getByLabel(/Select beacon/).first();
+  await expect(beaconCheckbox).toBeVisible();
 
-  // 12. Select the beacon
+  // 13. Select the beacon
   console.log('Selecting beacon');
-  await beacons.first().check({ force: true });
+  await beaconCheckbox.check({ force: true });
 
-  // 13. Click Continue (Beacon Step)
+  // 14. Click Continue (Beacon Step)
   console.log('Clicking Continue (Beacon)');
   await page.locator('[aria-label="continue beacon step"]').click();
 
-  // 14. Select the "HTTP GET file and execute" tome
+  // 15. Select the "HTTP GET file and execute" tome
   console.log('Selecting Tome');
   await expect(page.getByText('Loading tomes...')).toBeHidden();
-  await expect(page.getByText('HTTP GET file and execute')).toBeVisible();
-  await page.getByText('HTTP GET file and execute').click();
 
-  // 15. Fill in the url parameter with the generated link
+  // Search for the tome first (virtualized table doesn't show all items)
+  const dialog = page.locator('[role="dialog"]');
+  const searchInput = dialog.getByPlaceholder('Tome name, description & params');
+  await searchInput.fill('HTTP GET file and execute');
+  await page.waitForTimeout(500); // Wait for search results to filter
+
+  // Click the tome row (role="button") containing the tome name - scoped to dialog
+  const tomeRow = dialog.locator('[role="button"]').filter({ hasText: 'HTTP GET file and execute' });
+  await expect(tomeRow).toBeVisible();
+  await tomeRow.click();
+
+  // 16. Fill in the url parameter with the generated link
   console.log('Filling parameters');
-  await page.locator('textarea[name="url"]').fill(downloadUrl);
+  await page.getByPlaceholder('https://example.com/executable_file').fill(downloadUrl);
 
-  // 16. Click Continue (Tome Step)
+  // 17. Click Continue (Tome Step)
   console.log('Clicking Continue (Tome)');
   await page.locator('[aria-label="continue tome step"]').click();
 
-  // 17. Submit Quest
+  // 18. Submit Quest
   console.log('Submitting Quest');
   await page.locator('[aria-label="submit quest"]').click();
 
-  // 18. Wait for execution and check output
+  // 19. Wait for execution and check output
   console.log('Waiting for execution output');
   await page.waitForTimeout(5000);
 

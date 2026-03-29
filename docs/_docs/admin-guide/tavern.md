@@ -66,12 +66,12 @@ After installing the gcloud CLI, run `gcloud auth application-default login` to 
 2. Clone [the repo](https://github.com/spellshift/realm) and navigate to the `terraform` directory.
 3. Checkout the latest stable release `git checkout -b latest $(git tag | tail -1)`
 4. Run `terraform init` to install the Google provider for terraform.
-5. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=$(git tag | tail -1)"` to deploy Tavern!
+5. Run `terraform apply -var="gcp_project=<PROJECT_ID>" -var="oauth_client_id=<OAUTH_CLIENT_ID>" -var="oauth_client_secret=<OAUTH_CLIENT_SECRET>" -var="oauth_domain=<OAUTH_DOMAIN>" -var="tavern_container_image=spellshift/tavern:$(git tag | tail -1)"` to deploy Tavern!
 
 **Example:**
 
 ```sh
-terraform apply -var="gcp_project=new-realm-deployment" -var="oauth_client_id=12345.apps.googleusercontent.com" -var="oauth_client_secret=ABCDEFG" -var="oauth_domain=test-tavern.redteam.toys" -var="tavern_container_image=$(git tag | tail -1)"
+terraform apply -var="gcp_project=new-realm-deployment" -var="oauth_client_id=12345.apps.googleusercontent.com" -var="oauth_client_secret=ABCDEFG" -var="oauth_domain=test-tavern.redteam.toys" -var="tavern_container_image=spellshift/tavern:$(git tag | tail -1)"
 ```
 
 After terraform completes successfully, head to the [DNS mappings for Cloud Run](https://console.cloud.google.com/run/domains) and wait for a certificate to successfully provision. This may take a while, so go enjoy a nice cup of coffee ☕
@@ -110,11 +110,12 @@ By default Tavern only supports gRPC connections directly to the server. To enab
 
 ### Available Redirectors
 
-Realm includes three built-in redirector implementations:
+Realm includes four built-in redirector implementations:
 
 - **`grpc`** - Direct gRPC passthrough redirector
 - **`http1`** - HTTP/1.1 to gRPC redirector
 - **`dns`** - DNS to gRPC redirector
+- **`icmp`** - ICMP Echo to gRPC redirector
 
 ### Basic Usage
 
@@ -165,6 +166,35 @@ tavern redirector --transport dns --listen "0.0.0.0:53?domain=c2.example.com&dom
 - **Maximum data size**: 50MB per request
 
 See the [DNS Transport Configuration](/user-guide/imix#dns-transport-configuration) section in the Imix user guide for more details on agent-side configuration.
+
+### ICMP Redirector
+
+The ICMP redirector tunnels C2 traffic through ICMP Echo Request/Reply packets.
+
+```bash
+# Start ICMP redirector, listening on all interfaces
+tavern redirector --transport icmp --listen 0.0.0.0 http://localhost:8000
+```
+
+**Host Configuration Requirements:**
+
+Before starting the ICMP redirector, the Linux kernel's automatic ICMP echo reply must be disabled. Without this, the kernel responds to incoming ICMP echo requests by mirroring the payload back to the sender before the user-space redirector can act. Agents receive this kernel reply first and parse their own request payload as a response, breaking the protocol.
+
+```bash
+echo 1 | sudo tee /proc/sys/net/ipv4/icmp_echo_ignore_all
+```
+
+The redirector will refuse to start if this is not set. To make the setting persistent across reboots:
+
+```bash
+echo "net.ipv4.icmp_echo_ignore_all = 1" | sudo tee -a /etc/sysctl.conf
+sysctl -p
+```
+
+**Other requirements:**
+
+- Must run as root (raw ICMP sockets require `CAP_NET_RAW`)
+- Not supported on Windows hosts
 
 ### gRPC Redirector
 

@@ -308,12 +308,12 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn read_binary(&self, path: String) -> Result<Vec<u8>, String> {
+    fn read_binary(&self, path: String) -> Result<Value, String> {
         let mut root = self.root.lock();
         let parts = Self::normalize_path(&path);
 
         if let Some(FsEntry::File(data)) = Self::traverse(&mut root, &parts) {
-            Ok(data.clone())
+            Ok(Value::Bytes(data.clone()))
         } else {
             Err("File not found".to_string())
         }
@@ -363,6 +363,15 @@ impl FileLibrary for FileLibraryFake {
         Ok(())
     }
 
+    fn template_str(
+        &self,
+        _template: String,
+        _args: BTreeMap<String, Value>,
+        _autoescape: bool,
+    ) -> Result<String, String> {
+        Ok(String::new())
+    }
+
     #[allow(unused_variables)]
     fn timestomp(
         &self,
@@ -388,6 +397,31 @@ impl FileLibrary for FileLibraryFake {
         if let Some(parent) = Self::traverse(&mut root, parent_parts) {
             if let FsEntry::Dir(map) = parent {
                 map.insert(name.clone(), FsEntry::File(content.into_bytes()));
+                return Ok(());
+            }
+            return Err("Parent is not a directory".to_string());
+        }
+        Err("Parent path not found".to_string())
+    }
+
+    fn write_binary(&self, path: String, content: Value) -> Result<(), String> {
+        let bytes = match content {
+            Value::Bytes(b) => b,
+            _ => return Err("content must be of type Bytes".into()),
+        };
+
+        let mut root = self.root.lock();
+        let parts = Self::normalize_path(&path);
+        if parts.is_empty() {
+            return Err("Invalid path".to_string());
+        }
+
+        let (parent_parts, name) = parts.split_at(parts.len() - 1);
+        let name = &name[0];
+
+        if let Some(parent) = Self::traverse(&mut root, parent_parts) {
+            if let FsEntry::Dir(map) = parent {
+                map.insert(name.clone(), FsEntry::File(bytes));
                 return Ok(());
             }
             return Err("Parent is not a directory".to_string());

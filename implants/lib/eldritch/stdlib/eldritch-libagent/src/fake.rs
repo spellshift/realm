@@ -58,6 +58,10 @@ impl AgentLibrary for AgentLibraryFake {
         Ok("http".into())
     }
 
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
+
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -89,6 +93,7 @@ pub struct AgentFake;
 use alloc::collections::BTreeSet;
 
 #[cfg(feature = "stdlib")]
+#[async_trait::async_trait]
 impl Agent for AgentFake {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(Vec::new())
@@ -135,6 +140,9 @@ impl Agent for AgentFake {
     fn set_transport(&self, _transport: String) -> Result<(), String> {
         Ok(())
     }
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(alloc::vec!["http".into()])
     }
@@ -177,6 +185,15 @@ impl Agent for AgentFake {
     }
 
     fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }

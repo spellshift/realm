@@ -20,10 +20,10 @@ const (
 )
 
 // DefaultTransports is the default transport configuration for a build task.
-var DefaultTransports = []builderpb.BuildTaskTransport{{
-	URI:   "http://127.0.0.1:8000",
-	Interval:      5,
-	Type: c2pb.Transport_TRANSPORT_GRPC,
+var DefaultTransports = []builderpb.BuildProfileTransport{{
+	URI:      "http://127.0.0.1:8000",
+	Interval: 5,
+	Type:     c2pb.Transport_TRANSPORT_GRPC,
 }}
 
 // TargetFormat is an alias for builderpb.TargetFormat.
@@ -50,11 +50,11 @@ type buildKey struct {
 
 // buildCommands maps (target_os, target_format) -> cargo build command.
 var buildCommands = map[buildKey]string{
-	{c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN}:              "cargo build --release --bin imix --target=x86_64-unknown-linux-musl",
-	{c2pb.Host_PLATFORM_MACOS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:              "cargo zigbuild --release --target aarch64-apple-darwin",
-	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:            "cargo build --release --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_LINUX, builderpb.TargetFormat_TARGET_FORMAT_BIN}:               "cargo build --release --bin imix --target=x86_64-unknown-linux-musl",
+	{c2pb.Host_PLATFORM_MACOS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:               "cargo zigbuild --release --target aarch64-apple-darwin",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_BIN}:             "cargo build --release --target=x86_64-pc-windows-gnu",
 	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_WINDOWS_SERVICE}: "cargo build --release --features win_service --target=x86_64-pc-windows-gnu",
-	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_CDYLIB}:         "cargo build --release --lib --target=x86_64-pc-windows-gnu",
+	{c2pb.Host_PLATFORM_WINDOWS, builderpb.TargetFormat_TARGET_FORMAT_CDYLIB}:          "cargo build --release --lib --target=x86_64-pc-windows-gnu",
 }
 
 // ValidateTargetFormat checks whether the given format is supported for the given OS.
@@ -94,6 +94,8 @@ func TransportTypeToString(t c2pb.Transport_Type) string {
 		return "http"
 	case c2pb.Transport_TRANSPORT_DNS:
 		return "dns"
+	case c2pb.Transport_TRANSPORT_ICMP:
+		return "icmp"
 	default:
 		return "unspecified"
 	}
@@ -101,10 +103,10 @@ func TransportTypeToString(t c2pb.Transport_Type) string {
 
 // ImixTransportConfig represents the transport section of the IMIX configuration.
 type ImixTransportConfig struct {
-	URI string `yaml:"URI"`
-	Interval    int    `yaml:"interval"`
-	Type        string `yaml:"type"`
-	Extra       string `yaml:"extra"`
+	URI      string `yaml:"URI"`
+	Interval int    `yaml:"interval"`
+	Type     string `yaml:"type"`
+	Extra    string `yaml:"extra"`
 }
 
 // ImixConfig represents the IMIX agent configuration YAML.
@@ -121,23 +123,4 @@ func DeriveArtifactPath(os c2pb.Host_Platform) string {
 		return "/home/vscode/realm/implants/target/release/imix"
 	}
 	return fmt.Sprintf("/home/vscode/realm/implants/target/%s/release/imix", target)
-}
-
-// GenerateBuildScript generates the full build script from the build configuration.
-// It clones the repository and runs the build command. The IMIX configuration
-// is passed via the IMIX_CONFIG environment variable rather than being written
-// to a file in the build script.
-func GenerateBuildScript(os c2pb.Host_Platform, format TargetFormat) (string, error) {
-	buildCmd, err := BuildCommand(os, format)
-	if err != nil {
-		return "", err
-	}
-
-	script := fmt.Sprintf(
-		`cd /home/vscode && git clone %s realm && cd realm/implants/imix && %s`,
-		DefaultRealmRepoURL,
-		buildCmd,
-	)
-
-	return script, nil
 }

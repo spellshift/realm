@@ -3,7 +3,7 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use eldritch::agent::agent::Agent;
 use eldritch_agent::Context;
 use pb::c2;
-use pb::c2::{ReportOutputRequest, report_output_request};
+use pb::c2::report_output_request;
 use pb::eldritch::Tome;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -22,6 +22,7 @@ impl MockAgent {
     }
 }
 
+#[async_trait::async_trait]
 impl Agent for MockAgent {
     fn fetch_asset(&self, _req: c2::FetchAssetRequest) -> Result<Vec<u8>, String> {
         Ok(vec![])
@@ -75,6 +76,9 @@ impl Agent for MockAgent {
     fn set_transport(&self, _transport: String) -> Result<(), String> {
         Ok(())
     }
+    fn reset_transport(&self) -> Result<(), String> {
+        Ok(())
+    }
     fn list_transports(&self) -> Result<Vec<String>, String> {
         Ok(vec!["mock".to_string()])
     }
@@ -105,7 +109,16 @@ impl Agent for MockAgent {
     fn add_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
         Ok(())
     }
-    fn remove_callback_uri(&self, _uri: String) -> std::result::Result<(), String> {
+    fn remove_callback_uri(&self, _uri: String) -> Result<(), String> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }

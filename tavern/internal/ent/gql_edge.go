@@ -8,6 +8,27 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
+func (a *Adventure) Quests(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*QuestOrder, where *QuestWhereInput,
+) (*QuestConnection, error) {
+	opts := []QuestPaginateOption{
+		WithQuestOrder(orderBy),
+		WithQuestFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := a.Edges.totalCount[0][alias]
+	if nodes, err := a.NamedQuests(alias); err == nil || hasTotalCount {
+		pager, err := newQuestPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &QuestConnection{Edges: []*QuestEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return a.QueryQuests().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (a *Asset) Tomes(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
 ) (*TomeConnection, error) {
@@ -108,10 +129,30 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (bp *BuildProfile) Buildtasks(ctx context.Context) (result []*BuildTask, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = bp.NamedBuildtasks(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = bp.Edges.BuildtasksOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = bp.QueryBuildtasks().All(ctx)
+	}
+	return result, err
+}
+
 func (bt *BuildTask) Builder(ctx context.Context) (*Builder, error) {
 	result, err := bt.Edges.BuilderOrErr()
 	if IsNotLoaded(err) {
 		result, err = bt.QueryBuilder().Only(ctx)
+	}
+	return result, err
+}
+
+func (bt *BuildTask) Profile(ctx context.Context) (*BuildProfile, error) {
+	result, err := bt.Edges.ProfileOrErr()
+	if IsNotLoaded(err) {
+		result, err = bt.QueryProfile().Only(ctx)
 	}
 	return result, err
 }
@@ -124,7 +165,7 @@ func (bt *BuildTask) Artifact(ctx context.Context) (*Asset, error) {
 	return result, MaskNotFound(err)
 }
 
-func (b *Builder) BuildTasks(
+func (b *Builder) Buildtasks(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BuildTaskOrder, where *BuildTaskWhereInput,
 ) (*BuildTaskConnection, error) {
 	opts := []BuildTaskPaginateOption{
@@ -133,7 +174,7 @@ func (b *Builder) BuildTasks(
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
 	totalCount, hasTotalCount := b.Edges.totalCount[0][alias]
-	if nodes, err := b.NamedBuildTasks(alias); err == nil || hasTotalCount {
+	if nodes, err := b.NamedBuildtasks(alias); err == nil || hasTotalCount {
 		pager, err := newBuildTaskPager(opts, last != nil)
 		if err != nil {
 			return nil, err
@@ -142,7 +183,15 @@ func (b *Builder) BuildTasks(
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return b.QueryBuildTasks().Paginate(ctx, after, first, before, last, opts...)
+	return b.QueryBuildtasks().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (da *DeviceAuth) User(ctx context.Context) (*User, error) {
+	result, err := da.Edges.UserOrErr()
+	if IsNotLoaded(err) {
+		result, err = da.QueryUser().Only(ctx)
+	}
+	return result, MaskNotFound(err)
 }
 
 func (h *Host) Tags(
@@ -269,6 +318,27 @@ func (h *Host) Screenshots(
 		return conn, nil
 	}
 	return h.QueryScreenshots().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (h *Host) FavoritedBy(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*UserOrder, where *UserWhereInput,
+) (*UserConnection, error) {
+	opts := []UserPaginateOption{
+		WithUserOrder(orderBy),
+		WithUserFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[6][alias]
+	if nodes, err := h.NamedFavoritedBy(alias); err == nil || hasTotalCount {
+		pager, err := newUserPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &UserConnection{Edges: []*UserEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryFavoritedBy().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
@@ -457,6 +527,51 @@ func (q *Quest) Creator(ctx context.Context) (*User, error) {
 	return result, MaskNotFound(err)
 }
 
+func (q *Quest) ScheduledTask(ctx context.Context) (*ScheduledTask, error) {
+	result, err := q.Edges.ScheduledTaskOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryScheduledTask().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (q *Quest) Adventure(ctx context.Context) (*Adventure, error) {
+	result, err := q.Edges.AdventureOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryAdventure().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (q *Quest) RelatedQuests(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*QuestOrder, where *QuestWhereInput,
+) (*QuestConnection, error) {
+	opts := []QuestPaginateOption{
+		WithQuestOrder(orderBy),
+		WithQuestFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := q.Edges.totalCount[6][alias]
+	if nodes, err := q.NamedRelatedQuests(alias); err == nil || hasTotalCount {
+		pager, err := newQuestPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &QuestConnection{Edges: []*QuestEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return q.QueryRelatedQuests().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (q *Quest) PreviousQuest(ctx context.Context) (*Quest, error) {
+	result, err := q.Edges.PreviousQuestOrErr()
+	if IsNotLoaded(err) {
+		result, err = q.QueryPreviousQuest().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (r *Repository) Tomes(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
 ) (*TomeConnection, error) {
@@ -484,6 +599,56 @@ func (r *Repository) Owner(ctx context.Context) (*User, error) {
 		result, err = r.QueryOwner().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (st *ScheduledTask) Tome(ctx context.Context) (*Tome, error) {
+	result, err := st.Edges.TomeOrErr()
+	if IsNotLoaded(err) {
+		result, err = st.QueryTome().Only(ctx)
+	}
+	return result, err
+}
+
+func (st *ScheduledTask) ScheduledHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
+) (*HostConnection, error) {
+	opts := []HostPaginateOption{
+		WithHostOrder(orderBy),
+		WithHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := st.Edges.totalCount[1][alias]
+	if nodes, err := st.NamedScheduledHosts(alias); err == nil || hasTotalCount {
+		pager, err := newHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return st.QueryScheduledHosts().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (st *ScheduledTask) Quests(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*QuestOrder, where *QuestWhereInput,
+) (*QuestConnection, error) {
+	opts := []QuestPaginateOption{
+		WithQuestOrder(orderBy),
+		WithQuestFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := st.Edges.totalCount[2][alias]
+	if nodes, err := st.NamedQuests(alias); err == nil || hasTotalCount {
+		pager, err := newQuestPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &QuestConnection{Edges: []*QuestEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return st.QueryQuests().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (s *Screenshot) Host(ctx context.Context) (*Host, error) {
@@ -831,27 +996,6 @@ func (t *Tome) Repository(ctx context.Context) (*Repository, error) {
 	return result, MaskNotFound(err)
 }
 
-func (t *Tome) ScheduledHosts(
-	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
-) (*HostConnection, error) {
-	opts := []HostPaginateOption{
-		WithHostOrder(orderBy),
-		WithHostFilter(where.Filter),
-	}
-	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := t.Edges.totalCount[3][alias]
-	if nodes, err := t.NamedScheduledHosts(alias); err == nil || hasTotalCount {
-		pager, err := newHostPager(opts, last != nil)
-		if err != nil {
-			return nil, err
-		}
-		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
-		conn.build(nodes, pager, after, first, before, last)
-		return conn, nil
-	}
-	return t.QueryScheduledHosts().Paginate(ctx, after, first, before, last, opts...)
-}
-
 func (u *User) Tomes(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*TomeOrder, where *TomeWhereInput,
 ) (*TomeConnection, error) {
@@ -892,4 +1036,46 @@ func (u *User) ActiveShells(
 		return conn, nil
 	}
 	return u.QueryActiveShells().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) DeviceAuths(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*DeviceAuthOrder, where *DeviceAuthWhereInput,
+) (*DeviceAuthConnection, error) {
+	opts := []DeviceAuthPaginateOption{
+		WithDeviceAuthOrder(orderBy),
+		WithDeviceAuthFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[2][alias]
+	if nodes, err := u.NamedDeviceAuths(alias); err == nil || hasTotalCount {
+		pager, err := newDeviceAuthPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &DeviceAuthConnection{Edges: []*DeviceAuthEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryDeviceAuths().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (u *User) FavoriteHosts(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*HostOrder, where *HostWhereInput,
+) (*HostConnection, error) {
+	opts := []HostPaginateOption{
+		WithHostOrder(orderBy),
+		WithHostFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := u.Edges.totalCount[3][alias]
+	if nodes, err := u.NamedFavoriteHosts(alias); err == nil || hasTotalCount {
+		pager, err := newHostPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &HostConnection{Edges: []*HostEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return u.QueryFavoriteHosts().Paginate(ctx, after, first, before, last, opts...)
 }

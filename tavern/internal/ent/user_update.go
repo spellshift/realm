@@ -10,6 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -143,6 +145,36 @@ func (uu *UserUpdate) AddActiveShells(s ...*Shell) *UserUpdate {
 	return uu.AddActiveShellIDs(ids...)
 }
 
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by IDs.
+func (uu *UserUpdate) AddDeviceAuthIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddDeviceAuthIDs(ids...)
+	return uu
+}
+
+// AddDeviceAuths adds the "device_auths" edges to the DeviceAuth entity.
+func (uu *UserUpdate) AddDeviceAuths(d ...*DeviceAuth) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.AddDeviceAuthIDs(ids...)
+}
+
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uu *UserUpdate) AddFavoriteHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddFavoriteHostIDs(ids...)
+	return uu
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uu *UserUpdate) AddFavoriteHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.AddFavoriteHostIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -188,6 +220,48 @@ func (uu *UserUpdate) RemoveActiveShells(s ...*Shell) *UserUpdate {
 		ids[i] = s[i].ID
 	}
 	return uu.RemoveActiveShellIDs(ids...)
+}
+
+// ClearDeviceAuths clears all "device_auths" edges to the DeviceAuth entity.
+func (uu *UserUpdate) ClearDeviceAuths() *UserUpdate {
+	uu.mutation.ClearDeviceAuths()
+	return uu
+}
+
+// RemoveDeviceAuthIDs removes the "device_auths" edge to DeviceAuth entities by IDs.
+func (uu *UserUpdate) RemoveDeviceAuthIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveDeviceAuthIDs(ids...)
+	return uu
+}
+
+// RemoveDeviceAuths removes "device_auths" edges to DeviceAuth entities.
+func (uu *UserUpdate) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uu.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearFavoriteHosts clears all "favoriteHosts" edges to the Host entity.
+func (uu *UserUpdate) ClearFavoriteHosts() *UserUpdate {
+	uu.mutation.ClearFavoriteHosts()
+	return uu
+}
+
+// RemoveFavoriteHostIDs removes the "favoriteHosts" edge to Host entities by IDs.
+func (uu *UserUpdate) RemoveFavoriteHostIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveFavoriteHostIDs(ids...)
+	return uu
+}
+
+// RemoveFavoriteHosts removes "favoriteHosts" edges to Host entities.
+func (uu *UserUpdate) RemoveFavoriteHosts(h ...*Host) *UserUpdate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uu.RemoveFavoriteHostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -357,6 +431,96 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedDeviceAuthsIDs(); len(nodes) > 0 && !uu.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.DeviceAuthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedFavoriteHostsIDs(); len(nodes) > 0 && !uu.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -491,6 +655,36 @@ func (uuo *UserUpdateOne) AddActiveShells(s ...*Shell) *UserUpdateOne {
 	return uuo.AddActiveShellIDs(ids...)
 }
 
+// AddDeviceAuthIDs adds the "device_auths" edge to the DeviceAuth entity by IDs.
+func (uuo *UserUpdateOne) AddDeviceAuthIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddDeviceAuthIDs(ids...)
+	return uuo
+}
+
+// AddDeviceAuths adds the "device_auths" edges to the DeviceAuth entity.
+func (uuo *UserUpdateOne) AddDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.AddDeviceAuthIDs(ids...)
+}
+
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uuo *UserUpdateOne) AddFavoriteHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddFavoriteHostIDs(ids...)
+	return uuo
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) AddFavoriteHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.AddFavoriteHostIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -536,6 +730,48 @@ func (uuo *UserUpdateOne) RemoveActiveShells(s ...*Shell) *UserUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return uuo.RemoveActiveShellIDs(ids...)
+}
+
+// ClearDeviceAuths clears all "device_auths" edges to the DeviceAuth entity.
+func (uuo *UserUpdateOne) ClearDeviceAuths() *UserUpdateOne {
+	uuo.mutation.ClearDeviceAuths()
+	return uuo
+}
+
+// RemoveDeviceAuthIDs removes the "device_auths" edge to DeviceAuth entities by IDs.
+func (uuo *UserUpdateOne) RemoveDeviceAuthIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveDeviceAuthIDs(ids...)
+	return uuo
+}
+
+// RemoveDeviceAuths removes "device_auths" edges to DeviceAuth entities.
+func (uuo *UserUpdateOne) RemoveDeviceAuths(d ...*DeviceAuth) *UserUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return uuo.RemoveDeviceAuthIDs(ids...)
+}
+
+// ClearFavoriteHosts clears all "favoriteHosts" edges to the Host entity.
+func (uuo *UserUpdateOne) ClearFavoriteHosts() *UserUpdateOne {
+	uuo.mutation.ClearFavoriteHosts()
+	return uuo
+}
+
+// RemoveFavoriteHostIDs removes the "favoriteHosts" edge to Host entities by IDs.
+func (uuo *UserUpdateOne) RemoveFavoriteHostIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveFavoriteHostIDs(ids...)
+	return uuo
+}
+
+// RemoveFavoriteHosts removes "favoriteHosts" edges to Host entities.
+func (uuo *UserUpdateOne) RemoveFavoriteHosts(h ...*Host) *UserUpdateOne {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uuo.RemoveFavoriteHostIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -728,6 +964,96 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedDeviceAuthsIDs(); len(nodes) > 0 && !uuo.mutation.DeviceAuthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.DeviceAuthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.DeviceAuthsTable,
+			Columns: []string{user.DeviceAuthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedFavoriteHostsIDs(); len(nodes) > 0 && !uuo.mutation.FavoriteHostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

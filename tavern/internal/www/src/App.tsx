@@ -6,7 +6,6 @@ import './style.css';
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import 'react-virtualized/styles.css';
-import { TagContextProvider } from "./context/TagContext";
 import { AuthorizationContextProvider } from "./context/AuthorizationContext";
 import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
@@ -14,13 +13,13 @@ import Shell from "./pages/shell/Shell";
 import ShellV2 from "./pages/shellv2";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
-import { CreateQuest } from "./pages/create-quest/CreateQuest";
 import Assets from "./pages/assets/Assets";
 import { PageWrapper } from "./components/page-wrapper";
 import Quests from "./pages/quests";
 import Hosts from "./pages/hosts/Hosts";
 import { Tasks } from "./pages/tasks";
 import { Tomes } from "./pages/tomes/Tomes";
+import Profile from "./pages/profile/Profile";
 
 
 const router = createBrowserRouter([
@@ -53,10 +52,6 @@ const router = createBrowserRouter([
         element: <Tasks />,
       },
       {
-        path: "createQuest",
-        element: <TagContextProvider><CreateQuest /></TagContextProvider>,
-      },
-      {
         path: "tasks",
         element: <Tasks />,
       },
@@ -76,7 +71,10 @@ const router = createBrowserRouter([
         path: "admin",
         element: <AdminPortal />,
       },
-
+      {
+        path: "profile",
+        element: <Profile />,
+      },
     ]
   },
   {
@@ -90,9 +88,9 @@ export const App = () => {
   return (
     <ChakraProvider theme={theme}>
       <AuthorizationContextProvider>
-            <UserPreferencesContextProvider>
-              <RouterProvider router={router} />
-            </UserPreferencesContextProvider>
+        <UserPreferencesContextProvider>
+          <RouterProvider router={router} />
+        </UserPreferencesContextProvider>
       </AuthorizationContextProvider>
     </ChakraProvider>
   )

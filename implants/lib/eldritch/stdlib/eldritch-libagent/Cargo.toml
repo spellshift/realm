@@ -1,12 +1,14 @@
 [package]
 name = "eldritch-libagent"
-version = "0.3.2"
+version = "0.3.4"
 edition = "2024"
 
 [dependencies]
 eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 eldritch-agent = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["sync"] }
+async-trait = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { workspace = true, optional = true }
 pb = { path = "../../../pb", optional = true }
@@ -18,3 +20,6 @@ spin = { version = "0.10.0", features = ["rwlock"] }
 default = ["stdlib"]
 stdlib = ["dep:eldritch-agent", "dep:serde_json", "dep:pb", "dep:prost", "dep:prost-types"]
 fake_bindings = []
+
+[dev-dependencies]
+eldritch-mockagent = { path = "../../testutils/eldritch-mockagent" }

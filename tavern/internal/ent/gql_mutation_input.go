@@ -7,9 +7,28 @@ import (
 
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
+	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
+
+// CreateAdventureInput represents a mutation input for creating adventures.
+type CreateAdventureInput struct {
+	Name *string
+}
+
+// Mutate applies the CreateAdventureInput on the AdventureMutation builder.
+func (i *CreateAdventureInput) Mutate(m *AdventureMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateAdventureInput on the AdventureCreate builder.
+func (c *AdventureCreate) SetInput(i CreateAdventureInput) *AdventureCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
@@ -61,29 +80,96 @@ func (c *BuilderCreate) SetInput(i CreateBuilderInput) *BuilderCreate {
 	return c
 }
 
+// CreateDeviceAuthInput represents a mutation input for creating deviceauths.
+type CreateDeviceAuthInput struct {
+	UserCode   string
+	DeviceCode string
+	Status     *deviceauth.Status
+	ExpiresAt  time.Time
+}
+
+// Mutate applies the CreateDeviceAuthInput on the DeviceAuthMutation builder.
+func (i *CreateDeviceAuthInput) Mutate(m *DeviceAuthMutation) {
+	m.SetUserCode(i.UserCode)
+	m.SetDeviceCode(i.DeviceCode)
+	if v := i.Status; v != nil {
+		m.SetStatus(*v)
+	}
+	m.SetExpiresAt(i.ExpiresAt)
+}
+
+// SetInput applies the change-set in the CreateDeviceAuthInput on the DeviceAuthCreate builder.
+func (c *DeviceAuthCreate) SetInput(i CreateDeviceAuthInput) *DeviceAuthCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateDeviceAuthInput represents a mutation input for updating deviceauths.
+type UpdateDeviceAuthInput struct {
+	LastModifiedAt *time.Time
+	UserCode       *string
+	DeviceCode     *string
+	Status         *deviceauth.Status
+	ExpiresAt      *time.Time
+}
+
+// Mutate applies the UpdateDeviceAuthInput on the DeviceAuthMutation builder.
+func (i *UpdateDeviceAuthInput) Mutate(m *DeviceAuthMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.UserCode; v != nil {
+		m.SetUserCode(*v)
+	}
+	if v := i.DeviceCode; v != nil {
+		m.SetDeviceCode(*v)
+	}
+	if v := i.Status; v != nil {
+		m.SetStatus(*v)
+	}
+	if v := i.ExpiresAt; v != nil {
+		m.SetExpiresAt(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateDeviceAuthInput on the DeviceAuthUpdate builder.
+func (c *DeviceAuthUpdate) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateDeviceAuthInput on the DeviceAuthUpdateOne builder.
+func (c *DeviceAuthUpdateOne) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
-	LastModifiedAt      *time.Time
-	ClearName           bool
-	Name                *string
-	ClearTags           bool
-	AddTagIDs           []int
-	RemoveTagIDs        []int
-	ClearBeacons        bool
-	AddBeaconIDs        []int
-	RemoveBeaconIDs     []int
-	ClearFiles          bool
-	AddFileIDs          []int
-	RemoveFileIDs       []int
-	ClearProcesses      bool
-	AddProcessIDs       []int
-	RemoveProcessIDs    []int
-	ClearCredentials    bool
-	AddCredentialIDs    []int
-	RemoveCredentialIDs []int
-	ClearScreenshots    bool
-	AddScreenshotIDs    []int
-	RemoveScreenshotIDs []int
+	LastModifiedAt       *time.Time
+	ClearName            bool
+	Name                 *string
+	ClearTags            bool
+	AddTagIDs            []int
+	RemoveTagIDs         []int
+	ClearBeacons         bool
+	AddBeaconIDs         []int
+	RemoveBeaconIDs      []int
+	ClearFiles           bool
+	AddFileIDs           []int
+	RemoveFileIDs        []int
+	ClearProcesses       bool
+	AddProcessIDs        []int
+	RemoveProcessIDs     []int
+	ClearCredentials     bool
+	AddCredentialIDs     []int
+	RemoveCredentialIDs  []int
+	ClearScreenshots     bool
+	AddScreenshotIDs     []int
+	RemoveScreenshotIDs  []int
+	ClearFavoritedBy     bool
+	AddFavoritedByIDs    []int
+	RemoveFavoritedByIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -150,6 +236,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveScreenshotIDs; len(v) > 0 {
 		m.RemoveScreenshotIDs(v...)
+	}
+	if i.ClearFavoritedBy {
+		m.ClearFavoritedBy()
+	}
+	if v := i.AddFavoritedByIDs; len(v) > 0 {
+		m.AddFavoritedByIDs(v...)
+	}
+	if v := i.RemoveFavoritedByIDs; len(v) > 0 {
+		m.RemoveFavoritedByIDs(v...)
 	}
 }
 
@@ -317,6 +412,118 @@ func (c *RepositoryCreate) SetInput(i CreateRepositoryInput) *RepositoryCreate {
 	return c
 }
 
+// CreateScheduledTaskInput represents a mutation input for creating scheduledtasks.
+type CreateScheduledTaskInput struct {
+	Name                   string
+	Description            string
+	RunOnNewBeaconCallback *bool
+	RunOnFirstHostCallback *bool
+	Parameters             *string
+	RunOnSchedule          *string
+	Disabled               *bool
+	TomeID                 int
+	ScheduledHostIDs       []int
+}
+
+// Mutate applies the CreateScheduledTaskInput on the ScheduledTaskMutation builder.
+func (i *CreateScheduledTaskInput) Mutate(m *ScheduledTaskMutation) {
+	m.SetName(i.Name)
+	m.SetDescription(i.Description)
+	if v := i.RunOnNewBeaconCallback; v != nil {
+		m.SetRunOnNewBeaconCallback(*v)
+	}
+	if v := i.RunOnFirstHostCallback; v != nil {
+		m.SetRunOnFirstHostCallback(*v)
+	}
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
+	}
+	if v := i.RunOnSchedule; v != nil {
+		m.SetRunOnSchedule(*v)
+	}
+	if v := i.Disabled; v != nil {
+		m.SetDisabled(*v)
+	}
+	m.SetTomeID(i.TomeID)
+	if v := i.ScheduledHostIDs; len(v) > 0 {
+		m.AddScheduledHostIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the CreateScheduledTaskInput on the ScheduledTaskCreate builder.
+func (c *ScheduledTaskCreate) SetInput(i CreateScheduledTaskInput) *ScheduledTaskCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateScheduledTaskInput represents a mutation input for updating scheduledtasks.
+type UpdateScheduledTaskInput struct {
+	LastModifiedAt         *time.Time
+	Name                   *string
+	Description            *string
+	RunOnNewBeaconCallback *bool
+	RunOnFirstHostCallback *bool
+	ClearParameters        bool
+	Parameters             *string
+	RunOnSchedule          *string
+	Disabled               *bool
+	ClearScheduledHosts    bool
+	AddScheduledHostIDs    []int
+	RemoveScheduledHostIDs []int
+}
+
+// Mutate applies the UpdateScheduledTaskInput on the ScheduledTaskMutation builder.
+func (i *UpdateScheduledTaskInput) Mutate(m *ScheduledTaskMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Description; v != nil {
+		m.SetDescription(*v)
+	}
+	if v := i.RunOnNewBeaconCallback; v != nil {
+		m.SetRunOnNewBeaconCallback(*v)
+	}
+	if v := i.RunOnFirstHostCallback; v != nil {
+		m.SetRunOnFirstHostCallback(*v)
+	}
+	if i.ClearParameters {
+		m.ClearParameters()
+	}
+	if v := i.Parameters; v != nil {
+		m.SetParameters(*v)
+	}
+	if v := i.RunOnSchedule; v != nil {
+		m.SetRunOnSchedule(*v)
+	}
+	if v := i.Disabled; v != nil {
+		m.SetDisabled(*v)
+	}
+	if i.ClearScheduledHosts {
+		m.ClearScheduledHosts()
+	}
+	if v := i.AddScheduledHostIDs; len(v) > 0 {
+		m.AddScheduledHostIDs(v...)
+	}
+	if v := i.RemoveScheduledHostIDs; len(v) > 0 {
+		m.RemoveScheduledHostIDs(v...)
+	}
+}
+
+// SetInput applies the change-set in the UpdateScheduledTaskInput on the ScheduledTaskUpdate builder.
+func (c *ScheduledTaskUpdate) SetInput(i UpdateScheduledTaskInput) *ScheduledTaskUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateScheduledTaskInput on the ScheduledTaskUpdateOne builder.
+func (c *ScheduledTaskUpdateOne) SetInput(i UpdateScheduledTaskInput) *ScheduledTaskUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateShellInput represents a mutation input for creating shells.
 type CreateShellInput struct {
 	BeaconID int
@@ -397,18 +604,14 @@ func (c *TagUpdateOne) SetInput(i UpdateTagInput) *TagUpdateOne {
 
 // CreateTomeInput represents a mutation input for creating tomes.
 type CreateTomeInput struct {
-	Name                   string
-	Description            string
-	Author                 string
-	SupportModel           *tome.SupportModel
-	Tactic                 *tome.Tactic
-	RunOnNewBeaconCallback *bool
-	RunOnFirstHostCallback *bool
-	RunOnSchedule          *string
-	ParamDefs              *string
-	Eldritch               string
-	AssetIDs               []int
-	ScheduledHostIDs       []int
+	Name         string
+	Description  string
+	Author       string
+	SupportModel *tome.SupportModel
+	Tactic       *tome.Tactic
+	ParamDefs    *string
+	Eldritch     string
+	AssetIDs     []int
 }
 
 // Mutate applies the CreateTomeInput on the TomeMutation builder.
@@ -422,24 +625,12 @@ func (i *CreateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.Tactic; v != nil {
 		m.SetTactic(*v)
 	}
-	if v := i.RunOnNewBeaconCallback; v != nil {
-		m.SetRunOnNewBeaconCallback(*v)
-	}
-	if v := i.RunOnFirstHostCallback; v != nil {
-		m.SetRunOnFirstHostCallback(*v)
-	}
-	if v := i.RunOnSchedule; v != nil {
-		m.SetRunOnSchedule(*v)
-	}
 	if v := i.ParamDefs; v != nil {
 		m.SetParamDefs(*v)
 	}
 	m.SetEldritch(i.Eldritch)
 	if v := i.AssetIDs; len(v) > 0 {
 		m.AddAssetIDs(v...)
-	}
-	if v := i.ScheduledHostIDs; len(v) > 0 {
-		m.AddScheduledHostIDs(v...)
 	}
 }
 
@@ -451,24 +642,18 @@ func (c *TomeCreate) SetInput(i CreateTomeInput) *TomeCreate {
 
 // UpdateTomeInput represents a mutation input for updating tomes.
 type UpdateTomeInput struct {
-	LastModifiedAt         *time.Time
-	Name                   *string
-	Description            *string
-	Author                 *string
-	SupportModel           *tome.SupportModel
-	Tactic                 *tome.Tactic
-	RunOnNewBeaconCallback *bool
-	RunOnFirstHostCallback *bool
-	RunOnSchedule          *string
-	ClearParamDefs         bool
-	ParamDefs              *string
-	Eldritch               *string
-	ClearAssets            bool
-	AddAssetIDs            []int
-	RemoveAssetIDs         []int
-	ClearScheduledHosts    bool
-	AddScheduledHostIDs    []int
-	RemoveScheduledHostIDs []int
+	LastModifiedAt *time.Time
+	Name           *string
+	Description    *string
+	Author         *string
+	SupportModel   *tome.SupportModel
+	Tactic         *tome.Tactic
+	ClearParamDefs bool
+	ParamDefs      *string
+	Eldritch       *string
+	ClearAssets    bool
+	AddAssetIDs    []int
+	RemoveAssetIDs []int
 }
 
 // Mutate applies the UpdateTomeInput on the TomeMutation builder.
@@ -491,15 +676,6 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.Tactic; v != nil {
 		m.SetTactic(*v)
 	}
-	if v := i.RunOnNewBeaconCallback; v != nil {
-		m.SetRunOnNewBeaconCallback(*v)
-	}
-	if v := i.RunOnFirstHostCallback; v != nil {
-		m.SetRunOnFirstHostCallback(*v)
-	}
-	if v := i.RunOnSchedule; v != nil {
-		m.SetRunOnSchedule(*v)
-	}
 	if i.ClearParamDefs {
 		m.ClearParamDefs()
 	}
@@ -518,15 +694,6 @@ func (i *UpdateTomeInput) Mutate(m *TomeMutation) {
 	if v := i.RemoveAssetIDs; len(v) > 0 {
 		m.RemoveAssetIDs(v...)
 	}
-	if i.ClearScheduledHosts {
-		m.ClearScheduledHosts()
-	}
-	if v := i.AddScheduledHostIDs; len(v) > 0 {
-		m.AddScheduledHostIDs(v...)
-	}
-	if v := i.RemoveScheduledHostIDs; len(v) > 0 {
-		m.RemoveScheduledHostIDs(v...)
-	}
 }
 
 // SetInput applies the change-set in the UpdateTomeInput on the TomeUpdate builder.
@@ -543,16 +710,22 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name                 *string
-	PhotoURL             *string
-	IsActivated          *bool
-	IsAdmin              *bool
-	ClearTomes           bool
-	AddTomeIDs           []int
-	RemoveTomeIDs        []int
-	ClearActiveShells    bool
-	AddActiveShellIDs    []int
-	RemoveActiveShellIDs []int
+	Name                  *string
+	PhotoURL              *string
+	IsActivated           *bool
+	IsAdmin               *bool
+	ClearTomes            bool
+	AddTomeIDs            []int
+	RemoveTomeIDs         []int
+	ClearActiveShells     bool
+	AddActiveShellIDs     []int
+	RemoveActiveShellIDs  []int
+	ClearDeviceAuths      bool
+	AddDeviceAuthIDs      []int
+	RemoveDeviceAuthIDs   []int
+	ClearFavoriteHosts    bool
+	AddFavoriteHostIDs    []int
+	RemoveFavoriteHostIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -586,6 +759,24 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveActiveShellIDs; len(v) > 0 {
 		m.RemoveActiveShellIDs(v...)
+	}
+	if i.ClearDeviceAuths {
+		m.ClearDeviceAuths()
+	}
+	if v := i.AddDeviceAuthIDs; len(v) > 0 {
+		m.AddDeviceAuthIDs(v...)
+	}
+	if v := i.RemoveDeviceAuthIDs; len(v) > 0 {
+		m.RemoveDeviceAuthIDs(v...)
+	}
+	if i.ClearFavoriteHosts {
+		m.ClearFavoriteHosts()
+	}
+	if v := i.AddFavoriteHostIDs; len(v) > 0 {
+		m.AddFavoriteHostIDs(v...)
+	}
+	if v := i.RemoveFavoriteHostIDs; len(v) > 0 {
+		m.RemoveFavoriteHostIDs(v...)
 	}
 }
 

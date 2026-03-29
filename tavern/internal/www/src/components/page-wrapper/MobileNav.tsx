@@ -7,6 +7,8 @@ import {
 import { Link } from 'react-router-dom';
 import { classNames } from '../../utils/utils';
 import { usePageNavigation } from './usePageNavigation';
+import { Avatar } from '@chakra-ui/react';
+import { useAuthorization } from '../../context/AuthorizationContext';
 
 type MobileNavProps = {
     sidebarOpen: boolean;
@@ -16,6 +18,8 @@ type MobileNavProps = {
 
 const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavProps) => {
     const navigation = usePageNavigation();
+    const { data } = useAuthorization();
+    const user = data?.me;
 
     return (
         <>
@@ -25,10 +29,9 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                     <Bars3Icon className="h-6 w-6" aria-hidden="true" />
                 </button>
                 <div className="flex-1 text-sm font-semibold leading-6 text-white">Realm</div>
-                <div className='text-sm font-semibold leading-6 text-white'>Logout</div>
             </div>
             <Transition.Root show={sidebarOpen} as={Fragment}>
-                <Dialog as="div" className="relative z-50 lg:hidden" onClose={handleSidebarOpen}>
+                <Dialog as="div" className="relative z-40 lg:hidden" onClose={handleSidebarOpen}>
                     <Transition.Child
                         as={Fragment}
                         enter="transition-opacity ease-linear duration-400"
@@ -112,6 +115,15 @@ const MobileNav = ({ handleSidebarOpen, sidebarOpen, currNavItem }: MobileNavPro
                                             </li>
                                         </ul>
                                     </nav>
+                                    <div className="mt-auto pb-4">
+                                        <Link to="/profile" className={classNames(
+                                            currNavItem === 'Profile' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
+                                            'group flex items-center gap-x-4 rounded-md p-2 text-sm leading-6 font-semibold'
+                                        )}>
+                                            <Avatar size="sm" name={user?.name || ''} src={user?.photoURL || undefined} />
+                                            <span aria-hidden="true">{user?.name}</span>
+                                        </Link>
+                                    </div>
                                 </div>
                             </Dialog.Panel>
                         </Transition.Child>

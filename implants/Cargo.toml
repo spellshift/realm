@@ -5,6 +5,7 @@ members = [
     "lib/transport",
     "lib/pb",
     "lib/host_unique",
+    "lib/guardrails",
     "lib/netstat",
     "lib/eldritch/eldritch-core",
     "lib/eldritch/eldritch-macros",
@@ -24,7 +25,8 @@ members = [
     "lib/eldritch/stdlib/eldritch-libtime",
     "lib/eldritch/eldritch",
     "lib/eldritch/eldritch-wasm",
-    "lib/portals/portal-stream",
+    "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
+    "lib/eldritch/stdlib/eldritch-libchain",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -34,6 +36,7 @@ resolver = "2"
 [workspace.dependencies]
 transport = { path = "./lib/transport" }
 host_unique = { path = "./lib/host_unique" }
+guardrails = { path = "./lib/guardrails" }
 pb = { path = "./lib/pb" }
 netstat = { path = "./lib/netstat" }
 
@@ -57,6 +60,11 @@ eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
+
+eldritch-libchain = {path = "lib/eldritch/stdlib/eldritch-libchain",default-features = false }
+
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"
@@ -69,7 +77,7 @@ base64 = "0.21.4"
 byteorder = "1.5"
 chrono = "0.4.34"
 const-decoder = "0.3.0"
-clap = "3.2.23"
+clap = "4.5.60"
 criterion = "0.5"
 netdev = "0.33.0"
 derive_more = "=0.99.17"

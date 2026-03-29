@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -21,17 +23,21 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                   *QueryContext
-	order                 []user.OrderOption
-	inters                []Interceptor
-	predicates            []predicate.User
-	withTomes             *TomeQuery
-	withActiveShells      *ShellQuery
-	withFKs               bool
-	modifiers             []func(*sql.Selector)
-	loadTotal             []func(context.Context, []*User) error
-	withNamedTomes        map[string]*TomeQuery
-	withNamedActiveShells map[string]*ShellQuery
+	ctx                    *QueryContext
+	order                  []user.OrderOption
+	inters                 []Interceptor
+	predicates             []predicate.User
+	withTomes              *TomeQuery
+	withActiveShells       *ShellQuery
+	withDeviceAuths        *DeviceAuthQuery
+	withFavoriteHosts      *HostQuery
+	withFKs                bool
+	modifiers              []func(*sql.Selector)
+	loadTotal              []func(context.Context, []*User) error
+	withNamedTomes         map[string]*TomeQuery
+	withNamedActiveShells  map[string]*ShellQuery
+	withNamedDeviceAuths   map[string]*DeviceAuthQuery
+	withNamedFavoriteHosts map[string]*HostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -105,6 +111,50 @@ func (uq *UserQuery) QueryActiveShells() *ShellQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(shell.Table, shell.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.ActiveShellsTable, user.ActiveShellsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDeviceAuths chains the current query on the "device_auths" edge.
+func (uq *UserQuery) QueryDeviceAuths() *DeviceAuthQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(deviceauth.Table, deviceauth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.DeviceAuthsTable, user.DeviceAuthsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFavoriteHosts chains the current query on the "favoriteHosts" edge.
+func (uq *UserQuery) QueryFavoriteHosts() *HostQuery {
+	query := (&HostClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.FavoriteHostsTable, user.FavoriteHostsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -299,13 +349,15 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:           uq.config,
-		ctx:              uq.ctx.Clone(),
-		order:            append([]user.OrderOption{}, uq.order...),
-		inters:           append([]Interceptor{}, uq.inters...),
-		predicates:       append([]predicate.User{}, uq.predicates...),
-		withTomes:        uq.withTomes.Clone(),
-		withActiveShells: uq.withActiveShells.Clone(),
+		config:            uq.config,
+		ctx:               uq.ctx.Clone(),
+		order:             append([]user.OrderOption{}, uq.order...),
+		inters:            append([]Interceptor{}, uq.inters...),
+		predicates:        append([]predicate.User{}, uq.predicates...),
+		withTomes:         uq.withTomes.Clone(),
+		withActiveShells:  uq.withActiveShells.Clone(),
+		withDeviceAuths:   uq.withDeviceAuths.Clone(),
+		withFavoriteHosts: uq.withFavoriteHosts.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -331,6 +383,28 @@ func (uq *UserQuery) WithActiveShells(opts ...func(*ShellQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withActiveShells = query
+	return uq
+}
+
+// WithDeviceAuths tells the query-builder to eager-load the nodes that are connected to
+// the "device_auths" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithDeviceAuths(opts ...func(*DeviceAuthQuery)) *UserQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withDeviceAuths = query
+	return uq
+}
+
+// WithFavoriteHosts tells the query-builder to eager-load the nodes that are connected to
+// the "favoriteHosts" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithFavoriteHosts(opts ...func(*HostQuery)) *UserQuery {
+	query := (&HostClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withFavoriteHosts = query
 	return uq
 }
 
@@ -413,9 +487,11 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
+			uq.withDeviceAuths != nil,
+			uq.withFavoriteHosts != nil,
 		}
 	)
 	if withFKs {
@@ -456,6 +532,20 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withDeviceAuths; query != nil {
+		if err := uq.loadDeviceAuths(ctx, query, nodes,
+			func(n *User) { n.Edges.DeviceAuths = []*DeviceAuth{} },
+			func(n *User, e *DeviceAuth) { n.Edges.DeviceAuths = append(n.Edges.DeviceAuths, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withFavoriteHosts; query != nil {
+		if err := uq.loadFavoriteHosts(ctx, query, nodes,
+			func(n *User) { n.Edges.FavoriteHosts = []*Host{} },
+			func(n *User, e *Host) { n.Edges.FavoriteHosts = append(n.Edges.FavoriteHosts, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedTomes {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.appendNamedTomes(name) },
@@ -467,6 +557,20 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadActiveShells(ctx, query, nodes,
 			func(n *User) { n.appendNamedActiveShells(name) },
 			func(n *User, e *Shell) { n.appendNamedActiveShells(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedDeviceAuths {
+		if err := uq.loadDeviceAuths(ctx, query, nodes,
+			func(n *User) { n.appendNamedDeviceAuths(name) },
+			func(n *User, e *DeviceAuth) { n.appendNamedDeviceAuths(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedFavoriteHosts {
+		if err := uq.loadFavoriteHosts(ctx, query, nodes,
+			func(n *User) { n.appendNamedFavoriteHosts(name) },
+			func(n *User, e *Host) { n.appendNamedFavoriteHosts(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -563,6 +667,98 @@ func (uq *UserQuery) loadActiveShells(ctx context.Context, query *ShellQuery, no
 		nodes, ok := nids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected "active_shells" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (uq *UserQuery) loadDeviceAuths(ctx context.Context, query *DeviceAuthQuery, nodes []*User, init func(*User), assign func(*User, *DeviceAuth)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.DeviceAuth(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.DeviceAuthsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.device_auth_user
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "device_auth_user" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "device_auth_user" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadFavoriteHosts(ctx context.Context, query *HostQuery, nodes []*User, init func(*User), assign func(*User, *Host)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*User)
+	nids := make(map[int]map[*User]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(user.FavoriteHostsTable)
+		s.Join(joinT).On(s.C(host.FieldID), joinT.C(user.FavoriteHostsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(user.FavoriteHostsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(user.FavoriteHostsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*User]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Host](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "favoriteHosts" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -680,6 +876,34 @@ func (uq *UserQuery) WithNamedActiveShells(name string, opts ...func(*ShellQuery
 		uq.withNamedActiveShells = make(map[string]*ShellQuery)
 	}
 	uq.withNamedActiveShells[name] = query
+	return uq
+}
+
+// WithNamedDeviceAuths tells the query-builder to eager-load the nodes that are connected to the "device_auths"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedDeviceAuths(name string, opts ...func(*DeviceAuthQuery)) *UserQuery {
+	query := (&DeviceAuthClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedDeviceAuths == nil {
+		uq.withNamedDeviceAuths = make(map[string]*DeviceAuthQuery)
+	}
+	uq.withNamedDeviceAuths[name] = query
+	return uq
+}
+
+// WithNamedFavoriteHosts tells the query-builder to eager-load the nodes that are connected to the "favoriteHosts"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedFavoriteHosts(name string, opts ...func(*HostQuery)) *UserQuery {
+	query := (&HostClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedFavoriteHosts == nil {
+		uq.withNamedFavoriteHosts = make(map[string]*HostQuery)
+	}
+	uq.withNamedFavoriteHosts[name] = query
 	return uq
 }
 

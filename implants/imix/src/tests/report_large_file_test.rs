@@ -1,7 +1,7 @@
 use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use eldritch::report::std::file_impl;
-use eldritch_agent::{Agent, Context};
+use eldritch_agent::Context;
 use pb::c2::{
     AvailableTransports, Beacon, ClaimTasksRequest, ClaimTasksResponse, CreatePortalRequest,
     CreatePortalResponse, FetchAssetRequest, FetchAssetResponse, ReportCredentialRequest,
@@ -27,6 +27,7 @@ impl FakeTransport {
     }
 }
 
+#[async_trait::async_trait]
 impl Transport for FakeTransport {
     fn init() -> Self {
         FakeTransport::new()
@@ -100,6 +101,15 @@ impl Transport for FakeTransport {
         Ok(())
     }
 
+    async fn forward_raw(
+        &mut self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        Ok(())
+    }
+
     fn get_type(&mut self) -> pb::c2::transport::Type {
         pb::c2::transport::Type::TransportUnspecified
     }
@@ -114,6 +124,10 @@ impl Transport for FakeTransport {
 
     fn list_available(&self) -> Vec<String> {
         vec!["fake".to_string()]
+    }
+
+    fn clone_box(&self) -> Box<dyn Transport + Send + Sync> {
+        Box::new(self.clone())
     }
 }
 
@@ -151,11 +165,11 @@ async fn test_report_large_file_via_eldritch() {
 
     let agent = ImixAgent::new(
         config,
-        fake_transport,
         tokio::runtime::Handle::current(),
         task_registry,
         shell_tx,
     );
+    agent.update_transport(fake_transport.clone_box()).await;
     let agent = Arc::new(agent);
 
     // 4. Call file report

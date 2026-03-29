@@ -131,7 +131,7 @@ For more complex setups, such as configuring multiple transports or specifying d
 ```yaml
 transports:
   - URI: <string>
-    type: <grpc|http1|dns>
+    type: <grpc|http1|dns|icmp>
     interval: <integer> # optional, seconds
     extra: <json_string> # required (use "" if none)
 server_pubkey: <string> # optional - defaults to checking the first transport URI status page.
@@ -150,6 +150,10 @@ transports:
     type: "grpc"
     interval: 5
     extra: ""
+  - URI: "http1://127.0.0.1:8080"
+    type: "http1"
+    interval: 5
+    extra: ""
   - URI: "dns://*"
     type: "dns"
     interval: 10
@@ -163,7 +167,7 @@ cargo build --release --bin imix --target=x86_64-unknown-linux-musl
 
 ## Transport configuration
 
-Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1` and `dns`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
+Imix supports pluggable transports making it easy to adapt to your environment. Out of the box it supports `grpc` (default), `http1`, `dns`, and `icmp`. Each transport has a corresponding redirector subcommand in tavern. In order to use a non grpc transport a redirector that can speak to your transport is required.
 
 ### global configuration options
 - `uri`: specifies the upstream server or redirector the agent should connect to eg. `https://example.com` custom ports can be specified as `https://example.com:8443`
@@ -195,7 +199,7 @@ This transport doesn't support eldritch functions that require bi-directional st
 
 ### dns
 
-The DNS transport enables covert C2 communication by tunneling traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
+The DNS transport enables covert C2 communication by tunneling `ConvPacket` traffic through DNS queries and responses. This transport supports multiple DNS record types (TXT, A, AAAA).
 
 This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
 
@@ -206,6 +210,47 @@ This transport doesn't support eldritch functions that require bi-directional st
 - `type` (optional) - DNS record type: `txt` (default), `a`, or `aaaa`
 
 *Note*: TXT records provide the best performance.
+
+### tcp_bind
+
+The TCP Bind transport inverts the traditional C2 communication model: instead of the agent connecting outbound to the server, the agent binds to a local TCP port and waits for an upstream agent (or redirector) to connect inward.
+
+**Use Cases:**
+- Agent chaining: An upstream agent (Agent A) connects to a downstream agent's (Agent B) TCP bind port to proxy its C2 traffic
+- Network egress restrictions: When agents can't initiate outbound connections but can receive inbound connections
+- Multi-stage deployments: Establishing secure communication tunnels between agent stages
+
+**Configuration:**
+
+```yaml
+transports:
+  - type: tcp_bind
+    uri: tcp://0.0.0.0:8443    # Bind address and port
+```
+
+**Parameters:**
+- `uri`: The local address and port to bind on (e.g., `tcp://0.0.0.0:8443`). Use `0.0.0.0` to listen on all interfaces, or specify a specific IP for local-only binding.
+
+**Important Notes:**
+
+- **Inverted Nature**: The agent binds and listens; upstream agents or redirectors must initiate the connection. This reverses the typical agent-to-server model.
+- **Secure Channel**: TCP Bind is treated as a trusted local channel. Messages are sent as plain protobuf over the TCP connection; encryption (ChaCha20) is applied by the upstream agent when forwarding to Tavern.
+- **Agent Chaining**: Use with `chain.tcp()` in Eldritch to have one agent proxy traffic for another. For example:
+  - Agent B binds on `tcp://0.0.0.0:8443` with TCP Bind transport
+  - Agent A uses Eldritch to call `chain.tcp("192.168.1.100:8443")` to connect to Agent B
+  - Agent A proxies all of Agent B's C2 traffic upstream to Tavern
+- **Connection Persistence**: The TCP connection is maintained and reused across multiple C2 cycles. If the connection drops, a new upstream connection must be initiated.
+- **Not Suitable for Wide-Area Networks**: This transport is designed for local or trusted network chaining. For remote communication, use standard grpc, http1, or dns transports.
+
+### icmp
+
+The ICMP transport tunnels `ConvPacket` traffic through ICMP Echo Request/Reply packets. Raw protobuf bytes are carried directly in the echo payload, allowing up to 1400 byte chunks per packet.
+
+This transport doesn't support eldritch functions that require bi-directional streaming like reverse shell, or SOCKS5 proxying.
+
+*Note*: The URI must be the IPv4 address of the ICMP redirector, e.g. `icmp://192.168.1.1`. The redirector host must have kernel ICMP echo replies disabled - see the [ICMP Redirector](/admin-guide/tavern#icmp-redirector) section in the Tavern admin guide for setup instructions.
+
+**Extra Keys Supported:** None
 
 ## Logging
 
@@ -231,6 +276,53 @@ See the [Eldritch User Guide](/user-guide/eldritch) for more information.
 Imix can execute up to 127 threads concurrently after that the main imix thread will block behind other threads.
 Every callback interval imix will query each active thread for new output and relay that back to the c2. This means even long running tasks will report their status as new data comes in.
 
+## Guardrails
+
+Guardrails allow operators to ensure that Imix only runs on approved or expected hosts. This is particularly useful for preventing accidental execution in the wrong environment or ensuring that a payload only activates when specific conditions are met (e.g., a specific file exists, a process is running, or a registry key is set).
+
+By default, Imix compiles with no guardrails, meaning it will run on any host it lands on. Guardrails are evaluated at startup, and if any guardrail fails to validate, Imix will immediately exit. If multiple guardrails are configured, only **one** guardrail needs to successfully pass for the agent to continue execution (an OR condition).
+
+Guardrails are configured at build time using the `IMIX_GUARDRAILS` environment variable. Similar to host uniqueness, it takes a JSON list of objects specifying the guardrails.
+
+### Example Guardrails
+
+```bash
+export IMIX_GUARDRAILS='[
+    {
+        "type": "file",
+        "args": {
+            "path": "/etc/expected_file.txt"
+        }
+    },
+    {
+        "type": "process",
+        "args": {
+            "name": "explorer.exe"
+        }
+    },
+    {
+        "type": "registry",
+        "args": {
+            "subkey": "SOFTWARE\\MyCompany\\ExpectedKey",
+            "value_name": "ExpectedValue"
+        }
+    }
+]'
+```
+
+### Available Guardrails
+
+*   `file`: Checks if a specific file exists on disk. (Case-insensitive check is performed by converting to lower case).
+    *   `path` (string, required): The full path to the file.
+*   `process`: Checks if a specific process is currently running. (Case-insensitive check is performed by converting to lower case).
+    *   `name` (string, required): The name of the process (e.g., `explorer.exe`).
+*   `registry` (Windows only): Checks if a specific registry key or value exists.
+    *   `subkey` (string, required): The path to the registry subkey under `HKEY_CURRENT_USER` or `HKEY_LOCAL_MACHINE`.
+    *   `value_name` (string, optional): The name of a specific value to look for within the subkey. If omitted, only checks if the subkey itself exists.
+- **`env`**: Uses the `IMIX_HOST_ID` environment variable at runtime.
+- **`file`**: Uses a unique ID generated and saved to a file on disk. Accepts an optional `args` parameter `path_override` to specify a custom file path.
+- **`macaddr`**: Uses the MAC address of the first non-loopback network interface.
+- **`registry`**: Uses a registry key (Windows only). Must be enabled via `win_service` feature flag. Accepts `args` parameters `subkey` and optionally `value_name`.
 
 ## Identifying unique hosts
 
@@ -253,9 +345,47 @@ This isn't ideal as in the UI each new beacon will appear as though it were on a
 
 To change the default uniqueness behavior you can set the `IMIX_UNIQUE` environment variable at build time.
 
-`IMIX_UNIQUE` should be a list of JSON objects with `type` as a required field with args as an optional field.
+`IMIX_UNIQUE` should be a JSON array containing a list of JSON objects, where `type` is a required field and `args` is an optional field. The `args` object structure is dependent on the `type` selected. The selectors will be evaluated in the order they are specified.
 
-By default IMIX_UNIQUE is about equal to: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}},{"type":"macaddr"}]'`
+### Available Selectors
 
 To proiritize stealth we reccomend removing the file uniqueness selectors: `export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'`
 If you know the environment will have VMs cloned without sysprep we recommend proritizing the file selectors and removing macaddr: `export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'`
+
+### Default Behavior
+
+By default `IMIX_UNIQUE` is equivalent to the following:
+
+```bash
+export IMIX_UNIQUE='[
+  {"type": "env"},
+  {"type": "file"},
+  {"type": "file", "args": {"path_override": "/etc/system-id"}},
+  {"type": "macaddr"}
+]'
+```
+*(Note: the JSON must be minified/single-line when passed as an environment variable in practice. This is formatted for readability.)*
+
+### Example: Prioritize Stealth
+
+To prioritize stealth we recommend removing the file uniqueness selectors to prevent dropping arbitrary files to disk. Imix will first try checking the `IMIX_HOST_ID` environment variable, and if it is not set, it will fallback to using the network interface's MAC address.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"macaddr"}]'
+```
+
+### Example: VM Cloning Without Sysprep
+
+If you know the environment will have VMs cloned without sysprep (resulting in duplicate MAC addresses across instances), we recommend prioritizing the file selectors and removing `macaddr`:
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"file"},{"type":"file","args":{"path_override":"/etc/system-id"}}]'
+```
+
+### Example: Registry Key (Windows)
+
+On Windows, you can optionally configure Imix to fetch the uniqueness ID from a registry value. Note that the `registry` type is only valid for Windows targets.
+
+```bash
+export IMIX_UNIQUE='[{"type":"env"},{"type":"registry","args":{"subkey":"SOFTWARE\\MyCompany","value_name":"InstallID"}}]'
+```
