@@ -15,7 +15,7 @@ impl HostIDSelector for Env {
         let host_id_env = match env::var("IMIX_HOST_ID") {
             Ok(res) => res,
             Err(_err) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::debug!("No environment variable set {:?}", _err);
                 return None;
             }
@@ -23,7 +23,7 @@ impl HostIDSelector for Env {
         match Uuid::parse_str(&host_id_env) {
             Ok(res) => Some(res),
             Err(_err) => {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::debug!("Failed to deploy {:?}", _err);
                 None
             }

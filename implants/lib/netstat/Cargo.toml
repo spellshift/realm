@@ -32,3 +32,6 @@ byteorder = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 tokio-test = { workspace = true }
+
+[features]
+verbose-logging = []

@@ -156,7 +156,7 @@ impl ImixAgent {
             }
         }
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!(
             "Flushing {} task outputs and {} process list reports",
             outputs.len(),
@@ -233,7 +233,7 @@ impl ImixAgent {
         }
 
         for (_, (ctx, output)) in merged_task_outputs {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::info!("Task Output: {output:#?}");
 
             let req = ReportOutputRequest {
@@ -246,13 +246,13 @@ impl ImixAgent {
             };
 
             if let Err(_e) = transport.report_output(req).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::error!("Failed to report task output: {_e}");
             }
         }
 
         for (_, (ctx, output)) in merged_shell_outputs {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::info!("Shell Task Output: {output:#?}");
 
             let req = ReportOutputRequest {
@@ -265,7 +265,7 @@ impl ImixAgent {
             };
 
             if let Err(_e) = transport.report_output(req).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::error!("Failed to report shell task output: {_e}");
             }
         }
@@ -273,7 +273,7 @@ impl ImixAgent {
         // Only send the latest process list report (it replaces previous ones)
         if let Some(req) = process_list_reqs.into_iter().last() {
             if let Err(_e) = transport.report_process_list(req).await {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::error!("Failed to report process list: {_e}");
             }
         }
@@ -314,7 +314,7 @@ impl ImixAgent {
         let t =
             transport::create_transport(config).context("Failed to create on-demand transport")?;
 
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::debug!("Created on-demand transport for background task");
 
         Ok(t)
@@ -348,11 +348,11 @@ impl ImixAgent {
             self.runtime_handle.spawn(async move {
                 if let Ok(mut t) = agent.get_usable_transport().await {
                     if let Err(_e) = t.forward_raw(path.clone(), rx, tx).await {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::error!("Deferred forward_raw to {} failed: {}", path, _e);
                     }
                 } else {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::error!(
                         "Failed to get transport for deferred forward_raw to {}",
                         path
@@ -370,7 +370,7 @@ impl ImixAgent {
             let registry = self.task_registry.clone();
             let agent = Arc::new(self.clone());
             for task in resp.tasks {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::info!("Claimed task {}: JWT={}", task.id, task.jwt);
 
                 registry.spawn(task, agent.clone());
@@ -430,12 +430,12 @@ impl ImixAgent {
             match agent.get_usable_transport().await {
                 Ok(transport) => {
                     if let Err(_e) = action(transport).await {
-                        #[cfg(debug_assertions)]
+                        #[cfg(feature = "verbose-logging")]
                         log::error!("Subtask {} error: {_e:#}", task_id);
                     }
                 }
                 Err(_e) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::error!("Subtask {} failed to get transport: {_e:#}", task_id);
                 }
             }
@@ -861,7 +861,7 @@ impl Agent for ImixAgent {
             .map_err(|_| "Poisoned lock".to_string())?;
         if let Some(handle) = map.remove(&task_id) {
             handle.abort();
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::info!("Aborted subtask {task_id}");
         }
         Ok(())

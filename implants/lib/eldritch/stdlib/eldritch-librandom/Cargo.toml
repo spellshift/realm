@@ -11,6 +11,7 @@ rand_chacha = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:rand", "dep:rand_chacha", "dep:uuid"]
 fake_bindings = []

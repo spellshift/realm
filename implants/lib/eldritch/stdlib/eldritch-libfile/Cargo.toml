@@ -4,6 +4,7 @@ version = "0.3.4"
 edition = "2024"
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = [
     "dep:flate2",

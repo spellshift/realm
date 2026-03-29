@@ -4,6 +4,7 @@ version = "0.0.5"
 edition = "2021"
 
 [features]
+verbose-logging = ["host_unique/verbose-logging", "guardrails/verbose-logging"]
 default = []
 imix = []
 grpc = []

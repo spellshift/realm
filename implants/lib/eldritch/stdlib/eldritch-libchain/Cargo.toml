@@ -19,6 +19,7 @@ eldritch-core = { workspace = true }
 eldritch-macros = { workspace = true }
 
 [features]
+verbose-logging = ["pb/verbose-logging", "eldritch-agent/verbose-logging", "eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = []
 fake_bindings = []

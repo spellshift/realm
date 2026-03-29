@@ -17,3 +17,6 @@ log = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+
+[features]
+verbose-logging = ["eldritch-core/verbose-logging"]

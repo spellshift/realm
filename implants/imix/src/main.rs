@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
 
     #[cfg(feature = "install")]
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "verbose-logging")]
         log::info!("beginning installation");
 
         if std::env::args().any(|arg| arg == "install") {
@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
             return Ok(());
         }
         Err(_err) => {
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "verbose-logging")]
             log::error!("Failed to start service (running as exe?): {_err}");
         }
     }

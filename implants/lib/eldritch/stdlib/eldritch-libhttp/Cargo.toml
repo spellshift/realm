@@ -16,6 +16,7 @@ tokio = { version = "1", features = ["rt", "macros"], optional = true }
 futures = { version = "0.3", optional = true }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:reqwest", "dep:tokio", "dep:futures"]
 fake_bindings = []

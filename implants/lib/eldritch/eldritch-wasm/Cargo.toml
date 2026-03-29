@@ -4,6 +4,7 @@ version = "0.3.4"
 edition = "2024"
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-repl/verbose-logging"]
 stdlib = ["eldritch/stdlib", "eldritch/std"]
 fake_bindings = ["eldritch/fake_bindings"]
 

@@ -14,6 +14,7 @@ netstat = { workspace = true }
 libc = { workspace = true }
 
 [features]
+verbose-logging = ["eldritch-core/verbose-logging", "eldritch-macros/verbose-logging", "netstat/verbose-logging"]
 default = ["stdlib"]
 stdlib = ["dep:sysinfo"]
 fake_bindings = []

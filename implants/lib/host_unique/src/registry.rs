@@ -61,14 +61,14 @@ impl HostIDSelector for Registry {
                     match hklm.create_subkey(self.key_path()) {
                         Ok((k, _disp)) => k,
                         Err(_err) => {
-                            #[cfg(debug_assertions)]
+                            #[cfg(feature = "verbose-logging")]
                             log::debug!("failed to create registry key: {:?}", _err);
                             return None;
                         }
                     }
                 }
                 Err(_err) => {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::debug!("failed to open registry key: {:?}", _err);
                     return None;
                 }
@@ -79,7 +79,7 @@ impl HostIDSelector for Registry {
                 if let Ok(uuid) = Uuid::parse_str(&stored) {
                     return Some(uuid);
                 } else {
-                    #[cfg(debug_assertions)]
+                    #[cfg(feature = "verbose-logging")]
                     log::debug!("invalid UUID in registry: {:?}", stored);
                 }
             }
@@ -88,7 +88,7 @@ impl HostIDSelector for Registry {
             let new_uuid = Uuid::new_v4();
             let s = new_uuid.to_string();
             if let Err(_err) = key.set_value(self.val_name(), &s) {
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "verbose-logging")]
                 log::debug!("failed to write registry value: {:?}", _err);
             }
             Some(new_uuid)
