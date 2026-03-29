@@ -79,7 +79,7 @@ impl FileLibrary for StdFileLibrary {
         list_impl::list(path)
     }
 
-    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String> {
+    fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         list_recent_impl::list_recent(path, limit)
     }
 

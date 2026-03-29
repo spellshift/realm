@@ -162,15 +162,15 @@ pub trait FileLibrary {
     /// Lists files in a directory recursively, sorted by most recent modification time.
     ///
     /// **Parameters**
-    /// - `path` (`str`): The directory to scan. Defaults to "/".
-    /// - `limit` (`int`): The maximum number of files to return. Defaults to 10.
+    /// - `path` (`Option<str>`): The directory to scan. Defaults to "/".
+    /// - `limit` (`Option<int>`): The maximum number of files to return. Defaults to 10.
     ///
     /// **Returns**
     /// - `List<str>`: A list of file paths sorted by modification time (descending).
     ///
     /// **Errors**
     /// - Returns an error string if scanning fails.
-    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String>;
+    fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String>;
 
     #[eldritch_method]
     /// Creates a new directory.
