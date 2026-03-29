@@ -330,8 +330,13 @@ def windows_service_manager(service_name, service_display_name, service_descript
     binpath = executable_path
     if executable_args != "":
         binpath = executable_path + " " + executable_args
+
+    svc_type = "own"
+    if "svchost.exe" in executable_path.lower() or executable_path.lower().endswith(".dll"):
+        svc_type = "share"
+
     create_res = sys.shell("sc.exe create "+service_name+" binpath= \""+binpath+
-                           "\" displayname=\""+service_display_name+"\" start= auto type= own")
+                           "\" displayname=\""+service_display_name+"\" start= auto type= "+svc_type)
     if 'ERROR' in create_res['stdout'] or 'USAGE' in create_res['stdout'] or create_res['stderr'] != "":
         print("Failed to create service:\n"+str(create_res)+"\n")
         print("\n")

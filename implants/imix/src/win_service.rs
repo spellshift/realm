@@ -25,8 +25,17 @@ pub fn handle_service_main(_arguments: Vec<OsString>) {
     // Register system service event handler
     let status_handle = service_control_handler::register("imix", event_handler).unwrap();
 
+    let is_dll = std::env::current_exe()
+        .map(|p| p.to_string_lossy().to_lowercase().contains("svchost.exe"))
+        .unwrap_or(false);
+    let service_type = if is_dll {
+        ServiceType::SHARE_PROCESS
+    } else {
+        ServiceType::OWN_PROCESS
+    };
+
     let next_status = ServiceStatus {
-        service_type: ServiceType::OWN_PROCESS,
+        service_type,
         current_state: ServiceState::Running,
         controls_accepted: ServiceControlAccept::STOP,
         exit_code: ServiceExitCode::Win32(0),
