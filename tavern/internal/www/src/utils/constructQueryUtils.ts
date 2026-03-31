@@ -137,7 +137,7 @@ export function constructTaskFilterQuery(
   const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
   const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
   const beaconFilterQuery = constructBeaconFilterQuery(filter.beaconFields, currentTimestamp);
-  if (!questId && !filter.taskOutput && !beaconFilterQuery && !tomeFieldsFilterQuery && !questParamFilterQuery) {
+  if (!questId && !filter.taskOutput && !filter.userId && !beaconFilterQuery && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
@@ -145,9 +145,10 @@ export function constructTaskFilterQuery(
     "hasTasksWith": {
       ...(filter.taskOutput && { "outputContains": filter.taskOutput }),
       ...(beaconFilterQuery && beaconFilterQuery),
-      ...((questId || tomeFieldsFilterQuery || questParamFilterQuery) && {
+      ...((questId || filter?.userId || tomeFieldsFilterQuery || questParamFilterQuery ) && {
         "hasQuestWith": {
           ...questId && { "id": questId },
+          ...filter.userId && { "hasCreatorWith": {"id": filter.userId}},
           ...tomeFieldsFilterQuery && tomeFieldsFilterQuery,
           ...questParamFilterQuery && questParamFilterQuery
         }
@@ -162,12 +163,13 @@ export function constructQuestFilterQuery(filter: Filters) {
   const tomeFieldsFilterQuery = constructTomeFieldsFilterQuery(filter);
   const questParamFilterQuery = constructTomeDefinitionAndValueFilterQuery(filter);
 
-  if (!filter.questName && !tomeFieldsFilterQuery && !questParamFilterQuery) {
+  if (!filter.questName && !filter.userId && !tomeFieldsFilterQuery && !questParamFilterQuery) {
     return null;
   }
 
   return {
     ...(filter.questName && { "nameContains": filter.questName }),
+    ...filter.userId && { "hasCreatorWith": {"id": filter.userId}},
     ...(tomeFieldsFilterQuery && tomeFieldsFilterQuery),
     ...(questParamFilterQuery && questParamFilterQuery)
   }

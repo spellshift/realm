@@ -54,6 +54,12 @@ vi.mock('../../../components/ButtonDialogPopover', () => ({
   ),
 }));
 
+vi.mock('../../../components/UserFilterBar', () => ({
+  default: () => (
+    <div data-testid="user-filter-bar" />
+  ),
+}));
+
 function FiltersDisplay() {
   const { filters, isLocked } = useFilters();
   return (
@@ -87,6 +93,7 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('tome-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Tome definition & values')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Quest name')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
@@ -97,14 +104,16 @@ describe('FilterControls', () => {
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
       expect(screen.queryByTestId('tome-filter-bar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('user-filter-bar')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Task output')).not.toBeInTheDocument();
     });
 
-    it('should render beacon and task output filters for TASKS page', () => {
+    it('should render beacon, user, and task output filters for TASKS page', () => {
       render(<TestWrapper path="/tasks" />);
 
       expect(screen.getByTestId('beacon-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
       expect(screen.queryByTestId('free-text-search-Quest name')).not.toBeInTheDocument();
     });
@@ -113,6 +122,7 @@ describe('FilterControls', () => {
       render(<TestWrapper path="/hosts/123" />);
 
       expect(screen.getByTestId('tome-filter-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('user-filter-bar')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Tome definition & values')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Quest name')).toBeInTheDocument();
       expect(screen.getByTestId('free-text-search-Task output')).toBeInTheDocument();
