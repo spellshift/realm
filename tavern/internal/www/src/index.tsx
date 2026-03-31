@@ -43,7 +43,7 @@ const cache = new InMemoryCache({
     Host: {
       fields: {
         tags: relayStylePagination(),
-        beacons: relayStylePagination(),
+        beacons: relayStylePagination(["where"]),
         files: relayStylePagination(["where", "orderBy"]),
         processes: relayStylePagination(["where", "orderBy"]),
         credentials: relayStylePagination(),

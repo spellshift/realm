@@ -1,48 +1,30 @@
-import EmptyStateNoQuests from "../../components/empty-states/EmptyStateNoQuests";
-import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
-import QuestCard from "./components/QuestCard";
-import AccessCard from "./components/AccessCard";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import Button from "../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
-import { useDashboardData } from "./hook/useDashboardData";
-import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
-import { UseDashboardDataReturn } from "./types";
 import { FileTerminal } from "lucide-react";
+import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
+import { QuestTimelineChart } from "./QuestTimelineChart";
+import { HostByTagCard } from "./HostByTagCard/HostByTagCard";
+import { useQuery } from "@apollo/client";
+import { GET_TAGS_FOR_DASHBOARD } from "./HostByTagCard/queries";
+import { GetTagsForDashboardResponse } from "./HostByTagCard/types";
+import { EmptyState, EmptyStateType } from "../../components/tavern-base-ui/EmptyState";
+
+// Can be changed to "service" to display service tags instead
+const TAG_KIND_DISPLAY: "group" | "service" = "group";
 
 export const Dashboard = () => {
-    const { loading, error, data, hasTaskData }: UseDashboardDataReturn = useDashboardData();
     const { openModal } = useCreateQuestModal();
 
-    function getOverviewWrapper() {
-        if (loading) {
-            return <EmptyState type={EmptyStateType.loading} label="Loading dashboard data..." />
+    const { data, loading, error } = useQuery<GetTagsForDashboardResponse>(
+        GET_TAGS_FOR_DASHBOARD,
+        {
+            variables: { kind: TAG_KIND_DISPLAY },
+            fetchPolicy: "cache-and-network",
         }
+    );
 
-        if (error) {
-            return <EmptyState type={EmptyStateType.error} label="Error loading dashboard data..." />
-        }
-
-        if (!hasTaskData) {
-            return <EmptyStateNoQuests />
-        }
-
-        return (
-            <div className="my-4 flex flex-col gap-4">
-                <QuestCard
-                    formattedData={data.questData.formattedData}
-                    hosts={data.questData.hosts}
-                    loading={data.questData.loading}
-                />
-                <AccessCard
-                    hostActivity={data.hostData.hostActivity}
-                    onlineHostCount={data.hostData.onlineHostCount}
-                    offlineHostCount={data.hostData.offlineHostCount}
-                    loading={data.hostData.loading}
-                />
-            </div>
-        )
-    }
+    const tags = data?.tags?.edges.map(edge => edge.node) || [];
 
     return (
         <>
@@ -62,7 +44,34 @@ export const Dashboard = () => {
                 </div>
             </div>
             <PageHeader title="Dashboard" />
-            {getOverviewWrapper()}
+
+            <div className="mt-6 flex flex-col gap-2">
+                <QuestTimelineChart />
+                {loading && tags.length === 0 ? (
+                    <EmptyState type={EmptyStateType.loading} label="Loading tags..." />
+                ) : error ? (
+                    <EmptyState
+                        type={EmptyStateType.error}
+                        label="Failed to load tags"
+                        details={error.message}
+                    />
+                ) : tags.length === 0 ? (
+                    <EmptyState
+                        type={EmptyStateType.noData}
+                        label={`No ${TAG_KIND_DISPLAY} tags found`}
+                    />
+                ) : (
+                    <div className="grid grid-cols-4 gap-4">
+                        {tags.map((tag) => (
+                            <HostByTagCard
+                                key={tag.id}
+                                tagName={tag.name}
+                                tagKind={TAG_KIND_DISPLAY}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </>
     );
 }
