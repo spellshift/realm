@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/base:trixie
 
-ARG ZIG_VERSION=0.16.0-dev.2877+627f03af9
+ARG ZIG_VERSION=0.16.0-dev.3059+42e33db9d
 
 ENV GOPATH=/go
 ENV RUSTUP_HOME=/usr/local/rustup \
