@@ -3,7 +3,7 @@ state: |
     VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",false,false);
   INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
     VALUES (6,"test_oauth_id2","https://photos.com","admin","otherToken","otherAccessToken",true,true);
-requestor:
+requester:
   session_token: secretToken
 query: |
   query MeWithUnactivatedUser {

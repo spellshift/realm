@@ -50,7 +50,7 @@ state: |
     VALUES (9004,7000,1337,"output_d","","1","2023-03-04 14:51:13","2023-03-04 14:51:13");
   INSERT INTO host_files (id, path, task_reported_files, size, created_at, last_modified_at, host_file_host)
     VALUES (4, '/tmp/d', 9004, 100, datetime('now'), datetime('now'), 1010);
-requestor:
+requester:
   session_token: secretToken
 query: |
   query Quests {

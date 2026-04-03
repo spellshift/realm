@@ -11,7 +11,7 @@ state: |
     VALUES(1011, "2023-03-04 14:51:13", "2023-03-04 14:51:13", "Test Quest", 2000);
   INSERT INTO `tasks` (id, created_at, last_modified_at, output_size, quest_tasks, task_beacon)
     VALUES(1012, "2023-03-04 14:51:13", "2023-03-04 14:51:13", 100, 1011, 1337);
-requestor:
+requester:
   session_token: secretToken
 query: |
   mutation CreateQuestWithNoBeacons($input: CreateHostCredentialInput!) {
