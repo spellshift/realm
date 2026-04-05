@@ -9,6 +9,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -123,6 +124,21 @@ func init() {
 	beaconDescAgentIdentifier := beaconFields[3].Descriptor()
 	// beacon.AgentIdentifierValidator is a validator for the "agent_identifier" field. It is called by the builders before save.
 	beacon.AgentIdentifierValidator = beaconDescAgentIdentifier.Validators[0].(func(string) error)
+	beaconhistoryMixin := schema.BeaconHistory{}.Mixin()
+	beaconhistoryMixinFields0 := beaconhistoryMixin[0].Fields()
+	_ = beaconhistoryMixinFields0
+	beaconhistoryFields := schema.BeaconHistory{}.Fields()
+	_ = beaconhistoryFields
+	// beaconhistoryDescCreatedAt is the schema descriptor for created_at field.
+	beaconhistoryDescCreatedAt := beaconhistoryMixinFields0[0].Descriptor()
+	// beaconhistory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	beaconhistory.DefaultCreatedAt = beaconhistoryDescCreatedAt.Default.(func() time.Time)
+	// beaconhistoryDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	beaconhistoryDescLastModifiedAt := beaconhistoryMixinFields0[1].Descriptor()
+	// beaconhistory.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	beaconhistory.DefaultLastModifiedAt = beaconhistoryDescLastModifiedAt.Default.(func() time.Time)
+	// beaconhistory.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	beaconhistory.UpdateDefaultLastModifiedAt = beaconhistoryDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	buildprofileFields := schema.BuildProfile{}.Fields()
 	_ = buildprofileFields
 	// buildprofileDescTransports is the schema descriptor for transports field.

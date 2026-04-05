@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -59,6 +60,11 @@ var beaconImplementors = []string{"Beacon", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Beacon) IsNode() {}
+
+var beaconhistoryImplementors = []string{"BeaconHistory", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*BeaconHistory) IsNode() {}
 
 var buildprofileImplementors = []string{"BuildProfile", "Node"}
 
@@ -241,6 +247,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(beacon.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, beaconImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case beaconhistory.Table:
+		query := c.BeaconHistory.Query().
+			Where(beaconhistory.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, beaconhistoryImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -534,6 +549,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Beacon.Query().
 			Where(beacon.IDIn(ids...))
 		query, err := query.CollectFields(ctx, beaconImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case beaconhistory.Table:
+		query := c.BeaconHistory.Query().
+			Where(beaconhistory.IDIn(ids...))
+		query, err := query.CollectFields(ctx, beaconhistoryImplementors...)
 		if err != nil {
 			return nil, err
 		}

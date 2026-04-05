@@ -182,6 +182,30 @@ func (f BeaconMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BeaconMutation", m)
 }
 
+// The BeaconHistoryQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type BeaconHistoryQueryRuleFunc func(context.Context, *ent.BeaconHistoryQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f BeaconHistoryQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.BeaconHistoryQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.BeaconHistoryQuery", q)
+}
+
+// The BeaconHistoryMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type BeaconHistoryMutationRuleFunc func(context.Context, *ent.BeaconHistoryMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f BeaconHistoryMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.BeaconHistoryMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.BeaconHistoryMutation", m)
+}
+
 // The BuildProfileQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type BuildProfileQueryRuleFunc func(context.Context, *ent.BuildProfileQuery) error

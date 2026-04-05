@@ -58,6 +58,24 @@ func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
 	return c
 }
 
+// CreateBeaconHistoryInput represents a mutation input for creating beaconhistories.
+type CreateBeaconHistoryInput struct {
+	Latency  int64
+	BeaconID int
+}
+
+// Mutate applies the CreateBeaconHistoryInput on the BeaconHistoryMutation builder.
+func (i *CreateBeaconHistoryInput) Mutate(m *BeaconHistoryMutation) {
+	m.SetLatency(i.Latency)
+	m.SetBeaconID(i.BeaconID)
+}
+
+// SetInput applies the change-set in the CreateBeaconHistoryInput on the BeaconHistoryCreate builder.
+func (c *BeaconHistoryCreate) SetInput(i CreateBeaconHistoryInput) *BeaconHistoryCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateBuilderInput represents a mutation input for creating builders.
 type CreateBuilderInput struct {
 	SupportedTargets []c2pb.Host_Platform

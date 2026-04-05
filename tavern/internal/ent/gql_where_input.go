@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -858,6 +859,10 @@ type BeaconWhereInput struct {
 	// "shells" edge predicates.
 	HasShells     *bool              `json:"hasShells,omitempty"`
 	HasShellsWith []*ShellWhereInput `json:"hasShellsWith,omitempty"`
+
+	// "history" edge predicates.
+	HasHistory     *bool                      `json:"hasHistory,omitempty"`
+	HasHistoryWith []*BeaconHistoryWhereInput `json:"hasHistoryWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1328,6 +1333,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 		}
 		predicates = append(predicates, beacon.HasShellsWith(with...))
 	}
+	if i.HasHistory != nil {
+		p := beacon.HasHistory()
+		if !*i.HasHistory {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasHistoryWith) > 0 {
+		with := make([]predicate.BeaconHistory, 0, len(i.HasHistoryWith))
+		for _, w := range i.HasHistoryWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasHistoryWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasHistoryWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyBeaconWhereInput
@@ -1335,6 +1358,254 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 		return predicates[0], nil
 	default:
 		return beacon.And(predicates...), nil
+	}
+}
+
+// BeaconHistoryWhereInput represents a where input for filtering BeaconHistory queries.
+type BeaconHistoryWhereInput struct {
+	Predicates []predicate.BeaconHistory  `json:"-"`
+	Not        *BeaconHistoryWhereInput   `json:"not,omitempty"`
+	Or         []*BeaconHistoryWhereInput `json:"or,omitempty"`
+	And        []*BeaconHistoryWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "latency" field predicates.
+	Latency      *int64  `json:"latency,omitempty"`
+	LatencyNEQ   *int64  `json:"latencyNEQ,omitempty"`
+	LatencyIn    []int64 `json:"latencyIn,omitempty"`
+	LatencyNotIn []int64 `json:"latencyNotIn,omitempty"`
+	LatencyGT    *int64  `json:"latencyGT,omitempty"`
+	LatencyGTE   *int64  `json:"latencyGTE,omitempty"`
+	LatencyLT    *int64  `json:"latencyLT,omitempty"`
+	LatencyLTE   *int64  `json:"latencyLTE,omitempty"`
+
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *BeaconHistoryWhereInput) AddPredicates(predicates ...predicate.BeaconHistory) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the BeaconHistoryWhereInput filter on the BeaconHistoryQuery builder.
+func (i *BeaconHistoryWhereInput) Filter(q *BeaconHistoryQuery) (*BeaconHistoryQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyBeaconHistoryWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyBeaconHistoryWhereInput is returned in case the BeaconHistoryWhereInput is empty.
+var ErrEmptyBeaconHistoryWhereInput = errors.New("ent: empty predicate BeaconHistoryWhereInput")
+
+// P returns a predicate for filtering beaconhistories.
+// An error is returned if the input is empty or invalid.
+func (i *BeaconHistoryWhereInput) P() (predicate.BeaconHistory, error) {
+	var predicates []predicate.BeaconHistory
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, beaconhistory.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.BeaconHistory, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, beaconhistory.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.BeaconHistory, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, beaconhistory.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, beaconhistory.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, beaconhistory.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, beaconhistory.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, beaconhistory.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, beaconhistory.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, beaconhistory.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, beaconhistory.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, beaconhistory.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, beaconhistory.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, beaconhistory.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, beaconhistory.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, beaconhistory.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, beaconhistory.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, beaconhistory.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Latency != nil {
+		predicates = append(predicates, beaconhistory.LatencyEQ(*i.Latency))
+	}
+	if i.LatencyNEQ != nil {
+		predicates = append(predicates, beaconhistory.LatencyNEQ(*i.LatencyNEQ))
+	}
+	if len(i.LatencyIn) > 0 {
+		predicates = append(predicates, beaconhistory.LatencyIn(i.LatencyIn...))
+	}
+	if len(i.LatencyNotIn) > 0 {
+		predicates = append(predicates, beaconhistory.LatencyNotIn(i.LatencyNotIn...))
+	}
+	if i.LatencyGT != nil {
+		predicates = append(predicates, beaconhistory.LatencyGT(*i.LatencyGT))
+	}
+	if i.LatencyGTE != nil {
+		predicates = append(predicates, beaconhistory.LatencyGTE(*i.LatencyGTE))
+	}
+	if i.LatencyLT != nil {
+		predicates = append(predicates, beaconhistory.LatencyLT(*i.LatencyLT))
+	}
+	if i.LatencyLTE != nil {
+		predicates = append(predicates, beaconhistory.LatencyLTE(*i.LatencyLTE))
+	}
+
+	if i.HasBeacon != nil {
+		p := beaconhistory.HasBeacon()
+		if !*i.HasBeacon {
+			p = beaconhistory.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beaconhistory.HasBeaconWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyBeaconHistoryWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return beaconhistory.And(predicates...), nil
 	}
 }
 

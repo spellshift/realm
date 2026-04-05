@@ -76,6 +76,28 @@ var (
 			},
 		},
 	}
+	// BeaconHistoriesColumns holds the columns for the "beacon_histories" table.
+	BeaconHistoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "latency", Type: field.TypeInt64},
+		{Name: "beacon_history_beacon", Type: field.TypeInt},
+	}
+	// BeaconHistoriesTable holds the schema information for the "beacon_histories" table.
+	BeaconHistoriesTable = &schema.Table{
+		Name:       "beacon_histories",
+		Columns:    BeaconHistoriesColumns,
+		PrimaryKey: []*schema.Column{BeaconHistoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "beacon_histories_beacons_beacon",
+				Columns:    []*schema.Column{BeaconHistoriesColumns[4]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// BuildProfilesColumns holds the columns for the "build_profiles" table.
 	BuildProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -874,6 +896,7 @@ var (
 		AdventuresTable,
 		AssetsTable,
 		BeaconsTable,
+		BeaconHistoriesTable,
 		BuildProfilesTable,
 		BuildTasksTable,
 		BuildersTable,
@@ -913,6 +936,7 @@ func init() {
 	BeaconsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	BeaconHistoriesTable.ForeignKeys[0].RefTable = BeaconsTable
 	BuildProfilesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}

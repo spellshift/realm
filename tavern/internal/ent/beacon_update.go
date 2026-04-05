@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -214,6 +215,21 @@ func (bu *BeaconUpdate) AddShells(s ...*Shell) *BeaconUpdate {
 	return bu.AddShellIDs(ids...)
 }
 
+// AddHistoryIDs adds the "history" edge to the BeaconHistory entity by IDs.
+func (bu *BeaconUpdate) AddHistoryIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.AddHistoryIDs(ids...)
+	return bu
+}
+
+// AddHistory adds the "history" edges to the BeaconHistory entity.
+func (bu *BeaconUpdate) AddHistory(b ...*BeaconHistory) *BeaconUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return bu.AddHistoryIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (bu *BeaconUpdate) Mutation() *BeaconMutation {
 	return bu.mutation
@@ -265,6 +281,27 @@ func (bu *BeaconUpdate) RemoveShells(s ...*Shell) *BeaconUpdate {
 		ids[i] = s[i].ID
 	}
 	return bu.RemoveShellIDs(ids...)
+}
+
+// ClearHistory clears all "history" edges to the BeaconHistory entity.
+func (bu *BeaconUpdate) ClearHistory() *BeaconUpdate {
+	bu.mutation.ClearHistory()
+	return bu
+}
+
+// RemoveHistoryIDs removes the "history" edge to BeaconHistory entities by IDs.
+func (bu *BeaconUpdate) RemoveHistoryIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.RemoveHistoryIDs(ids...)
+	return bu
+}
+
+// RemoveHistory removes "history" edges to BeaconHistory entities.
+func (bu *BeaconUpdate) RemoveHistory(b ...*BeaconHistory) *BeaconUpdate {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return bu.RemoveHistoryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -504,6 +541,51 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if bu.mutation.HistoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.RemovedHistoryIDs(); len(nodes) > 0 && !bu.mutation.HistoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.HistoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{beacon.Label}
@@ -706,6 +788,21 @@ func (buo *BeaconUpdateOne) AddShells(s ...*Shell) *BeaconUpdateOne {
 	return buo.AddShellIDs(ids...)
 }
 
+// AddHistoryIDs adds the "history" edge to the BeaconHistory entity by IDs.
+func (buo *BeaconUpdateOne) AddHistoryIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.AddHistoryIDs(ids...)
+	return buo
+}
+
+// AddHistory adds the "history" edges to the BeaconHistory entity.
+func (buo *BeaconUpdateOne) AddHistory(b ...*BeaconHistory) *BeaconUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return buo.AddHistoryIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
 	return buo.mutation
@@ -757,6 +854,27 @@ func (buo *BeaconUpdateOne) RemoveShells(s ...*Shell) *BeaconUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return buo.RemoveShellIDs(ids...)
+}
+
+// ClearHistory clears all "history" edges to the BeaconHistory entity.
+func (buo *BeaconUpdateOne) ClearHistory() *BeaconUpdateOne {
+	buo.mutation.ClearHistory()
+	return buo
+}
+
+// RemoveHistoryIDs removes the "history" edge to BeaconHistory entities by IDs.
+func (buo *BeaconUpdateOne) RemoveHistoryIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.RemoveHistoryIDs(ids...)
+	return buo
+}
+
+// RemoveHistory removes "history" edges to BeaconHistory entities.
+func (buo *BeaconUpdateOne) RemoveHistory(b ...*BeaconHistory) *BeaconUpdateOne {
+	ids := make([]int, len(b))
+	for i := range b {
+		ids[i] = b[i].ID
+	}
+	return buo.RemoveHistoryIDs(ids...)
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
@@ -1019,6 +1137,51 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shell.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if buo.mutation.HistoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.RemovedHistoryIDs(); len(nodes) > 0 && !buo.mutation.HistoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.HistoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   beacon.HistoryTable,
+			Columns: []string{beacon.HistoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

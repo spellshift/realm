@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -51,6 +52,8 @@ type Client struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BeaconHistory is the client for interacting with the BeaconHistory builders.
+	BeaconHistory *BeaconHistoryClient
 	// BuildProfile is the client for interacting with the BuildProfile builders.
 	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
@@ -107,6 +110,7 @@ func (c *Client) init() {
 	c.Adventure = NewAdventureClient(c.config)
 	c.Asset = NewAssetClient(c.config)
 	c.Beacon = NewBeaconClient(c.config)
+	c.BeaconHistory = NewBeaconHistoryClient(c.config)
 	c.BuildProfile = NewBuildProfileClient(c.config)
 	c.BuildTask = NewBuildTaskClient(c.config)
 	c.Builder = NewBuilderClient(c.config)
@@ -222,6 +226,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Adventure:      NewAdventureClient(cfg),
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		BeaconHistory:  NewBeaconHistoryClient(cfg),
 		BuildProfile:   NewBuildProfileClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
@@ -264,6 +269,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Adventure:      NewAdventureClient(cfg),
 		Asset:          NewAssetClient(cfg),
 		Beacon:         NewBeaconClient(cfg),
+		BeaconHistory:  NewBeaconHistoryClient(cfg),
 		BuildProfile:   NewBuildProfileClient(cfg),
 		BuildTask:      NewBuildTaskClient(cfg),
 		Builder:        NewBuilderClient(cfg),
@@ -313,10 +319,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Adventure, c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder,
-		c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
+		c.Builder, c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess,
+		c.Link, c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -326,10 +332,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Adventure, c.Asset, c.Beacon, c.BuildProfile, c.BuildTask, c.Builder,
-		c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess, c.Link,
-		c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot, c.Shell,
-		c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
+		c.Builder, c.DeviceAuth, c.Host, c.HostCredential, c.HostFile, c.HostProcess,
+		c.Link, c.Portal, c.Quest, c.Repository, c.ScheduledTask, c.Screenshot,
+		c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -344,6 +350,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Asset.mutate(ctx, m)
 	case *BeaconMutation:
 		return c.Beacon.mutate(ctx, m)
+	case *BeaconHistoryMutation:
+		return c.BeaconHistory.mutate(ctx, m)
 	case *BuildProfileMutation:
 		return c.BuildProfile.mutate(ctx, m)
 	case *BuildTaskMutation:
@@ -876,6 +884,22 @@ func (c *BeaconClient) QueryShells(b *Beacon) *ShellQuery {
 	return query
 }
 
+// QueryHistory queries the history edge of a Beacon.
+func (c *BeaconClient) QueryHistory(b *Beacon) *BeaconHistoryQuery {
+	query := (&BeaconHistoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := b.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, id),
+			sqlgraph.To(beaconhistory.Table, beaconhistory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, beacon.HistoryTable, beacon.HistoryColumn),
+		)
+		fromV = sqlgraph.Neighbors(b.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *BeaconClient) Hooks() []Hook {
 	return c.hooks.Beacon
@@ -898,6 +922,155 @@ func (c *BeaconClient) mutate(ctx context.Context, m *BeaconMutation) (Value, er
 		return (&BeaconDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Beacon mutation op: %q", m.Op())
+	}
+}
+
+// BeaconHistoryClient is a client for the BeaconHistory schema.
+type BeaconHistoryClient struct {
+	config
+}
+
+// NewBeaconHistoryClient returns a client for the BeaconHistory from the given config.
+func NewBeaconHistoryClient(c config) *BeaconHistoryClient {
+	return &BeaconHistoryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `beaconhistory.Hooks(f(g(h())))`.
+func (c *BeaconHistoryClient) Use(hooks ...Hook) {
+	c.hooks.BeaconHistory = append(c.hooks.BeaconHistory, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `beaconhistory.Intercept(f(g(h())))`.
+func (c *BeaconHistoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.BeaconHistory = append(c.inters.BeaconHistory, interceptors...)
+}
+
+// Create returns a builder for creating a BeaconHistory entity.
+func (c *BeaconHistoryClient) Create() *BeaconHistoryCreate {
+	mutation := newBeaconHistoryMutation(c.config, OpCreate)
+	return &BeaconHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of BeaconHistory entities.
+func (c *BeaconHistoryClient) CreateBulk(builders ...*BeaconHistoryCreate) *BeaconHistoryCreateBulk {
+	return &BeaconHistoryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *BeaconHistoryClient) MapCreateBulk(slice any, setFunc func(*BeaconHistoryCreate, int)) *BeaconHistoryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &BeaconHistoryCreateBulk{err: fmt.Errorf("calling to BeaconHistoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*BeaconHistoryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &BeaconHistoryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for BeaconHistory.
+func (c *BeaconHistoryClient) Update() *BeaconHistoryUpdate {
+	mutation := newBeaconHistoryMutation(c.config, OpUpdate)
+	return &BeaconHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *BeaconHistoryClient) UpdateOne(bh *BeaconHistory) *BeaconHistoryUpdateOne {
+	mutation := newBeaconHistoryMutation(c.config, OpUpdateOne, withBeaconHistory(bh))
+	return &BeaconHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *BeaconHistoryClient) UpdateOneID(id int) *BeaconHistoryUpdateOne {
+	mutation := newBeaconHistoryMutation(c.config, OpUpdateOne, withBeaconHistoryID(id))
+	return &BeaconHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for BeaconHistory.
+func (c *BeaconHistoryClient) Delete() *BeaconHistoryDelete {
+	mutation := newBeaconHistoryMutation(c.config, OpDelete)
+	return &BeaconHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *BeaconHistoryClient) DeleteOne(bh *BeaconHistory) *BeaconHistoryDeleteOne {
+	return c.DeleteOneID(bh.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *BeaconHistoryClient) DeleteOneID(id int) *BeaconHistoryDeleteOne {
+	builder := c.Delete().Where(beaconhistory.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &BeaconHistoryDeleteOne{builder}
+}
+
+// Query returns a query builder for BeaconHistory.
+func (c *BeaconHistoryClient) Query() *BeaconHistoryQuery {
+	return &BeaconHistoryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeBeaconHistory},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a BeaconHistory entity by its id.
+func (c *BeaconHistoryClient) Get(ctx context.Context, id int) (*BeaconHistory, error) {
+	return c.Query().Where(beaconhistory.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *BeaconHistoryClient) GetX(ctx context.Context, id int) *BeaconHistory {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryBeacon queries the beacon edge of a BeaconHistory.
+func (c *BeaconHistoryClient) QueryBeacon(bh *BeaconHistory) *BeaconQuery {
+	query := (&BeaconClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := bh.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beaconhistory.Table, beaconhistory.FieldID, id),
+			sqlgraph.To(beacon.Table, beacon.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, beaconhistory.BeaconTable, beaconhistory.BeaconColumn),
+		)
+		fromV = sqlgraph.Neighbors(bh.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *BeaconHistoryClient) Hooks() []Hook {
+	return c.hooks.BeaconHistory
+}
+
+// Interceptors returns the client interceptors.
+func (c *BeaconHistoryClient) Interceptors() []Interceptor {
+	return c.inters.BeaconHistory
+}
+
+func (c *BeaconHistoryClient) mutate(ctx context.Context, m *BeaconHistoryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&BeaconHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&BeaconHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&BeaconHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&BeaconHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown BeaconHistory mutation op: %q", m.Op())
 	}
 }
 
@@ -4722,14 +4895,15 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Adventure, Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
-		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
-		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome, User []ent.Hook
+		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
+		DeviceAuth, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
+		Repository, ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome,
+		User []ent.Hook
 	}
 	inters struct {
-		Adventure, Asset, Beacon, BuildProfile, BuildTask, Builder, DeviceAuth, Host,
-		HostCredential, HostFile, HostProcess, Link, Portal, Quest, Repository,
-		ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome,
+		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
+		DeviceAuth, Host, HostCredential, HostFile, HostProcess, Link, Portal, Quest,
+		Repository, ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task, Tome,
 		User []ent.Interceptor
 	}
 )

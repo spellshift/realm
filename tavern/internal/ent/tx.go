@@ -18,6 +18,8 @@ type Tx struct {
 	Asset *AssetClient
 	// Beacon is the client for interacting with the Beacon builders.
 	Beacon *BeaconClient
+	// BeaconHistory is the client for interacting with the BeaconHistory builders.
+	BeaconHistory *BeaconHistoryClient
 	// BuildProfile is the client for interacting with the BuildProfile builders.
 	BuildProfile *BuildProfileClient
 	// BuildTask is the client for interacting with the BuildTask builders.
@@ -192,6 +194,7 @@ func (tx *Tx) init() {
 	tx.Adventure = NewAdventureClient(tx.config)
 	tx.Asset = NewAssetClient(tx.config)
 	tx.Beacon = NewBeaconClient(tx.config)
+	tx.BeaconHistory = NewBeaconHistoryClient(tx.config)
 	tx.BuildProfile = NewBuildProfileClient(tx.config)
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)

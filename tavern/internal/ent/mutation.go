@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -52,6 +53,7 @@ const (
 	TypeAdventure      = "Adventure"
 	TypeAsset          = "Asset"
 	TypeBeacon         = "Beacon"
+	TypeBeaconHistory  = "BeaconHistory"
 	TypeBuildProfile   = "BuildProfile"
 	TypeBuildTask      = "BuildTask"
 	TypeBuilder        = "Builder"
@@ -1494,6 +1496,9 @@ type BeaconMutation struct {
 	shells           map[int]struct{}
 	removedshells    map[int]struct{}
 	clearedshells    bool
+	history          map[int]struct{}
+	removedhistory   map[int]struct{}
+	clearedhistory   bool
 	done             bool
 	oldValue         func(context.Context) (*Beacon, error)
 	predicates       []predicate.Beacon
@@ -2190,6 +2195,60 @@ func (m *BeaconMutation) ResetShells() {
 	m.removedshells = nil
 }
 
+// AddHistoryIDs adds the "history" edge to the BeaconHistory entity by ids.
+func (m *BeaconMutation) AddHistoryIDs(ids ...int) {
+	if m.history == nil {
+		m.history = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.history[ids[i]] = struct{}{}
+	}
+}
+
+// ClearHistory clears the "history" edge to the BeaconHistory entity.
+func (m *BeaconMutation) ClearHistory() {
+	m.clearedhistory = true
+}
+
+// HistoryCleared reports if the "history" edge to the BeaconHistory entity was cleared.
+func (m *BeaconMutation) HistoryCleared() bool {
+	return m.clearedhistory
+}
+
+// RemoveHistoryIDs removes the "history" edge to the BeaconHistory entity by IDs.
+func (m *BeaconMutation) RemoveHistoryIDs(ids ...int) {
+	if m.removedhistory == nil {
+		m.removedhistory = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.history, ids[i])
+		m.removedhistory[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedHistory returns the removed IDs of the "history" edge to the BeaconHistory entity.
+func (m *BeaconMutation) RemovedHistoryIDs() (ids []int) {
+	for id := range m.removedhistory {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// HistoryIDs returns the "history" edge IDs in the mutation.
+func (m *BeaconMutation) HistoryIDs() (ids []int) {
+	for id := range m.history {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetHistory resets all changes to the "history" edge.
+func (m *BeaconMutation) ResetHistory() {
+	m.history = nil
+	m.clearedhistory = false
+	m.removedhistory = nil
+}
+
 // Where appends a list predicates to the BeaconMutation builder.
 func (m *BeaconMutation) Where(ps ...predicate.Beacon) {
 	m.predicates = append(m.predicates, ps...)
@@ -2524,7 +2583,7 @@ func (m *BeaconMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BeaconMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.host != nil {
 		edges = append(edges, beacon.EdgeHost)
 	}
@@ -2533,6 +2592,9 @@ func (m *BeaconMutation) AddedEdges() []string {
 	}
 	if m.shells != nil {
 		edges = append(edges, beacon.EdgeShells)
+	}
+	if m.history != nil {
+		edges = append(edges, beacon.EdgeHistory)
 	}
 	return edges
 }
@@ -2557,18 +2619,27 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeHistory:
+		ids := make([]ent.Value, 0, len(m.history))
+		for id := range m.history {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BeaconMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedtasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
 	}
 	if m.removedshells != nil {
 		edges = append(edges, beacon.EdgeShells)
+	}
+	if m.removedhistory != nil {
+		edges = append(edges, beacon.EdgeHistory)
 	}
 	return edges
 }
@@ -2589,13 +2660,19 @@ func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeHistory:
+		ids := make([]ent.Value, 0, len(m.removedhistory))
+		for id := range m.removedhistory {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BeaconMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedhost {
 		edges = append(edges, beacon.EdgeHost)
 	}
@@ -2604,6 +2681,9 @@ func (m *BeaconMutation) ClearedEdges() []string {
 	}
 	if m.clearedshells {
 		edges = append(edges, beacon.EdgeShells)
+	}
+	if m.clearedhistory {
+		edges = append(edges, beacon.EdgeHistory)
 	}
 	return edges
 }
@@ -2618,6 +2698,8 @@ func (m *BeaconMutation) EdgeCleared(name string) bool {
 		return m.clearedtasks
 	case beacon.EdgeShells:
 		return m.clearedshells
+	case beacon.EdgeHistory:
+		return m.clearedhistory
 	}
 	return false
 }
@@ -2646,8 +2728,548 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 	case beacon.EdgeShells:
 		m.ResetShells()
 		return nil
+	case beacon.EdgeHistory:
+		m.ResetHistory()
+		return nil
 	}
 	return fmt.Errorf("unknown Beacon edge %s", name)
+}
+
+// BeaconHistoryMutation represents an operation that mutates the BeaconHistory nodes in the graph.
+type BeaconHistoryMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	latency          *int64
+	addlatency       *int64
+	clearedFields    map[string]struct{}
+	beacon           *int
+	clearedbeacon    bool
+	done             bool
+	oldValue         func(context.Context) (*BeaconHistory, error)
+	predicates       []predicate.BeaconHistory
+}
+
+var _ ent.Mutation = (*BeaconHistoryMutation)(nil)
+
+// beaconhistoryOption allows management of the mutation configuration using functional options.
+type beaconhistoryOption func(*BeaconHistoryMutation)
+
+// newBeaconHistoryMutation creates new mutation for the BeaconHistory entity.
+func newBeaconHistoryMutation(c config, op Op, opts ...beaconhistoryOption) *BeaconHistoryMutation {
+	m := &BeaconHistoryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBeaconHistory,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBeaconHistoryID sets the ID field of the mutation.
+func withBeaconHistoryID(id int) beaconhistoryOption {
+	return func(m *BeaconHistoryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BeaconHistory
+		)
+		m.oldValue = func(ctx context.Context) (*BeaconHistory, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BeaconHistory.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBeaconHistory sets the old BeaconHistory of the mutation.
+func withBeaconHistory(node *BeaconHistory) beaconhistoryOption {
+	return func(m *BeaconHistoryMutation) {
+		m.oldValue = func(context.Context) (*BeaconHistory, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BeaconHistoryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BeaconHistoryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BeaconHistoryMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BeaconHistoryMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BeaconHistory.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BeaconHistoryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BeaconHistoryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BeaconHistory entity.
+// If the BeaconHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconHistoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BeaconHistoryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *BeaconHistoryMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *BeaconHistoryMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the BeaconHistory entity.
+// If the BeaconHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconHistoryMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *BeaconHistoryMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetLatency sets the "latency" field.
+func (m *BeaconHistoryMutation) SetLatency(i int64) {
+	m.latency = &i
+	m.addlatency = nil
+}
+
+// Latency returns the value of the "latency" field in the mutation.
+func (m *BeaconHistoryMutation) Latency() (r int64, exists bool) {
+	v := m.latency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatency returns the old "latency" field's value of the BeaconHistory entity.
+// If the BeaconHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BeaconHistoryMutation) OldLatency(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLatency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLatency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatency: %w", err)
+	}
+	return oldValue.Latency, nil
+}
+
+// AddLatency adds i to the "latency" field.
+func (m *BeaconHistoryMutation) AddLatency(i int64) {
+	if m.addlatency != nil {
+		*m.addlatency += i
+	} else {
+		m.addlatency = &i
+	}
+}
+
+// AddedLatency returns the value that was added to the "latency" field in this mutation.
+func (m *BeaconHistoryMutation) AddedLatency() (r int64, exists bool) {
+	v := m.addlatency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLatency resets all changes to the "latency" field.
+func (m *BeaconHistoryMutation) ResetLatency() {
+	m.latency = nil
+	m.addlatency = nil
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by id.
+func (m *BeaconHistoryMutation) SetBeaconID(id int) {
+	m.beacon = &id
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (m *BeaconHistoryMutation) ClearBeacon() {
+	m.clearedbeacon = true
+}
+
+// BeaconCleared reports if the "beacon" edge to the Beacon entity was cleared.
+func (m *BeaconHistoryMutation) BeaconCleared() bool {
+	return m.clearedbeacon
+}
+
+// BeaconID returns the "beacon" edge ID in the mutation.
+func (m *BeaconHistoryMutation) BeaconID() (id int, exists bool) {
+	if m.beacon != nil {
+		return *m.beacon, true
+	}
+	return
+}
+
+// BeaconIDs returns the "beacon" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BeaconID instead. It exists only for internal usage by the builders.
+func (m *BeaconHistoryMutation) BeaconIDs() (ids []int) {
+	if id := m.beacon; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBeacon resets all changes to the "beacon" edge.
+func (m *BeaconHistoryMutation) ResetBeacon() {
+	m.beacon = nil
+	m.clearedbeacon = false
+}
+
+// Where appends a list predicates to the BeaconHistoryMutation builder.
+func (m *BeaconHistoryMutation) Where(ps ...predicate.BeaconHistory) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BeaconHistoryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BeaconHistoryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BeaconHistory, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BeaconHistoryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BeaconHistoryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BeaconHistory).
+func (m *BeaconHistoryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BeaconHistoryMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, beaconhistory.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, beaconhistory.FieldLastModifiedAt)
+	}
+	if m.latency != nil {
+		fields = append(fields, beaconhistory.FieldLatency)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BeaconHistoryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case beaconhistory.FieldCreatedAt:
+		return m.CreatedAt()
+	case beaconhistory.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case beaconhistory.FieldLatency:
+		return m.Latency()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BeaconHistoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case beaconhistory.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case beaconhistory.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case beaconhistory.FieldLatency:
+		return m.OldLatency(ctx)
+	}
+	return nil, fmt.Errorf("unknown BeaconHistory field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BeaconHistoryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case beaconhistory.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case beaconhistory.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case beaconhistory.FieldLatency:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatency(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BeaconHistory field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BeaconHistoryMutation) AddedFields() []string {
+	var fields []string
+	if m.addlatency != nil {
+		fields = append(fields, beaconhistory.FieldLatency)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BeaconHistoryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case beaconhistory.FieldLatency:
+		return m.AddedLatency()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BeaconHistoryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case beaconhistory.FieldLatency:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLatency(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BeaconHistory numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BeaconHistoryMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BeaconHistoryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BeaconHistoryMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown BeaconHistory nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BeaconHistoryMutation) ResetField(name string) error {
+	switch name {
+	case beaconhistory.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case beaconhistory.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case beaconhistory.FieldLatency:
+		m.ResetLatency()
+		return nil
+	}
+	return fmt.Errorf("unknown BeaconHistory field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BeaconHistoryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.beacon != nil {
+		edges = append(edges, beaconhistory.EdgeBeacon)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BeaconHistoryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case beaconhistory.EdgeBeacon:
+		if id := m.beacon; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BeaconHistoryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BeaconHistoryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BeaconHistoryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedbeacon {
+		edges = append(edges, beaconhistory.EdgeBeacon)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BeaconHistoryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case beaconhistory.EdgeBeacon:
+		return m.clearedbeacon
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BeaconHistoryMutation) ClearEdge(name string) error {
+	switch name {
+	case beaconhistory.EdgeBeacon:
+		m.ClearBeacon()
+		return nil
+	}
+	return fmt.Errorf("unknown BeaconHistory unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BeaconHistoryMutation) ResetEdge(name string) error {
+	switch name {
+	case beaconhistory.EdgeBeacon:
+		m.ResetBeacon()
+		return nil
+	}
+	return fmt.Errorf("unknown BeaconHistory edge %s", name)
 }
 
 // BuildProfileMutation represents an operation that mutates the BuildProfile nodes in the graph.
