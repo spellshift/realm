@@ -12,16 +12,16 @@ import UserFilterBar from "../../components/UserFilterBar";
 
 function getFilterFields(pathname: string): FilterFieldType[] | null {
     if (pathname.startsWith('/hosts/')) {
-        return [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
+        return [FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.USER, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/hosts') {
         return [FilterFieldType.BEACON_FIELDS];
     }
     if (pathname === '/quests' || pathname.startsWith('/quests/')) {
-        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
+        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.USER, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.QUEST_NAME, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/tasks' || pathname.startsWith('/tasks/')) {
-        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
+        return [FilterFieldType.BEACON_FIELDS, FilterFieldType.TOME_FIELDS, FilterFieldType.USER, FilterFieldType.TOME_MULTI_SEARCH, FilterFieldType.TASK_OUTPUT];
     }
     if (pathname === '/assets') {
         return [FilterFieldType.ASSET_NAME, FilterFieldType.USER];
