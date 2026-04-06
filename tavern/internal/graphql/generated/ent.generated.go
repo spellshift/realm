@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"sync/atomic"
 
 	"entgo.io/contrib/entgql"
@@ -7275,7 +7274,7 @@ func (ec *executionContext) _HostFile_preview(ctx context.Context, field graphql
 		field,
 		ec.fieldContext_HostFile_preview,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.HostFile().Preview(ctx, obj)
+			return ec.Resolvers.HostFile().Preview(ctx, obj)
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -9638,7 +9637,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_node,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Node(ctx, fc.Args["id"].(int))
+			return ec.Resolvers.Query().Node(ctx, fc.Args["id"].(int))
 		},
 		nil,
 		ec.marshalONode2realmᚗpubᚋtavernᚋinternalᚋentᚐNoder,
@@ -9679,7 +9678,7 @@ func (ec *executionContext) _Query_nodes(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_nodes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Nodes(ctx, fc.Args["ids"].([]int))
+			return ec.Resolvers.Query().Nodes(ctx, fc.Args["ids"].([]int))
 		},
 		nil,
 		ec.marshalNNode2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚐNoder,
@@ -9720,7 +9719,7 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query_assets,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Assets(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
+			return ec.Resolvers.Query().Assets(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AssetOrder), fc.Args["where"].(*ent.AssetWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -9731,11 +9730,11 @@ func (ec *executionContext) _Query_assets(ctx context.Context, field graphql.Col
 					var zeroVal *ent.AssetConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.AssetConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -9787,7 +9786,7 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query_quests,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Quests(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
+			return ec.Resolvers.Query().Quests(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.QuestOrder), fc.Args["where"].(*ent.QuestWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -9798,11 +9797,11 @@ func (ec *executionContext) _Query_quests(ctx context.Context, field graphql.Col
 					var zeroVal *ent.QuestConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.QuestConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -9854,7 +9853,7 @@ func (ec *executionContext) _Query_adventures(ctx context.Context, field graphql
 		ec.fieldContext_Query_adventures,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Adventures(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AdventureOrder), fc.Args["where"].(*ent.AdventureWhereInput))
+			return ec.Resolvers.Query().Adventures(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.AdventureOrder), fc.Args["where"].(*ent.AdventureWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -9865,11 +9864,11 @@ func (ec *executionContext) _Query_adventures(ctx context.Context, field graphql
 					var zeroVal *ent.AdventureConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.AdventureConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -9921,7 +9920,7 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_tasks,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
+			return ec.Resolvers.Query().Tasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TaskOrder), fc.Args["where"].(*ent.TaskWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -9932,11 +9931,11 @@ func (ec *executionContext) _Query_tasks(ctx context.Context, field graphql.Coll
 					var zeroVal *ent.TaskConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.TaskConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -9988,7 +9987,7 @@ func (ec *executionContext) _Query_repositories(ctx context.Context, field graph
 		ec.fieldContext_Query_repositories,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Repositories(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.RepositoryOrder), fc.Args["where"].(*ent.RepositoryWhereInput))
+			return ec.Resolvers.Query().Repositories(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.RepositoryOrder), fc.Args["where"].(*ent.RepositoryWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -9999,11 +9998,11 @@ func (ec *executionContext) _Query_repositories(ctx context.Context, field graph
 					var zeroVal *ent.RepositoryConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.RepositoryConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10055,7 +10054,7 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_beacons,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Beacons(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
+			return ec.Resolvers.Query().Beacons(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BeaconOrder), fc.Args["where"].(*ent.BeaconWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10066,11 +10065,11 @@ func (ec *executionContext) _Query_beacons(ctx context.Context, field graphql.Co
 					var zeroVal *ent.BeaconConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BeaconConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10122,7 +10121,7 @@ func (ec *executionContext) _Query_hosts(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_hosts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Hosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
+			return ec.Resolvers.Query().Hosts(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.HostOrder), fc.Args["where"].(*ent.HostWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10133,11 +10132,11 @@ func (ec *executionContext) _Query_hosts(ctx context.Context, field graphql.Coll
 					var zeroVal *ent.HostConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.HostConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10189,7 +10188,7 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_tags,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Tags(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
+			return ec.Resolvers.Query().Tags(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TagOrder), fc.Args["where"].(*ent.TagWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10200,11 +10199,11 @@ func (ec *executionContext) _Query_tags(ctx context.Context, field graphql.Colle
 					var zeroVal *ent.TagConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.TagConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10256,7 +10255,7 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_tomes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
+			return ec.Resolvers.Query().Tomes(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.TomeOrder), fc.Args["where"].(*ent.TomeWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10267,11 +10266,11 @@ func (ec *executionContext) _Query_tomes(ctx context.Context, field graphql.Coll
 					var zeroVal *ent.TomeConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.TomeConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10323,7 +10322,7 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 		ec.fieldContext_Query_users,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Users(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
+			return ec.Resolvers.Query().Users(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.UserOrder), fc.Args["where"].(*ent.UserWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10334,11 +10333,11 @@ func (ec *executionContext) _Query_users(ctx context.Context, field graphql.Coll
 					var zeroVal *ent.UserConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.UserConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10390,7 +10389,7 @@ func (ec *executionContext) _Query_portals(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_portals,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Portals(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
+			return ec.Resolvers.Query().Portals(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.PortalOrder), fc.Args["where"].(*ent.PortalWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10401,11 +10400,11 @@ func (ec *executionContext) _Query_portals(ctx context.Context, field graphql.Co
 					var zeroVal *ent.PortalConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.PortalConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10457,7 +10456,7 @@ func (ec *executionContext) _Query_shells(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query_shells,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
+			return ec.Resolvers.Query().Shells(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ShellOrder), fc.Args["where"].(*ent.ShellWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10468,11 +10467,11 @@ func (ec *executionContext) _Query_shells(ctx context.Context, field graphql.Col
 					var zeroVal *ent.ShellConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ShellConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10524,7 +10523,7 @@ func (ec *executionContext) _Query_buildProfiles(ctx context.Context, field grap
 		ec.fieldContext_Query_buildProfiles,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().BuildProfiles(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuildProfileOrder), fc.Args["where"].(*ent.BuildProfileWhereInput))
+			return ec.Resolvers.Query().BuildProfiles(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuildProfileOrder), fc.Args["where"].(*ent.BuildProfileWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10535,11 +10534,11 @@ func (ec *executionContext) _Query_buildProfiles(ctx context.Context, field grap
 					var zeroVal *ent.BuildProfileConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BuildProfileConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10591,7 +10590,7 @@ func (ec *executionContext) _Query_buildTasks(ctx context.Context, field graphql
 		ec.fieldContext_Query_buildTasks,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().BuildTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuildTaskOrder), fc.Args["where"].(*ent.BuildTaskWhereInput))
+			return ec.Resolvers.Query().BuildTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuildTaskOrder), fc.Args["where"].(*ent.BuildTaskWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10602,11 +10601,11 @@ func (ec *executionContext) _Query_buildTasks(ctx context.Context, field graphql
 					var zeroVal *ent.BuildTaskConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BuildTaskConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10658,7 +10657,7 @@ func (ec *executionContext) _Query_builders(ctx context.Context, field graphql.C
 		ec.fieldContext_Query_builders,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Builders(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuilderOrder), fc.Args["where"].(*ent.BuilderWhereInput))
+			return ec.Resolvers.Query().Builders(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.BuilderOrder), fc.Args["where"].(*ent.BuilderWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10669,11 +10668,11 @@ func (ec *executionContext) _Query_builders(ctx context.Context, field graphql.C
 					var zeroVal *ent.BuilderConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BuilderConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10725,7 +10724,7 @@ func (ec *executionContext) _Query_scheduledTasks(ctx context.Context, field gra
 		ec.fieldContext_Query_scheduledTasks,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ScheduledTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ScheduledTaskOrder), fc.Args["where"].(*ent.ScheduledTaskWhereInput))
+			return ec.Resolvers.Query().ScheduledTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ScheduledTaskOrder), fc.Args["where"].(*ent.ScheduledTaskWhereInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10736,11 +10735,11 @@ func (ec *executionContext) _Query_scheduledTasks(ctx context.Context, field gra
 					var zeroVal *ent.ScheduledTaskConnection
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ScheduledTaskConnection
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10791,7 +10790,7 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		field,
 		ec.fieldContext_Query_me,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Me(ctx)
+			return ec.Resolvers.Query().Me(ctx)
 		},
 		nil,
 		ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
@@ -10842,7 +10841,7 @@ func (ec *executionContext) _Query_metrics(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Query_metrics,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Metrics(ctx)
+			return ec.Resolvers.Query().Metrics(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -10853,11 +10852,11 @@ func (ec *executionContext) _Query_metrics(ctx context.Context, field graphql.Co
 					var zeroVal *models.Metrics
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *models.Metrics
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -10894,7 +10893,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query___type,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.introspectType(fc.Args["name"].(string))
+			return ec.IntrospectType(fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
@@ -10958,7 +10957,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query___schema,
 		func(ctx context.Context) (any, error) {
-			return ec.introspectSchema()
+			return ec.IntrospectSchema()
 		},
 		nil,
 		ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema,
@@ -11620,7 +11619,7 @@ func (ec *executionContext) _Quest_diffs(ctx context.Context, field graphql.Coll
 		field,
 		ec.fieldContext_Quest_diffs,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Quest().Diffs(ctx, obj)
+			return ec.Resolvers.Quest().Diffs(ctx, obj)
 		},
 		nil,
 		ec.marshalNTaskDiff2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTaskDiffᚄ,
@@ -14311,7 +14310,7 @@ func (ec *executionContext) _ShellTask_sequenceID(ctx context.Context, field gra
 		field,
 		ec.fieldContext_ShellTask_sequenceID,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.ShellTask().SequenceID(ctx, obj)
+			return ec.Resolvers.ShellTask().SequenceID(ctx, obj)
 		},
 		nil,
 		ec.marshalNInt2int,
@@ -17043,7 +17042,7 @@ func (ec *executionContext) _User_apiKey(ctx context.Context, field graphql.Coll
 		field,
 		ec.fieldContext_User_apiKey,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.User().APIKey(ctx, obj)
+			return ec.Resolvers.User().APIKey(ctx, obj)
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -17254,6 +17253,10 @@ func (ec *executionContext) fieldContext_UserEdge_cursor(_ context.Context, fiel
 
 func (ec *executionContext) unmarshalInputAdventureOrder(ctx context.Context, obj any) (ent.AdventureOrder, error) {
 	var it ent.AdventureOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -17286,12 +17289,15 @@ func (ec *executionContext) unmarshalInputAdventureOrder(ctx context.Context, ob
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputAdventureWhereInput(ctx context.Context, obj any) (ent.AdventureWhereInput, error) {
 	var it ent.AdventureWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -17600,12 +17606,15 @@ func (ec *executionContext) unmarshalInputAdventureWhereInput(ctx context.Contex
 			it.HasQuestsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputAssetOrder(ctx context.Context, obj any) (ent.AssetOrder, error) {
 	var it ent.AssetOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -17638,12 +17647,15 @@ func (ec *executionContext) unmarshalInputAssetOrder(ctx context.Context, obj an
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, obj any) (ent.AssetWhereInput, error) {
 	var it ent.AssetWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -18127,12 +18139,15 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 			it.HasCreatorWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBeaconOrder(ctx context.Context, obj any) (ent.BeaconOrder, error) {
 	var it ent.BeaconOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -18165,12 +18180,15 @@ func (ec *executionContext) unmarshalInputBeaconOrder(ctx context.Context, obj a
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, obj any) (ent.BeaconWhereInput, error) {
 	var it ent.BeaconWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -19046,12 +19064,15 @@ func (ec *executionContext) unmarshalInputBeaconWhereInput(ctx context.Context, 
 			it.HasShellsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuildProfileOrder(ctx context.Context, obj any) (ent.BuildProfileOrder, error) {
 	var it ent.BuildProfileOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -19084,12 +19105,15 @@ func (ec *executionContext) unmarshalInputBuildProfileOrder(ctx context.Context,
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuildProfileWhereInput(ctx context.Context, obj any) (ent.BuildProfileWhereInput, error) {
 	var it ent.BuildProfileWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -19846,12 +19870,15 @@ func (ec *executionContext) unmarshalInputBuildProfileWhereInput(ctx context.Con
 			it.HasBuildtasksWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuildTaskOrder(ctx context.Context, obj any) (ent.BuildTaskOrder, error) {
 	var it ent.BuildTaskOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -19884,12 +19911,15 @@ func (ec *executionContext) unmarshalInputBuildTaskOrder(ctx context.Context, ob
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Context, obj any) (ent.BuildTaskWhereInput, error) {
 	var it ent.BuildTaskWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21199,12 +21229,15 @@ func (ec *executionContext) unmarshalInputBuildTaskWhereInput(ctx context.Contex
 			it.HasArtifactWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuilderOrder(ctx context.Context, obj any) (ent.BuilderOrder, error) {
 	var it ent.BuilderOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21237,12 +21270,15 @@ func (ec *executionContext) unmarshalInputBuilderOrder(ctx context.Context, obj 
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context, obj any) (ent.BuilderWhereInput, error) {
 	var it ent.BuilderWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21712,12 +21748,15 @@ func (ec *executionContext) unmarshalInputBuilderWhereInput(ctx context.Context,
 			it.HasBuildtasksWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateAdventureInput(ctx context.Context, obj any) (ent.CreateAdventureInput, error) {
 	var it ent.CreateAdventureInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21739,12 +21778,15 @@ func (ec *executionContext) unmarshalInputCreateAdventureInput(ctx context.Conte
 			it.Name = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context, obj any) (ent.CreateBuilderInput, error) {
 	var it ent.CreateBuilderInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21773,12 +21815,15 @@ func (ec *executionContext) unmarshalInputCreateBuilderInput(ctx context.Context
 			it.Upstream = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateDeviceAuthInput(ctx context.Context, obj any) (ent.CreateDeviceAuthInput, error) {
 	var it ent.CreateDeviceAuthInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21821,12 +21866,15 @@ func (ec *executionContext) unmarshalInputCreateDeviceAuthInput(ctx context.Cont
 			it.ExpiresAt = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.Context, obj any) (ent.CreateHostCredentialInput, error) {
 	var it ent.CreateHostCredentialInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21883,12 +21931,15 @@ func (ec *executionContext) unmarshalInputCreateHostCredentialInput(ctx context.
 			it.ShellTaskID = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, obj any) (ent.CreateLinkInput, error) {
 	var it ent.CreateLinkInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21938,12 +21989,15 @@ func (ec *executionContext) unmarshalInputCreateLinkInput(ctx context.Context, o
 			it.AssetID = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateQuestInput(ctx context.Context, obj any) (ent.CreateQuestInput, error) {
 	var it ent.CreateQuestInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -21979,12 +22033,15 @@ func (ec *executionContext) unmarshalInputCreateQuestInput(ctx context.Context, 
 			it.TomeID = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateRepositoryInput(ctx context.Context, obj any) (ent.CreateRepositoryInput, error) {
 	var it ent.CreateRepositoryInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22006,12 +22063,15 @@ func (ec *executionContext) unmarshalInputCreateRepositoryInput(ctx context.Cont
 			it.URL = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.Context, obj any) (ent.CreateScheduledTaskInput, error) {
 	var it ent.CreateScheduledTaskInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22089,12 +22149,15 @@ func (ec *executionContext) unmarshalInputCreateScheduledTaskInput(ctx context.C
 			it.ScheduledHostIDs = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateShellInput(ctx context.Context, obj any) (ent.CreateShellInput, error) {
 	var it ent.CreateShellInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22116,12 +22179,15 @@ func (ec *executionContext) unmarshalInputCreateShellInput(ctx context.Context, 
 			it.BeaconID = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateTagInput(ctx context.Context, obj any) (ent.CreateTagInput, error) {
 	var it ent.CreateTagInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22157,12 +22223,15 @@ func (ec *executionContext) unmarshalInputCreateTagInput(ctx context.Context, ob
 			it.HostIDs = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, obj any) (ent.CreateTomeInput, error) {
 	var it ent.CreateTomeInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22233,12 +22302,15 @@ func (ec *executionContext) unmarshalInputCreateTomeInput(ctx context.Context, o
 			it.AssetIDs = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputDeviceAuthOrder(ctx context.Context, obj any) (ent.DeviceAuthOrder, error) {
 	var it ent.DeviceAuthOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22271,12 +22343,15 @@ func (ec *executionContext) unmarshalInputDeviceAuthOrder(ctx context.Context, o
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputDeviceAuthWhereInput(ctx context.Context, obj any) (ent.DeviceAuthWhereInput, error) {
 	var it ent.DeviceAuthWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22669,12 +22744,15 @@ func (ec *executionContext) unmarshalInputDeviceAuthWhereInput(ctx context.Conte
 			it.HasUserWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostCredentialOrder(ctx context.Context, obj any) (ent.HostCredentialOrder, error) {
 	var it ent.HostCredentialOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22707,12 +22785,15 @@ func (ec *executionContext) unmarshalInputHostCredentialOrder(ctx context.Contex
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.Context, obj any) (ent.HostCredentialWhereInput, error) {
 	var it ent.HostCredentialWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -23168,12 +23249,15 @@ func (ec *executionContext) unmarshalInputHostCredentialWhereInput(ctx context.C
 			it.HasShellTaskWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostFileOrder(ctx context.Context, obj any) (ent.HostFileOrder, error) {
 	var it ent.HostFileOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -23206,12 +23290,15 @@ func (ec *executionContext) unmarshalInputHostFileOrder(ctx context.Context, obj
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context, obj any) (ent.HostFileWhereInput, error) {
 	var it ent.HostFileWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -24052,12 +24139,15 @@ func (ec *executionContext) unmarshalInputHostFileWhereInput(ctx context.Context
 			it.HasShellTaskWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostOrder(ctx context.Context, obj any) (ent.HostOrder, error) {
 	var it ent.HostOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -24090,12 +24180,15 @@ func (ec *executionContext) unmarshalInputHostOrder(ctx context.Context, obj any
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostProcessOrder(ctx context.Context, obj any) (ent.HostProcessOrder, error) {
 	var it ent.HostProcessOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -24128,12 +24221,15 @@ func (ec *executionContext) unmarshalInputHostProcessOrder(ctx context.Context, 
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Context, obj any) (ent.HostProcessWhereInput, error) {
 	var it ent.HostProcessWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -25191,12 +25287,15 @@ func (ec *executionContext) unmarshalInputHostProcessWhereInput(ctx context.Cont
 			it.HasShellTaskWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, obj any) (ent.HostWhereInput, error) {
 	var it ent.HostWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -26072,12 +26171,15 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 			it.HasFavoritedByWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputLinkOrder(ctx context.Context, obj any) (ent.LinkOrder, error) {
 	var it ent.LinkOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -26110,12 +26212,15 @@ func (ec *executionContext) unmarshalInputLinkOrder(ctx context.Context, obj any
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, obj any) (ent.LinkWhereInput, error) {
 	var it ent.LinkWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -26620,12 +26725,15 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 			it.HasCreatorWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputPortalOrder(ctx context.Context, obj any) (ent.PortalOrder, error) {
 	var it ent.PortalOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -26658,12 +26766,15 @@ func (ec *executionContext) unmarshalInputPortalOrder(ctx context.Context, obj a
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputPortalWhereInput(ctx context.Context, obj any) (ent.PortalWhereInput, error) {
 	var it ent.PortalWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -27007,12 +27118,15 @@ func (ec *executionContext) unmarshalInputPortalWhereInput(ctx context.Context, 
 			it.HasActiveUsersWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputQuestOrder(ctx context.Context, obj any) (ent.QuestOrder, error) {
 	var it ent.QuestOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -27045,12 +27159,15 @@ func (ec *executionContext) unmarshalInputQuestOrder(ctx context.Context, obj an
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, obj any) (ent.QuestWhereInput, error) {
 	var it ent.QuestWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -27772,12 +27889,15 @@ func (ec *executionContext) unmarshalInputQuestWhereInput(ctx context.Context, o
 			it.HasPreviousQuestWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputRepositoryOrder(ctx context.Context, obj any) (ent.RepositoryOrder, error) {
 	var it ent.RepositoryOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -27810,12 +27930,15 @@ func (ec *executionContext) unmarshalInputRepositoryOrder(ctx context.Context, o
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Context, obj any) (ent.RepositoryWhereInput, error) {
 	var it ent.RepositoryWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -28299,12 +28422,15 @@ func (ec *executionContext) unmarshalInputRepositoryWhereInput(ctx context.Conte
 			it.HasOwnerWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputScheduledTaskOrder(ctx context.Context, obj any) (ent.ScheduledTaskOrder, error) {
 	var it ent.ScheduledTaskOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -28337,12 +28463,15 @@ func (ec *executionContext) unmarshalInputScheduledTaskOrder(ctx context.Context
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Context, obj any) (ent.ScheduledTaskWhereInput, error) {
 	var it ent.ScheduledTaskWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -29008,12 +29137,15 @@ func (ec *executionContext) unmarshalInputScheduledTaskWhereInput(ctx context.Co
 			it.HasQuestsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputScreenshotOrder(ctx context.Context, obj any) (ent.ScreenshotOrder, error) {
 	var it ent.ScreenshotOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -29046,12 +29178,15 @@ func (ec *executionContext) unmarshalInputScreenshotOrder(ctx context.Context, o
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Context, obj any) (ent.ScreenshotWhereInput, error) {
 	var it ent.ScreenshotWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -29549,12 +29684,15 @@ func (ec *executionContext) unmarshalInputScreenshotWhereInput(ctx context.Conte
 			it.HasShellTaskWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputShellOrder(ctx context.Context, obj any) (ent.ShellOrder, error) {
 	var it ent.ShellOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -29587,12 +29725,15 @@ func (ec *executionContext) unmarshalInputShellOrder(ctx context.Context, obj an
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputShellTaskOrder(ctx context.Context, obj any) (ent.ShellTaskOrder, error) {
 	var it ent.ShellTaskOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -29625,12 +29766,15 @@ func (ec *executionContext) unmarshalInputShellTaskOrder(ctx context.Context, ob
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Context, obj any) (ent.ShellTaskWhereInput, error) {
 	var it ent.ShellTaskWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -30230,7 +30374,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceID(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceID(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDNEQ":
@@ -30239,7 +30383,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIdneq(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIdneq(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDIn":
@@ -30248,7 +30392,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIDIn(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIDIn(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDNotIn":
@@ -30257,7 +30401,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIDNotIn(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIDNotIn(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDGT":
@@ -30266,7 +30410,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIdgt(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIdgt(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDGTE":
@@ -30275,7 +30419,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIdgte(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIdgte(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDLT":
@@ -30284,7 +30428,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIdlt(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIdlt(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "sequenceIDLTE":
@@ -30293,7 +30437,7 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-			if err = ec.resolvers.ShellTaskWhereInput().SequenceIdlte(ctx, &it, data); err != nil {
+			if err = ec.Resolvers.ShellTaskWhereInput().SequenceIdlte(ctx, &it, data); err != nil {
 				return it, err
 			}
 		case "claimedAt":
@@ -30592,12 +30736,15 @@ func (ec *executionContext) unmarshalInputShellTaskWhereInput(ctx context.Contex
 			it.HasScreenshotsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, obj any) (ent.ShellWhereInput, error) {
 	var it ent.ShellWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -30955,12 +31102,15 @@ func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, o
 			it.HasShellTasksWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTagOrder(ctx context.Context, obj any) (ent.TagOrder, error) {
 	var it ent.TagOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -30993,12 +31143,15 @@ func (ec *executionContext) unmarshalInputTagOrder(ctx context.Context, obj any)
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj any) (ent.TagWhereInput, error) {
 	var it ent.TagWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -31223,12 +31376,15 @@ func (ec *executionContext) unmarshalInputTagWhereInput(ctx context.Context, obj
 			it.HasHostsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTaskOrder(ctx context.Context, obj any) (ent.TaskOrder, error) {
 	var it ent.TaskOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -31261,12 +31417,15 @@ func (ec *executionContext) unmarshalInputTaskOrder(ctx context.Context, obj any
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, obj any) (ent.TaskWhereInput, error) {
 	var it ent.TaskWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -32044,12 +32203,15 @@ func (ec *executionContext) unmarshalInputTaskWhereInput(ctx context.Context, ob
 			it.HasScreenshotsWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTomeOrder(ctx context.Context, obj any) (ent.TomeOrder, error) {
 	var it ent.TomeOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -32082,12 +32244,15 @@ func (ec *executionContext) unmarshalInputTomeOrder(ctx context.Context, obj any
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, obj any) (ent.TomeWhereInput, error) {
 	var it ent.TomeWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -32858,12 +33023,15 @@ func (ec *executionContext) unmarshalInputTomeWhereInput(ctx context.Context, ob
 			it.HasRepositoryWith = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateBeaconInput(ctx context.Context, obj any) (ent.UpdateBeaconInput, error) {
 	var it ent.UpdateBeaconInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -32892,12 +33060,15 @@ func (ec *executionContext) unmarshalInputUpdateBeaconInput(ctx context.Context,
 			it.HostID = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateDeviceAuthInput(ctx context.Context, obj any) (ent.UpdateDeviceAuthInput, error) {
 	var it ent.UpdateDeviceAuthInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -32947,12 +33118,15 @@ func (ec *executionContext) unmarshalInputUpdateDeviceAuthInput(ctx context.Cont
 			it.ExpiresAt = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateHostInput(ctx context.Context, obj any) (ent.UpdateHostInput, error) {
 	var it ent.UpdateHostInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33135,12 +33309,15 @@ func (ec *executionContext) unmarshalInputUpdateHostInput(ctx context.Context, o
 			it.ClearFavoritedBy = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, obj any) (ent.UpdateLinkInput, error) {
 	var it ent.UpdateLinkInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33211,12 +33388,15 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 			it.ClearCreator = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.Context, obj any) (ent.UpdateScheduledTaskInput, error) {
 	var it ent.UpdateScheduledTaskInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33315,12 +33495,15 @@ func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.C
 			it.ClearScheduledHosts = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, obj any) (ent.UpdateTagInput, error) {
 	var it ent.UpdateTagInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33370,12 +33553,15 @@ func (ec *executionContext) unmarshalInputUpdateTagInput(ctx context.Context, ob
 			it.ClearHosts = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateTomeInput(ctx context.Context, obj any) (ent.UpdateTomeInput, error) {
 	var it ent.UpdateTomeInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33474,12 +33660,15 @@ func (ec *executionContext) unmarshalInputUpdateTomeInput(ctx context.Context, o
 			it.ClearAssets = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, obj any) (ent.UpdateUserInput, error) {
 	var it ent.UpdateUserInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33606,12 +33795,15 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 			it.ClearFavoriteHosts = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUserOrder(ctx context.Context, obj any) (ent.UserOrder, error) {
 	var it ent.UserOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -33644,12 +33836,15 @@ func (ec *executionContext) unmarshalInputUserOrder(ctx context.Context, obj any
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, obj any) (ent.UserWhereInput, error) {
 	var it ent.UserWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -34007,7 +34202,6 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 			it.HasFavoriteHostsWith = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -34223,10 +34417,10 @@ func (ec *executionContext) _Adventure(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34269,10 +34463,10 @@ func (ec *executionContext) _AdventureConnection(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34310,10 +34504,10 @@ func (ec *executionContext) _AdventureEdge(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34479,10 +34673,10 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34525,10 +34719,10 @@ func (ec *executionContext) _AssetConnection(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34566,10 +34760,10 @@ func (ec *executionContext) _AssetEdge(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34748,10 +34942,10 @@ func (ec *executionContext) _Beacon(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34794,10 +34988,10 @@ func (ec *executionContext) _BeaconConnection(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34835,10 +35029,10 @@ func (ec *executionContext) _BeaconEdge(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34946,10 +35140,10 @@ func (ec *executionContext) _BuildProfile(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -34992,10 +35186,10 @@ func (ec *executionContext) _BuildProfileConnection(ctx context.Context, sel ast
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35033,10 +35227,10 @@ func (ec *executionContext) _BuildProfileEdge(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35230,10 +35424,10 @@ func (ec *executionContext) _BuildTask(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35276,10 +35470,10 @@ func (ec *executionContext) _BuildTaskConnection(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35317,10 +35511,10 @@ func (ec *executionContext) _BuildTaskEdge(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35419,10 +35613,10 @@ func (ec *executionContext) _Builder(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35465,10 +35659,10 @@ func (ec *executionContext) _BuilderConnection(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35506,10 +35700,10 @@ func (ec *executionContext) _BuilderEdge(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35603,10 +35797,10 @@ func (ec *executionContext) _DeviceAuth(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35649,10 +35843,10 @@ func (ec *executionContext) _DeviceAuthConnection(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -35690,10 +35884,10 @@ func (ec *executionContext) _DeviceAuthEdge(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36011,10 +36205,10 @@ func (ec *executionContext) _Host(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36057,10 +36251,10 @@ func (ec *executionContext) _HostConnection(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36223,10 +36417,10 @@ func (ec *executionContext) _HostCredential(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36269,10 +36463,10 @@ func (ec *executionContext) _HostCredentialConnection(ctx context.Context, sel a
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36310,10 +36504,10 @@ func (ec *executionContext) _HostCredentialEdge(ctx context.Context, sel ast.Sel
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36351,10 +36545,10 @@ func (ec *executionContext) _HostEdge(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36558,10 +36752,10 @@ func (ec *executionContext) _HostFile(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36604,10 +36798,10 @@ func (ec *executionContext) _HostFileConnection(ctx context.Context, sel ast.Sel
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36645,10 +36839,10 @@ func (ec *executionContext) _HostFileEdge(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36831,10 +37025,10 @@ func (ec *executionContext) _HostProcess(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36877,10 +37071,10 @@ func (ec *executionContext) _HostProcessConnection(ctx context.Context, sel ast.
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36918,10 +37112,10 @@ func (ec *executionContext) _HostProcessEdge(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37053,10 +37247,10 @@ func (ec *executionContext) _Link(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37099,10 +37293,10 @@ func (ec *executionContext) _LinkConnection(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37140,10 +37334,10 @@ func (ec *executionContext) _LinkEdge(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37188,10 +37382,10 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37413,10 +37607,10 @@ func (ec *executionContext) _Portal(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37459,10 +37653,10 @@ func (ec *executionContext) _PortalConnection(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37500,10 +37694,10 @@ func (ec *executionContext) _PortalEdge(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -37987,10 +38181,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38356,10 +38550,10 @@ func (ec *executionContext) _Quest(ctx context.Context, sel ast.SelectionSet, ob
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38402,10 +38596,10 @@ func (ec *executionContext) _QuestConnection(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38443,10 +38637,10 @@ func (ec *executionContext) _QuestEdge(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38573,10 +38767,10 @@ func (ec *executionContext) _Repository(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38619,10 +38813,10 @@ func (ec *executionContext) _RepositoryConnection(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38660,10 +38854,10 @@ func (ec *executionContext) _RepositoryEdge(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38849,10 +39043,10 @@ func (ec *executionContext) _ScheduledTask(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38895,10 +39089,10 @@ func (ec *executionContext) _ScheduledTaskConnection(ctx context.Context, sel as
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -38936,10 +39130,10 @@ func (ec *executionContext) _ScheduledTaskEdge(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39099,10 +39293,10 @@ func (ec *executionContext) _Screenshot(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39145,10 +39339,10 @@ func (ec *executionContext) _ScreenshotConnection(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39186,10 +39380,10 @@ func (ec *executionContext) _ScreenshotEdge(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39447,10 +39641,10 @@ func (ec *executionContext) _Shell(ctx context.Context, sel ast.SelectionSet, ob
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39493,10 +39687,10 @@ func (ec *executionContext) _ShellConnection(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39534,10 +39728,10 @@ func (ec *executionContext) _ShellEdge(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39843,10 +40037,10 @@ func (ec *executionContext) _ShellTask(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39889,10 +40083,10 @@ func (ec *executionContext) _ShellTaskConnection(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -39930,10 +40124,10 @@ func (ec *executionContext) _ShellTaskEdge(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40015,10 +40209,10 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40061,10 +40255,10 @@ func (ec *executionContext) _TagConnection(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40102,10 +40296,10 @@ func (ec *executionContext) _TagEdge(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40418,10 +40612,10 @@ func (ec *executionContext) _Task(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40464,10 +40658,10 @@ func (ec *executionContext) _TaskConnection(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40505,10 +40699,10 @@ func (ec *executionContext) _TaskEdge(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40688,10 +40882,10 @@ func (ec *executionContext) _Tome(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40734,10 +40928,10 @@ func (ec *executionContext) _TomeConnection(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -40775,10 +40969,10 @@ func (ec *executionContext) _TomeEdge(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -41011,10 +41205,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -41057,10 +41251,10 @@ func (ec *executionContext) _UserConnection(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -41098,10 +41292,10 @@ func (ec *executionContext) _UserEdge(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -41726,39 +41920,11 @@ func (ec *executionContext) unmarshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋint
 }
 
 func (ec *executionContext) marshalNHostPlatform2ᚕrealmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platformᚄ(ctx context.Context, sel ast.SelectionSet, v []c2pb.Host_Platform) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -41881,39 +42047,11 @@ func (ec *executionContext) unmarshalNLinkWhereInput2ᚖrealmᚗpubᚋtavernᚋi
 }
 
 func (ec *executionContext) marshalNNode2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚐNoder(ctx context.Context, sel ast.SelectionSet, v []ent.Noder) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalONode2realmᚗpubᚋtavernᚋinternalᚋentᚐNoder(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalONode2realmᚗpubᚋtavernᚋinternalᚋentᚐNoder(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -42549,39 +42687,11 @@ func (ec *executionContext) marshalOAdventureEdge2ᚕᚖrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOAdventureEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAdventureEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOAdventureEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAdventureEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -42648,39 +42758,11 @@ func (ec *executionContext) marshalOAssetEdge2ᚕᚖrealmᚗpubᚋtavernᚋinter
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOAssetEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOAssetEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐAssetEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -42747,39 +42829,11 @@ func (ec *executionContext) marshalOBeaconEdge2ᚕᚖrealmᚗpubᚋtavernᚋinte
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOBeaconEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOBeaconEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -42831,39 +42885,11 @@ func (ec *executionContext) marshalOBeaconTransport_Type2ᚕrealmᚗpubᚋtavern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBeaconTransport_Type2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐTransport_Type(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -42927,39 +42953,11 @@ func (ec *executionContext) marshalOBuildProfileEdge2ᚕᚖrealmᚗpubᚋtavern�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOBuildProfileEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfileEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOBuildProfileEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildProfileEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43019,39 +43017,11 @@ func (ec *executionContext) marshalOBuildTask2ᚕᚖrealmᚗpubᚋtavernᚋinter
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBuildTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTask(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuildTask2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTask(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43073,39 +43043,11 @@ func (ec *executionContext) marshalOBuildTaskEdge2ᚕᚖrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOBuildTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTaskEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOBuildTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTaskEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43157,39 +43099,11 @@ func (ec *executionContext) marshalOBuildTaskTargetFormat2ᚕrealmᚗpubᚋtaver
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBuildTaskTargetFormat2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuildTaskTargetFormat2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐTargetFormat(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43253,39 +43167,11 @@ func (ec *executionContext) marshalOBuilderEdge2ᚕᚖrealmᚗpubᚋtavernᚋint
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOBuilderEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuilderEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43368,39 +43254,11 @@ func (ec *executionContext) marshalODeviceAuthEdge2ᚕᚖrealmᚗpubᚋtavernᚋ
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalODeviceAuthEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐDeviceAuthEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalODeviceAuthEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐDeviceAuthEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43452,39 +43310,11 @@ func (ec *executionContext) marshalODeviceAuthStatus2ᚕrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDeviceAuthStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋdeviceauthᚐStatus(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDeviceAuthStatus2realmᚗpubᚋtavernᚋinternalᚋentᚋdeviceauthᚐStatus(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43548,39 +43378,11 @@ func (ec *executionContext) marshalOHostCredential2ᚕᚖrealmᚗpubᚋtavernᚋ
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostCredential2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredential(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43602,39 +43404,11 @@ func (ec *executionContext) marshalOHostCredentialEdge2ᚕᚖrealmᚗpubᚋtaver
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOHostCredentialEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOHostCredentialEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostCredentialEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43668,39 +43442,11 @@ func (ec *executionContext) marshalOHostCredentialKind2ᚕrealmᚗpubᚋtavern�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostCredentialKind2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐCredential_Kind(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43775,39 +43521,11 @@ func (ec *executionContext) marshalOHostEdge2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOHostEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOHostEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43823,39 +43541,11 @@ func (ec *executionContext) marshalOHostFile2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostFile2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFile(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -43877,39 +43567,11 @@ func (ec *executionContext) marshalOHostFileEdge2ᚕᚖrealmᚗpubᚋtavernᚋin
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOHostFileEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOHostFileEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostFileEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -43961,39 +43623,11 @@ func (ec *executionContext) marshalOHostFilePreviewType2ᚕrealmᚗpubᚋtavern�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋhostfileᚐPreviewType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostFilePreviewType2realmᚗpubᚋtavernᚋinternalᚋentᚋhostfileᚐPreviewType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -44086,39 +43720,11 @@ func (ec *executionContext) marshalOHostPlatform2ᚕrealmᚗpubᚋtavernᚋinter
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostPlatform2realmᚗpubᚋtavernᚋinternalᚋc2ᚋc2pbᚐHost_Platform(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -44149,39 +43755,11 @@ func (ec *executionContext) marshalOHostProcess2ᚕᚖrealmᚗpubᚋtavernᚋint
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostProcess2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcess(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -44203,39 +43781,11 @@ func (ec *executionContext) marshalOHostProcessEdge2ᚕᚖrealmᚗpubᚋtavern�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOHostProcessEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOHostProcessEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHostProcessEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44287,39 +43837,11 @@ func (ec *executionContext) marshalOHostProcessStatus2ᚕrealmᚗpubᚋtavernᚋ
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHostProcessStatus2realmᚗpubᚋtavernᚋinternalᚋc2ᚋepbᚐProcess_Status(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -44409,39 +43931,11 @@ func (ec *executionContext) marshalOLinkEdge2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOLinkEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOLinkEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐLinkEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44508,39 +44002,11 @@ func (ec *executionContext) marshalOPortal2ᚕᚖrealmᚗpubᚋtavernᚋinternal
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -44562,39 +44028,11 @@ func (ec *executionContext) marshalOPortalEdge2ᚕᚖrealmᚗpubᚋtavernᚋinte
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOPortalEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOPortalEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44661,39 +44099,11 @@ func (ec *executionContext) marshalOQuestEdge2ᚕᚖrealmᚗpubᚋtavernᚋinter
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOQuestEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOQuestEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐQuestEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44760,39 +44170,11 @@ func (ec *executionContext) marshalORepositoryEdge2ᚕᚖrealmᚗpubᚋtavernᚋ
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalORepositoryEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalORepositoryEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐRepositoryEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44859,39 +44241,11 @@ func (ec *executionContext) marshalOScheduledTaskEdge2ᚕᚖrealmᚗpubᚋtavern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOScheduledTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOScheduledTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -44951,39 +44305,11 @@ func (ec *executionContext) marshalOScreenshot2ᚕᚖrealmᚗpubᚋtavernᚋinte
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNScreenshot2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScreenshot(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNScreenshot2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScreenshot(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -45005,39 +44331,11 @@ func (ec *executionContext) marshalOScreenshotEdge2ᚕᚖrealmᚗpubᚋtavernᚋ
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOScreenshotEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScreenshotEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOScreenshotEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScreenshotEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45104,39 +44402,11 @@ func (ec *executionContext) marshalOShellEdge2ᚕᚖrealmᚗpubᚋtavernᚋinter
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOShellEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOShellEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45177,39 +44447,11 @@ func (ec *executionContext) marshalOShellTaskEdge2ᚕᚖrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOShellTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTaskEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOShellTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellTaskEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45302,39 +44544,11 @@ func (ec *executionContext) marshalOTagEdge2ᚕᚖrealmᚗpubᚋtavernᚋinterna
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOTagEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOTagEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTagEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45368,39 +44582,11 @@ func (ec *executionContext) marshalOTagKind2ᚕrealmᚗpubᚋtavernᚋinternal�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTagKind2realmᚗpubᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTagKind2realmᚗpubᚋtavernᚋinternalᚋentᚋtagᚐKind(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -45482,39 +44668,11 @@ func (ec *executionContext) marshalOTaskEdge2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOTaskEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTaskEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45581,39 +44739,11 @@ func (ec *executionContext) marshalOTomeEdge2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOTomeEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOTomeEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTomeEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
@@ -45665,39 +44795,11 @@ func (ec *executionContext) marshalOTomeSupportModel2ᚕrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTomeSupportModel2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐSupportModel(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTomeSupportModel2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐSupportModel(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -45746,39 +44848,11 @@ func (ec *executionContext) marshalOTomeTactic2ᚕrealmᚗpubᚋtavernᚋinterna
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTomeTactic2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐTactic(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTomeTactic2realmᚗpubᚋtavernᚋinternalᚋentᚋtomeᚐTactic(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -45842,39 +44916,11 @@ func (ec *executionContext) marshalOUserEdge2ᚕᚖrealmᚗpubᚋtavernᚋintern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOUserEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOUserEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
