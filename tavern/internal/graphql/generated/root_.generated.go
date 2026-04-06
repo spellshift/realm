@@ -129,6 +129,11 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BeaconTimelineBucket struct {
+		Count          func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
 	BuildProfile struct {
 		BuildImage      func(childComplexity int) int
 		Buildtasks      func(childComplexity int) int
@@ -379,6 +384,7 @@ type ComplexityRoot struct {
 	}
 
 	Metrics struct {
+		BeaconTimeline     func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconHistoryWhereInput) int
 		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
 	}
 
@@ -956,7 +962,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		return e.ComplexityRoot.Beacon.CreatedAt(childComplexity), true
 
 	case "Beacon.history":
-		if e.complexity.Beacon.History == nil {
+		if e.ComplexityRoot.Beacon.History == nil {
 			break
 		}
 
@@ -965,7 +971,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Beacon.History(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconHistoryOrder), args["where"].(*ent.BeaconHistoryWhereInput)), true
+		return e.ComplexityRoot.Beacon.History(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconHistoryOrder), args["where"].(*ent.BeaconHistoryWhereInput)), true
 
 	case "Beacon.host":
 		if e.ComplexityRoot.Beacon.Host == nil {
@@ -1097,74 +1103,88 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		return e.ComplexityRoot.BeaconEdge.Node(childComplexity), true
 
 	case "BeaconHistory.beacon":
-		if e.complexity.BeaconHistory.Beacon == nil {
+		if e.ComplexityRoot.BeaconHistory.Beacon == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistory.Beacon(childComplexity), true
+		return e.ComplexityRoot.BeaconHistory.Beacon(childComplexity), true
 
 	case "BeaconHistory.createdAt":
-		if e.complexity.BeaconHistory.CreatedAt == nil {
+		if e.ComplexityRoot.BeaconHistory.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistory.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.BeaconHistory.CreatedAt(childComplexity), true
 
 	case "BeaconHistory.id":
-		if e.complexity.BeaconHistory.ID == nil {
+		if e.ComplexityRoot.BeaconHistory.ID == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistory.ID(childComplexity), true
+		return e.ComplexityRoot.BeaconHistory.ID(childComplexity), true
 
 	case "BeaconHistory.lastModifiedAt":
-		if e.complexity.BeaconHistory.LastModifiedAt == nil {
+		if e.ComplexityRoot.BeaconHistory.LastModifiedAt == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistory.LastModifiedAt(childComplexity), true
+		return e.ComplexityRoot.BeaconHistory.LastModifiedAt(childComplexity), true
 
 	case "BeaconHistory.latency":
-		if e.complexity.BeaconHistory.Latency == nil {
+		if e.ComplexityRoot.BeaconHistory.Latency == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistory.Latency(childComplexity), true
+		return e.ComplexityRoot.BeaconHistory.Latency(childComplexity), true
 
 	case "BeaconHistoryConnection.edges":
-		if e.complexity.BeaconHistoryConnection.Edges == nil {
+		if e.ComplexityRoot.BeaconHistoryConnection.Edges == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistoryConnection.Edges(childComplexity), true
+		return e.ComplexityRoot.BeaconHistoryConnection.Edges(childComplexity), true
 
 	case "BeaconHistoryConnection.pageInfo":
-		if e.complexity.BeaconHistoryConnection.PageInfo == nil {
+		if e.ComplexityRoot.BeaconHistoryConnection.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistoryConnection.PageInfo(childComplexity), true
+		return e.ComplexityRoot.BeaconHistoryConnection.PageInfo(childComplexity), true
 
 	case "BeaconHistoryConnection.totalCount":
-		if e.complexity.BeaconHistoryConnection.TotalCount == nil {
+		if e.ComplexityRoot.BeaconHistoryConnection.TotalCount == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistoryConnection.TotalCount(childComplexity), true
+		return e.ComplexityRoot.BeaconHistoryConnection.TotalCount(childComplexity), true
 
 	case "BeaconHistoryEdge.cursor":
-		if e.complexity.BeaconHistoryEdge.Cursor == nil {
+		if e.ComplexityRoot.BeaconHistoryEdge.Cursor == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistoryEdge.Cursor(childComplexity), true
+		return e.ComplexityRoot.BeaconHistoryEdge.Cursor(childComplexity), true
 
 	case "BeaconHistoryEdge.node":
-		if e.complexity.BeaconHistoryEdge.Node == nil {
+		if e.ComplexityRoot.BeaconHistoryEdge.Node == nil {
 			break
 		}
 
-		return e.complexity.BeaconHistoryEdge.Node(childComplexity), true
+		return e.ComplexityRoot.BeaconHistoryEdge.Node(childComplexity), true
+
+	case "BeaconTimelineBucket.count":
+		if e.ComplexityRoot.BeaconTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.Count(childComplexity), true
+
+	case "BeaconTimelineBucket.startTimestamp":
+		if e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp(childComplexity), true
 
 	case "BuildProfile.buildImage":
 		if e.ComplexityRoot.BuildProfile.BuildImage == nil {
@@ -2339,6 +2359,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LinkEdge.Node(childComplexity), true
+
+	case "Metrics.beaconTimeline":
+		if e.ComplexityRoot.Metrics.BeaconTimeline == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_beaconTimeline_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Metrics.BeaconTimeline(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.BeaconHistoryWhereInput)), true
 
 	case "Metrics.questTimelineChart":
 		if e.ComplexityRoot.Metrics.QuestTimelineChart == nil {
@@ -11891,6 +11923,13 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimeline(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconHistoryWhereInput
+  ): [BeaconTimelineBucket!]!
 }
 
 type QuestTimelineBucket {
@@ -11902,6 +11941,11 @@ type QuestTimelineBucket {
 type QuestTimelineTacticBucket {
   tactic: TomeTactic!
   count: Int!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
 }
 `, BuiltIn: false},
 	{Name: "../schema/quest.graphql", Input: `enum StructuredData {

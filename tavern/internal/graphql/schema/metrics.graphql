@@ -9,6 +9,13 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimeline(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconHistoryWhereInput
+  ): [BeaconTimelineBucket!]!
 }
 
 type QuestTimelineBucket {
@@ -20,4 +27,9 @@ type QuestTimelineBucket {
 type QuestTimelineTacticBucket {
   tactic: TomeTactic!
   count: Int!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
 }
