@@ -96,6 +96,7 @@ type ComplexityRoot struct {
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
+		History         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconHistoryOrder, where *ent.BeaconHistoryWhereInput) int
 		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Identifier      func(childComplexity int) int
@@ -117,6 +118,25 @@ type ComplexityRoot struct {
 	}
 
 	BeaconEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	BeaconHistory struct {
+		Beacon         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Latency        func(childComplexity int) int
+	}
+
+	BeaconHistoryConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	BeaconHistoryEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -952,6 +972,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Beacon.CreatedAt(childComplexity), true
 
+	case "Beacon.history":
+		if e.complexity.Beacon.History == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_history_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Beacon.History(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.BeaconHistoryOrder), args["where"].(*ent.BeaconHistoryWhereInput)), true
+
 	case "Beacon.host":
 		if e.complexity.Beacon.Host == nil {
 			break
@@ -1080,6 +1112,76 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.BeaconEdge.Node(childComplexity), true
+
+	case "BeaconHistory.beacon":
+		if e.complexity.BeaconHistory.Beacon == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistory.Beacon(childComplexity), true
+
+	case "BeaconHistory.createdAt":
+		if e.complexity.BeaconHistory.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistory.CreatedAt(childComplexity), true
+
+	case "BeaconHistory.id":
+		if e.complexity.BeaconHistory.ID == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistory.ID(childComplexity), true
+
+	case "BeaconHistory.lastModifiedAt":
+		if e.complexity.BeaconHistory.LastModifiedAt == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistory.LastModifiedAt(childComplexity), true
+
+	case "BeaconHistory.latency":
+		if e.complexity.BeaconHistory.Latency == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistory.Latency(childComplexity), true
+
+	case "BeaconHistoryConnection.edges":
+		if e.complexity.BeaconHistoryConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistoryConnection.Edges(childComplexity), true
+
+	case "BeaconHistoryConnection.pageInfo":
+		if e.complexity.BeaconHistoryConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistoryConnection.PageInfo(childComplexity), true
+
+	case "BeaconHistoryConnection.totalCount":
+		if e.complexity.BeaconHistoryConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistoryConnection.TotalCount(childComplexity), true
+
+	case "BeaconHistoryEdge.cursor":
+		if e.complexity.BeaconHistoryEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistoryEdge.Cursor(childComplexity), true
+
+	case "BeaconHistoryEdge.node":
+		if e.complexity.BeaconHistoryEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.BeaconHistoryEdge.Node(childComplexity), true
 
 	case "BuildProfile.buildImage":
 		if e.complexity.BuildProfile.BuildImage == nil {
@@ -4266,6 +4368,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAdventureWhereInput,
 		ec.unmarshalInputAssetOrder,
 		ec.unmarshalInputAssetWhereInput,
+		ec.unmarshalInputBeaconHistoryOrder,
+		ec.unmarshalInputBeaconHistoryWhereInput,
 		ec.unmarshalInputBeaconOrder,
 		ec.unmarshalInputBeaconWhereInput,
 		ec.unmarshalInputBuildProfileOrder,
@@ -4278,6 +4382,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBuilderWhereInput,
 		ec.unmarshalInputClaimTasksInput,
 		ec.unmarshalInputCreateAdventureInput,
+		ec.unmarshalInputCreateBeaconHistoryInput,
 		ec.unmarshalInputCreateBuildProfileInput,
 		ec.unmarshalInputCreateBuildTaskInput,
 		ec.unmarshalInputCreateBuilderInput,
@@ -4948,6 +5053,37 @@ type Beacon implements Node {
     """
     where: ShellWhereInput
   ): ShellConnection!
+  history(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for BeaconHistories returned from the connection.
+    """
+    orderBy: [BeaconHistoryOrder!]
+
+    """
+    Filtering options for BeaconHistories returned from the connection.
+    """
+    where: BeaconHistoryWhereInput
+  ): BeaconHistoryConnection!
 }
 """
 A connection to a list of items.
@@ -4978,6 +5114,133 @@ type BeaconEdge {
   A cursor for use in pagination.
   """
   cursor: Cursor!
+}
+type BeaconHistory implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  The number of milliseconds off of its expected callback time. Can be negative if it checked-in ahead of schedule.
+  """
+  latency: Int!
+  """
+  The beacon this history belongs to.
+  """
+  beacon: Beacon!
+}
+"""
+A connection to a list of items.
+"""
+type BeaconHistoryConnection {
+  """
+  A list of edges.
+  """
+  edges: [BeaconHistoryEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type BeaconHistoryEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: BeaconHistory
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for BeaconHistory connections
+"""
+input BeaconHistoryOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order BeaconHistories.
+  """
+  field: BeaconHistoryOrderField!
+}
+"""
+Properties by which BeaconHistory connections can be ordered.
+"""
+enum BeaconHistoryOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+BeaconHistoryWhereInput is used for filtering BeaconHistory objects.
+Input was generated by ent.
+"""
+input BeaconHistoryWhereInput {
+  not: BeaconHistoryWhereInput
+  and: [BeaconHistoryWhereInput!]
+  or: [BeaconHistoryWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  latency field predicates
+  """
+  latency: Int
+  latencyNEQ: Int
+  latencyIn: [Int!]
+  latencyNotIn: [Int!]
+  latencyGT: Int
+  latencyGTE: Int
+  latencyLT: Int
+  latencyLTE: Int
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
 }
 """
 Ordering options for Beacon connections
@@ -5184,6 +5447,11 @@ input BeaconWhereInput {
   """
   hasShells: Boolean
   hasShellsWith: [ShellWhereInput!]
+  """
+  history edge predicates
+  """
+  hasHistory: Boolean
+  hasHistoryWith: [BeaconHistoryWhereInput!]
 }
 type BuildProfile implements Node {
   id: ID!
@@ -6022,6 +6290,17 @@ input CreateAdventureInput {
   Name of the adventure
   """
   name: String
+}
+"""
+CreateBeaconHistoryInput is used for create BeaconHistory object.
+Input was generated by ent.
+"""
+input CreateBeaconHistoryInput {
+  """
+  The number of milliseconds off of its expected callback time. Can be negative if it checked-in ahead of schedule.
+  """
+  latency: Int!
+  beaconID: ID!
 }
 """
 CreateBuilderInput is used for create Builder object.

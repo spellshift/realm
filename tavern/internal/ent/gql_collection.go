@@ -13,6 +13,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -747,6 +748,95 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			b.WithNamedShells(alias, func(wq *ShellQuery) {
 				*wq = *query
 			})
+
+		case "history":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BeaconHistoryClient{config: b.config}).Query()
+			)
+			args := newBeaconHistoryPaginateArgs(fieldArgs(ctx, new(BeaconHistoryWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newBeaconHistoryPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"beacon_history_beacon"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(beacon.HistoryColumn), ids...))
+						})
+						if err := query.GroupBy(beacon.HistoryColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[3][alias] = n
+						}
+						return nil
+					})
+				} else {
+					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.History)
+							if nodes[i].Edges.totalCount[3] == nil {
+								nodes[i].Edges.totalCount[3] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[3][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, beaconhistoryImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(beacon.HistoryColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			b.WithNamedHistory(alias, func(wq *BeaconHistoryQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[beacon.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, beacon.FieldCreatedAt)
@@ -862,6 +952,122 @@ func newBeaconPaginateArgs(rv map[string]any) *beaconPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*BeaconWhereInput); ok {
 		args.opts = append(args.opts, WithBeaconFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (bh *BeaconHistoryQuery) CollectFields(ctx context.Context, satisfies ...string) (*BeaconHistoryQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return bh, nil
+	}
+	if err := bh.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return bh, nil
+}
+
+func (bh *BeaconHistoryQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(beaconhistory.Columns))
+		selectedFields = []string{beaconhistory.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "beacon":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BeaconClient{config: bh.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
+				return err
+			}
+			bh.withBeacon = query
+		case "createdAt":
+			if _, ok := fieldSeen[beaconhistory.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, beaconhistory.FieldCreatedAt)
+				fieldSeen[beaconhistory.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[beaconhistory.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, beaconhistory.FieldLastModifiedAt)
+				fieldSeen[beaconhistory.FieldLastModifiedAt] = struct{}{}
+			}
+		case "latency":
+			if _, ok := fieldSeen[beaconhistory.FieldLatency]; !ok {
+				selectedFields = append(selectedFields, beaconhistory.FieldLatency)
+				fieldSeen[beaconhistory.FieldLatency] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		bh.Select(selectedFields...)
+	}
+	return nil
+}
+
+type beaconhistoryPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []BeaconHistoryPaginateOption
+}
+
+func newBeaconHistoryPaginateArgs(rv map[string]any) *beaconhistoryPaginateArgs {
+	args := &beaconhistoryPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*BeaconHistoryOrder:
+			args.opts = append(args.opts, WithBeaconHistoryOrder(v))
+		case []any:
+			var orders []*BeaconHistoryOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &BeaconHistoryOrder{Field: &BeaconHistoryOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithBeaconHistoryOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*BeaconHistoryWhereInput); ok {
+		args.opts = append(args.opts, WithBeaconHistoryFilter(v.Filter))
 	}
 	return args
 }

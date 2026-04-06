@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
@@ -98,6 +99,7 @@ func checkColumn(table, column string) error {
 			adventure.Table:      adventure.ValidColumn,
 			asset.Table:          asset.ValidColumn,
 			beacon.Table:         beacon.ValidColumn,
+			beaconhistory.Table:  beaconhistory.ValidColumn,
 			buildprofile.Table:   buildprofile.ValidColumn,
 			buildtask.Table:      buildtask.ValidColumn,
 			builder.Table:        builder.ValidColumn,

@@ -129,6 +129,35 @@ func (b *Beacon) Shells(
 	return b.QueryShells().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (b *Beacon) History(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*BeaconHistoryOrder, where *BeaconHistoryWhereInput,
+) (*BeaconHistoryConnection, error) {
+	opts := []BeaconHistoryPaginateOption{
+		WithBeaconHistoryOrder(orderBy),
+		WithBeaconHistoryFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := b.Edges.totalCount[3][alias]
+	if nodes, err := b.NamedHistory(alias); err == nil || hasTotalCount {
+		pager, err := newBeaconHistoryPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &BeaconHistoryConnection{Edges: []*BeaconHistoryEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return b.QueryHistory().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (bh *BeaconHistory) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := bh.Edges.BeaconOrErr()
+	if IsNotLoaded(err) {
+		result, err = bh.QueryBeacon().Only(ctx)
+	}
+	return result, err
+}
+
 func (bp *BuildProfile) Buildtasks(ctx context.Context) (result []*BuildTask, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
 		result, err = bp.NamedBuildtasks(graphql.GetFieldContext(ctx).Field.Alias)
