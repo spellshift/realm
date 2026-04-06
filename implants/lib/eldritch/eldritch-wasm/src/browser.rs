@@ -2,8 +2,16 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use eldritch_core::{BufferPrinter, Interpreter, Lexer, TokenKind};
+use eldritch_core::{BufferPrinter, Interpreter, Lexer, Parser, TokenKind, ExprKind, StmtKind};
 use wasm_bindgen::prelude::*;
+use serde::Serialize;
+
+#[derive(Serialize)]
+#[serde(tag = "type")]
+pub enum MetaCommand {
+    #[serde(rename = "help")]
+    Help { target: Option<String> },
+}
 
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
@@ -71,7 +79,7 @@ impl BrowserRepl {
         let mut error_msg = String::new();
 
         let tokens = Lexer::new(self.buffer.clone()).scan_tokens();
-        for t in tokens {
+        for t in &tokens {
             match t.kind {
                 TokenKind::LParen | TokenKind::LBracket | TokenKind::LBrace => balance += 1,
                 TokenKind::RParen | TokenKind::RBracket | TokenKind::RBrace => {
@@ -124,20 +132,89 @@ impl BrowserRepl {
         let last_line_empty =
             self.buffer.ends_with('\n') && lines.last().map_or(true, |l| l.trim().is_empty());
 
+        let mut is_complete = false;
+
         // If single line and doesn't end with colon, it's complete.
         if line_count == 1 && !ends_with_colon {
-            let payload = self.buffer.clone();
-            self.buffer.clear();
-            return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
+            is_complete = true;
+        } else if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
+            // If multi-line (or ends with colon), we need an empty line to finish.
+            is_complete = true;
         }
 
-        // If multi-line (or ends with colon), we need an empty line to finish.
-        // Wait, if line_count == 1 and ends with colon, we need more.
-        // If line_count > 1, check if last line is empty.
-        // Note: `lines()` iterator doesn't include the final empty string if string ends with \n.
-        // We need to check if the input `line` was empty (user pressed enter on empty line).
+        if is_complete {
+            // Check for meta commands
+            let mut meta_command = None;
 
-        if (line_count > 1 || ends_with_colon) && line.trim().is_empty() {
+            let mut parser = Parser::new(tokens);
+            let (ast, errors) = parser.parse();
+
+            if errors.is_empty() {
+                if ast.len() == 1 {
+                    if let StmtKind::Expression(expr) = &ast[0].kind {
+                        match &expr.kind {
+                            ExprKind::Identifier(id) if id == "help" => {
+                                meta_command = Some(MetaCommand::Help { target: None });
+                            }
+                            ExprKind::Call(callee, args) => {
+                                if let ExprKind::Identifier(id) = &callee.kind {
+                                    if id == "help" {
+                                        if args.is_empty() {
+                                            meta_command = Some(MetaCommand::Help { target: None });
+                                        } else if args.len() == 1 {
+                                            if let eldritch_core::Argument::Positional(arg_expr) = &args[0] {
+                                                // Try to format the argument back to string for the target
+                                                let mut parts = Vec::new();
+                                                let mut current_expr = arg_expr;
+                                                let mut is_valid = true;
+
+                                                while is_valid {
+                                                    match &current_expr.kind {
+                                                        ExprKind::Identifier(id) => {
+                                                            parts.push(id.clone());
+                                                            break;
+                                                        }
+                                                        ExprKind::GetAttr(obj, attr) => {
+                                                            parts.push(attr.clone());
+                                                            current_expr = obj;
+                                                        }
+                                                        _ => {
+                                                            is_valid = false;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                let mut target_str = String::new();
+                                                if is_valid {
+                                                    parts.reverse();
+                                                    target_str = parts.join(".");
+                                                } else {
+                                                    target_str = "unknown".to_string();
+                                                }
+                                                meta_command = Some(MetaCommand::Help { target: Some(target_str) });
+                                            } else {
+                                                meta_command = Some(MetaCommand::Help { target: None });
+                                            }
+                                        } else {
+                                            meta_command = Some(MetaCommand::Help { target: None });
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
+            if let Some(cmd) = meta_command {
+                self.buffer.clear();
+                if let Ok(json) = serde_json::to_string(&cmd) {
+                    return format!("{{ \"status\": \"meta\", \"meta_command\": {} }}", json);
+                }
+            }
+
             let payload = self.buffer.clone();
             self.buffer.clear();
             return format!("{{ \"status\": \"complete\", \"payload\": {:?} }}", payload);
