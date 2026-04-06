@@ -18587,6 +18587,10 @@ func (ec *executionContext) unmarshalInputAssetWhereInput(ctx context.Context, o
 
 func (ec *executionContext) unmarshalInputBeaconHistoryOrder(ctx context.Context, obj any) (ent.BeaconHistoryOrder, error) {
 	var it ent.BeaconHistoryOrder
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -18619,12 +18623,15 @@ func (ec *executionContext) unmarshalInputBeaconHistoryOrder(ctx context.Context
 			it.Field = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBeaconHistoryWhereInput(ctx context.Context, obj any) (ent.BeaconHistoryWhereInput, error) {
 	var it ent.BeaconHistoryWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -18898,7 +18905,6 @@ func (ec *executionContext) unmarshalInputBeaconHistoryWhereInput(ctx context.Co
 			it.HasBeaconWith = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -22557,6 +22563,10 @@ func (ec *executionContext) unmarshalInputCreateAdventureInput(ctx context.Conte
 
 func (ec *executionContext) unmarshalInputCreateBeaconHistoryInput(ctx context.Context, obj any) (ent.CreateBeaconHistoryInput, error) {
 	var it ent.CreateBeaconHistoryInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -22585,7 +22595,6 @@ func (ec *executionContext) unmarshalInputCreateBeaconHistoryInput(ctx context.C
 			it.BeaconID = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -35968,10 +35977,10 @@ func (ec *executionContext) _BeaconHistory(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36014,10 +36023,10 @@ func (ec *executionContext) _BeaconHistoryConnection(ctx context.Context, sel as
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -36055,10 +36064,10 @@ func (ec *executionContext) _BeaconHistoryEdge(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -43918,39 +43927,11 @@ func (ec *executionContext) marshalOBeaconHistoryEdge2ᚕᚖrealmᚗpubᚋtavern
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOBeaconHistoryEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconHistoryEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalOBeaconHistoryEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconHistoryEdge(ctx, sel, v[i])
+	})
 
 	return ret
 }
