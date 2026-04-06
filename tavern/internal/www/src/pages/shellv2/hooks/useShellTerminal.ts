@@ -838,6 +838,30 @@ export const useShellTerminal = (
                     state.inputBuffer = "";
                     state.cursorPos = 0;
                     state.prompt = ">>> ";
+                } else if (res?.status === "meta") {
+                    const metaCmd = res.meta_command;
+                    if (metaCmd?.type === "help") {
+                        const target = metaCmd.target;
+                        if (!target) {
+                            term.write("Welcome to the Browser REPL.\r\n");
+                            term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                            term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                        } else {
+                            const doc = docs[target];
+                            if (doc) {
+                                term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
+                                term.write(`${doc.description}\r\n`);
+                            } else {
+                                term.write(`No documentation found for: ${target}\r\n`);
+                            }
+                        }
+                    }
+                    term.write(">>> ");
+                    state.currentBlock = "";
+                    state.historyIndex = -1;
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
                 } else if (res?.status === "incomplete") {
                     state.prompt = res.prompt || ".. ";
                     term.write(state.prompt);
@@ -929,6 +953,30 @@ export const useShellTerminal = (
                         state.cursorPos = 0;
                         state.prompt = ">>> ";
                         term.write(state.prompt);
+                    } else if (res?.status === "meta") {
+                        const metaCmd = res.meta_command;
+                        if (metaCmd?.type === "help") {
+                            const target = metaCmd.target;
+                            if (!target) {
+                                term.write("Welcome to the Browser REPL.\r\n");
+                                term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                                term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                            } else {
+                                const doc = docs[target];
+                                if (doc) {
+                                    term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
+                                    term.write(`${doc.description}\r\n`);
+                                } else {
+                                    term.write(`No documentation found for: ${target}\r\n`);
+                                }
+                            }
+                        }
+                        term.write(">>> ");
+                        state.currentBlock = "";
+                        state.historyIndex = -1;
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                        state.prompt = ">>> ";
                     } else if (res?.status === "incomplete") {
                         state.prompt = res.prompt || ".. ";
                         term.write(state.prompt);

@@ -362,7 +362,7 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Mutation_dropAllData,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().DropAllData(ctx)
+			return ec.Resolvers.Mutation().DropAllData(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -373,11 +373,11 @@ func (ec *executionContext) _Mutation_dropAllData(ctx context.Context, field gra
 					var zeroVal bool
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal bool
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -410,7 +410,7 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 		ec.fieldContext_Mutation_createQuest,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput), fc.Args["prevNodeID"].(*int))
+			return ec.Resolvers.Mutation().CreateQuest(ctx, fc.Args["beaconIDs"].([]int), fc.Args["input"].(ent.CreateQuestInput), fc.Args["prevNodeID"].(*int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -421,11 +421,11 @@ func (ec *executionContext) _Mutation_createQuest(ctx context.Context, field gra
 					var zeroVal *ent.Quest
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Quest
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -503,7 +503,7 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 		ec.fieldContext_Mutation_updateBeacon,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateBeacon(ctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
+			return ec.Resolvers.Mutation().UpdateBeacon(ctx, fc.Args["beaconID"].(int), fc.Args["input"].(ent.UpdateBeaconInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -514,11 +514,11 @@ func (ec *executionContext) _Mutation_updateBeacon(ctx context.Context, field gr
 					var zeroVal *ent.Beacon
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Beacon
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -594,7 +594,7 @@ func (ec *executionContext) _Mutation_createShell(ctx context.Context, field gra
 		ec.fieldContext_Mutation_createShell,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateShell(ctx, fc.Args["input"].(ent.CreateShellInput))
+			return ec.Resolvers.Mutation().CreateShell(ctx, fc.Args["input"].(ent.CreateShellInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -605,11 +605,11 @@ func (ec *executionContext) _Mutation_createShell(ctx context.Context, field gra
 					var zeroVal *ent.Shell
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Shell
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -675,7 +675,7 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateHost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateHost(ctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
+			return ec.Resolvers.Mutation().UpdateHost(ctx, fc.Args["hostID"].(int), fc.Args["input"].(ent.UpdateHostInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -686,11 +686,11 @@ func (ec *executionContext) _Mutation_updateHost(ctx context.Context, field grap
 					var zeroVal *ent.Host
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Host
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -770,7 +770,7 @@ func (ec *executionContext) _Mutation_favoriteHost(ctx context.Context, field gr
 		ec.fieldContext_Mutation_favoriteHost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().FavoriteHost(ctx, fc.Args["hostID"].(int))
+			return ec.Resolvers.Mutation().FavoriteHost(ctx, fc.Args["hostID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -781,11 +781,11 @@ func (ec *executionContext) _Mutation_favoriteHost(ctx context.Context, field gr
 					var zeroVal *ent.Host
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Host
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -865,7 +865,7 @@ func (ec *executionContext) _Mutation_unfavoriteHost(ctx context.Context, field 
 		ec.fieldContext_Mutation_unfavoriteHost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UnfavoriteHost(ctx, fc.Args["hostID"].(int))
+			return ec.Resolvers.Mutation().UnfavoriteHost(ctx, fc.Args["hostID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -876,11 +876,11 @@ func (ec *executionContext) _Mutation_unfavoriteHost(ctx context.Context, field 
 					var zeroVal *ent.Host
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Host
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -960,7 +960,7 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 		ec.fieldContext_Mutation_createTag,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateTag(ctx, fc.Args["input"].(ent.CreateTagInput))
+			return ec.Resolvers.Mutation().CreateTag(ctx, fc.Args["input"].(ent.CreateTagInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -971,11 +971,11 @@ func (ec *executionContext) _Mutation_createTag(ctx context.Context, field graph
 					var zeroVal *ent.Tag
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tag
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1029,7 +1029,7 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 		ec.fieldContext_Mutation_updateTag,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateTag(ctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
+			return ec.Resolvers.Mutation().UpdateTag(ctx, fc.Args["tagID"].(int), fc.Args["input"].(ent.UpdateTagInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1040,11 +1040,11 @@ func (ec *executionContext) _Mutation_updateTag(ctx context.Context, field graph
 					var zeroVal *ent.Tag
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tag
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1098,7 +1098,7 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_createTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateTome(ctx, fc.Args["input"].(ent.CreateTomeInput))
+			return ec.Resolvers.Mutation().CreateTome(ctx, fc.Args["input"].(ent.CreateTomeInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1109,11 +1109,11 @@ func (ec *executionContext) _Mutation_createTome(ctx context.Context, field grap
 					var zeroVal *ent.Tome
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tome
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1185,7 +1185,7 @@ func (ec *executionContext) _Mutation_updateTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateTome(ctx, fc.Args["tomeID"].(int), fc.Args["input"].(ent.UpdateTomeInput))
+			return ec.Resolvers.Mutation().UpdateTome(ctx, fc.Args["tomeID"].(int), fc.Args["input"].(ent.UpdateTomeInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1196,11 +1196,11 @@ func (ec *executionContext) _Mutation_updateTome(ctx context.Context, field grap
 					var zeroVal *ent.Tome
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Tome
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1272,7 +1272,7 @@ func (ec *executionContext) _Mutation_deleteTome(ctx context.Context, field grap
 		ec.fieldContext_Mutation_deleteTome,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteTome(ctx, fc.Args["tomeID"].(int))
+			return ec.Resolvers.Mutation().DeleteTome(ctx, fc.Args["tomeID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1283,11 +1283,11 @@ func (ec *executionContext) _Mutation_deleteTome(ctx context.Context, field grap
 					var zeroVal int
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal int
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1331,7 +1331,7 @@ func (ec *executionContext) _Mutation_createRepository(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createRepository,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateRepository(ctx, fc.Args["input"].(ent.CreateRepositoryInput))
+			return ec.Resolvers.Mutation().CreateRepository(ctx, fc.Args["input"].(ent.CreateRepositoryInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1342,11 +1342,11 @@ func (ec *executionContext) _Mutation_createRepository(ctx context.Context, fiel
 					var zeroVal *ent.Repository
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Repository
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1408,7 +1408,7 @@ func (ec *executionContext) _Mutation_importRepository(ctx context.Context, fiel
 		ec.fieldContext_Mutation_importRepository,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ImportRepository(ctx, fc.Args["repoID"].(int), fc.Args["input"].(*models.ImportRepositoryInput))
+			return ec.Resolvers.Mutation().ImportRepository(ctx, fc.Args["repoID"].(int), fc.Args["input"].(*models.ImportRepositoryInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1419,11 +1419,11 @@ func (ec *executionContext) _Mutation_importRepository(ctx context.Context, fiel
 					var zeroVal *ent.Repository
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Repository
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1484,7 +1484,7 @@ func (ec *executionContext) _Mutation_resetUserAPIKey(ctx context.Context, field
 		field,
 		ec.fieldContext_Mutation_resetUserAPIKey,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Mutation().ResetUserAPIKey(ctx)
+			return ec.Resolvers.Mutation().ResetUserAPIKey(ctx)
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1495,11 +1495,11 @@ func (ec *executionContext) _Mutation_resetUserAPIKey(ctx context.Context, field
 					var zeroVal *ent.User
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.User
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1554,7 +1554,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateUser,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateUser(ctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
+			return ec.Resolvers.Mutation().UpdateUser(ctx, fc.Args["userID"].(int), fc.Args["input"].(ent.UpdateUserInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1565,11 +1565,11 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 					var zeroVal *ent.User
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.User
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1635,7 +1635,7 @@ func (ec *executionContext) _Mutation_createCredential(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createCredential,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateCredential(ctx, fc.Args["input"].(ent.CreateHostCredentialInput))
+			return ec.Resolvers.Mutation().CreateCredential(ctx, fc.Args["input"].(ent.CreateHostCredentialInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1646,11 +1646,11 @@ func (ec *executionContext) _Mutation_createCredential(ctx context.Context, fiel
 					var zeroVal *ent.HostCredential
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.HostCredential
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1714,7 +1714,7 @@ func (ec *executionContext) _Mutation_createLink(ctx context.Context, field grap
 		ec.fieldContext_Mutation_createLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateLink(ctx, fc.Args["input"].(ent.CreateLinkInput))
+			return ec.Resolvers.Mutation().CreateLink(ctx, fc.Args["input"].(ent.CreateLinkInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1725,11 +1725,11 @@ func (ec *executionContext) _Mutation_createLink(ctx context.Context, field grap
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1793,7 +1793,7 @@ func (ec *executionContext) _Mutation_updateLink(ctx context.Context, field grap
 		ec.fieldContext_Mutation_updateLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateLink(ctx, fc.Args["linkID"].(int), fc.Args["input"].(ent.UpdateLinkInput))
+			return ec.Resolvers.Mutation().UpdateLink(ctx, fc.Args["linkID"].(int), fc.Args["input"].(ent.UpdateLinkInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1804,11 +1804,11 @@ func (ec *executionContext) _Mutation_updateLink(ctx context.Context, field grap
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1872,7 +1872,7 @@ func (ec *executionContext) _Mutation_disableLink(ctx context.Context, field gra
 		ec.fieldContext_Mutation_disableLink,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DisableLink(ctx, fc.Args["linkID"].(int))
+			return ec.Resolvers.Mutation().DisableLink(ctx, fc.Args["linkID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1883,11 +1883,11 @@ func (ec *executionContext) _Mutation_disableLink(ctx context.Context, field gra
 					var zeroVal *ent.Link
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.Link
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -1951,7 +1951,7 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 		ec.fieldContext_Mutation_registerBuilder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
+			return ec.Resolvers.Mutation().RegisterBuilder(ctx, fc.Args["input"].(ent.CreateBuilderInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1962,11 +1962,11 @@ func (ec *executionContext) _Mutation_registerBuilder(ctx context.Context, field
 					var zeroVal *models.RegisterBuilderOutput
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *models.RegisterBuilderOutput
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2018,7 +2018,7 @@ func (ec *executionContext) _Mutation_deleteBuilder(ctx context.Context, field g
 		ec.fieldContext_Mutation_deleteBuilder,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteBuilder(ctx, fc.Args["builderID"].(int))
+			return ec.Resolvers.Mutation().DeleteBuilder(ctx, fc.Args["builderID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2029,11 +2029,11 @@ func (ec *executionContext) _Mutation_deleteBuilder(ctx context.Context, field g
 					var zeroVal int
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal int
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2077,7 +2077,7 @@ func (ec *executionContext) _Mutation_createBuildTask(ctx context.Context, field
 		ec.fieldContext_Mutation_createBuildTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateBuildTask(ctx, fc.Args["input"].(models.CreateBuildTaskInput))
+			return ec.Resolvers.Mutation().CreateBuildTask(ctx, fc.Args["input"].(models.CreateBuildTaskInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2088,11 +2088,11 @@ func (ec *executionContext) _Mutation_createBuildTask(ctx context.Context, field
 					var zeroVal *ent.BuildTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.BuildTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2178,7 +2178,7 @@ func (ec *executionContext) _Mutation_createScheduledTask(ctx context.Context, f
 		ec.fieldContext_Mutation_createScheduledTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateScheduledTask(ctx, fc.Args["input"].(ent.CreateScheduledTaskInput))
+			return ec.Resolvers.Mutation().CreateScheduledTask(ctx, fc.Args["input"].(ent.CreateScheduledTaskInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2189,11 +2189,11 @@ func (ec *executionContext) _Mutation_createScheduledTask(ctx context.Context, f
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2265,7 +2265,7 @@ func (ec *executionContext) _Mutation_disableScheduledTask(ctx context.Context, 
 		ec.fieldContext_Mutation_disableScheduledTask,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DisableScheduledTask(ctx, fc.Args["scheduledTaskID"].(int))
+			return ec.Resolvers.Mutation().DisableScheduledTask(ctx, fc.Args["scheduledTaskID"].(int))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2276,11 +2276,11 @@ func (ec *executionContext) _Mutation_disableScheduledTask(ctx context.Context, 
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, err
 				}
-				if ec.directives.RequireRole == nil {
+				if ec.Directives.RequireRole == nil {
 					var zeroVal *ent.ScheduledTask
 					return zeroVal, errors.New("directive requireRole is not implemented")
 				}
-				return ec.directives.RequireRole(ctx, nil, directive0, role)
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
 			}
 
 			next = directive1
@@ -2553,10 +2553,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
