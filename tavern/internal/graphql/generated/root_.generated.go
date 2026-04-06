@@ -129,6 +129,11 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BeaconTimelineBucket struct {
+		Count          func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
 	BuildProfile struct {
 		BuildImage      func(childComplexity int) int
 		Buildtasks      func(childComplexity int) int
@@ -379,6 +384,7 @@ type ComplexityRoot struct {
 	}
 
 	Metrics struct {
+		BeaconTimeline     func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconHistoryWhereInput) int
 		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
 	}
 
@@ -1165,6 +1171,20 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BeaconHistoryEdge.Node(childComplexity), true
+
+	case "BeaconTimelineBucket.count":
+		if e.ComplexityRoot.BeaconTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.Count(childComplexity), true
+
+	case "BeaconTimelineBucket.startTimestamp":
+		if e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp(childComplexity), true
 
 	case "BuildProfile.buildImage":
 		if e.ComplexityRoot.BuildProfile.BuildImage == nil {
@@ -2339,6 +2359,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LinkEdge.Node(childComplexity), true
+
+	case "Metrics.beaconTimeline":
+		if e.ComplexityRoot.Metrics.BeaconTimeline == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_beaconTimeline_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Metrics.BeaconTimeline(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.BeaconHistoryWhereInput)), true
 
 	case "Metrics.questTimelineChart":
 		if e.ComplexityRoot.Metrics.QuestTimelineChart == nil {
@@ -11891,6 +11923,18 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimeline(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconHistoryWhereInput
+  ): [BeaconTimelineBucket!]!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
 }
 
 type QuestTimelineBucket {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -106,6 +107,75 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 					Count:  count,
 				})
 			}
+		}
+	}
+
+	return buckets, nil
+}
+
+// BeaconTimeline is the resolver for the beaconTimeline field.
+func (r *metricsResolver) BeaconTimeline(ctx context.Context, obj *models.Metrics, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconHistoryWhereInput) ([]*models.BeaconTimelineBucket, error) {
+	endTime := time.Now()
+	if end != nil {
+		endTime = *end
+	}
+
+	if granularitySeconds <= 0 {
+		return nil, fmt.Errorf("granularity_seconds must be > 0")
+	}
+
+	granularity := time.Duration(granularitySeconds) * time.Second
+
+	// Ensure start is before or equal to endTime
+	if start.After(endTime) {
+		return []*models.BeaconTimelineBucket{}, nil
+	}
+
+	// Create buckets from start to endTime
+	var buckets []*models.BeaconTimelineBucket
+	bucketMap := make(map[int64]*models.BeaconTimelineBucket)
+
+	for t := start; t.Before(endTime) || t.Equal(endTime); t = t.Add(granularity) {
+		bucket := &models.BeaconTimelineBucket{
+			StartTimestamp: t,
+			Count:          0,
+		}
+		buckets = append(buckets, bucket)
+		bucketMap[t.Unix()] = bucket
+	}
+
+	query := r.client.BeaconHistory.Query()
+	if where != nil {
+		var err error
+		query, err = where.Filter(query)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+	}
+
+	// Filter histories by time range
+	query = query.Where(
+		beaconhistory.CreatedAtGTE(start),
+		beaconhistory.CreatedAtLTE(endTime),
+	)
+
+	// Fetch beacon histories
+	histories, err := query.All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query beacon histories: %w", err)
+	}
+
+	// Group histories into buckets
+	for _, h := range histories {
+		diff := h.CreatedAt.Sub(start)
+		if diff < 0 {
+			continue
+		}
+
+		bucketTime := start.Add(diff.Truncate(granularity))
+
+		if bucket, exists := bucketMap[bucketTime.Unix()]; exists {
+			bucket.Count++
 		}
 	}
 
