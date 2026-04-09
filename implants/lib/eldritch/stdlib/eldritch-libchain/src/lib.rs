@@ -2,10 +2,14 @@ extern crate alloc;
 
 use eldritch_macros::{eldritch_library, eldritch_method};
 
+#[cfg(feature = "stdlib")]
 pub mod tcp_impl;
 
 #[cfg(feature = "stdlib")]
 pub mod std;
+
+#[cfg(feature = "fake_bindings")]
+pub mod fake;
 
 #[eldritch_library("chain")]
 /// The `chain` library provides TCP chaining capabilities.
