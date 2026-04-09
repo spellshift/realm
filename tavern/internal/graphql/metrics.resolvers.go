@@ -78,24 +78,26 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 	for _, q := range quests {
 		// Find the bucket timestamp for this quest
 		// We calculate the number of granularities since start
-		diff := q.CreatedAt.Sub(start)
-		if diff < 0 {
+		if q.CreatedAt.Before(start) {
 			continue // Should not happen due to query filter, but just in case
 		}
 
-		// Use time.Truncate to perfectly align the bucket time to the nearest exact granularity boundary.
-		// This avoids any int casting duration bugs or fractional integer rounding drift issues over long periods
-		// and strictly enforces "perfectly aligned" mapping.
-		bucketTime := start.Add(diff.Truncate(granularity))
+		diffSeconds := q.CreatedAt.Unix() - start.Unix()
+		if diffSeconds < 0 {
+			continue
+		}
 
-		if bucket, exists := bucketMap[bucketTime.Unix()]; exists {
+		bucketIndex := diffSeconds / int64(granularitySeconds)
+		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+
+		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
 			bucket.Count++
 
 			if q.Edges.Tome != nil {
-				if tacticCounts[bucketTime.Unix()] == nil {
-					tacticCounts[bucketTime.Unix()] = make(map[tome.Tactic]int)
+				if tacticCounts[bucketTimeUnix] == nil {
+					tacticCounts[bucketTimeUnix] = make(map[tome.Tactic]int)
 				}
-				tacticCounts[bucketTime.Unix()][q.Edges.Tome.Tactic]++
+				tacticCounts[bucketTimeUnix][q.Edges.Tome.Tactic]++
 			}
 		}
 	}
@@ -192,26 +194,33 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 	hostCounts := make(map[int64]map[int]*models.BeaconTimelineHostBucket)
 	for _, h := range histories {
 		// Find the bucket timestamp for this history
-		diff := h.CreatedAt.Sub(start)
-		if diff < 0 {
+		if h.CreatedAt.Before(start) {
 			continue // Should not happen due to query filter
 		}
 
-		bucketTime := start.Add(diff.Truncate(granularity))
+		// Calculate the diff manually in seconds
+		diffSeconds := h.CreatedAt.Unix() - start.Unix()
+		if diffSeconds < 0 {
+		    continue
+		}
 
-		if bucket, exists := bucketMap[bucketTime.Unix()]; exists {
+		// Truncate to the nearest granularity
+		bucketIndex := diffSeconds / int64(granularitySeconds)
+		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+
+		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
 			bucket.Count++
 
 			if h.Edges.Beacon != nil && h.Edges.Beacon.Edges.Host != nil {
 				host := h.Edges.Beacon.Edges.Host
-				if hostCounts[bucketTime.Unix()] == nil {
-					hostCounts[bucketTime.Unix()] = make(map[int]*models.BeaconTimelineHostBucket)
+				if hostCounts[bucketTimeUnix] == nil {
+					hostCounts[bucketTimeUnix] = make(map[int]*models.BeaconTimelineHostBucket)
 				}
 
-				if hb, exists := hostCounts[bucketTime.Unix()][host.ID]; exists {
+				if hb, exists := hostCounts[bucketTimeUnix][host.ID]; exists {
 					hb.Count++
 				} else {
-					hostCounts[bucketTime.Unix()][host.ID] = &models.BeaconTimelineHostBucket{
+					hostCounts[bucketTimeUnix][host.ID] = &models.BeaconTimelineHostBucket{
 						Host:  host,
 						Count: 1,
 					}
