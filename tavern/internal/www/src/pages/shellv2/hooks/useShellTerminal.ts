@@ -10,19 +10,35 @@ import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHi
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
 const wrapText = (text: string, cols: number) => {
-    const words = text.split(' ');
+    const inputLines = text.split('\n');
     let lines = [];
-    let currentLine = '';
-    for (const word of words) {
-        if (currentLine.length + word.length + 1 > cols) {
-            if (currentLine.length > 0) lines.push(currentLine);
-            currentLine = word;
-        } else {
-            if (currentLine.length > 0) currentLine += ' ';
-            currentLine += word;
+    let inMarkdownBlock = false;
+
+    for (const line of inputLines) {
+        if (line.trim().startsWith('```')) {
+            inMarkdownBlock = !inMarkdownBlock;
+            lines.push(line.trim());
+            continue;
         }
+
+        if (inMarkdownBlock) {
+            lines.push('  ' + line.trimStart());
+            continue;
+        }
+
+        const words = line.split(' ');
+        let currentLine = '';
+        for (const word of words) {
+            if (currentLine.length + word.length + 1 > cols) {
+                if (currentLine.length > 0) lines.push(currentLine);
+                currentLine = word;
+            } else {
+                if (currentLine.length > 0) currentLine += ' ';
+                currentLine += word;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
     }
-    if (currentLine) lines.push(currentLine);
     return lines.join('\r\n');
 };
 
