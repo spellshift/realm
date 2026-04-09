@@ -392,6 +392,7 @@ type ComplexityRoot struct {
 	Metrics struct {
 		BeaconTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconWhereInput) int
 		QuestTimelineChart  func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
+		TasksByTome         func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -729,6 +730,17 @@ type ComplexityRoot struct {
 	TomeEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
+	}
+
+	TomeTaskMetrics struct {
+		TasksCompleteWithNoErrors func(childComplexity int) int
+		TasksPending              func(childComplexity int) int
+		TasksRunning              func(childComplexity int) int
+		TasksStale                func(childComplexity int) int
+		TasksTotal                func(childComplexity int) int
+		TasksWithErrors           func(childComplexity int) int
+		TasksWithNoErrors         func(childComplexity int) int
+		Tome                      func(childComplexity int) int
 	}
 
 	User struct {
@@ -2410,6 +2422,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Metrics.QuestTimelineChart(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.QuestWhereInput)), true
+
+	case "Metrics.tasksByTome":
+		if e.ComplexityRoot.Metrics.TasksByTome == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Metrics.TasksByTome(childComplexity), true
 
 	case "Mutation.createBuildTask":
 		if e.ComplexityRoot.Mutation.CreateBuildTask == nil {
@@ -4272,6 +4291,62 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.TomeEdge.Node(childComplexity), true
+
+	case "TomeTaskMetrics.tasksCompleteWithNoErrors":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksCompleteWithNoErrors == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksCompleteWithNoErrors(childComplexity), true
+
+	case "TomeTaskMetrics.tasksPending":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksPending == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksPending(childComplexity), true
+
+	case "TomeTaskMetrics.tasksRunning":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksRunning == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksRunning(childComplexity), true
+
+	case "TomeTaskMetrics.tasksStale":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksStale == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksStale(childComplexity), true
+
+	case "TomeTaskMetrics.tasksTotal":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksTotal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksTotal(childComplexity), true
+
+	case "TomeTaskMetrics.tasksWithErrors":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksWithErrors == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksWithErrors(childComplexity), true
+
+	case "TomeTaskMetrics.tasksWithNoErrors":
+		if e.ComplexityRoot.TomeTaskMetrics.TasksWithNoErrors == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.TasksWithNoErrors(childComplexity), true
+
+	case "TomeTaskMetrics.tome":
+		if e.ComplexityRoot.TomeTaskMetrics.Tome == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TomeTaskMetrics.Tome(childComplexity), true
 
 	case "User.apiKey":
 		if e.ComplexityRoot.User.APIKey == nil {
@@ -11957,6 +12032,19 @@ type Metrics {
     granularity_seconds: Int!
     where: BeaconWhereInput
   ): [BeaconTimelineBucket!]!
+
+  tasksByTome: [TomeTaskMetrics!]!
+}
+
+type TomeTaskMetrics {
+  tome: Tome!
+  tasksTotal: Int!
+  tasksWithErrors: Int!
+  tasksWithNoErrors: Int!
+  tasksCompleteWithNoErrors: Int!
+  tasksPending: Int!
+  tasksRunning: Int!
+  tasksStale: Int!
 }
 
 type BeaconTimelineBucket {

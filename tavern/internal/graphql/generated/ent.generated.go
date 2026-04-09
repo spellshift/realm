@@ -11319,6 +11319,8 @@ func (ec *executionContext) fieldContext_Query_metrics(_ context.Context, field 
 				return ec.fieldContext_Metrics_questTimelineChart(ctx, field)
 			case "beaconTimelineChart":
 				return ec.fieldContext_Metrics_beaconTimelineChart(ctx, field)
+			case "tasksByTome":
+				return ec.fieldContext_Metrics_tasksByTome(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Metrics", field.Name)
 		},

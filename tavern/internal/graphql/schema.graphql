@@ -6998,6 +6998,19 @@ type Metrics {
     granularity_seconds: Int!
     where: BeaconWhereInput
   ): [BeaconTimelineBucket!]!
+
+  tasksByTome: [TomeTaskMetrics!]!
+}
+
+type TomeTaskMetrics {
+  tome: Tome!
+  tasksTotal: Int!
+  tasksWithErrors: Int!
+  tasksWithNoErrors: Int!
+  tasksCompleteWithNoErrors: Int!
+  tasksPending: Int!
+  tasksRunning: Int!
+  tasksStale: Int!
 }
 
 type BeaconTimelineBucket {
