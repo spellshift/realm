@@ -156,7 +156,7 @@ func (m *Mux) SubName(topicID string) string {
 }
 
 // ensureTopic ensures that the topic exists.
-func (m *Mux) ensureTopic(ctx context.Context, topicID string) error {
+func (m *Mux) EnsureTopic(ctx context.Context, topicID string) error {
 	// The new pubsub.EnsurePublisher handles creation/existence checks.
 	// We can choose to cache it here or let getTopic handle caching later.
 	// Since ensureTopic is often called during setup, we can just ensure it exists.

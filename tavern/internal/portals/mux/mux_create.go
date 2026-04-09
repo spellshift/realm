@@ -71,10 +71,10 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 
 	// 2. Provisioning
 	// Ensure topics exist
-	if err := m.ensureTopic(ctx, topicIn); err != nil {
+	if err := m.EnsureTopic(ctx, topicIn); err != nil {
 		return portalID, nil, fmt.Errorf("failed to ensure topic in: %w", err)
 	}
-	if err := m.ensureTopic(ctx, topicOut); err != nil {
+	if err := m.EnsureTopic(ctx, topicOut); err != nil {
 		return portalID, nil, fmt.Errorf("failed to ensure topic out: %w", err)
 	}
 
