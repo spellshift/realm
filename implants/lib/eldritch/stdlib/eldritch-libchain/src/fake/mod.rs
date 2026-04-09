@@ -21,6 +21,6 @@ impl FakeChainLibrary {
 
 impl ChainLibrary for FakeChainLibrary {
     fn tcp(&self, _addr: String) -> Result<i64, String> {
-        Err("chain is not supported in the browser repl".into())
+        Err("chain is not supported in this environment".into())
     }
 }
