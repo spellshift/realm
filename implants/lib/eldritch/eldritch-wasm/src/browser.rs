@@ -2,9 +2,9 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use eldritch_core::{BufferPrinter, Interpreter, Lexer, Parser, TokenKind, ExprKind, StmtKind};
-use wasm_bindgen::prelude::*;
+use eldritch_core::{BufferPrinter, ExprKind, Interpreter, Lexer, Parser, StmtKind, TokenKind};
 use serde::Serialize;
+use wasm_bindgen::prelude::*;
 
 #[derive(Serialize)]
 #[serde(tag = "type")]
@@ -162,7 +162,9 @@ impl BrowserRepl {
                                         if args.is_empty() {
                                             meta_command = Some(MetaCommand::Help { target: None });
                                         } else if args.len() == 1 {
-                                            if let eldritch_core::Argument::Positional(arg_expr) = &args[0] {
+                                            if let eldritch_core::Argument::Positional(arg_expr) =
+                                                &args[0]
+                                            {
                                                 // Try to format the argument back to string for the target
                                                 let mut parts = Vec::new();
                                                 let mut current_expr = arg_expr;
@@ -192,9 +194,12 @@ impl BrowserRepl {
                                                 } else {
                                                     target_str = "unknown".to_string();
                                                 }
-                                                meta_command = Some(MetaCommand::Help { target: Some(target_str) });
+                                                meta_command = Some(MetaCommand::Help {
+                                                    target: Some(target_str),
+                                                });
                                             } else {
-                                                meta_command = Some(MetaCommand::Help { target: None });
+                                                meta_command =
+                                                    Some(MetaCommand::Help { target: None });
                                             }
                                         } else {
                                             meta_command = Some(MetaCommand::Help { target: None });
