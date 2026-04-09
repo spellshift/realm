@@ -74,3 +74,5 @@ models:
     fields:
       questTimelineChart:
         resolver: true
+      beaconTimelineChart:
+        resolver: true

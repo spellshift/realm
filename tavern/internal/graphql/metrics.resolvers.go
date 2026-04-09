@@ -8,9 +8,12 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -75,24 +78,26 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 	for _, q := range quests {
 		// Find the bucket timestamp for this quest
 		// We calculate the number of granularities since start
-		diff := q.CreatedAt.Sub(start)
-		if diff < 0 {
+		if q.CreatedAt.Before(start) {
 			continue // Should not happen due to query filter, but just in case
 		}
 
-		// Use time.Truncate to perfectly align the bucket time to the nearest exact granularity boundary.
-		// This avoids any int casting duration bugs or fractional integer rounding drift issues over long periods
-		// and strictly enforces "perfectly aligned" mapping.
-		bucketTime := start.Add(diff.Truncate(granularity))
+		diffSeconds := q.CreatedAt.Unix() - start.Unix()
+		if diffSeconds < 0 {
+			continue
+		}
 
-		if bucket, exists := bucketMap[bucketTime.Unix()]; exists {
+		bucketIndex := diffSeconds / int64(granularitySeconds)
+		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+
+		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
 			bucket.Count++
 
 			if q.Edges.Tome != nil {
-				if tacticCounts[bucketTime.Unix()] == nil {
-					tacticCounts[bucketTime.Unix()] = make(map[tome.Tactic]int)
+				if tacticCounts[bucketTimeUnix] == nil {
+					tacticCounts[bucketTimeUnix] = make(map[tome.Tactic]int)
 				}
-				tacticCounts[bucketTime.Unix()][q.Edges.Tome.Tactic]++
+				tacticCounts[bucketTimeUnix][q.Edges.Tome.Tactic]++
 			}
 		}
 	}
@@ -105,6 +110,137 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 					Tactic: tactic,
 					Count:  count,
 				})
+			}
+		}
+	}
+
+	return buckets, nil
+}
+
+// BeaconTimelineChart is the resolver for the beaconTimelineChart field.
+func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.Metrics, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconWhereInput) ([]*models.BeaconTimelineBucket, error) {
+	endTime := time.Now()
+	if end != nil {
+		endTime = *end
+	}
+
+	if granularitySeconds <= 0 {
+		return nil, fmt.Errorf("granularity_seconds must be > 0")
+	}
+
+	granularity := time.Duration(granularitySeconds) * time.Second
+
+	// Ensure start is before or equal to endTime
+	if start.After(endTime) {
+		return []*models.BeaconTimelineBucket{}, nil
+	}
+
+	// Create buckets from start to endTime
+	var buckets []*models.BeaconTimelineBucket
+	bucketMap := make(map[int64]*models.BeaconTimelineBucket)
+
+	for t := start; t.Before(endTime) || t.Equal(endTime); t = t.Add(granularity) {
+		bucket := &models.BeaconTimelineBucket{
+			StartTimestamp: t,
+			Count:          0,
+			GroupByHosts:   []*models.BeaconTimelineHostBucket{},
+		}
+		buckets = append(buckets, bucket)
+		bucketMap[t.Unix()] = bucket
+	}
+
+	query := r.client.BeaconHistory.Query()
+
+	if where != nil {
+		beaconQuery := r.client.Beacon.Query()
+		var err error
+		beaconQuery, err = where.Filter(beaconQuery)
+		if err != nil {
+			return nil, fmt.Errorf("failed to apply filter: %w", err)
+		}
+
+		// Use a subquery to get the beacon IDs that match the filter
+		beaconIDs, err := beaconQuery.IDs(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get filtered beacon IDs: %w", err)
+		}
+
+		if len(beaconIDs) == 0 {
+		    // If there are no matching beacons, short circuit
+		    return buckets, nil
+		}
+
+		// Filter beacon histories by the matching beacon IDs
+		query = query.Where(
+			beaconhistory.HasBeaconWith(beacon.IDIn(beaconIDs...)),
+		)
+	}
+
+	// Filter histories by time range
+	query = query.Where(
+		beaconhistory.CreatedAtGTE(start),
+		beaconhistory.CreatedAtLTE(endTime),
+	)
+
+	// Fetch histories with their associated beacon and host
+	histories, err := query.WithBeacon(func(bq *ent.BeaconQuery) {
+		bq.WithHost()
+	}).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query beacon histories: %w", err)
+	}
+
+	// Group histories into buckets
+	hostCounts := make(map[int64]map[int]*models.BeaconTimelineHostBucket)
+	for _, h := range histories {
+		// Find the bucket timestamp for this history
+		if h.CreatedAt.Before(start) {
+			continue // Should not happen due to query filter
+		}
+
+		// Calculate the diff manually in seconds
+		diffSeconds := h.CreatedAt.Unix() - start.Unix()
+		if diffSeconds < 0 {
+		    continue
+		}
+
+		// Truncate to the nearest granularity
+		bucketIndex := diffSeconds / int64(granularitySeconds)
+		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+
+		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
+			bucket.Count++
+
+			if h.Edges.Beacon != nil && h.Edges.Beacon.Edges.Host != nil {
+				host := h.Edges.Beacon.Edges.Host
+				if hostCounts[bucketTimeUnix] == nil {
+					hostCounts[bucketTimeUnix] = make(map[int]*models.BeaconTimelineHostBucket)
+				}
+
+				if hb, exists := hostCounts[bucketTimeUnix][host.ID]; exists {
+					hb.Count++
+				} else {
+					hostCounts[bucketTimeUnix][host.ID] = &models.BeaconTimelineHostBucket{
+						Host:  host,
+						Count: 1,
+					}
+				}
+			}
+		}
+	}
+
+	// Populate groupByHosts in buckets
+	for _, bucket := range buckets {
+		if countsMap, exists := hostCounts[bucket.StartTimestamp.Unix()]; exists {
+			// Extract keys and sort them to ensure deterministic order
+			keys := make([]int, 0, len(countsMap))
+			for k := range countsMap {
+				keys = append(keys, k)
+			}
+			sort.Ints(keys)
+
+			for _, key := range keys {
+				bucket.GroupByHosts = append(bucket.GroupByHosts, countsMap[key])
 			}
 		}
 	}
