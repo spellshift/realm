@@ -9,6 +9,24 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconWhereInput
+  ): [BeaconTimelineBucket!]!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByHosts: [BeaconTimelineHostBucket!]!
+}
+
+type BeaconTimelineHostBucket {
+  host: Host!
+  count: Int!
 }
 
 type QuestTimelineBucket {

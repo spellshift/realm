@@ -129,6 +129,17 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	BeaconTimelineBucket struct {
+		Count          func(childComplexity int) int
+		GroupByHosts   func(childComplexity int) int
+		StartTimestamp func(childComplexity int) int
+	}
+
+	BeaconTimelineHostBucket struct {
+		Count func(childComplexity int) int
+		Host  func(childComplexity int) int
+	}
+
 	BuildProfile struct {
 		BuildImage      func(childComplexity int) int
 		Buildtasks      func(childComplexity int) int
@@ -379,7 +390,8 @@ type ComplexityRoot struct {
 	}
 
 	Metrics struct {
-		QuestTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
+		BeaconTimelineChart func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconWhereInput) int
+		QuestTimelineChart  func(childComplexity int, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) int
 	}
 
 	Mutation struct {
@@ -1165,6 +1177,41 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.BeaconHistoryEdge.Node(childComplexity), true
+
+	case "BeaconTimelineBucket.count":
+		if e.ComplexityRoot.BeaconTimelineBucket.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.Count(childComplexity), true
+
+	case "BeaconTimelineBucket.groupByHosts":
+		if e.ComplexityRoot.BeaconTimelineBucket.GroupByHosts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.GroupByHosts(childComplexity), true
+
+	case "BeaconTimelineBucket.startTimestamp":
+		if e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineBucket.StartTimestamp(childComplexity), true
+
+	case "BeaconTimelineHostBucket.count":
+		if e.ComplexityRoot.BeaconTimelineHostBucket.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineHostBucket.Count(childComplexity), true
+
+	case "BeaconTimelineHostBucket.host":
+		if e.ComplexityRoot.BeaconTimelineHostBucket.Host == nil {
+			break
+		}
+
+		return e.ComplexityRoot.BeaconTimelineHostBucket.Host(childComplexity), true
 
 	case "BuildProfile.buildImage":
 		if e.ComplexityRoot.BuildProfile.BuildImage == nil {
@@ -2339,6 +2386,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.LinkEdge.Node(childComplexity), true
+
+	case "Metrics.beaconTimelineChart":
+		if e.ComplexityRoot.Metrics.BeaconTimelineChart == nil {
+			break
+		}
+
+		args, err := ec.field_Metrics_beaconTimelineChart_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Metrics.BeaconTimelineChart(childComplexity, args["start"].(time.Time), args["end"].(*time.Time), args["granularity_seconds"].(int), args["where"].(*ent.BeaconWhereInput)), true
 
 	case "Metrics.questTimelineChart":
 		if e.ComplexityRoot.Metrics.QuestTimelineChart == nil {
@@ -11891,6 +11950,24 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconWhereInput
+  ): [BeaconTimelineBucket!]!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByHosts: [BeaconTimelineHostBucket!]!
+}
+
+type BeaconTimelineHostBucket {
+  host: Host!
+  count: Int!
 }
 
 type QuestTimelineBucket {
