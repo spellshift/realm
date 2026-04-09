@@ -9,6 +9,23 @@ import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHi
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
+const wrapText = (text: string, cols: number) => {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+    for (const word of words) {
+        if (currentLine.length + word.length + 1 > cols) {
+            if (currentLine.length > 0) lines.push(currentLine);
+            currentLine = word;
+        } else {
+            if (currentLine.length > 0) currentLine += ' ';
+            currentLine += word;
+        }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines.join('\r\n');
+};
+
 interface ShellState {
     inputBuffer: string;
     cursorPos: number;
@@ -845,12 +862,14 @@ export const useShellTerminal = (
                         if (!target) {
                             term.write("Welcome to the Browser REPL.\r\n");
                             term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                            term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
                             term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
                         } else {
                             const doc = docs[target];
                             if (doc) {
+                                const wrappedDesc = wrapText(doc.description, term.cols);
                                 term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
-                                term.write(`${doc.description}\r\n`);
+                                term.write(`${wrappedDesc}\r\n`);
                             } else {
                                 term.write(`No documentation found for: ${target}\r\n`);
                             }
@@ -960,12 +979,14 @@ export const useShellTerminal = (
                             if (!target) {
                                 term.write("Welcome to the Browser REPL.\r\n");
                                 term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                                term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
                                 term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
                             } else {
                                 const doc = docs[target];
                                 if (doc) {
+                                    const wrappedDesc = wrapText(doc.description, term.cols);
                                     term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
-                                    term.write(`${doc.description}\r\n`);
+                                    term.write(`${wrappedDesc}\r\n`);
                                 } else {
                                     term.write(`No documentation found for: ${target}\r\n`);
                                 }
