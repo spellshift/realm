@@ -94,6 +94,8 @@ use crate::report::fake::ReportLibraryFake;
 use crate::sys::fake::SysLibraryFake;
 #[cfg(feature = "fake_time")]
 use crate::time::fake::TimeLibraryFake;
+#[cfg(feature = "fake_chain")]
+use crate::chain::fake::FakeChainLibrary;
 
 pub struct Interpreter {
     inner: CoreInterpreter,
@@ -199,6 +201,8 @@ impl Interpreter {
         self.inner.register_lib(PivotLibraryFake);
         #[cfg(feature = "fake_assets")]
         self.inner.register_lib(FakeAssetsLibrary);
+        #[cfg(feature = "fake_chain")]
+        self.inner.register_lib(FakeChainLibrary::new());
         self
     }
 
