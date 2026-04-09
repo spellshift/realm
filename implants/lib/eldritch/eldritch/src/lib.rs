@@ -74,6 +74,8 @@ use crate::time::std::StdTimeLibrary;
 use crate::agent::fake::AgentLibraryFake;
 #[cfg(feature = "fake_assets")]
 use crate::assets::fake::FakeAssetsLibrary;
+#[cfg(feature = "fake_chain")]
+use crate::chain::fake::FakeChainLibrary;
 #[cfg(feature = "fake_crypto")]
 use crate::crypto::fake::CryptoLibraryFake;
 #[cfg(feature = "fake_file")]
@@ -94,8 +96,6 @@ use crate::report::fake::ReportLibraryFake;
 use crate::sys::fake::SysLibraryFake;
 #[cfg(feature = "fake_time")]
 use crate::time::fake::TimeLibraryFake;
-#[cfg(feature = "fake_chain")]
-use crate::chain::fake::FakeChainLibrary;
 
 pub struct Interpreter {
     inner: CoreInterpreter,
