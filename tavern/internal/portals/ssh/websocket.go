@@ -119,14 +119,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer recvCleanup()
 
 	receiver := func() (*portalpb.Mote, error) {
-		m, ok := <-recvCh
-		if !ok {
-			return nil, io.EOF
+		for {
+			m, ok := <-recvCh
+			if !ok {
+				return nil, io.EOF
+			}
+			// Only accept motes matching our streamID to avoid mixing sequence IDs
+			// from other TCP connections or shell streams on the same portal.
+			if m.StreamId != streamID {
+				continue
+			}
+			if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				return nil, io.EOF
+			}
+			return m, nil
 		}
-		if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-			return nil, io.EOF
-		}
-		return m, nil
 	}
 
 	// Dial pnet
