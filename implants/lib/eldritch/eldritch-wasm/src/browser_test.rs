@@ -51,6 +51,16 @@ mod tests {
     }
 
     #[test]
+    fn test_browser_repl_meta_ssh() {
+        let mut repl = BrowserRepl::new();
+
+        let res = repl.input("ssh(\"test:pass@127.0.0.1:22\")");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\": \"ssh\""));
+        assert!(res.contains("\"target\": \"test:pass@127.0.0.1:22\""));
+    }
+
+    #[test]
     fn test_browser_repl_complete() {
         let repl = BrowserRepl::new();
 

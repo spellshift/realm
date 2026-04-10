@@ -59,7 +59,8 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    portalId: number | null
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -889,6 +890,14 @@ export const useShellTerminal = (
                             } else {
                                 term.write(`No documentation found for: ${target}\r\n`);
                             }
+                        } else if (metaCmd?.type === "ssh") {
+                            const target = metaCmd.target;
+                            if (portalId) {
+                                window.open(`/ssh?portal_id=${portalId}&target=${encodeURIComponent(target)}`, '_blank');
+                                term.write(`Opening SSH connection to ${target} in a new tab...\r\n`);
+                            } else {
+                                term.write(`\r\n\x1b[31mError: Active portal not found. SSH requires an active portal.\x1b[0m\r\n`);
+                            }
                         }
                     }
                     term.write(">>> ");
@@ -1005,6 +1014,14 @@ export const useShellTerminal = (
                                     term.write(`${wrappedDesc}\r\n`);
                                 } else {
                                     term.write(`No documentation found for: ${target}\r\n`);
+                                }
+                            } else if (metaCmd?.type === "ssh") {
+                                const target = metaCmd.target;
+                                if (portalId) {
+                                    window.open(`/ssh?portal_id=${portalId}&target=${encodeURIComponent(target)}`, '_blank');
+                                    term.write(`Opening SSH connection to ${target} in a new tab...\r\n`);
+                                } else {
+                                    term.write(`\r\n\x1b[31mError: Active portal not found. SSH requires an active portal.\x1b[0m\r\n`);
                                 }
                             }
                         }

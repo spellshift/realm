@@ -38,7 +38,7 @@ const ShellV2 = () => {
         connectionMessage,
         handleTooltipMouseEnter,
         handleTooltipMouseLeave
-    } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
+    } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, portalId);
 
     if (connectionError) {
         return (

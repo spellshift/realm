@@ -11,6 +11,7 @@ import HostDetails from "./pages/host-details/HostDetails";
 import { Dashboard } from "./pages/dashboard";
 import Shell from "./pages/shell/Shell";
 import ShellV2 from "./pages/shellv2";
+import SshTerminal from "./pages/ssh/SshTerminal";
 import { UserPreferencesContextProvider } from "./context/UserPreferences";
 import { AdminPortal } from "./pages/admin/AdminPortal";
 import Assets from "./pages/assets/Assets";
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
   {
     path: "shellv2/:shellId",
     element: <ShellV2 />,
+  },
+  {
+    path: "ssh",
+    element: <SshTerminal />,
   },
 ]);
 
