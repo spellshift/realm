@@ -1,4 +1,4 @@
-package main
+package sshecho
 
 import (
 	"crypto/rand"
@@ -34,7 +34,7 @@ func startServer(t *testing.T, args []string) (int, func()) {
 	appArgs := append([]string{"sshecho", "--port", fmt.Sprintf("%d", port)}, args...)
 
 	done := make(chan struct{})
-	app := newApp()
+	app := NewApp()
 
 	if app.Metadata == nil {
 		app.Metadata = make(map[string]interface{})

@@ -1,4 +1,4 @@
-package main
+package sshecho
 
 import (
 	"crypto/rand"
@@ -17,7 +17,7 @@ import (
 	"golang.org/x/term"
 )
 
-func newApp() *cli.App {
+func NewApp() *cli.App {
 	app := cli.NewApp()
 	app.Name = "sshecho"
 	app.Usage = "A simple SSH server that echoes input back to the client"
@@ -133,13 +133,6 @@ func newApp() *cli.App {
 	return app
 }
 
-func main() {
-	app := newApp()
-	err := app.Run(os.Args)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 	defer conn.Close()
