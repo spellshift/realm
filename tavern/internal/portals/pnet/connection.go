@@ -96,10 +96,15 @@ func (c *Connection) Write(b []byte) (n int, err error) {
 		return 0, nil
 	}
 
+	// Copy the slice because Mux.Publish handles motes asynchronously and the caller
+	// may reuse the buffer 'b' immediately after Write returns.
+	dataCopy := make([]byte, len(b))
+	copy(dataCopy, b)
+
 	if c.network == "tcp" {
-		err = c.writer.WriteTCP(b, c.dstAddr, c.dstPort)
+		err = c.writer.WriteTCP(dataCopy, c.dstAddr, c.dstPort)
 	} else if c.network == "udp" {
-		err = c.writer.WriteUDP(b, c.dstAddr, c.dstPort)
+		err = c.writer.WriteUDP(dataCopy, c.dstAddr, c.dstPort)
 	} else {
 		return 0, fmt.Errorf("unsupported network %q", c.network)
 	}
