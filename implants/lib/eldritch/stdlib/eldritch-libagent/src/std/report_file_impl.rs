@@ -28,5 +28,6 @@ pub fn report_file(
 
     let (tx, rx) = std::sync::mpsc::channel();
     tx.send(req).map_err(|e| e.to_string())?;
+    drop(tx);
     agent.report_file(rx).map(|_| ())
 }

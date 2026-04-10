@@ -16,6 +16,15 @@ pub struct MockAgent {
     pub reported_processes: Arc<Mutex<Vec<Process>>>,
     pub start_calls: Arc<Mutex<Vec<(i64, Option<String>)>>>,
     pub repl_calls: Arc<Mutex<Vec<i64>>>,
+    pub report_credential_calls: Arc<Mutex<Vec<c2::ReportCredentialRequest>>>,
+    pub report_file_calls: Arc<Mutex<Vec<c2::ReportFileRequest>>>,
+    pub report_output_calls: Arc<Mutex<Vec<c2::ReportOutputRequest>>>,
+    pub claim_tasks_calls: Arc<Mutex<Vec<c2::ClaimTasksRequest>>>,
+    pub stop_task_calls: Arc<Mutex<Vec<i64>>>,
+    pub tasks: Arc<Mutex<Vec<c2::Task>>>,
+    pub transport: Arc<RwLock<String>>,
+    pub set_callback_uri_calls: Arc<Mutex<Vec<String>>>,
+    pub reset_transport_calls: Arc<Mutex<usize>>,
 }
 
 impl MockAgent {
@@ -30,6 +39,15 @@ impl MockAgent {
             reported_processes: Arc::new(Mutex::new(Vec::new())),
             start_calls: Arc::new(Mutex::new(Vec::new())),
             repl_calls: Arc::new(Mutex::new(Vec::new())),
+            report_credential_calls: Arc::new(Mutex::new(Vec::new())),
+            report_file_calls: Arc::new(Mutex::new(Vec::new())),
+            report_output_calls: Arc::new(Mutex::new(Vec::new())),
+            claim_tasks_calls: Arc::new(Mutex::new(Vec::new())),
+            stop_task_calls: Arc::new(Mutex::new(Vec::new())),
+            tasks: Arc::new(Mutex::new(Vec::new())),
+            transport: Arc::new(RwLock::new("http".to_string())),
+            set_callback_uri_calls: Arc::new(Mutex::new(Vec::new())),
+            reset_transport_calls: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -78,15 +96,20 @@ impl Agent for MockAgent {
 
     fn report_credential(
         &self,
-        _req: c2::ReportCredentialRequest,
+        req: c2::ReportCredentialRequest,
     ) -> Result<c2::ReportCredentialResponse, String> {
+        self.report_credential_calls.lock().unwrap().push(req);
         Ok(c2::ReportCredentialResponse::default())
     }
 
     fn report_file(
         &self,
-        _req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
+        req: std::sync::mpsc::Receiver<c2::ReportFileRequest>,
     ) -> Result<c2::ReportFileResponse, String> {
+        let mut calls = self.report_file_calls.lock().unwrap();
+        for r in req {
+            calls.push(r);
+        }
         Ok(c2::ReportFileResponse::default())
     }
 
@@ -115,8 +138,9 @@ impl Agent for MockAgent {
 
     fn report_output(
         &self,
-        _req: c2::ReportOutputRequest,
+        req: c2::ReportOutputRequest,
     ) -> Result<c2::ReportOutputResponse, String> {
+        self.report_output_calls.lock().unwrap().push(req);
         Ok(c2::ReportOutputResponse::default())
     }
 
@@ -143,31 +167,38 @@ impl Agent for MockAgent {
         Ok(())
     }
 
-    fn claim_tasks(&self, _req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
-        Ok(c2::ClaimTasksResponse::default())
+    fn claim_tasks(&self, req: c2::ClaimTasksRequest) -> Result<c2::ClaimTasksResponse, String> {
+        self.claim_tasks_calls.lock().unwrap().push(req);
+        Ok(c2::ClaimTasksResponse {
+            tasks: self.tasks.lock().unwrap().clone(),
+            shell_tasks: Vec::new(),
+        })
     }
 
     fn get_transport(&self) -> Result<String, String> {
-        Ok("http".to_string())
+        Ok(self.transport.read().unwrap().clone())
     }
 
-    fn set_transport(&self, _transport: String) -> Result<(), String> {
+    fn set_transport(&self, transport: String) -> Result<(), String> {
+        *self.transport.write().unwrap() = transport;
         Ok(())
     }
 
     fn reset_transport(&self) -> Result<(), String> {
+        *self.reset_transport_calls.lock().unwrap() += 1;
         Ok(())
     }
 
     fn list_transports(&self) -> Result<Vec<String>, String> {
-        Ok(Vec::new())
+        Ok(alloc::vec!["http".to_string(), "dns".to_string()])
     }
 
     fn get_callback_interval(&self) -> Result<u64, String> {
         Ok(10)
     }
 
-    fn set_callback_uri(&self, _uri: String) -> Result<(), String> {
+    fn set_callback_uri(&self, uri: String) -> Result<(), String> {
+        self.set_callback_uri_calls.lock().unwrap().push(uri);
         Ok(())
     }
 
@@ -192,10 +223,11 @@ impl Agent for MockAgent {
     }
 
     fn list_tasks(&self) -> Result<Vec<c2::Task>, String> {
-        Ok(Vec::new())
+        Ok(self.tasks.lock().unwrap().clone())
     }
 
-    fn stop_task(&self, _task_id: i64) -> Result<(), String> {
+    fn stop_task(&self, task_id: i64) -> Result<(), String> {
+        self.stop_task_calls.lock().unwrap().push(task_id);
         Ok(())
     }
 
