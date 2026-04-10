@@ -8,131 +8,81 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
-	"github.com/urfave/cli"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 )
 
-func NewApp() *cli.App {
-	app := cli.NewApp()
-	app.Name = "sshecho"
-	app.Usage = "A simple SSH server that echoes input back to the client"
-	app.Flags = []cli.Flag{
-		cli.IntFlag{
-			Name:  "port, p",
-			Value: 2222,
-			Usage: "Port to listen on",
-		},
-		cli.StringFlag{
-			Name:  "user, u",
-			Usage: "Username for password authentication",
-		},
-		cli.StringFlag{
-			Name:  "password, pass",
-			Usage: "Password for password authentication",
-		},
-		cli.StringFlag{
-			Name:  "pubkey, k",
-			Usage: "Path to a public key file for public key authentication",
-		},
+// Run starts the SSH echo server on the given address, with optional user, password, and public key file for auth.
+// It returns a net.Listener that can be closed to stop the server.
+func Run(addr string, user string, password string, pubkeyFile string) (net.Listener, error) {
+	config := &ssh.ServerConfig{
+		NoClientAuth: true,
 	}
 
-	app.Action = func(c *cli.Context) error {
-		port := c.Int("port")
-		user := c.String("user")
-		password := c.String("password")
-		pubkeyFile := c.String("pubkey")
-
-		config := &ssh.ServerConfig{
-			NoClientAuth: true,
-		}
-
-		if user != "" && password != "" {
-			config.NoClientAuth = false
-			config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-				if c.User() == user && string(pass) == password {
-					return nil, nil
-				}
-				return nil, fmt.Errorf("password rejected for %q", c.User())
+	if user != "" && password != "" {
+		config.NoClientAuth = false
+		config.PasswordCallback = func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			if c.User() == user && string(pass) == password {
+				return nil, nil
 			}
+			return nil, fmt.Errorf("password rejected for %q", c.User())
 		}
-
-		if pubkeyFile != "" {
-			config.NoClientAuth = false
-			pubkeyBytes, err := os.ReadFile(pubkeyFile)
-			if err != nil {
-				return fmt.Errorf("failed to read public key: %v", err)
-			}
-			allowedKey, _, _, _, err := ssh.ParseAuthorizedKey(pubkeyBytes)
-			if err != nil {
-				return fmt.Errorf("failed to parse public key: %v", err)
-			}
-
-			config.PublicKeyCallback = func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
-				if string(allowedKey.Marshal()) == string(pubKey.Marshal()) {
-					return nil, nil
-				}
-				return nil, fmt.Errorf("public key rejected for %q", c.User())
-			}
-		}
-
-		privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-		if err != nil {
-			return fmt.Errorf("failed to generate private key: %v", err)
-		}
-
-		signer, err := ssh.NewSignerFromKey(privateKey)
-		if err != nil {
-			return fmt.Errorf("failed to create signer: %v", err)
-		}
-
-		config.AddHostKey(signer)
-
-		listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
-		if err != nil {
-			return fmt.Errorf("failed to listen on port %d: %v", port, err)
-		}
-		defer listener.Close()
-
-		log.Printf("Listening on port %d...\n", port)
-
-		go func() {
-			for {
-				conn, err := listener.Accept()
-				if err != nil {
-					// We just return if the listener is closed
-					return
-				}
-
-				go handleConnection(conn, config)
-			}
-		}()
-
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-
-		if doneCh, ok := c.App.Metadata["done"].(chan struct{}); ok {
-			select {
-			case <-sigCh:
-				log.Println("Shutting down...")
-			case <-doneCh:
-				log.Println("Context done, shutting down...")
-			}
-		} else {
-			<-sigCh
-			log.Println("Shutting down...")
-		}
-
-		return nil
 	}
 
-	return app
+	if pubkeyFile != "" {
+		config.NoClientAuth = false
+		pubkeyBytes, err := os.ReadFile(pubkeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read public key: %v", err)
+		}
+		allowedKey, _, _, _, err := ssh.ParseAuthorizedKey(pubkeyBytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public key: %v", err)
+		}
+
+		config.PublicKeyCallback = func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
+			if string(allowedKey.Marshal()) == string(pubKey.Marshal()) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("public key rejected for %q", c.User())
+		}
+	}
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate private key: %v", err)
+	}
+
+	signer, err := ssh.NewSignerFromKey(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create signer: %v", err)
+	}
+
+	config.AddHostKey(signer)
+
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to listen on addr %s: %v", addr, err)
+	}
+
+	log.Printf("Listening on %s...\n", addr)
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				// We just return if the listener is closed
+				return
+			}
+
+			go handleConnection(conn, config)
+		}
+	}()
+
+	return listener, nil
 }
-
 
 func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 	defer conn.Close()
