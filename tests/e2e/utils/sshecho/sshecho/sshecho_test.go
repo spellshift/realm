@@ -1,4 +1,4 @@
-package main
+package sshecho
 
 import (
 	"crypto/rand"
@@ -27,29 +27,18 @@ func getFreePort() (int, error) {
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
-func startServer(t *testing.T, args []string) (int, func()) {
+func startServer(t *testing.T, user, password, pubkeyFile string) (int, func()) {
 	port, err := getFreePort()
 	require.NoError(t, err)
 
-	appArgs := append([]string{"sshecho", "--port", fmt.Sprintf("%d", port)}, args...)
-
-	done := make(chan struct{})
-	app := newApp()
-
-	if app.Metadata == nil {
-		app.Metadata = make(map[string]interface{})
-	}
-	app.Metadata["done"] = done
-
-	go func() {
-		app.Run(appArgs)
-	}()
+	listener, err := Run(fmt.Sprintf("0.0.0.0:%d", port), user, password, pubkeyFile)
+	require.NoError(t, err)
 
 	// Wait a moment for the server goroutine to start listening
 	time.Sleep(500 * time.Millisecond)
 
 	return port, func() {
-		close(done)
+		listener.Close()
 	}
 }
 
@@ -149,7 +138,7 @@ func testInteractiveShell(t *testing.T, port int, clientConfig *ssh.ClientConfig
 }
 
 func TestSSHEcho_NoAuth(t *testing.T) {
-	port, cancel := startServer(t, []string{})
+	port, cancel := startServer(t, "", "", "")
 	defer cancel()
 
 	clientConfig := &ssh.ClientConfig{
@@ -161,7 +150,7 @@ func TestSSHEcho_NoAuth(t *testing.T) {
 }
 
 func TestSSHEcho_PasswordAuth(t *testing.T) {
-	port, cancel := startServer(t, []string{"--user", "user1", "--password", "pass1"})
+	port, cancel := startServer(t, "user1", "pass1", "")
 	defer cancel()
 
 	clientConfig := &ssh.ClientConfig{
@@ -205,7 +194,7 @@ func TestSSHEcho_PublicKeyAuth(t *testing.T) {
 	err = tmpFile.Close()
 	require.NoError(t, err)
 
-	port, cancel := startServer(t, []string{"--pubkey", tmpFile.Name()})
+	port, cancel := startServer(t, "", "", tmpFile.Name())
 	defer cancel()
 
 	signer, err := ssh.NewSignerFromKey(privateKey)
