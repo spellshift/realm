@@ -57,9 +57,13 @@ func main() {
 	u.RawQuery = q.Encode()
 
 	// Connect
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		log.Fatalf("Failed to dial websocket: %v", err)
+		if resp != nil {
+			log.Fatalf("Failed to dial websocket: %v (Status: %s)", err, resp.Status)
+		} else {
+			log.Fatalf("Failed to dial websocket: %v", err)
+		}
 	}
 	defer c.Close()
 
