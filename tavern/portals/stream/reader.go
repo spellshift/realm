@@ -3,6 +3,7 @@ package stream
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"realm.pub/tavern/portals/portalpb"
@@ -20,6 +21,11 @@ type OrderedReader struct {
 	staleTimeout    time.Duration
 	firstBufferedAt time.Time
 	receiver        ReceiverFunc
+
+	moteCh       chan *portalpb.Mote
+	errCh        chan error
+	stopCh       chan struct{}
+	readDeadline time.Time
 }
 
 // WithMaxBufferedMessages sets the maximum number of out-of-order messages to buffer.
@@ -46,11 +52,49 @@ func NewOrderedReader(receiver ReceiverFunc, options ...func(*OrderedReader)) *O
 		maxBuffer:    1024,
 		staleTimeout: 5 * time.Second,
 		receiver:     receiver,
+		moteCh:       make(chan *portalpb.Mote),
+		errCh:        make(chan error, 1),
+		stopCh:       make(chan struct{}),
 	}
 	for _, opt := range options {
 		opt(reader)
 	}
+
+	go func() {
+		for {
+			m, err := receiver()
+			if err != nil {
+				select {
+				case reader.errCh <- err:
+				case <-reader.stopCh:
+				}
+				return
+			}
+			select {
+			case reader.moteCh <- m:
+			case <-reader.stopCh:
+				return
+			}
+		}
+	}()
+
 	return reader
+}
+
+// Close gracefully stops the background receiver goroutine.
+func (r *OrderedReader) Close() error {
+	select {
+	case <-r.stopCh:
+	default:
+		close(r.stopCh)
+	}
+	return nil
+}
+
+// SetReadDeadline sets the deadline for future Read calls.
+// A zero value for t means Read will not time out.
+func (r *OrderedReader) SetReadDeadline(t time.Time) {
+	r.readDeadline = t
 }
 
 // Read returns the next ordered Mote.
@@ -76,7 +120,34 @@ func (r *OrderedReader) Read() (*portalpb.Mote, error) {
 
 	// Read loop
 	for {
-		mote, err := r.receiver()
+		var mote *portalpb.Mote
+		var err error
+
+		if !r.readDeadline.IsZero() {
+			if time.Now().After(r.readDeadline) {
+				return nil, os.ErrDeadlineExceeded
+			}
+			timer := time.NewTimer(time.Until(r.readDeadline))
+			select {
+			case mote = <-r.moteCh:
+				timer.Stop()
+			case err = <-r.errCh:
+				timer.Stop()
+			case <-timer.C:
+				return nil, os.ErrDeadlineExceeded
+			case <-r.stopCh:
+				timer.Stop()
+				return nil, errors.New("reader closed")
+			}
+		} else {
+			select {
+			case mote = <-r.moteCh:
+			case err = <-r.errCh:
+			case <-r.stopCh:
+				return nil, errors.New("reader closed")
+			}
+		}
+
 		if err != nil {
 			return nil, err
 		}
