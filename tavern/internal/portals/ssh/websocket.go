@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -44,54 +45,78 @@ func NewHandler(graph *ent.Client, mux *mux.Mux) *Handler {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Parse Query Parameters
-	portalIDStr := r.URL.Query().Get("portal_id")
-	target := r.URL.Query().Get("target")
-
-	if portalIDStr == "" || target == "" {
-		http.Error(w, "missing portal_id or target", http.StatusBadRequest)
-		return
-	}
-
-	portalID, err := strconv.Atoi(portalIDStr)
-	if err != nil {
-		http.Error(w, "invalid portal_id", http.StatusBadRequest)
-		return
-	}
-
-	// Parse target: user:password@host:port
-	// We'll use a crude parse since the format is strict for now.
-	var user, password, hostPort string
-	parts := strings.SplitN(target, "@", 2)
-	if len(parts) != 2 {
-		http.Error(w, "invalid target format, expected user:password@host:port", http.StatusBadRequest)
-		return
-	}
-	hostPort = parts[1]
-	userPass := strings.SplitN(parts[0], ":", 2)
-	user = userPass[0]
-	if len(userPass) == 2 {
-		password = userPass[1]
-	}
-
-	// Verify Portal
-	p, err := h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
-	if err != nil {
-		http.Error(w, "portal not found", http.StatusNotFound)
-		return
-	}
-	if !p.ClosedAt.IsZero() {
-		http.Error(w, "portal is closed", http.StatusForbidden)
-		return
-	}
-
-	// Upgrade to websocket
+	// Upgrade to websocket first to send errors over ws
 	wsConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to upgrade ssh websocket", "error", err)
 		return
 	}
 	defer wsConn.Close()
+
+	// Helper to send errors over websocket
+	sendWsError := func(errMsg string) {
+		wsConn.WriteJSON(shell.WebsocketErrorMessage{
+			Kind:  shell.WebsocketMessageKindError,
+			Error: errMsg,
+		})
+	}
+
+	// Parse Query Parameters
+	portalIDStr := r.URL.Query().Get("portal_id")
+	target := r.URL.Query().Get("target")
+
+	if portalIDStr == "" || target == "" {
+		sendWsError("missing portal_id or target")
+		return
+	}
+
+	portalID, err := strconv.Atoi(portalIDStr)
+	if err != nil {
+		sendWsError("invalid portal_id")
+		return
+	}
+
+	// Parse target: defaults to root@<target>:22
+	user := "root"
+	password := ""
+	hostPortStr := target
+
+	parts := strings.SplitN(target, "@", 2)
+	if len(parts) == 2 {
+		userPassStr := parts[0]
+		hostPortStr = parts[1]
+
+		userPass := strings.SplitN(userPassStr, ":", 2)
+		user = userPass[0]
+		if len(userPass) == 2 {
+			password = userPass[1]
+		}
+	}
+
+	host, port, err := net.SplitHostPort(hostPortStr)
+	if err != nil {
+		if strings.Contains(err.Error(), "missing port in address") || strings.Contains(err.Error(), "too many colons in address") {
+			hostPortStr = net.JoinHostPort(hostPortStr, "22")
+		} else {
+			sendWsError(fmt.Sprintf("invalid target host format: %v", err))
+			return
+		}
+	} else {
+		hostPortStr = net.JoinHostPort(host, port)
+	}
+
+	hostPort := hostPortStr
+
+	// Verify Portal
+	p, err := h.graph.Portal.Query().Where(portal.ID(portalID)).Only(ctx)
+	if err != nil {
+		sendWsError("portal not found")
+		return
+	}
+	if !p.ClosedAt.IsZero() {
+		sendWsError("portal is closed")
+		return
+	}
 
 	// Open Portal Mux
 	cleanupPortal, err := h.mux.OpenPortal(ctx, portalID)
