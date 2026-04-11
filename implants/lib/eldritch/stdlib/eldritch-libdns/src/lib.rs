@@ -15,20 +15,22 @@ pub mod std;
 /// The `dns` library enables the agent to make DNS queries.
 pub trait DnsLibrary {
     #[eldritch_method]
-    /// Resolves the A records for a domain.
+    /// Resolves DNS records for a domain.
     ///
     /// **Parameters**
     /// - `domain` (`str`): The domain name to resolve.
+    /// - `record_type` (`Option<str>`): An optional record type to query ("A" or "CNAME"). Defaults to "A".
     /// - `nameserver` (`Option<str>`): An optional nameserver IP to query (e.g. "8.8.8.8").
     ///
     /// **Returns**
-    /// - `List<str>`: A list of IPv4 addresses.
+    /// - `List<str>`: A list of result strings depending on the record type.
     ///
     /// **Errors**
-    /// - Returns an error string if resolution fails.
-    fn list_a_records(
+    /// - Returns an error string if resolution fails or the record type is unsupported.
+    fn list(
         &self,
         domain: String,
+        record_type: Option<String>,
         nameserver: Option<String>,
     ) -> Result<Vec<String>, String>;
 }

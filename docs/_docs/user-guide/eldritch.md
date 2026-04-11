@@ -631,20 +631,25 @@ The **crypto.sha256** method calculates the SHA256 hash of the provided data.
 
 The `dns` library enables DNS lookups within Eldritch scripts.
 
-### dns.list_a_records
+### dns.list
 
-`dns.list_a_records(domain: str, nameserver: Option<str>) -> List<str>`
+`dns.list(domain: str, record_type: Option<str>, nameserver: Option<str>) -> List<str>`
 
-The **dns.list_a_records** method resolves the given domain name to its IPv4 addresses (A records).
+The **dns.list** method resolves the given domain name to the specified DNS record type.
+It supports querying IPv4 addresses ("A") and aliases ("CNAME"). If `record_type` is not provided, it defaults to "A".
 An optional nameserver IP (e.g. "8.8.8.8") can be provided to query a specific DNS server instead of the system default.
 
 ```python
-# Default system nameserver
-ips = dns.list_a_records("google.com")
+# Default to "A" records using system nameserver
+ips = dns.list("google.com")
 print(ips) # Output: ["142.251.41.14", ...]
 
+# Fetch a CNAME explicitly
+cnames = dns.list("www.google.com", record_type="CNAME")
+print(cnames)
+
 # Custom nameserver
-cloudflare_ips = dns.list_a_records("google.com", nameserver="1.1.1.1")
+cloudflare_ips = dns.list("google.com", nameserver="1.1.1.1")
 print(cloudflare_ips)
 ```
 
