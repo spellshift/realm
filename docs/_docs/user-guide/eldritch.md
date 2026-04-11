@@ -644,7 +644,7 @@ ips = dns.get_a_records("google.com")
 print(ips) # Output: ["142.251.41.14", ...]
 
 # Custom nameserver
-cloudflare_ips = dns.get_a_records("google.com", "1.1.1.1")
+cloudflare_ips = dns.get_a_records("google.com", nameserver="1.1.1.1")
 print(cloudflare_ips)
 ```
 
