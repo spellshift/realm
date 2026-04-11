@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
@@ -210,6 +211,21 @@ func (qu *QuestUpdate) SetPreviousQuest(q *Quest) *QuestUpdate {
 	return qu.SetPreviousQuestID(q.ID)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (qu *QuestUpdate) AddEventIDs(ids ...int) *QuestUpdate {
+	qu.mutation.AddEventIDs(ids...)
+	return qu
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (qu *QuestUpdate) AddEvents(e ...*Event) *QuestUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return qu.AddEventIDs(ids...)
+}
+
 // Mutation returns the QuestMutation object of the builder.
 func (qu *QuestUpdate) Mutation() *QuestMutation {
 	return qu.mutation
@@ -291,6 +307,27 @@ func (qu *QuestUpdate) RemoveRelatedQuests(q ...*Quest) *QuestUpdate {
 func (qu *QuestUpdate) ClearPreviousQuest() *QuestUpdate {
 	qu.mutation.ClearPreviousQuest()
 	return qu
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (qu *QuestUpdate) ClearEvents() *QuestUpdate {
+	qu.mutation.ClearEvents()
+	return qu
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (qu *QuestUpdate) RemoveEventIDs(ids ...int) *QuestUpdate {
+	qu.mutation.RemoveEventIDs(ids...)
+	return qu
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (qu *QuestUpdate) RemoveEvents(e ...*Event) *QuestUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return qu.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -641,6 +678,51 @@ func (qu *QuestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if qu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := qu.mutation.RemovedEventsIDs(); len(nodes) > 0 && !qu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := qu.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, qu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{quest.Label}
@@ -837,6 +919,21 @@ func (quo *QuestUpdateOne) SetPreviousQuest(q *Quest) *QuestUpdateOne {
 	return quo.SetPreviousQuestID(q.ID)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (quo *QuestUpdateOne) AddEventIDs(ids ...int) *QuestUpdateOne {
+	quo.mutation.AddEventIDs(ids...)
+	return quo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (quo *QuestUpdateOne) AddEvents(e ...*Event) *QuestUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return quo.AddEventIDs(ids...)
+}
+
 // Mutation returns the QuestMutation object of the builder.
 func (quo *QuestUpdateOne) Mutation() *QuestMutation {
 	return quo.mutation
@@ -918,6 +1015,27 @@ func (quo *QuestUpdateOne) RemoveRelatedQuests(q ...*Quest) *QuestUpdateOne {
 func (quo *QuestUpdateOne) ClearPreviousQuest() *QuestUpdateOne {
 	quo.mutation.ClearPreviousQuest()
 	return quo
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (quo *QuestUpdateOne) ClearEvents() *QuestUpdateOne {
+	quo.mutation.ClearEvents()
+	return quo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (quo *QuestUpdateOne) RemoveEventIDs(ids ...int) *QuestUpdateOne {
+	quo.mutation.RemoveEventIDs(ids...)
+	return quo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (quo *QuestUpdateOne) RemoveEvents(e ...*Event) *QuestUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return quo.RemoveEventIDs(ids...)
 }
 
 // Where appends a list predicates to the QuestUpdate builder.
@@ -1291,6 +1409,51 @@ func (quo *QuestUpdateOne) sqlSave(ctx context.Context) (_node *Quest, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if quo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := quo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !quo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := quo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

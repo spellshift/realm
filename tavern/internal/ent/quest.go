@@ -64,14 +64,17 @@ type QuestEdges struct {
 	RelatedQuests []*Quest `json:"related_quests,omitempty"`
 	// The previous quest in the adventure
 	PreviousQuest *Quest `json:"previous_quest,omitempty"`
+	// Events associated with this quest.
+	Events []*Event `json:"events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 	// totalCount holds the count of the edges above.
-	totalCount [8]map[string]int
+	totalCount [9]map[string]int
 
 	namedTasks         map[string][]*Task
 	namedRelatedQuests map[string][]*Quest
+	namedEvents        map[string][]*Event
 }
 
 // TomeOrErr returns the Tome value or an error if the edge
@@ -156,6 +159,15 @@ func (e QuestEdges) PreviousQuestOrErr() (*Quest, error) {
 		return nil, &NotFoundError{label: quest.Label}
 	}
 	return nil, &NotLoadedError{edge: "previous_quest"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e QuestEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[8] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -333,6 +345,11 @@ func (q *Quest) QueryPreviousQuest() *QuestQuery {
 	return NewQuestClient(q.config).QueryPreviousQuest(q)
 }
 
+// QueryEvents queries the "events" edge of the Quest entity.
+func (q *Quest) QueryEvents() *EventQuery {
+	return NewQuestClient(q.config).QueryEvents(q)
+}
+
 // Update returns a builder for updating this Quest.
 // Note that you need to call Quest.Unwrap() before calling this method if this Quest
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -422,6 +439,30 @@ func (q *Quest) appendNamedRelatedQuests(name string, edges ...*Quest) {
 		q.Edges.namedRelatedQuests[name] = []*Quest{}
 	} else {
 		q.Edges.namedRelatedQuests[name] = append(q.Edges.namedRelatedQuests[name], edges...)
+	}
+}
+
+// NamedEvents returns the Events named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (q *Quest) NamedEvents(name string) ([]*Event, error) {
+	if q.Edges.namedEvents == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := q.Edges.namedEvents[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (q *Quest) appendNamedEvents(name string, edges ...*Event) {
+	if q.Edges.namedEvents == nil {
+		q.Edges.namedEvents = make(map[string][]*Event)
+	}
+	if len(edges) == 0 {
+		q.Edges.namedEvents[name] = []*Event{}
+	} else {
+		q.Edges.namedEvents[name] = append(q.Edges.namedEvents[name], edges...)
 	}
 }
 

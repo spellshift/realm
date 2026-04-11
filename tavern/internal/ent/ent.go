@@ -20,6 +20,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -104,6 +105,7 @@ func checkColumn(table, column string) error {
 			buildtask.Table:      buildtask.ValidColumn,
 			builder.Table:        builder.ValidColumn,
 			deviceauth.Table:     deviceauth.ValidColumn,
+			event.Table:          event.ValidColumn,
 			host.Table:           host.ValidColumn,
 			hostcredential.Table: hostcredential.ValidColumn,
 			hostfile.Table:       hostfile.ValidColumn,

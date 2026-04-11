@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -863,6 +864,10 @@ type BeaconWhereInput struct {
 	// "history" edge predicates.
 	HasHistory     *bool                      `json:"hasHistory,omitempty"`
 	HasHistoryWith []*BeaconHistoryWhereInput `json:"hasHistoryWith,omitempty"`
+
+	// "events" edge predicates.
+	HasEvents     *bool              `json:"hasEvents,omitempty"`
+	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -1350,6 +1355,24 @@ func (i *BeaconWhereInput) P() (predicate.Beacon, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, beacon.HasHistoryWith(with...))
+	}
+	if i.HasEvents != nil {
+		p := beacon.HasEvents()
+		if !*i.HasEvents {
+			p = beacon.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventsWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventsWith))
+		for _, w := range i.HasEventsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, beacon.HasEventsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -3773,6 +3796,316 @@ func (i *DeviceAuthWhereInput) P() (predicate.DeviceAuth, error) {
 	}
 }
 
+// EventWhereInput represents a where input for filtering Event queries.
+type EventWhereInput struct {
+	Predicates []predicate.Event  `json:"-"`
+	Not        *EventWhereInput   `json:"not,omitempty"`
+	Or         []*EventWhereInput `json:"or,omitempty"`
+	And        []*EventWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "timestamp" field predicates.
+	Timestamp      *int64  `json:"timestamp,omitempty"`
+	TimestampNEQ   *int64  `json:"timestampNEQ,omitempty"`
+	TimestampIn    []int64 `json:"timestampIn,omitempty"`
+	TimestampNotIn []int64 `json:"timestampNotIn,omitempty"`
+	TimestampGT    *int64  `json:"timestampGT,omitempty"`
+	TimestampGTE   *int64  `json:"timestampGTE,omitempty"`
+	TimestampLT    *int64  `json:"timestampLT,omitempty"`
+	TimestampLTE   *int64  `json:"timestampLTE,omitempty"`
+
+	// "kind" field predicates.
+	Kind      *event.Kind  `json:"kind,omitempty"`
+	KindNEQ   *event.Kind  `json:"kindNEQ,omitempty"`
+	KindIn    []event.Kind `json:"kindIn,omitempty"`
+	KindNotIn []event.Kind `json:"kindNotIn,omitempty"`
+
+	// "beacon" edge predicates.
+	HasBeacon     *bool               `json:"hasBeacon,omitempty"`
+	HasBeaconWith []*BeaconWhereInput `json:"hasBeaconWith,omitempty"`
+
+	// "host" edge predicates.
+	HasHost     *bool             `json:"hasHost,omitempty"`
+	HasHostWith []*HostWhereInput `json:"hasHostWith,omitempty"`
+
+	// "quest" edge predicates.
+	HasQuest     *bool              `json:"hasQuest,omitempty"`
+	HasQuestWith []*QuestWhereInput `json:"hasQuestWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *EventWhereInput) AddPredicates(predicates ...predicate.Event) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the EventWhereInput filter on the EventQuery builder.
+func (i *EventWhereInput) Filter(q *EventQuery) (*EventQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyEventWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyEventWhereInput is returned in case the EventWhereInput is empty.
+var ErrEmptyEventWhereInput = errors.New("ent: empty predicate EventWhereInput")
+
+// P returns a predicate for filtering events.
+// An error is returned if the input is empty or invalid.
+func (i *EventWhereInput) P() (predicate.Event, error) {
+	var predicates []predicate.Event
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, event.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Event, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, event.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Event, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, event.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, event.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, event.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, event.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, event.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, event.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, event.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, event.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, event.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, event.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, event.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, event.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, event.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, event.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, event.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, event.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, event.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, event.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, event.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, event.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, event.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, event.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, event.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, event.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, event.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Timestamp != nil {
+		predicates = append(predicates, event.TimestampEQ(*i.Timestamp))
+	}
+	if i.TimestampNEQ != nil {
+		predicates = append(predicates, event.TimestampNEQ(*i.TimestampNEQ))
+	}
+	if len(i.TimestampIn) > 0 {
+		predicates = append(predicates, event.TimestampIn(i.TimestampIn...))
+	}
+	if len(i.TimestampNotIn) > 0 {
+		predicates = append(predicates, event.TimestampNotIn(i.TimestampNotIn...))
+	}
+	if i.TimestampGT != nil {
+		predicates = append(predicates, event.TimestampGT(*i.TimestampGT))
+	}
+	if i.TimestampGTE != nil {
+		predicates = append(predicates, event.TimestampGTE(*i.TimestampGTE))
+	}
+	if i.TimestampLT != nil {
+		predicates = append(predicates, event.TimestampLT(*i.TimestampLT))
+	}
+	if i.TimestampLTE != nil {
+		predicates = append(predicates, event.TimestampLTE(*i.TimestampLTE))
+	}
+	if i.Kind != nil {
+		predicates = append(predicates, event.KindEQ(*i.Kind))
+	}
+	if i.KindNEQ != nil {
+		predicates = append(predicates, event.KindNEQ(*i.KindNEQ))
+	}
+	if len(i.KindIn) > 0 {
+		predicates = append(predicates, event.KindIn(i.KindIn...))
+	}
+	if len(i.KindNotIn) > 0 {
+		predicates = append(predicates, event.KindNotIn(i.KindNotIn...))
+	}
+
+	if i.HasBeacon != nil {
+		p := event.HasBeacon()
+		if !*i.HasBeacon {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasBeaconWith) > 0 {
+		with := make([]predicate.Beacon, 0, len(i.HasBeaconWith))
+		for _, w := range i.HasBeaconWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasBeaconWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasBeaconWith(with...))
+	}
+	if i.HasHost != nil {
+		p := event.HasHost()
+		if !*i.HasHost {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasHostWith) > 0 {
+		with := make([]predicate.Host, 0, len(i.HasHostWith))
+		for _, w := range i.HasHostWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasHostWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasHostWith(with...))
+	}
+	if i.HasQuest != nil {
+		p := event.HasQuest()
+		if !*i.HasQuest {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasQuestWith) > 0 {
+		with := make([]predicate.Quest, 0, len(i.HasQuestWith))
+		for _, w := range i.HasQuestWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasQuestWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasQuestWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyEventWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return event.And(predicates...), nil
+	}
+}
+
 // HostWhereInput represents a where input for filtering Host queries.
 type HostWhereInput struct {
 	Predicates []predicate.Host  `json:"-"`
@@ -3933,6 +4266,10 @@ type HostWhereInput struct {
 	// "favoritedBy" edge predicates.
 	HasFavoritedBy     *bool             `json:"hasFavoritedBy,omitempty"`
 	HasFavoritedByWith []*UserWhereInput `json:"hasFavoritedByWith,omitempty"`
+
+	// "events" edge predicates.
+	HasEvents     *bool              `json:"hasEvents,omitempty"`
+	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4450,6 +4787,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasFavoritedByWith(with...))
+	}
+	if i.HasEvents != nil {
+		p := host.HasEvents()
+		if !*i.HasEvents {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventsWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventsWith))
+		for _, w := range i.HasEventsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasEventsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -7077,6 +7432,10 @@ type QuestWhereInput struct {
 	// "previous_quest" edge predicates.
 	HasPreviousQuest     *bool              `json:"hasPreviousQuest,omitempty"`
 	HasPreviousQuestWith []*QuestWhereInput `json:"hasPreviousQuestWith,omitempty"`
+
+	// "events" edge predicates.
+	HasEvents     *bool              `json:"hasEvents,omitempty"`
+	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -7540,6 +7899,24 @@ func (i *QuestWhereInput) P() (predicate.Quest, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, quest.HasPreviousQuestWith(with...))
+	}
+	if i.HasEvents != nil {
+		p := quest.HasEvents()
+		if !*i.HasEvents {
+			p = quest.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventsWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventsWith))
+		for _, w := range i.HasEventsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, quest.HasEventsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

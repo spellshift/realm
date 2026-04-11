@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -230,6 +231,21 @@ func (bu *BeaconUpdate) AddHistory(b ...*BeaconHistory) *BeaconUpdate {
 	return bu.AddHistoryIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (bu *BeaconUpdate) AddEventIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.AddEventIDs(ids...)
+	return bu
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (bu *BeaconUpdate) AddEvents(e ...*Event) *BeaconUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return bu.AddEventIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (bu *BeaconUpdate) Mutation() *BeaconMutation {
 	return bu.mutation
@@ -302,6 +318,27 @@ func (bu *BeaconUpdate) RemoveHistory(b ...*BeaconHistory) *BeaconUpdate {
 		ids[i] = b[i].ID
 	}
 	return bu.RemoveHistoryIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (bu *BeaconUpdate) ClearEvents() *BeaconUpdate {
+	bu.mutation.ClearEvents()
+	return bu
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (bu *BeaconUpdate) RemoveEventIDs(ids ...int) *BeaconUpdate {
+	bu.mutation.RemoveEventIDs(ids...)
+	return bu
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (bu *BeaconUpdate) RemoveEvents(e ...*Event) *BeaconUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return bu.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -586,6 +623,51 @@ func (bu *BeaconUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if bu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.RemovedEventsIDs(); len(nodes) > 0 && !bu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := bu.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, bu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{beacon.Label}
@@ -803,6 +885,21 @@ func (buo *BeaconUpdateOne) AddHistory(b ...*BeaconHistory) *BeaconUpdateOne {
 	return buo.AddHistoryIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (buo *BeaconUpdateOne) AddEventIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.AddEventIDs(ids...)
+	return buo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (buo *BeaconUpdateOne) AddEvents(e ...*Event) *BeaconUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return buo.AddEventIDs(ids...)
+}
+
 // Mutation returns the BeaconMutation object of the builder.
 func (buo *BeaconUpdateOne) Mutation() *BeaconMutation {
 	return buo.mutation
@@ -875,6 +972,27 @@ func (buo *BeaconUpdateOne) RemoveHistory(b ...*BeaconHistory) *BeaconUpdateOne 
 		ids[i] = b[i].ID
 	}
 	return buo.RemoveHistoryIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (buo *BeaconUpdateOne) ClearEvents() *BeaconUpdateOne {
+	buo.mutation.ClearEvents()
+	return buo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (buo *BeaconUpdateOne) RemoveEventIDs(ids ...int) *BeaconUpdateOne {
+	buo.mutation.RemoveEventIDs(ids...)
+	return buo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (buo *BeaconUpdateOne) RemoveEvents(e ...*Event) *BeaconUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return buo.RemoveEventIDs(ids...)
 }
 
 // Where appends a list predicates to the BeaconUpdate builder.
@@ -1182,6 +1300,51 @@ func (buo *BeaconUpdateOne) sqlSave(ctx context.Context) (_node *Beacon, err err
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(beaconhistory.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if buo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !buo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := buo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   beacon.EventsTable,
+			Columns: []string{beacon.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
