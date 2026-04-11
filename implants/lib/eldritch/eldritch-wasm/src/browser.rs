@@ -11,6 +11,8 @@ use wasm_bindgen::prelude::*;
 pub enum MetaCommand {
     #[serde(rename = "help")]
     Help { target: Option<String> },
+    #[serde(rename = "ssh")]
+    Ssh { target: String },
 }
 
 #[cfg(feature = "fake_bindings")]
@@ -203,6 +205,21 @@ impl BrowserRepl {
                                             }
                                         } else {
                                             meta_command = Some(MetaCommand::Help { target: None });
+                                        }
+                                    } else if id == "ssh" {
+                                        if args.len() == 1 {
+                                            if let eldritch_core::Argument::Positional(arg_expr) =
+                                                &args[0]
+                                            {
+                                                if let ExprKind::Literal(
+                                                    eldritch_core::Value::String(s),
+                                                ) = &arg_expr.kind
+                                                {
+                                                    meta_command = Some(MetaCommand::Ssh {
+                                                        target: s.clone(),
+                                                    });
+                                                }
+                                            }
                                         }
                                     }
                                 }
