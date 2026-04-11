@@ -19,7 +19,7 @@ pub trait DnsLibrary {
     ///
     /// **Parameters**
     /// - `domain` (`str`): The domain name to resolve.
-    /// - `record_type` (`Option<str>`): An optional record type to query ("A" or "CNAME"). Defaults to "A".
+    /// - `kind` (`Option<str>`): An optional record kind to query ("A" or "CNAME"). Defaults to "A".
     /// - `nameserver` (`Option<str>`): An optional nameserver IP to query (e.g. "8.8.8.8").
     ///
     /// **Returns**
@@ -30,7 +30,7 @@ pub trait DnsLibrary {
     fn list(
         &self,
         domain: String,
-        record_type: Option<String>,
+        kind: Option<String>,
         nameserver: Option<String>,
     ) -> Result<Vec<String>, String>;
 }

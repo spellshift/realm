@@ -11,10 +11,10 @@ impl DnsLibrary for DnsLibraryFake {
     fn list(
         &self,
         _domain: String,
-        record_type: Option<String>,
+        kind: Option<String>,
         _nameserver: Option<String>,
     ) -> Result<Vec<String>, String> {
-        let rtype = record_type
+        let rtype = kind
             .unwrap_or_else(|| alloc::string::String::from("A"))
             .to_uppercase();
         match rtype.as_str() {

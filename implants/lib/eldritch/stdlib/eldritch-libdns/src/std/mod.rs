@@ -13,7 +13,7 @@ impl DnsLibrary for StdDnsLibrary {
     fn list(
         &self,
         domain: String,
-        record_type: Option<String>,
+        kind: Option<String>,
         nameserver: Option<String>,
     ) -> Result<Vec<String>, String> {
         let mut config = ResolverConfig::default();
@@ -33,7 +33,7 @@ impl DnsLibrary for StdDnsLibrary {
         let resolver = Resolver::new(config, ResolverOpts::default())
             .map_err(|e| format!("Failed to create resolver: {}", e))?;
 
-        let rtype = record_type.unwrap_or_else(|| alloc::string::String::from("A"));
+        let rtype = kind.unwrap_or_else(|| alloc::string::String::from("A"));
         match rtype.to_uppercase().as_str() {
             "A" => resolve_a_records(&resolver, &domain),
             "CNAME" => resolve_cname_records(&resolver, &domain),
