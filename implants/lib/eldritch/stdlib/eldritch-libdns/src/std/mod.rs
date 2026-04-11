@@ -36,7 +36,15 @@ impl DnsLibrary for StdDnsLibrary {
         let rtype = kind.unwrap_or_else(|| alloc::string::String::from("A"));
         match rtype.to_uppercase().as_str() {
             "A" => resolve_a_records(&resolver, &domain),
+            "AAAA" => resolve_aaaa_records(&resolver, &domain),
             "CNAME" => resolve_cname_records(&resolver, &domain),
+            "TXT" => resolve_txt_records(&resolver, &domain),
+            "MX" => resolve_mx_records(&resolver, &domain),
+            "SOA" => resolve_soa_records(&resolver, &domain),
+            "NS" => resolve_ns_records(&resolver, &domain),
+            "PTR" => resolve_ptr_records(&resolver, &domain),
+            "AXFR" => resolve_axfr_records(&resolver, &domain),
+            "SRV" => resolve_srv_records(&resolver, &domain),
             _ => Err(format!("Unsupported record type: {}", rtype)),
         }
     }
@@ -49,9 +57,65 @@ fn resolve_a_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, S
     Ok(response.iter().map(|ip| ip.to_string()).collect())
 }
 
+fn resolve_aaaa_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .ipv6_lookup(domain)
+        .map_err(|e| format!("Failed to resolve AAAA records for {}: {}", domain, e))?;
+    Ok(response.iter().map(|ip| ip.to_string()).collect())
+}
+
 fn resolve_cname_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
     let response = resolver
         .lookup(domain, hickory_resolver::proto::rr::RecordType::CNAME)
         .map_err(|e| format!("Failed to resolve CNAME for {}: {}", domain, e))?;
     Ok(response.iter().map(|ip| ip.to_string()).collect())
+}
+
+fn resolve_txt_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .txt_lookup(domain)
+        .map_err(|e| format!("Failed to resolve TXT for {}: {}", domain, e))?;
+    Ok(response.iter().map(|t| t.to_string()).collect())
+}
+
+fn resolve_mx_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .mx_lookup(domain)
+        .map_err(|e| format!("Failed to resolve MX for {}: {}", domain, e))?;
+    Ok(response.iter().map(|m| m.to_string()).collect())
+}
+
+fn resolve_soa_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .lookup(domain, hickory_resolver::proto::rr::RecordType::SOA)
+        .map_err(|e| format!("Failed to resolve SOA for {}: {}", domain, e))?;
+    Ok(response.iter().map(|r| r.to_string()).collect())
+}
+
+fn resolve_ns_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .lookup(domain, hickory_resolver::proto::rr::RecordType::NS)
+        .map_err(|e| format!("Failed to resolve NS for {}: {}", domain, e))?;
+    Ok(response.iter().map(|r| r.to_string()).collect())
+}
+
+fn resolve_ptr_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .lookup(domain, hickory_resolver::proto::rr::RecordType::PTR)
+        .map_err(|e| format!("Failed to resolve PTR for {}: {}", domain, e))?;
+    Ok(response.iter().map(|r| r.to_string()).collect())
+}
+
+fn resolve_axfr_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .lookup(domain, hickory_resolver::proto::rr::RecordType::AXFR)
+        .map_err(|e| format!("Failed to resolve AXFR for {}: {}", domain, e))?;
+    Ok(response.iter().map(|r| r.to_string()).collect())
+}
+
+fn resolve_srv_records(resolver: &Resolver, domain: &str) -> Result<Vec<String>, String> {
+    let response = resolver
+        .lookup(domain, hickory_resolver::proto::rr::RecordType::SRV)
+        .map_err(|e| format!("Failed to resolve SRV for {}: {}", domain, e))?;
+    Ok(response.iter().map(|r| r.to_string()).collect())
 }

@@ -636,7 +636,7 @@ The `dns` library enables DNS lookups within Eldritch scripts.
 `dns.list(domain: str, kind: Option<str>, nameserver: Option<str>) -> List<str>`
 
 The **dns.list** method resolves the given domain name to the specified DNS record type.
-It supports querying IPv4 addresses ("A") and aliases ("CNAME"). If `kind` is not provided, it defaults to "A".
+It natively supports querying `A`, `AAAA`, `CNAME`, `TXT`, `MX`, `SOA`, `NS`, `PTR`, `AXFR`, and `SRV` records. If `kind` is not provided, it defaults to "A".
 An optional nameserver IP (e.g. "8.8.8.8") can be provided to query a specific DNS server instead of the system default.
 
 ```python
