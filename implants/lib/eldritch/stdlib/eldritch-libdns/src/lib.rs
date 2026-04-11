@@ -26,5 +26,5 @@ pub trait DnsLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if resolution fails.
-    fn get_a_records(&self, domain: String, nameserver: Option<String>) -> Result<Vec<String>, String>;
+    fn list_a_records(&self, domain: String, nameserver: Option<String>) -> Result<Vec<String>, String>;
 }
