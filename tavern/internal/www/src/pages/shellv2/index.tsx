@@ -33,10 +33,15 @@ const ShellV2 = () => {
     const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
 
     const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
+    const [tabIndex, setTabIndex] = useState(0);
 
     const handleOpenPortalTab = (type: string, target: string) => {
         const id = `${type}-${target}-${Date.now()}`;
-        setPortalTabs(prev => [...prev, { id, type, target }]);
+        setPortalTabs(prev => {
+            const newTabs = [...prev, { id, type, target }];
+            setTabIndex(newTabs.length); // index 0 is main shell, so new length is the correct index
+            return newTabs;
+        });
     };
 
     const {
@@ -67,24 +72,11 @@ const ShellV2 = () => {
         return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
     }
 
-    let useTabs = portalTabs.length > 0;
+    const useTabs = portalTabs.length > 0;
 
-    let shellTerm = <ShellTerminal
-        termRef={termRef}
-        completions={completions}
-        showCompletions={showCompletions}
-        completionPos={completionPos}
-        completionIndex={completionIndex}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleTooltipMouseLeave}
-        tooltipState={tooltipState}
-        handleCompletionSelect={handleCompletionSelect}
-        onTooltipMouseEnter={handleTooltipMouseEnter}
-        onTooltipMouseLeave={handleTooltipMouseLeave}
-    />;
-    if (useTabs) {
-        shellTerm = <Tabs variant="enclosed" flex="1" display="flex" flexDirection="column" mt={4} overflow="hidden">
-            <TabList borderBottomColor="#333">
+    let shellTerm = (
+        <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} variant="enclosed" flex="1" display="flex" flexDirection="column" mt={useTabs ? 4 : 0} overflow="hidden">
+            <TabList borderBottomColor="#333" display={useTabs ? 'flex' : 'none'}>
                 <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
                 {portalTabs.map(tab => (
                     <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
@@ -116,8 +108,8 @@ const ShellV2 = () => {
                     </TabPanel>
                 ))}
             </TabPanels>
-        </Tabs>;
-    }
+        </Tabs>
+    );
 
     return (
         <AccessGate>
