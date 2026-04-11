@@ -14,7 +14,9 @@ impl DnsLibrary for DnsLibraryFake {
         record_type: Option<String>,
         _nameserver: Option<String>,
     ) -> Result<Vec<String>, String> {
-        let rtype = record_type.unwrap_or_else(|| alloc::string::String::from("A")).to_uppercase();
+        let rtype = record_type
+            .unwrap_or_else(|| alloc::string::String::from("A"))
+            .to_uppercase();
         match rtype.as_str() {
             "A" => Ok(alloc::vec!["127.0.0.1".into(), "10.0.0.1".into()]),
             "CNAME" => Ok(alloc::vec!["alias.example.com".into()]),
