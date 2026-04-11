@@ -19,7 +19,19 @@ impl DnsLibrary for DnsLibraryFake {
             .to_uppercase();
         match rtype.as_str() {
             "A" => Ok(alloc::vec!["127.0.0.1".into(), "10.0.0.1".into()]),
+            "AAAA" => Ok(alloc::vec!["::1".into()]),
             "CNAME" => Ok(alloc::vec!["alias.example.com".into()]),
+            "TXT" => Ok(alloc::vec!["v=spf1 -all".into()]),
+            "MX" => Ok(alloc::vec!["10 mail.example.com".into()]),
+            "SOA" => Ok(alloc::vec![
+                "ns1.example.com admin.example.com 2026 7200 3600 1209600 3600".into()
+            ]),
+            "NS" => Ok(alloc::vec!["ns1.example.com".into()]),
+            "PTR" => Ok(alloc::vec!["google.com".into()]),
+            "AXFR" => Ok(alloc::vec![
+                "example.com 86400 IN SOA ns1.example.com".into()
+            ]),
+            "SRV" => Ok(alloc::vec!["10 50 5060 sip.example.com".into()]),
             _ => Err(alloc::format!("Unsupported record type: {}", rtype)),
         }
     }
