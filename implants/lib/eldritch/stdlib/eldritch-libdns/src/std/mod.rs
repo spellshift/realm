@@ -10,7 +10,7 @@ use hickory_resolver::config::*;
 pub struct StdDnsLibrary;
 
 impl DnsLibrary for StdDnsLibrary {
-    fn resolve_a(&self, domain: String, nameserver: Option<String>) -> Result<Vec<String>, String> {
+    fn get_a_records(&self, domain: String, nameserver: Option<String>) -> Result<Vec<String>, String> {
         let mut config = ResolverConfig::default();
         if let Some(ns) = nameserver {
             use std::str::FromStr;
