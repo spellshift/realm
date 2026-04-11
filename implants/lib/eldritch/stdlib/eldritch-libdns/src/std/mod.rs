@@ -10,7 +10,11 @@ use hickory_resolver::config::*;
 pub struct StdDnsLibrary;
 
 impl DnsLibrary for StdDnsLibrary {
-    fn list_a_records(&self, domain: String, nameserver: Option<String>) -> Result<Vec<String>, String> {
+    fn list_a_records(
+        &self,
+        domain: String,
+        nameserver: Option<String>,
+    ) -> Result<Vec<String>, String> {
         let mut config = ResolverConfig::default();
         if let Some(ns) = nameserver {
             use std::str::FromStr;
@@ -18,7 +22,11 @@ impl DnsLibrary for StdDnsLibrary {
                 .map_err(|e| format!("Invalid nameserver IP {}: {}", ns, e))?;
             let ns_addr = std::net::SocketAddr::new(ns_ip, 53);
             let ns_config = NameServerConfig::new(ns_addr, Protocol::Udp);
-            config = ResolverConfig::from_parts(None, alloc::vec::Vec::new(), NameServerConfigGroup::from(alloc::vec![ns_config]));
+            config = ResolverConfig::from_parts(
+                None,
+                alloc::vec::Vec::new(),
+                NameServerConfigGroup::from(alloc::vec![ns_config]),
+            );
         }
 
         let resolver = Resolver::new(config, ResolverOpts::default())
