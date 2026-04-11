@@ -59,7 +59,8 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onOpenPortalTab?: (type: string, target: string) => void
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -67,6 +68,8 @@ export const useShellTerminal = (
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
+
+    const portalIdRef = useRef<number | null>(null);
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -534,6 +537,7 @@ export const useShellTerminal = (
                             content = msg.message + "\n";
                             color = "\x1b[38;5;178m"; // Purple
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
                         }
                         // Handle other control signals if needed
@@ -890,6 +894,17 @@ export const useShellTerminal = (
                                 term.write(`No documentation found for: ${target}\r\n`);
                             }
                         }
+                    } else if (metaCmd?.type === "ssh") {
+                        const target = metaCmd.target;
+                        const pId = portalIdRef.current;
+                        if (!pId) {
+                            term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                        } else {
+                            term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                            if (onOpenPortalTab) {
+                                onOpenPortalTab("ssh", target);
+                            }
+                        }
                     }
                     term.write(">>> ");
                     state.currentBlock = "";
@@ -1005,6 +1020,17 @@ export const useShellTerminal = (
                                     term.write(`${wrappedDesc}\r\n`);
                                 } else {
                                     term.write(`No documentation found for: ${target}\r\n`);
+                                }
+                            }
+                        } else if (metaCmd?.type === "ssh") {
+                            const target = metaCmd.target;
+                            const pId = portalIdRef.current;
+                            if (!pId) {
+                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                            } else {
+                                term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                                if (onOpenPortalTab) {
+                                    onOpenPortalTab("ssh", target);
                                 }
                             }
                         }
