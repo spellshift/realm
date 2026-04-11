@@ -8,12 +8,19 @@ use eldritch_macros::eldritch_library_impl;
 pub struct DnsLibraryFake;
 
 impl DnsLibrary for DnsLibraryFake {
-    fn list_a_records(
+    fn list(
         &self,
         _domain: String,
+        kind: Option<String>,
         _nameserver: Option<String>,
     ) -> Result<Vec<String>, String> {
-        // Return dummy IPs for testing
-        Ok(alloc::vec!["127.0.0.1".into(), "10.0.0.1".into()])
+        let rtype = kind
+            .unwrap_or_else(|| alloc::string::String::from("A"))
+            .to_uppercase();
+        match rtype.as_str() {
+            "A" => Ok(alloc::vec!["127.0.0.1".into(), "10.0.0.1".into()]),
+            "CNAME" => Ok(alloc::vec!["alias.example.com".into()]),
+            _ => Err(alloc::format!("Unsupported record type: {}", rtype)),
+        }
     }
 }
