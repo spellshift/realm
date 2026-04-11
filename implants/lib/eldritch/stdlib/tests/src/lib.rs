@@ -27,6 +27,7 @@ mod tests {
         interp.register_lib(eldritch::assets::fake::FakeAssetsLibrary);
         interp.register_lib(eldritch::file::fake::FileLibraryFake::default());
         interp.register_lib(eldritch::http::fake::HttpLibraryFake);
+        interp.register_lib(eldritch::dns::fake::DnsLibraryFake::default());
         interp.register_lib(eldritch::pivot::fake::PivotLibraryFake);
         interp.register_lib(eldritch::process::fake::ProcessLibraryFake);
         interp.register_lib(eldritch::report::fake::ReportLibraryFake);
