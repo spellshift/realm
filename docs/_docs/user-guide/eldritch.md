@@ -627,6 +627,29 @@ The **crypto.sha256** method calculates the SHA256 hash of the provided data.
 
 ---
 
+## DNS
+
+The `dns` library enables DNS lookups within Eldritch scripts.
+
+### dns.list_a_records
+
+`dns.list_a_records(domain: str, nameserver: Option<str>) -> List<str>`
+
+The **dns.list_a_records** method resolves the given domain name to its IPv4 addresses (A records).
+An optional nameserver IP (e.g. "8.8.8.8") can be provided to query a specific DNS server instead of the system default.
+
+```python
+# Default system nameserver
+ips = dns.list_a_records("google.com")
+print(ips) # Output: ["142.251.41.14", ...]
+
+# Custom nameserver
+cloudflare_ips = dns.list_a_records("google.com", nameserver="1.1.1.1")
+print(cloudflare_ips)
+```
+
+---
+
 ## File
 
 The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping.
