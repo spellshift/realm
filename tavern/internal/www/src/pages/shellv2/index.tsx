@@ -7,6 +7,7 @@ import { useShellTerminal } from "./hooks/useShellTerminal";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
+import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 
 const ShellV2 = () => {
     const { shellId } = useParams<{ shellId: string }>();
@@ -52,24 +53,53 @@ const ShellV2 = () => {
         return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
     }
 
+    // TODO: This should be updated when we begin to open new tabs for pivot connections (e.g. SSH)
+    let useTabs = false;
+
+    let shellTerm = <ShellTerminal
+        termRef={termRef}
+        completions={completions}
+        showCompletions={showCompletions}
+        completionPos={completionPos}
+        completionIndex={completionIndex}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleTooltipMouseLeave}
+        tooltipState={tooltipState}
+        handleCompletionSelect={handleCompletionSelect}
+        onTooltipMouseEnter={handleTooltipMouseEnter}
+        onTooltipMouseLeave={handleTooltipMouseLeave}
+    />;
+    if (useTabs) {
+        shellTerm = <Tabs variant="enclosed" flex="1" display="flex" flexDirection="column" mt={4} overflow="hidden">
+            <TabList borderBottomColor="#333">
+                <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
+            </TabList>
+            <TabPanels flex="1" display="flex" flexDirection="column" overflow="hidden">
+                <TabPanel flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
+                    <ShellTerminal
+                        termRef={termRef}
+                        completions={completions}
+                        showCompletions={showCompletions}
+                        completionPos={completionPos}
+                        completionIndex={completionIndex}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleTooltipMouseLeave}
+                        tooltipState={tooltipState}
+                        handleCompletionSelect={handleCompletionSelect}
+                        onTooltipMouseEnter={handleTooltipMouseEnter}
+                        onTooltipMouseLeave={handleTooltipMouseLeave}
+                    />
+                </TabPanel>
+            </TabPanels>
+        </Tabs>;
+    }
+
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
                 <ShellHeader shellData={shellData} activeUsers={activeUsers} />
 
-                <ShellTerminal
-                    termRef={termRef}
-                    completions={completions}
-                    showCompletions={showCompletions}
-                    completionPos={completionPos}
-                    completionIndex={completionIndex}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleTooltipMouseLeave}
-                    tooltipState={tooltipState}
-                    handleCompletionSelect={handleCompletionSelect}
-                    onTooltipMouseEnter={handleTooltipMouseEnter}
-                    onTooltipMouseLeave={handleTooltipMouseLeave}
-                />
+                {shellTerm}
 
                 <ShellStatusBar
                     portalId={portalId}
