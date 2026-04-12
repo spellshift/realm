@@ -52,6 +52,8 @@ type Tx struct {
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
+	// ShellPivot is the client for interacting with the ShellPivot builders.
+	ShellPivot *ShellPivotClient
 	// ShellTask is the client for interacting with the ShellTask builders.
 	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
@@ -213,6 +215,7 @@ func (tx *Tx) init() {
 	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
+	tx.ShellPivot = NewShellPivotClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)

@@ -35,6 +35,7 @@ import (
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -146,6 +147,11 @@ var shellImplementors = []string{"Shell", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Shell) IsNode() {}
+
+var shellpivotImplementors = []string{"ShellPivot", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ShellPivot) IsNode() {}
 
 var shelltaskImplementors = []string{"ShellTask", "Node"}
 
@@ -406,6 +412,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(shell.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case shellpivot.Table:
+		query := c.ShellPivot.Query().
+			Where(shellpivot.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellpivotImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -836,6 +851,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Shell.Query().
 			Where(shell.IDIn(ids...))
 		query, err := query.CollectFields(ctx, shellImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case shellpivot.Table:
+		query := c.ShellPivot.Query().
+			Where(shellpivot.IDIn(ids...))
+		query, err := query.CollectFields(ctx, shellpivotImplementors...)
 		if err != nil {
 			return nil, err
 		}

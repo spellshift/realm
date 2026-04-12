@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/task"
 	"realm.pub/tavern/internal/ent/user"
@@ -159,6 +160,21 @@ func (sc *ShellCreate) AddShellTasks(s ...*ShellTask) *ShellCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddShellTaskIDs(ids...)
+}
+
+// AddPivotIDs adds the "pivots" edge to the ShellPivot entity by IDs.
+func (sc *ShellCreate) AddPivotIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddPivotIDs(ids...)
+	return sc
+}
+
+// AddPivots adds the "pivots" edges to the ShellPivot entity.
+func (sc *ShellCreate) AddPivots(s ...*ShellPivot) *ShellCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return sc.AddPivotIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -358,6 +374,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shelltask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.PivotsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   shell.PivotsTable,
+			Columns: []string{shell.PivotsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
