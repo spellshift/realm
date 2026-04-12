@@ -174,6 +174,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	client := ent.NewClient(append(options, ent.Driver(drv))...)
 	client.Host.Use(ent.HookDeriveHostEvents())
 	client.Task.Use(ent.HookDeriveQuestEvents())
+	client.Event.Use(ent.HookDeriveNotifications())
 	return client, nil
 }
 

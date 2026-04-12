@@ -40,6 +40,8 @@ type Tx struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Notification is the client for interacting with the Notification builders.
+	Notification *NotificationClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -52,6 +54,8 @@ type Tx struct {
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
+	// ShellPivot is the client for interacting with the ShellPivot builders.
+	ShellPivot *ShellPivotClient
 	// ShellTask is the client for interacting with the ShellTask builders.
 	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
@@ -207,12 +211,14 @@ func (tx *Tx) init() {
 	tx.HostFile = NewHostFileClient(tx.config)
 	tx.HostProcess = NewHostProcessClient(tx.config)
 	tx.Link = NewLinkClient(tx.config)
+	tx.Notification = NewNotificationClient(tx.config)
 	tx.Portal = NewPortalClient(tx.config)
 	tx.Quest = NewQuestClient(tx.config)
 	tx.Repository = NewRepositoryClient(tx.config)
 	tx.ScheduledTask = NewScheduledTaskClient(tx.config)
 	tx.Screenshot = NewScreenshotClient(tx.config)
 	tx.Shell = NewShellClient(tx.config)
+	tx.ShellPivot = NewShellPivotClient(tx.config)
 	tx.ShellTask = NewShellTaskClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)

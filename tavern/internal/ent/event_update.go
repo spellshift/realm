@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 )
@@ -129,6 +130,21 @@ func (eu *EventUpdate) SetQuest(q *Quest) *EventUpdate {
 	return eu.SetQuestID(q.ID)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (eu *EventUpdate) AddNotificationIDs(ids ...int) *EventUpdate {
+	eu.mutation.AddNotificationIDs(ids...)
+	return eu
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (eu *EventUpdate) AddNotifications(n ...*Notification) *EventUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return eu.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (eu *EventUpdate) Mutation() *EventMutation {
 	return eu.mutation
@@ -150,6 +166,27 @@ func (eu *EventUpdate) ClearHost() *EventUpdate {
 func (eu *EventUpdate) ClearQuest() *EventUpdate {
 	eu.mutation.ClearQuest()
 	return eu
+}
+
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (eu *EventUpdate) ClearNotifications() *EventUpdate {
+	eu.mutation.ClearNotifications()
+	return eu
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (eu *EventUpdate) RemoveNotificationIDs(ids ...int) *EventUpdate {
+	eu.mutation.RemoveNotificationIDs(ids...)
+	return eu
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (eu *EventUpdate) RemoveNotifications(n ...*Notification) *EventUpdate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return eu.RemoveNotificationIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -309,6 +346,51 @@ func (eu *EventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if eu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !eu.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, eu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{event.Label}
@@ -427,6 +509,21 @@ func (euo *EventUpdateOne) SetQuest(q *Quest) *EventUpdateOne {
 	return euo.SetQuestID(q.ID)
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (euo *EventUpdateOne) AddNotificationIDs(ids ...int) *EventUpdateOne {
+	euo.mutation.AddNotificationIDs(ids...)
+	return euo
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (euo *EventUpdateOne) AddNotifications(n ...*Notification) *EventUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return euo.AddNotificationIDs(ids...)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (euo *EventUpdateOne) Mutation() *EventMutation {
 	return euo.mutation
@@ -448,6 +545,27 @@ func (euo *EventUpdateOne) ClearHost() *EventUpdateOne {
 func (euo *EventUpdateOne) ClearQuest() *EventUpdateOne {
 	euo.mutation.ClearQuest()
 	return euo
+}
+
+// ClearNotifications clears all "notifications" edges to the Notification entity.
+func (euo *EventUpdateOne) ClearNotifications() *EventUpdateOne {
+	euo.mutation.ClearNotifications()
+	return euo
+}
+
+// RemoveNotificationIDs removes the "notifications" edge to Notification entities by IDs.
+func (euo *EventUpdateOne) RemoveNotificationIDs(ids ...int) *EventUpdateOne {
+	euo.mutation.RemoveNotificationIDs(ids...)
+	return euo
+}
+
+// RemoveNotifications removes "notifications" edges to Notification entities.
+func (euo *EventUpdateOne) RemoveNotifications(n ...*Notification) *EventUpdateOne {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return euo.RemoveNotificationIDs(ids...)
 }
 
 // Where appends a list predicates to the EventUpdate builder.
@@ -630,6 +748,51 @@ func (euo *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if euo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.RemovedNotificationsIDs(); len(nodes) > 0 && !euo.mutation.NotificationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   event.NotificationsTable,
+			Columns: []string{event.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

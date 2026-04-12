@@ -26,12 +26,14 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -111,12 +113,14 @@ func checkColumn(table, column string) error {
 			hostfile.Table:       hostfile.ValidColumn,
 			hostprocess.Table:    hostprocess.ValidColumn,
 			link.Table:           link.ValidColumn,
+			notification.Table:   notification.ValidColumn,
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,
 			scheduledtask.Table:  scheduledtask.ValidColumn,
 			screenshot.Table:     screenshot.ValidColumn,
 			shell.Table:          shell.ValidColumn,
+			shellpivot.Table:     shellpivot.ValidColumn,
 			shelltask.Table:      shelltask.ValidColumn,
 			tag.Table:            tag.ValidColumn,
 			task.Table:           task.ValidColumn,

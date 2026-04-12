@@ -29,12 +29,14 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -75,6 +77,8 @@ type Client struct {
 	HostProcess *HostProcessClient
 	// Link is the client for interacting with the Link builders.
 	Link *LinkClient
+	// Notification is the client for interacting with the Notification builders.
+	Notification *NotificationClient
 	// Portal is the client for interacting with the Portal builders.
 	Portal *PortalClient
 	// Quest is the client for interacting with the Quest builders.
@@ -87,6 +91,8 @@ type Client struct {
 	Screenshot *ScreenshotClient
 	// Shell is the client for interacting with the Shell builders.
 	Shell *ShellClient
+	// ShellPivot is the client for interacting with the ShellPivot builders.
+	ShellPivot *ShellPivotClient
 	// ShellTask is the client for interacting with the ShellTask builders.
 	ShellTask *ShellTaskClient
 	// Tag is the client for interacting with the Tag builders.
@@ -124,12 +130,14 @@ func (c *Client) init() {
 	c.HostFile = NewHostFileClient(c.config)
 	c.HostProcess = NewHostProcessClient(c.config)
 	c.Link = NewLinkClient(c.config)
+	c.Notification = NewNotificationClient(c.config)
 	c.Portal = NewPortalClient(c.config)
 	c.Quest = NewQuestClient(c.config)
 	c.Repository = NewRepositoryClient(c.config)
 	c.ScheduledTask = NewScheduledTaskClient(c.config)
 	c.Screenshot = NewScreenshotClient(c.config)
 	c.Shell = NewShellClient(c.config)
+	c.ShellPivot = NewShellPivotClient(c.config)
 	c.ShellTask = NewShellTaskClient(c.config)
 	c.Tag = NewTagClient(c.config)
 	c.Task = NewTaskClient(c.config)
@@ -241,12 +249,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Link:           NewLinkClient(cfg),
+		Notification:   NewNotificationClient(cfg),
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		ScheduledTask:  NewScheduledTaskClient(cfg),
 		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
+		ShellPivot:     NewShellPivotClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
@@ -285,12 +295,14 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		HostFile:       NewHostFileClient(cfg),
 		HostProcess:    NewHostProcessClient(cfg),
 		Link:           NewLinkClient(cfg),
+		Notification:   NewNotificationClient(cfg),
 		Portal:         NewPortalClient(cfg),
 		Quest:          NewQuestClient(cfg),
 		Repository:     NewRepositoryClient(cfg),
 		ScheduledTask:  NewScheduledTaskClient(cfg),
 		Screenshot:     NewScreenshotClient(cfg),
 		Shell:          NewShellClient(cfg),
+		ShellPivot:     NewShellPivotClient(cfg),
 		ShellTask:      NewShellTaskClient(cfg),
 		Tag:            NewTagClient(cfg),
 		Task:           NewTaskClient(cfg),
@@ -327,8 +339,9 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.DeviceAuth, c.Event, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.ScheduledTask,
-		c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Notification, c.Portal, c.Quest, c.Repository,
+		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
+		c.Task, c.Tome, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -340,8 +353,9 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.Adventure, c.Asset, c.Beacon, c.BeaconHistory, c.BuildProfile, c.BuildTask,
 		c.Builder, c.DeviceAuth, c.Event, c.Host, c.HostCredential, c.HostFile,
-		c.HostProcess, c.Link, c.Portal, c.Quest, c.Repository, c.ScheduledTask,
-		c.Screenshot, c.Shell, c.ShellTask, c.Tag, c.Task, c.Tome, c.User,
+		c.HostProcess, c.Link, c.Notification, c.Portal, c.Quest, c.Repository,
+		c.ScheduledTask, c.Screenshot, c.Shell, c.ShellPivot, c.ShellTask, c.Tag,
+		c.Task, c.Tome, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -378,6 +392,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.HostProcess.mutate(ctx, m)
 	case *LinkMutation:
 		return c.Link.mutate(ctx, m)
+	case *NotificationMutation:
+		return c.Notification.mutate(ctx, m)
 	case *PortalMutation:
 		return c.Portal.mutate(ctx, m)
 	case *QuestMutation:
@@ -390,6 +406,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Screenshot.mutate(ctx, m)
 	case *ShellMutation:
 		return c.Shell.mutate(ctx, m)
+	case *ShellPivotMutation:
+		return c.ShellPivot.mutate(ctx, m)
 	case *ShellTaskMutation:
 		return c.ShellTask.mutate(ctx, m)
 	case *TagMutation:
@@ -1883,6 +1901,22 @@ func (c *EventClient) QueryQuest(e *Event) *QuestQuery {
 	return query
 }
 
+// QueryNotifications queries the notifications edge of a Event.
+func (c *EventClient) QueryNotifications(e *Event) *NotificationQuery {
+	query := (&NotificationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, event.NotificationsTable, event.NotificationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *EventClient) Hooks() []Hook {
 	return c.hooks.Event
@@ -2875,6 +2909,171 @@ func (c *LinkClient) mutate(ctx context.Context, m *LinkMutation) (Value, error)
 		return (&LinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Link mutation op: %q", m.Op())
+	}
+}
+
+// NotificationClient is a client for the Notification schema.
+type NotificationClient struct {
+	config
+}
+
+// NewNotificationClient returns a client for the Notification from the given config.
+func NewNotificationClient(c config) *NotificationClient {
+	return &NotificationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `notification.Hooks(f(g(h())))`.
+func (c *NotificationClient) Use(hooks ...Hook) {
+	c.hooks.Notification = append(c.hooks.Notification, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `notification.Intercept(f(g(h())))`.
+func (c *NotificationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Notification = append(c.inters.Notification, interceptors...)
+}
+
+// Create returns a builder for creating a Notification entity.
+func (c *NotificationClient) Create() *NotificationCreate {
+	mutation := newNotificationMutation(c.config, OpCreate)
+	return &NotificationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Notification entities.
+func (c *NotificationClient) CreateBulk(builders ...*NotificationCreate) *NotificationCreateBulk {
+	return &NotificationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NotificationClient) MapCreateBulk(slice any, setFunc func(*NotificationCreate, int)) *NotificationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NotificationCreateBulk{err: fmt.Errorf("calling to NotificationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NotificationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NotificationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Notification.
+func (c *NotificationClient) Update() *NotificationUpdate {
+	mutation := newNotificationMutation(c.config, OpUpdate)
+	return &NotificationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NotificationClient) UpdateOne(n *Notification) *NotificationUpdateOne {
+	mutation := newNotificationMutation(c.config, OpUpdateOne, withNotification(n))
+	return &NotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NotificationClient) UpdateOneID(id int) *NotificationUpdateOne {
+	mutation := newNotificationMutation(c.config, OpUpdateOne, withNotificationID(id))
+	return &NotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Notification.
+func (c *NotificationClient) Delete() *NotificationDelete {
+	mutation := newNotificationMutation(c.config, OpDelete)
+	return &NotificationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NotificationClient) DeleteOne(n *Notification) *NotificationDeleteOne {
+	return c.DeleteOneID(n.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NotificationClient) DeleteOneID(id int) *NotificationDeleteOne {
+	builder := c.Delete().Where(notification.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NotificationDeleteOne{builder}
+}
+
+// Query returns a query builder for Notification.
+func (c *NotificationClient) Query() *NotificationQuery {
+	return &NotificationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNotification},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Notification entity by its id.
+func (c *NotificationClient) Get(ctx context.Context, id int) (*Notification, error) {
+	return c.Query().Where(notification.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NotificationClient) GetX(ctx context.Context, id int) *Notification {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Notification.
+func (c *NotificationClient) QueryUser(n *Notification) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(notification.Table, notification.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, notification.UserTable, notification.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvent queries the event edge of a Notification.
+func (c *NotificationClient) QueryEvent(n *Notification) *EventQuery {
+	query := (&EventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(notification.Table, notification.FieldID, id),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, notification.EventTable, notification.EventColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NotificationClient) Hooks() []Hook {
+	return c.hooks.Notification
+}
+
+// Interceptors returns the client interceptors.
+func (c *NotificationClient) Interceptors() []Interceptor {
+	return c.inters.Notification
+}
+
+func (c *NotificationClient) mutate(ctx context.Context, m *NotificationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NotificationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NotificationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NotificationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NotificationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Notification mutation op: %q", m.Op())
 	}
 }
 
@@ -4101,6 +4300,22 @@ func (c *ShellClient) QueryShellTasks(s *Shell) *ShellTaskQuery {
 	return query
 }
 
+// QueryPivots queries the pivots edge of a Shell.
+func (c *ShellClient) QueryPivots(s *Shell) *ShellPivotQuery {
+	query := (&ShellPivotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(shellpivot.Table, shellpivot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, shell.PivotsTable, shell.PivotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell
@@ -4123,6 +4338,187 @@ func (c *ShellClient) mutate(ctx context.Context, m *ShellMutation) (Value, erro
 		return (&ShellDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Shell mutation op: %q", m.Op())
+	}
+}
+
+// ShellPivotClient is a client for the ShellPivot schema.
+type ShellPivotClient struct {
+	config
+}
+
+// NewShellPivotClient returns a client for the ShellPivot from the given config.
+func NewShellPivotClient(c config) *ShellPivotClient {
+	return &ShellPivotClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `shellpivot.Hooks(f(g(h())))`.
+func (c *ShellPivotClient) Use(hooks ...Hook) {
+	c.hooks.ShellPivot = append(c.hooks.ShellPivot, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `shellpivot.Intercept(f(g(h())))`.
+func (c *ShellPivotClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ShellPivot = append(c.inters.ShellPivot, interceptors...)
+}
+
+// Create returns a builder for creating a ShellPivot entity.
+func (c *ShellPivotClient) Create() *ShellPivotCreate {
+	mutation := newShellPivotMutation(c.config, OpCreate)
+	return &ShellPivotCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ShellPivot entities.
+func (c *ShellPivotClient) CreateBulk(builders ...*ShellPivotCreate) *ShellPivotCreateBulk {
+	return &ShellPivotCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ShellPivotClient) MapCreateBulk(slice any, setFunc func(*ShellPivotCreate, int)) *ShellPivotCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ShellPivotCreateBulk{err: fmt.Errorf("calling to ShellPivotClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ShellPivotCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ShellPivotCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ShellPivot.
+func (c *ShellPivotClient) Update() *ShellPivotUpdate {
+	mutation := newShellPivotMutation(c.config, OpUpdate)
+	return &ShellPivotUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ShellPivotClient) UpdateOne(sp *ShellPivot) *ShellPivotUpdateOne {
+	mutation := newShellPivotMutation(c.config, OpUpdateOne, withShellPivot(sp))
+	return &ShellPivotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ShellPivotClient) UpdateOneID(id int) *ShellPivotUpdateOne {
+	mutation := newShellPivotMutation(c.config, OpUpdateOne, withShellPivotID(id))
+	return &ShellPivotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ShellPivot.
+func (c *ShellPivotClient) Delete() *ShellPivotDelete {
+	mutation := newShellPivotMutation(c.config, OpDelete)
+	return &ShellPivotDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ShellPivotClient) DeleteOne(sp *ShellPivot) *ShellPivotDeleteOne {
+	return c.DeleteOneID(sp.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ShellPivotClient) DeleteOneID(id int) *ShellPivotDeleteOne {
+	builder := c.Delete().Where(shellpivot.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ShellPivotDeleteOne{builder}
+}
+
+// Query returns a query builder for ShellPivot.
+func (c *ShellPivotClient) Query() *ShellPivotQuery {
+	return &ShellPivotQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeShellPivot},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ShellPivot entity by its id.
+func (c *ShellPivotClient) Get(ctx context.Context, id int) (*ShellPivot, error) {
+	return c.Query().Where(shellpivot.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ShellPivotClient) GetX(ctx context.Context, id int) *ShellPivot {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryShell queries the shell edge of a ShellPivot.
+func (c *ShellPivotClient) QueryShell(sp *ShellPivot) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shellpivot.Table, shellpivot.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shellpivot.ShellTable, shellpivot.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(sp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPortal queries the portal edge of a ShellPivot.
+func (c *ShellPivotClient) QueryPortal(sp *ShellPivot) *PortalQuery {
+	query := (&PortalClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shellpivot.Table, shellpivot.FieldID, id),
+			sqlgraph.To(portal.Table, portal.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shellpivot.PortalTable, shellpivot.PortalColumn),
+		)
+		fromV = sqlgraph.Neighbors(sp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCredential queries the credential edge of a ShellPivot.
+func (c *ShellPivotClient) QueryCredential(sp *ShellPivot) *HostCredentialQuery {
+	query := (&HostCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shellpivot.Table, shellpivot.FieldID, id),
+			sqlgraph.To(hostcredential.Table, hostcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, shellpivot.CredentialTable, shellpivot.CredentialColumn),
+		)
+		fromV = sqlgraph.Neighbors(sp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ShellPivotClient) Hooks() []Hook {
+	return c.hooks.ShellPivot
+}
+
+// Interceptors returns the client interceptors.
+func (c *ShellPivotClient) Interceptors() []Interceptor {
+	return c.inters.ShellPivot
+}
+
+func (c *ShellPivotClient) mutate(ctx context.Context, m *ShellPivotMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ShellPivotCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ShellPivotUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ShellPivotUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ShellPivotDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ShellPivot mutation op: %q", m.Op())
 	}
 }
 
@@ -5040,6 +5436,22 @@ func (c *UserClient) GetX(ctx context.Context, id int) *User {
 	return obj
 }
 
+// QueryNotifications queries the notifications edge of a User.
+func (c *UserClient) QueryNotifications(u *User) *NotificationQuery {
+	query := (&NotificationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.NotificationsTable, user.NotificationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTomes queries the tomes edge of a User.
 func (c *UserClient) QueryTomes(u *User) *TomeQuery {
 	query := (&TomeClient{config: c.config}).Query()
@@ -5133,14 +5545,14 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 type (
 	hooks struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
-		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link, Portal,
-		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task,
-		Tome, User []ent.Hook
+		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link,
+		Notification, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
+		ShellPivot, ShellTask, Tag, Task, Tome, User []ent.Hook
 	}
 	inters struct {
 		Adventure, Asset, Beacon, BeaconHistory, BuildProfile, BuildTask, Builder,
-		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link, Portal,
-		Quest, Repository, ScheduledTask, Screenshot, Shell, ShellTask, Tag, Task,
-		Tome, User []ent.Interceptor
+		DeviceAuth, Event, Host, HostCredential, HostFile, HostProcess, Link,
+		Notification, Portal, Quest, Repository, ScheduledTask, Screenshot, Shell,
+		ShellPivot, ShellTask, Tag, Task, Tome, User []ent.Interceptor
 	}
 )

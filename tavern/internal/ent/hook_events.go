@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent"
 	"realm.pub/tavern/internal/ent/event"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -55,6 +56,25 @@ func HookDeriveHostEvents() ent.Hook {
 				}
 
 				client := mut.Client()
+
+				if shouldCreateNew {
+					exists, err := client.Event.Query().
+						Where(
+							event.HasHostWith(host.ID(id)),
+							event.KindEQ(event.KindHOST_ACCESS_NEW),
+						).Exist(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("checking for existing host access event: %w", err)
+					}
+					if exists {
+						shouldCreateNew = false
+					}
+				}
+
+				if !shouldCreateNew && !shouldCreateRecovered {
+					return val, nil
+				}
+
 				evtCreate := client.Event.Create().
 					SetTimestamp(time.Now().Unix()).
 					SetHostID(id)
@@ -153,6 +173,75 @@ func HookDeriveQuestEvents() ent.Hook {
 						if err != nil {
 							return nil, fmt.Errorf("creating quest completed event: %w", err)
 						}
+					}
+				}
+			}
+
+			return val, nil
+		})
+	}
+}
+
+// HookDeriveNotifications will create notifications for specific events
+func HookDeriveNotifications() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*EventMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			// Run the next mutator first to create/update the event
+			val, err := next.Mutate(ctx, m)
+			if err != nil {
+				return val, err
+			}
+
+			// We only care about specific events to derive notifications
+			evt, ok := val.(*Event)
+			if !ok {
+				return val, nil // Should not happen
+			}
+
+			client := mut.Client()
+
+			switch evt.Kind {
+			case event.KindQUEST_COMPLETED:
+				// Fetch the quest to find the creator
+				q, err := client.Quest.Query().
+					Where(quest.HasEventsWith(event.ID(evt.ID))).
+					WithCreator().
+					Only(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("fetching quest for completed event: %w", err)
+				}
+				if q.Edges.Creator != nil {
+					err = client.Notification.Create().
+						SetUser(q.Edges.Creator).
+						SetEvent(evt).
+						SetPriority("Low").
+						Exec(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("creating notification for quest completed: %w", err)
+					}
+				}
+			case event.KindHOST_ACCESS_NEW, event.KindHOST_ACCESS_RECOVERED:
+				// Notify all users
+				users, err := client.User.Query().All(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("fetching users for host access event: %w", err)
+				}
+				var creates []*NotificationCreate
+				for _, u := range users {
+					creates = append(creates, client.Notification.Create().
+						SetUser(u).
+						SetEvent(evt).
+						SetPriority("Low"))
+				}
+				if len(creates) > 0 {
+					err = client.Notification.CreateBulk(creates...).Exec(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("creating notifications for host access: %w", err)
 					}
 				}
 			}

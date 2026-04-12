@@ -24,6 +24,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -31,6 +32,7 @@ import (
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -3860,6 +3862,10 @@ type EventWhereInput struct {
 	// "quest" edge predicates.
 	HasQuest     *bool              `json:"hasQuest,omitempty"`
 	HasQuestWith []*QuestWhereInput `json:"hasQuestWith,omitempty"`
+
+	// "notifications" edge predicates.
+	HasNotifications     *bool                     `json:"hasNotifications,omitempty"`
+	HasNotificationsWith []*NotificationWhereInput `json:"hasNotificationsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4095,6 +4101,24 @@ func (i *EventWhereInput) P() (predicate.Event, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, event.HasQuestWith(with...))
+	}
+	if i.HasNotifications != nil {
+		p := event.HasNotifications()
+		if !*i.HasNotifications {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNotificationsWith) > 0 {
+		with := make([]predicate.Notification, 0, len(i.HasNotificationsWith))
+		for _, w := range i.HasNotificationsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNotificationsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasNotificationsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6954,6 +6978,280 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 	}
 }
 
+// NotificationWhereInput represents a where input for filtering Notification queries.
+type NotificationWhereInput struct {
+	Predicates []predicate.Notification  `json:"-"`
+	Not        *NotificationWhereInput   `json:"not,omitempty"`
+	Or         []*NotificationWhereInput `json:"or,omitempty"`
+	And        []*NotificationWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "priority" field predicates.
+	Priority      *notification.Priority  `json:"priority,omitempty"`
+	PriorityNEQ   *notification.Priority  `json:"priorityNEQ,omitempty"`
+	PriorityIn    []notification.Priority `json:"priorityIn,omitempty"`
+	PriorityNotIn []notification.Priority `json:"priorityNotIn,omitempty"`
+
+	// "read" field predicates.
+	Read    *bool `json:"read,omitempty"`
+	ReadNEQ *bool `json:"readNEQ,omitempty"`
+
+	// "archived" field predicates.
+	Archived    *bool `json:"archived,omitempty"`
+	ArchivedNEQ *bool `json:"archivedNEQ,omitempty"`
+
+	// "user" edge predicates.
+	HasUser     *bool             `json:"hasUser,omitempty"`
+	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
+
+	// "event" edge predicates.
+	HasEvent     *bool              `json:"hasEvent,omitempty"`
+	HasEventWith []*EventWhereInput `json:"hasEventWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *NotificationWhereInput) AddPredicates(predicates ...predicate.Notification) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the NotificationWhereInput filter on the NotificationQuery builder.
+func (i *NotificationWhereInput) Filter(q *NotificationQuery) (*NotificationQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyNotificationWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyNotificationWhereInput is returned in case the NotificationWhereInput is empty.
+var ErrEmptyNotificationWhereInput = errors.New("ent: empty predicate NotificationWhereInput")
+
+// P returns a predicate for filtering notifications.
+// An error is returned if the input is empty or invalid.
+func (i *NotificationWhereInput) P() (predicate.Notification, error) {
+	var predicates []predicate.Notification
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, notification.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Notification, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, notification.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Notification, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, notification.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, notification.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, notification.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, notification.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, notification.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, notification.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, notification.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, notification.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, notification.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, notification.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, notification.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, notification.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, notification.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, notification.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, notification.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, notification.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, notification.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, notification.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, notification.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, notification.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, notification.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, notification.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, notification.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, notification.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, notification.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Priority != nil {
+		predicates = append(predicates, notification.PriorityEQ(*i.Priority))
+	}
+	if i.PriorityNEQ != nil {
+		predicates = append(predicates, notification.PriorityNEQ(*i.PriorityNEQ))
+	}
+	if len(i.PriorityIn) > 0 {
+		predicates = append(predicates, notification.PriorityIn(i.PriorityIn...))
+	}
+	if len(i.PriorityNotIn) > 0 {
+		predicates = append(predicates, notification.PriorityNotIn(i.PriorityNotIn...))
+	}
+	if i.Read != nil {
+		predicates = append(predicates, notification.ReadEQ(*i.Read))
+	}
+	if i.ReadNEQ != nil {
+		predicates = append(predicates, notification.ReadNEQ(*i.ReadNEQ))
+	}
+	if i.Archived != nil {
+		predicates = append(predicates, notification.ArchivedEQ(*i.Archived))
+	}
+	if i.ArchivedNEQ != nil {
+		predicates = append(predicates, notification.ArchivedNEQ(*i.ArchivedNEQ))
+	}
+
+	if i.HasUser != nil {
+		p := notification.HasUser()
+		if !*i.HasUser {
+			p = notification.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUserWith))
+		for _, w := range i.HasUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, notification.HasUserWith(with...))
+	}
+	if i.HasEvent != nil {
+		p := notification.HasEvent()
+		if !*i.HasEvent {
+			p = notification.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventWith))
+		for _, w := range i.HasEventWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, notification.HasEventWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyNotificationWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return notification.And(predicates...), nil
+	}
+}
+
 // PortalWhereInput represents a where input for filtering Portal queries.
 type PortalWhereInput struct {
 	Predicates []predicate.Portal  `json:"-"`
@@ -9306,6 +9604,10 @@ type ShellWhereInput struct {
 	// "shell_tasks" edge predicates.
 	HasShellTasks     *bool                  `json:"hasShellTasks,omitempty"`
 	HasShellTasksWith []*ShellTaskWhereInput `json:"hasShellTasksWith,omitempty"`
+
+	// "pivots" edge predicates.
+	HasPivots     *bool                   `json:"hasPivots,omitempty"`
+	HasPivotsWith []*ShellPivotWhereInput `json:"hasPivotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -9590,6 +9892,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 		}
 		predicates = append(predicates, shell.HasShellTasksWith(with...))
 	}
+	if i.HasPivots != nil {
+		p := shell.HasPivots()
+		if !*i.HasPivots {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPivotsWith) > 0 {
+		with := make([]predicate.ShellPivot, 0, len(i.HasPivotsWith))
+		for _, w := range i.HasPivotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPivotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasPivotsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyShellWhereInput
@@ -9597,6 +9917,528 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 		return predicates[0], nil
 	default:
 		return shell.And(predicates...), nil
+	}
+}
+
+// ShellPivotWhereInput represents a where input for filtering ShellPivot queries.
+type ShellPivotWhereInput struct {
+	Predicates []predicate.ShellPivot  `json:"-"`
+	Not        *ShellPivotWhereInput   `json:"not,omitempty"`
+	Or         []*ShellPivotWhereInput `json:"or,omitempty"`
+	And        []*ShellPivotWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "closed_at" field predicates.
+	ClosedAt       *time.Time  `json:"closedAt,omitempty"`
+	ClosedAtNEQ    *time.Time  `json:"closedAtNEQ,omitempty"`
+	ClosedAtIn     []time.Time `json:"closedAtIn,omitempty"`
+	ClosedAtNotIn  []time.Time `json:"closedAtNotIn,omitempty"`
+	ClosedAtGT     *time.Time  `json:"closedAtGT,omitempty"`
+	ClosedAtGTE    *time.Time  `json:"closedAtGTE,omitempty"`
+	ClosedAtLT     *time.Time  `json:"closedAtLT,omitempty"`
+	ClosedAtLTE    *time.Time  `json:"closedAtLTE,omitempty"`
+	ClosedAtIsNil  bool        `json:"closedAtIsNil,omitempty"`
+	ClosedAtNotNil bool        `json:"closedAtNotNil,omitempty"`
+
+	// "stream_id" field predicates.
+	StreamID             *string  `json:"streamID,omitempty"`
+	StreamIDNEQ          *string  `json:"streamIDNEQ,omitempty"`
+	StreamIDIn           []string `json:"streamIDIn,omitempty"`
+	StreamIDNotIn        []string `json:"streamIDNotIn,omitempty"`
+	StreamIDGT           *string  `json:"streamIDGT,omitempty"`
+	StreamIDGTE          *string  `json:"streamIDGTE,omitempty"`
+	StreamIDLT           *string  `json:"streamIDLT,omitempty"`
+	StreamIDLTE          *string  `json:"streamIDLTE,omitempty"`
+	StreamIDContains     *string  `json:"streamIDContains,omitempty"`
+	StreamIDHasPrefix    *string  `json:"streamIDHasPrefix,omitempty"`
+	StreamIDHasSuffix    *string  `json:"streamIDHasSuffix,omitempty"`
+	StreamIDEqualFold    *string  `json:"streamIDEqualFold,omitempty"`
+	StreamIDContainsFold *string  `json:"streamIDContainsFold,omitempty"`
+
+	// "kind" field predicates.
+	Kind      *shellpivot.Kind  `json:"kind,omitempty"`
+	KindNEQ   *shellpivot.Kind  `json:"kindNEQ,omitempty"`
+	KindIn    []shellpivot.Kind `json:"kindIn,omitempty"`
+	KindNotIn []shellpivot.Kind `json:"kindNotIn,omitempty"`
+
+	// "destination" field predicates.
+	Destination             *string  `json:"destination,omitempty"`
+	DestinationNEQ          *string  `json:"destinationNEQ,omitempty"`
+	DestinationIn           []string `json:"destinationIn,omitempty"`
+	DestinationNotIn        []string `json:"destinationNotIn,omitempty"`
+	DestinationGT           *string  `json:"destinationGT,omitempty"`
+	DestinationGTE          *string  `json:"destinationGTE,omitempty"`
+	DestinationLT           *string  `json:"destinationLT,omitempty"`
+	DestinationLTE          *string  `json:"destinationLTE,omitempty"`
+	DestinationContains     *string  `json:"destinationContains,omitempty"`
+	DestinationHasPrefix    *string  `json:"destinationHasPrefix,omitempty"`
+	DestinationHasSuffix    *string  `json:"destinationHasSuffix,omitempty"`
+	DestinationEqualFold    *string  `json:"destinationEqualFold,omitempty"`
+	DestinationContainsFold *string  `json:"destinationContainsFold,omitempty"`
+
+	// "port" field predicates.
+	Port      *int  `json:"port,omitempty"`
+	PortNEQ   *int  `json:"portNEQ,omitempty"`
+	PortIn    []int `json:"portIn,omitempty"`
+	PortNotIn []int `json:"portNotIn,omitempty"`
+	PortGT    *int  `json:"portGT,omitempty"`
+	PortGTE   *int  `json:"portGTE,omitempty"`
+	PortLT    *int  `json:"portLT,omitempty"`
+	PortLTE   *int  `json:"portLTE,omitempty"`
+
+	// "data" field predicates.
+	Data             *string  `json:"data,omitempty"`
+	DataNEQ          *string  `json:"dataNEQ,omitempty"`
+	DataIn           []string `json:"dataIn,omitempty"`
+	DataNotIn        []string `json:"dataNotIn,omitempty"`
+	DataGT           *string  `json:"dataGT,omitempty"`
+	DataGTE          *string  `json:"dataGTE,omitempty"`
+	DataLT           *string  `json:"dataLT,omitempty"`
+	DataLTE          *string  `json:"dataLTE,omitempty"`
+	DataContains     *string  `json:"dataContains,omitempty"`
+	DataHasPrefix    *string  `json:"dataHasPrefix,omitempty"`
+	DataHasSuffix    *string  `json:"dataHasSuffix,omitempty"`
+	DataIsNil        bool     `json:"dataIsNil,omitempty"`
+	DataNotNil       bool     `json:"dataNotNil,omitempty"`
+	DataEqualFold    *string  `json:"dataEqualFold,omitempty"`
+	DataContainsFold *string  `json:"dataContainsFold,omitempty"`
+
+	// "shell" edge predicates.
+	HasShell     *bool              `json:"hasShell,omitempty"`
+	HasShellWith []*ShellWhereInput `json:"hasShellWith,omitempty"`
+
+	// "portal" edge predicates.
+	HasPortal     *bool               `json:"hasPortal,omitempty"`
+	HasPortalWith []*PortalWhereInput `json:"hasPortalWith,omitempty"`
+
+	// "credential" edge predicates.
+	HasCredential     *bool                       `json:"hasCredential,omitempty"`
+	HasCredentialWith []*HostCredentialWhereInput `json:"hasCredentialWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *ShellPivotWhereInput) AddPredicates(predicates ...predicate.ShellPivot) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the ShellPivotWhereInput filter on the ShellPivotQuery builder.
+func (i *ShellPivotWhereInput) Filter(q *ShellPivotQuery) (*ShellPivotQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyShellPivotWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyShellPivotWhereInput is returned in case the ShellPivotWhereInput is empty.
+var ErrEmptyShellPivotWhereInput = errors.New("ent: empty predicate ShellPivotWhereInput")
+
+// P returns a predicate for filtering shellpivots.
+// An error is returned if the input is empty or invalid.
+func (i *ShellPivotWhereInput) P() (predicate.ShellPivot, error) {
+	var predicates []predicate.ShellPivot
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, shellpivot.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.ShellPivot, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, shellpivot.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.ShellPivot, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, shellpivot.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, shellpivot.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, shellpivot.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, shellpivot.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, shellpivot.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, shellpivot.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, shellpivot.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, shellpivot.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, shellpivot.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, shellpivot.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, shellpivot.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, shellpivot.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, shellpivot.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, shellpivot.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, shellpivot.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, shellpivot.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, shellpivot.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, shellpivot.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, shellpivot.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, shellpivot.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.ClosedAt != nil {
+		predicates = append(predicates, shellpivot.ClosedAtEQ(*i.ClosedAt))
+	}
+	if i.ClosedAtNEQ != nil {
+		predicates = append(predicates, shellpivot.ClosedAtNEQ(*i.ClosedAtNEQ))
+	}
+	if len(i.ClosedAtIn) > 0 {
+		predicates = append(predicates, shellpivot.ClosedAtIn(i.ClosedAtIn...))
+	}
+	if len(i.ClosedAtNotIn) > 0 {
+		predicates = append(predicates, shellpivot.ClosedAtNotIn(i.ClosedAtNotIn...))
+	}
+	if i.ClosedAtGT != nil {
+		predicates = append(predicates, shellpivot.ClosedAtGT(*i.ClosedAtGT))
+	}
+	if i.ClosedAtGTE != nil {
+		predicates = append(predicates, shellpivot.ClosedAtGTE(*i.ClosedAtGTE))
+	}
+	if i.ClosedAtLT != nil {
+		predicates = append(predicates, shellpivot.ClosedAtLT(*i.ClosedAtLT))
+	}
+	if i.ClosedAtLTE != nil {
+		predicates = append(predicates, shellpivot.ClosedAtLTE(*i.ClosedAtLTE))
+	}
+	if i.ClosedAtIsNil {
+		predicates = append(predicates, shellpivot.ClosedAtIsNil())
+	}
+	if i.ClosedAtNotNil {
+		predicates = append(predicates, shellpivot.ClosedAtNotNil())
+	}
+	if i.StreamID != nil {
+		predicates = append(predicates, shellpivot.StreamIDEQ(*i.StreamID))
+	}
+	if i.StreamIDNEQ != nil {
+		predicates = append(predicates, shellpivot.StreamIDNEQ(*i.StreamIDNEQ))
+	}
+	if len(i.StreamIDIn) > 0 {
+		predicates = append(predicates, shellpivot.StreamIDIn(i.StreamIDIn...))
+	}
+	if len(i.StreamIDNotIn) > 0 {
+		predicates = append(predicates, shellpivot.StreamIDNotIn(i.StreamIDNotIn...))
+	}
+	if i.StreamIDGT != nil {
+		predicates = append(predicates, shellpivot.StreamIDGT(*i.StreamIDGT))
+	}
+	if i.StreamIDGTE != nil {
+		predicates = append(predicates, shellpivot.StreamIDGTE(*i.StreamIDGTE))
+	}
+	if i.StreamIDLT != nil {
+		predicates = append(predicates, shellpivot.StreamIDLT(*i.StreamIDLT))
+	}
+	if i.StreamIDLTE != nil {
+		predicates = append(predicates, shellpivot.StreamIDLTE(*i.StreamIDLTE))
+	}
+	if i.StreamIDContains != nil {
+		predicates = append(predicates, shellpivot.StreamIDContains(*i.StreamIDContains))
+	}
+	if i.StreamIDHasPrefix != nil {
+		predicates = append(predicates, shellpivot.StreamIDHasPrefix(*i.StreamIDHasPrefix))
+	}
+	if i.StreamIDHasSuffix != nil {
+		predicates = append(predicates, shellpivot.StreamIDHasSuffix(*i.StreamIDHasSuffix))
+	}
+	if i.StreamIDEqualFold != nil {
+		predicates = append(predicates, shellpivot.StreamIDEqualFold(*i.StreamIDEqualFold))
+	}
+	if i.StreamIDContainsFold != nil {
+		predicates = append(predicates, shellpivot.StreamIDContainsFold(*i.StreamIDContainsFold))
+	}
+	if i.Kind != nil {
+		predicates = append(predicates, shellpivot.KindEQ(*i.Kind))
+	}
+	if i.KindNEQ != nil {
+		predicates = append(predicates, shellpivot.KindNEQ(*i.KindNEQ))
+	}
+	if len(i.KindIn) > 0 {
+		predicates = append(predicates, shellpivot.KindIn(i.KindIn...))
+	}
+	if len(i.KindNotIn) > 0 {
+		predicates = append(predicates, shellpivot.KindNotIn(i.KindNotIn...))
+	}
+	if i.Destination != nil {
+		predicates = append(predicates, shellpivot.DestinationEQ(*i.Destination))
+	}
+	if i.DestinationNEQ != nil {
+		predicates = append(predicates, shellpivot.DestinationNEQ(*i.DestinationNEQ))
+	}
+	if len(i.DestinationIn) > 0 {
+		predicates = append(predicates, shellpivot.DestinationIn(i.DestinationIn...))
+	}
+	if len(i.DestinationNotIn) > 0 {
+		predicates = append(predicates, shellpivot.DestinationNotIn(i.DestinationNotIn...))
+	}
+	if i.DestinationGT != nil {
+		predicates = append(predicates, shellpivot.DestinationGT(*i.DestinationGT))
+	}
+	if i.DestinationGTE != nil {
+		predicates = append(predicates, shellpivot.DestinationGTE(*i.DestinationGTE))
+	}
+	if i.DestinationLT != nil {
+		predicates = append(predicates, shellpivot.DestinationLT(*i.DestinationLT))
+	}
+	if i.DestinationLTE != nil {
+		predicates = append(predicates, shellpivot.DestinationLTE(*i.DestinationLTE))
+	}
+	if i.DestinationContains != nil {
+		predicates = append(predicates, shellpivot.DestinationContains(*i.DestinationContains))
+	}
+	if i.DestinationHasPrefix != nil {
+		predicates = append(predicates, shellpivot.DestinationHasPrefix(*i.DestinationHasPrefix))
+	}
+	if i.DestinationHasSuffix != nil {
+		predicates = append(predicates, shellpivot.DestinationHasSuffix(*i.DestinationHasSuffix))
+	}
+	if i.DestinationEqualFold != nil {
+		predicates = append(predicates, shellpivot.DestinationEqualFold(*i.DestinationEqualFold))
+	}
+	if i.DestinationContainsFold != nil {
+		predicates = append(predicates, shellpivot.DestinationContainsFold(*i.DestinationContainsFold))
+	}
+	if i.Port != nil {
+		predicates = append(predicates, shellpivot.PortEQ(*i.Port))
+	}
+	if i.PortNEQ != nil {
+		predicates = append(predicates, shellpivot.PortNEQ(*i.PortNEQ))
+	}
+	if len(i.PortIn) > 0 {
+		predicates = append(predicates, shellpivot.PortIn(i.PortIn...))
+	}
+	if len(i.PortNotIn) > 0 {
+		predicates = append(predicates, shellpivot.PortNotIn(i.PortNotIn...))
+	}
+	if i.PortGT != nil {
+		predicates = append(predicates, shellpivot.PortGT(*i.PortGT))
+	}
+	if i.PortGTE != nil {
+		predicates = append(predicates, shellpivot.PortGTE(*i.PortGTE))
+	}
+	if i.PortLT != nil {
+		predicates = append(predicates, shellpivot.PortLT(*i.PortLT))
+	}
+	if i.PortLTE != nil {
+		predicates = append(predicates, shellpivot.PortLTE(*i.PortLTE))
+	}
+	if i.Data != nil {
+		predicates = append(predicates, shellpivot.DataEQ(*i.Data))
+	}
+	if i.DataNEQ != nil {
+		predicates = append(predicates, shellpivot.DataNEQ(*i.DataNEQ))
+	}
+	if len(i.DataIn) > 0 {
+		predicates = append(predicates, shellpivot.DataIn(i.DataIn...))
+	}
+	if len(i.DataNotIn) > 0 {
+		predicates = append(predicates, shellpivot.DataNotIn(i.DataNotIn...))
+	}
+	if i.DataGT != nil {
+		predicates = append(predicates, shellpivot.DataGT(*i.DataGT))
+	}
+	if i.DataGTE != nil {
+		predicates = append(predicates, shellpivot.DataGTE(*i.DataGTE))
+	}
+	if i.DataLT != nil {
+		predicates = append(predicates, shellpivot.DataLT(*i.DataLT))
+	}
+	if i.DataLTE != nil {
+		predicates = append(predicates, shellpivot.DataLTE(*i.DataLTE))
+	}
+	if i.DataContains != nil {
+		predicates = append(predicates, shellpivot.DataContains(*i.DataContains))
+	}
+	if i.DataHasPrefix != nil {
+		predicates = append(predicates, shellpivot.DataHasPrefix(*i.DataHasPrefix))
+	}
+	if i.DataHasSuffix != nil {
+		predicates = append(predicates, shellpivot.DataHasSuffix(*i.DataHasSuffix))
+	}
+	if i.DataIsNil {
+		predicates = append(predicates, shellpivot.DataIsNil())
+	}
+	if i.DataNotNil {
+		predicates = append(predicates, shellpivot.DataNotNil())
+	}
+	if i.DataEqualFold != nil {
+		predicates = append(predicates, shellpivot.DataEqualFold(*i.DataEqualFold))
+	}
+	if i.DataContainsFold != nil {
+		predicates = append(predicates, shellpivot.DataContainsFold(*i.DataContainsFold))
+	}
+
+	if i.HasShell != nil {
+		p := shellpivot.HasShell()
+		if !*i.HasShell {
+			p = shellpivot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasShellWith) > 0 {
+		with := make([]predicate.Shell, 0, len(i.HasShellWith))
+		for _, w := range i.HasShellWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasShellWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shellpivot.HasShellWith(with...))
+	}
+	if i.HasPortal != nil {
+		p := shellpivot.HasPortal()
+		if !*i.HasPortal {
+			p = shellpivot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPortalWith) > 0 {
+		with := make([]predicate.Portal, 0, len(i.HasPortalWith))
+		for _, w := range i.HasPortalWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPortalWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shellpivot.HasPortalWith(with...))
+	}
+	if i.HasCredential != nil {
+		p := shellpivot.HasCredential()
+		if !*i.HasCredential {
+			p = shellpivot.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasCredentialWith) > 0 {
+		with := make([]predicate.HostCredential, 0, len(i.HasCredentialWith))
+		for _, w := range i.HasCredentialWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasCredentialWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shellpivot.HasCredentialWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyShellPivotWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return shellpivot.And(predicates...), nil
 	}
 }
 
@@ -11806,6 +12648,10 @@ type UserWhereInput struct {
 	IsAdmin    *bool `json:"isAdmin,omitempty"`
 	IsAdminNEQ *bool `json:"isAdminNEQ,omitempty"`
 
+	// "notifications" edge predicates.
+	HasNotifications     *bool                     `json:"hasNotifications,omitempty"`
+	HasNotificationsWith []*NotificationWhereInput `json:"hasNotificationsWith,omitempty"`
+
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
 	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
@@ -12048,6 +12894,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.IsAdminNEQ(*i.IsAdminNEQ))
 	}
 
+	if i.HasNotifications != nil {
+		p := user.HasNotifications()
+		if !*i.HasNotifications {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNotificationsWith) > 0 {
+		with := make([]predicate.Notification, 0, len(i.HasNotificationsWith))
+		for _, w := range i.HasNotificationsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNotificationsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasNotificationsWith(with...))
+	}
 	if i.HasTomes != nil {
 		p := user.HasTomes()
 		if !*i.HasTomes {
