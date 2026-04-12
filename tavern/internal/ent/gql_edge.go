@@ -782,6 +782,30 @@ func (s *Shell) ShellTasks(
 	return s.QueryShellTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (sp *ShellPivot) Shell(ctx context.Context) (*Shell, error) {
+	result, err := sp.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryShell().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (sp *ShellPivot) Portal(ctx context.Context) (*Portal, error) {
+	result, err := sp.Edges.PortalOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryPortal().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (sp *ShellPivot) Credential(ctx context.Context) (*HostCredential, error) {
+	result, err := sp.Edges.CredentialOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryCredential().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (st *ShellTask) Shell(ctx context.Context) (*Shell, error) {
 	result, err := st.Edges.ShellOrErr()
 	if IsNotLoaded(err) {

@@ -618,6 +618,32 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	ShellPivot struct {
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Credential     func(childComplexity int) int
+		Data           func(childComplexity int) int
+		Destination    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Port           func(childComplexity int) int
+		Portal         func(childComplexity int) int
+		Shell          func(childComplexity int) int
+		StreamID       func(childComplexity int) int
+	}
+
+	ShellPivotConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellPivotEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	ShellTask struct {
 		ClaimedAt           func(childComplexity int) int
 		CreatedAt           func(childComplexity int) int
@@ -3720,6 +3746,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ShellEdge.Node(childComplexity), true
 
+	case "ShellPivot.closedAt":
+		if e.ComplexityRoot.ShellPivot.ClosedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.ClosedAt(childComplexity), true
+
+	case "ShellPivot.createdAt":
+		if e.ComplexityRoot.ShellPivot.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.CreatedAt(childComplexity), true
+
+	case "ShellPivot.credential":
+		if e.ComplexityRoot.ShellPivot.Credential == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Credential(childComplexity), true
+
+	case "ShellPivot.data":
+		if e.ComplexityRoot.ShellPivot.Data == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Data(childComplexity), true
+
+	case "ShellPivot.destination":
+		if e.ComplexityRoot.ShellPivot.Destination == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Destination(childComplexity), true
+
+	case "ShellPivot.id":
+		if e.ComplexityRoot.ShellPivot.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.ID(childComplexity), true
+
+	case "ShellPivot.kind":
+		if e.ComplexityRoot.ShellPivot.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Kind(childComplexity), true
+
+	case "ShellPivot.lastModifiedAt":
+		if e.ComplexityRoot.ShellPivot.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.LastModifiedAt(childComplexity), true
+
+	case "ShellPivot.port":
+		if e.ComplexityRoot.ShellPivot.Port == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Port(childComplexity), true
+
+	case "ShellPivot.portal":
+		if e.ComplexityRoot.ShellPivot.Portal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Portal(childComplexity), true
+
+	case "ShellPivot.shell":
+		if e.ComplexityRoot.ShellPivot.Shell == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Shell(childComplexity), true
+
+	case "ShellPivot.streamID":
+		if e.ComplexityRoot.ShellPivot.StreamID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.StreamID(childComplexity), true
+
+	case "ShellPivotConnection.edges":
+		if e.ComplexityRoot.ShellPivotConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.Edges(childComplexity), true
+
+	case "ShellPivotConnection.pageInfo":
+		if e.ComplexityRoot.ShellPivotConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.PageInfo(childComplexity), true
+
+	case "ShellPivotConnection.totalCount":
+		if e.ComplexityRoot.ShellPivotConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.TotalCount(childComplexity), true
+
+	case "ShellPivotEdge.cursor":
+		if e.ComplexityRoot.ShellPivotEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotEdge.Cursor(childComplexity), true
+
+	case "ShellPivotEdge.node":
+		if e.ComplexityRoot.ShellPivotEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotEdge.Node(childComplexity), true
+
 	case "ShellTask.claimedAt":
 		if e.ComplexityRoot.ShellTask.ClaimedAt == nil {
 			break
@@ -4435,6 +4580,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateScheduledTaskInput,
 		ec.unmarshalInputCreateShellInput,
+		ec.unmarshalInputCreateShellPivotInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputDeviceAuthOrder,
@@ -4461,6 +4607,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputScreenshotOrder,
 		ec.unmarshalInputScreenshotWhereInput,
 		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellPivotOrder,
+		ec.unmarshalInputShellPivotWhereInput,
 		ec.unmarshalInputShellTaskOrder,
 		ec.unmarshalInputShellTaskWhereInput,
 		ec.unmarshalInputShellWhereInput,
@@ -6469,6 +6617,31 @@ Input was generated by ent.
 """
 input CreateShellInput {
   beaconID: ID!
+}
+"""
+CreateShellPivotInput is used for create ShellPivot object.
+Input was generated by ent.
+"""
+input CreateShellPivotInput {
+  """
+  Stream ID of the portal connection
+  """
+  streamID: String!
+  """
+  Kind of pivot connection
+  """
+  kind: ShellPivotKind!
+  """
+  Destination address of the pivot
+  """
+  destination: String!
+  """
+  Destination port of the pivot
+  """
+  port: Int!
+  shellID: ID
+  portalID: ID
+  credentialID: ID
 }
 """
 CreateTagInput is used for create Tag object.
@@ -9595,6 +9768,248 @@ enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   CLOSED_AT
+}
+type ShellPivot implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Timestamp of when this pivot was closed
+  """
+  closedAt: Time
+  """
+  Stream ID of the portal connection
+  """
+  streamID: String!
+  """
+  Kind of pivot connection
+  """
+  kind: ShellPivotKind!
+  """
+  Destination address of the pivot
+  """
+  destination: String!
+  """
+  Destination port of the pivot
+  """
+  port: Int!
+  """
+  Pivot data stream buffer
+  """
+  data: String
+  """
+  Shell associated with this pivot
+  """
+  shell: Shell
+  """
+  Portal associated with this pivot
+  """
+  portal: Portal
+  """
+  Credential used for this pivot
+  """
+  credential: HostCredential
+}
+"""
+A connection to a list of items.
+"""
+type ShellPivotConnection {
+  """
+  A list of edges.
+  """
+  edges: [ShellPivotEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ShellPivotEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ShellPivot
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+ShellPivotKind is enum for the field kind
+"""
+enum ShellPivotKind @goModel(model: "realm.pub/tavern/internal/ent/shellpivot.Kind") {
+  ssh
+}
+"""
+Ordering options for ShellPivot connections
+"""
+input ShellPivotOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ShellPivots.
+  """
+  field: ShellPivotOrderField!
+}
+"""
+Properties by which ShellPivot connections can be ordered.
+"""
+enum ShellPivotOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+ShellPivotWhereInput is used for filtering ShellPivot objects.
+Input was generated by ent.
+"""
+input ShellPivotWhereInput {
+  not: ShellPivotWhereInput
+  and: [ShellPivotWhereInput!]
+  or: [ShellPivotWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  closed_at field predicates
+  """
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """
+  stream_id field predicates
+  """
+  streamID: String
+  streamIDNEQ: String
+  streamIDIn: [String!]
+  streamIDNotIn: [String!]
+  streamIDGT: String
+  streamIDGTE: String
+  streamIDLT: String
+  streamIDLTE: String
+  streamIDContains: String
+  streamIDHasPrefix: String
+  streamIDHasSuffix: String
+  streamIDEqualFold: String
+  streamIDContainsFold: String
+  """
+  kind field predicates
+  """
+  kind: ShellPivotKind
+  kindNEQ: ShellPivotKind
+  kindIn: [ShellPivotKind!]
+  kindNotIn: [ShellPivotKind!]
+  """
+  destination field predicates
+  """
+  destination: String
+  destinationNEQ: String
+  destinationIn: [String!]
+  destinationNotIn: [String!]
+  destinationGT: String
+  destinationGTE: String
+  destinationLT: String
+  destinationLTE: String
+  destinationContains: String
+  destinationHasPrefix: String
+  destinationHasSuffix: String
+  destinationEqualFold: String
+  destinationContainsFold: String
+  """
+  port field predicates
+  """
+  port: Int
+  portNEQ: Int
+  portIn: [Int!]
+  portNotIn: [Int!]
+  portGT: Int
+  portGTE: Int
+  portLT: Int
+  portLTE: Int
+  """
+  data field predicates
+  """
+  data: String
+  dataNEQ: String
+  dataIn: [String!]
+  dataNotIn: [String!]
+  dataGT: String
+  dataGTE: String
+  dataLT: String
+  dataLTE: String
+  dataContains: String
+  dataHasPrefix: String
+  dataHasSuffix: String
+  dataIsNil: Boolean
+  dataNotNil: Boolean
+  dataEqualFold: String
+  dataContainsFold: String
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  portal edge predicates
+  """
+  hasPortal: Boolean
+  hasPortalWith: [PortalWhereInput!]
+  """
+  credential edge predicates
+  """
+  hasCredential: Boolean
+  hasCredentialWith: [HostCredentialWhereInput!]
 }
 type ShellTask implements Node {
   id: ID!

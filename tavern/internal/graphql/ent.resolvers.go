@@ -150,3 +150,52 @@ type questResolver struct{ *Resolver }
 type shellTaskResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 type shellTaskWhereInputResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *shellPivotResolver) Port(ctx context.Context, obj *ent.ShellPivot) (int, error) {
+	panic(fmt.Errorf("not implemented: Port - port"))
+}
+func (r *createShellPivotInputResolver) Port(ctx context.Context, obj *ent.CreateShellPivotInput, data int) error {
+	panic(fmt.Errorf("not implemented: Port - port"))
+}
+func (r *shellPivotWhereInputResolver) Port(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: Port - port"))
+}
+func (r *shellPivotWhereInputResolver) PortNeq(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PortNeq - portNEQ"))
+}
+func (r *shellPivotWhereInputResolver) PortIn(ctx context.Context, obj *ent.ShellPivotWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PortIn - portIn"))
+}
+func (r *shellPivotWhereInputResolver) PortNotIn(ctx context.Context, obj *ent.ShellPivotWhereInput, data []int) error {
+	panic(fmt.Errorf("not implemented: PortNotIn - portNotIn"))
+}
+func (r *shellPivotWhereInputResolver) PortGt(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PortGt - portGT"))
+}
+func (r *shellPivotWhereInputResolver) PortGte(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PortGte - portGTE"))
+}
+func (r *shellPivotWhereInputResolver) PortLt(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PortLt - portLT"))
+}
+func (r *shellPivotWhereInputResolver) PortLte(ctx context.Context, obj *ent.ShellPivotWhereInput, data *int) error {
+	panic(fmt.Errorf("not implemented: PortLte - portLTE"))
+}
+func (r *Resolver) ShellPivot() generated.ShellPivotResolver { return &shellPivotResolver{r} }
+func (r *Resolver) CreateShellPivotInput() generated.CreateShellPivotInputResolver {
+	return &createShellPivotInputResolver{r}
+}
+func (r *Resolver) ShellPivotWhereInput() generated.ShellPivotWhereInputResolver {
+	return &shellPivotWhereInputResolver{r}
+}
+type shellPivotResolver struct{ *Resolver }
+type createShellPivotInputResolver struct{ *Resolver }
+type shellPivotWhereInputResolver struct{ *Resolver }
+*/

@@ -166,8 +166,8 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 		}
 
 		if len(beaconIDs) == 0 {
-		    // If there are no matching beacons, short circuit
-		    return buckets, nil
+			// If there are no matching beacons, short circuit
+			return buckets, nil
 		}
 
 		// Filter beacon histories by the matching beacon IDs
@@ -201,7 +201,7 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 		// Calculate the diff manually in seconds
 		diffSeconds := h.CreatedAt.Unix() - start.Unix()
 		if diffSeconds < 0 {
-		    continue
+			continue
 		}
 
 		// Truncate to the nearest granularity
