@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 )
@@ -21,16 +23,18 @@ import (
 // EventQuery is the builder for querying Event entities.
 type EventQuery struct {
 	config
-	ctx        *QueryContext
-	order      []event.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Event
-	withBeacon *BeaconQuery
-	withHost   *HostQuery
-	withQuest  *QuestQuery
-	withFKs    bool
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Event) error
+	ctx                    *QueryContext
+	order                  []event.OrderOption
+	inters                 []Interceptor
+	predicates             []predicate.Event
+	withBeacon             *BeaconQuery
+	withHost               *HostQuery
+	withQuest              *QuestQuery
+	withNotifications      *NotificationQuery
+	withFKs                bool
+	modifiers              []func(*sql.Selector)
+	loadTotal              []func(context.Context, []*Event) error
+	withNamedNotifications map[string]*NotificationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -126,6 +130,28 @@ func (eq *EventQuery) QueryQuest() *QuestQuery {
 			sqlgraph.From(event.Table, event.FieldID, selector),
 			sqlgraph.To(quest.Table, quest.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, event.QuestTable, event.QuestColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNotifications chains the current query on the "notifications" edge.
+func (eq *EventQuery) QueryNotifications() *NotificationQuery {
+	query := (&NotificationClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, event.NotificationsTable, event.NotificationsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
@@ -320,14 +346,15 @@ func (eq *EventQuery) Clone() *EventQuery {
 		return nil
 	}
 	return &EventQuery{
-		config:     eq.config,
-		ctx:        eq.ctx.Clone(),
-		order:      append([]event.OrderOption{}, eq.order...),
-		inters:     append([]Interceptor{}, eq.inters...),
-		predicates: append([]predicate.Event{}, eq.predicates...),
-		withBeacon: eq.withBeacon.Clone(),
-		withHost:   eq.withHost.Clone(),
-		withQuest:  eq.withQuest.Clone(),
+		config:            eq.config,
+		ctx:               eq.ctx.Clone(),
+		order:             append([]event.OrderOption{}, eq.order...),
+		inters:            append([]Interceptor{}, eq.inters...),
+		predicates:        append([]predicate.Event{}, eq.predicates...),
+		withBeacon:        eq.withBeacon.Clone(),
+		withHost:          eq.withHost.Clone(),
+		withQuest:         eq.withQuest.Clone(),
+		withNotifications: eq.withNotifications.Clone(),
 		// clone intermediate query.
 		sql:  eq.sql.Clone(),
 		path: eq.path,
@@ -364,6 +391,17 @@ func (eq *EventQuery) WithQuest(opts ...func(*QuestQuery)) *EventQuery {
 		opt(query)
 	}
 	eq.withQuest = query
+	return eq
+}
+
+// WithNotifications tells the query-builder to eager-load the nodes that are connected to
+// the "notifications" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithNotifications(opts ...func(*NotificationQuery)) *EventQuery {
+	query := (&NotificationClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withNotifications = query
 	return eq
 }
 
@@ -446,10 +484,11 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 		nodes       = []*Event{}
 		withFKs     = eq.withFKs
 		_spec       = eq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			eq.withBeacon != nil,
 			eq.withHost != nil,
 			eq.withQuest != nil,
+			eq.withNotifications != nil,
 		}
 	)
 	if eq.withBeacon != nil || eq.withHost != nil || eq.withQuest != nil {
@@ -494,6 +533,20 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 	if query := eq.withQuest; query != nil {
 		if err := eq.loadQuest(ctx, query, nodes, nil,
 			func(n *Event, e *Quest) { n.Edges.Quest = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withNotifications; query != nil {
+		if err := eq.loadNotifications(ctx, query, nodes,
+			func(n *Event) { n.Edges.Notifications = []*Notification{} },
+			func(n *Event, e *Notification) { n.Edges.Notifications = append(n.Edges.Notifications, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range eq.withNamedNotifications {
+		if err := eq.loadNotifications(ctx, query, nodes,
+			func(n *Event) { n.appendNamedNotifications(name) },
+			func(n *Event, e *Notification) { n.appendNamedNotifications(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -601,6 +654,37 @@ func (eq *EventQuery) loadQuest(ctx context.Context, query *QuestQuery, nodes []
 	}
 	return nil
 }
+func (eq *EventQuery) loadNotifications(ctx context.Context, query *NotificationQuery, nodes []*Event, init func(*Event), assign func(*Event, *Notification)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Event)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Notification(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(event.NotificationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.notification_event
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "notification_event" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "notification_event" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (eq *EventQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := eq.querySpec()
@@ -684,6 +768,20 @@ func (eq *EventQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedNotifications tells the query-builder to eager-load the nodes that are connected to the "notifications"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithNamedNotifications(name string, opts ...func(*NotificationQuery)) *EventQuery {
+	query := (&NotificationClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if eq.withNamedNotifications == nil {
+		eq.withNamedNotifications = make(map[string]*NotificationQuery)
+	}
+	eq.withNamedNotifications[name] = query
+	return eq
 }
 
 // EventGroupBy is the group-by builder for Event entities.

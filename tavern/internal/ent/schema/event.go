@@ -49,6 +49,13 @@ func (Event) Edges() []ent.Edge {
 			Ref("events").
 			Unique().
 			Comment("Quest associated with this event"),
+		edge.From("notifications", Notification.Type).
+			Ref("event").
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Notifications related to this event"),
 	}
 }
 

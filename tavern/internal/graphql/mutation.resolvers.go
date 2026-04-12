@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	mathrand "math/rand"
@@ -23,6 +24,8 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
 )
@@ -589,6 +592,58 @@ func (r *mutationResolver) DisableScheduledTask(ctx context.Context, scheduledTa
 	return r.client.ScheduledTask.UpdateOneID(scheduledTaskID).
 		SetDisabled(true).
 		Save(ctx)
+}
+
+// MarkNotificationsAsRead is the resolver for the markNotificationsAsRead field.
+func (r *mutationResolver) MarkNotificationsAsRead(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error) {
+	u := auth.UserFromContext(ctx)
+	if u == nil {
+		return nil, errors.New("unauthorized")
+	}
+
+	err := r.client.Notification.Update().
+		Where(
+			notification.IDIn(notificationIDs...),
+			notification.HasUserWith(user.ID(u.ID)),
+		).
+		SetRead(true).
+		Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("updating notification read status: %w", err)
+	}
+
+	return r.client.Notification.Query().
+		Where(
+			notification.IDIn(notificationIDs...),
+			notification.HasUserWith(user.ID(u.ID)),
+		).
+		All(ctx)
+}
+
+// MarkNotificationsAsArchived is the resolver for the markNotificationsAsArchived field.
+func (r *mutationResolver) MarkNotificationsAsArchived(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error) {
+	u := auth.UserFromContext(ctx)
+	if u == nil {
+		return nil, errors.New("unauthorized")
+	}
+
+	err := r.client.Notification.Update().
+		Where(
+			notification.IDIn(notificationIDs...),
+			notification.HasUserWith(user.ID(u.ID)),
+		).
+		SetArchived(true).
+		Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("updating notification archived status: %w", err)
+	}
+
+	return r.client.Notification.Query().
+		Where(
+			notification.IDIn(notificationIDs...),
+			notification.HasUserWith(user.ID(u.ID)),
+		).
+		All(ctx)
 }
 
 // Mutation returns generated.MutationResolver implementation.

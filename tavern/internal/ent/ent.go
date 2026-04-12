@@ -26,6 +26,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
@@ -112,6 +113,7 @@ func checkColumn(table, column string) error {
 			hostfile.Table:       hostfile.ValidColumn,
 			hostprocess.Table:    hostprocess.ValidColumn,
 			link.Table:           link.ValidColumn,
+			notification.Table:   notification.ValidColumn,
 			portal.Table:         portal.ValidColumn,
 			quest.Table:          quest.ValidColumn,
 			repository.Table:     repository.ValidColumn,

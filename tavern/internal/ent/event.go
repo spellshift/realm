@@ -45,11 +45,15 @@ type EventEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Quest associated with this event
 	Quest *Quest `json:"quest,omitempty"`
+	// Notifications related to this event
+	Notifications []*Notification `json:"notifications,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [4]map[string]int
+
+	namedNotifications map[string][]*Notification
 }
 
 // BeaconOrErr returns the Beacon value or an error if the edge
@@ -83,6 +87,15 @@ func (e EventEdges) QuestOrErr() (*Quest, error) {
 		return nil, &NotFoundError{label: quest.Label}
 	}
 	return nil, &NotLoadedError{edge: "quest"}
+}
+
+// NotificationsOrErr returns the Notifications value or an error if the edge
+// was not loaded in eager-loading.
+func (e EventEdges) NotificationsOrErr() ([]*Notification, error) {
+	if e.loadedTypes[3] {
+		return e.Notifications, nil
+	}
+	return nil, &NotLoadedError{edge: "notifications"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -196,6 +209,11 @@ func (e *Event) QueryQuest() *QuestQuery {
 	return NewEventClient(e.config).QueryQuest(e)
 }
 
+// QueryNotifications queries the "notifications" edge of the Event entity.
+func (e *Event) QueryNotifications() *NotificationQuery {
+	return NewEventClient(e.config).QueryNotifications(e)
+}
+
 // Update returns a builder for updating this Event.
 // Note that you need to call Event.Unwrap() before calling this method if this Event
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -232,6 +250,30 @@ func (e *Event) String() string {
 	builder.WriteString(fmt.Sprintf("%v", e.Kind))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedNotifications returns the Notifications named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (e *Event) NamedNotifications(name string) ([]*Notification, error) {
+	if e.Edges.namedNotifications == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := e.Edges.namedNotifications[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (e *Event) appendNamedNotifications(name string, edges ...*Notification) {
+	if e.Edges.namedNotifications == nil {
+		e.Edges.namedNotifications = make(map[string][]*Notification)
+	}
+	if len(edges) == 0 {
+		e.Edges.namedNotifications[name] = []*Notification{}
+	} else {
+		e.Edges.namedNotifications[name] = append(e.Edges.namedNotifications[name], edges...)
+	}
 }
 
 // Events is a parsable slice of Event.

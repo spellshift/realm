@@ -24,6 +24,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
@@ -3861,6 +3862,10 @@ type EventWhereInput struct {
 	// "quest" edge predicates.
 	HasQuest     *bool              `json:"hasQuest,omitempty"`
 	HasQuestWith []*QuestWhereInput `json:"hasQuestWith,omitempty"`
+
+	// "notifications" edge predicates.
+	HasNotifications     *bool                     `json:"hasNotifications,omitempty"`
+	HasNotificationsWith []*NotificationWhereInput `json:"hasNotificationsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4096,6 +4101,24 @@ func (i *EventWhereInput) P() (predicate.Event, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, event.HasQuestWith(with...))
+	}
+	if i.HasNotifications != nil {
+		p := event.HasNotifications()
+		if !*i.HasNotifications {
+			p = event.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNotificationsWith) > 0 {
+		with := make([]predicate.Notification, 0, len(i.HasNotificationsWith))
+		for _, w := range i.HasNotificationsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNotificationsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, event.HasNotificationsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
@@ -6952,6 +6975,280 @@ func (i *LinkWhereInput) P() (predicate.Link, error) {
 		return predicates[0], nil
 	default:
 		return link.And(predicates...), nil
+	}
+}
+
+// NotificationWhereInput represents a where input for filtering Notification queries.
+type NotificationWhereInput struct {
+	Predicates []predicate.Notification  `json:"-"`
+	Not        *NotificationWhereInput   `json:"not,omitempty"`
+	Or         []*NotificationWhereInput `json:"or,omitempty"`
+	And        []*NotificationWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "last_modified_at" field predicates.
+	LastModifiedAt      *time.Time  `json:"lastModifiedAt,omitempty"`
+	LastModifiedAtNEQ   *time.Time  `json:"lastModifiedAtNEQ,omitempty"`
+	LastModifiedAtIn    []time.Time `json:"lastModifiedAtIn,omitempty"`
+	LastModifiedAtNotIn []time.Time `json:"lastModifiedAtNotIn,omitempty"`
+	LastModifiedAtGT    *time.Time  `json:"lastModifiedAtGT,omitempty"`
+	LastModifiedAtGTE   *time.Time  `json:"lastModifiedAtGTE,omitempty"`
+	LastModifiedAtLT    *time.Time  `json:"lastModifiedAtLT,omitempty"`
+	LastModifiedAtLTE   *time.Time  `json:"lastModifiedAtLTE,omitempty"`
+
+	// "priority" field predicates.
+	Priority      *notification.Priority  `json:"priority,omitempty"`
+	PriorityNEQ   *notification.Priority  `json:"priorityNEQ,omitempty"`
+	PriorityIn    []notification.Priority `json:"priorityIn,omitempty"`
+	PriorityNotIn []notification.Priority `json:"priorityNotIn,omitempty"`
+
+	// "read" field predicates.
+	Read    *bool `json:"read,omitempty"`
+	ReadNEQ *bool `json:"readNEQ,omitempty"`
+
+	// "archived" field predicates.
+	Archived    *bool `json:"archived,omitempty"`
+	ArchivedNEQ *bool `json:"archivedNEQ,omitempty"`
+
+	// "user" edge predicates.
+	HasUser     *bool             `json:"hasUser,omitempty"`
+	HasUserWith []*UserWhereInput `json:"hasUserWith,omitempty"`
+
+	// "event" edge predicates.
+	HasEvent     *bool              `json:"hasEvent,omitempty"`
+	HasEventWith []*EventWhereInput `json:"hasEventWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *NotificationWhereInput) AddPredicates(predicates ...predicate.Notification) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the NotificationWhereInput filter on the NotificationQuery builder.
+func (i *NotificationWhereInput) Filter(q *NotificationQuery) (*NotificationQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyNotificationWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyNotificationWhereInput is returned in case the NotificationWhereInput is empty.
+var ErrEmptyNotificationWhereInput = errors.New("ent: empty predicate NotificationWhereInput")
+
+// P returns a predicate for filtering notifications.
+// An error is returned if the input is empty or invalid.
+func (i *NotificationWhereInput) P() (predicate.Notification, error) {
+	var predicates []predicate.Notification
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, notification.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Notification, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, notification.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Notification, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, notification.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, notification.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, notification.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, notification.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, notification.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, notification.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, notification.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, notification.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, notification.IDLTE(*i.IDLTE))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, notification.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, notification.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, notification.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, notification.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, notification.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, notification.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, notification.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, notification.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.LastModifiedAt != nil {
+		predicates = append(predicates, notification.LastModifiedAtEQ(*i.LastModifiedAt))
+	}
+	if i.LastModifiedAtNEQ != nil {
+		predicates = append(predicates, notification.LastModifiedAtNEQ(*i.LastModifiedAtNEQ))
+	}
+	if len(i.LastModifiedAtIn) > 0 {
+		predicates = append(predicates, notification.LastModifiedAtIn(i.LastModifiedAtIn...))
+	}
+	if len(i.LastModifiedAtNotIn) > 0 {
+		predicates = append(predicates, notification.LastModifiedAtNotIn(i.LastModifiedAtNotIn...))
+	}
+	if i.LastModifiedAtGT != nil {
+		predicates = append(predicates, notification.LastModifiedAtGT(*i.LastModifiedAtGT))
+	}
+	if i.LastModifiedAtGTE != nil {
+		predicates = append(predicates, notification.LastModifiedAtGTE(*i.LastModifiedAtGTE))
+	}
+	if i.LastModifiedAtLT != nil {
+		predicates = append(predicates, notification.LastModifiedAtLT(*i.LastModifiedAtLT))
+	}
+	if i.LastModifiedAtLTE != nil {
+		predicates = append(predicates, notification.LastModifiedAtLTE(*i.LastModifiedAtLTE))
+	}
+	if i.Priority != nil {
+		predicates = append(predicates, notification.PriorityEQ(*i.Priority))
+	}
+	if i.PriorityNEQ != nil {
+		predicates = append(predicates, notification.PriorityNEQ(*i.PriorityNEQ))
+	}
+	if len(i.PriorityIn) > 0 {
+		predicates = append(predicates, notification.PriorityIn(i.PriorityIn...))
+	}
+	if len(i.PriorityNotIn) > 0 {
+		predicates = append(predicates, notification.PriorityNotIn(i.PriorityNotIn...))
+	}
+	if i.Read != nil {
+		predicates = append(predicates, notification.ReadEQ(*i.Read))
+	}
+	if i.ReadNEQ != nil {
+		predicates = append(predicates, notification.ReadNEQ(*i.ReadNEQ))
+	}
+	if i.Archived != nil {
+		predicates = append(predicates, notification.ArchivedEQ(*i.Archived))
+	}
+	if i.ArchivedNEQ != nil {
+		predicates = append(predicates, notification.ArchivedNEQ(*i.ArchivedNEQ))
+	}
+
+	if i.HasUser != nil {
+		p := notification.HasUser()
+		if !*i.HasUser {
+			p = notification.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasUserWith) > 0 {
+		with := make([]predicate.User, 0, len(i.HasUserWith))
+		for _, w := range i.HasUserWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasUserWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, notification.HasUserWith(with...))
+	}
+	if i.HasEvent != nil {
+		p := notification.HasEvent()
+		if !*i.HasEvent {
+			p = notification.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasEventWith) > 0 {
+		with := make([]predicate.Event, 0, len(i.HasEventWith))
+		for _, w := range i.HasEventWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasEventWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, notification.HasEventWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyNotificationWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return notification.And(predicates...), nil
 	}
 }
 
@@ -12351,6 +12648,10 @@ type UserWhereInput struct {
 	IsAdmin    *bool `json:"isAdmin,omitempty"`
 	IsAdminNEQ *bool `json:"isAdminNEQ,omitempty"`
 
+	// "notifications" edge predicates.
+	HasNotifications     *bool                     `json:"hasNotifications,omitempty"`
+	HasNotificationsWith []*NotificationWhereInput `json:"hasNotificationsWith,omitempty"`
+
 	// "tomes" edge predicates.
 	HasTomes     *bool             `json:"hasTomes,omitempty"`
 	HasTomesWith []*TomeWhereInput `json:"hasTomesWith,omitempty"`
@@ -12593,6 +12894,24 @@ func (i *UserWhereInput) P() (predicate.User, error) {
 		predicates = append(predicates, user.IsAdminNEQ(*i.IsAdminNEQ))
 	}
 
+	if i.HasNotifications != nil {
+		p := user.HasNotifications()
+		if !*i.HasNotifications {
+			p = user.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasNotificationsWith) > 0 {
+		with := make([]predicate.Notification, 0, len(i.HasNotificationsWith))
+		for _, w := range i.HasNotificationsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasNotificationsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, user.HasNotificationsWith(with...))
+	}
 	if i.HasTomes != nil {
 		p := user.HasTomes()
 		if !*i.HasTomes {

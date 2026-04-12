@@ -48,6 +48,9 @@ type HostProcess func(*sql.Selector)
 // Link is the predicate function for link builders.
 type Link func(*sql.Selector)
 
+// Notification is the predicate function for notification builders.
+type Notification func(*sql.Selector)
+
 // Portal is the predicate function for portal builders.
 type Portal func(*sql.Selector)
 

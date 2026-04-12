@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/hostfile"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
@@ -358,6 +359,42 @@ func (ec *executionContext) field_Builder_buildtasks_args(ctx context.Context, r
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBuildTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBuildTaskWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Event_notifications_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalONotificationOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalONotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -1982,6 +2019,42 @@ func (ec *executionContext) field_User_favoritehosts_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_User_notifications_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalONotificationOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalONotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_User_tomes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2670,6 +2743,8 @@ func (ec *executionContext) fieldContext_Asset_creator(_ context.Context, field 
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -6043,6 +6118,8 @@ func (ec *executionContext) fieldContext_DeviceAuth_user(_ context.Context, fiel
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -6577,6 +6654,55 @@ func (ec *executionContext) fieldContext_Event_quest(_ context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Event_notifications(ctx context.Context, field graphql.CollectedField, obj *ent.Event) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Event_notifications,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Notifications(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.NotificationOrder), fc.Args["where"].(*ent.NotificationWhereInput))
+		},
+		nil,
+		ec.marshalNNotificationConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Event_notifications(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_NotificationConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_NotificationConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_NotificationConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotificationConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Event_notifications_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EventConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.EventConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6720,6 +6846,8 @@ func (ec *executionContext) fieldContext_EventEdge_node(_ context.Context, field
 				return ec.fieldContext_Event_host(ctx, field)
 			case "quest":
 				return ec.fieldContext_Event_quest(ctx, field)
+			case "notifications":
+				return ec.fieldContext_Event_notifications(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Event", field.Name)
 		},
@@ -9945,6 +10073,8 @@ func (ec *executionContext) fieldContext_Link_creator(_ context.Context, field g
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -10133,6 +10263,461 @@ func (ec *executionContext) _LinkEdge_cursor(ctx context.Context, field graphql.
 func (ec *executionContext) fieldContext_LinkEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LinkEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Cursor does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_id(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_lastModifiedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_lastModifiedAt,
+		func(ctx context.Context) (any, error) {
+			return obj.LastModifiedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_lastModifiedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_priority(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_priority,
+		func(ctx context.Context) (any, error) {
+			return obj.Priority, nil
+		},
+		nil,
+		ec.marshalNNotificationPriority2realmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_priority(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type NotificationPriority does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_read(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_read,
+		func(ctx context.Context) (any, error) {
+			return obj.Read, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_read(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_archived(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_archived,
+		func(ctx context.Context) (any, error) {
+			return obj.Archived, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_archived(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_user(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_user,
+		func(ctx context.Context) (any, error) {
+			return obj.User(ctx)
+		},
+		nil,
+		ec.marshalNUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "photoURL":
+				return ec.fieldContext_User_photoURL(ctx, field)
+			case "isActivated":
+				return ec.fieldContext_User_isActivated(ctx, field)
+			case "isAdmin":
+				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
+			case "tomes":
+				return ec.fieldContext_User_tomes(ctx, field)
+			case "activeShells":
+				return ec.fieldContext_User_activeShells(ctx, field)
+			case "deviceAuths":
+				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "apiKey":
+				return ec.fieldContext_User_apiKey(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Notification_event(ctx context.Context, field graphql.CollectedField, obj *ent.Notification) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Notification_event,
+		func(ctx context.Context) (any, error) {
+			return obj.Event(ctx)
+		},
+		nil,
+		ec.marshalNEvent2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEvent,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Notification_event(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Notification",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Event_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Event_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Event_lastModifiedAt(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Event_timestamp(ctx, field)
+			case "kind":
+				return ec.fieldContext_Event_kind(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Event_beacon(ctx, field)
+			case "host":
+				return ec.fieldContext_Event_host(ctx, field)
+			case "quest":
+				return ec.fieldContext_Event_quest(ctx, field)
+			case "notifications":
+				return ec.fieldContext_Event_notifications(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Event", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.NotificationConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationConnection_edges,
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
+		nil,
+		ec.marshalONotificationEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationEdge,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_NotificationEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_NotificationEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotificationEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ent.NotificationConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *ent.NotificationConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationConnection_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationEdge_node(ctx context.Context, field graphql.CollectedField, obj *ent.NotificationEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalONotification2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotification,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Notification_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Notification_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Notification_lastModifiedAt(ctx, field)
+			case "priority":
+				return ec.fieldContext_Notification_priority(ctx, field)
+			case "read":
+				return ec.fieldContext_Notification_read(ctx, field)
+			case "archived":
+				return ec.fieldContext_Notification_archived(ctx, field)
+			case "user":
+				return ec.fieldContext_Notification_user(ctx, field)
+			case "event":
+				return ec.fieldContext_Notification_event(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Notification", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ent.NotificationEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationEdge",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -10600,6 +11185,8 @@ func (ec *executionContext) fieldContext_Portal_owner(_ context.Context, field g
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -12035,6 +12622,8 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -12605,6 +13194,8 @@ func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field 
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -13376,6 +13967,8 @@ func (ec *executionContext) fieldContext_Repository_owner(_ context.Context, fie
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -15032,6 +15625,8 @@ func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field gr
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -16435,6 +17030,8 @@ func (ec *executionContext) fieldContext_ShellTask_creator(_ context.Context, fi
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -18378,6 +18975,8 @@ func (ec *executionContext) fieldContext_Tome_uploader(_ context.Context, field 
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -18776,6 +19375,55 @@ func (ec *executionContext) fieldContext_User_isAdmin(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _User_notifications(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_notifications,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Notifications(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.NotificationOrder), fc.Args["where"].(*ent.NotificationWhereInput))
+		},
+		nil,
+		ec.marshalNNotificationConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_notifications(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_NotificationConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_NotificationConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_NotificationConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NotificationConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User_notifications_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_tomes(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -19138,6 +19786,8 @@ func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field 
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -25196,7 +25846,7 @@ func (ec *executionContext) unmarshalInputEventWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasBeacon", "hasBeaconWith", "hasHost", "hasHostWith", "hasQuest", "hasQuestWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasBeacon", "hasBeaconWith", "hasHost", "hasHostWith", "hasQuest", "hasQuestWith", "hasNotifications", "hasNotificationsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -25518,6 +26168,20 @@ func (ec *executionContext) unmarshalInputEventWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasQuestWith = data
+		case "hasNotifications":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNotifications"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNotifications = data
+		case "hasNotificationsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNotificationsWith"))
+			data, err := ec.unmarshalONotificationWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNotificationsWith = data
 		}
 	}
 	return it, nil
@@ -29513,6 +30177,343 @@ func (ec *executionContext) unmarshalInputLinkWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasCreatorWith = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNotificationOrder(ctx context.Context, obj any) (ent.NotificationOrder, error) {
+	var it ent.NotificationOrder
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["direction"]; !present {
+		asMap["direction"] = "ASC"
+	}
+
+	fieldsInOrder := [...]string{"direction", "field"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "direction":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
+			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Direction = data
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNNotificationOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputNotificationWhereInput(ctx context.Context, obj any) (ent.NotificationWhereInput, error) {
+	var it ent.NotificationWhereInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "priority", "priorityNEQ", "priorityIn", "priorityNotIn", "read", "readNEQ", "archived", "archivedNEQ", "hasUser", "hasUserWith", "hasEvent", "hasEventWith"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "not":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
+			data, err := ec.unmarshalONotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Not = data
+		case "and":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
+			data, err := ec.unmarshalONotificationWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.And = data
+		case "or":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
+			data, err := ec.unmarshalONotificationWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Or = data
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "idNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNEQ = data
+		case "idIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDIn = data
+		case "idNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDNotIn = data
+		case "idGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGT = data
+		case "idGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDGTE = data
+		case "idLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLT = data
+		case "idLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IDLTE = data
+		case "createdAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAt = data
+		case "createdAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNEQ = data
+		case "createdAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtIn = data
+		case "createdAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtNotIn = data
+		case "createdAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGT = data
+		case "createdAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtGTE = data
+		case "createdAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLT = data
+		case "createdAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CreatedAtLTE = data
+		case "lastModifiedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAt = data
+		case "lastModifiedAtNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtNEQ"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtNEQ = data
+		case "lastModifiedAtIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtIn = data
+		case "lastModifiedAtNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtNotIn"))
+			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtNotIn = data
+		case "lastModifiedAtGT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtGT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtGT = data
+		case "lastModifiedAtGTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtGTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtGTE = data
+		case "lastModifiedAtLT":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtLT"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtLT = data
+		case "lastModifiedAtLTE":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAtLTE"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAtLTE = data
+		case "priority":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+			data, err := ec.unmarshalONotificationPriority2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Priority = data
+		case "priorityNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priorityNEQ"))
+			data, err := ec.unmarshalONotificationPriority2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PriorityNEQ = data
+		case "priorityIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priorityIn"))
+			data, err := ec.unmarshalONotificationPriority2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriorityᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PriorityIn = data
+		case "priorityNotIn":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priorityNotIn"))
+			data, err := ec.unmarshalONotificationPriority2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriorityᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PriorityNotIn = data
+		case "read":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("read"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Read = data
+		case "readNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("readNEQ"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReadNEQ = data
+		case "archived":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("archived"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Archived = data
+		case "archivedNEQ":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("archivedNEQ"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ArchivedNEQ = data
+		case "hasUser":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUser"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasUser = data
+		case "hasUserWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUserWith"))
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasUserWith = data
+		case "hasEvent":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEvent"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEvent = data
+		case "hasEventWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEventWith"))
+			data, err := ec.unmarshalOEventWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEventWith = data
 		}
 	}
 	return it, nil
@@ -36945,6 +37946,71 @@ func (ec *executionContext) unmarshalInputUpdateLinkInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateNotificationInput(ctx context.Context, obj any) (ent.UpdateNotificationInput, error) {
+	var it ent.UpdateNotificationInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"lastModifiedAt", "priority", "read", "archived", "userID", "eventID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "lastModifiedAt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastModifiedAt"))
+			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LastModifiedAt = data
+		case "priority":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+			data, err := ec.unmarshalONotificationPriority2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Priority = data
+		case "read":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("read"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Read = data
+		case "archived":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("archived"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Archived = data
+		case "userID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.UserID = data
+		case "eventID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+			data, err := ec.unmarshalOID2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EventID = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateScheduledTaskInput(ctx context.Context, obj any) (ent.UpdateScheduledTaskInput, error) {
 	var it ent.UpdateScheduledTaskInput
 	if obj == nil {
@@ -37228,7 +38294,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths", "addFavoriteHostIDs", "removeFavoriteHostIDs", "clearFavoriteHosts"}
+	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addNotificationIDs", "removeNotificationIDs", "clearNotifications", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths", "addFavoriteHostIDs", "removeFavoriteHostIDs", "clearFavoriteHosts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37263,6 +38329,27 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.IsAdmin = data
+		case "addNotificationIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addNotificationIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddNotificationIDs = data
+		case "removeNotificationIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeNotificationIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveNotificationIDs = data
+		case "clearNotifications":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearNotifications"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearNotifications = data
 		case "addTomeIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addTomeIDs"))
 			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
@@ -37404,7 +38491,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasNotifications", "hasNotificationsWith", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -37698,6 +38785,20 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.IsAdminNEQ = data
+		case "hasNotifications":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNotifications"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNotifications = data
+		case "hasNotificationsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNotificationsWith"))
+			data, err := ec.unmarshalONotificationWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasNotificationsWith = data
 		case "hasTomes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasTomes"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -37827,6 +38928,11 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Portal(ctx, sel, obj)
+	case *ent.Notification:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Notification(ctx, sel, obj)
 	case *ent.Link:
 		if obj == nil {
 			return graphql.Null
@@ -39851,6 +40957,42 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "notifications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Event_notifications(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -41421,6 +42563,229 @@ func (ec *executionContext) _LinkEdge(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._LinkEdge_node(ctx, field, obj)
 		case "cursor":
 			out.Values[i] = ec._LinkEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notificationImplementors = []string{"Notification", "Node"}
+
+func (ec *executionContext) _Notification(ctx context.Context, sel ast.SelectionSet, obj *ent.Notification) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Notification")
+		case "id":
+			out.Values[i] = ec._Notification_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._Notification_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "lastModifiedAt":
+			out.Values[i] = ec._Notification_lastModifiedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "priority":
+			out.Values[i] = ec._Notification_priority(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "read":
+			out.Values[i] = ec._Notification_read(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "archived":
+			out.Values[i] = ec._Notification_archived(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Notification_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "event":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Notification_event(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notificationConnectionImplementors = []string{"NotificationConnection"}
+
+func (ec *executionContext) _NotificationConnection(ctx context.Context, sel ast.SelectionSet, obj *ent.NotificationConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotificationConnection")
+		case "edges":
+			out.Values[i] = ec._NotificationConnection_edges(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._NotificationConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._NotificationConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var notificationEdgeImplementors = []string{"NotificationEdge"}
+
+func (ec *executionContext) _NotificationEdge(ctx context.Context, sel ast.SelectionSet, obj *ent.NotificationEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notificationEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotificationEdge")
+		case "node":
+			out.Values[i] = ec._NotificationEdge_node(ctx, field, obj)
+		case "cursor":
+			out.Values[i] = ec._NotificationEdge_cursor(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -45449,6 +46814,42 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "notifications":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_notifications(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "tomes":
 			field := field
 
@@ -46195,6 +47596,16 @@ func (ec *executionContext) unmarshalNDeviceAuthWhereInput2ᚖrealmᚗpubᚋtave
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNEvent2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEvent(ctx context.Context, sel ast.SelectionSet, v *ent.Event) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Event(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEventConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventConnection(ctx context.Context, sel ast.SelectionSet, v *ent.EventConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -46566,6 +47977,78 @@ func (ec *executionContext) marshalNNode2ᚕrealmᚗpubᚋtavernᚋinternalᚋen
 	})
 
 	return ret
+}
+
+func (ec *executionContext) marshalNNotification2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Notification) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotification2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotification(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNotification2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotification(ctx context.Context, sel ast.SelectionSet, v *ent.Notification) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Notification(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNotificationConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationConnection(ctx context.Context, sel ast.SelectionSet, v *ent.NotificationConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NotificationConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNNotificationOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrder(ctx context.Context, v any) (*ent.NotificationOrder, error) {
+	res, err := ec.unmarshalInputNotificationOrder(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNNotificationOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderField(ctx context.Context, v any) (*ent.NotificationOrderField, error) {
+	var res = new(ent.NotificationOrderField)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNNotificationOrderField2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderField(ctx context.Context, sel ast.SelectionSet, v *ent.NotificationOrderField) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalNNotificationPriority2realmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx context.Context, v any) (notification.Priority, error) {
+	var res notification.Priority
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNNotificationPriority2realmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx context.Context, sel ast.SelectionSet, v notification.Priority) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNNotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput(ctx context.Context, v any) (*ent.NotificationWhereInput, error) {
+	res, err := ec.unmarshalInputNotificationWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, v any) (entgql.OrderDirection, error) {
@@ -48749,6 +50232,130 @@ func (ec *executionContext) marshalONode2realmᚗpubᚋtavernᚋinternalᚋent�
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONotification2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotification(ctx context.Context, sel ast.SelectionSet, v *ent.Notification) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Notification(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalONotificationEdge2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationEdge(ctx context.Context, sel ast.SelectionSet, v []*ent.NotificationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalONotificationEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationEdge(ctx, sel, v[i])
+	})
+
+	return ret
+}
+
+func (ec *executionContext) marshalONotificationEdge2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationEdge(ctx context.Context, sel ast.SelectionSet, v *ent.NotificationEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._NotificationEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalONotificationOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrderᚄ(ctx context.Context, v any) ([]*ent.NotificationOrder, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.NotificationOrder, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNNotificationOrder2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationOrder(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONotificationPriority2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriorityᚄ(ctx context.Context, v any) ([]notification.Priority, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]notification.Priority, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNNotificationPriority2realmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalONotificationPriority2ᚕrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriorityᚄ(ctx context.Context, sel ast.SelectionSet, v []notification.Priority) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNotificationPriority2realmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalONotificationPriority2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx context.Context, v any) (*notification.Priority, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(notification.Priority)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalONotificationPriority2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚋnotificationᚐPriority(ctx context.Context, sel ast.SelectionSet, v *notification.Priority) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalONotificationWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInputᚄ(ctx context.Context, v any) ([]*ent.NotificationWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*ent.NotificationWhereInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNNotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalONotificationWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationWhereInput(ctx context.Context, v any) (*ent.NotificationWhereInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputNotificationWhereInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOPortal2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortalᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Portal) graphql.Marshaler {
