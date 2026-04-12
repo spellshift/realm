@@ -906,6 +906,51 @@ func (s *Shell) ShellTasks(
 	return s.QueryShellTasks().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (s *Shell) Pivots(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ShellPivotOrder, where *ShellPivotWhereInput,
+) (*ShellPivotConnection, error) {
+	opts := []ShellPivotPaginateOption{
+		WithShellPivotOrder(orderBy),
+		WithShellPivotFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := s.Edges.totalCount[6][alias]
+	if nodes, err := s.NamedPivots(alias); err == nil || hasTotalCount {
+		pager, err := newShellPivotPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ShellPivotConnection{Edges: []*ShellPivotEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return s.QueryPivots().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (sp *ShellPivot) Shell(ctx context.Context) (*Shell, error) {
+	result, err := sp.Edges.ShellOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryShell().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (sp *ShellPivot) Portal(ctx context.Context) (*Portal, error) {
+	result, err := sp.Edges.PortalOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryPortal().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (sp *ShellPivot) Credential(ctx context.Context) (*HostCredential, error) {
+	result, err := sp.Edges.CredentialOrErr()
+	if IsNotLoaded(err) {
+		result, err = sp.QueryCredential().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
 func (st *ShellTask) Shell(ctx context.Context) (*Shell, error) {
 	result, err := st.Edges.ShellOrErr()
 	if IsNotLoaded(err) {

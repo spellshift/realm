@@ -715,6 +715,47 @@ var (
 			},
 		},
 	}
+	// ShellPivotsColumns holds the columns for the "shell_pivots" table.
+	ShellPivotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "stream_id", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"ssh"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "port", Type: field.TypeInt},
+		{Name: "data", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "shell_pivot_shell", Type: field.TypeInt, Nullable: true},
+		{Name: "shell_pivot_portal", Type: field.TypeInt, Nullable: true},
+		{Name: "shell_pivot_credential", Type: field.TypeInt, Nullable: true},
+	}
+	// ShellPivotsTable holds the schema information for the "shell_pivots" table.
+	ShellPivotsTable = &schema.Table{
+		Name:       "shell_pivots",
+		Columns:    ShellPivotsColumns,
+		PrimaryKey: []*schema.Column{ShellPivotsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shell_pivots_shells_shell",
+				Columns:    []*schema.Column{ShellPivotsColumns[9]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "shell_pivots_portals_portal",
+				Columns:    []*schema.Column{ShellPivotsColumns[10]},
+				RefColumns: []*schema.Column{PortalsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "shell_pivots_host_credentials_credential",
+				Columns:    []*schema.Column{ShellPivotsColumns[11]},
+				RefColumns: []*schema.Column{HostCredentialsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// ShellTasksColumns holds the columns for the "shell_tasks" table.
 	ShellTasksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -982,6 +1023,7 @@ var (
 		ScheduledTasksTable,
 		ScreenshotsTable,
 		ShellsTable,
+		ShellPivotsTable,
 		ShellTasksTable,
 		TagsTable,
 		TasksTable,
@@ -1099,6 +1141,12 @@ func init() {
 	ShellsTable.ForeignKeys[1].RefTable = BeaconsTable
 	ShellsTable.ForeignKeys[2].RefTable = UsersTable
 	ShellsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	ShellPivotsTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellPivotsTable.ForeignKeys[1].RefTable = PortalsTable
+	ShellPivotsTable.ForeignKeys[2].RefTable = HostCredentialsTable
+	ShellPivotsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	ShellTasksTable.ForeignKeys[0].RefTable = ShellsTable

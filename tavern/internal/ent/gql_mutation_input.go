@@ -9,6 +9,7 @@ import (
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -599,6 +600,40 @@ func (i *CreateShellInput) Mutate(m *ShellMutation) {
 
 // SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
 func (c *ShellCreate) SetInput(i CreateShellInput) *ShellCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateShellPivotInput represents a mutation input for creating shellpivots.
+type CreateShellPivotInput struct {
+	StreamID     string
+	Kind         shellpivot.Kind
+	Destination  string
+	Port         int
+	ShellID      *int
+	PortalID     *int
+	CredentialID *int
+}
+
+// Mutate applies the CreateShellPivotInput on the ShellPivotMutation builder.
+func (i *CreateShellPivotInput) Mutate(m *ShellPivotMutation) {
+	m.SetStreamID(i.StreamID)
+	m.SetKind(i.Kind)
+	m.SetDestination(i.Destination)
+	m.SetPort(i.Port)
+	if v := i.ShellID; v != nil {
+		m.SetShellID(*v)
+	}
+	if v := i.PortalID; v != nil {
+		m.SetPortalID(*v)
+	}
+	if v := i.CredentialID; v != nil {
+		m.SetCredentialID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateShellPivotInput on the ShellPivotCreate builder.
+func (c *ShellPivotCreate) SetInput(i CreateShellPivotInput) *ShellPivotCreate {
 	i.Mutate(c.Mutation())
 	return c
 }

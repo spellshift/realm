@@ -38,6 +38,16 @@ export const GET_SHELL = gql`
           id
           closedAt
         }
+        pivots {
+          edges {
+            node {
+              id
+              kind
+              destination
+              closedAt
+            }
+          }
+        }
       }
     }
   }

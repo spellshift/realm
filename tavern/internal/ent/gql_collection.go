@@ -31,6 +31,7 @@ import (
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -5346,6 +5347,95 @@ func (s *ShellQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 			s.WithNamedShellTasks(alias, func(wq *ShellTaskQuery) {
 				*wq = *query
 			})
+
+		case "pivots":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellPivotClient{config: s.config}).Query()
+			)
+			args := newShellPivotPaginateArgs(fieldArgs(ctx, new(ShellPivotWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newShellPivotPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					s.loadTotal = append(s.loadTotal, func(ctx context.Context, nodes []*Shell) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"shell_pivot_shell"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(shell.PivotsColumn), ids...))
+						})
+						if err := query.GroupBy(shell.PivotsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[6][alias] = n
+						}
+						return nil
+					})
+				} else {
+					s.loadTotal = append(s.loadTotal, func(_ context.Context, nodes []*Shell) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Pivots)
+							if nodes[i].Edges.totalCount[6] == nil {
+								nodes[i].Edges.totalCount[6] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[6][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, shellpivotImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(shell.PivotsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			s.WithNamedPivots(alias, func(wq *ShellPivotQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[shell.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, shell.FieldCreatedAt)
@@ -5426,6 +5516,169 @@ func newShellPaginateArgs(rv map[string]any) *shellPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*ShellWhereInput); ok {
 		args.opts = append(args.opts, WithShellFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (sp *ShellPivotQuery) CollectFields(ctx context.Context, satisfies ...string) (*ShellPivotQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return sp, nil
+	}
+	if err := sp.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return sp, nil
+}
+
+func (sp *ShellPivotQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(shellpivot.Columns))
+		selectedFields = []string{shellpivot.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "shell":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ShellClient{config: sp.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, shellImplementors)...); err != nil {
+				return err
+			}
+			sp.withShell = query
+
+		case "portal":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&PortalClient{config: sp.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, portalImplementors)...); err != nil {
+				return err
+			}
+			sp.withPortal = query
+
+		case "credential":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostCredentialClient{config: sp.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostcredentialImplementors)...); err != nil {
+				return err
+			}
+			sp.withCredential = query
+		case "createdAt":
+			if _, ok := fieldSeen[shellpivot.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldCreatedAt)
+				fieldSeen[shellpivot.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[shellpivot.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldLastModifiedAt)
+				fieldSeen[shellpivot.FieldLastModifiedAt] = struct{}{}
+			}
+		case "closedAt":
+			if _, ok := fieldSeen[shellpivot.FieldClosedAt]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldClosedAt)
+				fieldSeen[shellpivot.FieldClosedAt] = struct{}{}
+			}
+		case "streamID":
+			if _, ok := fieldSeen[shellpivot.FieldStreamID]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldStreamID)
+				fieldSeen[shellpivot.FieldStreamID] = struct{}{}
+			}
+		case "kind":
+			if _, ok := fieldSeen[shellpivot.FieldKind]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldKind)
+				fieldSeen[shellpivot.FieldKind] = struct{}{}
+			}
+		case "destination":
+			if _, ok := fieldSeen[shellpivot.FieldDestination]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldDestination)
+				fieldSeen[shellpivot.FieldDestination] = struct{}{}
+			}
+		case "port":
+			if _, ok := fieldSeen[shellpivot.FieldPort]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldPort)
+				fieldSeen[shellpivot.FieldPort] = struct{}{}
+			}
+		case "data":
+			if _, ok := fieldSeen[shellpivot.FieldData]; !ok {
+				selectedFields = append(selectedFields, shellpivot.FieldData)
+				fieldSeen[shellpivot.FieldData] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		sp.Select(selectedFields...)
+	}
+	return nil
+}
+
+type shellpivotPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ShellPivotPaginateOption
+}
+
+func newShellPivotPaginateArgs(rv map[string]any) *shellpivotPaginateArgs {
+	args := &shellpivotPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*ShellPivotOrder:
+			args.opts = append(args.opts, WithShellPivotOrder(v))
+		case []any:
+			var orders []*ShellPivotOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &ShellPivotOrder{Field: &ShellPivotOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithShellPivotOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*ShellPivotWhereInput); ok {
+		args.opts = append(args.opts, WithShellPivotFilter(v.Filter))
 	}
 	return args
 }

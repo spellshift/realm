@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/schema"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -571,6 +572,29 @@ func init() {
 	shell.DefaultLastModifiedAt = shellDescLastModifiedAt.Default.(func() time.Time)
 	// shell.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	shell.UpdateDefaultLastModifiedAt = shellDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	shellpivotMixin := schema.ShellPivot{}.Mixin()
+	shellpivotMixinFields0 := shellpivotMixin[0].Fields()
+	_ = shellpivotMixinFields0
+	shellpivotFields := schema.ShellPivot{}.Fields()
+	_ = shellpivotFields
+	// shellpivotDescCreatedAt is the schema descriptor for created_at field.
+	shellpivotDescCreatedAt := shellpivotMixinFields0[0].Descriptor()
+	// shellpivot.DefaultCreatedAt holds the default value on creation for the created_at field.
+	shellpivot.DefaultCreatedAt = shellpivotDescCreatedAt.Default.(func() time.Time)
+	// shellpivotDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	shellpivotDescLastModifiedAt := shellpivotMixinFields0[1].Descriptor()
+	// shellpivot.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	shellpivot.DefaultLastModifiedAt = shellpivotDescLastModifiedAt.Default.(func() time.Time)
+	// shellpivot.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	shellpivot.UpdateDefaultLastModifiedAt = shellpivotDescLastModifiedAt.UpdateDefault.(func() time.Time)
+	// shellpivotDescStreamID is the schema descriptor for stream_id field.
+	shellpivotDescStreamID := shellpivotFields[1].Descriptor()
+	// shellpivot.StreamIDValidator is a validator for the "stream_id" field. It is called by the builders before save.
+	shellpivot.StreamIDValidator = shellpivotDescStreamID.Validators[0].(func(string) error)
+	// shellpivotDescDestination is the schema descriptor for destination field.
+	shellpivotDescDestination := shellpivotFields[3].Descriptor()
+	// shellpivot.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	shellpivot.DestinationValidator = shellpivotDescDestination.Validators[0].(func(string) error)
 	shelltaskMixin := schema.ShellTask{}.Mixin()
 	shelltaskMixinFields0 := shelltaskMixin[0].Fields()
 	_ = shelltaskMixinFields0
