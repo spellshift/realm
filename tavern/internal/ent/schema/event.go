@@ -24,7 +24,6 @@ func (Event) Fields() []ent.Field {
 			),
 		field.Enum("kind").
 			Values(
-				"BEACON_CALLBACK",
 				"BEACON_LOST",
 				"HOST_ACCESS_NEW",
 				"HOST_ACCESS_RECOVERED",

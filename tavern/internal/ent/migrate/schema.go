@@ -213,7 +213,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "timestamp", Type: field.TypeInt64},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_CALLBACK", "BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
 		{Name: "beacon_events", Type: field.TypeInt, Nullable: true},
 		{Name: "host_events", Type: field.TypeInt, Nullable: true},
 		{Name: "quest_events", Type: field.TypeInt, Nullable: true},
