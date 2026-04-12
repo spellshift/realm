@@ -188,12 +188,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	target := r.URL.Query().Get("target")
 	shellIDStr := r.URL.Query().Get("shell_id")
 
-	// Require a shellID
-	if shellIDStr == "" {
-		sendWsError("missing shell_id")
-		return
-	}
-
 	var pivotSession *PivotSession
 
 	if pivotIDStr != "" {
@@ -223,6 +217,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		portalID, err := strconv.Atoi(portalIDStr)
 		if err != nil {
 			sendWsError("invalid portal_id")
+			return
+		}
+
+		// Require a shellID
+		if shellIDStr == "" {
+			sendWsError("missing shell_id")
 			return
 		}
 
