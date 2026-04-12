@@ -13,7 +13,6 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
     table,
     sortType,
     showFiltering = true,
-    headerComponent,
 }) => {
     const { filterCount, resetFilters } = useFilters();
 
@@ -80,8 +79,6 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
                     {showFiltering && <FilterControls />}
                 </div>
             </div>
-
-            {headerComponent}
 
             {renderTableContent()}
         </div>

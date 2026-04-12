@@ -54,9 +54,11 @@ const PortalTab = () => {
 
     return (
         <div className="mt-2">
+            <div className="mb-4">
+                <PortalsHeader />
+            </div>
             <VirtualizedTableWrapper
                 title="Portals"
-                headerComponent={<PortalsHeader />}
                 totalItems={data?.portals?.totalCount}
                 loading={initialLoading}
                 error={error}
