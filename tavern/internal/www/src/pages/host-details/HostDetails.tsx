@@ -9,9 +9,10 @@ import { BeaconTab } from "./beacon-tab";
 import { ProcessTab } from "./process-tab";
 import { FilesTab } from "./files-tab";
 import { ShellTab } from "./shell-tab";
+import { PortalTab } from "./portal-tab";
 import HostHeader from "./components/HostHeader";
 
-const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells"] as const;
+const TAB_NAMES = ["beacons", "tasks", "processes", "files", "credentials", "shells", "portals"] as const;
 
 const HostDetails = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -48,6 +49,9 @@ const HostDetails = () => {
                         </TabPanel>
                         <TabPanel>
                             <ShellTab />
+                        </TabPanel>
+                        <TabPanel>
+                            <PortalTab />
                         </TabPanel>
                     </TabPanels>
                 </TabGroup>
