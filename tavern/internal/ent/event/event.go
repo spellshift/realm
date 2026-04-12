@@ -31,6 +31,8 @@ const (
 	EdgeHost = "host"
 	// EdgeQuest holds the string denoting the quest edge name in mutations.
 	EdgeQuest = "quest"
+	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
+	EdgeNotifications = "notifications"
 	// Table holds the table name of the event in the database.
 	Table = "events"
 	// BeaconTable is the table that holds the beacon relation/edge.
@@ -54,6 +56,13 @@ const (
 	QuestInverseTable = "quests"
 	// QuestColumn is the table column denoting the quest relation/edge.
 	QuestColumn = "quest_events"
+	// NotificationsTable is the table that holds the notifications relation/edge.
+	NotificationsTable = "notifications"
+	// NotificationsInverseTable is the table name for the Notification entity.
+	// It exists in this package in order to avoid circular dependency with the "notification" package.
+	NotificationsInverseTable = "notifications"
+	// NotificationsColumn is the table column denoting the notifications relation/edge.
+	NotificationsColumn = "notification_event"
 )
 
 // Columns holds all SQL columns for event fields.
@@ -171,6 +180,20 @@ func ByQuestField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newQuestStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByNotificationsCount orders the results by notifications count.
+func ByNotificationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNotificationsStep(), opts...)
+	}
+}
+
+// ByNotifications orders the results by notifications terms.
+func ByNotifications(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNotificationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newBeaconStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -190,6 +213,13 @@ func newQuestStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(QuestInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, QuestTable, QuestColumn),
+	)
+}
+func newNotificationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NotificationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, NotificationsTable, NotificationsColumn),
 	)
 }
 

@@ -79,4 +79,10 @@ type Mutation {
     ###
     createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
     disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
+
+    ###
+    # Notification
+    ###
+    markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
 }

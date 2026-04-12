@@ -262,6 +262,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		Kind           func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
+		Notifications  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
 		Quest          func(childComplexity int) int
 		Timestamp      func(childComplexity int) int
 	}
@@ -419,31 +420,55 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
-		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateScheduledTask  func(childComplexity int, input ent.CreateScheduledTaskInput) int
-		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag            func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome           func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder        func(childComplexity int, builderID int) int
-		DeleteTome           func(childComplexity int, tomeID int) int
-		DisableLink          func(childComplexity int, linkID int) int
-		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
-		DropAllData          func(childComplexity int) int
-		FavoriteHost         func(childComplexity int, hostID int) int
-		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey      func(childComplexity int) int
-		UnfavoriteHost       func(childComplexity int, hostID int) int
-		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome           func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser           func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest                 func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
+		CreateRepository            func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask         func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell                 func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder               func(childComplexity int, builderID int) int
+		DeleteTome                  func(childComplexity int, tomeID int) int
+		DisableLink                 func(childComplexity int, linkID int) int
+		DisableScheduledTask        func(childComplexity int, scheduledTaskID int) int
+		DropAllData                 func(childComplexity int) int
+		FavoriteHost                func(childComplexity int, hostID int) int
+		ImportRepository            func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		MarkNotificationsAsArchived func(childComplexity int, notificationIDs []int) int
+		MarkNotificationsAsRead     func(childComplexity int, notificationIDs []int) int
+		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey             func(childComplexity int) int
+		UnfavoriteHost              func(childComplexity int, hostID int) int
+		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome                  func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser                  func(childComplexity int, userID int, input ent.UpdateUserInput) int
+	}
+
+	Notification struct {
+		Archived       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Event          func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Priority       func(childComplexity int) int
+		Read           func(childComplexity int) int
+		User           func(childComplexity int) int
+	}
+
+	NotificationConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	NotificationEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -765,6 +790,7 @@ type ComplexityRoot struct {
 		IsActivated   func(childComplexity int) int
 		IsAdmin       func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Notifications func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
 		PhotoURL      func(childComplexity int) int
 		Tomes         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
@@ -1801,6 +1827,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Event.LastModifiedAt(childComplexity), true
 
+	case "Event.notifications":
+		if e.ComplexityRoot.Event.Notifications == nil {
+			break
+		}
+
+		args, err := ec.field_Event_notifications_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Event.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
+
 	case "Event.quest":
 		if e.ComplexityRoot.Event.Quest == nil {
 			break
@@ -2738,6 +2776,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.ImportRepository(childComplexity, args["repoID"].(int), args["input"].(*models.ImportRepositoryInput)), true
 
+	case "Mutation.markNotificationsAsArchived":
+		if e.ComplexityRoot.Mutation.MarkNotificationsAsArchived == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markNotificationsAsArchived_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.MarkNotificationsAsArchived(childComplexity, args["notificationIDs"].([]int)), true
+
+	case "Mutation.markNotificationsAsRead":
+		if e.ComplexityRoot.Mutation.MarkNotificationsAsRead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markNotificationsAsRead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.MarkNotificationsAsRead(childComplexity, args["notificationIDs"].([]int)), true
+
 	case "Mutation.registerBuilder":
 		if e.ComplexityRoot.Mutation.RegisterBuilder == nil {
 			break
@@ -2840,6 +2902,97 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateUser(childComplexity, args["userID"].(int), args["input"].(ent.UpdateUserInput)), true
+
+	case "Notification.archived":
+		if e.ComplexityRoot.Notification.Archived == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Archived(childComplexity), true
+
+	case "Notification.createdAt":
+		if e.ComplexityRoot.Notification.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.CreatedAt(childComplexity), true
+
+	case "Notification.event":
+		if e.ComplexityRoot.Notification.Event == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Event(childComplexity), true
+
+	case "Notification.id":
+		if e.ComplexityRoot.Notification.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.ID(childComplexity), true
+
+	case "Notification.lastModifiedAt":
+		if e.ComplexityRoot.Notification.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.LastModifiedAt(childComplexity), true
+
+	case "Notification.priority":
+		if e.ComplexityRoot.Notification.Priority == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Priority(childComplexity), true
+
+	case "Notification.read":
+		if e.ComplexityRoot.Notification.Read == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Read(childComplexity), true
+
+	case "Notification.user":
+		if e.ComplexityRoot.Notification.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.User(childComplexity), true
+
+	case "NotificationConnection.edges":
+		if e.ComplexityRoot.NotificationConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.Edges(childComplexity), true
+
+	case "NotificationConnection.pageInfo":
+		if e.ComplexityRoot.NotificationConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.PageInfo(childComplexity), true
+
+	case "NotificationConnection.totalCount":
+		if e.ComplexityRoot.NotificationConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.TotalCount(childComplexity), true
+
+	case "NotificationEdge.cursor":
+		if e.ComplexityRoot.NotificationEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationEdge.Cursor(childComplexity), true
+
+	case "NotificationEdge.node":
+		if e.ComplexityRoot.NotificationEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationEdge.Node(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.ComplexityRoot.PageInfo.EndCursor == nil {
@@ -4496,6 +4649,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.Name(childComplexity), true
 
+	case "User.notifications":
+		if e.ComplexityRoot.User.Notifications == nil {
+			break
+		}
+
+		args, err := ec.field_User_notifications_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
+
 	case "User.photoURL":
 		if e.ComplexityRoot.User.PhotoURL == nil {
 			break
@@ -4604,6 +4769,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputImportRepositoryInput,
 		ec.unmarshalInputLinkOrder,
 		ec.unmarshalInputLinkWhereInput,
+		ec.unmarshalInputNotificationOrder,
+		ec.unmarshalInputNotificationWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -4629,6 +4796,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
+		ec.unmarshalInputUpdateNotificationInput,
 		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
@@ -6912,6 +7080,37 @@ type Event implements Node {
   Quest associated with this event
   """
   quest: Quest
+  notifications(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Notifications returned from the connection.
+    """
+    orderBy: [NotificationOrder!]
+
+    """
+    Filtering options for Notifications returned from the connection.
+    """
+    where: NotificationWhereInput
+  ): NotificationConnection!
 }
 """
 A connection to a list of items.
@@ -7048,6 +7247,11 @@ input EventWhereInput {
   """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
+  """
+  notifications edge predicates
+  """
+  hasNotifications: Boolean
+  hasNotificationsWith: [NotificationWhereInput!]
 }
 type Host implements Node {
   id: ID!
@@ -8591,6 +8795,165 @@ interface Node @goModel(model: "realm.pub/tavern/internal/ent.Noder") {
   The id of the object.
   """
   id: ID!
+}
+type Notification implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Priority of the notification
+  """
+  priority: NotificationPriority!
+  """
+  Whether the notification has been read
+  """
+  read: Boolean!
+  """
+  Whether the notification has been archived
+  """
+  archived: Boolean!
+  """
+  User who owns this notification
+  """
+  user: User!
+  """
+  Event this notification is related to
+  """
+  event: Event!
+}
+"""
+A connection to a list of items.
+"""
+type NotificationConnection {
+  """
+  A list of edges.
+  """
+  edges: [NotificationEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type NotificationEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Notification
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Notification connections
+"""
+input NotificationOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Notifications.
+  """
+  field: NotificationOrderField!
+}
+"""
+Properties by which Notification connections can be ordered.
+"""
+enum NotificationOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+NotificationPriority is enum for the field priority
+"""
+enum NotificationPriority @goModel(model: "realm.pub/tavern/internal/ent/notification.Priority") {
+  Urgent
+  High
+  Medium
+  Low
+}
+"""
+NotificationWhereInput is used for filtering Notification objects.
+Input was generated by ent.
+"""
+input NotificationWhereInput {
+  not: NotificationWhereInput
+  and: [NotificationWhereInput!]
+  or: [NotificationWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  priority field predicates
+  """
+  priority: NotificationPriority
+  priorityNEQ: NotificationPriority
+  priorityIn: [NotificationPriority!]
+  priorityNotIn: [NotificationPriority!]
+  """
+  read field predicates
+  """
+  read: Boolean
+  readNEQ: Boolean
+  """
+  archived field predicates
+  """
+  archived: Boolean
+  archivedNEQ: Boolean
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
+  """
+  event edge predicates
+  """
+  hasEvent: Boolean
+  hasEventWith: [EventWhereInput!]
 }
 """
 Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
@@ -11388,6 +11751,30 @@ input UpdateLinkInput {
   clearCreator: Boolean
 }
 """
+UpdateNotificationInput is used for update Notification object.
+Input was generated by ent.
+"""
+input UpdateNotificationInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Priority of the notification
+  """
+  priority: NotificationPriority
+  """
+  Whether the notification has been read
+  """
+  read: Boolean
+  """
+  Whether the notification has been archived
+  """
+  archived: Boolean
+  userID: ID
+  eventID: ID
+}
+"""
 UpdateScheduledTaskInput is used for update ScheduledTask object.
 Input was generated by ent.
 """
@@ -11509,6 +11896,9 @@ input UpdateUserInput {
   True if the user is an Admin
   """
   isAdmin: Boolean
+  addNotificationIDs: [ID!]
+  removeNotificationIDs: [ID!]
+  clearNotifications: Boolean
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
@@ -11540,6 +11930,37 @@ type User implements Node {
   True if the user is an Admin
   """
   isAdmin: Boolean!
+  notifications(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Notifications returned from the connection.
+    """
+    orderBy: [NotificationOrder!]
+
+    """
+    Filtering options for Notifications returned from the connection.
+    """
+    where: NotificationWhereInput
+  ): NotificationConnection!
   tomes(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -11775,6 +12196,11 @@ input UserWhereInput {
   """
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """
+  notifications edge predicates
+  """
+  hasNotifications: Boolean
+  hasNotificationsWith: [NotificationWhereInput!]
   """
   tomes edge predicates
   """
@@ -12189,6 +12615,12 @@ scalar Uint64
     ###
     createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
     disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
+
+    ###
+    # Notification
+    ###
+    markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

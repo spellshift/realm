@@ -445,6 +445,37 @@ var (
 			},
 		},
 	}
+	// NotificationsColumns holds the columns for the "notifications" table.
+	NotificationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "priority", Type: field.TypeEnum, Enums: []string{"Urgent", "High", "Medium", "Low"}, Default: "Low"},
+		{Name: "read", Type: field.TypeBool, Default: false},
+		{Name: "archived", Type: field.TypeBool, Default: false},
+		{Name: "notification_user", Type: field.TypeInt},
+		{Name: "notification_event", Type: field.TypeInt},
+	}
+	// NotificationsTable holds the schema information for the "notifications" table.
+	NotificationsTable = &schema.Table{
+		Name:       "notifications",
+		Columns:    NotificationsColumns,
+		PrimaryKey: []*schema.Column{NotificationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "notifications_users_user",
+				Columns:    []*schema.Column{NotificationsColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "notifications_events_event",
+				Columns:    []*schema.Column{NotificationsColumns[7]},
+				RefColumns: []*schema.Column{EventsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// PortalsColumns holds the columns for the "portals" table.
 	PortalsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -944,6 +975,7 @@ var (
 		HostFilesTable,
 		HostProcessesTable,
 		LinksTable,
+		NotificationsTable,
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
@@ -1024,6 +1056,11 @@ func init() {
 	LinksTable.ForeignKeys[0].RefTable = AssetsTable
 	LinksTable.ForeignKeys[1].RefTable = UsersTable
 	LinksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	NotificationsTable.ForeignKeys[0].RefTable = UsersTable
+	NotificationsTable.ForeignKeys[1].RefTable = EventsTable
+	NotificationsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable

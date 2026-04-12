@@ -8,6 +8,7 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -392,6 +393,50 @@ func (c *LinkUpdateOne) SetInput(i UpdateLinkInput) *LinkUpdateOne {
 	return c
 }
 
+// UpdateNotificationInput represents a mutation input for updating notifications.
+type UpdateNotificationInput struct {
+	LastModifiedAt *time.Time
+	Priority       *notification.Priority
+	Read           *bool
+	Archived       *bool
+	UserID         *int
+	EventID        *int
+}
+
+// Mutate applies the UpdateNotificationInput on the NotificationMutation builder.
+func (i *UpdateNotificationInput) Mutate(m *NotificationMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Priority; v != nil {
+		m.SetPriority(*v)
+	}
+	if v := i.Read; v != nil {
+		m.SetRead(*v)
+	}
+	if v := i.Archived; v != nil {
+		m.SetArchived(*v)
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+	if v := i.EventID; v != nil {
+		m.SetEventID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdate builder.
+func (c *NotificationUpdate) SetInput(i UpdateNotificationInput) *NotificationUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdateOne builder.
+func (c *NotificationUpdateOne) SetInput(i UpdateNotificationInput) *NotificationUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateQuestInput represents a mutation input for creating quests.
 type CreateQuestInput struct {
 	Name       string
@@ -732,6 +777,9 @@ type UpdateUserInput struct {
 	PhotoURL              *string
 	IsActivated           *bool
 	IsAdmin               *bool
+	ClearNotifications    bool
+	AddNotificationIDs    []int
+	RemoveNotificationIDs []int
 	ClearTomes            bool
 	AddTomeIDs            []int
 	RemoveTomeIDs         []int
@@ -759,6 +807,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.IsAdmin; v != nil {
 		m.SetIsAdmin(*v)
+	}
+	if i.ClearNotifications {
+		m.ClearNotifications()
+	}
+	if v := i.AddNotificationIDs; len(v) > 0 {
+		m.AddNotificationIDs(v...)
+	}
+	if v := i.RemoveNotificationIDs; len(v) > 0 {
+		m.RemoveNotificationIDs(v...)
 	}
 	if i.ClearTomes {
 		m.ClearTomes()
