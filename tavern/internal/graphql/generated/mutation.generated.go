@@ -475,6 +475,8 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_relatedQuests(ctx, field)
 			case "previousQuest":
 				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "events":
+				return ec.fieldContext_Quest_events(ctx, field)
 			case "diffs":
 				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
@@ -568,6 +570,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_shells(ctx, field)
 			case "history":
 				return ec.fieldContext_Beacon_history(ctx, field)
+			case "events":
+				return ec.fieldContext_Beacon_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -746,6 +750,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -841,6 +847,8 @@ func (ec *executionContext) fieldContext_Mutation_favoriteHost(ctx context.Conte
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -936,6 +944,8 @@ func (ec *executionContext) fieldContext_Mutation_unfavoriteHost(ctx context.Con
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},

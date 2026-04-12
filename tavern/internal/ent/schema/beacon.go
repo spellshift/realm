@@ -117,6 +117,13 @@ func (Beacon) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Historical check-ins for this beacon."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with this beacon."),
 	}
 }
 

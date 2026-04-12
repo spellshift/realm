@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -275,6 +276,21 @@ func (hu *HostUpdate) AddFavoritedBy(u ...*User) *HostUpdate {
 	return hu.AddFavoritedByIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (hu *HostUpdate) AddEventIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddEventIDs(ids...)
+	return hu
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (hu *HostUpdate) AddEvents(e ...*Event) *HostUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return hu.AddEventIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hu *HostUpdate) Mutation() *HostMutation {
 	return hu.mutation
@@ -425,6 +441,27 @@ func (hu *HostUpdate) RemoveFavoritedBy(u ...*User) *HostUpdate {
 		ids[i] = u[i].ID
 	}
 	return hu.RemoveFavoritedByIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (hu *HostUpdate) ClearEvents() *HostUpdate {
+	hu.mutation.ClearEvents()
+	return hu
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (hu *HostUpdate) RemoveEventIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveEventIDs(ids...)
+	return hu
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (hu *HostUpdate) RemoveEvents(e ...*Event) *HostUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return hu.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -849,6 +886,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedEventsIDs(); len(nodes) > 0 && !hu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{host.Label}
@@ -1108,6 +1190,21 @@ func (huo *HostUpdateOne) AddFavoritedBy(u ...*User) *HostUpdateOne {
 	return huo.AddFavoritedByIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (huo *HostUpdateOne) AddEventIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddEventIDs(ids...)
+	return huo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (huo *HostUpdateOne) AddEvents(e ...*Event) *HostUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return huo.AddEventIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (huo *HostUpdateOne) Mutation() *HostMutation {
 	return huo.mutation
@@ -1258,6 +1355,27 @@ func (huo *HostUpdateOne) RemoveFavoritedBy(u ...*User) *HostUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return huo.RemoveFavoritedByIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (huo *HostUpdateOne) ClearEvents() *HostUpdateOne {
+	huo.mutation.ClearEvents()
+	return huo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (huo *HostUpdateOne) RemoveEventIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveEventIDs(ids...)
+	return huo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (huo *HostUpdateOne) RemoveEvents(e ...*Event) *HostUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return huo.RemoveEventIDs(ids...)
 }
 
 // Where appends a list predicates to the HostUpdate builder.
@@ -1705,6 +1823,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !huo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

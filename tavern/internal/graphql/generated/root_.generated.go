@@ -84,6 +84,7 @@ type ComplexityRoot struct {
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
+		Events          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		History         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconHistoryOrder, where *ent.BeaconHistoryWhereInput) int
 		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -254,10 +255,33 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Event struct {
+		Beacon         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Quest          func(childComplexity int) int
+		Timestamp      func(childComplexity int) int
+	}
+
+	EventConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	EventEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Host struct {
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		Events         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ExternalIP     func(childComplexity int) int
 		FavoritedBy    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
@@ -482,6 +506,7 @@ type ComplexityRoot struct {
 		Creator             func(childComplexity int) int
 		Diffs               func(childComplexity int) int
 		EldritchAtCreation  func(childComplexity int) int
+		Events              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ID                  func(childComplexity int) int
 		LastModifiedAt      func(childComplexity int) int
 		Name                func(childComplexity int) int
@@ -993,6 +1018,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Beacon.CreatedAt(childComplexity), true
+
+	case "Beacon.events":
+		if e.ComplexityRoot.Beacon.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Beacon.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Beacon.history":
 		if e.ComplexityRoot.Beacon.History == nil {
@@ -1749,6 +1786,97 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.DeviceAuthEdge.Node(childComplexity), true
 
+	case "Event.beacon":
+		if e.ComplexityRoot.Event.Beacon == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Beacon(childComplexity), true
+
+	case "Event.createdAt":
+		if e.ComplexityRoot.Event.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.CreatedAt(childComplexity), true
+
+	case "Event.host":
+		if e.ComplexityRoot.Event.Host == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Host(childComplexity), true
+
+	case "Event.id":
+		if e.ComplexityRoot.Event.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.ID(childComplexity), true
+
+	case "Event.kind":
+		if e.ComplexityRoot.Event.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Kind(childComplexity), true
+
+	case "Event.lastModifiedAt":
+		if e.ComplexityRoot.Event.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.LastModifiedAt(childComplexity), true
+
+	case "Event.quest":
+		if e.ComplexityRoot.Event.Quest == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Quest(childComplexity), true
+
+	case "Event.timestamp":
+		if e.ComplexityRoot.Event.Timestamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Timestamp(childComplexity), true
+
+	case "EventConnection.edges":
+		if e.ComplexityRoot.EventConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.Edges(childComplexity), true
+
+	case "EventConnection.pageInfo":
+		if e.ComplexityRoot.EventConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.PageInfo(childComplexity), true
+
+	case "EventConnection.totalCount":
+		if e.ComplexityRoot.EventConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.TotalCount(childComplexity), true
+
+	case "EventEdge.cursor":
+		if e.ComplexityRoot.EventEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventEdge.Cursor(childComplexity), true
+
+	case "EventEdge.node":
+		if e.ComplexityRoot.EventEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventEdge.Node(childComplexity), true
+
 	case "Host.beacons":
 		if e.ComplexityRoot.Host.Beacons == nil {
 			break
@@ -1779,6 +1907,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Host.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
+
+	case "Host.events":
+		if e.ComplexityRoot.Host.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Host_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Host.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Host.externalIP":
 		if e.ComplexityRoot.Host.ExternalIP == nil {
@@ -3130,6 +3270,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Quest.EldritchAtCreation(childComplexity), true
+
+	case "Quest.events":
+		if e.ComplexityRoot.Quest.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Quest_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Quest.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Quest.id":
 		if e.ComplexityRoot.Quest.ID == nil {
@@ -4598,6 +4750,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputDeviceAuthOrder,
 		ec.unmarshalInputDeviceAuthWhereInput,
+		ec.unmarshalInputEventOrder,
+		ec.unmarshalInputEventWhereInput,
 		ec.unmarshalInputHostCredentialOrder,
 		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
@@ -5265,6 +5419,37 @@ type Beacon implements Node {
     """
     where: BeaconHistoryWhereInput
   ): BeaconHistoryConnection!
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -5633,6 +5818,11 @@ input BeaconWhereInput {
   """
   hasHistory: Boolean
   hasHistoryWith: [BeaconHistoryWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type BuildProfile implements Node {
   id: ID!
@@ -6878,6 +7068,173 @@ input DeviceAuthWhereInput {
   hasUser: Boolean
   hasUserWith: [UserWhereInput!]
 }
+type Event implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Unix timestamp of the event
+  """
+  timestamp: Int!
+  """
+  Type of event
+  """
+  kind: EventKind!
+  """
+  Beacon associated with this event
+  """
+  beacon: Beacon
+  """
+  Host associated with this event
+  """
+  host: Host
+  """
+  Quest associated with this event
+  """
+  quest: Quest
+}
+"""
+A connection to a list of items.
+"""
+type EventConnection {
+  """
+  A list of edges.
+  """
+  edges: [EventEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type EventEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Event
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+EventKind is enum for the field kind
+"""
+enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
+  BEACON_LOST
+  HOST_ACCESS_NEW
+  HOST_ACCESS_RECOVERED
+  HOST_ACCESS_LOST
+  QUEST_COMPLETED
+}
+"""
+Ordering options for Event connections
+"""
+input EventOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Events.
+  """
+  field: EventOrderField!
+}
+"""
+Properties by which Event connections can be ordered.
+"""
+enum EventOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  TIMESTAMP
+}
+"""
+EventWhereInput is used for filtering Event objects.
+Input was generated by ent.
+"""
+input EventWhereInput {
+  not: EventWhereInput
+  and: [EventWhereInput!]
+  or: [EventWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  timestamp field predicates
+  """
+  timestamp: Int
+  timestampNEQ: Int
+  timestampIn: [Int!]
+  timestampNotIn: [Int!]
+  timestampGT: Int
+  timestampGTE: Int
+  timestampLT: Int
+  timestampLTE: Int
+  """
+  kind field predicates
+  """
+  kind: EventKind
+  kindNEQ: EventKind
+  kindIn: [EventKind!]
+  kindNotIn: [EventKind!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """
+  host edge predicates
+  """
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """
+  quest edge predicates
+  """
+  hasQuest: Boolean
+  hasQuestWith: [QuestWhereInput!]
+}
 type Host implements Node {
   id: ID!
   """
@@ -7133,6 +7490,37 @@ type Host implements Node {
     """
     where: UserWhereInput
   ): UserConnection! @goField(name: "FavoritedBy", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -8182,6 +8570,11 @@ input HostWhereInput {
   """
   hasFavoritedBy: Boolean
   hasFavoritedByWith: [UserWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -8745,6 +9138,37 @@ type Quest implements Node {
   The previous quest in the adventure
   """
   previousQuest: Quest
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -8948,6 +9372,11 @@ input QuestWhereInput {
   """
   hasPreviousQuest: Boolean
   hasPreviousQuestWith: [QuestWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Repository implements Node {
   id: ID!

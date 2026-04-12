@@ -30,6 +30,9 @@ type Builder func(*sql.Selector)
 // DeviceAuth is the predicate function for deviceauth builders.
 type DeviceAuth func(*sql.Selector)
 
+// Event is the predicate function for event builders.
+type Event func(*sql.Selector)
+
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 

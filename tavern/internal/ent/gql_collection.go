@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -836,6 +837,95 @@ func (b *BeaconQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 				query = pager.applyOrder(query)
 			}
 			b.WithNamedHistory(alias, func(wq *BeaconHistoryQuery) {
+				*wq = *query
+			})
+
+		case "events":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&EventClient{config: b.config}).Query()
+			)
+			args := newEventPaginateArgs(fieldArgs(ctx, new(EventWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newEventPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					b.loadTotal = append(b.loadTotal, func(ctx context.Context, nodes []*Beacon) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"beacon_events"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(beacon.EventsColumn), ids...))
+						})
+						if err := query.GroupBy(beacon.EventsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[4][alias] = n
+						}
+						return nil
+					})
+				} else {
+					b.loadTotal = append(b.loadTotal, func(_ context.Context, nodes []*Beacon) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Events)
+							if nodes[i].Edges.totalCount[4] == nil {
+								nodes[i].Edges.totalCount[4] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[4][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, eventImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(beacon.EventsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			b.WithNamedEvents(alias, func(wq *EventQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -1760,6 +1850,149 @@ func newDeviceAuthPaginateArgs(rv map[string]any) *deviceauthPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (e *EventQuery) CollectFields(ctx context.Context, satisfies ...string) (*EventQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return e, nil
+	}
+	if err := e.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return e, nil
+}
+
+func (e *EventQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(event.Columns))
+		selectedFields = []string{event.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "beacon":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&BeaconClient{config: e.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, beaconImplementors)...); err != nil {
+				return err
+			}
+			e.withBeacon = query
+
+		case "host":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&HostClient{config: e.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, hostImplementors)...); err != nil {
+				return err
+			}
+			e.withHost = query
+
+		case "quest":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&QuestClient{config: e.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, questImplementors)...); err != nil {
+				return err
+			}
+			e.withQuest = query
+		case "createdAt":
+			if _, ok := fieldSeen[event.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, event.FieldCreatedAt)
+				fieldSeen[event.FieldCreatedAt] = struct{}{}
+			}
+		case "lastModifiedAt":
+			if _, ok := fieldSeen[event.FieldLastModifiedAt]; !ok {
+				selectedFields = append(selectedFields, event.FieldLastModifiedAt)
+				fieldSeen[event.FieldLastModifiedAt] = struct{}{}
+			}
+		case "timestamp":
+			if _, ok := fieldSeen[event.FieldTimestamp]; !ok {
+				selectedFields = append(selectedFields, event.FieldTimestamp)
+				fieldSeen[event.FieldTimestamp] = struct{}{}
+			}
+		case "kind":
+			if _, ok := fieldSeen[event.FieldKind]; !ok {
+				selectedFields = append(selectedFields, event.FieldKind)
+				fieldSeen[event.FieldKind] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		e.Select(selectedFields...)
+	}
+	return nil
+}
+
+type eventPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []EventPaginateOption
+}
+
+func newEventPaginateArgs(rv map[string]any) *eventPaginateArgs {
+	args := &eventPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case []*EventOrder:
+			args.opts = append(args.opts, WithEventOrder(v))
+		case []any:
+			var orders []*EventOrder
+			for i := range v {
+				mv, ok := v[i].(map[string]any)
+				if !ok {
+					continue
+				}
+				var (
+					err1, err2 error
+					order      = &EventOrder{Field: &EventOrderField{}, Direction: entgql.OrderDirectionAsc}
+				)
+				if d, ok := mv[directionField]; ok {
+					err1 = order.Direction.UnmarshalGQL(d)
+				}
+				if f, ok := mv[fieldField]; ok {
+					err2 = order.Field.UnmarshalGQL(f)
+				}
+				if err1 == nil && err2 == nil {
+					orders = append(orders, order)
+				}
+			}
+			args.opts = append(args.opts, WithEventOrder(orders))
+		}
+	}
+	if v, ok := rv[whereField].(*EventWhereInput); ok {
+		args.opts = append(args.opts, WithEventFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (h *HostQuery) CollectFields(ctx context.Context, satisfies ...string) (*HostQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -2409,6 +2642,95 @@ func (h *HostQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 				query = pager.applyOrder(query)
 			}
 			h.WithNamedFavoritedBy(alias, func(wq *UserQuery) {
+				*wq = *query
+			})
+
+		case "events":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&EventClient{config: h.config}).Query()
+			)
+			args := newEventPaginateArgs(fieldArgs(ctx, new(EventWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newEventPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					h.loadTotal = append(h.loadTotal, func(ctx context.Context, nodes []*Host) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"host_events"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(host.EventsColumn), ids...))
+						})
+						if err := query.GroupBy(host.EventsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				} else {
+					h.loadTotal = append(h.loadTotal, func(_ context.Context, nodes []*Host) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Events)
+							if nodes[i].Edges.totalCount[7] == nil {
+								nodes[i].Edges.totalCount[7] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[7][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, eventImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(host.EventsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			h.WithNamedEvents(alias, func(wq *EventQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -3674,6 +3996,95 @@ func (q *QuestQuery) collectField(ctx context.Context, oneNode bool, opCtx *grap
 				return err
 			}
 			q.withPreviousQuest = query
+
+		case "events":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&EventClient{config: q.config}).Query()
+			)
+			args := newEventPaginateArgs(fieldArgs(ctx, new(EventWhereInput), path...))
+			if err := validateFirstLast(args.first, args.last); err != nil {
+				return fmt.Errorf("validate first and last in path %q: %w", path, err)
+			}
+			pager, err := newEventPager(args.opts, args.last != nil)
+			if err != nil {
+				return fmt.Errorf("create new pager in path %q: %w", path, err)
+			}
+			if query, err = pager.applyFilter(query); err != nil {
+				return err
+			}
+			ignoredEdges := !hasCollectedField(ctx, append(path, edgesField)...)
+			if hasCollectedField(ctx, append(path, totalCountField)...) || hasCollectedField(ctx, append(path, pageInfoField)...) {
+				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
+				if hasPagination || ignoredEdges {
+					query := query.Clone()
+					q.loadTotal = append(q.loadTotal, func(ctx context.Context, nodes []*Quest) error {
+						ids := make([]driver.Value, len(nodes))
+						for i := range nodes {
+							ids[i] = nodes[i].ID
+						}
+						var v []struct {
+							NodeID int `sql:"quest_events"`
+							Count  int `sql:"count"`
+						}
+						query.Where(func(s *sql.Selector) {
+							s.Where(sql.InValues(s.C(quest.EventsColumn), ids...))
+						})
+						if err := query.GroupBy(quest.EventsColumn).Aggregate(Count()).Scan(ctx, &v); err != nil {
+							return err
+						}
+						m := make(map[int]int, len(v))
+						for i := range v {
+							m[v[i].NodeID] = v[i].Count
+						}
+						for i := range nodes {
+							n := m[nodes[i].ID]
+							if nodes[i].Edges.totalCount[8] == nil {
+								nodes[i].Edges.totalCount[8] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[8][alias] = n
+						}
+						return nil
+					})
+				} else {
+					q.loadTotal = append(q.loadTotal, func(_ context.Context, nodes []*Quest) error {
+						for i := range nodes {
+							n := len(nodes[i].Edges.Events)
+							if nodes[i].Edges.totalCount[8] == nil {
+								nodes[i].Edges.totalCount[8] = make(map[string]int)
+							}
+							nodes[i].Edges.totalCount[8][alias] = n
+						}
+						return nil
+					})
+				}
+			}
+			if ignoredEdges || (args.first != nil && *args.first == 0) || (args.last != nil && *args.last == 0) {
+				continue
+			}
+			if query, err = pager.applyCursors(query, args.after, args.before); err != nil {
+				return err
+			}
+			path = append(path, edgesField, nodeField)
+			if field := collectedField(ctx, path...); field != nil {
+				if err := query.collectField(ctx, false, opCtx, *field, path, mayAddCondition(satisfies, eventImplementors)...); err != nil {
+					return err
+				}
+			}
+			if limit := paginateLimit(args.first, args.last); limit > 0 {
+				if oneNode {
+					pager.applyOrder(query.Limit(limit))
+				} else {
+					modify := entgql.LimitPerRow(quest.EventsColumn, limit, pager.orderExpr(query))
+					query.modifiers = append(query.modifiers, modify)
+				}
+			} else {
+				query = pager.applyOrder(query)
+			}
+			q.WithNamedEvents(alias, func(wq *EventQuery) {
+				*wq = *query
+			})
 		case "createdAt":
 			if _, ok := fieldSeen[quest.FieldCreatedAt]; !ok {
 				selectedFields = append(selectedFields, quest.FieldCreatedAt)

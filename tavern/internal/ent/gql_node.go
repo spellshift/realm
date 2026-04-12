@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -86,6 +87,11 @@ var deviceauthImplementors = []string{"DeviceAuth", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*DeviceAuth) IsNode() {}
+
+var eventImplementors = []string{"Event", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Event) IsNode() {}
 
 var hostImplementors = []string{"Host", "Node"}
 
@@ -298,6 +304,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(deviceauth.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, deviceauthImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case event.Table:
+		query := c.Event.Query().
+			Where(event.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, eventImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -644,6 +659,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.DeviceAuth.Query().
 			Where(deviceauth.IDIn(ids...))
 		query, err := query.CollectFields(ctx, deviceauthImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case event.Table:
+		query := c.Event.Query().
+			Where(event.IDIn(ids...))
+		query, err := query.CollectFields(ctx, eventImplementors...)
 		if err != nil {
 			return nil, err
 		}

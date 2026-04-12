@@ -22,6 +22,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -59,6 +60,7 @@ const (
 	TypeBuildTask      = "BuildTask"
 	TypeBuilder        = "Builder"
 	TypeDeviceAuth     = "DeviceAuth"
+	TypeEvent          = "Event"
 	TypeHost           = "Host"
 	TypeHostCredential = "HostCredential"
 	TypeHostFile       = "HostFile"
@@ -1501,6 +1503,9 @@ type BeaconMutation struct {
 	history          map[int]struct{}
 	removedhistory   map[int]struct{}
 	clearedhistory   bool
+	events           map[int]struct{}
+	removedevents    map[int]struct{}
+	clearedevents    bool
 	done             bool
 	oldValue         func(context.Context) (*Beacon, error)
 	predicates       []predicate.Beacon
@@ -2251,6 +2256,60 @@ func (m *BeaconMutation) ResetHistory() {
 	m.removedhistory = nil
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by ids.
+func (m *BeaconMutation) AddEventIDs(ids ...int) {
+	if m.events == nil {
+		m.events = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the Event entity.
+func (m *BeaconMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the Event entity was cleared.
+func (m *BeaconMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the Event entity by IDs.
+func (m *BeaconMutation) RemoveEventIDs(ids ...int) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the Event entity.
+func (m *BeaconMutation) RemovedEventsIDs() (ids []int) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *BeaconMutation) EventsIDs() (ids []int) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *BeaconMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
 // Where appends a list predicates to the BeaconMutation builder.
 func (m *BeaconMutation) Where(ps ...predicate.Beacon) {
 	m.predicates = append(m.predicates, ps...)
@@ -2585,7 +2644,7 @@ func (m *BeaconMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BeaconMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.host != nil {
 		edges = append(edges, beacon.EdgeHost)
 	}
@@ -2597,6 +2656,9 @@ func (m *BeaconMutation) AddedEdges() []string {
 	}
 	if m.history != nil {
 		edges = append(edges, beacon.EdgeHistory)
+	}
+	if m.events != nil {
+		edges = append(edges, beacon.EdgeEvents)
 	}
 	return edges
 }
@@ -2627,13 +2689,19 @@ func (m *BeaconMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BeaconMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedtasks != nil {
 		edges = append(edges, beacon.EdgeTasks)
 	}
@@ -2642,6 +2710,9 @@ func (m *BeaconMutation) RemovedEdges() []string {
 	}
 	if m.removedhistory != nil {
 		edges = append(edges, beacon.EdgeHistory)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, beacon.EdgeEvents)
 	}
 	return edges
 }
@@ -2668,13 +2739,19 @@ func (m *BeaconMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case beacon.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BeaconMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedhost {
 		edges = append(edges, beacon.EdgeHost)
 	}
@@ -2686,6 +2763,9 @@ func (m *BeaconMutation) ClearedEdges() []string {
 	}
 	if m.clearedhistory {
 		edges = append(edges, beacon.EdgeHistory)
+	}
+	if m.clearedevents {
+		edges = append(edges, beacon.EdgeEvents)
 	}
 	return edges
 }
@@ -2702,6 +2782,8 @@ func (m *BeaconMutation) EdgeCleared(name string) bool {
 		return m.clearedshells
 	case beacon.EdgeHistory:
 		return m.clearedhistory
+	case beacon.EdgeEvents:
+		return m.clearedevents
 	}
 	return false
 }
@@ -2732,6 +2814,9 @@ func (m *BeaconMutation) ResetEdge(name string) error {
 		return nil
 	case beacon.EdgeHistory:
 		m.ResetHistory()
+		return nil
+	case beacon.EdgeEvents:
+		m.ResetEvents()
 		return nil
 	}
 	return fmt.Errorf("unknown Beacon edge %s", name)
@@ -7187,6 +7272,715 @@ func (m *DeviceAuthMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown DeviceAuth edge %s", name)
 }
 
+// EventMutation represents an operation that mutates the Event nodes in the graph.
+type EventMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int
+	created_at       *time.Time
+	last_modified_at *time.Time
+	timestamp        *int64
+	addtimestamp     *int64
+	kind             *event.Kind
+	clearedFields    map[string]struct{}
+	beacon           *int
+	clearedbeacon    bool
+	host             *int
+	clearedhost      bool
+	quest            *int
+	clearedquest     bool
+	done             bool
+	oldValue         func(context.Context) (*Event, error)
+	predicates       []predicate.Event
+}
+
+var _ ent.Mutation = (*EventMutation)(nil)
+
+// eventOption allows management of the mutation configuration using functional options.
+type eventOption func(*EventMutation)
+
+// newEventMutation creates new mutation for the Event entity.
+func newEventMutation(c config, op Op, opts ...eventOption) *EventMutation {
+	m := &EventMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEvent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEventID sets the ID field of the mutation.
+func withEventID(id int) eventOption {
+	return func(m *EventMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Event
+		)
+		m.oldValue = func(ctx context.Context) (*Event, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Event.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEvent sets the old Event of the mutation.
+func withEvent(node *Event) eventOption {
+	return func(m *EventMutation) {
+		m.oldValue = func(context.Context) (*Event, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EventMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EventMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EventMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EventMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Event.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EventMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EventMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EventMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastModifiedAt sets the "last_modified_at" field.
+func (m *EventMutation) SetLastModifiedAt(t time.Time) {
+	m.last_modified_at = &t
+}
+
+// LastModifiedAt returns the value of the "last_modified_at" field in the mutation.
+func (m *EventMutation) LastModifiedAt() (r time.Time, exists bool) {
+	v := m.last_modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastModifiedAt returns the old "last_modified_at" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldLastModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastModifiedAt: %w", err)
+	}
+	return oldValue.LastModifiedAt, nil
+}
+
+// ResetLastModifiedAt resets all changes to the "last_modified_at" field.
+func (m *EventMutation) ResetLastModifiedAt() {
+	m.last_modified_at = nil
+}
+
+// SetTimestamp sets the "timestamp" field.
+func (m *EventMutation) SetTimestamp(i int64) {
+	m.timestamp = &i
+	m.addtimestamp = nil
+}
+
+// Timestamp returns the value of the "timestamp" field in the mutation.
+func (m *EventMutation) Timestamp() (r int64, exists bool) {
+	v := m.timestamp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimestamp returns the old "timestamp" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldTimestamp(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimestamp is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimestamp requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimestamp: %w", err)
+	}
+	return oldValue.Timestamp, nil
+}
+
+// AddTimestamp adds i to the "timestamp" field.
+func (m *EventMutation) AddTimestamp(i int64) {
+	if m.addtimestamp != nil {
+		*m.addtimestamp += i
+	} else {
+		m.addtimestamp = &i
+	}
+}
+
+// AddedTimestamp returns the value that was added to the "timestamp" field in this mutation.
+func (m *EventMutation) AddedTimestamp() (r int64, exists bool) {
+	v := m.addtimestamp
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTimestamp resets all changes to the "timestamp" field.
+func (m *EventMutation) ResetTimestamp() {
+	m.timestamp = nil
+	m.addtimestamp = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *EventMutation) SetKind(e event.Kind) {
+	m.kind = &e
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *EventMutation) Kind() (r event.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldKind(ctx context.Context) (v event.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *EventMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetBeaconID sets the "beacon" edge to the Beacon entity by id.
+func (m *EventMutation) SetBeaconID(id int) {
+	m.beacon = &id
+}
+
+// ClearBeacon clears the "beacon" edge to the Beacon entity.
+func (m *EventMutation) ClearBeacon() {
+	m.clearedbeacon = true
+}
+
+// BeaconCleared reports if the "beacon" edge to the Beacon entity was cleared.
+func (m *EventMutation) BeaconCleared() bool {
+	return m.clearedbeacon
+}
+
+// BeaconID returns the "beacon" edge ID in the mutation.
+func (m *EventMutation) BeaconID() (id int, exists bool) {
+	if m.beacon != nil {
+		return *m.beacon, true
+	}
+	return
+}
+
+// BeaconIDs returns the "beacon" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BeaconID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) BeaconIDs() (ids []int) {
+	if id := m.beacon; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBeacon resets all changes to the "beacon" edge.
+func (m *EventMutation) ResetBeacon() {
+	m.beacon = nil
+	m.clearedbeacon = false
+}
+
+// SetHostID sets the "host" edge to the Host entity by id.
+func (m *EventMutation) SetHostID(id int) {
+	m.host = &id
+}
+
+// ClearHost clears the "host" edge to the Host entity.
+func (m *EventMutation) ClearHost() {
+	m.clearedhost = true
+}
+
+// HostCleared reports if the "host" edge to the Host entity was cleared.
+func (m *EventMutation) HostCleared() bool {
+	return m.clearedhost
+}
+
+// HostID returns the "host" edge ID in the mutation.
+func (m *EventMutation) HostID() (id int, exists bool) {
+	if m.host != nil {
+		return *m.host, true
+	}
+	return
+}
+
+// HostIDs returns the "host" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HostID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) HostIDs() (ids []int) {
+	if id := m.host; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHost resets all changes to the "host" edge.
+func (m *EventMutation) ResetHost() {
+	m.host = nil
+	m.clearedhost = false
+}
+
+// SetQuestID sets the "quest" edge to the Quest entity by id.
+func (m *EventMutation) SetQuestID(id int) {
+	m.quest = &id
+}
+
+// ClearQuest clears the "quest" edge to the Quest entity.
+func (m *EventMutation) ClearQuest() {
+	m.clearedquest = true
+}
+
+// QuestCleared reports if the "quest" edge to the Quest entity was cleared.
+func (m *EventMutation) QuestCleared() bool {
+	return m.clearedquest
+}
+
+// QuestID returns the "quest" edge ID in the mutation.
+func (m *EventMutation) QuestID() (id int, exists bool) {
+	if m.quest != nil {
+		return *m.quest, true
+	}
+	return
+}
+
+// QuestIDs returns the "quest" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// QuestID instead. It exists only for internal usage by the builders.
+func (m *EventMutation) QuestIDs() (ids []int) {
+	if id := m.quest; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetQuest resets all changes to the "quest" edge.
+func (m *EventMutation) ResetQuest() {
+	m.quest = nil
+	m.clearedquest = false
+}
+
+// Where appends a list predicates to the EventMutation builder.
+func (m *EventMutation) Where(ps ...predicate.Event) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EventMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EventMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Event, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EventMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EventMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Event).
+func (m *EventMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EventMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.created_at != nil {
+		fields = append(fields, event.FieldCreatedAt)
+	}
+	if m.last_modified_at != nil {
+		fields = append(fields, event.FieldLastModifiedAt)
+	}
+	if m.timestamp != nil {
+		fields = append(fields, event.FieldTimestamp)
+	}
+	if m.kind != nil {
+		fields = append(fields, event.FieldKind)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EventMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case event.FieldCreatedAt:
+		return m.CreatedAt()
+	case event.FieldLastModifiedAt:
+		return m.LastModifiedAt()
+	case event.FieldTimestamp:
+		return m.Timestamp()
+	case event.FieldKind:
+		return m.Kind()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EventMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case event.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case event.FieldLastModifiedAt:
+		return m.OldLastModifiedAt(ctx)
+	case event.FieldTimestamp:
+		return m.OldTimestamp(ctx)
+	case event.FieldKind:
+		return m.OldKind(ctx)
+	}
+	return nil, fmt.Errorf("unknown Event field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case event.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case event.FieldLastModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastModifiedAt(v)
+		return nil
+	case event.FieldTimestamp:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimestamp(v)
+		return nil
+	case event.FieldKind:
+		v, ok := value.(event.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Event field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EventMutation) AddedFields() []string {
+	var fields []string
+	if m.addtimestamp != nil {
+		fields = append(fields, event.FieldTimestamp)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EventMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case event.FieldTimestamp:
+		return m.AddedTimestamp()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case event.FieldTimestamp:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTimestamp(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Event numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EventMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EventMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EventMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Event nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EventMutation) ResetField(name string) error {
+	switch name {
+	case event.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case event.FieldLastModifiedAt:
+		m.ResetLastModifiedAt()
+		return nil
+	case event.FieldTimestamp:
+		m.ResetTimestamp()
+		return nil
+	case event.FieldKind:
+		m.ResetKind()
+		return nil
+	}
+	return fmt.Errorf("unknown Event field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EventMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.beacon != nil {
+		edges = append(edges, event.EdgeBeacon)
+	}
+	if m.host != nil {
+		edges = append(edges, event.EdgeHost)
+	}
+	if m.quest != nil {
+		edges = append(edges, event.EdgeQuest)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EventMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case event.EdgeBeacon:
+		if id := m.beacon; id != nil {
+			return []ent.Value{*id}
+		}
+	case event.EdgeHost:
+		if id := m.host; id != nil {
+			return []ent.Value{*id}
+		}
+	case event.EdgeQuest:
+		if id := m.quest; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EventMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EventMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EventMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedbeacon {
+		edges = append(edges, event.EdgeBeacon)
+	}
+	if m.clearedhost {
+		edges = append(edges, event.EdgeHost)
+	}
+	if m.clearedquest {
+		edges = append(edges, event.EdgeQuest)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EventMutation) EdgeCleared(name string) bool {
+	switch name {
+	case event.EdgeBeacon:
+		return m.clearedbeacon
+	case event.EdgeHost:
+		return m.clearedhost
+	case event.EdgeQuest:
+		return m.clearedquest
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EventMutation) ClearEdge(name string) error {
+	switch name {
+	case event.EdgeBeacon:
+		m.ClearBeacon()
+		return nil
+	case event.EdgeHost:
+		m.ClearHost()
+		return nil
+	case event.EdgeQuest:
+		m.ClearQuest()
+		return nil
+	}
+	return fmt.Errorf("unknown Event unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EventMutation) ResetEdge(name string) error {
+	switch name {
+	case event.EdgeBeacon:
+		m.ResetBeacon()
+		return nil
+	case event.EdgeHost:
+		m.ResetHost()
+		return nil
+	case event.EdgeQuest:
+		m.ResetQuest()
+		return nil
+	}
+	return fmt.Errorf("unknown Event edge %s", name)
+}
+
 // HostMutation represents an operation that mutates the Host nodes in the graph.
 type HostMutation struct {
 	config
@@ -7224,6 +8018,9 @@ type HostMutation struct {
 	favoritedBy        map[int]struct{}
 	removedfavoritedBy map[int]struct{}
 	clearedfavoritedBy bool
+	events             map[int]struct{}
+	removedevents      map[int]struct{}
+	clearedevents      bool
 	done               bool
 	oldValue           func(context.Context) (*Host, error)
 	predicates         []predicate.Host
@@ -8094,6 +8891,60 @@ func (m *HostMutation) ResetFavoritedBy() {
 	m.removedfavoritedBy = nil
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by ids.
+func (m *HostMutation) AddEventIDs(ids ...int) {
+	if m.events == nil {
+		m.events = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the Event entity.
+func (m *HostMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the Event entity was cleared.
+func (m *HostMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the Event entity by IDs.
+func (m *HostMutation) RemoveEventIDs(ids ...int) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the Event entity.
+func (m *HostMutation) RemovedEventsIDs() (ids []int) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *HostMutation) EventsIDs() (ids []int) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *HostMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -8396,7 +9247,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -8417,6 +9268,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.favoritedBy != nil {
 		edges = append(edges, host.EdgeFavoritedBy)
+	}
+	if m.events != nil {
+		edges = append(edges, host.EdgeEvents)
 	}
 	return edges
 }
@@ -8467,13 +9321,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -8494,6 +9354,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedfavoritedBy != nil {
 		edges = append(edges, host.EdgeFavoritedBy)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, host.EdgeEvents)
 	}
 	return edges
 }
@@ -8544,13 +9407,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 7)
+	edges := make([]string, 0, 8)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -8571,6 +9440,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	}
 	if m.clearedfavoritedBy {
 		edges = append(edges, host.EdgeFavoritedBy)
+	}
+	if m.clearedevents {
+		edges = append(edges, host.EdgeEvents)
 	}
 	return edges
 }
@@ -8593,6 +9465,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedscreenshots
 	case host.EdgeFavoritedBy:
 		return m.clearedfavoritedBy
+	case host.EdgeEvents:
+		return m.clearedevents
 	}
 	return false
 }
@@ -8629,6 +9503,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeFavoritedBy:
 		m.ResetFavoritedBy()
+		return nil
+	case host.EdgeEvents:
+		m.ResetEvents()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)
@@ -13501,6 +14378,9 @@ type QuestMutation struct {
 	clearedrelated_quests  bool
 	previous_quest         *int
 	clearedprevious_quest  bool
+	events                 map[int]struct{}
+	removedevents          map[int]struct{}
+	clearedevents          bool
 	done                   bool
 	oldValue               func(context.Context) (*Quest, error)
 	predicates             []predicate.Quest
@@ -14201,6 +15081,60 @@ func (m *QuestMutation) ResetPreviousQuest() {
 	m.clearedprevious_quest = false
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by ids.
+func (m *QuestMutation) AddEventIDs(ids ...int) {
+	if m.events == nil {
+		m.events = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.events[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEvents clears the "events" edge to the Event entity.
+func (m *QuestMutation) ClearEvents() {
+	m.clearedevents = true
+}
+
+// EventsCleared reports if the "events" edge to the Event entity was cleared.
+func (m *QuestMutation) EventsCleared() bool {
+	return m.clearedevents
+}
+
+// RemoveEventIDs removes the "events" edge to the Event entity by IDs.
+func (m *QuestMutation) RemoveEventIDs(ids ...int) {
+	if m.removedevents == nil {
+		m.removedevents = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.events, ids[i])
+		m.removedevents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEvents returns the removed IDs of the "events" edge to the Event entity.
+func (m *QuestMutation) RemovedEventsIDs() (ids []int) {
+	for id := range m.removedevents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EventsIDs returns the "events" edge IDs in the mutation.
+func (m *QuestMutation) EventsIDs() (ids []int) {
+	for id := range m.events {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEvents resets all changes to the "events" edge.
+func (m *QuestMutation) ResetEvents() {
+	m.events = nil
+	m.clearedevents = false
+	m.removedevents = nil
+}
+
 // Where appends a list predicates to the QuestMutation builder.
 func (m *QuestMutation) Where(ps ...predicate.Quest) {
 	m.predicates = append(m.predicates, ps...)
@@ -14440,7 +15374,7 @@ func (m *QuestMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *QuestMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.tome != nil {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -14464,6 +15398,9 @@ func (m *QuestMutation) AddedEdges() []string {
 	}
 	if m.previous_quest != nil {
 		edges = append(edges, quest.EdgePreviousQuest)
+	}
+	if m.events != nil {
+		edges = append(edges, quest.EdgeEvents)
 	}
 	return edges
 }
@@ -14508,18 +15445,27 @@ func (m *QuestMutation) AddedIDs(name string) []ent.Value {
 		if id := m.previous_quest; id != nil {
 			return []ent.Value{*id}
 		}
+	case quest.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.events))
+		for id := range m.events {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *QuestMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedtasks != nil {
 		edges = append(edges, quest.EdgeTasks)
 	}
 	if m.removedrelated_quests != nil {
 		edges = append(edges, quest.EdgeRelatedQuests)
+	}
+	if m.removedevents != nil {
+		edges = append(edges, quest.EdgeEvents)
 	}
 	return edges
 }
@@ -14540,13 +15486,19 @@ func (m *QuestMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case quest.EdgeEvents:
+		ids := make([]ent.Value, 0, len(m.removedevents))
+		for id := range m.removedevents {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *QuestMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedtome {
 		edges = append(edges, quest.EdgeTome)
 	}
@@ -14571,6 +15523,9 @@ func (m *QuestMutation) ClearedEdges() []string {
 	if m.clearedprevious_quest {
 		edges = append(edges, quest.EdgePreviousQuest)
 	}
+	if m.clearedevents {
+		edges = append(edges, quest.EdgeEvents)
+	}
 	return edges
 }
 
@@ -14594,6 +15549,8 @@ func (m *QuestMutation) EdgeCleared(name string) bool {
 		return m.clearedrelated_quests
 	case quest.EdgePreviousQuest:
 		return m.clearedprevious_quest
+	case quest.EdgeEvents:
+		return m.clearedevents
 	}
 	return false
 }
@@ -14651,6 +15608,9 @@ func (m *QuestMutation) ResetEdge(name string) error {
 		return nil
 	case quest.EdgePreviousQuest:
 		m.ResetPreviousQuest()
+		return nil
+	case quest.EdgeEvents:
+		m.ResetEvents()
 		return nil
 	}
 	return fmt.Errorf("unknown Quest edge %s", name)

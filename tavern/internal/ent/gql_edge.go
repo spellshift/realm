@@ -150,6 +150,27 @@ func (b *Beacon) History(
 	return b.QueryHistory().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (b *Beacon) Events(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*EventOrder, where *EventWhereInput,
+) (*EventConnection, error) {
+	opts := []EventPaginateOption{
+		WithEventOrder(orderBy),
+		WithEventFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := b.Edges.totalCount[4][alias]
+	if nodes, err := b.NamedEvents(alias); err == nil || hasTotalCount {
+		pager, err := newEventPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &EventConnection{Edges: []*EventEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return b.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (bh *BeaconHistory) Beacon(ctx context.Context) (*Beacon, error) {
 	result, err := bh.Edges.BeaconOrErr()
 	if IsNotLoaded(err) {
@@ -219,6 +240,30 @@ func (da *DeviceAuth) User(ctx context.Context) (*User, error) {
 	result, err := da.Edges.UserOrErr()
 	if IsNotLoaded(err) {
 		result, err = da.QueryUser().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (e *Event) Beacon(ctx context.Context) (*Beacon, error) {
+	result, err := e.Edges.BeaconOrErr()
+	if IsNotLoaded(err) {
+		result, err = e.QueryBeacon().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (e *Event) Host(ctx context.Context) (*Host, error) {
+	result, err := e.Edges.HostOrErr()
+	if IsNotLoaded(err) {
+		result, err = e.QueryHost().Only(ctx)
+	}
+	return result, MaskNotFound(err)
+}
+
+func (e *Event) Quest(ctx context.Context) (*Quest, error) {
+	result, err := e.Edges.QuestOrErr()
+	if IsNotLoaded(err) {
+		result, err = e.QueryQuest().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }
@@ -368,6 +413,27 @@ func (h *Host) FavoritedBy(
 		return conn, nil
 	}
 	return h.QueryFavoritedBy().Paginate(ctx, after, first, before, last, opts...)
+}
+
+func (h *Host) Events(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*EventOrder, where *EventWhereInput,
+) (*EventConnection, error) {
+	opts := []EventPaginateOption{
+		WithEventOrder(orderBy),
+		WithEventFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[7][alias]
+	if nodes, err := h.NamedEvents(alias); err == nil || hasTotalCount {
+		pager, err := newEventPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &EventConnection{Edges: []*EventEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
@@ -599,6 +665,27 @@ func (q *Quest) PreviousQuest(ctx context.Context) (*Quest, error) {
 		result, err = q.QueryPreviousQuest().Only(ctx)
 	}
 	return result, MaskNotFound(err)
+}
+
+func (q *Quest) Events(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*EventOrder, where *EventWhereInput,
+) (*EventConnection, error) {
+	opts := []EventPaginateOption{
+		WithEventOrder(orderBy),
+		WithEventFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := q.Edges.totalCount[8][alias]
+	if nodes, err := q.NamedEvents(alias); err == nil || hasTotalCount {
+		pager, err := newEventPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &EventConnection{Edges: []*EventEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return q.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
 }
 
 func (r *Repository) Tomes(

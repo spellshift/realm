@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
 	"realm.pub/tavern/internal/ent/beaconhistory"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -31,12 +32,14 @@ type BeaconQuery struct {
 	withTasks        *TaskQuery
 	withShells       *ShellQuery
 	withHistory      *BeaconHistoryQuery
+	withEvents       *EventQuery
 	withFKs          bool
 	modifiers        []func(*sql.Selector)
 	loadTotal        []func(context.Context, []*Beacon) error
 	withNamedTasks   map[string]*TaskQuery
 	withNamedShells  map[string]*ShellQuery
 	withNamedHistory map[string]*BeaconHistoryQuery
+	withNamedEvents  map[string]*EventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -154,6 +157,28 @@ func (bq *BeaconQuery) QueryHistory() *BeaconHistoryQuery {
 			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
 			sqlgraph.To(beaconhistory.Table, beaconhistory.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, beacon.HistoryTable, beacon.HistoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (bq *BeaconQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(beacon.Table, beacon.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, beacon.EventsTable, beacon.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
 		return fromU, nil
@@ -357,6 +382,7 @@ func (bq *BeaconQuery) Clone() *BeaconQuery {
 		withTasks:   bq.withTasks.Clone(),
 		withShells:  bq.withShells.Clone(),
 		withHistory: bq.withHistory.Clone(),
+		withEvents:  bq.withEvents.Clone(),
 		// clone intermediate query.
 		sql:  bq.sql.Clone(),
 		path: bq.path,
@@ -404,6 +430,17 @@ func (bq *BeaconQuery) WithHistory(opts ...func(*BeaconHistoryQuery)) *BeaconQue
 		opt(query)
 	}
 	bq.withHistory = query
+	return bq
+}
+
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithEvents(opts ...func(*EventQuery)) *BeaconQuery {
+	query := (&EventClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withEvents = query
 	return bq
 }
 
@@ -486,11 +523,12 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 		nodes       = []*Beacon{}
 		withFKs     = bq.withFKs
 		_spec       = bq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			bq.withHost != nil,
 			bq.withTasks != nil,
 			bq.withShells != nil,
 			bq.withHistory != nil,
+			bq.withEvents != nil,
 		}
 	)
 	if bq.withHost != nil {
@@ -547,6 +585,13 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 			return nil, err
 		}
 	}
+	if query := bq.withEvents; query != nil {
+		if err := bq.loadEvents(ctx, query, nodes,
+			func(n *Beacon) { n.Edges.Events = []*Event{} },
+			func(n *Beacon, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range bq.withNamedTasks {
 		if err := bq.loadTasks(ctx, query, nodes,
 			func(n *Beacon) { n.appendNamedTasks(name) },
@@ -565,6 +610,13 @@ func (bq *BeaconQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Beaco
 		if err := bq.loadHistory(ctx, query, nodes,
 			func(n *Beacon) { n.appendNamedHistory(name) },
 			func(n *Beacon, e *BeaconHistory) { n.appendNamedHistory(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range bq.withNamedEvents {
+		if err := bq.loadEvents(ctx, query, nodes,
+			func(n *Beacon) { n.appendNamedEvents(name) },
+			func(n *Beacon, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -701,6 +753,37 @@ func (bq *BeaconQuery) loadHistory(ctx context.Context, query *BeaconHistoryQuer
 	}
 	return nil
 }
+func (bq *BeaconQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*Beacon, init func(*Beacon), assign func(*Beacon, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Beacon)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(beacon.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.beacon_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "beacon_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "beacon_events" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (bq *BeaconQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bq.querySpec()
@@ -825,6 +908,20 @@ func (bq *BeaconQuery) WithNamedHistory(name string, opts ...func(*BeaconHistory
 		bq.withNamedHistory = make(map[string]*BeaconHistoryQuery)
 	}
 	bq.withNamedHistory[name] = query
+	return bq
+}
+
+// WithNamedEvents tells the query-builder to eager-load the nodes that are connected to the "events"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (bq *BeaconQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *BeaconQuery {
+	query := (&EventClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if bq.withNamedEvents == nil {
+		bq.withNamedEvents = make(map[string]*EventQuery)
+	}
+	bq.withNamedEvents[name] = query
 	return bq
 }
 

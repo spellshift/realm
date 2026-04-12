@@ -207,6 +207,43 @@ var (
 			},
 		},
 	}
+	// EventsColumns holds the columns for the "events" table.
+	EventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "timestamp", Type: field.TypeInt64},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
+		{Name: "beacon_events", Type: field.TypeInt, Nullable: true},
+		{Name: "host_events", Type: field.TypeInt, Nullable: true},
+		{Name: "quest_events", Type: field.TypeInt, Nullable: true},
+	}
+	// EventsTable holds the schema information for the "events" table.
+	EventsTable = &schema.Table{
+		Name:       "events",
+		Columns:    EventsColumns,
+		PrimaryKey: []*schema.Column{EventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "events_beacons_events",
+				Columns:    []*schema.Column{EventsColumns[5]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_hosts_events",
+				Columns:    []*schema.Column{EventsColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_quests_events",
+				Columns:    []*schema.Column{EventsColumns[7]},
+				RefColumns: []*schema.Column{QuestsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// HostsColumns holds the columns for the "hosts" table.
 	HostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -942,6 +979,7 @@ var (
 		BuildTasksTable,
 		BuildersTable,
 		DeviceAuthsTable,
+		EventsTable,
 		HostsTable,
 		HostCredentialsTable,
 		HostFilesTable,
@@ -993,6 +1031,12 @@ func init() {
 	}
 	DeviceAuthsTable.ForeignKeys[0].RefTable = UsersTable
 	DeviceAuthsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	EventsTable.ForeignKeys[0].RefTable = BeaconsTable
+	EventsTable.ForeignKeys[1].RefTable = HostsTable
+	EventsTable.ForeignKeys[2].RefTable = QuestsTable
+	EventsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostsTable.ForeignKeys[0].RefTable = ScheduledTasksTable
