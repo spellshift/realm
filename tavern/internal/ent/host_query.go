@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -37,6 +38,7 @@ type HostQuery struct {
 	withCredentials      *HostCredentialQuery
 	withScreenshots      *ScreenshotQuery
 	withFavoritedBy      *UserQuery
+	withEvents           *EventQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Host) error
@@ -47,6 +49,7 @@ type HostQuery struct {
 	withNamedCredentials map[string]*HostCredentialQuery
 	withNamedScreenshots map[string]*ScreenshotQuery
 	withNamedFavoritedBy map[string]*UserQuery
+	withNamedEvents      map[string]*EventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -230,6 +233,28 @@ func (hq *HostQuery) QueryFavoritedBy() *UserQuery {
 			sqlgraph.From(host.Table, host.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, host.FavoritedByTable, host.FavoritedByPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (hq *HostQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, host.EventsTable, host.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
 		return fromU, nil
@@ -436,6 +461,7 @@ func (hq *HostQuery) Clone() *HostQuery {
 		withCredentials: hq.withCredentials.Clone(),
 		withScreenshots: hq.withScreenshots.Clone(),
 		withFavoritedBy: hq.withFavoritedBy.Clone(),
+		withEvents:      hq.withEvents.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -519,6 +545,17 @@ func (hq *HostQuery) WithFavoritedBy(opts ...func(*UserQuery)) *HostQuery {
 	return hq
 }
 
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithEvents(opts ...func(*EventQuery)) *HostQuery {
+	query := (&EventClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withEvents = query
+	return hq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -598,7 +635,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		nodes       = []*Host{}
 		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
@@ -606,6 +643,7 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			hq.withCredentials != nil,
 			hq.withScreenshots != nil,
 			hq.withFavoritedBy != nil,
+			hq.withEvents != nil,
 		}
 	)
 	if withFKs {
@@ -681,6 +719,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withEvents; query != nil {
+		if err := hq.loadEvents(ctx, query, nodes,
+			func(n *Host) { n.Edges.Events = []*Event{} },
+			func(n *Host, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -727,6 +772,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadFavoritedBy(ctx, query, nodes,
 			func(n *Host) { n.appendNamedFavoritedBy(name) },
 			func(n *Host, e *User) { n.appendNamedFavoritedBy(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedEvents {
+		if err := hq.loadEvents(ctx, query, nodes,
+			func(n *Host) { n.appendNamedEvents(name) },
+			func(n *Host, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1015,6 +1067,37 @@ func (hq *HostQuery) loadFavoritedBy(ctx context.Context, query *UserQuery, node
 	}
 	return nil
 }
+func (hq *HostQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*Host, init func(*Host), assign func(*Host, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Host)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(host.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.host_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "host_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "host_events" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -1195,6 +1278,20 @@ func (hq *HostQuery) WithNamedFavoritedBy(name string, opts ...func(*UserQuery))
 		hq.withNamedFavoritedBy = make(map[string]*UserQuery)
 	}
 	hq.withNamedFavoritedBy[name] = query
+	return hq
+}
+
+// WithNamedEvents tells the query-builder to eager-load the nodes that are connected to the "events"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *HostQuery {
+	query := (&EventClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedEvents == nil {
+		hq.withNamedEvents = make(map[string]*EventQuery)
+	}
+	hq.withNamedEvents[name] = query
 	return hq
 }
 

@@ -28,6 +28,8 @@ type Tx struct {
 	Builder *BuilderClient
 	// DeviceAuth is the client for interacting with the DeviceAuth builders.
 	DeviceAuth *DeviceAuthClient
+	// Event is the client for interacting with the Event builders.
+	Event *EventClient
 	// Host is the client for interacting with the Host builders.
 	Host *HostClient
 	// HostCredential is the client for interacting with the HostCredential builders.
@@ -199,6 +201,7 @@ func (tx *Tx) init() {
 	tx.BuildTask = NewBuildTaskClient(tx.config)
 	tx.Builder = NewBuilderClient(tx.config)
 	tx.DeviceAuth = NewDeviceAuthClient(tx.config)
+	tx.Event = NewEventClient(tx.config)
 	tx.Host = NewHostClient(tx.config)
 	tx.HostCredential = NewHostCredentialClient(tx.config)
 	tx.HostFile = NewHostFileClient(tx.config)
