@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent"
 	"realm.pub/tavern/internal/ent/event"
+	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -55,6 +56,25 @@ func HookDeriveHostEvents() ent.Hook {
 				}
 
 				client := mut.Client()
+
+				if shouldCreateNew {
+					exists, err := client.Event.Query().
+						Where(
+							event.HasHostWith(host.ID(id)),
+							event.KindEQ(event.KindHOST_ACCESS_NEW),
+						).Exist(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("checking for existing host access event: %w", err)
+					}
+					if exists {
+						shouldCreateNew = false
+					}
+				}
+
+				if !shouldCreateNew && !shouldCreateRecovered {
+					return val, nil
+				}
+
 				evtCreate := client.Event.Create().
 					SetTimestamp(time.Now().Unix()).
 					SetHostID(id)
