@@ -23,6 +23,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -3170,6 +3171,374 @@ func (da *DeviceAuth) ToEdge(order *DeviceAuthOrder) *DeviceAuthEdge {
 	return &DeviceAuthEdge{
 		Node:   da,
 		Cursor: order.Field.toCursor(da),
+	}
+}
+
+// EventEdge is the edge representation of Event.
+type EventEdge struct {
+	Node   *Event `json:"node"`
+	Cursor Cursor `json:"cursor"`
+}
+
+// EventConnection is the connection containing edges to Event.
+type EventConnection struct {
+	Edges      []*EventEdge `json:"edges"`
+	PageInfo   PageInfo     `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
+}
+
+func (c *EventConnection) build(nodes []*Event, pager *eventPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Event
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Event {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Event {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*EventEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &EventEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// EventPaginateOption enables pagination customization.
+type EventPaginateOption func(*eventPager) error
+
+// WithEventOrder configures pagination ordering.
+func WithEventOrder(order []*EventOrder) EventPaginateOption {
+	return func(pager *eventPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithEventFilter configures pagination filter.
+func WithEventFilter(filter func(*EventQuery) (*EventQuery, error)) EventPaginateOption {
+	return func(pager *eventPager) error {
+		if filter == nil {
+			return errors.New("EventQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type eventPager struct {
+	reverse bool
+	order   []*EventOrder
+	filter  func(*EventQuery) (*EventQuery, error)
+}
+
+func newEventPager(opts []EventPaginateOption, reverse bool) (*eventPager, error) {
+	pager := &eventPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *eventPager) applyFilter(query *EventQuery) (*EventQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *eventPager) toCursor(e *Event) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(e).Value)
+	}
+	return Cursor{ID: e.ID, Value: cs_}
+}
+
+func (p *eventPager) applyCursors(query *EventQuery, after, before *Cursor) (*EventQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultEventOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *eventPager) applyOrder(query *EventQuery) *EventQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultEventOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultEventOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *eventPager) orderExpr(query *EventQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultEventOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Event.
+func (e *EventQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...EventPaginateOption,
+) (*EventConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newEventPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if e, err = pager.applyFilter(e); err != nil {
+		return nil, err
+	}
+	conn := &EventConnection{Edges: []*EventEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := e.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if e, err = pager.applyCursors(e, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		e.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := e.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	e = pager.applyOrder(e)
+	nodes, err := e.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// EventOrderFieldCreatedAt orders Event by created_at.
+	EventOrderFieldCreatedAt = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.CreatedAt, nil
+		},
+		column: event.FieldCreatedAt,
+		toTerm: event.ByCreatedAt,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.CreatedAt,
+			}
+		},
+	}
+	// EventOrderFieldLastModifiedAt orders Event by last_modified_at.
+	EventOrderFieldLastModifiedAt = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.LastModifiedAt, nil
+		},
+		column: event.FieldLastModifiedAt,
+		toTerm: event.ByLastModifiedAt,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.LastModifiedAt,
+			}
+		},
+	}
+	// EventOrderFieldTimestamp orders Event by timestamp.
+	EventOrderFieldTimestamp = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.Timestamp, nil
+		},
+		column: event.FieldTimestamp,
+		toTerm: event.ByTimestamp,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.Timestamp,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f EventOrderField) String() string {
+	var str string
+	switch f.column {
+	case EventOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case EventOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case EventOrderFieldTimestamp.column:
+		str = "TIMESTAMP"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f EventOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *EventOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("EventOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *EventOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *EventOrderFieldLastModifiedAt
+	case "TIMESTAMP":
+		*f = *EventOrderFieldTimestamp
+	default:
+		return fmt.Errorf("%s is not a valid EventOrderField", str)
+	}
+	return nil
+}
+
+// EventOrderField defines the ordering field of Event.
+type EventOrderField struct {
+	// Value extracts the ordering value from the given Event.
+	Value    func(*Event) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) event.OrderOption
+	toCursor func(*Event) Cursor
+}
+
+// EventOrder defines the ordering of Event.
+type EventOrder struct {
+	Direction OrderDirection   `json:"direction"`
+	Field     *EventOrderField `json:"field"`
+}
+
+// DefaultEventOrder is the default ordering of Event.
+var DefaultEventOrder = &EventOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.ID, nil
+		},
+		column: event.FieldID,
+		toTerm: event.ByID,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{ID: e.ID}
+		},
+	},
+}
+
+// ToEdge converts Event into EventEdge.
+func (e *Event) ToEdge(order *EventOrder) *EventEdge {
+	if order == nil {
+		order = DefaultEventOrder
+	}
+	return &EventEdge{
+		Node:   e,
+		Cursor: order.Field.toCursor(e),
 	}
 }
 

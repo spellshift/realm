@@ -27,6 +27,7 @@ members = [
     "lib/eldritch/eldritch-wasm",
     "lib/portals/portal-stream", "lib/eldritch/testutils/eldritch-mockagent",
     "lib/eldritch/stdlib/eldritch-libchain",
+    "lib/eldritch/stdlib/eldritch-libdns",
 ]
 exclude = [
     "lib/eldritch/stdlib/tests",  # Excluded to prevent fake_bindings from polluting workspace builds
@@ -58,6 +59,7 @@ eldritch-libregex = {path = "lib/eldritch/stdlib/eldritch-libregex",default-feat
 eldritch-libreport = {path = "lib/eldritch/stdlib/eldritch-libreport",default-features = false }
 eldritch-libsys = {path = "lib/eldritch/stdlib/eldritch-libsys",default-features = false }
 eldritch-libtime = {path = "lib/eldritch/stdlib/eldritch-libtime",default-features = false }
+eldritch-libdns = {path = "lib/eldritch/stdlib/eldritch-libdns",default-features = false }
 portal-stream = { path = "lib/portals/portal-stream" }
 
 http-body-util = "0.1"
@@ -65,6 +67,7 @@ hyper-util = { version = "0.1", features = ["full"] }
 
 eldritch-libchain = {path = "lib/eldritch/stdlib/eldritch-libchain",default-features = false }
 
+hickory-resolver = "0.24.1"
 aes = "0.8.3"
 allocative = "0.3.2"
 allocative_derive = "0.3.2"

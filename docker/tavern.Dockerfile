@@ -1,5 +1,5 @@
 # Dependency Cache
-FROM golang:1.24.0-bookworm as base
+FROM golang:1.26.2-trixie as base
 WORKDIR /app
 RUN mkdir -p /app/build /app/cdn
 COPY ./go.mod /app/go.mod
@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags='-w -s -extldflags
 RUN go build -ldflags='-w -extldflags "-static"' -o /app/build/tavern ./tavern
 
 # Production
-FROM debian:bookworm as production
+FROM debian:trixie as production
 WORKDIR /app
 CMD ["/app/tavern"]
 EXPOSE 80 443 8080

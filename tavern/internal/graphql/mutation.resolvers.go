@@ -210,7 +210,7 @@ func (r *mutationResolver) CreateQuest(ctx context.Context, beaconIDs []int, inp
 			SetBeaconID(sid).
 			Save(ctx)
 		if err != nil {
-			return nil, rollback(tx, fmt.Errorf("failed to create task for beacon (%q): %w", sid, err))
+			return nil, rollback(tx, fmt.Errorf("failed to create task for beacon (%d): %w", sid, err))
 		}
 	}
 

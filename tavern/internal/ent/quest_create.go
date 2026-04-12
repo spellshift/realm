@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/task"
@@ -238,6 +239,21 @@ func (qc *QuestCreate) SetNillablePreviousQuestID(id *int) *QuestCreate {
 // SetPreviousQuest sets the "previous_quest" edge to the Quest entity.
 func (qc *QuestCreate) SetPreviousQuest(q *Quest) *QuestCreate {
 	return qc.SetPreviousQuestID(q.ID)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (qc *QuestCreate) AddEventIDs(ids ...int) *QuestCreate {
+	qc.mutation.AddEventIDs(ids...)
+	return qc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (qc *QuestCreate) AddEvents(e ...*Event) *QuestCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return qc.AddEventIDs(ids...)
 }
 
 // Mutation returns the QuestMutation object of the builder.
@@ -497,6 +513,22 @@ func (qc *QuestCreate) createSpec() (*Quest, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.quest_related_quests = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := qc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   quest.EventsTable,
+			Columns: []string{quest.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

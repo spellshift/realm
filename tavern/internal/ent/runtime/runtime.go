@@ -14,6 +14,7 @@ import (
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
@@ -244,6 +245,21 @@ func init() {
 	deviceauthDescDeviceCode := deviceauthFields[1].Descriptor()
 	// deviceauth.DeviceCodeValidator is a validator for the "device_code" field. It is called by the builders before save.
 	deviceauth.DeviceCodeValidator = deviceauthDescDeviceCode.Validators[0].(func(string) error)
+	eventMixin := schema.Event{}.Mixin()
+	eventMixinFields0 := eventMixin[0].Fields()
+	_ = eventMixinFields0
+	eventFields := schema.Event{}.Fields()
+	_ = eventFields
+	// eventDescCreatedAt is the schema descriptor for created_at field.
+	eventDescCreatedAt := eventMixinFields0[0].Descriptor()
+	// event.DefaultCreatedAt holds the default value on creation for the created_at field.
+	event.DefaultCreatedAt = eventDescCreatedAt.Default.(func() time.Time)
+	// eventDescLastModifiedAt is the schema descriptor for last_modified_at field.
+	eventDescLastModifiedAt := eventMixinFields0[1].Descriptor()
+	// event.DefaultLastModifiedAt holds the default value on creation for the last_modified_at field.
+	event.DefaultLastModifiedAt = eventDescLastModifiedAt.Default.(func() time.Time)
+	// event.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
+	event.UpdateDefaultLastModifiedAt = eventDescLastModifiedAt.UpdateDefault.(func() time.Time)
 	hostMixin := schema.Host{}.Mixin()
 	hostMixinFields0 := hostMixin[0].Fields()
 	_ = hostMixinFields0
