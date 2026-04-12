@@ -43,9 +43,10 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId }) 
     resizeObserver.observe(termRef.current);
 
     // WebSocket Connection
-    let wsUrl = `ws://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}`;
+    const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    let wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}`;
     if (pivotId) {
-      wsUrl = `ws://${window.location.host}/portals/ssh/ws?pivot_id=${pivotId}`;
+      wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?pivot_id=${pivotId}`;
     }
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
