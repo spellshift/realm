@@ -102,7 +102,6 @@ type Kind string
 
 // Kind values.
 const (
-	KindBEACON_CALLBACK       Kind = "BEACON_CALLBACK"
 	KindBEACON_LOST           Kind = "BEACON_LOST"
 	KindHOST_ACCESS_NEW       Kind = "HOST_ACCESS_NEW"
 	KindHOST_ACCESS_RECOVERED Kind = "HOST_ACCESS_RECOVERED"
@@ -117,7 +116,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindBEACON_CALLBACK, KindBEACON_LOST, KindHOST_ACCESS_NEW, KindHOST_ACCESS_RECOVERED, KindHOST_ACCESS_LOST, KindQUEST_COMPLETED:
+	case KindBEACON_LOST, KindHOST_ACCESS_NEW, KindHOST_ACCESS_RECOVERED, KindHOST_ACCESS_LOST, KindQUEST_COMPLETED:
 		return nil
 	default:
 		return fmt.Errorf("event: invalid enum value for kind field: %q", k)

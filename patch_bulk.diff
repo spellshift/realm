@@ -1,0 +1,64 @@
+<<<<<<< SEARCH
+// HookDeriveHostEvents will create host events based on mutations.
+func HookDeriveHostEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*HostMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			var shouldCreateNew, shouldCreateRecovered bool
+			if mut.Op().Is(ent.OpCreate) {
+				shouldCreateNew = true
+			} else if mut.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
+=======
+// HookDeriveHostEvents will create host events based on mutations.
+func HookDeriveHostEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*HostMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			var shouldCreateNew, shouldCreateRecovered bool
+			if mut.Op().Is(ent.OpCreate) {
+				shouldCreateNew = true
+			} else if mut.Op().Is(ent.OpUpdateOne) {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+// HookDeriveQuestEvents will create quest events based on task mutations.
+func HookDeriveQuestEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*TaskMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			var shouldCheckQuest bool
+			if mut.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
+				_, ok := mut.ExecFinishedAt()
+				if ok {
+					shouldCheckQuest = true
+				}
+			}
+=======
+// HookDeriveQuestEvents will create quest events based on task mutations.
+func HookDeriveQuestEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*TaskMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			var shouldCheckQuest bool
+			if mut.Op().Is(ent.OpUpdateOne) {
+				_, ok := mut.ExecFinishedAt()
+				if ok {
+					shouldCheckQuest = true
+				}
+			}
+>>>>>>> REPLACE

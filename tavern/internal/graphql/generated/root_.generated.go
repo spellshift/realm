@@ -6947,7 +6947,6 @@ type EventEdge {
 EventKind is enum for the field kind
 """
 enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
-  BEACON_CALLBACK
   BEACON_LOST
   HOST_ACCESS_NEW
   HOST_ACCESS_RECOVERED
