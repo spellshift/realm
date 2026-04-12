@@ -26,6 +26,9 @@ export interface VirtualizedTableWrapperProps {
 
     /** Whether to show filtering controls */
     showFiltering?: boolean;
+
+    /** Optional header component to render below title/filters but above table/empty state */
+    headerComponent?: ReactNode;
 }
 
 /**
