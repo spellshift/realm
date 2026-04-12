@@ -1,10 +1,10 @@
 import { Tab, TabList } from "@headlessui/react"
 import { useHost } from "../../../context/HostContext";
-import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon } from "lucide-react";
+import { ArrowUpDownIcon, FileCheckIcon, KeyRoundIcon, ListVideo, TerminalIcon, PlugIcon } from "lucide-react";
 
 
 const HostTabs = () => {
-    const { data: host, taskCount, totalShellCount, activeShellCount } = useHost();
+    const { data: host, taskCount, totalShellCount, activeShellCount, totalPortalCount, activePortalCount } = useHost();
 
     return (
         <TabList className="flex flex-row space-x-4 border-gray-200 w-full bg-gray-100 ">
@@ -60,6 +60,15 @@ const HostTabs = () => {
                 </div>
                 <div>
                     {totalShellCount !== undefined && `(${activeShellCount ?? 0}/${totalShellCount})`}
+                </div>
+            </Tab>
+            <Tab className={({ selected }) => `p-4 flex flex-row gap-1 items-center border-t-2 border-l-2 border-r-2 rounded-t-lg ${selected ? 'border-t-purple-600 bg-white text-purple-800 hover:bg-gray-100' : 'border-transparent hover:bg-white hover:border-t-purple-600'}`}>
+                <PlugIcon className="w-4 h-4" />
+                <div>
+                    Portals
+                </div>
+                <div>
+                    {totalPortalCount !== undefined && `(${activePortalCount ?? 0}/${totalPortalCount})`}
                 </div>
             </Tab>
         </TabList>
