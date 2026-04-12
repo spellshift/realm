@@ -8930,6 +8930,10 @@ type ShellWhereInput struct {
 	// "shell_tasks" edge predicates.
 	HasShellTasks     *bool                  `json:"hasShellTasks,omitempty"`
 	HasShellTasksWith []*ShellTaskWhereInput `json:"hasShellTasksWith,omitempty"`
+
+	// "pivots" edge predicates.
+	HasPivots     *bool                   `json:"hasPivots,omitempty"`
+	HasPivotsWith []*ShellPivotWhereInput `json:"hasPivotsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -9213,6 +9217,24 @@ func (i *ShellWhereInput) P() (predicate.Shell, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, shell.HasShellTasksWith(with...))
+	}
+	if i.HasPivots != nil {
+		p := shell.HasPivots()
+		if !*i.HasPivots {
+			p = shell.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasPivotsWith) > 0 {
+		with := make([]predicate.ShellPivot, 0, len(i.HasPivotsWith))
+		for _, w := range i.HasPivotsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasPivotsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, shell.HasPivotsWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

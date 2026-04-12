@@ -5005,6 +5005,37 @@ type Shell implements Node {
     """
     where: ShellTaskWhereInput
   ): ShellTaskConnection!
+  pivots(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ShellPivots returned from the connection.
+    """
+    orderBy: [ShellPivotOrder!]
+
+    """
+    Filtering options for ShellPivots returned from the connection.
+    """
+    where: ShellPivotWhereInput
+  ): ShellPivotConnection!
 }
 """
 A connection to a list of items.
@@ -5693,6 +5724,11 @@ input ShellWhereInput {
   """
   hasShellTasks: Boolean
   hasShellTasksWith: [ShellTaskWhereInput!]
+  """
+  pivots edge predicates
+  """
+  hasPivots: Boolean
+  hasPivotsWith: [ShellPivotWhereInput!]
 }
 type Tag implements Node {
   id: ID!

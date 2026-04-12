@@ -7,9 +7,10 @@ import { WebsocketMessageKind } from "../websocket";
 interface SshTerminalProps {
   portalId: number;
   target: string;
+  pivotId?: number;
 }
 
-const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target }) => {
+const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -42,7 +43,10 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target }) => {
     resizeObserver.observe(termRef.current);
 
     // WebSocket Connection
-    const wsUrl = `ws://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}`;
+    let wsUrl = `ws://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}`;
+    if (pivotId) {
+      wsUrl = `ws://${window.location.host}/portals/ssh/ws?pivot_id=${pivotId}`;
+    }
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

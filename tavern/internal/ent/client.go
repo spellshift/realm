@@ -3872,6 +3872,22 @@ func (c *ShellClient) QueryShellTasks(s *Shell) *ShellTaskQuery {
 	return query
 }
 
+// QueryPivots queries the pivots edge of a Shell.
+func (c *ShellClient) QueryPivots(s *Shell) *ShellPivotQuery {
+	query := (&ShellPivotClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(shellpivot.Table, shellpivot.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, shell.PivotsTable, shell.PivotsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell

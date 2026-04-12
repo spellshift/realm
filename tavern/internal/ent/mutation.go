@@ -17325,6 +17325,9 @@ type ShellMutation struct {
 	shell_tasks         map[int]struct{}
 	removedshell_tasks  map[int]struct{}
 	clearedshell_tasks  bool
+	pivots              map[int]struct{}
+	removedpivots       map[int]struct{}
+	clearedpivots       bool
 	done                bool
 	oldValue            func(context.Context) (*Shell, error)
 	predicates          []predicate.Shell
@@ -17864,6 +17867,60 @@ func (m *ShellMutation) ResetShellTasks() {
 	m.removedshell_tasks = nil
 }
 
+// AddPivotIDs adds the "pivots" edge to the ShellPivot entity by ids.
+func (m *ShellMutation) AddPivotIDs(ids ...int) {
+	if m.pivots == nil {
+		m.pivots = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.pivots[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPivots clears the "pivots" edge to the ShellPivot entity.
+func (m *ShellMutation) ClearPivots() {
+	m.clearedpivots = true
+}
+
+// PivotsCleared reports if the "pivots" edge to the ShellPivot entity was cleared.
+func (m *ShellMutation) PivotsCleared() bool {
+	return m.clearedpivots
+}
+
+// RemovePivotIDs removes the "pivots" edge to the ShellPivot entity by IDs.
+func (m *ShellMutation) RemovePivotIDs(ids ...int) {
+	if m.removedpivots == nil {
+		m.removedpivots = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.pivots, ids[i])
+		m.removedpivots[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPivots returns the removed IDs of the "pivots" edge to the ShellPivot entity.
+func (m *ShellMutation) RemovedPivotsIDs() (ids []int) {
+	for id := range m.removedpivots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PivotsIDs returns the "pivots" edge IDs in the mutation.
+func (m *ShellMutation) PivotsIDs() (ids []int) {
+	for id := range m.pivots {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPivots resets all changes to the "pivots" edge.
+func (m *ShellMutation) ResetPivots() {
+	m.pivots = nil
+	m.clearedpivots = false
+	m.removedpivots = nil
+}
+
 // Where appends a list predicates to the ShellMutation builder.
 func (m *ShellMutation) Where(ps ...predicate.Shell) {
 	m.predicates = append(m.predicates, ps...)
@@ -18057,7 +18114,7 @@ func (m *ShellMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ShellMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.task != nil {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -18075,6 +18132,9 @@ func (m *ShellMutation) AddedEdges() []string {
 	}
 	if m.shell_tasks != nil {
 		edges = append(edges, shell.EdgeShellTasks)
+	}
+	if m.pivots != nil {
+		edges = append(edges, shell.EdgePivots)
 	}
 	return edges
 }
@@ -18113,13 +18173,19 @@ func (m *ShellMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shell.EdgePivots:
+		ids := make([]ent.Value, 0, len(m.pivots))
+		for id := range m.pivots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ShellMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedportals != nil {
 		edges = append(edges, shell.EdgePortals)
 	}
@@ -18128,6 +18194,9 @@ func (m *ShellMutation) RemovedEdges() []string {
 	}
 	if m.removedshell_tasks != nil {
 		edges = append(edges, shell.EdgeShellTasks)
+	}
+	if m.removedpivots != nil {
+		edges = append(edges, shell.EdgePivots)
 	}
 	return edges
 }
@@ -18154,13 +18223,19 @@ func (m *ShellMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case shell.EdgePivots:
+		ids := make([]ent.Value, 0, len(m.removedpivots))
+		for id := range m.removedpivots {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ShellMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedtask {
 		edges = append(edges, shell.EdgeTask)
 	}
@@ -18178,6 +18253,9 @@ func (m *ShellMutation) ClearedEdges() []string {
 	}
 	if m.clearedshell_tasks {
 		edges = append(edges, shell.EdgeShellTasks)
+	}
+	if m.clearedpivots {
+		edges = append(edges, shell.EdgePivots)
 	}
 	return edges
 }
@@ -18198,6 +18276,8 @@ func (m *ShellMutation) EdgeCleared(name string) bool {
 		return m.clearedactive_users
 	case shell.EdgeShellTasks:
 		return m.clearedshell_tasks
+	case shell.EdgePivots:
+		return m.clearedpivots
 	}
 	return false
 }
@@ -18240,6 +18320,9 @@ func (m *ShellMutation) ResetEdge(name string) error {
 		return nil
 	case shell.EdgeShellTasks:
 		m.ResetShellTasks()
+		return nil
+	case shell.EdgePivots:
+		m.ResetPivots()
 		return nil
 	}
 	return fmt.Errorf("unknown Shell edge %s", name)

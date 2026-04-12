@@ -8,13 +8,14 @@ import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SshTerminal from './components/SshTerminal';
 
 interface PortalTab {
     id: string;
     type: string;
     target: string;
+    pivotId?: string;
 }
 
 const ShellV2 = () => {
@@ -35,10 +36,22 @@ const ShellV2 = () => {
     const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
     const [tabIndex, setTabIndex] = useState(0);
 
-    const handleOpenPortalTab = (type: string, target: string) => {
-        const id = `${type}-${target}-${Date.now()}`;
+    useEffect(() => {
+        if (shellData?.node?.pivots?.edges) {
+            shellData.node.pivots.edges.forEach((edge: any) => {
+                const pivot = edge.node;
+                if (!pivot.closedAt) {
+                    handleOpenPortalTab(pivot.kind, pivot.destination, pivot.id);
+                }
+            });
+        }
+    }, [shellData]);
+
+    const handleOpenPortalTab = (type: string, target: string, pivotId?: string) => {
+        const id = pivotId ? `pivot-${pivotId}` : `${type}-${target}-${Date.now()}`;
         setPortalTabs(prev => {
-            const newTabs = [...prev, { id, type, target }];
+            if (prev.find(t => t.id === id)) return prev;
+            const newTabs = [...prev, { id, type, target, pivotId }];
             setTabIndex(newTabs.length); // index 0 is main shell, so new length is the correct index
             return newTabs;
         });
@@ -102,8 +115,8 @@ const ShellV2 = () => {
                 </TabPanel>
                 {portalTabs.map(tab => (
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
-                        {tab.type === "ssh" && portalId && (
-                            <SshTerminal portalId={portalId} target={tab.target} />
+                        {tab.type === "ssh" && (portalId || tab.pivotId) && (
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} />
                         )}
                     </TabPanel>
                 ))}
