@@ -602,6 +602,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		Pivots         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellPivotOrder, where *ent.ShellPivotWhereInput) int
 		Portals        func(childComplexity int) int
 		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
 		Task           func(childComplexity int) int
@@ -3684,6 +3685,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Shell.Owner(childComplexity), true
+
+	case "Shell.pivots":
+		if e.ComplexityRoot.Shell.Pivots == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_pivots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Shell.Pivots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellPivotOrder), args["where"].(*ent.ShellPivotWhereInput)), true
 
 	case "Shell.portals":
 		if e.ComplexityRoot.Shell.Portals == nil {
@@ -9717,6 +9730,37 @@ type Shell implements Node {
     """
     where: ShellTaskWhereInput
   ): ShellTaskConnection!
+  pivots(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ShellPivots returned from the connection.
+    """
+    orderBy: [ShellPivotOrder!]
+
+    """
+    Filtering options for ShellPivots returned from the connection.
+    """
+    where: ShellPivotWhereInput
+  ): ShellPivotConnection!
 }
 """
 A connection to a list of items.
@@ -10405,6 +10449,11 @@ input ShellWhereInput {
   """
   hasShellTasks: Boolean
   hasShellTasksWith: [ShellTaskWhereInput!]
+  """
+  pivots edge predicates
+  """
+  hasPivots: Boolean
+  hasPivotsWith: [ShellPivotWhereInput!]
 }
 type Tag implements Node {
   id: ID!
