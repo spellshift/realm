@@ -186,6 +186,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pivotIDStr := r.URL.Query().Get("pivot_id")
 	portalIDStr := r.URL.Query().Get("portal_id")
 	target := r.URL.Query().Get("target")
+	shellIDStr := r.URL.Query().Get("shell_id")
 
 	var pivotSession *PivotSession
 
@@ -280,13 +281,20 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		dstPort, _ := strconv.ParseUint(dstPortStr, 10, 32)
 
 		// Create ShellPivot Ent
-		pivotEnt, err := h.graph.ShellPivot.Create().
+		createReq := h.graph.ShellPivot.Create().
 			SetStreamID(streamID).
 			SetKind("ssh").
 			SetDestination(hostPortStr).
 			SetPort(int(dstPort)).
-			SetPortalID(portalID).
-			Save(ctx)
+			SetPortalID(portalID)
+
+		if shellIDStr != "" {
+			if shellID, err := strconv.Atoi(shellIDStr); err == nil {
+				createReq = createReq.SetShellID(shellID)
+			}
+		}
+
+		pivotEnt, err := createReq.Save(ctx)
 
 		if err != nil {
 			sendWsError(fmt.Sprintf("Failed to create shell pivot: %v", err))

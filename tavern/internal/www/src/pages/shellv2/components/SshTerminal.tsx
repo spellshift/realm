@@ -8,9 +8,10 @@ interface SshTerminalProps {
   portalId: number;
   target: string;
   pivotId?: number;
+  shellId: string;
 }
 
-const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId }) => {
+const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, shellId }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -44,7 +45,7 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId }) 
 
     // WebSocket Connection
     const scheme = window.location.protocol === "https:" ? "wss" : "ws";
-    let wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}`;
+    let wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?portal_id=${portalId}&target=${encodeURIComponent(target)}&shell_id=${shellId}`;
     if (pivotId) {
       wsUrl = `${scheme}://${window.location.host}/portals/ssh/ws?pivot_id=${pivotId}`;
     }
