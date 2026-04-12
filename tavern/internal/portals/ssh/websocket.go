@@ -39,10 +39,10 @@ type PivotSession struct {
 	Stdin         io.WriteCloser
 	CancelContext context.CancelFunc
 
-	mu             sync.Mutex
-	history        []byte
-	dirty          bool
-	activeSockets  map[*websocket.Conn]chan interface{}
+	mu            sync.Mutex
+	history       []byte
+	dirty         bool
+	activeSockets map[*websocket.Conn]chan interface{}
 }
 
 // sessionCache maintains a map of active PivotSessions.
@@ -187,6 +187,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	portalIDStr := r.URL.Query().Get("portal_id")
 	target := r.URL.Query().Get("target")
 	shellIDStr := r.URL.Query().Get("shell_id")
+
+	// Require a shellID
+	if shellIDStr == "" {
+		sendWsError("missing shell_id")
+		return
+	}
 
 	var pivotSession *PivotSession
 
@@ -435,12 +441,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		pivotSession = &PivotSession{
-			PivotID:       pivotEnt.ID,
-			StreamID:      streamID,
-			Conn:          conn,
-			SSHClient:     sshClient,
-			Session:       session,
-			Stdin:         stdin,
+			PivotID:   pivotEnt.ID,
+			StreamID:  streamID,
+			Conn:      conn,
+			SSHClient: sshClient,
+			Session:   session,
+			Stdin:     stdin,
 			CancelContext: func() {
 				cancelSession()
 				recvCleanup()
