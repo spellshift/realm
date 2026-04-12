@@ -31,6 +31,7 @@ import (
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -115,6 +116,7 @@ func checkColumn(table, column string) error {
 			scheduledtask.Table:  scheduledtask.ValidColumn,
 			screenshot.Table:     screenshot.ValidColumn,
 			shell.Table:          shell.ValidColumn,
+			shellpivot.Table:     shellpivot.ValidColumn,
 			shelltask.Table:      shelltask.ValidColumn,
 			tag.Table:            tag.ValidColumn,
 			task.Table:           task.ValidColumn,

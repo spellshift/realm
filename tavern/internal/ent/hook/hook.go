@@ -237,6 +237,18 @@ func (f ShellFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ShellMutation", m)
 }
 
+// The ShellPivotFunc type is an adapter to allow the use of ordinary
+// function as ShellPivot mutator.
+type ShellPivotFunc func(context.Context, *ent.ShellPivotMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ShellPivotFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ShellPivotMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ShellPivotMutation", m)
+}
+
 // The ShellTaskFunc type is an adapter to allow the use of ordinary
 // function as ShellTask mutator.
 type ShellTaskFunc func(context.Context, *ent.ShellTaskMutation) (ent.Value, error)

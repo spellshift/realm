@@ -566,6 +566,30 @@ func (f ShellMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ShellMutation", m)
 }
 
+// The ShellPivotQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type ShellPivotQueryRuleFunc func(context.Context, *ent.ShellPivotQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f ShellPivotQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.ShellPivotQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ShellPivotQuery", q)
+}
+
+// The ShellPivotMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type ShellPivotMutationRuleFunc func(context.Context, *ent.ShellPivotMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f ShellPivotMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.ShellPivotMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ShellPivotMutation", m)
+}
+
 // The ShellTaskQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ShellTaskQueryRuleFunc func(context.Context, *ent.ShellTaskQuery) error
