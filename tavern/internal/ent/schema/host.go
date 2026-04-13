@@ -113,6 +113,13 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Users who have favorited this host."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with this host."),
 	}
 }
 

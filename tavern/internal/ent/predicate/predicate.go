@@ -30,6 +30,9 @@ type Builder func(*sql.Selector)
 // DeviceAuth is the predicate function for deviceauth builders.
 type DeviceAuth func(*sql.Selector)
 
+// Event is the predicate function for event builders.
+type Event func(*sql.Selector)
+
 // Host is the predicate function for host builders.
 type Host func(*sql.Selector)
 
@@ -44,6 +47,9 @@ type HostProcess func(*sql.Selector)
 
 // Link is the predicate function for link builders.
 type Link func(*sql.Selector)
+
+// Notification is the predicate function for notification builders.
+type Notification func(*sql.Selector)
 
 // Portal is the predicate function for portal builders.
 type Portal func(*sql.Selector)
@@ -62,6 +68,9 @@ type Screenshot func(*sql.Selector)
 
 // Shell is the predicate function for shell builders.
 type Shell func(*sql.Selector)
+
+// ShellPivot is the predicate function for shellpivot builders.
+type ShellPivot func(*sql.Selector)
 
 // ShellTask is the predicate function for shelltask builders.
 type ShellTask func(*sql.Selector)

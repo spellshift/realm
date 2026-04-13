@@ -105,10 +105,19 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 	// Populate groupByTactic in buckets
 	for _, bucket := range buckets {
 		if counts, exists := tacticCounts[bucket.StartTimestamp.Unix()]; exists {
-			for tactic, count := range counts {
+			// Extract keys and sort them for deterministic order
+			var tactics []tome.Tactic
+			for tactic := range counts {
+				tactics = append(tactics, tactic)
+			}
+			sort.SliceStable(tactics, func(i, j int) bool {
+				return tactics[i] < tactics[j]
+			})
+
+			for _, tactic := range tactics {
 				bucket.GroupByTactic = append(bucket.GroupByTactic, &models.QuestTimelineTacticBucket{
 					Tactic: tactic,
-					Count:  count,
+					Count:  counts[tactic],
 				})
 			}
 		}

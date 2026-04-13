@@ -9,6 +9,39 @@ import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHi
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
+const wrapText = (text: string, cols: number) => {
+    const inputLines = text.split('\n');
+    let lines = [];
+    let inMarkdownBlock = false;
+
+    for (const line of inputLines) {
+        if (line.trim().startsWith('```')) {
+            inMarkdownBlock = !inMarkdownBlock;
+            lines.push(line.trim());
+            continue;
+        }
+
+        if (inMarkdownBlock) {
+            lines.push('  ' + line.trimStart());
+            continue;
+        }
+
+        const words = line.split(' ');
+        let currentLine = '';
+        for (const word of words) {
+            if (currentLine.length + word.length + 1 > cols) {
+                if (currentLine.length > 0) lines.push(currentLine);
+                currentLine = word;
+            } else {
+                if (currentLine.length > 0) currentLine += ' ';
+                currentLine += word;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+    }
+    return lines.join('\r\n');
+};
+
 interface ShellState {
     inputBuffer: string;
     cursorPos: number;
@@ -26,7 +59,8 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onOpenPortalTab?: (type: string, target: string) => void
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -34,6 +68,8 @@ export const useShellTerminal = (
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
+
+    const portalIdRef = useRef<number | null>(null);
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -501,6 +537,7 @@ export const useShellTerminal = (
                             content = msg.message + "\n";
                             color = "\x1b[38;5;178m"; // Purple
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
                         }
                         // Handle other control signals if needed
@@ -845,14 +882,27 @@ export const useShellTerminal = (
                         if (!target) {
                             term.write("Welcome to the Browser REPL.\r\n");
                             term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                            term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
                             term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
                         } else {
                             const doc = docs[target];
                             if (doc) {
+                                const wrappedDesc = wrapText(doc.description, term.cols);
                                 term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
-                                term.write(`${doc.description}\r\n`);
+                                term.write(`${wrappedDesc}\r\n`);
                             } else {
                                 term.write(`No documentation found for: ${target}\r\n`);
+                            }
+                        }
+                    } else if (metaCmd?.type === "ssh") {
+                        const target = metaCmd.target;
+                        const pId = portalIdRef.current;
+                        if (!pId) {
+                            term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                        } else {
+                            term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                            if (onOpenPortalTab) {
+                                onOpenPortalTab("ssh", target);
                             }
                         }
                     }
@@ -960,14 +1010,27 @@ export const useShellTerminal = (
                             if (!target) {
                                 term.write("Welcome to the Browser REPL.\r\n");
                                 term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                                term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
                                 term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
                             } else {
                                 const doc = docs[target];
                                 if (doc) {
+                                    const wrappedDesc = wrapText(doc.description, term.cols);
                                     term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
-                                    term.write(`${doc.description}\r\n`);
+                                    term.write(`${wrappedDesc}\r\n`);
                                 } else {
                                     term.write(`No documentation found for: ${target}\r\n`);
+                                }
+                            }
+                        } else if (metaCmd?.type === "ssh") {
+                            const target = metaCmd.target;
+                            const pId = portalIdRef.current;
+                            if (!pId) {
+                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                            } else {
+                                term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                                if (onOpenPortalTab) {
+                                    onOpenPortalTab("ssh", target);
                                 }
                             }
                         }

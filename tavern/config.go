@@ -171,7 +171,11 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
-	return ent.NewClient(append(options, ent.Driver(drv))...), nil
+	client := ent.NewClient(append(options, ent.Driver(drv))...)
+	client.Host.Use(ent.HookDeriveHostEvents())
+	client.Task.Use(ent.HookDeriveQuestEvents())
+	client.Event.Use(ent.HookDeriveNotifications())
+	return client, nil
 }
 
 func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {

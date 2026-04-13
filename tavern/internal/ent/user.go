@@ -39,6 +39,8 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
+	// Notifications belonging to the user.
+	Notifications []*Notification `json:"notifications,omitempty"`
 	// Tomes uploaded by the user.
 	Tomes []*Tome `json:"tomes,omitempty"`
 	// Shells actively used by the user
@@ -49,20 +51,30 @@ type UserEdges struct {
 	FavoriteHosts []*Host `json:"favoriteHosts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [5]map[string]int
 
+	namedNotifications map[string][]*Notification
 	namedTomes         map[string][]*Tome
 	namedActiveShells  map[string][]*Shell
 	namedDeviceAuths   map[string][]*DeviceAuth
 	namedFavoriteHosts map[string][]*Host
 }
 
+// NotificationsOrErr returns the Notifications value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) NotificationsOrErr() ([]*Notification, error) {
+	if e.loadedTypes[0] {
+		return e.Notifications, nil
+	}
+	return nil, &NotLoadedError{edge: "notifications"}
+}
+
 // TomesOrErr returns the Tomes value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) TomesOrErr() ([]*Tome, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Tomes, nil
 	}
 	return nil, &NotLoadedError{edge: "tomes"}
@@ -71,7 +83,7 @@ func (e UserEdges) TomesOrErr() ([]*Tome, error) {
 // ActiveShellsOrErr returns the ActiveShells value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) ActiveShellsOrErr() ([]*Shell, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.ActiveShells, nil
 	}
 	return nil, &NotLoadedError{edge: "active_shells"}
@@ -80,7 +92,7 @@ func (e UserEdges) ActiveShellsOrErr() ([]*Shell, error) {
 // DeviceAuthsOrErr returns the DeviceAuths value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) DeviceAuthsOrErr() ([]*DeviceAuth, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.DeviceAuths, nil
 	}
 	return nil, &NotLoadedError{edge: "device_auths"}
@@ -89,7 +101,7 @@ func (e UserEdges) DeviceAuthsOrErr() ([]*DeviceAuth, error) {
 // FavoriteHostsOrErr returns the FavoriteHosts value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) FavoriteHostsOrErr() ([]*Host, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.FavoriteHosts, nil
 	}
 	return nil, &NotLoadedError{edge: "favoriteHosts"}
@@ -191,6 +203,11 @@ func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
 }
 
+// QueryNotifications queries the "notifications" edge of the User entity.
+func (u *User) QueryNotifications() *NotificationQuery {
+	return NewUserClient(u.config).QueryNotifications(u)
+}
+
 // QueryTomes queries the "tomes" edge of the User entity.
 func (u *User) QueryTomes() *TomeQuery {
 	return NewUserClient(u.config).QueryTomes(u)
@@ -253,6 +270,30 @@ func (u *User) String() string {
 	builder.WriteString(fmt.Sprintf("%v", u.IsAdmin))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedNotifications returns the Notifications named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (u *User) NamedNotifications(name string) ([]*Notification, error) {
+	if u.Edges.namedNotifications == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := u.Edges.namedNotifications[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (u *User) appendNamedNotifications(name string, edges ...*Notification) {
+	if u.Edges.namedNotifications == nil {
+		u.Edges.namedNotifications = make(map[string][]*Notification)
+	}
+	if len(edges) == 0 {
+		u.Edges.namedNotifications[name] = []*Notification{}
+	} else {
+		u.Edges.namedNotifications[name] = append(u.Edges.namedNotifications[name], edges...)
+	}
 }
 
 // NamedTomes returns the Tomes named value or an error if the edge was not

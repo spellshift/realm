@@ -43,6 +43,8 @@ type MutationResolver interface {
 	CreateBuildTask(ctx context.Context, input models.CreateBuildTaskInput) (*ent.BuildTask, error)
 	CreateScheduledTask(ctx context.Context, input ent.CreateScheduledTaskInput) (*ent.ScheduledTask, error)
 	DisableScheduledTask(ctx context.Context, scheduledTaskID int) (*ent.ScheduledTask, error)
+	MarkNotificationsAsRead(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error)
+	MarkNotificationsAsArchived(ctx context.Context, notificationIDs []int) ([]*ent.Notification, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -226,6 +228,28 @@ func (ec *executionContext) field_Mutation_importRepository_args(ctx context.Con
 		return nil, err
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_markNotificationsAsArchived_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "notificationIDs", ec.unmarshalNID2ᚕintᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["notificationIDs"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_markNotificationsAsRead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "notificationIDs", ec.unmarshalNID2ᚕintᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["notificationIDs"] = arg0
 	return args, nil
 }
 
@@ -475,6 +499,8 @@ func (ec *executionContext) fieldContext_Mutation_createQuest(ctx context.Contex
 				return ec.fieldContext_Quest_relatedQuests(ctx, field)
 			case "previousQuest":
 				return ec.fieldContext_Quest_previousQuest(ctx, field)
+			case "events":
+				return ec.fieldContext_Quest_events(ctx, field)
 			case "diffs":
 				return ec.fieldContext_Quest_diffs(ctx, field)
 			}
@@ -568,6 +594,8 @@ func (ec *executionContext) fieldContext_Mutation_updateBeacon(ctx context.Conte
 				return ec.fieldContext_Beacon_shells(ctx, field)
 			case "history":
 				return ec.fieldContext_Beacon_history(ctx, field)
+			case "events":
+				return ec.fieldContext_Beacon_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Beacon", field.Name)
 		},
@@ -649,6 +677,8 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_activeUsers(ctx, field)
 			case "shellTasks":
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
+			case "pivots":
+				return ec.fieldContext_Shell_pivots(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -744,6 +774,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -839,6 +871,8 @@ func (ec *executionContext) fieldContext_Mutation_favoriteHost(ctx context.Conte
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -934,6 +968,8 @@ func (ec *executionContext) fieldContext_Mutation_unfavoriteHost(ctx context.Con
 				return ec.fieldContext_Host_screenshots(ctx, field)
 			case "favoritedby":
 				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -1529,6 +1565,8 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -1599,6 +1637,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_isActivated(ctx, field)
 			case "isAdmin":
 				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
 			case "tomes":
 				return ec.fieldContext_User_tomes(ctx, field)
 			case "activeShells":
@@ -2344,6 +2384,160 @@ func (ec *executionContext) fieldContext_Mutation_disableScheduledTask(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_markNotificationsAsRead(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_markNotificationsAsRead,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().MarkNotificationsAsRead(ctx, fc.Args["notificationIDs"].([]int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNNotification2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markNotificationsAsRead(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Notification_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Notification_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Notification_lastModifiedAt(ctx, field)
+			case "priority":
+				return ec.fieldContext_Notification_priority(ctx, field)
+			case "read":
+				return ec.fieldContext_Notification_read(ctx, field)
+			case "archived":
+				return ec.fieldContext_Notification_archived(ctx, field)
+			case "user":
+				return ec.fieldContext_Notification_user(ctx, field)
+			case "event":
+				return ec.fieldContext_Notification_event(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Notification", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_markNotificationsAsRead_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_markNotificationsAsArchived(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_markNotificationsAsArchived,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().MarkNotificationsAsArchived(ctx, fc.Args["notificationIDs"].([]int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal []*ent.Notification
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNNotification2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐNotificationᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_markNotificationsAsArchived(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Notification_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Notification_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Notification_lastModifiedAt(ctx, field)
+			case "priority":
+				return ec.fieldContext_Notification_priority(ctx, field)
+			case "read":
+				return ec.fieldContext_Notification_read(ctx, field)
+			case "archived":
+				return ec.fieldContext_Notification_archived(ctx, field)
+			case "user":
+				return ec.fieldContext_Notification_user(ctx, field)
+			case "event":
+				return ec.fieldContext_Notification_event(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Notification", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_markNotificationsAsArchived_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -2540,6 +2734,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "disableScheduledTask":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_disableScheduledTask(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "markNotificationsAsRead":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markNotificationsAsRead(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "markNotificationsAsArchived":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_markNotificationsAsArchived(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

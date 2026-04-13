@@ -383,6 +383,29 @@ func HasShellTasksWith(preds ...predicate.ShellTask) predicate.Shell {
 	})
 }
 
+// HasPivots applies the HasEdge predicate on the "pivots" edge.
+func HasPivots() predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, PivotsTable, PivotsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPivotsWith applies the HasEdge predicate on the "pivots" edge with a given conditions (other predicates).
+func HasPivotsWith(preds ...predicate.ShellPivot) predicate.Shell {
+	return predicate.Shell(func(s *sql.Selector) {
+		step := newPivotsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Shell) predicate.Shell {
 	return predicate.Shell(sql.AndPredicates(predicates...))

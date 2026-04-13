@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
@@ -27,6 +28,7 @@ type UserQuery struct {
 	order                  []user.OrderOption
 	inters                 []Interceptor
 	predicates             []predicate.User
+	withNotifications      *NotificationQuery
 	withTomes              *TomeQuery
 	withActiveShells       *ShellQuery
 	withDeviceAuths        *DeviceAuthQuery
@@ -34,6 +36,7 @@ type UserQuery struct {
 	withFKs                bool
 	modifiers              []func(*sql.Selector)
 	loadTotal              []func(context.Context, []*User) error
+	withNamedNotifications map[string]*NotificationQuery
 	withNamedTomes         map[string]*TomeQuery
 	withNamedActiveShells  map[string]*ShellQuery
 	withNamedDeviceAuths   map[string]*DeviceAuthQuery
@@ -72,6 +75,28 @@ func (uq *UserQuery) Unique(unique bool) *UserQuery {
 func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	uq.order = append(uq.order, o...)
 	return uq
+}
+
+// QueryNotifications chains the current query on the "notifications" edge.
+func (uq *UserQuery) QueryNotifications() *NotificationQuery {
+	query := (&NotificationClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(notification.Table, notification.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.NotificationsTable, user.NotificationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryTomes chains the current query on the "tomes" edge.
@@ -354,6 +379,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		order:             append([]user.OrderOption{}, uq.order...),
 		inters:            append([]Interceptor{}, uq.inters...),
 		predicates:        append([]predicate.User{}, uq.predicates...),
+		withNotifications: uq.withNotifications.Clone(),
 		withTomes:         uq.withTomes.Clone(),
 		withActiveShells:  uq.withActiveShells.Clone(),
 		withDeviceAuths:   uq.withDeviceAuths.Clone(),
@@ -362,6 +388,17 @@ func (uq *UserQuery) Clone() *UserQuery {
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
+}
+
+// WithNotifications tells the query-builder to eager-load the nodes that are connected to
+// the "notifications" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNotifications(opts ...func(*NotificationQuery)) *UserQuery {
+	query := (&NotificationClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withNotifications = query
+	return uq
 }
 
 // WithTomes tells the query-builder to eager-load the nodes that are connected to
@@ -487,7 +524,8 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
+			uq.withNotifications != nil,
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
 			uq.withDeviceAuths != nil,
@@ -518,6 +556,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := uq.withNotifications; query != nil {
+		if err := uq.loadNotifications(ctx, query, nodes,
+			func(n *User) { n.Edges.Notifications = []*Notification{} },
+			func(n *User, e *Notification) { n.Edges.Notifications = append(n.Edges.Notifications, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := uq.withTomes; query != nil {
 		if err := uq.loadTomes(ctx, query, nodes,
 			func(n *User) { n.Edges.Tomes = []*Tome{} },
@@ -543,6 +588,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadFavoriteHosts(ctx, query, nodes,
 			func(n *User) { n.Edges.FavoriteHosts = []*Host{} },
 			func(n *User, e *Host) { n.Edges.FavoriteHosts = append(n.Edges.FavoriteHosts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedNotifications {
+		if err := uq.loadNotifications(ctx, query, nodes,
+			func(n *User) { n.appendNamedNotifications(name) },
+			func(n *User, e *Notification) { n.appendNamedNotifications(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -582,6 +634,37 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	return nodes, nil
 }
 
+func (uq *UserQuery) loadNotifications(ctx context.Context, query *NotificationQuery, nodes []*User, init func(*User), assign func(*User, *Notification)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Notification(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.NotificationsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.notification_user
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "notification_user" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "notification_user" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (uq *UserQuery) loadTomes(ctx context.Context, query *TomeQuery, nodes []*User, init func(*User), assign func(*User, *Tome)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*User)
@@ -849,6 +932,20 @@ func (uq *UserQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedNotifications tells the query-builder to eager-load the nodes that are connected to the "notifications"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedNotifications(name string, opts ...func(*NotificationQuery)) *UserQuery {
+	query := (&NotificationClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedNotifications == nil {
+		uq.withNamedNotifications = make(map[string]*NotificationQuery)
+	}
+	uq.withNamedNotifications[name] = query
+	return uq
 }
 
 // WithNamedTomes tells the query-builder to eager-load the nodes that are connected to the "tomes"

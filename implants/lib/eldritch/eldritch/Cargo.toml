@@ -24,6 +24,7 @@ eldritch-libreport = { workspace = true, default-features = false }
 eldritch-libsys = { workspace = true, default-features = false }
 eldritch-libtime = { workspace = true, default-features = false }
 eldritch-libchain = { workspace = true, default-features = false }
+eldritch-libdns = { workspace = true, default-features = false }
 pb = { workspace = true, optional = true }
 eldritch-repl = { workspace = true, default-features = false }
 
@@ -44,6 +45,7 @@ fake_bindings = [
     "fake_sys",
     "fake_time",
     "fake_chain",
+    "fake_dns",
 ]
 fake_agent = ["eldritch-libagent/fake_bindings"]
 fake_assets = ["eldritch-libassets/fake_bindings"]
@@ -58,6 +60,7 @@ fake_report = ["eldritch-libreport/fake_bindings"]
 fake_sys = ["eldritch-libsys/fake_bindings"]
 fake_time = ["eldritch-libtime/fake_bindings"]
 fake_chain = ["eldritch-libchain/fake_bindings"]
+fake_dns = ["eldritch-libdns/fake_bindings"]
 stdlib = [
     "dep:pb",
     "dep:eldritch-agent",
@@ -74,6 +77,7 @@ stdlib = [
     "eldritch-libsys/stdlib",
     "eldritch-libtime/stdlib",
     "eldritch-libchain/stdlib",
+    "eldritch-libdns/stdlib",
 ]
 
 [dev-dependencies]

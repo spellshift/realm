@@ -84,6 +84,7 @@ type ComplexityRoot struct {
 	Beacon struct {
 		AgentIdentifier func(childComplexity int) int
 		CreatedAt       func(childComplexity int) int
+		Events          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		History         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconHistoryOrder, where *ent.BeaconHistoryWhereInput) int
 		Host            func(childComplexity int) int
 		ID              func(childComplexity int) int
@@ -254,10 +255,34 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Event struct {
+		Beacon         func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Host           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Notifications  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
+		Quest          func(childComplexity int) int
+		Timestamp      func(childComplexity int) int
+	}
+
+	EventConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	EventEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Host struct {
 		Beacons        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.BeaconOrder, where *ent.BeaconWhereInput) int
 		CreatedAt      func(childComplexity int) int
 		Credentials    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostCredentialOrder, where *ent.HostCredentialWhereInput) int
+		Events         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ExternalIP     func(childComplexity int) int
 		FavoritedBy    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.UserOrder, where *ent.UserWhereInput) int
 		Files          func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostFileOrder, where *ent.HostFileWhereInput) int
@@ -396,31 +421,55 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateBuildTask      func(childComplexity int, input models.CreateBuildTaskInput) int
-		CreateCredential     func(childComplexity int, input ent.CreateHostCredentialInput) int
-		CreateLink           func(childComplexity int, input ent.CreateLinkInput) int
-		CreateQuest          func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
-		CreateRepository     func(childComplexity int, input ent.CreateRepositoryInput) int
-		CreateScheduledTask  func(childComplexity int, input ent.CreateScheduledTaskInput) int
-		CreateShell          func(childComplexity int, input ent.CreateShellInput) int
-		CreateTag            func(childComplexity int, input ent.CreateTagInput) int
-		CreateTome           func(childComplexity int, input ent.CreateTomeInput) int
-		DeleteBuilder        func(childComplexity int, builderID int) int
-		DeleteTome           func(childComplexity int, tomeID int) int
-		DisableLink          func(childComplexity int, linkID int) int
-		DisableScheduledTask func(childComplexity int, scheduledTaskID int) int
-		DropAllData          func(childComplexity int) int
-		FavoriteHost         func(childComplexity int, hostID int) int
-		ImportRepository     func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
-		RegisterBuilder      func(childComplexity int, input ent.CreateBuilderInput) int
-		ResetUserAPIKey      func(childComplexity int) int
-		UnfavoriteHost       func(childComplexity int, hostID int) int
-		UpdateBeacon         func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
-		UpdateHost           func(childComplexity int, hostID int, input ent.UpdateHostInput) int
-		UpdateLink           func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
-		UpdateTag            func(childComplexity int, tagID int, input ent.UpdateTagInput) int
-		UpdateTome           func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
-		UpdateUser           func(childComplexity int, userID int, input ent.UpdateUserInput) int
+		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
+		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
+		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
+		CreateQuest                 func(childComplexity int, beaconIDs []int, input ent.CreateQuestInput, prevNodeID *int) int
+		CreateRepository            func(childComplexity int, input ent.CreateRepositoryInput) int
+		CreateScheduledTask         func(childComplexity int, input ent.CreateScheduledTaskInput) int
+		CreateShell                 func(childComplexity int, input ent.CreateShellInput) int
+		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
+		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
+		DeleteBuilder               func(childComplexity int, builderID int) int
+		DeleteTome                  func(childComplexity int, tomeID int) int
+		DisableLink                 func(childComplexity int, linkID int) int
+		DisableScheduledTask        func(childComplexity int, scheduledTaskID int) int
+		DropAllData                 func(childComplexity int) int
+		FavoriteHost                func(childComplexity int, hostID int) int
+		ImportRepository            func(childComplexity int, repoID int, input *models.ImportRepositoryInput) int
+		MarkNotificationsAsArchived func(childComplexity int, notificationIDs []int) int
+		MarkNotificationsAsRead     func(childComplexity int, notificationIDs []int) int
+		RegisterBuilder             func(childComplexity int, input ent.CreateBuilderInput) int
+		ResetUserAPIKey             func(childComplexity int) int
+		UnfavoriteHost              func(childComplexity int, hostID int) int
+		UpdateBeacon                func(childComplexity int, beaconID int, input ent.UpdateBeaconInput) int
+		UpdateHost                  func(childComplexity int, hostID int, input ent.UpdateHostInput) int
+		UpdateLink                  func(childComplexity int, linkID int, input ent.UpdateLinkInput) int
+		UpdateTag                   func(childComplexity int, tagID int, input ent.UpdateTagInput) int
+		UpdateTome                  func(childComplexity int, tomeID int, input ent.UpdateTomeInput) int
+		UpdateUser                  func(childComplexity int, userID int, input ent.UpdateUserInput) int
+	}
+
+	Notification struct {
+		Archived       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Event          func(childComplexity int) int
+		ID             func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Priority       func(childComplexity int) int
+		Read           func(childComplexity int) int
+		User           func(childComplexity int) int
+	}
+
+	NotificationConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	NotificationEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -483,6 +532,7 @@ type ComplexityRoot struct {
 		Creator             func(childComplexity int) int
 		Diffs               func(childComplexity int) int
 		EldritchAtCreation  func(childComplexity int) int
+		Events              func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ID                  func(childComplexity int) int
 		LastModifiedAt      func(childComplexity int) int
 		Name                func(childComplexity int) int
@@ -603,6 +653,7 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
+		Pivots         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellPivotOrder, where *ent.ShellPivotWhereInput) int
 		Portals        func(childComplexity int) int
 		ShellTasks     func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellTaskOrder, where *ent.ShellTaskWhereInput) int
 		Task           func(childComplexity int) int
@@ -615,6 +666,32 @@ type ComplexityRoot struct {
 	}
 
 	ShellEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	ShellPivot struct {
+		ClosedAt       func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		Credential     func(childComplexity int) int
+		Data           func(childComplexity int) int
+		Destination    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Kind           func(childComplexity int) int
+		LastModifiedAt func(childComplexity int) int
+		Port           func(childComplexity int) int
+		Portal         func(childComplexity int) int
+		Shell          func(childComplexity int) int
+		StreamID       func(childComplexity int) int
+	}
+
+	ShellPivotConnection struct {
+		Edges      func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
+	ShellPivotEdge struct {
 		Cursor func(childComplexity int) int
 		Node   func(childComplexity int) int
 	}
@@ -752,6 +829,7 @@ type ComplexityRoot struct {
 		IsActivated   func(childComplexity int) int
 		IsAdmin       func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Notifications func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
 		PhotoURL      func(childComplexity int) int
 		Tomes         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TomeOrder, where *ent.TomeWhereInput) int
 	}
@@ -978,6 +1056,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Beacon.CreatedAt(childComplexity), true
+
+	case "Beacon.events":
+		if e.ComplexityRoot.Beacon.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Beacon_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Beacon.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Beacon.history":
 		if e.ComplexityRoot.Beacon.History == nil {
@@ -1734,6 +1824,109 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.DeviceAuthEdge.Node(childComplexity), true
 
+	case "Event.beacon":
+		if e.ComplexityRoot.Event.Beacon == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Beacon(childComplexity), true
+
+	case "Event.createdAt":
+		if e.ComplexityRoot.Event.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.CreatedAt(childComplexity), true
+
+	case "Event.host":
+		if e.ComplexityRoot.Event.Host == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Host(childComplexity), true
+
+	case "Event.id":
+		if e.ComplexityRoot.Event.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.ID(childComplexity), true
+
+	case "Event.kind":
+		if e.ComplexityRoot.Event.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Kind(childComplexity), true
+
+	case "Event.lastModifiedAt":
+		if e.ComplexityRoot.Event.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.LastModifiedAt(childComplexity), true
+
+	case "Event.notifications":
+		if e.ComplexityRoot.Event.Notifications == nil {
+			break
+		}
+
+		args, err := ec.field_Event_notifications_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Event.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
+
+	case "Event.quest":
+		if e.ComplexityRoot.Event.Quest == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Quest(childComplexity), true
+
+	case "Event.timestamp":
+		if e.ComplexityRoot.Event.Timestamp == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Timestamp(childComplexity), true
+
+	case "EventConnection.edges":
+		if e.ComplexityRoot.EventConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.Edges(childComplexity), true
+
+	case "EventConnection.pageInfo":
+		if e.ComplexityRoot.EventConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.PageInfo(childComplexity), true
+
+	case "EventConnection.totalCount":
+		if e.ComplexityRoot.EventConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventConnection.TotalCount(childComplexity), true
+
+	case "EventEdge.cursor":
+		if e.ComplexityRoot.EventEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventEdge.Cursor(childComplexity), true
+
+	case "EventEdge.node":
+		if e.ComplexityRoot.EventEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.EventEdge.Node(childComplexity), true
+
 	case "Host.beacons":
 		if e.ComplexityRoot.Host.Beacons == nil {
 			break
@@ -1764,6 +1957,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Host.Credentials(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostCredentialOrder), args["where"].(*ent.HostCredentialWhereInput)), true
+
+	case "Host.events":
+		if e.ComplexityRoot.Host.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Host_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Host.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Host.externalIP":
 		if e.ComplexityRoot.Host.ExternalIP == nil {
@@ -2617,6 +2822,30 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.ImportRepository(childComplexity, args["repoID"].(int), args["input"].(*models.ImportRepositoryInput)), true
 
+	case "Mutation.markNotificationsAsArchived":
+		if e.ComplexityRoot.Mutation.MarkNotificationsAsArchived == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markNotificationsAsArchived_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.MarkNotificationsAsArchived(childComplexity, args["notificationIDs"].([]int)), true
+
+	case "Mutation.markNotificationsAsRead":
+		if e.ComplexityRoot.Mutation.MarkNotificationsAsRead == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_markNotificationsAsRead_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.MarkNotificationsAsRead(childComplexity, args["notificationIDs"].([]int)), true
+
 	case "Mutation.registerBuilder":
 		if e.ComplexityRoot.Mutation.RegisterBuilder == nil {
 			break
@@ -2719,6 +2948,97 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateUser(childComplexity, args["userID"].(int), args["input"].(ent.UpdateUserInput)), true
+
+	case "Notification.archived":
+		if e.ComplexityRoot.Notification.Archived == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Archived(childComplexity), true
+
+	case "Notification.createdAt":
+		if e.ComplexityRoot.Notification.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.CreatedAt(childComplexity), true
+
+	case "Notification.event":
+		if e.ComplexityRoot.Notification.Event == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Event(childComplexity), true
+
+	case "Notification.id":
+		if e.ComplexityRoot.Notification.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.ID(childComplexity), true
+
+	case "Notification.lastModifiedAt":
+		if e.ComplexityRoot.Notification.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.LastModifiedAt(childComplexity), true
+
+	case "Notification.priority":
+		if e.ComplexityRoot.Notification.Priority == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Priority(childComplexity), true
+
+	case "Notification.read":
+		if e.ComplexityRoot.Notification.Read == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.Read(childComplexity), true
+
+	case "Notification.user":
+		if e.ComplexityRoot.Notification.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Notification.User(childComplexity), true
+
+	case "NotificationConnection.edges":
+		if e.ComplexityRoot.NotificationConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.Edges(childComplexity), true
+
+	case "NotificationConnection.pageInfo":
+		if e.ComplexityRoot.NotificationConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.PageInfo(childComplexity), true
+
+	case "NotificationConnection.totalCount":
+		if e.ComplexityRoot.NotificationConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationConnection.TotalCount(childComplexity), true
+
+	case "NotificationEdge.cursor":
+		if e.ComplexityRoot.NotificationEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationEdge.Cursor(childComplexity), true
+
+	case "NotificationEdge.node":
+		if e.ComplexityRoot.NotificationEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationEdge.Node(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.ComplexityRoot.PageInfo.EndCursor == nil {
@@ -3122,6 +3442,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Quest.EldritchAtCreation(childComplexity), true
+
+	case "Quest.events":
+		if e.ComplexityRoot.Quest.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Quest_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Quest.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "Quest.id":
 		if e.ComplexityRoot.Quest.ID == nil {
@@ -3678,6 +4010,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Shell.Owner(childComplexity), true
 
+	case "Shell.pivots":
+		if e.ComplexityRoot.Shell.Pivots == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_pivots_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Shell.Pivots(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ShellPivotOrder), args["where"].(*ent.ShellPivotWhereInput)), true
+
 	case "Shell.portals":
 		if e.ComplexityRoot.Shell.Portals == nil {
 			break
@@ -3738,6 +4082,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.ShellEdge.Node(childComplexity), true
+
+	case "ShellPivot.closedAt":
+		if e.ComplexityRoot.ShellPivot.ClosedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.ClosedAt(childComplexity), true
+
+	case "ShellPivot.createdAt":
+		if e.ComplexityRoot.ShellPivot.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.CreatedAt(childComplexity), true
+
+	case "ShellPivot.credential":
+		if e.ComplexityRoot.ShellPivot.Credential == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Credential(childComplexity), true
+
+	case "ShellPivot.data":
+		if e.ComplexityRoot.ShellPivot.Data == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Data(childComplexity), true
+
+	case "ShellPivot.destination":
+		if e.ComplexityRoot.ShellPivot.Destination == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Destination(childComplexity), true
+
+	case "ShellPivot.id":
+		if e.ComplexityRoot.ShellPivot.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.ID(childComplexity), true
+
+	case "ShellPivot.kind":
+		if e.ComplexityRoot.ShellPivot.Kind == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Kind(childComplexity), true
+
+	case "ShellPivot.lastModifiedAt":
+		if e.ComplexityRoot.ShellPivot.LastModifiedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.LastModifiedAt(childComplexity), true
+
+	case "ShellPivot.port":
+		if e.ComplexityRoot.ShellPivot.Port == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Port(childComplexity), true
+
+	case "ShellPivot.portal":
+		if e.ComplexityRoot.ShellPivot.Portal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Portal(childComplexity), true
+
+	case "ShellPivot.shell":
+		if e.ComplexityRoot.ShellPivot.Shell == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.Shell(childComplexity), true
+
+	case "ShellPivot.streamID":
+		if e.ComplexityRoot.ShellPivot.StreamID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivot.StreamID(childComplexity), true
+
+	case "ShellPivotConnection.edges":
+		if e.ComplexityRoot.ShellPivotConnection.Edges == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.Edges(childComplexity), true
+
+	case "ShellPivotConnection.pageInfo":
+		if e.ComplexityRoot.ShellPivotConnection.PageInfo == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.PageInfo(childComplexity), true
+
+	case "ShellPivotConnection.totalCount":
+		if e.ComplexityRoot.ShellPivotConnection.TotalCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotConnection.TotalCount(childComplexity), true
+
+	case "ShellPivotEdge.cursor":
+		if e.ComplexityRoot.ShellPivotEdge.Cursor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotEdge.Cursor(childComplexity), true
+
+	case "ShellPivotEdge.node":
+		if e.ComplexityRoot.ShellPivotEdge.Node == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ShellPivotEdge.Node(childComplexity), true
 
 	case "ShellTask.claimedAt":
 		if e.ComplexityRoot.ShellTask.ClaimedAt == nil {
@@ -4419,6 +4882,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.User.Name(childComplexity), true
 
+	case "User.notifications":
+		if e.ComplexityRoot.User.Notifications == nil {
+			break
+		}
+
+		args, err := ec.field_User_notifications_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.Notifications(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.NotificationOrder), args["where"].(*ent.NotificationWhereInput)), true
+
 	case "User.photoURL":
 		if e.ComplexityRoot.User.PhotoURL == nil {
 			break
@@ -4510,10 +4985,13 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateRepositoryInput,
 		ec.unmarshalInputCreateScheduledTaskInput,
 		ec.unmarshalInputCreateShellInput,
+		ec.unmarshalInputCreateShellPivotInput,
 		ec.unmarshalInputCreateTagInput,
 		ec.unmarshalInputCreateTomeInput,
 		ec.unmarshalInputDeviceAuthOrder,
 		ec.unmarshalInputDeviceAuthWhereInput,
+		ec.unmarshalInputEventOrder,
+		ec.unmarshalInputEventWhereInput,
 		ec.unmarshalInputHostCredentialOrder,
 		ec.unmarshalInputHostCredentialWhereInput,
 		ec.unmarshalInputHostFileOrder,
@@ -4525,6 +5003,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputImportRepositoryInput,
 		ec.unmarshalInputLinkOrder,
 		ec.unmarshalInputLinkWhereInput,
+		ec.unmarshalInputNotificationOrder,
+		ec.unmarshalInputNotificationWhereInput,
 		ec.unmarshalInputPortalOrder,
 		ec.unmarshalInputPortalWhereInput,
 		ec.unmarshalInputQuestOrder,
@@ -4536,6 +5016,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputScreenshotOrder,
 		ec.unmarshalInputScreenshotWhereInput,
 		ec.unmarshalInputShellOrder,
+		ec.unmarshalInputShellPivotOrder,
+		ec.unmarshalInputShellPivotWhereInput,
 		ec.unmarshalInputShellTaskOrder,
 		ec.unmarshalInputShellTaskWhereInput,
 		ec.unmarshalInputShellWhereInput,
@@ -4550,6 +5032,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateDeviceAuthInput,
 		ec.unmarshalInputUpdateHostInput,
 		ec.unmarshalInputUpdateLinkInput,
+		ec.unmarshalInputUpdateNotificationInput,
 		ec.unmarshalInputUpdateScheduledTaskInput,
 		ec.unmarshalInputUpdateTagInput,
 		ec.unmarshalInputUpdateTomeInput,
@@ -5179,6 +5662,37 @@ type Beacon implements Node {
     """
     where: BeaconHistoryWhereInput
   ): BeaconHistoryConnection!
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -5547,6 +6061,11 @@ input BeaconWhereInput {
   """
   hasHistory: Boolean
   hasHistoryWith: [BeaconHistoryWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type BuildProfile implements Node {
   id: ID!
@@ -6546,6 +7065,31 @@ input CreateShellInput {
   beaconID: ID!
 }
 """
+CreateShellPivotInput is used for create ShellPivot object.
+Input was generated by ent.
+"""
+input CreateShellPivotInput {
+  """
+  Stream ID of the portal connection
+  """
+  streamID: String!
+  """
+  Kind of pivot connection
+  """
+  kind: ShellPivotKind!
+  """
+  Destination address of the pivot
+  """
+  destination: String!
+  """
+  Destination port of the pivot
+  """
+  port: Int!
+  shellID: ID
+  portalID: ID
+  credentialID: ID
+}
+"""
 CreateTagInput is used for create Tag object.
 Input was generated by ent.
 """
@@ -6766,6 +7310,209 @@ input DeviceAuthWhereInput {
   """
   hasUser: Boolean
   hasUserWith: [UserWhereInput!]
+}
+type Event implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Unix timestamp of the event
+  """
+  timestamp: Int!
+  """
+  Type of event
+  """
+  kind: EventKind!
+  """
+  Beacon associated with this event
+  """
+  beacon: Beacon
+  """
+  Host associated with this event
+  """
+  host: Host
+  """
+  Quest associated with this event
+  """
+  quest: Quest
+  notifications(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Notifications returned from the connection.
+    """
+    orderBy: [NotificationOrder!]
+
+    """
+    Filtering options for Notifications returned from the connection.
+    """
+    where: NotificationWhereInput
+  ): NotificationConnection!
+}
+"""
+A connection to a list of items.
+"""
+type EventConnection {
+  """
+  A list of edges.
+  """
+  edges: [EventEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type EventEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Event
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+EventKind is enum for the field kind
+"""
+enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
+  BEACON_LOST
+  HOST_ACCESS_NEW
+  HOST_ACCESS_RECOVERED
+  HOST_ACCESS_LOST
+  QUEST_COMPLETED
+}
+"""
+Ordering options for Event connections
+"""
+input EventOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Events.
+  """
+  field: EventOrderField!
+}
+"""
+Properties by which Event connections can be ordered.
+"""
+enum EventOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  TIMESTAMP
+}
+"""
+EventWhereInput is used for filtering Event objects.
+Input was generated by ent.
+"""
+input EventWhereInput {
+  not: EventWhereInput
+  and: [EventWhereInput!]
+  or: [EventWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  timestamp field predicates
+  """
+  timestamp: Int
+  timestampNEQ: Int
+  timestampIn: [Int!]
+  timestampNotIn: [Int!]
+  timestampGT: Int
+  timestampGTE: Int
+  timestampLT: Int
+  timestampLTE: Int
+  """
+  kind field predicates
+  """
+  kind: EventKind
+  kindNEQ: EventKind
+  kindIn: [EventKind!]
+  kindNotIn: [EventKind!]
+  """
+  beacon edge predicates
+  """
+  hasBeacon: Boolean
+  hasBeaconWith: [BeaconWhereInput!]
+  """
+  host edge predicates
+  """
+  hasHost: Boolean
+  hasHostWith: [HostWhereInput!]
+  """
+  quest edge predicates
+  """
+  hasQuest: Boolean
+  hasQuestWith: [QuestWhereInput!]
+  """
+  notifications edge predicates
+  """
+  hasNotifications: Boolean
+  hasNotificationsWith: [NotificationWhereInput!]
 }
 type Host implements Node {
   id: ID!
@@ -7022,6 +7769,37 @@ type Host implements Node {
     """
     where: UserWhereInput
   ): UserConnection! @goField(name: "FavoritedBy", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -8071,6 +8849,11 @@ input HostWhereInput {
   """
   hasFavoritedBy: Boolean
   hasFavoritedByWith: [UserWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -8273,6 +9056,165 @@ interface Node @goModel(model: "realm.pub/tavern/internal/ent.Noder") {
   The id of the object.
   """
   id: ID!
+}
+type Notification implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Priority of the notification
+  """
+  priority: NotificationPriority!
+  """
+  Whether the notification has been read
+  """
+  read: Boolean!
+  """
+  Whether the notification has been archived
+  """
+  archived: Boolean!
+  """
+  User who owns this notification
+  """
+  user: User!
+  """
+  Event this notification is related to
+  """
+  event: Event!
+}
+"""
+A connection to a list of items.
+"""
+type NotificationConnection {
+  """
+  A list of edges.
+  """
+  edges: [NotificationEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type NotificationEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Notification
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+Ordering options for Notification connections
+"""
+input NotificationOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order Notifications.
+  """
+  field: NotificationOrderField!
+}
+"""
+Properties by which Notification connections can be ordered.
+"""
+enum NotificationOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+}
+"""
+NotificationPriority is enum for the field priority
+"""
+enum NotificationPriority @goModel(model: "realm.pub/tavern/internal/ent/notification.Priority") {
+  Urgent
+  High
+  Medium
+  Low
+}
+"""
+NotificationWhereInput is used for filtering Notification objects.
+Input was generated by ent.
+"""
+input NotificationWhereInput {
+  not: NotificationWhereInput
+  and: [NotificationWhereInput!]
+  or: [NotificationWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  priority field predicates
+  """
+  priority: NotificationPriority
+  priorityNEQ: NotificationPriority
+  priorityIn: [NotificationPriority!]
+  priorityNotIn: [NotificationPriority!]
+  """
+  read field predicates
+  """
+  read: Boolean
+  readNEQ: Boolean
+  """
+  archived field predicates
+  """
+  archived: Boolean
+  archivedNEQ: Boolean
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
+  """
+  event edge predicates
+  """
+  hasEvent: Boolean
+  hasEventWith: [EventWhereInput!]
 }
 """
 Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
@@ -8634,6 +9576,37 @@ type Quest implements Node {
   The previous quest in the adventure
   """
   previousQuest: Quest
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -8837,6 +9810,11 @@ input QuestWhereInput {
   """
   hasPreviousQuest: Boolean
   hasPreviousQuestWith: [QuestWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Repository implements Node {
   id: ID!
@@ -9619,6 +10597,37 @@ type Shell implements Node {
     """
     where: ShellTaskWhereInput
   ): ShellTaskConnection!
+  pivots(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ShellPivots returned from the connection.
+    """
+    orderBy: [ShellPivotOrder!]
+
+    """
+    Filtering options for ShellPivots returned from the connection.
+    """
+    where: ShellPivotWhereInput
+  ): ShellPivotConnection!
 }
 """
 A connection to a list of items.
@@ -9670,6 +10679,248 @@ enum ShellOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
   CLOSED_AT
+}
+type ShellPivot implements Node {
+  id: ID!
+  """
+  Timestamp of when this ent was created
+  """
+  createdAt: Time!
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time!
+  """
+  Timestamp of when this pivot was closed
+  """
+  closedAt: Time
+  """
+  Stream ID of the portal connection
+  """
+  streamID: String!
+  """
+  Kind of pivot connection
+  """
+  kind: ShellPivotKind!
+  """
+  Destination address of the pivot
+  """
+  destination: String!
+  """
+  Destination port of the pivot
+  """
+  port: Int!
+  """
+  Pivot data stream buffer
+  """
+  data: String
+  """
+  Shell associated with this pivot
+  """
+  shell: Shell
+  """
+  Portal associated with this pivot
+  """
+  portal: Portal
+  """
+  Credential used for this pivot
+  """
+  credential: HostCredential
+}
+"""
+A connection to a list of items.
+"""
+type ShellPivotConnection {
+  """
+  A list of edges.
+  """
+  edges: [ShellPivotEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type ShellPivotEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: ShellPivot
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
+}
+"""
+ShellPivotKind is enum for the field kind
+"""
+enum ShellPivotKind @goModel(model: "realm.pub/tavern/internal/ent/shellpivot.Kind") {
+  ssh
+}
+"""
+Ordering options for ShellPivot connections
+"""
+input ShellPivotOrder {
+  """
+  The ordering direction.
+  """
+  direction: OrderDirection! = ASC
+  """
+  The field by which to order ShellPivots.
+  """
+  field: ShellPivotOrderField!
+}
+"""
+Properties by which ShellPivot connections can be ordered.
+"""
+enum ShellPivotOrderField {
+  CREATED_AT
+  LAST_MODIFIED_AT
+  CLOSED_AT
+}
+"""
+ShellPivotWhereInput is used for filtering ShellPivot objects.
+Input was generated by ent.
+"""
+input ShellPivotWhereInput {
+  not: ShellPivotWhereInput
+  and: [ShellPivotWhereInput!]
+  or: [ShellPivotWhereInput!]
+  """
+  id field predicates
+  """
+  id: ID
+  idNEQ: ID
+  idIn: [ID!]
+  idNotIn: [ID!]
+  idGT: ID
+  idGTE: ID
+  idLT: ID
+  idLTE: ID
+  """
+  created_at field predicates
+  """
+  createdAt: Time
+  createdAtNEQ: Time
+  createdAtIn: [Time!]
+  createdAtNotIn: [Time!]
+  createdAtGT: Time
+  createdAtGTE: Time
+  createdAtLT: Time
+  createdAtLTE: Time
+  """
+  last_modified_at field predicates
+  """
+  lastModifiedAt: Time
+  lastModifiedAtNEQ: Time
+  lastModifiedAtIn: [Time!]
+  lastModifiedAtNotIn: [Time!]
+  lastModifiedAtGT: Time
+  lastModifiedAtGTE: Time
+  lastModifiedAtLT: Time
+  lastModifiedAtLTE: Time
+  """
+  closed_at field predicates
+  """
+  closedAt: Time
+  closedAtNEQ: Time
+  closedAtIn: [Time!]
+  closedAtNotIn: [Time!]
+  closedAtGT: Time
+  closedAtGTE: Time
+  closedAtLT: Time
+  closedAtLTE: Time
+  closedAtIsNil: Boolean
+  closedAtNotNil: Boolean
+  """
+  stream_id field predicates
+  """
+  streamID: String
+  streamIDNEQ: String
+  streamIDIn: [String!]
+  streamIDNotIn: [String!]
+  streamIDGT: String
+  streamIDGTE: String
+  streamIDLT: String
+  streamIDLTE: String
+  streamIDContains: String
+  streamIDHasPrefix: String
+  streamIDHasSuffix: String
+  streamIDEqualFold: String
+  streamIDContainsFold: String
+  """
+  kind field predicates
+  """
+  kind: ShellPivotKind
+  kindNEQ: ShellPivotKind
+  kindIn: [ShellPivotKind!]
+  kindNotIn: [ShellPivotKind!]
+  """
+  destination field predicates
+  """
+  destination: String
+  destinationNEQ: String
+  destinationIn: [String!]
+  destinationNotIn: [String!]
+  destinationGT: String
+  destinationGTE: String
+  destinationLT: String
+  destinationLTE: String
+  destinationContains: String
+  destinationHasPrefix: String
+  destinationHasSuffix: String
+  destinationEqualFold: String
+  destinationContainsFold: String
+  """
+  port field predicates
+  """
+  port: Int
+  portNEQ: Int
+  portIn: [Int!]
+  portNotIn: [Int!]
+  portGT: Int
+  portGTE: Int
+  portLT: Int
+  portLTE: Int
+  """
+  data field predicates
+  """
+  data: String
+  dataNEQ: String
+  dataIn: [String!]
+  dataNotIn: [String!]
+  dataGT: String
+  dataGTE: String
+  dataLT: String
+  dataLTE: String
+  dataContains: String
+  dataHasPrefix: String
+  dataHasSuffix: String
+  dataIsNil: Boolean
+  dataNotNil: Boolean
+  dataEqualFold: String
+  dataContainsFold: String
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  portal edge predicates
+  """
+  hasPortal: Boolean
+  hasPortalWith: [PortalWhereInput!]
+  """
+  credential edge predicates
+  """
+  hasCredential: Boolean
+  hasCredentialWith: [HostCredentialWhereInput!]
 }
 type ShellTask implements Node {
   id: ID!
@@ -10065,6 +11316,11 @@ input ShellWhereInput {
   """
   hasShellTasks: Boolean
   hasShellTasksWith: [ShellTaskWhereInput!]
+  """
+  pivots edge predicates
+  """
+  hasPivots: Boolean
+  hasPivotsWith: [ShellPivotWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -11034,6 +12290,30 @@ input UpdateLinkInput {
   clearCreator: Boolean
 }
 """
+UpdateNotificationInput is used for update Notification object.
+Input was generated by ent.
+"""
+input UpdateNotificationInput {
+  """
+  Timestamp of when this ent was last updated
+  """
+  lastModifiedAt: Time
+  """
+  Priority of the notification
+  """
+  priority: NotificationPriority
+  """
+  Whether the notification has been read
+  """
+  read: Boolean
+  """
+  Whether the notification has been archived
+  """
+  archived: Boolean
+  userID: ID
+  eventID: ID
+}
+"""
 UpdateScheduledTaskInput is used for update ScheduledTask object.
 Input was generated by ent.
 """
@@ -11155,6 +12435,9 @@ input UpdateUserInput {
   True if the user is an Admin
   """
   isAdmin: Boolean
+  addNotificationIDs: [ID!]
+  removeNotificationIDs: [ID!]
+  clearNotifications: Boolean
   addTomeIDs: [ID!]
   removeTomeIDs: [ID!]
   clearTomes: Boolean
@@ -11186,6 +12469,37 @@ type User implements Node {
   True if the user is an Admin
   """
   isAdmin: Boolean!
+  notifications(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Notifications returned from the connection.
+    """
+    orderBy: [NotificationOrder!]
+
+    """
+    Filtering options for Notifications returned from the connection.
+    """
+    where: NotificationWhereInput
+  ): NotificationConnection!
   tomes(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -11421,6 +12735,11 @@ input UserWhereInput {
   """
   isAdmin: Boolean
   isAdminNEQ: Boolean
+  """
+  notifications edge predicates
+  """
+  hasNotifications: Boolean
+  hasNotificationsWith: [NotificationWhereInput!]
   """
   tomes edge predicates
   """
@@ -11835,6 +13154,12 @@ scalar Uint64
     ###
     createScheduledTask(input: CreateScheduledTaskInput!): ScheduledTask! @requireRole(role: USER)
     disableScheduledTask(scheduledTaskID: ID!): ScheduledTask! @requireRole(role: USER)
+
+    ###
+    # Notification
+    ###
+    markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
 }
 `, BuiltIn: false},
 	{Name: "../schema/inputs.graphql", Input: `input ClaimTasksInput {

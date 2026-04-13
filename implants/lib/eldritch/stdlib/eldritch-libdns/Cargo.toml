@@ -1,0 +1,15 @@
+[package]
+name = "eldritch-libdns"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eldritch-core = { workspace = true, default-features = false }
+eldritch-macros = { workspace = true }
+hickory-resolver = { workspace = true, optional = true }
+
+[features]
+default = ["std", "stdlib"]
+std = ["eldritch-core/std"]
+fake_bindings = []
+stdlib = ["std", "dep:hickory-resolver"]

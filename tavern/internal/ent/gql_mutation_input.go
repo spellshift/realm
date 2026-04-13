@@ -8,6 +8,8 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
@@ -392,6 +394,50 @@ func (c *LinkUpdateOne) SetInput(i UpdateLinkInput) *LinkUpdateOne {
 	return c
 }
 
+// UpdateNotificationInput represents a mutation input for updating notifications.
+type UpdateNotificationInput struct {
+	LastModifiedAt *time.Time
+	Priority       *notification.Priority
+	Read           *bool
+	Archived       *bool
+	UserID         *int
+	EventID        *int
+}
+
+// Mutate applies the UpdateNotificationInput on the NotificationMutation builder.
+func (i *UpdateNotificationInput) Mutate(m *NotificationMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Priority; v != nil {
+		m.SetPriority(*v)
+	}
+	if v := i.Read; v != nil {
+		m.SetRead(*v)
+	}
+	if v := i.Archived; v != nil {
+		m.SetArchived(*v)
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+	if v := i.EventID; v != nil {
+		m.SetEventID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdate builder.
+func (c *NotificationUpdate) SetInput(i UpdateNotificationInput) *NotificationUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdateOne builder.
+func (c *NotificationUpdateOne) SetInput(i UpdateNotificationInput) *NotificationUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateQuestInput represents a mutation input for creating quests.
 type CreateQuestInput struct {
 	Name       string
@@ -554,6 +600,40 @@ func (i *CreateShellInput) Mutate(m *ShellMutation) {
 
 // SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
 func (c *ShellCreate) SetInput(i CreateShellInput) *ShellCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateShellPivotInput represents a mutation input for creating shellpivots.
+type CreateShellPivotInput struct {
+	StreamID     string
+	Kind         shellpivot.Kind
+	Destination  string
+	Port         int
+	ShellID      *int
+	PortalID     *int
+	CredentialID *int
+}
+
+// Mutate applies the CreateShellPivotInput on the ShellPivotMutation builder.
+func (i *CreateShellPivotInput) Mutate(m *ShellPivotMutation) {
+	m.SetStreamID(i.StreamID)
+	m.SetKind(i.Kind)
+	m.SetDestination(i.Destination)
+	m.SetPort(i.Port)
+	if v := i.ShellID; v != nil {
+		m.SetShellID(*v)
+	}
+	if v := i.PortalID; v != nil {
+		m.SetPortalID(*v)
+	}
+	if v := i.CredentialID; v != nil {
+		m.SetCredentialID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateShellPivotInput on the ShellPivotCreate builder.
+func (c *ShellPivotCreate) SetInput(i CreateShellPivotInput) *ShellPivotCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -732,6 +812,9 @@ type UpdateUserInput struct {
 	PhotoURL              *string
 	IsActivated           *bool
 	IsAdmin               *bool
+	ClearNotifications    bool
+	AddNotificationIDs    []int
+	RemoveNotificationIDs []int
 	ClearTomes            bool
 	AddTomeIDs            []int
 	RemoveTomeIDs         []int
@@ -759,6 +842,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.IsAdmin; v != nil {
 		m.SetIsAdmin(*v)
+	}
+	if i.ClearNotifications {
+		m.ClearNotifications()
+	}
+	if v := i.AddNotificationIDs; len(v) > 0 {
+		m.AddNotificationIDs(v...)
+	}
+	if v := i.RemoveNotificationIDs; len(v) > 0 {
+		m.RemoveNotificationIDs(v...)
 	}
 	if i.ClearTomes {
 		m.ClearTomes()
