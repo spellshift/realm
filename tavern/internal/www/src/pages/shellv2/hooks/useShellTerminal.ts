@@ -111,21 +111,26 @@ export const useShellTerminal = (
 
     const redrawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const shellNodeId = shellData?.node?.id;
+    const shellClosedAt = shellData?.node?.closedAt;
+
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
+    const shellClosedAtRef = useRef(shellClosedAt);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
+        shellClosedAtRef.current = shellClosedAt;
         if (termInstance.current) {
-            const isDimmed = isLateCheckin || connectionStatus !== "connected";
+            const isDimmed = isLateCheckin || connectionStatus !== "connected" || !!shellClosedAt;
             termInstance.current.options.theme = {
                 foreground: isDimmed ? "#777777" : "#d4d4d4",
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin, connectionStatus]);
+    }, [isLateCheckin, connectionStatus, shellClosedAt]);
 
     const redrawLine = useCallback(() => {
         const term = termInstance.current;
@@ -336,9 +341,6 @@ export const useShellTerminal = (
         }
     }, [tooltipState.visible, scheduleHideTooltip, cancelHideTooltip]);
 
-    const shellNodeId = shellData?.node?.id;
-    const shellClosedAt = shellData?.node?.closedAt;
-
     useEffect(() => {
         if (!termRef.current || loading) return;
 
@@ -354,11 +356,6 @@ export const useShellTerminal = (
 
         if (!shellNodeId) {
             setConnectionError("Shell not found.");
-            return;
-        }
-
-        if (shellClosedAt) {
-            setConnectionError("This shell session is closed.");
             return;
         }
 
@@ -577,8 +574,8 @@ export const useShellTerminal = (
         adapter.current.init();
 
         const handleData = (data: string, isPaste: boolean = false) => {
-            // Check for late checkin and block input
-            if (isLateCheckinRef.current) return;
+            // Check for late checkin, closed shell, and block input
+            if (isLateCheckinRef.current || shellClosedAtRef.current) return;
             // Check for connection status and block input
             if (connectionStatusRef.current !== "connected") return;
 
@@ -968,7 +965,7 @@ export const useShellTerminal = (
             // Check if this is a paste or multi-character sequence (not starting with ESC)
             if (data.length > 1 && data.charCodeAt(0) !== 27) {
                 // Check for connection status and block input
-                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected") return;
+                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected" || shellClosedAtRef.current) return;
 
                 const hasNewlines = data.includes('\r') || data.includes('\n');
 

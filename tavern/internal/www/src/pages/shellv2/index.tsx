@@ -137,6 +137,7 @@ const ShellV2 = () => {
                     isMissedCallback={isMissedCallback}
                     connectionStatus={connectionStatus}
                     connectionMessage={connectionMessage}
+                    closedAt={shellData?.node?.closedAt}
                 />
             </div>
         </AccessGate>
