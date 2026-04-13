@@ -6,19 +6,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	_ "github.com/mattn/go-sqlite3"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
-    _ "github.com/mattn/go-sqlite3"
 )
 
 func TestHookDeriveNotifications(t *testing.T) {
 	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	defer client.Close()
 
-    // Add the hooks since enttest.Open doesn't by default
+	// Add the hooks since enttest.Open doesn't by default
 	client.Host.Use(ent.HookDeriveHostEvents())
 	client.Task.Use(ent.HookDeriveQuestEvents())
 	client.Event.Use(ent.HookDeriveNotifications())
@@ -29,7 +29,7 @@ func TestHookDeriveNotifications(t *testing.T) {
 	u, err := client.User.Create().
 		SetName("test-user").
 		SetOauthID("oauth-1").
-        SetPhotoURL("http://photo.com").
+		SetPhotoURL("http://photo.com").
 		Save(ctx)
 	require.NoError(t, err)
 

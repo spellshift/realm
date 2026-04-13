@@ -35,6 +35,7 @@ type MutationResolver interface {
 	ResetUserAPIKey(ctx context.Context) (*ent.User, error)
 	UpdateUser(ctx context.Context, userID int, input ent.UpdateUserInput) (*ent.User, error)
 	CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error)
+	ClosePortal(ctx context.Context, portalID int) (*ent.Portal, error)
 	CreateLink(ctx context.Context, input ent.CreateLinkInput) (*ent.Link, error)
 	UpdateLink(ctx context.Context, linkID int, input ent.UpdateLinkInput) (*ent.Link, error)
 	DisableLink(ctx context.Context, linkID int) (*ent.Link, error)
@@ -50,6 +51,17 @@ type MutationResolver interface {
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_closePortal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "portalID", ec.unmarshalNID2int)
+	if err != nil {
+		return nil, err
+	}
+	args["portalID"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createBuildTask_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -1746,6 +1758,85 @@ func (ec *executionContext) fieldContext_Mutation_createCredential(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_closePortal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_closePortal,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().ClosePortal(ctx, fc.Args["portalID"].(int))
+		},
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐRole(ctx, "USER")
+				if err != nil {
+					var zeroVal *ent.Portal
+					return zeroVal, err
+				}
+				if ec.Directives.RequireRole == nil {
+					var zeroVal *ent.Portal
+					return zeroVal, errors.New("directive requireRole is not implemented")
+				}
+				return ec.Directives.RequireRole(ctx, nil, directive0, role)
+			}
+
+			next = directive1
+			return next
+		},
+		ec.marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_closePortal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Portal_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Portal_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Portal_lastModifiedAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_Portal_closedAt(ctx, field)
+			case "task":
+				return ec.fieldContext_Portal_task(ctx, field)
+			case "shellTask":
+				return ec.fieldContext_Portal_shellTask(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Portal_beacon(ctx, field)
+			case "owner":
+				return ec.fieldContext_Portal_owner(ctx, field)
+			case "activeUsers":
+				return ec.fieldContext_Portal_activeUsers(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Portal", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_closePortal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_createLink(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2678,6 +2769,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "createCredential":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createCredential(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "closePortal":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_closePortal(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

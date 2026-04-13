@@ -7,7 +7,6 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
 use pb::config::Config;
-use transport;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 const MAX_BUF_SHELL_MESSAGES: usize = 65535;
