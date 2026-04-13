@@ -7916,6 +7916,11 @@ type Mutation {
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
 
     ###
+    # Portal
+    ###
+    closePortal(portalID: ID!): Portal! @requireRole(role: USER)
+
+    ###
     # Link
     ###
     createLink(input: CreateLinkInput!): Link! @requireRole(role: USER)

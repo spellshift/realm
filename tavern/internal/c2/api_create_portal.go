@@ -3,7 +3,6 @@ package c2
 import (
 	"context"
 	"log/slog"
-	"sync"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -61,19 +60,27 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
+
+	done := make(chan struct{}, 2)
+
+	go func() {
 		sendPortalInput(ctx, portalID, gstream, recv)
-	}(ctx)
+		done <- struct{}{}
+	}()
 
 	// Send portal output from gRPC stream to portal output topic
-	sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+	go func() {
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-done:
+	}
 
 	// Cleanup
 	cancel()
-	wg.Wait()
 
 	return nil
 }
@@ -163,6 +170,14 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 					"portal_id", portalID,
 					"error", err,
 				)
+			}
+
+			// Check for close message indicating portal termination
+			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				if mote.GetStreamId() == "" {
+					slog.InfoContext(ctx, "received portal close, disconnecting agent", "portal_id", portalID)
+					return
+				}
 			}
 		}
 	}
