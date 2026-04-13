@@ -3,8 +3,9 @@ import { classNames } from '../../utils/utils';
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import logo from '../../assets/eldrich.png';
 import { usePageNavigation } from './usePageNavigation';
-import { Avatar } from '@chakra-ui/react';
+import { Avatar, VStack } from '@chakra-ui/react';
 import { useAuthorization } from '../../context/AuthorizationContext';
+import NotificationBell from '../notifications/NotificationBell';
 
 type MinimizedSidebarNavProps = {
     currNavItem?: string;
@@ -66,12 +67,15 @@ const MinimizedSidebarNav = ({ currNavItem, handleSidebarMinimized }: MinimizedS
                     </ul>
                 </nav>
                 <div className="mt-auto pb-4">
-                    <Link to="/profile" className={classNames(
-                        currNavItem === 'Profile' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
-                        'group flex items-center justify-center rounded-md p-2 text-sm leading-6 font-semibold'
-                    )}>
-                        <Avatar size="sm" name={user?.name || ''} src={user?.photoURL || undefined} />
-                    </Link>
+                    <VStack spacing={4}>
+                        <NotificationBell />
+                        <Link to="/profile" className={classNames(
+                            currNavItem === 'Profile' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white',
+                            'group flex items-center justify-center rounded-md p-2 text-sm leading-6 font-semibold'
+                        )}>
+                            <Avatar size="sm" name={user?.name || ''} src={user?.photoURL || undefined} />
+                        </Link>
+                    </VStack>
                 </div>
             </div>
             <div className="my-8">
