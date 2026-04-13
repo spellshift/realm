@@ -82,13 +82,9 @@ func (r *metricsResolver) QuestTimelineChart(ctx context.Context, obj *models.Me
 			continue // Should not happen due to query filter, but just in case
 		}
 
-		diffSeconds := q.CreatedAt.Unix() - start.Unix()
-		if diffSeconds < 0 {
-			continue
-		}
-
-		bucketIndex := diffSeconds / int64(granularitySeconds)
-		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+		// Calculate the bucket index using duration to preserve sub-second precision
+		bucketIndex := int64(q.CreatedAt.Sub(start) / granularity)
+		bucketTimeUnix := start.Add(time.Duration(bucketIndex) * granularity).Unix()
 
 		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
 			bucket.Count++
@@ -207,15 +203,9 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 			continue // Should not happen due to query filter
 		}
 
-		// Calculate the diff manually in seconds
-		diffSeconds := h.CreatedAt.Unix() - start.Unix()
-		if diffSeconds < 0 {
-			continue
-		}
-
-		// Truncate to the nearest granularity
-		bucketIndex := diffSeconds / int64(granularitySeconds)
-		bucketTimeUnix := start.Unix() + (bucketIndex * int64(granularitySeconds))
+		// Calculate the bucket index using duration to preserve sub-second precision
+		bucketIndex := int64(h.CreatedAt.Sub(start) / granularity)
+		bucketTimeUnix := start.Add(time.Duration(bucketIndex) * granularity).Unix()
 
 		if bucket, exists := bucketMap[bucketTimeUnix]; exists {
 			bucket.Count++
