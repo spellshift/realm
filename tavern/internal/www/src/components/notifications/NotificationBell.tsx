@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
+import { Link } from 'react-router-dom';
 import { BellIcon, BugAntIcon } from '@heroicons/react/24/outline';
 import {
     Popover,
@@ -89,6 +90,22 @@ const NotificationBell = () => {
         }
     };
 
+    const getNotificationLink = (notification: NotificationNode) => {
+        const event = notification.event;
+        switch (event.kind) {
+            case EventKind.HOST_ACCESS_NEW:
+            case EventKind.HOST_ACCESS_RECOVERED:
+            case EventKind.HOST_ACCESS_LOST:
+                return event.host ? `/hosts/${event.host.id}` : null;
+            case EventKind.BEACON_LOST:
+                return event.host?.id ? `/hosts/${event.host.id}` : (event.beacon?.host?.id ? `/hosts/${event.beacon.host.id}` : null);
+            case EventKind.QUEST_COMPLETED:
+                return event.quest ? `/tasks/${event.quest.id}` : null;
+            default:
+                return null;
+        }
+    };
+
     const NotificationList = ({ list }: { list: NotificationNode[] }) => {
         if (list.length === 0) {
             return (
@@ -118,31 +135,44 @@ const NotificationBell = () => {
                     }
                 }}
             >
-                {list.map((n) => (
-                    <Box key={n.id} py={3} px={4} position="relative" zIndex={1}>
-                        <HStack align="start" spacing={4}>
-                            <Box
-                                borderRadius="full"
-                                bg={n.read ? "gray.700" : "purple.900"}
-                                p={2}
-                                color={n.read ? "gray.400" : "purple.200"}
-                                border="2px solid"
-                                borderColor="gray.900"
-                                zIndex={2}
-                            >
-                                {getEventIcon(n.event.kind)}
-                            </Box>
-                            <VStack align="start" spacing={0} flex={1}>
-                                <Text fontSize="sm" fontWeight={n.read ? "normal" : "semibold"} color="white">
-                                    {getEventDescription(n)}
-                                </Text>
-                                <Text fontSize="xs" color="gray.400">
-                                    {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                                </Text>
-                            </VStack>
-                        </HStack>
-                    </Box>
-                ))}
+                {list.map((n) => {
+                    const link = getNotificationLink(n);
+                    return (
+                        <Box
+                            key={n.id}
+                            py={3}
+                            px={4}
+                            position="relative"
+                            zIndex={1}
+                            as={link ? Link : 'div'}
+                            to={link || undefined}
+                            _hover={link ? { bg: "gray.800", textDecoration: 'none' } : {}}
+                            display="block"
+                        >
+                            <HStack align="start" spacing={4}>
+                                <Box
+                                    borderRadius="full"
+                                    bg={n.read ? "gray.700" : "purple.900"}
+                                    p={2}
+                                    color={n.read ? "gray.400" : "purple.200"}
+                                    border="2px solid"
+                                    borderColor="gray.900"
+                                    zIndex={2}
+                                >
+                                    {getEventIcon(n.event.kind)}
+                                </Box>
+                                <VStack align="start" spacing={0} flex={1}>
+                                    <Text fontSize="sm" fontWeight={n.read ? "normal" : "semibold"} color="white">
+                                        {getEventDescription(n)}
+                                    </Text>
+                                    <Text fontSize="xs" color="gray.400">
+                                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                                    </Text>
+                                </VStack>
+                            </HStack>
+                        </Box>
+                    );
+                })}
             </VStack>
         );
     };
