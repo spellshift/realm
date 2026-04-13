@@ -64,8 +64,8 @@ export const PortalsTable = ({ portalIds, hasMore = false, onLoadMore }: Portals
                             {displayCommand}
                         </code>
                         <Button
-                            variant="secondary"
-                            size="sm"
+                            buttonVariant="ghost"
+                            buttonStyle={{ color: "gray", size: 'sm' }}
                             onClick={handleCopy}
                             aria-label="Copy proxy command"
                         >
