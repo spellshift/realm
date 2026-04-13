@@ -147,3 +147,18 @@ export enum TomeFilterFieldKind {
     SupportModel = "SupportModel",
     Tactic = "Tactic",
 }
+
+export enum NotificationPriority {
+    Urgent = "Urgent",
+    High = "High",
+    Medium = "Medium",
+    Low = "Low",
+}
+
+export enum EventKind {
+    BEACON_LOST = "BEACON_LOST",
+    HOST_ACCESS_NEW = "HOST_ACCESS_NEW",
+    HOST_ACCESS_RECOVERED = "HOST_ACCESS_RECOVERED",
+    HOST_ACCESS_LOST = "HOST_ACCESS_LOST",
+    QUEST_COMPLETED = "QUEST_COMPLETED",
+}
