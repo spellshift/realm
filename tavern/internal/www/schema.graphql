@@ -7834,6 +7834,19 @@ type Metrics {
     granularity_seconds: Int!
     where: BeaconWhereInput
   ): [BeaconTimelineBucket!]!
+
+  tasksByTome: [TomeTaskMetrics!]!
+}
+
+type TomeTaskMetrics {
+  tome: Tome!
+  tasksTotal: Int!
+  tasksWithErrors: Int!
+  tasksWithNoErrors: Int!
+  tasksCompleteWithNoErrors: Int!
+  tasksPending: Int!
+  tasksRunning: Int!
+  tasksStale: Int!
 }
 
 type BeaconTimelineBucket {
@@ -7914,6 +7927,11 @@ type Mutation {
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # Portal
+    ###
+    closePortal(portalID: ID!): Portal! @requireRole(role: USER)
 
     ###
     # Link

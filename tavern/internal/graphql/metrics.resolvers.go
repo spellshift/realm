@@ -257,6 +257,72 @@ func (r *metricsResolver) BeaconTimelineChart(ctx context.Context, obj *models.M
 	return buckets, nil
 }
 
+// TasksByTome is the resolver for the tasksByTome field.
+func (r *metricsResolver) TasksByTome(ctx context.Context, obj *models.Metrics) ([]*models.TomeTaskMetrics, error) {
+	tasks, err := r.client.Task.Query().
+		WithQuest(func(qq *ent.QuestQuery) {
+			qq.WithTome()
+		}).
+		WithBeacon().
+		All(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tasks: %w", err)
+	}
+
+	tomeMetricsMap := make(map[int]*models.TomeTaskMetrics)
+	for _, task := range tasks {
+		if task.Edges.Quest == nil || task.Edges.Quest.Edges.Tome == nil {
+			continue
+		}
+		tome := task.Edges.Quest.Edges.Tome
+		if _, exists := tomeMetricsMap[tome.ID]; !exists {
+			tomeMetricsMap[tome.ID] = &models.TomeTaskMetrics{
+				Tome: tome,
+			}
+		}
+
+		metrics := tomeMetricsMap[tome.ID]
+		metrics.TasksTotal++
+
+		if task.Error != "" {
+			metrics.TasksWithErrors++
+		} else {
+			metrics.TasksWithNoErrors++
+			if !task.ExecFinishedAt.IsZero() {
+				metrics.TasksCompleteWithNoErrors++
+			}
+		}
+
+		if task.ClaimedAt.IsZero() {
+			metrics.TasksPending++
+		} else if task.ExecFinishedAt.IsZero() {
+			if task.Edges.Beacon != nil && !task.Edges.Beacon.NextSeenAt.IsZero() && task.Edges.Beacon.NextSeenAt.Add(time.Minute).After(time.Now()) {
+				metrics.TasksRunning++
+			}
+		}
+
+		if task.ExecFinishedAt.IsZero() {
+			if task.Edges.Beacon == nil || task.Edges.Beacon.NextSeenAt.IsZero() || task.Edges.Beacon.NextSeenAt.Add(time.Minute).Before(time.Now()) {
+				metrics.TasksStale++
+			}
+		}
+	}
+
+	var tomeIDs []int
+	for tomeID := range tomeMetricsMap {
+		tomeIDs = append(tomeIDs, tomeID)
+	}
+	sort.Ints(tomeIDs)
+
+	var result []*models.TomeTaskMetrics
+	for _, tomeID := range tomeIDs {
+		result = append(result, tomeMetricsMap[tomeID])
+	}
+
+	return result, nil
+}
+
 // Metrics is the resolver for the metrics field.
 func (r *queryResolver) Metrics(ctx context.Context) (*models.Metrics, error) {
 	return &models.Metrics{}, nil

@@ -76,3 +76,5 @@ models:
         resolver: true
       beaconTimelineChart:
         resolver: true
+      tasksByTome:
+        resolver: true

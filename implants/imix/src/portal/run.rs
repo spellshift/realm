@@ -79,6 +79,15 @@ pub async fn run(
                     Some(resp) => {
                          #[allow(clippy::collapsible_if)]
                          if let Some(mote) = resp.mote {
+                            // Handle global Close message
+                            if let Some(Payload::Bytes(bytes_payload)) = &mote.payload {
+                                if bytes_payload.kind == BytesPayloadKind::Close as i32 && mote.stream_id.is_empty() {
+                                    #[cfg(debug_assertions)]
+                                    log::info!("Received global close portal mote, shutting down portal loop");
+                                    break;
+                                }
+                            }
+
                             if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx).await {
                                 #[cfg(debug_assertions)]
                                 log::error!("Error handling incoming mote: {}", _e);

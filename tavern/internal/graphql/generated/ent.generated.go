@@ -12687,6 +12687,8 @@ func (ec *executionContext) fieldContext_Query_metrics(_ context.Context, field 
 				return ec.fieldContext_Metrics_questTimelineChart(ctx, field)
 			case "beaconTimelineChart":
 				return ec.fieldContext_Metrics_beaconTimelineChart(ctx, field)
+			case "tasksByTome":
+				return ec.fieldContext_Metrics_tasksByTome(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Metrics", field.Name)
 		},
@@ -48063,6 +48065,10 @@ func (ec *executionContext) marshalNOrderDirection2entgoᚗioᚋcontribᚋentgql
 
 func (ec *executionContext) marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v entgql.PageInfo[int]) graphql.Marshaler {
 	return ec._PageInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPortal2realmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx context.Context, sel ast.SelectionSet, v ent.Portal) graphql.Marshaler {
+	return ec._Portal(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNPortal2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐPortal(ctx context.Context, sel ast.SelectionSet, v *ent.Portal) graphql.Marshaler {
