@@ -24,6 +24,9 @@ export const GET_NOTIFICATIONS = gql`
                             beacon {
                                 id
                                 name
+                                host {
+                                    id
+                                }
                             }
                             quest {
                                 id
