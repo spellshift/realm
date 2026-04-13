@@ -28,6 +28,7 @@ import (
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
+	"realm.pub/tavern/portals/portalpb"
 )
 
 // DropAllData is the resolver for the dropAllData field.
@@ -375,6 +376,38 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, userID int, input ent
 // CreateCredential is the resolver for the createCredential field.
 func (r *mutationResolver) CreateCredential(ctx context.Context, input ent.CreateHostCredentialInput) (*ent.HostCredential, error) {
 	return r.client.HostCredential.Create().SetInput(input).Save(ctx)
+}
+
+// ClosePortal is the resolver for the closePortal field.
+func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.Portal, error) {
+	if r.portalMux == nil {
+		return nil, fmt.Errorf("portal mux is not configured")
+	}
+
+	p, err := r.client.Portal.Get(ctx, portalID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch portal: %w", err)
+	}
+
+	if !p.ClosedAt.IsZero() {
+		return nil, fmt.Errorf("portal %d is already closed", portalID)
+	}
+
+	// Publish CLOSE message with an empty stream ID to the portal's input topic
+	// so the agent receives it and tears down the portal connections.
+	err = r.portalMux.Publish(ctx, r.portalMux.TopicIn(portalID), &portalpb.Mote{
+		StreamId: "",
+		Payload: &portalpb.Mote_Bytes{
+			Bytes: &portalpb.BytesPayload{
+				Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to publish close message to portal: %w", err)
+	}
+
+	return p, nil
 }
 
 // CreateLink is the resolver for the createLink field.

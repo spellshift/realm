@@ -421,6 +421,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ClosePortal                 func(childComplexity int, portalID int) int
 		CreateBuildTask             func(childComplexity int, input models.CreateBuildTaskInput) int
 		CreateCredential            func(childComplexity int, input ent.CreateHostCredentialInput) int
 		CreateLink                  func(childComplexity int, input ent.CreateLinkInput) int
@@ -2634,6 +2635,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Metrics.TasksByTome(childComplexity), true
+
+	case "Mutation.closePortal":
+		if e.ComplexityRoot.Mutation.ClosePortal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_closePortal_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.ClosePortal(childComplexity, args["portalID"].(int)), true
 
 	case "Mutation.createBuildTask":
 		if e.ComplexityRoot.Mutation.CreateBuildTask == nil {
@@ -13130,6 +13143,11 @@ scalar Uint64
     # Credential
     ###
     createCredential(input: CreateHostCredentialInput!): HostCredential! @requireRole(role: USER)
+
+    ###
+    # Portal
+    ###
+    closePortal(portalID: ID!): Portal! @requireRole(role: USER)
 
     ###
     # Link
