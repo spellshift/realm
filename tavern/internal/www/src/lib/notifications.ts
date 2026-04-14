@@ -1,11 +1,17 @@
 import { gql } from "@apollo/client";
 
 export const GET_NOTIFICATIONS = gql`
-    query GetNotifications {
+    query GetNotifications($first: Int) {
         me {
             id
-            notifications(orderBy: { field: CREATED_AT, direction: DESC }) {
+            notifications(first: $first, orderBy: { field: CREATED_AT, direction: DESC }) {
                 totalCount
+                pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                }
                 edges {
                     node {
                         id
