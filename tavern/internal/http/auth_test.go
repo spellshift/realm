@@ -16,11 +16,8 @@ import (
 func TestRequestAuthenticator(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	var (
-		driverName     = "sqlite3"
-		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
-	)
-	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 	srv := tavernhttp.NewServer(
 		tavernhttp.RouteMap{

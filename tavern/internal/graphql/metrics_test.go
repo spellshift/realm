@@ -12,7 +12,7 @@ import (
 )
 
 func TestMetrics_QuestTimelineChart(t *testing.T) {
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	ctx := context.Background()
