@@ -1,14 +1,81 @@
 import { useCallback, useMemo, useState, useEffect } from "react";
+import { useMutation, useQuery } from "@apollo/client";
 import { PlugIcon, DownloadIcon, Copy } from "lucide-react";
 import { Image, Tooltip, useToast } from "@chakra-ui/react";
+import { Ring } from "@uiball/loaders";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { VirtualizedTable } from "../../../components/tavern-base-ui/virtualized-table/VirtualizedTable";
 import { VirtualizedTableColumn } from "../../../components/tavern-base-ui/virtualized-table/types";
-import { GET_PORTAL_DETAIL_QUERY } from "./queries";
+import { GET_PORTAL_DETAIL_QUERY, CLOSE_PORTAL_MUTATION } from "./queries";
 import { PortalsQueryTopLevel, PortalNode } from "./types";
 import UserImageAndName from "../../../components/UserImageAndName";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
+
+interface ClosePortalActionProps {
+    portal: PortalNode;
+}
+
+const ClosePortalAction = ({ portal }: ClosePortalActionProps) => {
+    const toast = useToast();
+    const [isClosing, setIsClosing] = useState(false);
+    const [closePortal] = useMutation(CLOSE_PORTAL_MUTATION);
+
+    const { data } = useQuery<PortalsQueryTopLevel>(GET_PORTAL_DETAIL_QUERY, {
+        variables: { id: portal.id },
+        pollInterval: isClosing ? 1000 : 0,
+        skip: !isClosing,
+    });
+
+    const currentPortal = data?.portals?.edges?.[0]?.node || portal;
+
+    useEffect(() => {
+        if (isClosing && currentPortal.closedAt) {
+            setIsClosing(false);
+        }
+    }, [isClosing, currentPortal.closedAt]);
+
+    if (currentPortal.closedAt) {
+        return null;
+    }
+
+    const handleClose = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsClosing(true);
+        try {
+            await closePortal({ variables: { id: portal.id } });
+        } catch (error) {
+            console.error("Failed to close portal:", error);
+            toast({
+                title: "Error",
+                description: "Failed to close portal. Please try again.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top",
+            });
+            setIsClosing(false);
+        }
+    };
+
+    if (isClosing) {
+        return (
+            <div className="flex justify-start items-center w-full">
+                <Ring size={16} lineWeight={5} speed={2} color="#7C3AED" />
+            </div>
+        );
+    }
+
+    return (
+        <Button
+            buttonVariant="outline"
+            buttonStyle={{ color: "red", size: "sm" }}
+            onClick={handleClose}
+        >
+            Close
+        </Button>
+    );
+};
 
 interface PortalsTableProps {
     portalIds: string[];
@@ -136,6 +203,14 @@ export const PortalsTable = ({ portalIds, hasMore = false, onLoadMore }: Portals
                     </div>
                 );
             },
+        },
+        {
+            key: "actions",
+            label: "Actions",
+            width: "100px",
+            render: (portal: PortalNode) => (
+                <ClosePortalAction portal={portal} />
+            ),
         },
     ], []);
 

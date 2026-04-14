@@ -26,6 +26,15 @@ export const GET_PORTAL_IDS_QUERY = gql`
     }
 `;
 
+export const CLOSE_PORTAL_MUTATION = gql`
+    mutation ClosePortal($id: ID!) {
+        closePortal(portalID: $id) {
+            id
+            closedAt
+        }
+    }
+`;
+
 export const GET_PORTAL_DETAIL_QUERY = gql`
     query GetPortalDetail($id: ID!) {
         portals(where: { id: $id }, first: 1) {
