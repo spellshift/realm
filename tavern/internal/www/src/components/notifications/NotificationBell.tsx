@@ -29,7 +29,8 @@ import { formatDistanceToNow } from 'date-fns';
 
 const NotificationBell = () => {
     const { data, refetch } = useQuery(GET_NOTIFICATIONS, {
-        pollInterval: 30000, // Poll every 30 seconds
+        variables: { first: 100 },
+        pollInterval: 5000, // Poll every 5 seconds
     });
     const [markAsRead] = useMutation(MARK_NOTIFICATIONS_AS_READ);
 
