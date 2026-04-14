@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"realm.pub/tavern/internal/ent"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -56,7 +58,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	// Send CLOSE
-	defer sendPortalClose(ctx, srv.portalMux, portalID)
+	defer sendPortalClose(ctx, srv.graph, srv.portalMux, portalID)
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
@@ -183,7 +185,17 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 	}
 }
 
-func sendPortalClose(ctx context.Context, mux *mux.Mux, portalID int) {
+func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int) {
+	// Update DB to Closed
+	if err := graph.Portal.UpdateOneID(portalID).
+		SetClosedAt(time.Now()).
+		Exec(context.Background()); err != nil {
+		slog.ErrorContext(ctx, "failed to update portal closed_at",
+			"portal_id", portalID,
+			"error", err,
+		)
+	}
+
 	portalOutTopic := mux.TopicOut(portalID)
 	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
 		Payload: &portalpb.Mote_Bytes{

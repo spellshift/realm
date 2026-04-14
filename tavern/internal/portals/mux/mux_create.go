@@ -3,7 +3,6 @@ package mux
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/shelltask"
@@ -126,11 +125,6 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 				cancel()
 			}
 		}
-
-		// Update DB to Closed using ID
-		client.Portal.UpdateOneID(p.ID).
-			SetClosedAt(time.Now()).
-			Save(context.Background())
 	}
 
 	return portalID, teardown, nil
