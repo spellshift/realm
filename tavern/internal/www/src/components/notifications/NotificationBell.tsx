@@ -14,6 +14,7 @@ import {
     TabPanels,
     Tab,
     TabPanel,
+    LinkBox,
     Box,
     Text,
     VStack,
@@ -138,16 +139,15 @@ const NotificationBell = () => {
                 {list.map((n) => {
                     const link = getNotificationLink(n);
                     return (
-                        <Box
+                        <LinkBox
                             key={n.id}
+                            as="article"
                             py={3}
                             px={4}
                             position="relative"
                             zIndex={1}
-                            as={link ? Link : 'div'}
-                            to={link || undefined}
-                            _hover={link ? { bg: "gray.800", textDecoration: 'none' } : {}}
                             display="block"
+                            _hover={link ? { bg: "gray.800" } : {}}
                         >
                             <HStack align="start" spacing={4}>
                                 <Box
@@ -170,7 +170,7 @@ const NotificationBell = () => {
                                     </Text>
                                 </VStack>
                             </HStack>
-                        </Box>
+                        </LinkBox>
                     );
                 })}
             </VStack>
@@ -235,9 +235,9 @@ const NotificationBell = () => {
                                     <TabPanel key={tab} p={0}>
                                         <NotificationList list={
                                             tab === 'Urgent' ? urgentNotifications :
-                                            tab === 'Unread' ? unreadNotifications :
-                                            tab === 'Read' ? readNotifications :
-                                            archivedNotifications
+                                                tab === 'Unread' ? unreadNotifications :
+                                                    tab === 'Read' ? readNotifications :
+                                                        archivedNotifications
                                         } />
                                     </TabPanel>
                                 ))}

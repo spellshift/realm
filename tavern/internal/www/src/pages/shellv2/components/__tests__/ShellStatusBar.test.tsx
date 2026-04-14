@@ -53,4 +53,9 @@ describe("ShellStatusBar", () => {
         const timer = screen.getByText("expected 5 minutes ago");
         expect(timer).toHaveClass("text-red-500 font-bold");
     });
+
+    it("displays terminated status when closedAt is present", () => {
+        render(<ShellStatusBar {...defaultProps} closedAt="2024-01-01T00:00:00Z" />);
+        expect(screen.getByText(/Terminated/i)).toBeInTheDocument();
+    });
 });
