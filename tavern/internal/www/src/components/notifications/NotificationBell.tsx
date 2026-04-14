@@ -15,6 +15,7 @@ import {
     Tab,
     TabPanel,
     LinkBox,
+    LinkOverlay,
     Box,
     Text,
     VStack,
@@ -162,9 +163,17 @@ const NotificationBell = () => {
                                     {getEventIcon(n.event.kind)}
                                 </Box>
                                 <VStack align="start" spacing={0} flex={1}>
-                                    <Text fontSize="sm" fontWeight={n.read ? "normal" : "semibold"} color="white">
-                                        {getEventDescription(n)}
-                                    </Text>
+                                    {link ? (
+                                        <LinkOverlay as={Link} to={link}>
+                                            <Text fontSize="sm" fontWeight={n.read ? "normal" : "semibold"} color="white">
+                                                {getEventDescription(n)}
+                                            </Text>
+                                        </LinkOverlay>
+                                    ) : (
+                                        <Text fontSize="sm" fontWeight={n.read ? "normal" : "semibold"} color="white">
+                                            {getEventDescription(n)}
+                                        </Text>
+                                    )}
                                     <Text fontSize="xs" color="gray.400">
                                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                                     </Text>
