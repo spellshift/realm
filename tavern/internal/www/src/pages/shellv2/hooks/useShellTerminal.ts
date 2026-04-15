@@ -158,13 +158,54 @@ export const useShellTerminal = (
             // In search mode, cursor is typically at the end of the match
             cursorIndex = contentToWrite.length;
         } else {
-            contentToWrite = state.prompt + state.inputBuffer;
-            contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
-            cursorIndex = state.prompt.length + state.cursorPos;
+            const lines = state.inputBuffer.split('\n');
+            const highlighted = highlightPythonSyntax(state.inputBuffer).split('\n');
+
+            contentToWrite = "";
+            contentToDisplay = "";
+
+            let cursorInFull = 0;
+            let currentOffset = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const linePrompt = i === 0 ? state.prompt : ".. ";
+
+                if (i > 0) {
+                    contentToWrite += '\n';
+                    contentToDisplay += '\n';
+                }
+
+                contentToWrite += linePrompt + lines[i];
+                contentToDisplay += linePrompt + highlighted[i];
+
+                const lineStartOffset = currentOffset;
+                const lineEndOffset = currentOffset + lines[i].length;
+
+                if (state.cursorPos >= lineStartOffset && state.cursorPos <= lineEndOffset) {
+                    cursorInFull = contentToWrite.length - (lineEndOffset - state.cursorPos);
+                }
+
+                currentOffset += lines[i].length + 1;
+            }
+            cursorIndex = cursorInFull;
         }
 
-        // Calculate rows based on newlines
-        const rows = contentToWrite.split('\n').length - 1;
+        // Calculate rows based on visual line wrapping
+        const termCols = term.cols;
+        const getVisualLineCount = (text: string, cols: number) => {
+            const lines = text.split('\n');
+            let count = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (i > 0) count++; // Newline character
+                if (line.length > 0) {
+                    count += Math.floor((line.length - 1) / cols);
+                }
+            }
+            return count;
+        };
+
+        const rows = getVisualLineCount(contentToWrite, termCols);
 
         // Move up to start of previous rendering (regardless of mode)
         const prevRows = lastBufferHeight.current;
@@ -185,13 +226,14 @@ export const useShellTerminal = (
         if (!state.isSearching) {
             // Calculate cursor position in terms of rows/cols relative to start
             const prefix = contentToWrite.slice(0, cursorIndex);
-            const cursorRow = prefix.split('\n').length - 1;
-            const cursorCol = prefix.split('\n').pop()?.length || 0;
+            // Calculate rows occupied by prefix
+            const cursorRow = getVisualLineCount(prefix, termCols);
 
-            // Current position after write is at end of content
-            const totalRows = rows;
-            // We need to move UP from end to cursorRow
-            const moveUp = totalRows - cursorRow;
+            // Calculate cursor column
+            const lastLine = prefix.split('\n').pop() || "";
+            let cursorCol = lastLine.length % termCols;
+
+            const moveUp = rows - cursorRow;
             if (moveUp > 0) {
                 term.write(`\x1b[${moveUp}A`);
             }
@@ -199,6 +241,11 @@ export const useShellTerminal = (
             term.write("\r"); // Go to start of line
             if (cursorCol > 0) {
                 term.write(`\x1b[${cursorCol}C`);
+            } else if (lastLine.length > 0 && lastLine.length % termCols === 0) {
+                // If the last line of the prefix exactly fills a terminal row,
+                // xterm positions the cursor at the start of the *next* visual row.
+                // We should move back to the end of the current row to maintain consistency.
+                term.write(`\x1b[1A\x1b[${termCols}C`);
             }
         }
     }, []);
@@ -384,109 +431,16 @@ export const useShellTerminal = (
 
         termInstance.current.write("Eldritch v0.3.0\r\n");
 
-        // Define redrawLine early so it can be used by adapter callback
-        const redrawLine = () => {
-            const term = termInstance.current;
-            if (!term) return;
-            const state = shellState.current;
-
-            let contentToWrite = "";
-            let contentToDisplay = "";
-            let cursorIndex = 0;
-
-            if (state.isSearching) {
-                const prompt = `(reverse-i-search)'${state.searchQuery}': `;
-                let match = "";
-                if (state.searchQuery) {
-                    // Simple search backwards
-                    for (let i = state.history.length - 1; i >= 0; i--) {
-                        if (state.history[i].includes(state.searchQuery)) {
-                            match = state.history[i];
-                            break;
-                        }
-                    }
-                }
-                contentToWrite = prompt + match;
-                contentToDisplay = contentToWrite;
-                // In search mode, cursor is typically at the end of the match
-                cursorIndex = contentToWrite.length;
-            } else {
-                contentToWrite = state.prompt + state.inputBuffer;
-                contentToDisplay = state.prompt + highlightPythonSyntax(state.inputBuffer);
-                cursorIndex = state.prompt.length + state.cursorPos;
+        termInstance.current.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+            if (event.type === "keydown" && event.key === "Enter" && event.shiftKey) {
+                const state = shellState.current;
+                state.inputBuffer = state.inputBuffer.slice(0, state.cursorPos) + "\n" + state.inputBuffer.slice(state.cursorPos);
+                state.cursorPos += 1;
+                redrawLine();
+                return false;
             }
-
-            // Calculate rows based on visual line wrapping
-            const termCols = term.cols;
-            const getVisualLineCount = (text: string, cols: number) => {
-                const lines = text.split('\n');
-                let count = 0;
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    if (i > 0) count++; // Newline character
-                    // Calculate wrapped lines for this segment
-                    // Even an empty line takes 1 row if explicitly split
-                    // But here, split('\n') gives empty string for consecutive newlines
-
-                    if (line.length > 0) {
-                        count += Math.floor((line.length - 1) / cols);
-                    }
-                    // If line is exactly cols length, it doesn't wrap to next line unless another char comes
-                    // But we are counting *visual* rows.
-                    // xterm wraps: if I write 80 chars on 80 col terminal, cursor is at (80, y)
-                    // if I write 81 chars, cursor is at (1, y+1)
-                }
-                return count;
-            };
-
-            const rows = getVisualLineCount(contentToWrite, termCols);
-
-            // Move up to start of previous rendering (regardless of mode)
-            const prevRows = lastBufferHeight.current;
-            if (prevRows > 0) {
-                term.write(`\x1b[${prevRows}A`);
-            }
-
-            // Clear everything below
-            term.write("\r\x1b[J");
-
-            // Write new content, ensuring newlines are carriage-return + newline
-            term.write(contentToDisplay.replace(/\n/g, "\r\n"));
-
-            // Update last height
-            lastBufferHeight.current = rows;
-
-            // Move cursor to correct position
-            if (!state.isSearching) {
-                // Calculate cursor position in terms of rows/cols relative to start
-                const prefix = contentToWrite.slice(0, cursorIndex);
-                // Calculate rows occupied by prefix
-                const cursorRow = getVisualLineCount(prefix, termCols);
-
-                // Calculate cursor column
-                const lastLine = prefix.split('\n').pop() || "";
-                let cursorCol = lastLine.length % termCols;
-                // If we are exactly at end of line (and not empty), it might be tricky
-                // But xterm handles cursor positioning
-                // If length is multiple of cols, cursor is effectively at index 0 of next line physically?
-                // Actually, if we write 80 chars, cursor is at 80. Writing next char moves it.
-                // We use relative movement.
-
-                // We moved up `prevRows`. We wrote `rows` lines.
-                // We are now at the end of the content.
-                // We want to be at `cursorRow`.
-
-                const moveUp = rows - cursorRow;
-                if (moveUp > 0) {
-                    term.write(`\x1b[${moveUp}A`);
-                }
-
-                term.write("\r"); // Go to start of line
-                if (cursorCol > 0) {
-                    term.write(`\x1b[${cursorCol}C`);
-                }
-            }
-        };
+            return true;
+        });
 
         const scheduleRedraw = () => {
             if (redrawTimeoutRef.current) {
@@ -791,7 +745,7 @@ export const useShellTerminal = (
             if (data === "\x1b[D") { // Left
                 if (state.cursorPos > 0) {
                     state.cursorPos--;
-                    term.write("\x1b[D");
+                    redrawLine();
                 }
                 return;
             }
@@ -799,7 +753,7 @@ export const useShellTerminal = (
             if (data === "\x1b[C") { // Right
                 if (state.cursorPos < state.inputBuffer.length) {
                     state.cursorPos++;
-                    term.write("\x1b[C");
+                    redrawLine();
                 }
                 return;
             }
