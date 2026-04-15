@@ -11911,9 +11911,22 @@ func (m *HostProcessMutation) OldPrincipal(ctx context.Context) (v string, err e
 	return oldValue.Principal, nil
 }
 
+// ClearPrincipal clears the value of the "principal" field.
+func (m *HostProcessMutation) ClearPrincipal() {
+	m.principal = nil
+	m.clearedFields[hostprocess.FieldPrincipal] = struct{}{}
+}
+
+// PrincipalCleared returns if the "principal" field was cleared in this mutation.
+func (m *HostProcessMutation) PrincipalCleared() bool {
+	_, ok := m.clearedFields[hostprocess.FieldPrincipal]
+	return ok
+}
+
 // ResetPrincipal resets all changes to the "principal" field.
 func (m *HostProcessMutation) ResetPrincipal() {
 	m.principal = nil
+	delete(m.clearedFields, hostprocess.FieldPrincipal)
 }
 
 // SetPath sets the "path" field.
@@ -12633,6 +12646,9 @@ func (m *HostProcessMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *HostProcessMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(hostprocess.FieldPrincipal) {
+		fields = append(fields, hostprocess.FieldPrincipal)
+	}
 	if m.FieldCleared(hostprocess.FieldPath) {
 		fields = append(fields, hostprocess.FieldPath)
 	}
@@ -12662,6 +12678,9 @@ func (m *HostProcessMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *HostProcessMutation) ClearField(name string) error {
 	switch name {
+	case hostprocess.FieldPrincipal:
+		m.ClearPrincipal()
+		return nil
 	case hostprocess.FieldPath:
 		m.ClearPath()
 		return nil
