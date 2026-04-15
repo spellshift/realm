@@ -29,6 +29,7 @@ pub mod temp_file_impl;
 pub mod template_impl;
 pub mod template_str_impl;
 pub mod timestomp_impl;
+pub mod tmp_dir_impl;
 pub mod write_binary_impl;
 pub mod write_impl;
 
@@ -121,6 +122,10 @@ impl FileLibrary for StdFileLibrary {
 
     fn temp_file(&self, name: Option<String>) -> Result<String, String> {
         temp_file_impl::temp_file(name)
+    }
+
+    fn tmp_dir(&self, name: Option<String>) -> Result<String, String> {
+        tmp_dir_impl::tmp_dir(name)
     }
 
     fn template(
