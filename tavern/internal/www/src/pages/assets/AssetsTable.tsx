@@ -46,7 +46,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'name',
             label: 'Name',
-            width: 'minmax(250px,3fr)',
+            width: 'minmax(200px,3fr)',
             render: (asset) => {
                 const hasTomes = asset.tomes.totalCount > 0;
                 const truncatedName = truncateAssetName(asset.name);
@@ -87,7 +87,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'creator',
             label: 'Creator',
-            width: 'minmax(200px,2fr)',
+            width: 'minmax(150px,1fr)',
             render: (asset) => (
                 <div className="pr-4">
                     <UserImageAndName userData={asset.creator} />
@@ -103,7 +103,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'size',
             label: 'Size',
-            width: 'minmax(100px,1fr)',
+            width: 'minmax(80px,100px)',
             render: (asset) => <span>{formatBytes(asset.size)}</span>,
             renderSkeleton: () => (
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
@@ -112,7 +112,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'hash',
             label: 'Hash',
-            width: 'minmax(150px,2fr)',
+            width: 'minmax(100px,120px)',
             render: (asset) => {
                 const hash = asset.hash;
                 return (
@@ -134,7 +134,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'lastModifiedAt',
             label: 'Modified',
-            width: 'minmax(120px,1fr)',
+            width: 'minmax(100px,120px)',
             render: (asset) => (
                 <span>{moment(asset.lastModifiedAt).fromNow()}</span>
             ),
@@ -145,7 +145,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'createdAt',
             label: 'Created',
-            width: 'minmax(150px,1fr)',
+            width: 'minmax(120px,150px)',
             render: (asset) => (
                 <span>{format(new Date(asset.createdAt), "yyyy-MM-dd HH:mm")}</span>
             ),
@@ -156,7 +156,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
         {
             key: 'actions',
             label: 'Actions',
-            width: 'minmax(100px,1fr)',
+            width: 'minmax(100px,100px)',
             render: (asset) => (
                 <div className="flex flex-row gap-2">
                     <Tooltip label="Download" bg="white" color="black">
@@ -201,6 +201,7 @@ export const AssetsTable = ({ assetIds, hasMore = false, onLoadMore, onCreateLin
             extractData={extractData}
             hasMore={hasMore}
             onLoadMore={onLoadMore}
+            minWidth="1000px"
             expandable={{
                 render: (asset) => <AssetAccordion asset={asset} onUpdate={onAssetUpdate} />,
                 isExpandable: (asset) => asset.links.totalCount > 0,
