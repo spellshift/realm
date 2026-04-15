@@ -180,7 +180,7 @@ function buildFiltersFromTypeFilters(
     // Host-level filters need to use hasHostWith
     const hostFilters: Record<string, unknown> = {};
     if (searchTypes.host.length > 0) {
-        hostFilters.nameIn = searchTypes.host;
+        hostFilters.idIn = searchTypes.host;
     }
     if (searchTypes.platform.length > 0) {
         hostFilters.platformIn = searchTypes.platform;

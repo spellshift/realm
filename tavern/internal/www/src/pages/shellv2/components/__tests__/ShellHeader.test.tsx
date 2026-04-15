@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ShellHeader from "../ShellHeader";
 import React from "react";
 import { expect, describe, it, vi } from "vitest";
@@ -70,5 +70,17 @@ describe("ShellHeader", () => {
             </BrowserRouter>
         );
         expect(screen.queryByText("root")).not.toBeInTheDocument();
+    });
+
+    it("calls onExport when export button is clicked", () => {
+        const onExport = vi.fn();
+        render(
+            <BrowserRouter>
+                <ShellHeader shellData={mockShellData} onExport={onExport} />
+            </BrowserRouter>
+        );
+        const exportButton = screen.getByText("Export");
+        fireEvent.click(exportButton);
+        expect(onExport).toHaveBeenCalled();
     });
 });

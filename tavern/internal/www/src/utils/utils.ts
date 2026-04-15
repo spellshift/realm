@@ -120,7 +120,7 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             accumulator.group.push(currentValue.name);
         }
         else if (currentValue.kind === "host") {
-            accumulator.host.push(currentValue.name);
+            accumulator.host.push(currentValue.value);
         }
         else if (currentValue.kind === "principal"){
             accumulator.principal.push(currentValue.name);

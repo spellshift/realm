@@ -369,7 +369,7 @@ var (
 		{Name: "pid", Type: field.TypeUint64},
 		{Name: "ppid", Type: field.TypeUint64},
 		{Name: "name", Type: field.TypeString},
-		{Name: "principal", Type: field.TypeString},
+		{Name: "principal", Type: field.TypeString, Nullable: true},
 		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "cmd", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "env", Type: field.TypeString, Nullable: true},

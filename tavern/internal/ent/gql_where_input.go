@@ -5920,6 +5920,8 @@ type HostProcessWhereInput struct {
 	PrincipalContains     *string  `json:"principalContains,omitempty"`
 	PrincipalHasPrefix    *string  `json:"principalHasPrefix,omitempty"`
 	PrincipalHasSuffix    *string  `json:"principalHasSuffix,omitempty"`
+	PrincipalIsNil        bool     `json:"principalIsNil,omitempty"`
+	PrincipalNotNil       bool     `json:"principalNotNil,omitempty"`
 	PrincipalEqualFold    *string  `json:"principalEqualFold,omitempty"`
 	PrincipalContainsFold *string  `json:"principalContainsFold,omitempty"`
 
@@ -6284,6 +6286,12 @@ func (i *HostProcessWhereInput) P() (predicate.HostProcess, error) {
 	}
 	if i.PrincipalHasSuffix != nil {
 		predicates = append(predicates, hostprocess.PrincipalHasSuffix(*i.PrincipalHasSuffix))
+	}
+	if i.PrincipalIsNil {
+		predicates = append(predicates, hostprocess.PrincipalIsNil())
+	}
+	if i.PrincipalNotNil {
+		predicates = append(predicates, hostprocess.PrincipalNotNil())
 	}
 	if i.PrincipalEqualFold != nil {
 		predicates = append(predicates, hostprocess.PrincipalEqualFold(*i.PrincipalEqualFold))

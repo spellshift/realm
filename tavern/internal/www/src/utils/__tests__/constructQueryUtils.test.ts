@@ -29,6 +29,7 @@ const createBeaconField = (kind: string, name: string): FilterBarOption => ({
   kind,
   id: '1',
   name,
+  value: name,
 });
 
 const FIXED_TIMESTAMP = new Date('2024-01-15T12:00:00.000Z');
@@ -53,7 +54,7 @@ describe('constructHostFieldQuery', () => {
   });
 
   it.each([
-    { args: [[], [], [], ['host1'], [], []], expected: { nameIn: ['host1'] }, desc: 'hosts' },
+    { args: [[], [], [], ['host1'], [], []], expected: { idIn: ['host1'] }, desc: 'hosts' },
     { args: [[], [], ['linux'], [], [], []], expected: { platformIn: ['linux'] }, desc: 'platforms' },
     { args: [[], [], [], [], ['192.168.1.1'], []], expected: { primaryIPIn: ['192.168.1.1'] }, desc: 'primaryIP' },
   ])('includes $desc in hasHostWith', ({ args, expected }) => {
@@ -64,7 +65,7 @@ describe('constructHostFieldQuery', () => {
   it('combines multiple filters', () => {
     const result = constructHostFieldQuery(['admin'], ['web'], ['linux'], ['server1'], [], []);
     expect(result?.hasHostWith).toMatchObject({
-      nameIn: ['server1'],
+      idIn: ['server1'],
       platformIn: ['linux'],
     });
     expect(result?.hasHostWith?.and).toBeDefined();
@@ -87,7 +88,7 @@ describe('constructBeaconFilterQuery', () => {
 
   it('nests host filters under hasHostWith', () => {
     const result = constructBeaconFilterQuery([createBeaconField('host', 'server1')]);
-    expect(result?.hasBeaconWith?.hasHostWith?.nameIn).toEqual(['server1']);
+    expect(result?.hasBeaconWith?.hasHostWith?.idIn).toEqual(['server1']);
   });
 });
 

@@ -354,10 +354,6 @@ func init() {
 	hostprocess.DefaultLastModifiedAt = hostprocessDescLastModifiedAt.Default.(func() time.Time)
 	// hostprocess.UpdateDefaultLastModifiedAt holds the default value on update for the last_modified_at field.
 	hostprocess.UpdateDefaultLastModifiedAt = hostprocessDescLastModifiedAt.UpdateDefault.(func() time.Time)
-	// hostprocessDescPrincipal is the schema descriptor for principal field.
-	hostprocessDescPrincipal := hostprocessFields[3].Descriptor()
-	// hostprocess.PrincipalValidator is a validator for the "principal" field. It is called by the builders before save.
-	hostprocess.PrincipalValidator = hostprocessDescPrincipal.Validators[0].(func(string) error)
 	linkMixin := schema.Link{}.Mixin()
 	linkMixinFields0 := linkMixin[0].Fields()
 	_ = linkMixinFields0

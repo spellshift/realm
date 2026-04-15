@@ -42,20 +42,10 @@ const NotificationBell = () => {
     const readNotifications = notifications.filter(n => n.read && !n.archived);
     const archivedNotifications = notifications.filter(n => n.archived);
 
-    const handleTabChange = (index: number, activeTabs: string[]) => {
-        const tabName = activeTabs[index];
-        const listMap: Record<string, NotificationNode[]> = {
-            'Urgent': urgentNotifications,
-            'Unread': unreadNotifications,
-            'Read': readNotifications,
-            'Archived': archivedNotifications
-        };
-        const list = listMap[tabName] || [];
-        const toMark = list.filter(n => !n.read);
-
-        if (toMark.length > 0) {
+    const handleClose = () => {
+        if (unreadNotifications.length > 0) {
             markAsRead({
-                variables: { notificationIDs: toMark.map(n => n.id) },
+                variables: { notificationIDs: unreadNotifications.map(n => n.id) },
                 onCompleted: () => refetch(),
             });
         }
@@ -196,11 +186,7 @@ const NotificationBell = () => {
     return (
         <Popover
             placement="right-start"
-            onOpen={() => {
-                if (activeTabs[0] === 'Urgent' || activeTabs[0] === 'Unread') {
-                    handleTabChange(0, activeTabs);
-                }
-            }}
+            onClose={handleClose}
         >
             <PopoverTrigger>
                 <Box position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }}>
@@ -234,7 +220,7 @@ const NotificationBell = () => {
                 </Box>
                 <Box p={0}>
                     {activeTabs.length > 0 ? (
-                        <Tabs colorScheme="purple" isFitted onChange={(index) => handleTabChange(index, activeTabs)}>
+                        <Tabs colorScheme="purple" isFitted>
                             <TabList borderColor="gray.700">
                                 {activeTabs.map(tab => (
                                     <Tab key={tab} fontSize="xs" py={3} _focus={{ outline: 'none' }}>{tab}</Tab>
