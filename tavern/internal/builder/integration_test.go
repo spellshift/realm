@@ -31,7 +31,7 @@ func TestBuilderE2E(t *testing.T) {
 	ctx := context.Background()
 
 	// 1. Setup in-memory SQLite database
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	// 2. Generate ED25519 key pair and create Builder CA
