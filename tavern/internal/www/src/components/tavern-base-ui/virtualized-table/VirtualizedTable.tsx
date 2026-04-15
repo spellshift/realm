@@ -21,9 +21,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
     height = "calc(100vh - 180px)",
     minHeight = "400px",
     headerVisible = true,
-    growWithContent = false,
-    paddingX = "px-6",
-    gap = "gap-4"
+    growWithContent = false
 }: VirtualizedTableProps<TData, TResponse>) {
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
     const useDynamicSizing = expandable !== undefined;
@@ -139,7 +137,7 @@ export function VirtualizedTable<TData, TResponse = unknown>({
             {/* Header */}
             {headerVisible && 
                 <div
-                    className={`bg-gray-50 sticky top-0 grid ${gap} ${paddingX} py-3 border-b border-gray-200 z-10`}
+                    className="bg-gray-50 sticky top-0 grid gap-2 px-4 py-3 border-b border-gray-200 z-10"
                     style={{
                         gridTemplateColumns: headerGridTemplateColumns,
                         minWidth,
@@ -189,8 +187,6 @@ export function VirtualizedTable<TData, TResponse = unknown>({
                                 isExpanded={expandedItems.has(itemId)}
                                 onToggleExpand={handleToggleExpand}
                                 expandable={expandable}
-                                paddingX={paddingX}
-                                gap={gap}
                             />
                         </div>
                     );

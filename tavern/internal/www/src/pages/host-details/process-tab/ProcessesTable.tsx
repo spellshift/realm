@@ -110,8 +110,6 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
             estimateRowSize={80}
             overscan={5}
             height="60vh"
-            paddingX="px-4"
-            gap="gap-2"
         />
     );
 };

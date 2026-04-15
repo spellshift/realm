@@ -105,12 +105,6 @@ export interface VirtualizedTableProps<TData, TResponse = unknown> {
 
     /** When true, container grows with content up to max height (uses maxHeight instead of fixed height) */
     growWithContent?: boolean;
-
-    /** Horizontal padding class (e.g., 'px-6') */
-    paddingX?: string;
-
-    /** Gap class between columns (e.g., 'gap-4') */
-    gap?: string;
 }
 
 /**
@@ -143,8 +137,4 @@ export interface VirtualizedTableRowInternalProps<TData, TResponse> {
     onToggleExpand: (id: string) => void;
     /** Configuration for expandable row behavior */
     expandable?: ExpandableConfig<TData>;
-    /** Horizontal padding class */
-    paddingX?: string;
-    /** Gap class between columns */
-    gap?: string;
 }
