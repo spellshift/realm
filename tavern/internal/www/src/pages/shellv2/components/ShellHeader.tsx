@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug, Download } from "lucide-react";
+import { Bug, Share } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
@@ -62,15 +62,6 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         {principal && <Badge>{principal}</Badge>}
       </h1>
 
-      <Button
-        buttonVariant="outline"
-        buttonStyle={{ color: "gray", size: "sm" }}
-        leftIcon={<Download size={16} />}
-        onClick={onExport}
-      >
-        Export
-      </Button>
-
       <a
         href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"
@@ -80,6 +71,15 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
       >
         <Bug size={20} />
       </a>
+
+      <Button
+        buttonVariant="solid"
+        buttonStyle={{ color: "gray", size: "sm" }}
+        leftIcon={<Share size={16} />}
+        onClick={onExport}
+      >
+        Export
+      </Button>
 
       {/* Active Users Display */}
       <div className="ml-auto flex items-center gap-2">
