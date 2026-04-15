@@ -1421,13 +1421,13 @@ $> sys.get_pid()
 
 ### sys.get_reg
 
-`sys.get_reg(reghive: str, regpath: str) -> Dict`
+`sys.get_reg(path: str) -> Dict`
 
 The **sys.get_reg** method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
-$> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+$> sys.get_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
 {
     "ProgramFilesDir": "C:\\Program Files",
     "CommonFilesDir": "C:\\Program Files\\Common Files",
