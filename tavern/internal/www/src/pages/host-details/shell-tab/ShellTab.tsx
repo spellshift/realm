@@ -2,6 +2,7 @@ import { VirtualizedTableWrapper } from "../../../components/tavern-base-ui/virt
 import { ShellsTable } from "./ShellsTable";
 import { useShellIds } from "./useShellIds";
 import { useParams } from "react-router-dom";
+import { CreateShellButton } from "../../../components/create-shell-button/CreateShellButton";
 
 const ShellTab = () => {
     const { hostId } = useParams();
@@ -23,6 +24,7 @@ const ShellTab = () => {
                 loading={initialLoading}
                 error={error}
                 showFiltering={false}
+                actions={<CreateShellButton hostId={hostId} />}
                 table={
                     <ShellsTable
                         shellIds={shellIds}
