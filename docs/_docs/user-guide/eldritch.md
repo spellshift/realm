@@ -1317,7 +1317,7 @@ The `sys` library offers general system capabilities to retrieve context about t
 
 The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
-For Imix reflective loading, use `sys.dll_reflect` with `function_name` set to `lib_entry`.
+For Imix DLLs, set `function_name` to `lib_entry`.
 
 ### sys.dll_reflect
 
