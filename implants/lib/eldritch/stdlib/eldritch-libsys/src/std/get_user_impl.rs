@@ -24,26 +24,28 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
             None => return Err(anyhow::anyhow!("Failed to get uid")),
         };
         #[cfg(target_os = "windows")]
-        dict_user.insert(
-            Value::String("uid".to_string()),
-            Value::String(uid.to_string()),
-        );
+        {
+            dict_user.insert(
+                Value::String("uid".to_string()),
+                Value::String(uid.to_string()),
+            );
 
-        dict_user.insert(
-            Value::String("name".to_string()),
-            Value::String(whoami::username()),
-        );
+            dict_user.insert(
+                Value::String("name".to_string()),
+                Value::String(whoami::username()),
+            );
 
-        let gid = process
-            .group_id()
-            .map(|gid| gid.to_string())
-            .unwrap_or_default();
-        dict_user.insert(Value::String("gid".to_string()), Value::String(gid));
+            let gid = process
+                .group_id()
+                .map(|gid| gid.to_string())
+                .unwrap_or_default();
+            dict_user.insert(Value::String("gid".to_string()), Value::String(gid));
 
-        dict_user.insert(
-            Value::String("groups".to_string()),
-            Value::List(Arc::new(RwLock::new(Vec::new()))),
-        );
+            dict_user.insert(
+                Value::String("groups".to_string()),
+                Value::List(Arc::new(RwLock::new(Vec::new()))),
+            );
+        }
 
         #[cfg(not(target_os = "windows"))]
         dict_user.insert(Value::String("uid".to_string()), Value::Int(**uid as i64));
