@@ -18,6 +18,8 @@ export function VirtualizedTableRowInternal<TData, TResponse>({
     isExpanded,
     onToggleExpand,
     expandable,
+    paddingX = "px-6",
+    gap = "gap-4",
 }: VirtualizedTableRowInternalProps<TData, TResponse>) {
     const variables = useMemo(() => getVariables(itemId), [itemId, getVariables]);
 
@@ -29,7 +31,7 @@ export function VirtualizedTableRowInternal<TData, TResponse>({
 
     const supportsExpand = expandable !== undefined;
     const fullGridTemplateColumns = supportsExpand ? `32px ${gridTemplateColumns}` : gridTemplateColumns;
-    const rowClassName = `grid gap-4 px-6 py-4 border-b border-gray-200 bg-white hover:bg-gray-50`;
+    const rowClassName = `grid ${gap} ${paddingX} py-4 border-b border-gray-200 bg-white hover:bg-gray-50`;
 
     if (!data) {
         return (
