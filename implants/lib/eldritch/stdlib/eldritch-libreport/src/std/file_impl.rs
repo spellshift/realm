@@ -75,7 +75,7 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
     // Use a sync channel with bound 1 to provide backpressure
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
 
-    std::thread::spawn(move || {
+    let producer = std::thread::spawn(move || {
         for path_clone in files_to_report {
             let file_res = std::fs::File::open(&path_clone).map_err(|e| e.to_string());
             match file_res {
@@ -142,11 +142,15 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
         }
     });
 
-    agent.report_file(rx).map(|_| ())?;
+    let report_result = agent.report_file(rx).map(|_| ());
+
+    producer
+        .join()
+        .map_err(|_| "report.file worker thread panicked".to_string())?;
 
     if let Some(e) = error.lock().unwrap().as_ref() {
         return Err(e.clone());
     }
 
-    Ok(())
+    report_result
 }
