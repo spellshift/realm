@@ -31,6 +31,8 @@ mod tests {
         let path = std::path::Path::new(&res);
         assert!(path.is_absolute());
         assert!(path.is_dir());
+        // Cleanup
+        let _ = ::std::fs::remove_dir(&res);
     }
 
     #[test]
@@ -40,6 +42,6 @@ mod tests {
         assert!(res.ends_with("eldritch_test_dir"));
         assert!(path.is_dir());
         // Cleanup
-        let _ = ::std::fs::remove_dir(&res);
+        let _ = ::std::fs::remove_dir_all(&res);
     }
 }
