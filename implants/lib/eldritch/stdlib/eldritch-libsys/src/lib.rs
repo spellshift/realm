@@ -36,6 +36,10 @@ pub trait SysLibrary {
     ///
     /// **Errors**
     /// - Returns an error string if injection fails.
+    ///
+    /// **Note**
+    /// - For Imix reflective loading, use `dll_reflect` with `function_name = "lib_entry"` instead of
+    ///   loading from disk with `dll_inject`.
     fn dll_inject(&self, dll_path: String, pid: i64) -> Result<(), String>;
 
     #[eldritch_method]
@@ -44,7 +48,7 @@ pub trait SysLibrary {
     /// **Parameters**
     /// - `dll_bytes` (`List<int>`): Content of the DLL.
     /// - `pid` (`int`): Target process ID.
-    /// - `function_name` (`str`): Exported function to call.
+    /// - `function_name` (`str`): Exported function to call (for Imix DLLs, use `"lib_entry"`).
     ///
     /// **Returns**
     /// - `None`

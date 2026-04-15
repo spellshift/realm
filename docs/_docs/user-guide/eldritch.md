@@ -1317,11 +1317,15 @@ The `sys` library offers general system capabilities to retrieve context about t
 
 The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
+For Imix DLLs, set `function_name` to `lib_entry`.
+
 ### sys.dll_reflect
 
 `sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
 
 The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+
+For Imix DLLs, set `function_name` to `lib_entry`.
 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
@@ -1421,13 +1425,13 @@ $> sys.get_pid()
 
 ### sys.get_reg
 
-`sys.get_reg(reghive: str, regpath: str) -> Dict`
+`sys.get_reg(path: str) -> Dict`
 
 The **sys.get_reg** method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
-$> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+$> sys.get_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
 {
     "ProgramFilesDir": "C:\\Program Files",
     "CommonFilesDir": "C:\\Program Files\\Common Files",
