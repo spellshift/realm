@@ -85,6 +85,8 @@ func TestAuthenticate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TAVERN_USE_BROWSER_OAUTH", "1")
+
 			// Setup Timeout
 			deadline, ok := t.Deadline()
 			if !ok {
