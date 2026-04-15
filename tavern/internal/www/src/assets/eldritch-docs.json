@@ -588,8 +588,8 @@
     "description": "The **sys.get_pid** method returns the process ID of the current process.\nAn example is below:\n```python\n$> sys.get_pid()\n123456\n```"
   },
   "sys.get_reg": {
-    "signature": "sys.get_reg(reghive: str, regpath: str) -> Dict",
-    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\",\"SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
+    "signature": "sys.get_reg(path: str) -> Dict",
+    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
   },
   "sys.get_user": {
     "signature": "sys.get_user() -> Dict",
