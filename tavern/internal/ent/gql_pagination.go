@@ -3817,6 +3817,20 @@ var (
 			}
 		},
 	}
+	// HostOrderFieldName orders Host by name.
+	HostOrderFieldName = &HostOrderField{
+		Value: func(h *Host) (ent.Value, error) {
+			return h.Name, nil
+		},
+		column: host.FieldName,
+		toTerm: host.ByName,
+		toCursor: func(h *Host) Cursor {
+			return Cursor{
+				ID:    h.ID,
+				Value: h.Name,
+			}
+		},
+	}
 	// HostOrderFieldLastSeenAt orders Host by last_seen_at.
 	HostOrderFieldLastSeenAt = &HostOrderField{
 		Value: func(h *Host) (ent.Value, error) {
@@ -3855,6 +3869,8 @@ func (f HostOrderField) String() string {
 		str = "CREATED_AT"
 	case HostOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
+	case HostOrderFieldName.column:
+		str = "NAME"
 	case HostOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
 	case HostOrderFieldNextSeenAt.column:
@@ -3879,6 +3895,8 @@ func (f *HostOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *HostOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *HostOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *HostOrderFieldName
 	case "LAST_SEEN_AT":
 		*f = *HostOrderFieldLastSeenAt
 	case "NEXT_SEEN_AT":

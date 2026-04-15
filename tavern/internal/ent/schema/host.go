@@ -28,6 +28,9 @@ func (Host) Fields() []ent.Field {
 		field.String("name").
 			Optional().
 			NotEmpty().
+			Annotations(
+				entgql.OrderField("NAME"),
+			).
 			Comment("A human readable identifier for the host."),
 		field.String("primary_ip").
 			Optional().
