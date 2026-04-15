@@ -223,6 +223,7 @@ func (cfg *Config) migrateLegacyScheduledTaskHosts(ctx context.Context) error {
 		case err == nil:
 			continue
 		case err == stdsql.ErrNoRows:
+			// No join row exists yet; insert it below.
 		default:
 			return fmt.Errorf("lookup migrated scheduled task host assignment: %w", err)
 		}
