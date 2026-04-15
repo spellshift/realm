@@ -26,6 +26,12 @@ export interface VirtualizedTableWrapperProps {
 
     /** Whether to show filtering controls */
     showFiltering?: boolean;
+
+    /** Optional additional actions to display in the header */
+    actions?: ReactNode;
+
+    /** Optional action to display in the empty state */
+    emptyStateAction?: ReactNode;
 }
 
 /**

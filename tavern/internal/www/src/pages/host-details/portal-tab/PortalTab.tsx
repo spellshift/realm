@@ -5,6 +5,7 @@ import { PortalsTable } from "./PortalsTable";
 import { usePortalIds } from "./usePortalIds";
 import { useParams } from "react-router-dom";
 import Button from "../../../components/tavern-base-ui/button/Button";
+import { CreatePortalQuestButton } from "./CreatePortalQuestButton";
 
 const PortalsHeader = () => {
     const [downloadAsset, setDownloadAsset] = useState<string>("linux/socks5");
@@ -63,6 +64,8 @@ const PortalTab = () => {
                 loading={initialLoading}
                 error={error}
                 showFiltering={false}
+                actions={<CreatePortalQuestButton variant="ghost" size="sm" />}
+                emptyStateAction={<CreatePortalQuestButton variant="solid" size="md" />}
                 table={
                     <PortalsTable
                         portalIds={portalIds}
