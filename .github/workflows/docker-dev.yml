@@ -5,6 +5,14 @@ name: Publish Docker Images (on push to main)
 on:
   push:
     branches: ['main']
+    paths:
+      - '.devcontainer/**'
+      - 'tavern/**'
+      - 'bin/**'
+      - 'docker/tavern.Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/docker-dev.yml'
   workflow_dispatch: ~
 
 env:
@@ -13,7 +21,31 @@ env:
   GHCR_IMAGE_NAME_DEV: ${{ github.repository }}/devcontainer
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      devcontainer: ${{ steps.filter.outputs.devcontainer }}
+      tavern: ${{ steps.filter.outputs.tavern }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            devcontainer:
+              - '.devcontainer/**'
+              - '.github/workflows/docker-dev.yml'
+            tavern:
+              - 'tavern/**'
+              - 'bin/**'
+              - 'docker/tavern.Dockerfile'
+              - 'go.mod'
+              - 'go.sum'
+              - '.github/workflows/docker-dev.yml'
+
   devcontainer-docker:
+    needs: [changes]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.devcontainer == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -83,6 +115,8 @@ jobs:
           labels: ${{ steps.meta_ghcr.outputs.labels }}
 
   tavern-docker:
+    needs: [changes]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.tavern == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
