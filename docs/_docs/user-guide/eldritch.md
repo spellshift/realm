@@ -861,9 +861,9 @@ The **file.temp_file** method returns the path of a new temporary file with a ra
 
 ### file.tmp_dir
 
-`file.tmp_dir(name: Option<str>) -> str`
+`file.tmp_dir() -> str`
 
-The **file.tmp_dir** method creates a temporary directory and returns its absolute path. If no name is provided, a random directory name is generated. The directory persists after the function returns.
+The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
 
 ### file.template
   

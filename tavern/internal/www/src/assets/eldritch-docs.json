@@ -371,6 +371,10 @@
     "signature": "file.temp_file(name: Option<str>) -> str",
     "description": "The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument."
   },
+  "file.tmp_dir": {
+    "signature": "file.tmp_dir() -> str",
+    "description": "The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns."
+  },
   "file.template": {
     "signature": "file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None",
     "description": "The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.\nIf the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.\nThe `args` dictionary currently supports values of: `int`, `str`, and `List`.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)"
@@ -561,7 +565,7 @@
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
-    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.\nFor Imix reflective loading, use `sys.dll_reflect` with `function_name` set to `lib_entry` instead of `sys.dll_inject`."
+    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.\nFor Imix DLLs, set `function_name` to `lib_entry`."
   },
   "sys.dll_reflect": {
     "signature": "sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None",

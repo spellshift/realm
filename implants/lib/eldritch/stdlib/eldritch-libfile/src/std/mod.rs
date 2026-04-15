@@ -124,8 +124,8 @@ impl FileLibrary for StdFileLibrary {
         temp_file_impl::temp_file(name)
     }
 
-    fn tmp_dir(&self, name: Option<String>) -> Result<String, String> {
-        tmp_dir_impl::tmp_dir(name)
+    fn tmp_dir(&self) -> Result<String, String> {
+        tmp_dir_impl::tmp_dir()
     }
 
     fn template(

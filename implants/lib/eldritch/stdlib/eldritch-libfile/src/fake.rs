@@ -353,8 +353,8 @@ impl FileLibrary for FileLibraryFake {
         Ok(format!("/tmp/{}", name))
     }
 
-    fn tmp_dir(&self, name: Option<String>) -> Result<String, String> {
-        let name = name.unwrap_or_else(|| "random_dir".to_string());
+    fn tmp_dir(&self) -> Result<String, String> {
+        let name = "tmp_dir".to_string();
         let path = format!("/tmp/{}", name);
         self.mkdir(path.clone(), None)?;
         Ok(path)
