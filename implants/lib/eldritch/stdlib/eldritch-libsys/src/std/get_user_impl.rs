@@ -12,7 +12,8 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
     let mut dict_res = BTreeMap::new();
     let mut dict_user: BTreeMap<Value, Value> = BTreeMap::new();
 
-    let sys = System::new_all();
+    let mut sys = System::new_all();
+    sys.refresh_users_list();
     let pid = process::id() as usize;
     if let Some(process) = sys.process(Pid::from(pid)) {
         let uid = match process.user_id() {
