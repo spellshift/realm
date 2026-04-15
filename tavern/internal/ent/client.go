@@ -2178,6 +2178,22 @@ func (c *HostClient) QueryEvents(h *Host) *EventQuery {
 	return query
 }
 
+// QueryScheduledTasks queries the scheduledTasks edge of a Host.
+func (c *HostClient) QueryScheduledTasks(h *Host) *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.ScheduledTasksTable, host.ScheduledTasksPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host
@@ -3865,7 +3881,7 @@ func (c *ScheduledTaskClient) QueryScheduledHosts(st *ScheduledTask) *HostQuery 
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scheduledtask.Table, scheduledtask.FieldID, id),
 			sqlgraph.To(host.Table, host.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, scheduledtask.ScheduledHostsTable, scheduledtask.ScheduledHostsColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, scheduledtask.ScheduledHostsTable, scheduledtask.ScheduledHostsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(st.driver.Dialect(), step)
 		return fromV, nil

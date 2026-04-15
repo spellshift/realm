@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/user"
@@ -291,6 +292,21 @@ func (hu *HostUpdate) AddEvents(e ...*Event) *HostUpdate {
 	return hu.AddEventIDs(ids...)
 }
 
+// AddScheduledTaskIDs adds the "scheduledTasks" edge to the ScheduledTask entity by IDs.
+func (hu *HostUpdate) AddScheduledTaskIDs(ids ...int) *HostUpdate {
+	hu.mutation.AddScheduledTaskIDs(ids...)
+	return hu
+}
+
+// AddScheduledTasks adds the "scheduledTasks" edges to the ScheduledTask entity.
+func (hu *HostUpdate) AddScheduledTasks(s ...*ScheduledTask) *HostUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return hu.AddScheduledTaskIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hu *HostUpdate) Mutation() *HostMutation {
 	return hu.mutation
@@ -462,6 +478,27 @@ func (hu *HostUpdate) RemoveEvents(e ...*Event) *HostUpdate {
 		ids[i] = e[i].ID
 	}
 	return hu.RemoveEventIDs(ids...)
+}
+
+// ClearScheduledTasks clears all "scheduledTasks" edges to the ScheduledTask entity.
+func (hu *HostUpdate) ClearScheduledTasks() *HostUpdate {
+	hu.mutation.ClearScheduledTasks()
+	return hu
+}
+
+// RemoveScheduledTaskIDs removes the "scheduledTasks" edge to ScheduledTask entities by IDs.
+func (hu *HostUpdate) RemoveScheduledTaskIDs(ids ...int) *HostUpdate {
+	hu.mutation.RemoveScheduledTaskIDs(ids...)
+	return hu
+}
+
+// RemoveScheduledTasks removes "scheduledTasks" edges to ScheduledTask entities.
+func (hu *HostUpdate) RemoveScheduledTasks(s ...*ScheduledTask) *HostUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return hu.RemoveScheduledTaskIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -931,6 +968,51 @@ func (hu *HostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if hu.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.RemovedScheduledTasksIDs(); len(nodes) > 0 && !hu.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := hu.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, hu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{host.Label}
@@ -1205,6 +1287,21 @@ func (huo *HostUpdateOne) AddEvents(e ...*Event) *HostUpdateOne {
 	return huo.AddEventIDs(ids...)
 }
 
+// AddScheduledTaskIDs adds the "scheduledTasks" edge to the ScheduledTask entity by IDs.
+func (huo *HostUpdateOne) AddScheduledTaskIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.AddScheduledTaskIDs(ids...)
+	return huo
+}
+
+// AddScheduledTasks adds the "scheduledTasks" edges to the ScheduledTask entity.
+func (huo *HostUpdateOne) AddScheduledTasks(s ...*ScheduledTask) *HostUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return huo.AddScheduledTaskIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (huo *HostUpdateOne) Mutation() *HostMutation {
 	return huo.mutation
@@ -1376,6 +1473,27 @@ func (huo *HostUpdateOne) RemoveEvents(e ...*Event) *HostUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return huo.RemoveEventIDs(ids...)
+}
+
+// ClearScheduledTasks clears all "scheduledTasks" edges to the ScheduledTask entity.
+func (huo *HostUpdateOne) ClearScheduledTasks() *HostUpdateOne {
+	huo.mutation.ClearScheduledTasks()
+	return huo
+}
+
+// RemoveScheduledTaskIDs removes the "scheduledTasks" edge to ScheduledTask entities by IDs.
+func (huo *HostUpdateOne) RemoveScheduledTaskIDs(ids ...int) *HostUpdateOne {
+	huo.mutation.RemoveScheduledTaskIDs(ids...)
+	return huo
+}
+
+// RemoveScheduledTasks removes "scheduledTasks" edges to ScheduledTask entities.
+func (huo *HostUpdateOne) RemoveScheduledTasks(s ...*ScheduledTask) *HostUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return huo.RemoveScheduledTaskIDs(ids...)
 }
 
 // Where appends a list predicates to the HostUpdate builder.
@@ -1868,6 +1986,51 @@ func (huo *HostUpdateOne) sqlSave(ctx context.Context) (_node *Host, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if huo.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.RemovedScheduledTasksIDs(); len(nodes) > 0 && !huo.mutation.ScheduledTasksCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := huo.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

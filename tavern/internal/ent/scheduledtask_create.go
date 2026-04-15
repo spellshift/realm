@@ -358,10 +358,10 @@ func (stc *ScheduledTaskCreate) createSpec() (*ScheduledTask, *sqlgraph.CreateSp
 	}
 	if nodes := stc.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),

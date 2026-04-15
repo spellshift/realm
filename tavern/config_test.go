@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/ent/tag"
 )
@@ -168,6 +169,47 @@ func TestConfigureOAuthFromEnv(t *testing.T) {
 
 		assert.Equal(t, expectedCfg, cfg.oauth)
 	})
+}
+
+func TestMigrateLegacyScheduledTaskHosts(t *testing.T) {
+	cfg := &Config{}
+	client, err := cfg.Connect()
+	require.NoError(t, err)
+	require.NotNil(t, cfg.db)
+
+	ctx := context.Background()
+	require.NoError(t, client.Schema.Create(
+		ctx,
+		migrate.WithGlobalUniqueID(true),
+	))
+
+	host := client.Host.Create().
+		SetIdentifier("legacy-host").
+		SetPlatform(c2pb.Host_PLATFORM_LINUX).
+		SaveX(ctx)
+	tome := client.Tome.Create().
+		SetName("legacy-tome").
+		SetDescription("legacy description").
+		SetAuthor("test-author").
+		SetEldritch("print('hello')").
+		SaveX(ctx)
+	task := client.ScheduledTask.Create().
+		SetName("legacy-scheduled-task").
+		SetDescription("legacy scheduled task").
+		SetTome(tome).
+		SaveX(ctx)
+
+	_, err = cfg.db.ExecContext(ctx, "ALTER TABLE hosts ADD COLUMN scheduled_task_scheduled_hosts integer")
+	require.NoError(t, err)
+	_, err = cfg.db.ExecContext(ctx, "UPDATE hosts SET scheduled_task_scheduled_hosts = ? WHERE id = ?", task.ID, host.ID)
+	require.NoError(t, err)
+
+	require.NoError(t, cfg.migrateLegacyScheduledTaskHosts(ctx))
+
+	scheduledHosts, err := task.QueryScheduledHosts().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, scheduledHosts, 1)
+	assert.Equal(t, host.ID, scheduledHosts[0].ID)
 }
 
 func TestConfigurePubSubFromEnv(t *testing.T) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	stdsql "database/sql"
 	"fmt"
 	"log"
 	"log/slog"
@@ -11,7 +12,7 @@ import (
 
 	gcppubsub "cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
-	"entgo.io/ent/dialect/sql"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/go-sql-driver/mysql"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/gcppubsub"
@@ -124,6 +125,7 @@ type Config struct {
 	srv *http.Server
 
 	mysqlDSN string
+	db       *stdsql.DB
 
 	client       *ent.Client
 	oauth        oauth2.Config
@@ -145,7 +147,7 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 		driver = "mysql"
 	}
 
-	drv, err := sql.Open(driver, mysqlDSN)
+	drv, err := entsql.Open(driver, mysqlDSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -171,11 +173,76 @@ func (cfg *Config) Connect(options ...ent.Option) (*ent.Client, error) {
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetMaxOpenConns(maxOpenConns)
 	db.SetConnMaxLifetime(maxConnLifetime)
+	if cfg != nil {
+		cfg.db = db
+	}
 	client := ent.NewClient(append(options, ent.Driver(drv))...)
 	client.Host.Use(ent.HookDeriveHostEvents())
 	client.Task.Use(ent.HookDeriveQuestEvents())
 	client.Event.Use(ent.HookDeriveNotifications())
 	return client, nil
+}
+
+func (cfg *Config) migrateLegacyScheduledTaskHosts(ctx context.Context) error {
+	if cfg == nil || cfg.db == nil {
+		return nil
+	}
+
+	rows, err := cfg.db.QueryContext(ctx, "SELECT id, scheduled_task_scheduled_hosts FROM hosts WHERE scheduled_task_scheduled_hosts IS NOT NULL")
+	if err != nil {
+		if strings.Contains(err.Error(), "no such column") || strings.Contains(err.Error(), "Unknown column") {
+			return nil
+		}
+		return fmt.Errorf("query legacy scheduled task host assignments: %w", err)
+	}
+	defer rows.Close()
+
+	tx, err := cfg.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin scheduled task host migration: %w", err)
+	}
+	defer tx.Rollback()
+
+	for rows.Next() {
+		var (
+			hostID          int
+			scheduledTaskID int
+		)
+		if err := rows.Scan(&hostID, &scheduledTaskID); err != nil {
+			return fmt.Errorf("scan legacy scheduled task host assignment: %w", err)
+		}
+
+		var existing int
+		err := tx.QueryRowContext(
+			ctx,
+			"SELECT 1 FROM scheduled_task_scheduled_hosts WHERE scheduled_task_id = ? AND host_id = ? LIMIT 1",
+			scheduledTaskID,
+			hostID,
+		).Scan(&existing)
+		switch {
+		case err == nil:
+			continue
+		case err == stdsql.ErrNoRows:
+		default:
+			return fmt.Errorf("lookup migrated scheduled task host assignment: %w", err)
+		}
+
+		if _, err := tx.ExecContext(
+			ctx,
+			"INSERT INTO scheduled_task_scheduled_hosts (scheduled_task_id, host_id) VALUES (?, ?)",
+			scheduledTaskID,
+			hostID,
+		); err != nil {
+			return fmt.Errorf("insert migrated scheduled task host assignment: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate legacy scheduled task host assignments: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit scheduled task host migration: %w", err)
+	}
+	return nil
 }
 
 func (cfg *Config) NewPortalMux(ctx context.Context) *mux.Mux {

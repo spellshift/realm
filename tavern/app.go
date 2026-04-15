@@ -258,6 +258,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize graph schema: %w", err)
 	}
+	if err := cfg.migrateLegacyScheduledTaskHosts(ctx); err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to migrate scheduled task host assignments: %w", err)
+	}
 
 	// Load Default Tomes
 	// Load Tools

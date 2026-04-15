@@ -508,7 +508,7 @@ func HasScheduledHosts() predicate.ScheduledTask {
 	return predicate.ScheduledTask(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, ScheduledHostsTable, ScheduledHostsColumn),
+			sqlgraph.Edge(sqlgraph.M2M, false, ScheduledHostsTable, ScheduledHostsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/predicate"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/user"
@@ -27,29 +28,30 @@ import (
 // HostQuery is the builder for querying Host entities.
 type HostQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []host.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.Host
-	withTags             *TagQuery
-	withBeacons          *BeaconQuery
-	withFiles            *HostFileQuery
-	withProcesses        *HostProcessQuery
-	withCredentials      *HostCredentialQuery
-	withScreenshots      *ScreenshotQuery
-	withFavoritedBy      *UserQuery
-	withEvents           *EventQuery
-	withFKs              bool
-	modifiers            []func(*sql.Selector)
-	loadTotal            []func(context.Context, []*Host) error
-	withNamedTags        map[string]*TagQuery
-	withNamedBeacons     map[string]*BeaconQuery
-	withNamedFiles       map[string]*HostFileQuery
-	withNamedProcesses   map[string]*HostProcessQuery
-	withNamedCredentials map[string]*HostCredentialQuery
-	withNamedScreenshots map[string]*ScreenshotQuery
-	withNamedFavoritedBy map[string]*UserQuery
-	withNamedEvents      map[string]*EventQuery
+	ctx                     *QueryContext
+	order                   []host.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.Host
+	withTags                *TagQuery
+	withBeacons             *BeaconQuery
+	withFiles               *HostFileQuery
+	withProcesses           *HostProcessQuery
+	withCredentials         *HostCredentialQuery
+	withScreenshots         *ScreenshotQuery
+	withFavoritedBy         *UserQuery
+	withEvents              *EventQuery
+	withScheduledTasks      *ScheduledTaskQuery
+	modifiers               []func(*sql.Selector)
+	loadTotal               []func(context.Context, []*Host) error
+	withNamedTags           map[string]*TagQuery
+	withNamedBeacons        map[string]*BeaconQuery
+	withNamedFiles          map[string]*HostFileQuery
+	withNamedProcesses      map[string]*HostProcessQuery
+	withNamedCredentials    map[string]*HostCredentialQuery
+	withNamedScreenshots    map[string]*ScreenshotQuery
+	withNamedFavoritedBy    map[string]*UserQuery
+	withNamedEvents         map[string]*EventQuery
+	withNamedScheduledTasks map[string]*ScheduledTaskQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -262,6 +264,28 @@ func (hq *HostQuery) QueryEvents() *EventQuery {
 	return query
 }
 
+// QueryScheduledTasks chains the current query on the "scheduledTasks" edge.
+func (hq *HostQuery) QueryScheduledTasks() *ScheduledTaskQuery {
+	query := (&ScheduledTaskClient{config: hq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := hq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := hq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, selector),
+			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.ScheduledTasksTable, host.ScheduledTasksPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(hq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Host entity from the query.
 // Returns a *NotFoundError when no Host was found.
 func (hq *HostQuery) First(ctx context.Context) (*Host, error) {
@@ -449,19 +473,20 @@ func (hq *HostQuery) Clone() *HostQuery {
 		return nil
 	}
 	return &HostQuery{
-		config:          hq.config,
-		ctx:             hq.ctx.Clone(),
-		order:           append([]host.OrderOption{}, hq.order...),
-		inters:          append([]Interceptor{}, hq.inters...),
-		predicates:      append([]predicate.Host{}, hq.predicates...),
-		withTags:        hq.withTags.Clone(),
-		withBeacons:     hq.withBeacons.Clone(),
-		withFiles:       hq.withFiles.Clone(),
-		withProcesses:   hq.withProcesses.Clone(),
-		withCredentials: hq.withCredentials.Clone(),
-		withScreenshots: hq.withScreenshots.Clone(),
-		withFavoritedBy: hq.withFavoritedBy.Clone(),
-		withEvents:      hq.withEvents.Clone(),
+		config:             hq.config,
+		ctx:                hq.ctx.Clone(),
+		order:              append([]host.OrderOption{}, hq.order...),
+		inters:             append([]Interceptor{}, hq.inters...),
+		predicates:         append([]predicate.Host{}, hq.predicates...),
+		withTags:           hq.withTags.Clone(),
+		withBeacons:        hq.withBeacons.Clone(),
+		withFiles:          hq.withFiles.Clone(),
+		withProcesses:      hq.withProcesses.Clone(),
+		withCredentials:    hq.withCredentials.Clone(),
+		withScreenshots:    hq.withScreenshots.Clone(),
+		withFavoritedBy:    hq.withFavoritedBy.Clone(),
+		withEvents:         hq.withEvents.Clone(),
+		withScheduledTasks: hq.withScheduledTasks.Clone(),
 		// clone intermediate query.
 		sql:  hq.sql.Clone(),
 		path: hq.path,
@@ -556,6 +581,17 @@ func (hq *HostQuery) WithEvents(opts ...func(*EventQuery)) *HostQuery {
 	return hq
 }
 
+// WithScheduledTasks tells the query-builder to eager-load the nodes that are connected to
+// the "scheduledTasks" edge. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithScheduledTasks(opts ...func(*ScheduledTaskQuery)) *HostQuery {
+	query := (&ScheduledTaskClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	hq.withScheduledTasks = query
+	return hq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -633,9 +669,8 @@ func (hq *HostQuery) prepareQuery(ctx context.Context) error {
 func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, error) {
 	var (
 		nodes       = []*Host{}
-		withFKs     = hq.withFKs
 		_spec       = hq.querySpec()
-		loadedTypes = [8]bool{
+		loadedTypes = [9]bool{
 			hq.withTags != nil,
 			hq.withBeacons != nil,
 			hq.withFiles != nil,
@@ -644,11 +679,9 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			hq.withScreenshots != nil,
 			hq.withFavoritedBy != nil,
 			hq.withEvents != nil,
+			hq.withScheduledTasks != nil,
 		}
 	)
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, host.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Host).scanValues(nil, columns)
 	}
@@ -726,6 +759,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 			return nil, err
 		}
 	}
+	if query := hq.withScheduledTasks; query != nil {
+		if err := hq.loadScheduledTasks(ctx, query, nodes,
+			func(n *Host) { n.Edges.ScheduledTasks = []*ScheduledTask{} },
+			func(n *Host, e *ScheduledTask) { n.Edges.ScheduledTasks = append(n.Edges.ScheduledTasks, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range hq.withNamedTags {
 		if err := hq.loadTags(ctx, query, nodes,
 			func(n *Host) { n.appendNamedTags(name) },
@@ -779,6 +819,13 @@ func (hq *HostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Host, e
 		if err := hq.loadEvents(ctx, query, nodes,
 			func(n *Host) { n.appendNamedEvents(name) },
 			func(n *Host, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range hq.withNamedScheduledTasks {
+		if err := hq.loadScheduledTasks(ctx, query, nodes,
+			func(n *Host) { n.appendNamedScheduledTasks(name) },
+			func(n *Host, e *ScheduledTask) { n.appendNamedScheduledTasks(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -1098,6 +1145,67 @@ func (hq *HostQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []
 	}
 	return nil
 }
+func (hq *HostQuery) loadScheduledTasks(ctx context.Context, query *ScheduledTaskQuery, nodes []*Host, init func(*Host), assign func(*Host, *ScheduledTask)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Host)
+	nids := make(map[int]map[*Host]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(host.ScheduledTasksTable)
+		s.Join(joinT).On(s.C(scheduledtask.FieldID), joinT.C(host.ScheduledTasksPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(host.ScheduledTasksPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(host.ScheduledTasksPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Host]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*ScheduledTask](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "scheduledTasks" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 
 func (hq *HostQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := hq.querySpec()
@@ -1292,6 +1400,20 @@ func (hq *HostQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *Ho
 		hq.withNamedEvents = make(map[string]*EventQuery)
 	}
 	hq.withNamedEvents[name] = query
+	return hq
+}
+
+// WithNamedScheduledTasks tells the query-builder to eager-load the nodes that are connected to the "scheduledTasks"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (hq *HostQuery) WithNamedScheduledTasks(name string, opts ...func(*ScheduledTaskQuery)) *HostQuery {
+	query := (&ScheduledTaskClient{config: hq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if hq.withNamedScheduledTasks == nil {
+		hq.withNamedScheduledTasks = make(map[string]*ScheduledTaskQuery)
+	}
+	hq.withNamedScheduledTasks[name] = query
 	return hq
 }
 

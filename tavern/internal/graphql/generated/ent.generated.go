@@ -618,6 +618,42 @@ func (ec *executionContext) field_Host_processes_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Host_scheduledtasks_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOScheduledTaskOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOScheduledTaskWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_Host_screenshots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3322,6 +3358,8 @@ func (ec *executionContext) fieldContext_Beacon_host(_ context.Context, field gr
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -6582,6 +6620,8 @@ func (ec *executionContext) fieldContext_Event_host(_ context.Context, field gra
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -7566,6 +7606,55 @@ func (ec *executionContext) fieldContext_Host_events(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Host_scheduledtasks(ctx context.Context, field graphql.CollectedField, obj *ent.Host) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Host_scheduledtasks,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.ScheduledTasks(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.ScheduledTaskOrder), fc.Args["where"].(*ent.ScheduledTaskWhereInput))
+		},
+		nil,
+		ec.marshalNScheduledTaskConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Host_scheduledtasks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Host",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_ScheduledTaskConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_ScheduledTaskConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ScheduledTaskConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ScheduledTaskConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Host_scheduledtasks_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _HostConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.HostConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -7903,6 +7992,8 @@ func (ec *executionContext) fieldContext_HostCredential_host(_ context.Context, 
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -8279,6 +8370,8 @@ func (ec *executionContext) fieldContext_HostEdge_node(_ context.Context, field 
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -8694,6 +8787,8 @@ func (ec *executionContext) fieldContext_HostFile_host(_ context.Context, field 
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -9457,6 +9552,8 @@ func (ec *executionContext) fieldContext_HostProcess_host(_ context.Context, fie
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -15035,6 +15132,8 @@ func (ec *executionContext) fieldContext_Screenshot_host(_ context.Context, fiel
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -28743,7 +28842,7 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "identifier", "identifierNEQ", "identifierIn", "identifierNotIn", "identifierGT", "identifierGTE", "identifierLT", "identifierLTE", "identifierContains", "identifierHasPrefix", "identifierHasSuffix", "identifierEqualFold", "identifierContainsFold", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameIsNil", "nameNotNil", "nameEqualFold", "nameContainsFold", "primaryIP", "primaryIPNEQ", "primaryIPIn", "primaryIPNotIn", "primaryIPGT", "primaryIPGTE", "primaryIPLT", "primaryIPLTE", "primaryIPContains", "primaryIPHasPrefix", "primaryIPHasSuffix", "primaryIPIsNil", "primaryIPNotNil", "primaryIPEqualFold", "primaryIPContainsFold", "externalIP", "externalIPNEQ", "externalIPIn", "externalIPNotIn", "externalIPGT", "externalIPGTE", "externalIPLT", "externalIPLTE", "externalIPContains", "externalIPHasPrefix", "externalIPHasSuffix", "externalIPIsNil", "externalIPNotNil", "externalIPEqualFold", "externalIPContainsFold", "platform", "platformNEQ", "platformIn", "platformNotIn", "lastSeenAt", "lastSeenAtNEQ", "lastSeenAtIn", "lastSeenAtNotIn", "lastSeenAtGT", "lastSeenAtGTE", "lastSeenAtLT", "lastSeenAtLTE", "lastSeenAtIsNil", "lastSeenAtNotNil", "nextSeenAt", "nextSeenAtNEQ", "nextSeenAtIn", "nextSeenAtNotIn", "nextSeenAtGT", "nextSeenAtGTE", "nextSeenAtLT", "nextSeenAtLTE", "nextSeenAtIsNil", "nextSeenAtNotNil", "hasTags", "hasTagsWith", "hasBeacons", "hasBeaconsWith", "hasFiles", "hasFilesWith", "hasProcesses", "hasProcessesWith", "hasCredentials", "hasCredentialsWith", "hasScreenshots", "hasScreenshotsWith", "hasFavoritedBy", "hasFavoritedByWith", "hasEvents", "hasEventsWith", "hasScheduledTasks", "hasScheduledTasksWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -29625,6 +29724,20 @@ func (ec *executionContext) unmarshalInputHostWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasEventsWith = data
+		case "hasScheduledTasks":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasScheduledTasks"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasScheduledTasks = data
+		case "hasScheduledTasksWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasScheduledTasksWith"))
+			data, err := ec.unmarshalOScheduledTaskWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐScheduledTaskWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasScheduledTasksWith = data
 		}
 	}
 	return it, nil
@@ -41413,6 +41526,42 @@ func (ec *executionContext) _Host(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Host_events(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "scheduledtasks":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Host_scheduledtasks(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

@@ -51,6 +51,8 @@ const (
 	EdgeFavoritedBy = "favoritedBy"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeScheduledTasks holds the string denoting the scheduledtasks edge name in mutations.
+	EdgeScheduledTasks = "scheduledTasks"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -105,6 +107,11 @@ const (
 	EventsInverseTable = "events"
 	// EventsColumn is the table column denoting the events relation/edge.
 	EventsColumn = "host_events"
+	// ScheduledTasksTable is the table that holds the scheduledTasks relation/edge. The primary key declared below.
+	ScheduledTasksTable = "scheduled_task_scheduled_hosts"
+	// ScheduledTasksInverseTable is the table name for the ScheduledTask entity.
+	// It exists in this package in order to avoid circular dependency with the "scheduledtask" package.
+	ScheduledTasksInverseTable = "scheduled_tasks"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -121,12 +128,6 @@ var Columns = []string{
 	FieldNextSeenAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the "hosts"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"scheduled_task_scheduled_hosts",
-}
-
 var (
 	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
 	// primary key for the tags relation (M2M).
@@ -134,17 +135,15 @@ var (
 	// FavoritedByPrimaryKey and FavoritedByColumn2 are the table columns denoting the
 	// primary key for the favoritedBy relation (M2M).
 	FavoritedByPrimaryKey = []string{"user_id", "host_id"}
+	// ScheduledTasksPrimaryKey and ScheduledTasksColumn2 are the table columns denoting the
+	// primary key for the scheduledTasks relation (M2M).
+	ScheduledTasksPrimaryKey = []string{"scheduled_task_id", "host_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -338,6 +337,20 @@ func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByScheduledTasksCount orders the results by scheduledTasks count.
+func ByScheduledTasksCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScheduledTasksStep(), opts...)
+	}
+}
+
+// ByScheduledTasks orders the results by scheduledTasks terms.
+func ByScheduledTasks(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScheduledTasksStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -392,6 +405,13 @@ func newEventsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EventsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
+	)
+}
+func newScheduledTasksStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScheduledTasksInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, ScheduledTasksTable, ScheduledTasksPrimaryKey...),
 	)
 }
 

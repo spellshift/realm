@@ -770,6 +770,29 @@ func HasEventsWith(preds ...predicate.Event) predicate.Host {
 	})
 }
 
+// HasScheduledTasks applies the HasEdge predicate on the "scheduledTasks" edge.
+func HasScheduledTasks() predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ScheduledTasksTable, ScheduledTasksPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasScheduledTasksWith applies the HasEdge predicate on the "scheduledTasks" edge with a given conditions (other predicates).
+func HasScheduledTasksWith(preds ...predicate.ScheduledTask) predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := newScheduledTasksStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Host) predicate.Host {
 	return predicate.Host(sql.AndPredicates(predicates...))

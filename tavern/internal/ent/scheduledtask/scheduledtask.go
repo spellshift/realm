@@ -47,13 +47,11 @@ const (
 	TomeInverseTable = "tomes"
 	// TomeColumn is the table column denoting the tome relation/edge.
 	TomeColumn = "scheduled_task_tome"
-	// ScheduledHostsTable is the table that holds the scheduled_hosts relation/edge.
-	ScheduledHostsTable = "hosts"
+	// ScheduledHostsTable is the table that holds the scheduled_hosts relation/edge. The primary key declared below.
+	ScheduledHostsTable = "scheduled_task_scheduled_hosts"
 	// ScheduledHostsInverseTable is the table name for the Host entity.
 	// It exists in this package in order to avoid circular dependency with the "host" package.
 	ScheduledHostsInverseTable = "hosts"
-	// ScheduledHostsColumn is the table column denoting the scheduled_hosts relation/edge.
-	ScheduledHostsColumn = "scheduled_task_scheduled_hosts"
 	// QuestsTable is the table that holds the quests relation/edge.
 	QuestsTable = "quests"
 	// QuestsInverseTable is the table name for the Quest entity.
@@ -82,6 +80,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"scheduled_task_tome",
 }
+
+var (
+	// ScheduledHostsPrimaryKey and ScheduledHostsColumn2 are the table columns denoting the
+	// primary key for the scheduled_hosts relation (M2M).
+	ScheduledHostsPrimaryKey = []string{"scheduled_task_id", "host_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -217,7 +221,7 @@ func newScheduledHostsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScheduledHostsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ScheduledHostsTable, ScheduledHostsColumn),
+		sqlgraph.Edge(sqlgraph.M2M, false, ScheduledHostsTable, ScheduledHostsPrimaryKey...),
 	)
 }
 func newQuestsStep() *sqlgraph.Step {

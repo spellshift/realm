@@ -359,10 +359,10 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if stu.mutation.ScheduledHostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
@@ -372,10 +372,10 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if nodes := stu.mutation.RemovedScheduledHostsIDs(); len(nodes) > 0 && !stu.mutation.ScheduledHostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
@@ -388,10 +388,10 @@ func (stu *ScheduledTaskUpdate) sqlSave(ctx context.Context) (n int, err error) 
 	}
 	if nodes := stu.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
@@ -825,10 +825,10 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 	}
 	if stuo.mutation.ScheduledHostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
@@ -838,10 +838,10 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 	}
 	if nodes := stuo.mutation.RemovedScheduledHostsIDs(); len(nodes) > 0 && !stuo.mutation.ScheduledHostsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
@@ -854,10 +854,10 @@ func (stuo *ScheduledTaskUpdateOne) sqlSave(ctx context.Context) (_node *Schedul
 	}
 	if nodes := stuo.mutation.ScheduledHostsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
+			Rel:     sqlgraph.M2M,
 			Inverse: false,
 			Table:   scheduledtask.ScheduledHostsTable,
-			Columns: []string{scheduledtask.ScheduledHostsColumn},
+			Columns: scheduledtask.ScheduledHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),

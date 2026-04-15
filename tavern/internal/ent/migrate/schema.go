@@ -256,21 +256,12 @@ var (
 		{Name: "platform", Type: field.TypeEnum, Enums: []string{"PLATFORM_BSD", "PLATFORM_LINUX", "PLATFORM_MACOS", "PLATFORM_UNSPECIFIED", "PLATFORM_WINDOWS"}},
 		{Name: "last_seen_at", Type: field.TypeTime, Nullable: true},
 		{Name: "next_seen_at", Type: field.TypeTime, Nullable: true},
-		{Name: "scheduled_task_scheduled_hosts", Type: field.TypeInt, Nullable: true},
 	}
 	// HostsTable holds the schema information for the "hosts" table.
 	HostsTable = &schema.Table{
 		Name:       "hosts",
 		Columns:    HostsColumns,
 		PrimaryKey: []*schema.Column{HostsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "hosts_scheduled_tasks_scheduled_hosts",
-				Columns:    []*schema.Column{HostsColumns[10]},
-				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
 	}
 	// HostCredentialsColumns holds the columns for the "host_credentials" table.
 	HostCredentialsColumns = []*schema.Column{
@@ -925,6 +916,31 @@ var (
 			},
 		},
 	}
+	// ScheduledTaskScheduledHostsColumns holds the columns for the "scheduled_task_scheduled_hosts" table.
+	ScheduledTaskScheduledHostsColumns = []*schema.Column{
+		{Name: "scheduled_task_id", Type: field.TypeInt},
+		{Name: "host_id", Type: field.TypeInt},
+	}
+	// ScheduledTaskScheduledHostsTable holds the schema information for the "scheduled_task_scheduled_hosts" table.
+	ScheduledTaskScheduledHostsTable = &schema.Table{
+		Name:       "scheduled_task_scheduled_hosts",
+		Columns:    ScheduledTaskScheduledHostsColumns,
+		PrimaryKey: []*schema.Column{ScheduledTaskScheduledHostsColumns[0], ScheduledTaskScheduledHostsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "scheduled_task_scheduled_hosts_scheduled_task_id",
+				Columns:    []*schema.Column{ScheduledTaskScheduledHostsColumns[0]},
+				RefColumns: []*schema.Column{ScheduledTasksColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "scheduled_task_scheduled_hosts_host_id",
+				Columns:    []*schema.Column{ScheduledTaskScheduledHostsColumns[1]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ShellActiveUsersColumns holds the columns for the "shell_active_users" table.
 	ShellActiveUsersColumns = []*schema.Column{
 		{Name: "shell_id", Type: field.TypeInt},
@@ -1030,6 +1046,7 @@ var (
 		TomesTable,
 		UsersTable,
 		HostTagsTable,
+		ScheduledTaskScheduledHostsTable,
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
@@ -1071,7 +1088,6 @@ func init() {
 	EventsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
-	HostsTable.ForeignKeys[0].RefTable = ScheduledTasksTable
 	HostsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -1170,6 +1186,8 @@ func init() {
 	}
 	HostTagsTable.ForeignKeys[0].RefTable = HostsTable
 	HostTagsTable.ForeignKeys[1].RefTable = TagsTable
+	ScheduledTaskScheduledHostsTable.ForeignKeys[0].RefTable = ScheduledTasksTable
+	ScheduledTaskScheduledHostsTable.ForeignKeys[1].RefTable = HostsTable
 	ShellActiveUsersTable.ForeignKeys[0].RefTable = ShellsTable
 	ShellActiveUsersTable.ForeignKeys[1].RefTable = UsersTable
 	TomeAssetsTable.ForeignKeys[0].RefTable = TomesTable

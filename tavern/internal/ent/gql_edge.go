@@ -457,6 +457,27 @@ func (h *Host) Events(
 	return h.QueryEvents().Paginate(ctx, after, first, before, last, opts...)
 }
 
+func (h *Host) ScheduledTasks(
+	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy []*ScheduledTaskOrder, where *ScheduledTaskWhereInput,
+) (*ScheduledTaskConnection, error) {
+	opts := []ScheduledTaskPaginateOption{
+		WithScheduledTaskOrder(orderBy),
+		WithScheduledTaskFilter(where.Filter),
+	}
+	alias := graphql.GetFieldContext(ctx).Field.Alias
+	totalCount, hasTotalCount := h.Edges.totalCount[8][alias]
+	if nodes, err := h.NamedScheduledTasks(alias); err == nil || hasTotalCount {
+		pager, err := newScheduledTaskPager(opts, last != nil)
+		if err != nil {
+			return nil, err
+		}
+		conn := &ScheduledTaskConnection{Edges: []*ScheduledTaskEdge{}, TotalCount: totalCount}
+		conn.build(nodes, pager, after, first, before, last)
+		return conn, nil
+	}
+	return h.QueryScheduledTasks().Paginate(ctx, after, first, before, last, opts...)
+}
+
 func (hc *HostCredential) Host(ctx context.Context) (*Host, error) {
 	result, err := hc.Edges.HostOrErr()
 	if IsNotLoaded(err) {

@@ -295,6 +295,7 @@ type ComplexityRoot struct {
 		Platform       func(childComplexity int) int
 		PrimaryIP      func(childComplexity int) int
 		Processes      func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostProcessOrder, where *ent.HostProcessWhereInput) int
+		ScheduledTasks func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScheduledTaskOrder, where *ent.ScheduledTaskWhereInput) int
 		Screenshots    func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ScreenshotOrder, where *ent.ScreenshotWhereInput) int
 		Tags           func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.TagOrder, where *ent.TagWhereInput) int
 	}
@@ -2069,6 +2070,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Host.Processes(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.HostProcessOrder), args["where"].(*ent.HostProcessWhereInput)), true
+
+	case "Host.scheduledtasks":
+		if e.ComplexityRoot.Host.ScheduledTasks == nil {
+			break
+		}
+
+		args, err := ec.field_Host_scheduledtasks_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Host.ScheduledTasks(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.ScheduledTaskOrder), args["where"].(*ent.ScheduledTaskWhereInput)), true
 
 	case "Host.screenshots":
 		if e.ComplexityRoot.Host.Screenshots == nil {
@@ -7813,6 +7826,37 @@ type Host implements Node {
     """
     where: EventWhereInput
   ): EventConnection!
+  scheduledtasks(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for ScheduledTasks returned from the connection.
+    """
+    orderBy: [ScheduledTaskOrder!]
+
+    """
+    Filtering options for ScheduledTasks returned from the connection.
+    """
+    where: ScheduledTaskWhereInput
+  ): ScheduledTaskConnection! @goField(name: "ScheduledTasks", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -8867,6 +8911,11 @@ input HostWhereInput {
   """
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
+  """
+  scheduledTasks edge predicates
+  """
+  hasScheduledTasks: Boolean
+  hasScheduledTasksWith: [ScheduledTaskWhereInput!]
 }
 type Link implements Node {
   id: ID!

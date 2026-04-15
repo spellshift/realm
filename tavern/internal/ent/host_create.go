@@ -18,6 +18,7 @@ import (
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
+	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/user"
@@ -259,6 +260,21 @@ func (hc *HostCreate) AddEvents(e ...*Event) *HostCreate {
 		ids[i] = e[i].ID
 	}
 	return hc.AddEventIDs(ids...)
+}
+
+// AddScheduledTaskIDs adds the "scheduledTasks" edge to the ScheduledTask entity by IDs.
+func (hc *HostCreate) AddScheduledTaskIDs(ids ...int) *HostCreate {
+	hc.mutation.AddScheduledTaskIDs(ids...)
+	return hc
+}
+
+// AddScheduledTasks adds the "scheduledTasks" edges to the ScheduledTask entity.
+func (hc *HostCreate) AddScheduledTasks(s ...*ScheduledTask) *HostCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return hc.AddScheduledTaskIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
@@ -519,6 +535,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.ScheduledTasksIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.ScheduledTasksTable,
+			Columns: host.ScheduledTasksPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scheduledtask.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

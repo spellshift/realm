@@ -8071,46 +8071,49 @@ func (m *EventMutation) ResetEdge(name string) error {
 // HostMutation represents an operation that mutates the Host nodes in the graph.
 type HostMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *int
-	created_at         *time.Time
-	last_modified_at   *time.Time
-	identifier         *string
-	name               *string
-	primary_ip         *string
-	external_ip        *string
-	platform           *c2pb.Host_Platform
-	last_seen_at       *time.Time
-	next_seen_at       *time.Time
-	clearedFields      map[string]struct{}
-	tags               map[int]struct{}
-	removedtags        map[int]struct{}
-	clearedtags        bool
-	beacons            map[int]struct{}
-	removedbeacons     map[int]struct{}
-	clearedbeacons     bool
-	files              map[int]struct{}
-	removedfiles       map[int]struct{}
-	clearedfiles       bool
-	processes          map[int]struct{}
-	removedprocesses   map[int]struct{}
-	clearedprocesses   bool
-	credentials        map[int]struct{}
-	removedcredentials map[int]struct{}
-	clearedcredentials bool
-	screenshots        map[int]struct{}
-	removedscreenshots map[int]struct{}
-	clearedscreenshots bool
-	favoritedBy        map[int]struct{}
-	removedfavoritedBy map[int]struct{}
-	clearedfavoritedBy bool
-	events             map[int]struct{}
-	removedevents      map[int]struct{}
-	clearedevents      bool
-	done               bool
-	oldValue           func(context.Context) (*Host, error)
-	predicates         []predicate.Host
+	op                    Op
+	typ                   string
+	id                    *int
+	created_at            *time.Time
+	last_modified_at      *time.Time
+	identifier            *string
+	name                  *string
+	primary_ip            *string
+	external_ip           *string
+	platform              *c2pb.Host_Platform
+	last_seen_at          *time.Time
+	next_seen_at          *time.Time
+	clearedFields         map[string]struct{}
+	tags                  map[int]struct{}
+	removedtags           map[int]struct{}
+	clearedtags           bool
+	beacons               map[int]struct{}
+	removedbeacons        map[int]struct{}
+	clearedbeacons        bool
+	files                 map[int]struct{}
+	removedfiles          map[int]struct{}
+	clearedfiles          bool
+	processes             map[int]struct{}
+	removedprocesses      map[int]struct{}
+	clearedprocesses      bool
+	credentials           map[int]struct{}
+	removedcredentials    map[int]struct{}
+	clearedcredentials    bool
+	screenshots           map[int]struct{}
+	removedscreenshots    map[int]struct{}
+	clearedscreenshots    bool
+	favoritedBy           map[int]struct{}
+	removedfavoritedBy    map[int]struct{}
+	clearedfavoritedBy    bool
+	events                map[int]struct{}
+	removedevents         map[int]struct{}
+	clearedevents         bool
+	scheduledTasks        map[int]struct{}
+	removedscheduledTasks map[int]struct{}
+	clearedscheduledTasks bool
+	done                  bool
+	oldValue              func(context.Context) (*Host, error)
+	predicates            []predicate.Host
 }
 
 var _ ent.Mutation = (*HostMutation)(nil)
@@ -9032,6 +9035,60 @@ func (m *HostMutation) ResetEvents() {
 	m.removedevents = nil
 }
 
+// AddScheduledTaskIDs adds the "scheduledTasks" edge to the ScheduledTask entity by ids.
+func (m *HostMutation) AddScheduledTaskIDs(ids ...int) {
+	if m.scheduledTasks == nil {
+		m.scheduledTasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.scheduledTasks[ids[i]] = struct{}{}
+	}
+}
+
+// ClearScheduledTasks clears the "scheduledTasks" edge to the ScheduledTask entity.
+func (m *HostMutation) ClearScheduledTasks() {
+	m.clearedscheduledTasks = true
+}
+
+// ScheduledTasksCleared reports if the "scheduledTasks" edge to the ScheduledTask entity was cleared.
+func (m *HostMutation) ScheduledTasksCleared() bool {
+	return m.clearedscheduledTasks
+}
+
+// RemoveScheduledTaskIDs removes the "scheduledTasks" edge to the ScheduledTask entity by IDs.
+func (m *HostMutation) RemoveScheduledTaskIDs(ids ...int) {
+	if m.removedscheduledTasks == nil {
+		m.removedscheduledTasks = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.scheduledTasks, ids[i])
+		m.removedscheduledTasks[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedScheduledTasks returns the removed IDs of the "scheduledTasks" edge to the ScheduledTask entity.
+func (m *HostMutation) RemovedScheduledTasksIDs() (ids []int) {
+	for id := range m.removedscheduledTasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ScheduledTasksIDs returns the "scheduledTasks" edge IDs in the mutation.
+func (m *HostMutation) ScheduledTasksIDs() (ids []int) {
+	for id := range m.scheduledTasks {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetScheduledTasks resets all changes to the "scheduledTasks" edge.
+func (m *HostMutation) ResetScheduledTasks() {
+	m.scheduledTasks = nil
+	m.clearedscheduledTasks = false
+	m.removedscheduledTasks = nil
+}
+
 // Where appends a list predicates to the HostMutation builder.
 func (m *HostMutation) Where(ps ...predicate.Host) {
 	m.predicates = append(m.predicates, ps...)
@@ -9334,7 +9391,7 @@ func (m *HostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *HostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.tags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9358,6 +9415,9 @@ func (m *HostMutation) AddedEdges() []string {
 	}
 	if m.events != nil {
 		edges = append(edges, host.EdgeEvents)
+	}
+	if m.scheduledTasks != nil {
+		edges = append(edges, host.EdgeScheduledTasks)
 	}
 	return edges
 }
@@ -9414,13 +9474,19 @@ func (m *HostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScheduledTasks:
+		ids := make([]ent.Value, 0, len(m.scheduledTasks))
+		for id := range m.scheduledTasks {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *HostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedtags != nil {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9444,6 +9510,9 @@ func (m *HostMutation) RemovedEdges() []string {
 	}
 	if m.removedevents != nil {
 		edges = append(edges, host.EdgeEvents)
+	}
+	if m.removedscheduledTasks != nil {
+		edges = append(edges, host.EdgeScheduledTasks)
 	}
 	return edges
 }
@@ -9500,13 +9569,19 @@ func (m *HostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case host.EdgeScheduledTasks:
+		ids := make([]ent.Value, 0, len(m.removedscheduledTasks))
+		for id := range m.removedscheduledTasks {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *HostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedtags {
 		edges = append(edges, host.EdgeTags)
 	}
@@ -9531,6 +9606,9 @@ func (m *HostMutation) ClearedEdges() []string {
 	if m.clearedevents {
 		edges = append(edges, host.EdgeEvents)
 	}
+	if m.clearedscheduledTasks {
+		edges = append(edges, host.EdgeScheduledTasks)
+	}
 	return edges
 }
 
@@ -9554,6 +9632,8 @@ func (m *HostMutation) EdgeCleared(name string) bool {
 		return m.clearedfavoritedBy
 	case host.EdgeEvents:
 		return m.clearedevents
+	case host.EdgeScheduledTasks:
+		return m.clearedscheduledTasks
 	}
 	return false
 }
@@ -9593,6 +9673,9 @@ func (m *HostMutation) ResetEdge(name string) error {
 		return nil
 	case host.EdgeEvents:
 		m.ResetEvents()
+		return nil
+	case host.EdgeScheduledTasks:
+		m.ResetScheduledTasks()
 		return nil
 	}
 	return fmt.Errorf("unknown Host edge %s", name)

@@ -788,6 +788,8 @@ func (ec *executionContext) fieldContext_Mutation_updateHost(ctx context.Context
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -885,6 +887,8 @@ func (ec *executionContext) fieldContext_Mutation_favoriteHost(ctx context.Conte
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},
@@ -982,6 +986,8 @@ func (ec *executionContext) fieldContext_Mutation_unfavoriteHost(ctx context.Con
 				return ec.fieldContext_Host_favoritedby(ctx, field)
 			case "events":
 				return ec.fieldContext_Host_events(ctx, field)
+			case "scheduledtasks":
+				return ec.fieldContext_Host_scheduledtasks(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
 		},

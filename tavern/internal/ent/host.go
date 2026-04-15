@@ -38,9 +38,8 @@ type Host struct {
 	NextSeenAt time.Time `json:"next_seen_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the HostQuery when eager-loading is set.
-	Edges                          HostEdges `json:"edges"`
-	scheduled_task_scheduled_hosts *int
-	selectValues                   sql.SelectValues
+	Edges        HostEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // HostEdges holds the relations/edges for other nodes in the graph.
@@ -61,20 +60,23 @@ type HostEdges struct {
 	FavoritedBy []*User `json:"favoritedBy,omitempty"`
 	// Events associated with this host.
 	Events []*Event `json:"events,omitempty"`
+	// Scheduled tasks configured to run against this host.
+	ScheduledTasks []*ScheduledTask `json:"scheduledTasks,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [8]bool
+	loadedTypes [9]bool
 	// totalCount holds the count of the edges above.
-	totalCount [8]map[string]int
+	totalCount [9]map[string]int
 
-	namedTags        map[string][]*Tag
-	namedBeacons     map[string][]*Beacon
-	namedFiles       map[string][]*HostFile
-	namedProcesses   map[string][]*HostProcess
-	namedCredentials map[string][]*HostCredential
-	namedScreenshots map[string][]*Screenshot
-	namedFavoritedBy map[string][]*User
-	namedEvents      map[string][]*Event
+	namedTags           map[string][]*Tag
+	namedBeacons        map[string][]*Beacon
+	namedFiles          map[string][]*HostFile
+	namedProcesses      map[string][]*HostProcess
+	namedCredentials    map[string][]*HostCredential
+	namedScreenshots    map[string][]*Screenshot
+	namedFavoritedBy    map[string][]*User
+	namedEvents         map[string][]*Event
+	namedScheduledTasks map[string][]*ScheduledTask
 }
 
 // TagsOrErr returns the Tags value or an error if the edge
@@ -149,6 +151,15 @@ func (e HostEdges) EventsOrErr() ([]*Event, error) {
 	return nil, &NotLoadedError{edge: "events"}
 }
 
+// ScheduledTasksOrErr returns the ScheduledTasks value or an error if the edge
+// was not loaded in eager-loading.
+func (e HostEdges) ScheduledTasksOrErr() ([]*ScheduledTask, error) {
+	if e.loadedTypes[8] {
+		return e.ScheduledTasks, nil
+	}
+	return nil, &NotLoadedError{edge: "scheduledTasks"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Host) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -162,8 +173,6 @@ func (*Host) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case host.FieldCreatedAt, host.FieldLastModifiedAt, host.FieldLastSeenAt, host.FieldNextSeenAt:
 			values[i] = new(sql.NullTime)
-		case host.ForeignKeys[0]: // scheduled_task_scheduled_hosts
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -239,13 +248,6 @@ func (h *Host) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				h.NextSeenAt = value.Time
 			}
-		case host.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field scheduled_task_scheduled_hosts", value)
-			} else if value.Valid {
-				h.scheduled_task_scheduled_hosts = new(int)
-				*h.scheduled_task_scheduled_hosts = int(value.Int64)
-			}
 		default:
 			h.selectValues.Set(columns[i], values[i])
 		}
@@ -297,6 +299,11 @@ func (h *Host) QueryFavoritedBy() *UserQuery {
 // QueryEvents queries the "events" edge of the Host entity.
 func (h *Host) QueryEvents() *EventQuery {
 	return NewHostClient(h.config).QueryEvents(h)
+}
+
+// QueryScheduledTasks queries the "scheduledTasks" edge of the Host entity.
+func (h *Host) QueryScheduledTasks() *ScheduledTaskQuery {
+	return NewHostClient(h.config).QueryScheduledTasks(h)
 }
 
 // Update returns a builder for updating this Host.
@@ -541,6 +548,30 @@ func (h *Host) appendNamedEvents(name string, edges ...*Event) {
 		h.Edges.namedEvents[name] = []*Event{}
 	} else {
 		h.Edges.namedEvents[name] = append(h.Edges.namedEvents[name], edges...)
+	}
+}
+
+// NamedScheduledTasks returns the ScheduledTasks named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (h *Host) NamedScheduledTasks(name string) ([]*ScheduledTask, error) {
+	if h.Edges.namedScheduledTasks == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := h.Edges.namedScheduledTasks[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (h *Host) appendNamedScheduledTasks(name string, edges ...*ScheduledTask) {
+	if h.Edges.namedScheduledTasks == nil {
+		h.Edges.namedScheduledTasks = make(map[string][]*ScheduledTask)
+	}
+	if len(edges) == 0 {
+		h.Edges.namedScheduledTasks[name] = []*ScheduledTask{}
+	} else {
+		h.Edges.namedScheduledTasks[name] = append(h.Edges.namedScheduledTasks[name], edges...)
 	}
 }
 

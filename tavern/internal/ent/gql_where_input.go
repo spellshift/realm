@@ -4294,6 +4294,10 @@ type HostWhereInput struct {
 	// "events" edge predicates.
 	HasEvents     *bool              `json:"hasEvents,omitempty"`
 	HasEventsWith []*EventWhereInput `json:"hasEventsWith,omitempty"`
+
+	// "scheduledTasks" edge predicates.
+	HasScheduledTasks     *bool                      `json:"hasScheduledTasks,omitempty"`
+	HasScheduledTasksWith []*ScheduledTaskWhereInput `json:"hasScheduledTasksWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -4829,6 +4833,24 @@ func (i *HostWhereInput) P() (predicate.Host, error) {
 			with = append(with, p)
 		}
 		predicates = append(predicates, host.HasEventsWith(with...))
+	}
+	if i.HasScheduledTasks != nil {
+		p := host.HasScheduledTasks()
+		if !*i.HasScheduledTasks {
+			p = host.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasScheduledTasksWith) > 0 {
+		with := make([]predicate.ScheduledTask, 0, len(i.HasScheduledTasksWith))
+		for _, w := range i.HasScheduledTasksWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasScheduledTasksWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, host.HasScheduledTasksWith(with...))
 	}
 	switch len(predicates) {
 	case 0:
