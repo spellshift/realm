@@ -8331,6 +8331,7 @@ Properties by which Host connections can be ordered.
 enum HostOrderField {
   CREATED_AT
   LAST_MODIFIED_AT
+  NAME
   LAST_SEEN_AT
   NEXT_SEEN_AT
 }
