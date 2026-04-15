@@ -1,6 +1,6 @@
 def cat(path):
     if "*" not in path and not file.is_file(path):
-        eprint(f"Error: Path is not a file '{path}'")
+        eprint(f"Error: Path must be a file, not a directory: '{path}'")
         return
 
     res = file.read(path)
