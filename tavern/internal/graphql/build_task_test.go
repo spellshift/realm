@@ -20,7 +20,7 @@ import (
 
 func TestCreateBuildTask(t *testing.T) {
 	ctx := context.Background()
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	git := tomes.NewGitImporter(graph)
