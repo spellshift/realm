@@ -1,4 +1,8 @@
 def cat(path):
+    if "*" not in path and not file.is_file(path):
+        eprint(f"Error: Invalid Path '{path}'")
+        return
+
     res = file.read(path)
     print(res)
     return
