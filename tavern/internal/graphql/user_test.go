@@ -21,7 +21,7 @@ import (
 func TestUserMutations(t *testing.T) {
 	// Setup
 	ctx := context.Background()
-	graph := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	// Initialize Git Importer

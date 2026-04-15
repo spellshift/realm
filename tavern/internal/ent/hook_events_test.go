@@ -15,7 +15,7 @@ import (
 )
 
 func TestHookDeriveNotifications(t *testing.T) {
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.OpenTempDB(t)
 	defer client.Close()
 
 	// Add the hooks since enttest.Open doesn't by default

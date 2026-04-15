@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"database/sql"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
@@ -20,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/auth"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/enttest"
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
@@ -49,12 +49,7 @@ func SetupTestEnv(t *testing.T) *TestEnv {
 	ctx := context.Background()
 
 	// 1. Setup DB
-	dsn := fmt.Sprintf("file:ent_%s?mode=memory&cache=shared&_fk=1&_busy_timeout=30000", uuid.NewString())
-
-	db, err := sql.Open("sqlite3", dsn)
-	require.NoError(t, err)
-	db.SetMaxOpenConns(1)
-
+	db := enttest.NewDB(t)
 	drv := entsql.OpenDB("sqlite3", db)
 	entClient := ent.NewClient(ent.Driver(drv))
 
