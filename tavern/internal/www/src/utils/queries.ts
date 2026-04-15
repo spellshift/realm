@@ -55,6 +55,7 @@ query GetSearchFilters($groupTag: TagWhereInput, $serviceTag: TagWhereInput){
                     id
                     name
                     primaryIP
+                    externalIP
                 }
             }
         }

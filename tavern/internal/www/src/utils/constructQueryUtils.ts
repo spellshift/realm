@@ -38,6 +38,7 @@ export function constructHostFieldQuery(
   platforms: Array<string>,
   hosts: Array<string>,
   primaryIP: Array<string>,
+  externalIP: Array<string>,
   onlineOfflineStatus: Array<string>,
   currentTimestamp?: Date
 ) {
@@ -45,7 +46,7 @@ export function constructHostFieldQuery(
 
   const hostStatusFilter = constructHostStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-  if (hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && !hostStatusFilter) {
+  if (hosts.length < 1 && !tagQuery && platforms.length < 1 && primaryIP.length < 1 && externalIP.length < 1 && !hostStatusFilter) {
     return null;
   }
 
@@ -56,6 +57,7 @@ export function constructHostFieldQuery(
       ...(hosts.length > 0) && { "nameIn": hosts },
       ...(platforms.length > 0) && { "platformIn": platforms },
       ...(primaryIP.length > 0) && { "primaryIPIn": primaryIP },
+      ...(externalIP.length > 0) && { "externalIPIn": externalIP },
       ...(hostStatusFilter && hostStatusFilter)
     }
   }
@@ -65,11 +67,11 @@ export function constructBeaconFilterQuery(
   beaconFields: Array<FilterBarOption>,
   currentTimestamp?: Date
 ) {
-  const { beacon: beacons, group: groups, service: services, platform: platforms, host: hosts, principal, primaryIP, transport, onlineOfflineStatus } = getBeaconFilterNameByTypes(beaconFields);
+  const { beacon: beacons, group: groups, service: services, platform: platforms, host: hosts, principal, primaryIP, externalIP, transport, onlineOfflineStatus } = getBeaconFilterNameByTypes(beaconFields);
 
   const beaconStatusFilter = constructBeaconStatusFilter(onlineOfflineStatus, currentTimestamp);
 
-  const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, onlineOfflineStatus, currentTimestamp);
+  const hostFiledQuery = constructHostFieldQuery(groups, services, platforms, hosts, primaryIP, externalIP, onlineOfflineStatus, currentTimestamp);
 
   if (beacons.length < 1 && principal.length < 1 && transport.length < 1 && !beaconStatusFilter && !hostFiledQuery) {
     return null;

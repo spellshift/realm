@@ -103,6 +103,7 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
     "platform": Array<string>,
     "principal": Array<string>,
     "primaryIP": Array<string>,
+    "externalIP": Array<string>,
     "transport": Array<string>,
     "onlineOfflineStatus": Array<string>
 } {
@@ -128,6 +129,9 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
         else if (currentValue.kind === "primaryIP"){
             accumulator.primaryIP.push(currentValue.name);
         }
+        else if (currentValue.kind === "externalIP"){
+            accumulator.externalIP.push(currentValue.name);
+        }
         else if (currentValue.kind === "transport"){
             accumulator.transport.push(currentValue.name);
         }
@@ -144,6 +148,7 @@ export function getBeaconFilterNameByTypes(typeFilters: Array<FilterBarOption>):
             "platform": [],
             "principal": [],
             "primaryIP": [],
+            "externalIP": [],
             "transport": [],
             "onlineOfflineStatus": []
         });
