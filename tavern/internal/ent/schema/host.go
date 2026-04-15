@@ -120,6 +120,14 @@ func (Host) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Events associated with this host."),
+		edge.From("scheduledTasks", ScheduledTask.Type).
+			Ref("scheduled_hosts").
+			Annotations(
+				entgql.Skip(entgql.SkipMutationCreateInput, entgql.SkipMutationUpdateInput),
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Scheduled tasks configured to run against this host."),
 	}
 }
 
