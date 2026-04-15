@@ -8370,7 +8370,7 @@ type HostProcess implements Node {
   """
   The user the process is running as.
   """
-  principal: String!
+  principal: String
   """
   The path to the process executable.
   """
@@ -8574,6 +8574,8 @@ input HostProcessWhereInput {
   principalContains: String
   principalHasPrefix: String
   principalHasSuffix: String
+  principalIsNil: Boolean
+  principalNotNil: Boolean
   principalEqualFold: String
   principalContainsFold: String
   """

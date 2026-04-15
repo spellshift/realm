@@ -53,7 +53,7 @@ export function constructHostFieldQuery(
   return {
     "hasHostWith": {
       ...(tagQuery && { "and": constructTagFieldsQuery(groups, services) }),
-      ...(hosts.length > 0) && { "nameIn": hosts },
+      ...(hosts.length > 0) && { "idIn": hosts },
       ...(platforms.length > 0) && { "platformIn": platforms },
       ...(primaryIP.length > 0) && { "primaryIPIn": primaryIP },
       ...(hostStatusFilter && hostStatusFilter)
