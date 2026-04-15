@@ -12,7 +12,11 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
     let mut dict_res = BTreeMap::new();
     let mut dict_user: BTreeMap<Value, Value> = BTreeMap::new();
 
-    let sys = System::new_all();
+    let mut sys = System::new();
+    sys.refresh_processes();
+    #[cfg(not(target_os = "windows"))]
+    sys.refresh_users_list();
+
     let pid = process::id() as usize;
     if let Some(process) = sys.process(Pid::from(pid)) {
         let uid = match process.user_id() {
@@ -25,31 +29,50 @@ pub fn get_user() -> Result<BTreeMap<String, Value>> {
             Value::String(uid.to_string()),
         );
 
+        dict_user.insert(
+            Value::String("name".to_string()),
+            Value::String(whoami::username()),
+        );
+
+        let gid = process
+            .group_id()
+            .map(|gid| gid.to_string())
+            .unwrap_or_default();
+        dict_user.insert(Value::String("gid".to_string()), Value::String(gid));
+
+        dict_user.insert(
+            Value::String("groups".to_string()),
+            Value::List(Arc::new(RwLock::new(Vec::new()))),
+        );
+
         #[cfg(not(target_os = "windows"))]
         dict_user.insert(Value::String("uid".to_string()), Value::Int(**uid as i64));
 
-        let user = match sys.get_user_by_id(uid) {
-            Some(user) => user,
-            None => return Err(anyhow::anyhow!("Failed to get user")),
-        };
-        dict_user.insert(
-            Value::String("name".to_string()),
-            Value::String(user.name().to_string()),
-        );
-        dict_user.insert(
-            Value::String("gid".to_string()),
-            Value::Int(*user.group_id() as i64),
-        );
+        #[cfg(not(target_os = "windows"))]
+        {
+            let user = match sys.get_user_by_id(uid) {
+                Some(user) => user,
+                None => return Err(anyhow::anyhow!("Failed to get user")),
+            };
+            dict_user.insert(
+                Value::String("name".to_string()),
+                Value::String(user.name().to_string()),
+            );
+            dict_user.insert(
+                Value::String("gid".to_string()),
+                Value::Int(*user.group_id() as i64),
+            );
 
-        let groups: Vec<Value> = user
-            .groups()
-            .iter()
-            .map(|g| Value::String(g.clone()))
-            .collect();
-        dict_user.insert(
-            Value::String("groups".to_string()),
-            Value::List(Arc::new(RwLock::new(groups))),
-        );
+            let groups: Vec<Value> = user
+                .groups()
+                .iter()
+                .map(|g| Value::String(g.clone()))
+                .collect();
+            dict_user.insert(
+                Value::String("groups".to_string()),
+                Value::List(Arc::new(RwLock::new(groups))),
+            );
+        }
 
         #[cfg(not(target_os = "windows"))]
         {

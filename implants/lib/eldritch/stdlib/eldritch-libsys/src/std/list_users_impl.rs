@@ -5,55 +5,92 @@ use alloc::vec::Vec;
 use anyhow::Result;
 use eldritch_core::Value;
 use spin::RwLock;
+#[cfg(target_os = "windows")]
+use std::sync::mpsc;
+#[cfg(target_os = "windows")]
+use std::thread;
+#[cfg(target_os = "windows")]
+use std::time::Duration;
 use sysinfo::{System, SystemExt, UserExt};
 
-pub fn list_users() -> Result<Vec<BTreeMap<String, Value>>> {
-    let mut users_list = Vec::new();
-    let mut sys = System::new();
-    sys.refresh_users_list();
+#[cfg(target_os = "windows")]
+const WINDOWS_USERS_REFRESH_TIMEOUT: Duration = Duration::from_secs(5);
 
-    for user in sys.users() {
-        let mut dict_user: BTreeMap<String, Value> = BTreeMap::new();
+fn user_to_dict(user: &sysinfo::User) -> BTreeMap<String, Value> {
+    let mut dict_user: BTreeMap<String, Value> = BTreeMap::new();
+    dict_user.insert(
+        "principal".to_string(),
+        Value::String(user.name().to_string()),
+    );
 
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, UIDs are SIDs (strings)
+        dict_user.insert("uid".to_string(), Value::String(user.id().to_string()));
+        // GIDs are also likely strings or handled differently on Windows
         dict_user.insert(
-            "principal".to_string(),
-            Value::String(user.name().to_string()),
+            "gid".to_string(),
+            Value::String(user.group_id().to_string()),
         );
-
-        #[cfg(target_os = "windows")]
-        {
-            // On Windows, UIDs are SIDs (strings)
-            dict_user.insert("uid".to_string(), Value::String(user.id().to_string()));
-            // GIDs are also likely strings or handled differently on Windows
-            dict_user.insert(
-                "gid".to_string(),
-                Value::String(user.group_id().to_string()),
-            );
-        }
-
-        #[cfg(not(target_os = "windows"))]
-        {
-            // On *nix, UIDs are usually integers wrapped in a struct
-            // sysinfo usually exposes them as &Uid, which derefs to the underlying integer type
-            dict_user.insert("uid".to_string(), Value::Int(**user.id() as i64));
-            dict_user.insert("gid".to_string(), Value::Int(*user.group_id() as i64));
-        }
-
-        let groups: Vec<Value> = user
-            .groups()
-            .iter()
-            .map(|g| Value::String(g.clone()))
-            .collect();
-
-        dict_user.insert(
-            "groups".to_string(),
-            Value::List(Arc::new(RwLock::new(groups))),
-        );
-
-        users_list.push(dict_user);
     }
 
-    Ok(users_list)
+    #[cfg(not(target_os = "windows"))]
+    {
+        // On *nix, UIDs are usually integers wrapped in a struct
+        // sysinfo usually exposes them as &Uid, which derefs to the underlying integer type
+        dict_user.insert("uid".to_string(), Value::Int(**user.id() as i64));
+        dict_user.insert("gid".to_string(), Value::Int(*user.group_id() as i64));
+    }
+
+    let groups: Vec<Value> = user
+        .groups()
+        .iter()
+        .map(|g| Value::String(g.clone()))
+        .collect();
+
+    dict_user.insert(
+        "groups".to_string(),
+        Value::List(Arc::new(RwLock::new(groups))),
+    );
+    dict_user
+}
+
+pub fn list_users() -> Result<Vec<BTreeMap<String, Value>>> {
+    #[cfg(target_os = "windows")]
+    {
+        let (tx, rx) = mpsc::channel();
+
+        thread::spawn(move || {
+            let mut users_list = Vec::new();
+            let mut sys = System::new();
+            sys.refresh_users_list();
+
+            for user in sys.users() {
+                users_list.push(user_to_dict(user));
+            }
+
+            let _ = tx.send(users_list);
+        });
+
+        return rx
+            .recv_timeout(WINDOWS_USERS_REFRESH_TIMEOUT)
+            .map_err(|err| {
+                anyhow::anyhow!("Failed to list users before timeout on Windows: {err}")
+            });
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut users_list = Vec::new();
+        let mut sys = System::new();
+        sys.refresh_users_list();
+
+        for user in sys.users() {
+            users_list.push(user_to_dict(user));
+        }
+
+        Ok(users_list)
+    }
 }
 
 #[cfg(test)]
