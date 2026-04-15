@@ -1,10 +1,10 @@
 def cat(path):
-    if file.is_file(path):
-        res = file.read(path)
-        print(res)
-    else:
-        eprint(f"Error: Invalid Path '{path}'")
+    if "*" not in path and not file.is_file(path):
+        eprint(f"Error: Path must be a file, not a directory: '{path}'")
+        return
 
+    res = file.read(path)
+    print(res)
     return
 
 time.sleep(5)
