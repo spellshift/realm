@@ -627,6 +627,34 @@ The **crypto.sha256** method calculates the SHA256 hash of the provided data.
 
 ---
 
+## DNS
+
+The `dns` library enables DNS lookups within Eldritch scripts.
+
+### dns.list
+
+`dns.list(domain: str, kind: Option<str>, nameserver: Option<str>) -> List<str>`
+
+The **dns.list** method resolves the given domain name to the specified DNS record type.
+It natively supports querying `A`, `AAAA`, `CNAME`, `TXT`, `MX`, `SOA`, `NS`, `PTR`, `AXFR`, and `SRV` records. If `kind` is not provided, it defaults to "A".
+An optional nameserver IP (e.g. "8.8.8.8") can be provided to query a specific DNS server instead of the system default.
+
+```python
+# Default to "A" records using system nameserver
+ips = dns.list("google.com")
+print(ips) # Output: ["142.251.41.14", ...]
+
+# Fetch a CNAME explicitly
+cnames = dns.list("www.google.com", kind="CNAME")
+print(cnames)
+
+# Custom nameserver
+cloudflare_ips = dns.list("google.com", nameserver="1.1.1.1")
+print(cloudflare_ips)
+```
+
+---
+
 ## File
 
 The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping.
@@ -1289,11 +1317,15 @@ The `sys` library offers general system capabilities to retrieve context about t
 
 The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
+For Imix DLLs, set `function_name` to `lib_entry`.
+
 ### sys.dll_reflect
 
 `sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
 
 The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+
+For Imix DLLs, set `function_name` to `lib_entry`.
 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
@@ -1393,13 +1425,13 @@ $> sys.get_pid()
 
 ### sys.get_reg
 
-`sys.get_reg(reghive: str, regpath: str) -> Dict`
+`sys.get_reg(path: str) -> Dict`
 
 The **sys.get_reg** method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
-$> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+$> sys.get_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
 {
     "ProgramFilesDir": "C:\\Program Files",
     "CommonFilesDir": "C:\\Program Files\\Common Files",

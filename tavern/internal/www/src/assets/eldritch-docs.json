@@ -279,6 +279,14 @@
     "signature": "crypto.sha256(data: Bytes) -> str",
     "description": "The **crypto.sha256** method calculates the SHA256 hash of the provided data.\n---"
   },
+  "dns": {
+    "signature": "dns",
+    "description": "The `dns` library enables DNS lookups within Eldritch scripts."
+  },
+  "dns.list": {
+    "signature": "dns.list(domain: str, kind: Option<str>, nameserver: Option<str>) -> List<str>",
+    "description": "The **dns.list** method resolves the given domain name to the specified DNS record type.\nIt natively supports querying `A`, `AAAA`, `CNAME`, `TXT`, `MX`, `SOA`, `NS`, `PTR`, `AXFR`, and `SRV` records. If `kind` is not provided, it defaults to \"A\".\nAn optional nameserver IP (e.g. \"8.8.8.8\") can be provided to query a specific DNS server instead of the system default.\n```python\n# Default to \"A\" records using system nameserver\nips = dns.list(\"google.com\")\nprint(ips) # Output: [\"142.251.41.14\", ...]\n# Fetch a CNAME explicitly\ncnames = dns.list(\"www.google.com\", kind=\"CNAME\")\nprint(cnames)\n# Custom nameserver\ncloudflare_ips = dns.list(\"google.com\", nameserver=\"1.1.1.1\")\nprint(cloudflare_ips)\n```\n---"
+  },
   "file": {
     "signature": "file",
     "description": "The `file` library gives you comprehensive control to interact with files and directories on the host system. It includes methods for reading, writing, moving, copying, and compressing files, as well as searching and timestomping."
@@ -553,11 +561,11 @@
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
-    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call."
+    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.\nFor Imix DLLs, set `function_name` to `lib_entry`."
   },
   "sys.dll_reflect": {
     "signature": "sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None",
-    "description": "The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
+    "description": "The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nFor Imix DLLs, set `function_name` to `lib_entry`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
   },
   "sys.exec": {
     "signature": "sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict",
@@ -580,8 +588,8 @@
     "description": "The **sys.get_pid** method returns the process ID of the current process.\nAn example is below:\n```python\n$> sys.get_pid()\n123456\n```"
   },
   "sys.get_reg": {
-    "signature": "sys.get_reg(reghive: str, regpath: str) -> Dict",
-    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\",\"SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
+    "signature": "sys.get_reg(path: str) -> Dict",
+    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
   },
   "sys.get_user": {
     "signature": "sys.get_user() -> Dict",

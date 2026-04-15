@@ -9,9 +9,10 @@ interface ShellStatusBarProps {
   isMissedCallback: boolean;
   connectionStatus: ConnectionStatus;
   connectionMessage?: string;
+  closedAt?: string;
 }
 
-const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus, connectionMessage }) => {
+const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCallback, isMissedCallback, connectionStatus, connectionMessage, closedAt }) => {
   const getConnectionIcon = () => {
     switch (connectionStatus) {
       case "connected":
@@ -48,6 +49,15 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
         <div className="flex items-center">
             {getConnectionIcon()}
         </div>
+
+        {closedAt && (
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-red-500 uppercase">Terminated</span>
+            <Tooltip label={`This shell session was closed at ${new Date(closedAt).toLocaleString()}. Input is disabled.`}>
+              <span><Info size={14} className="text-red-500" /></span>
+            </Tooltip>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {portalId ? (

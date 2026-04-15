@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -315,6 +314,10 @@ func (ec *executionContext) fieldContext_RegisterBuilderOutput_config(_ context.
 
 func (ec *executionContext) unmarshalInputBuildProfileTomeInput(ctx context.Context, obj any) (models.BuildProfileTomeInput, error) {
 	var it models.BuildProfileTomeInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -343,12 +346,15 @@ func (ec *executionContext) unmarshalInputBuildProfileTomeInput(ctx context.Cont
 			it.Params = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputBuildProfileTransportInput(ctx context.Context, obj any) (models.BuildProfileTransportInput, error) {
 	var it models.BuildProfileTransportInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -395,12 +401,15 @@ func (ec *executionContext) unmarshalInputBuildProfileTransportInput(ctx context
 			it.Extra = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, obj any) (models.ClaimTasksInput, error) {
 	var it models.ClaimTasksInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -464,12 +473,15 @@ func (ec *executionContext) unmarshalInputClaimTasksInput(ctx context.Context, o
 			it.AgentIdentifier = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Context, obj any) (models.CreateBuildProfileInput, error) {
 	var it models.CreateBuildProfileInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -540,12 +552,15 @@ func (ec *executionContext) unmarshalInputCreateBuildProfileInput(ctx context.Co
 			it.Unique = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Context, obj any) (models.CreateBuildTaskInput, error) {
 	var it models.CreateBuildTaskInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -637,12 +652,15 @@ func (ec *executionContext) unmarshalInputCreateBuildTaskInput(ctx context.Conte
 			it.Unique = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Context, obj any) (models.ImportRepositoryInput, error) {
 	var it models.ImportRepositoryInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -664,12 +682,15 @@ func (ec *executionContext) unmarshalInputImportRepositoryInput(ctx context.Cont
 			it.IncludeDirs = data
 		}
 	}
-
 	return it, nil
 }
 
 func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Context, obj any) (models.SubmitTaskResultInput, error) {
 	var it models.SubmitTaskResultInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -719,7 +740,6 @@ func (ec *executionContext) unmarshalInputSubmitTaskResultInput(ctx context.Cont
 			it.Error = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -761,10 +781,10 @@ func (ec *executionContext) _BuildProfileTome(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -812,10 +832,10 @@ func (ec *executionContext) _BuildProfileTransport(ctx context.Context, sel ast.
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -861,10 +881,10 @@ func (ec *executionContext) _RegisterBuilderOutput(ctx context.Context, sel ast.
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -893,39 +913,11 @@ func (ec *executionContext) marshalNBuildProfileTransport2realmᚗpubᚋtavern�
 }
 
 func (ec *executionContext) marshalNBuildProfileTransport2ᚕrealmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransportᚄ(ctx context.Context, sel ast.SelectionSet, v []builderpb.BuildProfileTransport) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBuildProfileTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransport(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuildProfileTransport2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTransport(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -964,39 +956,11 @@ func (ec *executionContext) marshalOBuildProfileTome2ᚕrealmᚗpubᚋtavernᚋi
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNBuildProfileTome2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTome(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBuildProfileTome2realmᚗpubᚋtavernᚋinternalᚋbuilderᚋbuilderpbᚐBuildProfileTome(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {

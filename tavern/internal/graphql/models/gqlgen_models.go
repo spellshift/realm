@@ -15,6 +15,17 @@ import (
 	"realm.pub/tavern/internal/ent/tome"
 )
 
+type BeaconTimelineBucket struct {
+	Count          int                         `json:"count"`
+	StartTimestamp time.Time                   `json:"startTimestamp"`
+	GroupByHosts   []*BeaconTimelineHostBucket `json:"groupByHosts"`
+}
+
+type BeaconTimelineHostBucket struct {
+	Host  *ent.Host `json:"host"`
+	Count int       `json:"count"`
+}
+
 // Input for a tome configuration in a build profile.
 type BuildProfileTomeInput struct {
 	// The ID of the tome to include.
@@ -105,7 +116,9 @@ type ImportRepositoryInput struct {
 }
 
 type Metrics struct {
-	QuestTimelineChart []*QuestTimelineBucket `json:"questTimelineChart"`
+	QuestTimelineChart  []*QuestTimelineBucket  `json:"questTimelineChart"`
+	BeaconTimelineChart []*BeaconTimelineBucket `json:"beaconTimelineChart"`
+	TasksByTome         []*TomeTaskMetrics      `json:"tasksByTome"`
 }
 
 type QuestTimelineBucket struct {
@@ -148,6 +161,17 @@ type TaskDiff struct {
 	Output         *string          `json:"output,omitempty"`
 	Error          *string          `json:"error,omitempty"`
 	StructuredData []StructuredData `json:"structuredData"`
+}
+
+type TomeTaskMetrics struct {
+	Tome                      *ent.Tome `json:"tome"`
+	TasksTotal                int       `json:"tasksTotal"`
+	TasksWithErrors           int       `json:"tasksWithErrors"`
+	TasksWithNoErrors         int       `json:"tasksWithNoErrors"`
+	TasksCompleteWithNoErrors int       `json:"tasksCompleteWithNoErrors"`
+	TasksPending              int       `json:"tasksPending"`
+	TasksRunning              int       `json:"tasksRunning"`
+	TasksStale                int       `json:"tasksStale"`
 }
 
 type Role string

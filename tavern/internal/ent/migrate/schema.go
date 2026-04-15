@@ -76,6 +76,28 @@ var (
 			},
 		},
 	}
+	// BeaconHistoriesColumns holds the columns for the "beacon_histories" table.
+	BeaconHistoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "latency", Type: field.TypeInt64},
+		{Name: "beacon_history_beacon", Type: field.TypeInt},
+	}
+	// BeaconHistoriesTable holds the schema information for the "beacon_histories" table.
+	BeaconHistoriesTable = &schema.Table{
+		Name:       "beacon_histories",
+		Columns:    BeaconHistoriesColumns,
+		PrimaryKey: []*schema.Column{BeaconHistoriesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "beacon_histories_beacons_beacon",
+				Columns:    []*schema.Column{BeaconHistoriesColumns[4]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// BuildProfilesColumns holds the columns for the "build_profiles" table.
 	BuildProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -181,6 +203,43 @@ var (
 				Symbol:     "device_auths_users_user",
 				Columns:    []*schema.Column{DeviceAuthsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// EventsColumns holds the columns for the "events" table.
+	EventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "timestamp", Type: field.TypeInt64},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"BEACON_LOST", "HOST_ACCESS_NEW", "HOST_ACCESS_RECOVERED", "HOST_ACCESS_LOST", "QUEST_COMPLETED"}},
+		{Name: "beacon_events", Type: field.TypeInt, Nullable: true},
+		{Name: "host_events", Type: field.TypeInt, Nullable: true},
+		{Name: "quest_events", Type: field.TypeInt, Nullable: true},
+	}
+	// EventsTable holds the schema information for the "events" table.
+	EventsTable = &schema.Table{
+		Name:       "events",
+		Columns:    EventsColumns,
+		PrimaryKey: []*schema.Column{EventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "events_beacons_events",
+				Columns:    []*schema.Column{EventsColumns[5]},
+				RefColumns: []*schema.Column{BeaconsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_hosts_events",
+				Columns:    []*schema.Column{EventsColumns[6]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "events_quests_events",
+				Columns:    []*schema.Column{EventsColumns[7]},
+				RefColumns: []*schema.Column{QuestsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -310,7 +369,7 @@ var (
 		{Name: "pid", Type: field.TypeUint64},
 		{Name: "ppid", Type: field.TypeUint64},
 		{Name: "name", Type: field.TypeString},
-		{Name: "principal", Type: field.TypeString},
+		{Name: "principal", Type: field.TypeString, Nullable: true},
 		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "cmd", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "env", Type: field.TypeString, Nullable: true},
@@ -383,6 +442,37 @@ var (
 				Columns:    []*schema.Column{LinksColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// NotificationsColumns holds the columns for the "notifications" table.
+	NotificationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "priority", Type: field.TypeEnum, Enums: []string{"Urgent", "High", "Medium", "Low"}, Default: "Low"},
+		{Name: "read", Type: field.TypeBool, Default: false},
+		{Name: "archived", Type: field.TypeBool, Default: false},
+		{Name: "notification_user", Type: field.TypeInt},
+		{Name: "notification_event", Type: field.TypeInt},
+	}
+	// NotificationsTable holds the schema information for the "notifications" table.
+	NotificationsTable = &schema.Table{
+		Name:       "notifications",
+		Columns:    NotificationsColumns,
+		PrimaryKey: []*schema.Column{NotificationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "notifications_users_user",
+				Columns:    []*schema.Column{NotificationsColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "notifications_events_event",
+				Columns:    []*schema.Column{NotificationsColumns[7]},
+				RefColumns: []*schema.Column{EventsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
@@ -622,6 +712,47 @@ var (
 				Columns:    []*schema.Column{ShellsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ShellPivotsColumns holds the columns for the "shell_pivots" table.
+	ShellPivotsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_modified_at", Type: field.TypeTime},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "stream_id", Type: field.TypeString},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"ssh"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "port", Type: field.TypeInt},
+		{Name: "data", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},
+		{Name: "shell_pivot_shell", Type: field.TypeInt, Nullable: true},
+		{Name: "shell_pivot_portal", Type: field.TypeInt, Nullable: true},
+		{Name: "shell_pivot_credential", Type: field.TypeInt, Nullable: true},
+	}
+	// ShellPivotsTable holds the schema information for the "shell_pivots" table.
+	ShellPivotsTable = &schema.Table{
+		Name:       "shell_pivots",
+		Columns:    ShellPivotsColumns,
+		PrimaryKey: []*schema.Column{ShellPivotsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "shell_pivots_shells_shell",
+				Columns:    []*schema.Column{ShellPivotsColumns[9]},
+				RefColumns: []*schema.Column{ShellsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "shell_pivots_portals_portal",
+				Columns:    []*schema.Column{ShellPivotsColumns[10]},
+				RefColumns: []*schema.Column{PortalsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "shell_pivots_host_credentials_credential",
+				Columns:    []*schema.Column{ShellPivotsColumns[11]},
+				RefColumns: []*schema.Column{HostCredentialsColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -874,21 +1005,25 @@ var (
 		AdventuresTable,
 		AssetsTable,
 		BeaconsTable,
+		BeaconHistoriesTable,
 		BuildProfilesTable,
 		BuildTasksTable,
 		BuildersTable,
 		DeviceAuthsTable,
+		EventsTable,
 		HostsTable,
 		HostCredentialsTable,
 		HostFilesTable,
 		HostProcessesTable,
 		LinksTable,
+		NotificationsTable,
 		PortalsTable,
 		QuestsTable,
 		RepositoriesTable,
 		ScheduledTasksTable,
 		ScreenshotsTable,
 		ShellsTable,
+		ShellPivotsTable,
 		ShellTasksTable,
 		TagsTable,
 		TasksTable,
@@ -913,6 +1048,7 @@ func init() {
 	BeaconsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
+	BeaconHistoriesTable.ForeignKeys[0].RefTable = BeaconsTable
 	BuildProfilesTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
@@ -927,6 +1063,12 @@ func init() {
 	}
 	DeviceAuthsTable.ForeignKeys[0].RefTable = UsersTable
 	DeviceAuthsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	EventsTable.ForeignKeys[0].RefTable = BeaconsTable
+	EventsTable.ForeignKeys[1].RefTable = HostsTable
+	EventsTable.ForeignKeys[2].RefTable = QuestsTable
+	EventsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	HostsTable.ForeignKeys[0].RefTable = ScheduledTasksTable
@@ -956,6 +1098,11 @@ func init() {
 	LinksTable.ForeignKeys[0].RefTable = AssetsTable
 	LinksTable.ForeignKeys[1].RefTable = UsersTable
 	LinksTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	NotificationsTable.ForeignKeys[0].RefTable = UsersTable
+	NotificationsTable.ForeignKeys[1].RefTable = EventsTable
+	NotificationsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	PortalsTable.ForeignKeys[0].RefTable = TasksTable
@@ -994,6 +1141,12 @@ func init() {
 	ShellsTable.ForeignKeys[1].RefTable = BeaconsTable
 	ShellsTable.ForeignKeys[2].RefTable = UsersTable
 	ShellsTable.Annotation = &entsql.Annotation{
+		Collation: "utf8mb4_general_ci",
+	}
+	ShellPivotsTable.ForeignKeys[0].RefTable = ShellsTable
+	ShellPivotsTable.ForeignKeys[1].RefTable = PortalsTable
+	ShellPivotsTable.ForeignKeys[2].RefTable = HostCredentialsTable
+	ShellPivotsTable.Annotation = &entsql.Annotation{
 		Collation: "utf8mb4_general_ci",
 	}
 	ShellTasksTable.ForeignKeys[0].RefTable = ShellsTable

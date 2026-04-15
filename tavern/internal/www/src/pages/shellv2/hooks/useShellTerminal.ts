@@ -9,6 +9,39 @@ import { moveWordLeft, moveWordRight, highlightPythonSyntax, loadHistory, saveHi
 
 const docs = docsData as Record<string, { signature: string; description: string }>;
 
+const wrapText = (text: string, cols: number) => {
+    const inputLines = text.split('\n');
+    let lines = [];
+    let inMarkdownBlock = false;
+
+    for (const line of inputLines) {
+        if (line.trim().startsWith('```')) {
+            inMarkdownBlock = !inMarkdownBlock;
+            lines.push(line.trim());
+            continue;
+        }
+
+        if (inMarkdownBlock) {
+            lines.push('  ' + line.trimStart());
+            continue;
+        }
+
+        const words = line.split(' ');
+        let currentLine = '';
+        for (const word of words) {
+            if (currentLine.length + word.length + 1 > cols) {
+                if (currentLine.length > 0) lines.push(currentLine);
+                currentLine = word;
+            } else {
+                if (currentLine.length > 0) currentLine += ' ';
+                currentLine += word;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+    }
+    return lines.join('\r\n');
+};
+
 interface ShellState {
     inputBuffer: string;
     cursorPos: number;
@@ -26,7 +59,8 @@ export const useShellTerminal = (
     error: any,
     shellData: any,
     setPortalId: (id: number | null) => void,
-    isLateCheckin: boolean
+    isLateCheckin: boolean,
+    onOpenPortalTab?: (type: string, target: string) => void
 ) => {
     const termRef = useRef<HTMLDivElement>(null);
     const termInstance = useRef<Terminal | null>(null);
@@ -34,6 +68,9 @@ export const useShellTerminal = (
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
     const [connectionMessage, setConnectionMessage] = useState<string>("");
+
+    const portalIdRef = useRef<number | null>(null);
+    const sessionInputs = useRef<string[]>([]);
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -75,21 +112,26 @@ export const useShellTerminal = (
 
     const redrawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const shellNodeId = shellData?.node?.id;
+    const shellClosedAt = shellData?.node?.closedAt;
+
     // Ref for late checkin to access in event handlers
     const isLateCheckinRef = useRef(isLateCheckin);
     const connectionStatusRef = useRef(connectionStatus);
+    const shellClosedAtRef = useRef(shellClosedAt);
 
     useEffect(() => {
         isLateCheckinRef.current = isLateCheckin;
         connectionStatusRef.current = connectionStatus;
+        shellClosedAtRef.current = shellClosedAt;
         if (termInstance.current) {
-            const isDimmed = isLateCheckin || connectionStatus !== "connected";
+            const isDimmed = isLateCheckin || connectionStatus !== "connected" || !!shellClosedAt;
             termInstance.current.options.theme = {
                 foreground: isDimmed ? "#777777" : "#d4d4d4",
                 background: "#1e1e1e",
             };
         }
-    }, [isLateCheckin, connectionStatus]);
+    }, [isLateCheckin, connectionStatus, shellClosedAt]);
 
     const redrawLine = useCallback(() => {
         const term = termInstance.current;
@@ -300,9 +342,6 @@ export const useShellTerminal = (
         }
     }, [tooltipState.visible, scheduleHideTooltip, cancelHideTooltip]);
 
-    const shellNodeId = shellData?.node?.id;
-    const shellClosedAt = shellData?.node?.closedAt;
-
     useEffect(() => {
         if (!termRef.current || loading) return;
 
@@ -318,11 +357,6 @@ export const useShellTerminal = (
 
         if (!shellNodeId) {
             setConnectionError("Shell not found.");
-            return;
-        }
-
-        if (shellClosedAt) {
-            setConnectionError("This shell session is closed.");
             return;
         }
 
@@ -501,6 +535,7 @@ export const useShellTerminal = (
                             content = msg.message + "\n";
                             color = "\x1b[38;5;178m"; // Purple
                         } else if (msg.signal === WebsocketControlFlowSignal.PortalUpgrade && msg.portal_id) {
+                            portalIdRef.current = msg.portal_id;
                             setPortalId(msg.portal_id);
                         }
                         // Handle other control signals if needed
@@ -540,8 +575,8 @@ export const useShellTerminal = (
         adapter.current.init();
 
         const handleData = (data: string, isPaste: boolean = false) => {
-            // Check for late checkin and block input
-            if (isLateCheckinRef.current) return;
+            // Check for late checkin, closed shell, and block input
+            if (isLateCheckinRef.current || shellClosedAtRef.current) return;
             // Check for connection status and block input
             if (connectionStatusRef.current !== "connected") return;
 
@@ -830,9 +865,48 @@ export const useShellTerminal = (
 
                 if (res?.status === "complete") {
                     if (state.currentBlock.trim()) {
-                        state.history.push(state.currentBlock.trimEnd());
+                        const trimmed = state.currentBlock.trimEnd();
+                        state.history.push(trimmed);
+                        sessionInputs.current.push(trimmed);
                         saveHistory(state.history);
                     }
+                    state.currentBlock = "";
+                    state.historyIndex = -1;
+                    state.inputBuffer = "";
+                    state.cursorPos = 0;
+                    state.prompt = ">>> ";
+                } else if (res?.status === "meta") {
+                    const metaCmd = res.meta_command;
+                    if (metaCmd?.type === "help") {
+                        const target = metaCmd.target;
+                        if (!target) {
+                            term.write("Welcome to the Browser REPL.\r\n");
+                            term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                            term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
+                            term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                        } else {
+                            const doc = docs[target];
+                            if (doc) {
+                                const wrappedDesc = wrapText(doc.description, term.cols);
+                                term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
+                                term.write(`${wrappedDesc}\r\n`);
+                            } else {
+                                term.write(`No documentation found for: ${target}\r\n`);
+                            }
+                        }
+                    } else if (metaCmd?.type === "ssh") {
+                        const target = metaCmd.target;
+                        const pId = portalIdRef.current;
+                        if (!pId) {
+                            term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                        } else {
+                            term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                            if (onOpenPortalTab) {
+                                onOpenPortalTab("ssh", target);
+                            }
+                        }
+                    }
+                    term.write(">>> ");
                     state.currentBlock = "";
                     state.historyIndex = -1;
                     state.inputBuffer = "";
@@ -894,7 +968,7 @@ export const useShellTerminal = (
             // Check if this is a paste or multi-character sequence (not starting with ESC)
             if (data.length > 1 && data.charCodeAt(0) !== 27) {
                 // Check for connection status and block input
-                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected") return;
+                if (isLateCheckinRef.current || connectionStatusRef.current !== "connected" || shellClosedAtRef.current) return;
 
                 const hasNewlines = data.includes('\r') || data.includes('\n');
 
@@ -920,7 +994,9 @@ export const useShellTerminal = (
 
                     if (res?.status === "complete") {
                         if (state.currentBlock.trim()) {
-                            state.history.push(state.currentBlock.trimEnd());
+                            const trimmed = state.currentBlock.trimEnd();
+                            state.history.push(trimmed);
+                            sessionInputs.current.push(trimmed);
                             saveHistory(state.history);
                         }
                         state.currentBlock = "";
@@ -929,6 +1005,43 @@ export const useShellTerminal = (
                         state.cursorPos = 0;
                         state.prompt = ">>> ";
                         term.write(state.prompt);
+                    } else if (res?.status === "meta") {
+                        const metaCmd = res.meta_command;
+                        if (metaCmd?.type === "help") {
+                            const target = metaCmd.target;
+                            if (!target) {
+                                term.write("Welcome to the Browser REPL.\r\n");
+                                term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
+                                term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
+                                term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                            } else {
+                                const doc = docs[target];
+                                if (doc) {
+                                    const wrappedDesc = wrapText(doc.description, term.cols);
+                                    term.write(`\r\n\x1b[1;36m${doc.signature}\x1b[0m\r\n`);
+                                    term.write(`${wrappedDesc}\r\n`);
+                                } else {
+                                    term.write(`No documentation found for: ${target}\r\n`);
+                                }
+                            }
+                        } else if (metaCmd?.type === "ssh") {
+                            const target = metaCmd.target;
+                            const pId = portalIdRef.current;
+                            if (!pId) {
+                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate an SSH connection.\x1b[0m\r\n`);
+                            } else {
+                                term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
+                                if (onOpenPortalTab) {
+                                    onOpenPortalTab("ssh", target);
+                                }
+                            }
+                        }
+                        term.write(">>> ");
+                        state.currentBlock = "";
+                        state.historyIndex = -1;
+                        state.inputBuffer = "";
+                        state.cursorPos = 0;
+                        state.prompt = ">>> ";
                     } else if (res?.status === "incomplete") {
                         state.prompt = res.prompt || ".. ";
                         term.write(state.prompt);
@@ -960,6 +1073,10 @@ export const useShellTerminal = (
         };
     }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
+    const getSessionInputs = useCallback(() => {
+        return sessionInputs.current.join("\n");
+    }, []);
+
     return {
         termRef,
         connectionError,
@@ -973,6 +1090,7 @@ export const useShellTerminal = (
         connectionStatus,
         connectionMessage,
         handleTooltipMouseEnter: cancelHideTooltip,
-        handleTooltipMouseLeave: scheduleHideTooltip
+        handleTooltipMouseLeave: scheduleHideTooltip,
+        getSessionInputs
     };
 };

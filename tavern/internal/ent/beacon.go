@@ -54,14 +54,20 @@ type BeaconEdges struct {
 	Tasks []*Task `json:"tasks,omitempty"`
 	// Shells that have been created by the beacon.
 	Shells []*Shell `json:"shells,omitempty"`
+	// Historical check-ins for this beacon.
+	History []*BeaconHistory `json:"history,omitempty"`
+	// Events associated with this beacon.
+	Events []*Event `json:"events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 	// totalCount holds the count of the edges above.
-	totalCount [3]map[string]int
+	totalCount [5]map[string]int
 
-	namedTasks  map[string][]*Task
-	namedShells map[string][]*Shell
+	namedTasks   map[string][]*Task
+	namedShells  map[string][]*Shell
+	namedHistory map[string][]*BeaconHistory
+	namedEvents  map[string][]*Event
 }
 
 // HostOrErr returns the Host value or an error if the edge
@@ -91,6 +97,24 @@ func (e BeaconEdges) ShellsOrErr() ([]*Shell, error) {
 		return e.Shells, nil
 	}
 	return nil, &NotLoadedError{edge: "shells"}
+}
+
+// HistoryOrErr returns the History value or an error if the edge
+// was not loaded in eager-loading.
+func (e BeaconEdges) HistoryOrErr() ([]*BeaconHistory, error) {
+	if e.loadedTypes[3] {
+		return e.History, nil
+	}
+	return nil, &NotLoadedError{edge: "history"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e BeaconEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[4] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -224,6 +248,16 @@ func (b *Beacon) QueryShells() *ShellQuery {
 	return NewBeaconClient(b.config).QueryShells(b)
 }
 
+// QueryHistory queries the "history" edge of the Beacon entity.
+func (b *Beacon) QueryHistory() *BeaconHistoryQuery {
+	return NewBeaconClient(b.config).QueryHistory(b)
+}
+
+// QueryEvents queries the "events" edge of the Beacon entity.
+func (b *Beacon) QueryEvents() *EventQuery {
+	return NewBeaconClient(b.config).QueryEvents(b)
+}
+
 // Update returns a builder for updating this Beacon.
 // Note that you need to call Beacon.Unwrap() before calling this method if this Beacon
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -325,6 +359,54 @@ func (b *Beacon) appendNamedShells(name string, edges ...*Shell) {
 		b.Edges.namedShells[name] = []*Shell{}
 	} else {
 		b.Edges.namedShells[name] = append(b.Edges.namedShells[name], edges...)
+	}
+}
+
+// NamedHistory returns the History named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (b *Beacon) NamedHistory(name string) ([]*BeaconHistory, error) {
+	if b.Edges.namedHistory == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := b.Edges.namedHistory[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (b *Beacon) appendNamedHistory(name string, edges ...*BeaconHistory) {
+	if b.Edges.namedHistory == nil {
+		b.Edges.namedHistory = make(map[string][]*BeaconHistory)
+	}
+	if len(edges) == 0 {
+		b.Edges.namedHistory[name] = []*BeaconHistory{}
+	} else {
+		b.Edges.namedHistory[name] = append(b.Edges.namedHistory[name], edges...)
+	}
+}
+
+// NamedEvents returns the Events named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (b *Beacon) NamedEvents(name string) ([]*Event, error) {
+	if b.Edges.namedEvents == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := b.Edges.namedEvents[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (b *Beacon) appendNamedEvents(name string, edges ...*Event) {
+	if b.Edges.namedEvents == nil {
+		b.Edges.namedEvents = make(map[string][]*Event)
+	}
+	if len(edges) == 0 {
+		b.Edges.namedEvents[name] = []*Event{}
+	} else {
+		b.Edges.namedEvents[name] = append(b.Edges.namedEvents[name], edges...)
 	}
 }
 

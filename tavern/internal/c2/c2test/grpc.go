@@ -30,14 +30,8 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 	t.Helper()
 	ctx := context.Background()
 
-	// TestDB Config
-	var (
-		driverName     = "sqlite3"
-		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
-	)
-
 	// Ent Client
-	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+	graph := enttest.OpenTempDB(t)
 
 	// gRPC Mux
 	var (
