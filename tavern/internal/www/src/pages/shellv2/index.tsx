@@ -7,7 +7,7 @@ import { useShellTerminal } from "./hooks/useShellTerminal";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
-import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
+import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import SshTerminal from './components/SshTerminal';
 
@@ -70,8 +70,33 @@ const ShellV2 = () => {
         connectionStatus,
         connectionMessage,
         handleTooltipMouseEnter,
-        handleTooltipMouseLeave
+        handleTooltipMouseLeave,
+        getSessionInputs
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
+
+    const toast = useToast();
+
+    const handleExport = () => {
+        const inputs = getSessionInputs();
+        if (inputs) {
+            navigator.clipboard.writeText(inputs);
+            toast({
+                title: "Copied to clipboard",
+                description: "Session input history has been copied to your clipboard.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        } else {
+            toast({
+                title: "No inputs to export",
+                description: "There are no completed commands in the current session.",
+                status: "info",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
 
     if (connectionError) {
         return (
@@ -127,7 +152,7 @@ const ShellV2 = () => {
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-                <ShellHeader shellData={shellData} activeUsers={activeUsers} />
+                <ShellHeader shellData={shellData} activeUsers={activeUsers} onExport={handleExport} />
 
                 {shellTerm}
 

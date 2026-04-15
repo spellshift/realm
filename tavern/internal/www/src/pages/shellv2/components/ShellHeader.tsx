@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug } from "lucide-react";
+import { Bug, Download } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
@@ -11,9 +12,10 @@ import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
 interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
+  onExport?: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], onExport }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -59,6 +61,16 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
         </span>
         {principal && <Badge>{principal}</Badge>}
       </h1>
+
+      <Button
+        buttonVariant="outline"
+        buttonStyle={{ color: "gray", size: "sm" }}
+        leftIcon={<Download size={16} />}
+        onClick={onExport}
+      >
+        Export
+      </Button>
+
       <a
         href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"

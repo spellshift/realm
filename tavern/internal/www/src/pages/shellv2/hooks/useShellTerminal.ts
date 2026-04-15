@@ -70,6 +70,7 @@ export const useShellTerminal = (
     const [connectionMessage, setConnectionMessage] = useState<string>("");
 
     const portalIdRef = useRef<number | null>(null);
+    const sessionInputs = useRef<string[]>([]);
 
     // Shell state
     const shellState = useRef<ShellState>({
@@ -864,7 +865,9 @@ export const useShellTerminal = (
 
                 if (res?.status === "complete") {
                     if (state.currentBlock.trim()) {
-                        state.history.push(state.currentBlock.trimEnd());
+                        const trimmed = state.currentBlock.trimEnd();
+                        state.history.push(trimmed);
+                        sessionInputs.current.push(trimmed);
                         saveHistory(state.history);
                     }
                     state.currentBlock = "";
@@ -991,7 +994,9 @@ export const useShellTerminal = (
 
                     if (res?.status === "complete") {
                         if (state.currentBlock.trim()) {
-                            state.history.push(state.currentBlock.trimEnd());
+                            const trimmed = state.currentBlock.trimEnd();
+                            state.history.push(trimmed);
+                            sessionInputs.current.push(trimmed);
                             saveHistory(state.history);
                         }
                         state.currentBlock = "";
@@ -1068,6 +1073,10 @@ export const useShellTerminal = (
         };
     }, [shellId, loading, error, shellNodeId, shellClosedAt, setPortalId, redrawLine, updateCompletionsUI, applyCompletion]);
 
+    const getSessionInputs = useCallback(() => {
+        return sessionInputs.current.join("\n");
+    }, []);
+
     return {
         termRef,
         connectionError,
@@ -1081,6 +1090,7 @@ export const useShellTerminal = (
         connectionStatus,
         connectionMessage,
         handleTooltipMouseEnter: cancelHideTooltip,
-        handleTooltipMouseLeave: scheduleHideTooltip
+        handleTooltipMouseLeave: scheduleHideTooltip,
+        getSessionInputs
     };
 };
