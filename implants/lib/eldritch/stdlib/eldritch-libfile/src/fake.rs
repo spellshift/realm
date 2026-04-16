@@ -353,6 +353,13 @@ impl FileLibrary for FileLibraryFake {
         Ok(format!("/tmp/{}", name))
     }
 
+    fn tmp_dir(&self) -> Result<String, String> {
+        let name = "tmp_dir".to_string();
+        let path = format!("/tmp/{}", name);
+        self.mkdir(path.clone(), None)?;
+        Ok(path)
+    }
+
     fn template(
         &self,
         _template_path: String,

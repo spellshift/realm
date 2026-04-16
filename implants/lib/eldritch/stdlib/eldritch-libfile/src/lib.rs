@@ -306,6 +306,19 @@ pub trait FileLibrary {
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
+    /// Creates a temporary directory and returns its path.
+    ///
+    /// The directory persists after this function returns.
+    /// Operates similar to `mktemp -d`.
+    ///
+    /// **Returns**
+    /// - `str`: The absolute path to the temporary directory.
+    ///
+    /// **Errors**
+    /// - Returns an error string if creation fails.
+    fn tmp_dir(&self) -> Result<String, String>;
+
+    #[eldritch_method]
     /// Renders a Jinja2 template file to a destination path.
     ///
     /// **Parameters**
