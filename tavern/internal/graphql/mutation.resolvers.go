@@ -42,6 +42,18 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 
 	// Delete relevant ents
 	// We must delete children before parents to avoid foreign key constraint violations
+	if _, err := client.Notification.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete notifications: %w", err))
+	}
+	if _, err := client.Event.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete events: %w", err))
+	}
+	if _, err := client.BeaconHistory.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete beacon histories: %w", err))
+	}
+	if _, err := client.ShellPivot.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete shell pivots: %w", err))
+	}
 	if _, err := client.ShellTask.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete shell tasks: %w", err))
 	}
@@ -83,6 +95,12 @@ func (r *mutationResolver) DropAllData(ctx context.Context) (bool, error) {
 	}
 	if _, err := client.Builder.Delete().Exec(ctx); err != nil {
 		return false, rollback(tx, fmt.Errorf("failed to delete builders: %w", err))
+	}
+	if _, err := client.Adventure.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete adventures: %w", err))
+	}
+	if _, err := client.ScheduledTask.Delete().Exec(ctx); err != nil {
+		return false, rollback(tx, fmt.Errorf("failed to delete scheduled tasks: %w", err))
 	}
 
 	// Commit
