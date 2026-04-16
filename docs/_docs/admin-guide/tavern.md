@@ -392,6 +392,38 @@ DISABLE_DEFAULT_TOMES=1 go run ./tavern
 
 Running Tavern with the `ENABLE_PPROF` environment variable set will enable performance profiling information to be collected and accessible. This should never be set for a production deployment as it will be unauthenticated and may provide access to sensitive information, it is intended for development purposes only. Read more on how to use `pprof` with tavern in the [Developer Guide](/dev-guide/tavern#performance-profiling).
 
+### AI MCP Server
+
+Tavern includes a built-in [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables AI assistants and LLM-based tools to interact with your Tavern deployment. The MCP server uses Server-Sent Events (SSE) for transport and is gated behind the `ENABLE_AI_MCP` environment variable.
+
+| Env Var | Description | Default | Required |
+| ------- | ----------- | ------- | -------- |
+| ENABLE_AI_MCP | Set to any value to enable the MCP server at `/mcp`. | Disabled | No |
+
+To enable the MCP server:
+
+```sh
+ENABLE_AI_MCP=1 go run ./tavern
+```
+
+Once enabled, the MCP server exposes the following endpoints:
+
+- `/mcp/sse` — SSE endpoint for establishing MCP connections
+- `/mcp/message` — Message endpoint for sending MCP requests
+
+The MCP server requires authentication (OAuth session cookie or API access token). All queries are executed in the context of the authenticated user.
+
+**Available MCP Tools:**
+
+| Tool | Description |
+| ---- | ----------- |
+| `list_quests` | List all quests in Tavern |
+| `quest_output` | Get task output for specific quests |
+| `list_tomes` | List all available tomes and their parameters |
+| `create_quest` | Create a new quest targeting specific beacons |
+| `list_hosts` | List all hosts with their beacons and tags |
+| `wait_for_quest` | Wait for all tasks in a quest to complete |
+
 ## Tavern docker image tags explained
 
 Tavern publishes a couple different images.
