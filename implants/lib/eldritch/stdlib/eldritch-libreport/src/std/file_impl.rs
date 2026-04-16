@@ -64,10 +64,6 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
         return Ok(());
     }
 
-    for file_path in &files_to_report {
-        std::fs::File::open(file_path).map_err(|e| e.to_string())?;
-    }
-
     let context_val = match context {
         Context::Task(tc) => Some(report_file_request::Context::TaskContext(tc)),
         Context::ShellTask(stc) => Some(report_file_request::Context::ShellTaskContext(stc)),
