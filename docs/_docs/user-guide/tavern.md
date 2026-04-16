@@ -32,12 +32,12 @@ Tavern supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.
 
 ### Connecting an MCP Client
 
-Once the MCP server is enabled on your Tavern instance, you can connect any MCP-compatible client using the SSE transport.
+Once the MCP server is enabled on your Tavern instance, you can connect any MCP-compatible client using the Streamable HTTP transport.
 
 #### Connection Details
 
-- **SSE Endpoint:** `https://<your-tavern-url>/mcp/sse`
-- **Transport:** SSE (Server-Sent Events)
+- **Endpoint:** `https://<your-tavern-url>/mcp`
+- **Transport:** Streamable HTTP
 - **Authentication:** Use your Tavern session cookie or API access token
 
 #### Example: Claude Desktop
@@ -48,7 +48,7 @@ Add the following to your Claude Desktop MCP configuration file (`claude_desktop
 {
   "mcpServers": {
     "tavern": {
-      "url": "https://<your-tavern-url>/mcp/sse",
+      "url": "https://<your-tavern-url>/mcp",
       "headers": {
         "X-Tavern-Access-Token": "<your-access-token>"
       }
@@ -61,10 +61,10 @@ Replace `<your-tavern-url>` with the URL of your Tavern deployment and `<your-ac
 
 #### Example: Cursor / VS Code
 
-For editors that support MCP via SSE, configure the server URL as:
+For editors that support MCP via Streamable HTTP, configure the server URL as:
 
 ```
-https://<your-tavern-url>/mcp/sse
+https://<your-tavern-url>/mcp
 ```
 
 And set the authentication header `X-Tavern-Access-Token` to your personal access token.

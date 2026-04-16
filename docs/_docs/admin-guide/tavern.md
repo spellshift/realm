@@ -406,10 +406,9 @@ To enable the MCP server:
 ENABLE_AI_MCP=1 go run ./tavern
 ```
 
-Once enabled, the MCP server exposes the following endpoints:
+Once enabled, the MCP server exposes a Streamable HTTP endpoint:
 
-- `/mcp/sse` — SSE endpoint for establishing MCP connections
-- `/mcp/message` — Message endpoint for sending MCP requests
+- `/mcp` — Streamable HTTP endpoint for MCP connections (supports GET for streaming and POST for requests)
 
 The MCP server requires authentication (OAuth session cookie or API access token). All queries are executed in the context of the authenticated user.
 
