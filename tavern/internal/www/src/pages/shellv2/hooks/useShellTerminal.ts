@@ -942,7 +942,7 @@ export const useShellTerminal = (
             }
 
             // Trigger completion updates if needed
-            if (!isPaste && (completionsRef.current.show || code === 46 /* . */)) {
+            if (!isPaste && completionsRef.current.show) {
                 if (state.inputBuffer.endsWith("(") || code === 40 /* ( */) {
                     if (completionsRef.current.show) {
                         updateCompletionsUI([], 0, false, 0);
