@@ -2,12 +2,12 @@ package mcp_test
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"realm.pub/tavern/internal/c2/c2pb"
@@ -358,7 +358,7 @@ func TestWaitForQuestHandler(t *testing.T) {
 	assert.False(t, quest.Edges.Tasks[0].ExecFinishedAt.IsZero())
 }
 
-// TestParseIntIDs tests the parseIntIDs helper via JSON round-trip.
+// TestParseIntIDs tests the ParseIntIDs helper.
 func TestParseIntIDs(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -395,20 +395,17 @@ func TestParseIntIDs(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Marshal and check the input can be parsed
-			data, err := json.Marshal(tc.input)
-			require.NoError(t, err)
-			assert.NotEmpty(t, data)
-
+			req := mcp.CallToolRequest{
+				Params: mcp.CallToolParams{
+					Arguments: tc.input,
+				},
+			}
+			ids, err := tavernmcp.ParseIntIDs(req, tc.key)
 			if tc.expectErr {
-				// Just verify the test data is set up correctly
-				_, exists := tc.input[tc.key]
-				if !exists {
-					assert.True(t, tc.expectErr)
-				}
+				assert.Error(t, err)
 			} else {
-				arr := tc.input[tc.key].([]any)
-				assert.Len(t, arr, len(tc.expected))
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, ids)
 			}
 		})
 	}

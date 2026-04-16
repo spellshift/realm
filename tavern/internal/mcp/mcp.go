@@ -143,7 +143,7 @@ func handleQuestOutput(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError("internal error: no database client"), nil
 	}
 
-	ids, err := parseIntIDs(request, "ids")
+	ids, err := ParseIntIDs(request, "ids")
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid ids: %v", err)), nil
 	}
@@ -286,7 +286,7 @@ func handleCreateQuest(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("invalid name: %v", err)), nil
 	}
 
-	beaconIDs, err := parseIntIDs(request, "beacon_ids")
+	beaconIDs, err := ParseIntIDs(request, "beacon_ids")
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid beacon_ids: %v", err)), nil
 	}
@@ -532,7 +532,10 @@ func handleWaitForQuest(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 				"message": fmt.Sprintf("All %d tasks in quest '%s' have finished.", len(tasks), q.Name),
 				"tasks":   details,
 			}
-			data, _ := json.Marshal(result)
+			data, err := json.Marshal(result)
+			if err != nil {
+				return mcp.NewToolResultError(fmt.Sprintf("failed to marshal result: %v", err)), nil
+			}
 			return mcp.NewToolResultText(string(data)), nil
 		}
 
@@ -546,8 +549,8 @@ func handleWaitForQuest(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	return mcp.NewToolResultError(fmt.Sprintf("timeout: not all tasks in quest %d finished within 10 minutes. %d tasks still pending", questID, pendingCount)), nil
 }
 
-// parseIntIDs extracts an array of string IDs from the request arguments and converts them to ints.
-func parseIntIDs(request mcp.CallToolRequest, key string) ([]int, error) {
+// ParseIntIDs extracts an array of string IDs from the request arguments and converts them to ints.
+func ParseIntIDs(request mcp.CallToolRequest, key string) ([]int, error) {
 	args := request.GetArguments()
 	raw, ok := args[key]
 	if !ok {
