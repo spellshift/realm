@@ -40,9 +40,9 @@ Once the MCP server is enabled on your Tavern instance, you can connect any MCP-
 - **Transport:** Streamable HTTP
 - **Authentication:** Use your Tavern session cookie or API access token
 
-#### Example: Claude Desktop
+#### Example Configuration
 
-Add the following to your Claude Desktop MCP configuration file (`claude_desktop_config.json`):
+Add the following to your MCP client configuration:
 
 ```json
 {
@@ -59,28 +59,18 @@ Add the following to your Claude Desktop MCP configuration file (`claude_desktop
 
 Replace `<your-tavern-url>` with the URL of your Tavern deployment and `<your-access-token>` with your personal access token from Tavern.
 
-#### Example: Cursor / VS Code
-
-For editors that support MCP via Streamable HTTP, configure the server URL as:
-
-```
-https://<your-tavern-url>/mcp
-```
-
-And set the authentication header `X-Tavern-Access-Token` to your personal access token.
-
 ### Available Tools
 
-The MCP server exposes the following tools:
+The MCP server exposes the following tools. Tools are annotated as **read-only** or **write** to indicate whether they modify server state. Write tools will request user confirmation before executing.
 
-| Tool | Description | Parameters |
-| ---- | ----------- | ---------- |
-| `list_quests` | List all quests in Tavern | None |
-| `quest_output` | Get the output of specific quests | `ids` (array of quest ID strings) |
-| `list_tomes` | List all available tomes and their required parameters | None |
-| `create_quest` | Create a new quest targeting specific beacons | `name`, `beacon_ids`, `parameters`, `tome_id` |
-| `list_hosts` | List all hosts with their beacons and tags | None |
-| `wait_for_quest` | Wait for all tasks in a quest to finish (polls for up to 10 min) | `quest_id` |
+| Tool | Description | Parameters | Access |
+| ---- | ----------- | ---------- | ------ |
+| `list_quests` | List all quests in Tavern | None | Read-only |
+| `quest_output` | Get the output of specific quests | `ids` (array of quest ID strings) | Read-only |
+| `list_tomes` | List all available tomes and their required parameters | None | Read-only |
+| `create_quest` | Create a new quest targeting specific beacons | `name`, `beacon_ids`, `parameters`, `tome_id` | Write |
+| `list_hosts` | List all hosts with their beacons and tags | None | Read-only |
+| `wait_for_quest` | Wait for all tasks in a quest to finish (polls for up to 10 min) | `quest_id` | Read-only |
 
 ### Typical Workflow
 
