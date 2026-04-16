@@ -2,6 +2,8 @@
 use anyhow::Result;
 #[cfg(feature = "install")]
 use eldritch::Interpreter;
+#[cfg(all(feature = "install", feature = "quiet"))]
+use eldritch::NoopPrinter;
 use eldritch::assets::std::{EmbeddedAssets, StdAssetsLibrary};
 use std::sync::Arc;
 
@@ -33,6 +35,10 @@ pub async fn install() -> Result<()> {
             // Execute using Eldritch Interpreter
             let mut locker = StdAssetsLibrary::new();
             let _ = locker.add(asset_backend.clone());
+            #[cfg(feature = "quiet")]
+            let mut interpreter =
+                Interpreter::new_with_printer(Arc::new(NoopPrinter)).with_default_libs();
+            #[cfg(not(feature = "quiet"))]
             let mut interpreter = Interpreter::new().with_default_libs();
             interpreter.register_lib(locker);
 

@@ -50,6 +50,17 @@ impl Printer for StdoutPrinter {
     }
 }
 
+/// A printer that discards all output.
+/// Useful when interpreter output should be silently dropped.
+#[derive(Debug)]
+pub struct NoopPrinter;
+
+impl Printer for NoopPrinter {
+    fn print_out(&self, _span: &Span, _s: &str) {}
+
+    fn print_err(&self, _span: &Span, _s: &str) {}
+}
+
 /// A printer that writes to an internal string buffer.
 /// Useful for capturing output in tests or REPL environments.
 #[derive(Debug)]
