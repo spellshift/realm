@@ -38,8 +38,8 @@ func TestNewHandler(t *testing.T) {
 	assert.NotNil(t, handler)
 }
 
-// TestMCPSSEEndpoint verifies the SSE endpoint is accessible and returns the correct content type.
-func TestMCPSSEEndpoint(t *testing.T) {
+// TestMCPStreamableHTTPEndpoint verifies the Streamable HTTP endpoint accepts GET requests for SSE streaming.
+func TestMCPStreamableHTTPEndpoint(t *testing.T) {
 	client := setupTestDB(t)
 	defer client.Close()
 
@@ -49,10 +49,10 @@ func TestMCPSSEEndpoint(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	req := httptest.NewRequest(http.MethodGet, "/mcp/sse", nil).WithContext(ctx)
+	req := httptest.NewRequest(http.MethodGet, "/mcp", nil).WithContext(ctx)
 	w := httptest.NewRecorder()
 
-	// Run handler in goroutine since SSE will block
+	// Run handler in goroutine since streaming will block
 	done := make(chan struct{})
 	go func() {
 		handler.ServeHTTP(w, req)
@@ -65,28 +65,28 @@ func TestMCPSSEEndpoint(t *testing.T) {
 	case <-ctx.Done():
 	}
 
-	// SSE endpoint should return text/event-stream
+	// Streamable HTTP GET endpoint should return text/event-stream
 	result := w.Result()
 	defer result.Body.Close()
 	assert.Equal(t, http.StatusOK, result.StatusCode)
 	assert.Contains(t, result.Header.Get("Content-Type"), "text/event-stream")
 }
 
-// TestMCPMessageEndpointRequiresSession verifies the message endpoint rejects requests without a valid session.
-func TestMCPMessageEndpointRequiresSession(t *testing.T) {
+// TestMCPPostEndpointRequiresValidRequest verifies the POST endpoint rejects requests without valid JSON-RPC.
+func TestMCPPostEndpointRequiresValidRequest(t *testing.T) {
 	client := setupTestDB(t)
 	defer client.Close()
 
 	handler := setupTestHandler(t, client)
 
-	req := httptest.NewRequest(http.MethodPost, "/mcp/message", nil)
+	req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
 
 	result := w.Result()
 	defer result.Body.Close()
-	// Without a valid session, we expect an error response
+	// Without a valid JSON-RPC request body, we expect an error response
 	assert.NotEqual(t, http.StatusOK, result.StatusCode)
 }
 

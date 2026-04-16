@@ -1,5 +1,5 @@
 // Package mcp provides a Model Context Protocol (MCP) server for Tavern.
-// It exposes Tavern operations as MCP tools accessible via SSE transport.
+// It exposes Tavern operations as MCP tools accessible via Streamable HTTP transport.
 package mcp
 
 import (
@@ -30,7 +30,7 @@ func clientFromContext(ctx context.Context) *ent.Client {
 	return nil
 }
 
-// NewHandler creates an http.Handler that serves the MCP SSE endpoints.
+// NewHandler creates an http.Handler that serves the MCP Streamable HTTP endpoints.
 // The handler is meant to be mounted at a prefix (e.g. /mcp) on the main server mux.
 // Authentication is handled by the parent Tavern HTTP server; this handler
 // expects an authenticated context to already be set.
@@ -39,26 +39,26 @@ func NewHandler(client *ent.Client) http.Handler {
 		"tavern",
 		"1.0.0",
 		mcpserver.WithToolCapabilities(true),
+		mcpserver.WithElicitation(),
 	)
 
 	mcpSrv.AddTools(
 		listQuestsTool(),
 		questOutputTool(),
 		listTomesTool(),
-		createQuestTool(),
+		createQuestTool(mcpSrv),
 		listHostsTool(),
 		waitForQuestTool(),
 	)
 
-	sseSrv := mcpserver.NewSSEServer(mcpSrv,
-		mcpserver.WithStaticBasePath("/mcp"),
-		mcpserver.WithSSEContextFunc(func(ctx context.Context, r *http.Request) context.Context {
+	httpSrv := mcpserver.NewStreamableHTTPServer(mcpSrv,
+		mcpserver.WithEndpointPath("/mcp"),
+		mcpserver.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
 			return context.WithValue(ctx, contextKey{}, client)
 		}),
-		mcpserver.WithUseFullURLForMessageEndpoint(false),
 	)
 
-	return sseSrv
+	return httpSrv
 }
 
 // listQuestsTool returns the list_quests MCP tool.
@@ -66,6 +66,8 @@ func listQuestsTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("list_quests",
 			mcp.WithDescription("List all available quests in Tavern"),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithDestructiveHintAnnotation(false),
 		),
 		Handler: handleListQuests,
 	}
@@ -127,6 +129,8 @@ func questOutputTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("quest_output",
 			mcp.WithDescription("Get the output of quests by their IDs"),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithArray("ids",
 				mcp.Required(),
 				mcp.Description("List of quest IDs"),
@@ -206,6 +210,8 @@ func listTomesTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("list_tomes",
 			mcp.WithDescription("List all available tomes in Tavern and their required parameters"),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithDestructiveHintAnnotation(false),
 		),
 		Handler: handleListTomes,
 	}
@@ -249,10 +255,13 @@ func handleListTomes(ctx context.Context, request mcp.CallToolRequest) (*mcp.Cal
 }
 
 // createQuestTool returns the create_quest MCP tool.
-func createQuestTool() mcpserver.ServerTool {
+// It accepts the MCPServer to enable elicitation (human-in-the-loop confirmation).
+func createQuestTool(mcpSrv *mcpserver.MCPServer) mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("create_quest",
 			mcp.WithDescription("Create a new quest in Tavern"),
+			mcp.WithReadOnlyHintAnnotation(false),
+			mcp.WithDestructiveHintAnnotation(true),
 			mcp.WithString("name",
 				mcp.Required(),
 				mcp.Description("The name of the quest"),
@@ -271,92 +280,131 @@ func createQuestTool() mcpserver.ServerTool {
 				mcp.Description("The ID of the tome to use for this quest"),
 			),
 		),
-		Handler: handleCreateQuest,
+		Handler: handleCreateQuest(mcpSrv),
 	}
 }
 
-func handleCreateQuest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client := clientFromContext(ctx)
-	if client == nil {
-		return mcp.NewToolResultError("internal error: no database client"), nil
-	}
+// confirmSchema is the JSON Schema used to request a boolean confirmation from the user.
+var confirmSchema = map[string]any{
+	"type": "object",
+	"properties": map[string]any{
+		"confirm": map[string]any{
+			"type":        "boolean",
+			"description": "Set to true to confirm quest creation",
+		},
+	},
+	"required": []string{"confirm"},
+}
 
-	name, err := request.RequireString("name")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid name: %v", err)), nil
-	}
-
-	beaconIDs, err := ParseIntIDs(request, "beacon_ids")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid beacon_ids: %v", err)), nil
-	}
-	if len(beaconIDs) == 0 {
-		return mcp.NewToolResultError("must provide at least one beacon id"), nil
-	}
-
-	params, err := request.RequireString("parameters")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid parameters: %v", err)), nil
-	}
-
-	tomeIDStr, err := request.RequireString("tome_id")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("invalid tome_id: %v", err)), nil
-	}
-	tomeID, err := strconv.Atoi(tomeIDStr)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("tome_id must be a number: %v", err)), nil
-	}
-
-	// Load the tome to get eldritch and param defs
-	questTome, err := client.Tome.Get(ctx, tomeID)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to load tome: %v", err)), nil
-	}
-
-	// Get creator from context (if available)
-	var creatorID *int
-	if creator := auth.UserFromContext(ctx); creator != nil {
-		creatorID = &creator.ID
-	}
-
-	// Create the quest
-	questCreate := client.Quest.Create().
-		SetName(name).
-		SetParameters(params).
-		SetTomeID(tomeID).
-		SetParamDefsAtCreation(questTome.ParamDefs).
-		SetEldritchAtCreation(questTome.Eldritch)
-
-	if creatorID != nil {
-		questCreate = questCreate.SetCreatorID(*creatorID)
-	}
-
-	newQuest, err := questCreate.Save(ctx)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to create quest: %v", err)), nil
-	}
-
-	// Create tasks for each beacon
-	for _, beaconID := range beaconIDs {
-		_, err := client.Task.Create().
-			SetQuestID(newQuest.ID).
-			SetBeaconID(beaconID).
-			Save(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to create task for beacon", "beacon_id", beaconID, "err", err)
+// handleCreateQuest returns a tool handler that creates a quest after eliciting user confirmation.
+func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		client := clientFromContext(ctx)
+		if client == nil {
+			return mcp.NewToolResultError("internal error: no database client"), nil
 		}
-	}
 
-	result := map[string]any{
-		"id":   newQuest.ID,
-		"name": newQuest.Name,
+		name, err := request.RequireString("name")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid name: %v", err)), nil
+		}
+
+		beaconIDs, err := ParseIntIDs(request, "beacon_ids")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid beacon_ids: %v", err)), nil
+		}
+		if len(beaconIDs) == 0 {
+			return mcp.NewToolResultError("must provide at least one beacon id"), nil
+		}
+
+		params, err := request.RequireString("parameters")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid parameters: %v", err)), nil
+		}
+
+		tomeIDStr, err := request.RequireString("tome_id")
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("invalid tome_id: %v", err)), nil
+		}
+		tomeID, err := strconv.Atoi(tomeIDStr)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("tome_id must be a number: %v", err)), nil
+		}
+
+		// Load the tome to get eldritch and param defs
+		questTome, err := client.Tome.Get(ctx, tomeID)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to load tome: %v", err)), nil
+		}
+
+		// Request human-in-the-loop confirmation before creating the quest.
+		// If elicitation is not supported by the client session, proceed without it.
+		elicitResult, err := mcpSrv.RequestElicitation(ctx, mcp.ElicitationRequest{
+			Params: mcp.ElicitationParams{
+				Message:         fmt.Sprintf("Create quest %q using tome %q targeting %d beacon(s)?", name, questTome.Name, len(beaconIDs)),
+				RequestedSchema: confirmSchema,
+			},
+		})
+		if err == nil {
+			// Elicitation was supported; check the user's response.
+			if elicitResult.Action != mcp.ElicitationResponseActionAccept {
+				return mcp.NewToolResultError("quest creation cancelled by user"), nil
+			}
+			// Verify the user explicitly confirmed.
+			if content, ok := elicitResult.Content.(map[string]any); ok {
+				if confirmed, _ := content["confirm"].(bool); !confirmed {
+					return mcp.NewToolResultError("quest creation cancelled by user"), nil
+				}
+			}
+		} else if err != mcpserver.ErrElicitationNotSupported && err != mcpserver.ErrNoActiveSession {
+			return mcp.NewToolResultError(fmt.Sprintf("elicitation failed: %v", err)), nil
+		}
+		// If elicitation is not supported, proceed without confirmation.
+
+		// Get creator from context (if available)
+		var creatorID *int
+		if creator := auth.UserFromContext(ctx); creator != nil {
+			creatorID = &creator.ID
+		}
+
+		// Create the quest
+		questCreate := client.Quest.Create().
+			SetName(name).
+			SetParameters(params).
+			SetTomeID(tomeID).
+			SetParamDefsAtCreation(questTome.ParamDefs).
+			SetEldritchAtCreation(questTome.Eldritch)
+
+		if creatorID != nil {
+			questCreate = questCreate.SetCreatorID(*creatorID)
+		}
+
+		newQuest, err := questCreate.Save(ctx)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to create quest: %v", err)), nil
+		}
+
+		// Create tasks for each beacon
+		for _, beaconID := range beaconIDs {
+			_, err := client.Task.Create().
+				SetQuestID(newQuest.ID).
+				SetBeaconID(beaconID).
+				Save(ctx)
+			if err != nil {
+				slog.ErrorContext(ctx, "failed to create task for beacon", "beacon_id", beaconID, "err", err)
+			}
+		}
+
+		result := map[string]any{
+			"id":   newQuest.ID,
+			"name": newQuest.Name,
+		}
+		data, err := json.Marshal(result)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to marshal result: %v", err)), nil
+		}
+		return mcp.NewToolResultText(string(data)), nil
 	}
-	data, err := json.Marshal(result)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to marshal result: %v", err)), nil
-	}
-	return mcp.NewToolResultText(string(data)), nil
 }
 
 // listHostsTool returns the list_hosts MCP tool.
@@ -364,6 +412,8 @@ func listHostsTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("list_hosts",
 			mcp.WithDescription("List all available hosts in Tavern"),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithDestructiveHintAnnotation(false),
 		),
 		Handler: handleListHosts,
 	}
@@ -447,6 +497,8 @@ func waitForQuestTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("wait_for_quest",
 			mcp.WithDescription("Wait for all tasks in a quest to finish. Polls every 5 seconds for up to 10 minutes."),
+			mcp.WithReadOnlyHintAnnotation(true),
+			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithString("quest_id",
 				mcp.Required(),
 				mcp.Description("The ID of the quest to wait for"),
