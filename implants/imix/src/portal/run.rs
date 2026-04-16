@@ -10,6 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 use transport::Transport;
 
+use super::pty::PtyManager;
 use crate::shell::manager::ShellManagerMessage;
 
 use super::{bytes, tcp, udp};
@@ -42,6 +43,9 @@ pub async fn run(
     // Map of stream_id -> StreamContext
     // Each stream has its own OrderedReader and a sender to its handler task
     let mut streams: HashMap<String, StreamContext> = HashMap::new();
+
+    // PTY Manager for handling PTY portal sessions
+    let mut pty_manager = PtyManager::new();
 
     // Map to track running tasks
     let mut tasks = Vec::new();
@@ -88,7 +92,7 @@ pub async fn run(
                                 }
                             }
 
-                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx).await {
+                            if let Err(_e) = handle_incoming_mote(mote, &mut streams, &out_tx, &mut tasks, &shell_manager_tx, &mut pty_manager).await {
                                 #[cfg(debug_assertions)]
                                 log::error!("Error handling incoming mote: {}", _e);
                             }
@@ -148,6 +152,7 @@ async fn handle_incoming_mote(
     out_tx: &mpsc::Sender<Mote>,
     tasks: &mut Vec<tokio::task::JoinHandle<()>>,
     shell_manager_tx: &mpsc::Sender<ShellManagerMessage>,
+    pty_manager: &mut PtyManager,
 ) -> Result<()> {
     // Handle Trace Mote
     if let Some(Payload::Bytes(ref mut bytes_payload)) = mote.payload
@@ -168,6 +173,18 @@ async fn handle_incoming_mote(
             .await
             .map_err(|e| anyhow::anyhow!("Failed to echo trace mote: {}", e))?;
         return Ok(());
+    }
+
+    // Handle PTY Mote (BytesPayload with PTY kind)
+    if let Some(Payload::Bytes(ref bytes_payload)) = mote.payload {
+        if bytes_payload.kind == BytesPayloadKind::Pty as i32 {
+            let stream_id = mote.stream_id.clone();
+            let data = bytes_payload.data.clone();
+            pty_manager
+                .handle_mote(stream_id, data, out_tx.clone())
+                .await?;
+            return Ok(());
+        }
     }
 
     // Handle Shell Mote
