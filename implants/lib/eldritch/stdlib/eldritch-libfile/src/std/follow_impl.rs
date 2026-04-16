@@ -82,9 +82,9 @@ fn follow_impl(
             bytes_read += n as u64;
 
             // Trim trailing newline and carriage return
-            if buf.ends_with(&[b'\n']) {
+            if buf.ends_with(b"\n") {
                 buf.pop();
-                if buf.ends_with(&[b'\r']) {
+                if buf.ends_with(b"\r") {
                     buf.pop();
                 }
             }

@@ -441,6 +441,17 @@ impl FileLibrary for FileLibraryFake {
         // Simple BFS/DFS to find all files
         Ok(Vec::new())
     }
+
+    fn set_perms(
+        &self,
+        _path: String,
+        _user: Option<String>,
+        _group: Option<String>,
+        _perms: Option<String>,
+        _xattrs: Option<BTreeMap<String, Value>>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 #[cfg(all(test, feature = "fake_bindings"))]

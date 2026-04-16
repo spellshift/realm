@@ -61,14 +61,13 @@ fn visit_dirs(dir: &Path, cb: &mut Vec<FileEntry>) -> std::io::Result<()> {
                         // Recurse, ignoring errors
                         let _ = visit_dirs(&path, cb);
                     } else {
-                        if let Ok(metadata) = entry.metadata() {
-                            if let Ok(modified) = metadata.modified() {
+                        if let Ok(metadata) = entry.metadata()
+                            && let Ok(modified) = metadata.modified() {
                                 cb.push(FileEntry {
                                     path: path.to_string_lossy().into_owned(),
                                     modified,
                                 });
                             }
-                        }
                     }
                 }
             }
