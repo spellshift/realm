@@ -29,7 +29,7 @@ func (ShellPivot) Fields() []ent.Field {
 			NotEmpty().
 			Comment("Stream ID of the portal connection"),
 		field.Enum("kind").
-			Values("ssh").
+			Values("ssh", "pty").
 			Comment("Kind of pivot connection"),
 		field.String("destination").
 			NotEmpty().
