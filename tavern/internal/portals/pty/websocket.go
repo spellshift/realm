@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -334,17 +333,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Keep a reference to topicIn and sessionCtx for the input goroutine
-		// We use a closure to capture these variables
-		go func() {
-			<-sessionCtx.Done()
-		}()
-
-		// Store topicIn in the session for the writer goroutine below
-		// We use the wsConn reader goroutine to send input
-		pivotSession.mu.Lock()
-		pivotSession.mu.Unlock()
-
 		// WebSocket -> Portal PTY Input goroutine (spawned below in the common path)
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
@@ -464,9 +452,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
-
-	// Suppress unused import warning
-	_ = io.EOF
 
 	// Wait for disconnect
 	<-errCh
