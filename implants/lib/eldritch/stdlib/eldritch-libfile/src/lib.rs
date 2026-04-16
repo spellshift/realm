@@ -427,4 +427,28 @@ pub trait FileLibrary {
         modified_time: Option<i64>,
         create_time: Option<i64>,
     ) -> Result<Vec<String>, String>;
+
+    #[eldritch_method]
+    /// Set permissions and extended attributes of a file.
+    ///
+    /// **Parameters**
+    /// - `path` (`str`): The file path.
+    /// - `user` (`Option<str>`): The new owner user.
+    /// - `group` (`Option<str>`): The new owner group.
+    /// - `perms` (`Option<str>`): The new permissions in octal string format (e.g. "755").
+    /// - `xattrs` (`Option<Dict<str, Value>>`): Extended attributes to set.
+    ///
+    /// **Returns**
+    /// - `None`
+    ///
+    /// **Errors**
+    /// - Returns an error string if setting permissions fails.
+    fn set_perms(
+        &self,
+        path: String,
+        user: Option<String>,
+        group: Option<String>,
+        perms: Option<String>,
+        xattrs: Option<BTreeMap<String, Value>>,
+    ) -> Result<(), String>;
 }

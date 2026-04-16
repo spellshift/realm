@@ -25,6 +25,7 @@ pub mod read_impl;
 pub mod remove_impl;
 pub mod replace_all_impl;
 pub mod replace_impl;
+pub mod set_perms_impl;
 pub mod temp_file_impl;
 pub mod template_impl;
 pub mod template_str_impl;
@@ -178,5 +179,16 @@ impl FileLibrary for StdFileLibrary {
             modified_time,
             create_time,
         )
+    }
+
+    fn set_perms(
+        &self,
+        path: String,
+        user: Option<String>,
+        group: Option<String>,
+        perms: Option<String>,
+        xattrs: Option<BTreeMap<String, Value>>,
+    ) -> Result<(), String> {
+        set_perms_impl::set_perms(path, user, group, perms, xattrs)
     }
 }
