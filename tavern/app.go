@@ -39,6 +39,7 @@ import (
 	tavernhttp "realm.pub/tavern/internal/http"
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
+	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/ssh"
@@ -429,6 +430,15 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if cfg.IsPProfEnabled() {
 		slog.WarnContext(ctx, "performance profiling is enabled, do not use in production as this may leak sensitive information")
 		registerProfiler(routes)
+	}
+
+	// Setup MCP Server
+	if cfg.IsMCPEnabled() {
+		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
+		mcpHandler := tavernmcp.NewHandler(client)
+		routes["/mcp/"] = tavernhttp.Endpoint{
+			Handler: mcpHandler,
+		}
 	}
 
 	// Create Tavern HTTP Server
