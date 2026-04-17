@@ -24,8 +24,8 @@ impl ProcessLibrary for StdProcessLibrary {
         kill_impl::kill(pid)
     }
 
-    fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String> {
-        list_impl::list()
+    fn list(&self, include_env: Option<bool>) -> Result<Vec<BTreeMap<String, Value>>, String> {
+        list_impl::list(include_env)
     }
 
     fn name(&self, pid: i64) -> Result<String, String> {
