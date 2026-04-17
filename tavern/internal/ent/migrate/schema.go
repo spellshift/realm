@@ -722,7 +722,7 @@ var (
 		{Name: "last_modified_at", Type: field.TypeTime},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "stream_id", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"ssh"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"ssh", "pty"}},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "port", Type: field.TypeInt},
 		{Name: "data", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "LONGTEXT"}},

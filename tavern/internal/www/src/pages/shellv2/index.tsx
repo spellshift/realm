@@ -10,6 +10,7 @@ import ShellStatusBar from "./components/ShellStatusBar";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import SshTerminal from './components/SshTerminal';
+import PtyTerminal from './components/PtyTerminal';
 
 interface PortalTab {
     id: string;
@@ -142,6 +143,9 @@ const ShellV2 = () => {
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                         {tab.type === "ssh" && (portalId || tab.pivotId) && (
                             <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                        )}
+                        {tab.type === "pty" && (portalId || tab.pivotId) && (
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
                         )}
                     </TabPanel>
                 ))}

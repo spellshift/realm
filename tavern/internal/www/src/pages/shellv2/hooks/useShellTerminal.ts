@@ -905,6 +905,16 @@ export const useShellTerminal = (
                                 onOpenPortalTab("ssh", target);
                             }
                         }
+                    } else if (metaCmd?.type === "pty") {
+                        const pId = portalIdRef.current;
+                        if (!pId) {
+                            term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
+                        } else {
+                            term.write(`\r\nOpening PTY session...\r\n`);
+                            if (onOpenPortalTab) {
+                                onOpenPortalTab("pty", "PTY");
+                            }
+                        }
                     }
                     term.write(">>> ");
                     state.currentBlock = "";
@@ -1033,6 +1043,16 @@ export const useShellTerminal = (
                                 term.write(`\r\nInitiating SSH connection to ${target}...\r\n`);
                                 if (onOpenPortalTab) {
                                     onOpenPortalTab("ssh", target);
+                                }
+                            }
+                        } else if (metaCmd?.type === "pty") {
+                            const pId = portalIdRef.current;
+                            if (!pId) {
+                                term.write(`\r\n\x1b[31mError: An active portal is required to initiate a PTY session.\x1b[0m\r\n`);
+                            } else {
+                                term.write(`\r\nOpening PTY session...\r\n`);
+                                if (onOpenPortalTab) {
+                                    onOpenPortalTab("pty", "PTY");
                                 }
                             }
                         }

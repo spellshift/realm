@@ -13,6 +13,8 @@ pub enum MetaCommand {
     Help { target: Option<String> },
     #[serde(rename = "ssh")]
     Ssh { target: String },
+    #[serde(rename = "pty")]
+    Pty,
 }
 
 #[cfg(feature = "fake_bindings")]
@@ -222,6 +224,10 @@ impl BrowserRepl {
                                                 }
                                             }
                                         }
+                                    } else if id == "pty" {
+                                        if args.is_empty() {
+                                            meta_command = Some(MetaCommand::Pty);
+                                        }
                                     }
                                 }
                             }
@@ -404,5 +410,13 @@ mod tests {
         assert!(res.contains("\"status\": \"complete\""));
         // Payload should contain sys.shell with indentation
         assert!(res.contains("sys.shell(\\\"ls\\\")"));
+    }
+
+    #[test]
+    fn test_browser_repl_pty_meta_command() {
+        let mut repl = BrowserRepl::new();
+        let res = repl.input("pty()");
+        assert!(res.contains("\"status\": \"meta\""));
+        assert!(res.contains("\"type\":\"pty\""));
     }
 }
