@@ -37,10 +37,6 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, o
     fitAddon.fit();
     termInstance.current = term;
 
-    // Focus the terminal after mount; deferred so HeadlessUI menu
-    // finishes restoring focus to its trigger button first.
-    setTimeout(() => term.focus(), 0);
-
     // Handle Resize
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
