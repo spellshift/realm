@@ -185,7 +185,7 @@ const NotificationBell = () => {
 
     return (
         <Popover
-            placement="right-start"
+            placement="bottom-end"
             onClose={handleClose}
         >
             <PopoverTrigger>
