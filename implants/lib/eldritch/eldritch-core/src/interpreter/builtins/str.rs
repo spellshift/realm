@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
@@ -8,7 +9,7 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `object` (Any): The object to convert.
-pub fn builtin_str(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_str(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.is_empty() {
         return Ok(Value::String(String::new()));
     }

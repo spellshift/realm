@@ -1,5 +1,6 @@
 use super::get_all_builtins;
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -9,9 +10,12 @@ use spin::RwLock;
 ///
 /// Returns a list of strings representing the names of all built-in functions
 /// available in the global scope.
-pub fn builtin_builtins(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_builtins(
+    _env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     if !args.is_empty() {
-        return Err("builtins() takes no arguments".to_string());
+        return Err(NativeError::runtime_error("builtins() takes no arguments"));
     }
     let mut names: Vec<String> = get_all_builtins()
         .into_iter()

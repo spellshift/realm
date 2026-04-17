@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::collections::BTreeMap;
 use alloc::format;
@@ -15,12 +16,12 @@ pub fn builtin_dict(
     _env: &Arc<RwLock<Environment>>,
     args: &[Value],
     kwargs: &BTreeMap<String, Value>,
-) -> Result<Value, String> {
+) -> Result<Value, NativeError> {
     if args.len() > 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "dict expected at most 1 arguments, got {}",
             args.len()
-        ));
+        )));
     }
 
     let mut map = BTreeMap::new();
@@ -50,10 +51,10 @@ pub fn builtin_dict(
                 }
             }
             _ => {
-                return Err(format!(
+                return Err(NativeError::runtime_error(format!(
                     "'{}' object is not iterable",
                     get_type_name(iterable)
-                ));
+                )));
             }
         }
     }
@@ -70,35 +71,35 @@ fn process_pair(
     map: &mut BTreeMap<Value, Value>,
     item: &Value,
     index: usize,
-) -> Result<(), String> {
+) -> Result<(), NativeError> {
     match item {
         Value::List(l) => {
             let list = l.read();
             if list.len() != 2 {
-                return Err(format!(
+                return Err(NativeError::runtime_error(format!(
                     "dictionary update sequence element #{} has length {}; 2 is required",
                     index,
                     list.len()
-                ));
+                )));
             }
             let key = list[0].clone();
             map.insert(key, list[1].clone());
         }
         Value::Tuple(t) => {
             if t.len() != 2 {
-                return Err(format!(
+                return Err(NativeError::runtime_error(format!(
                     "dictionary update sequence element #{} has length {}; 2 is required",
                     index,
                     t.len()
-                ));
+                )));
             }
             let key = t[0].clone();
             map.insert(key, t[1].clone());
         }
         _ => {
-            return Err(format!(
+            return Err(NativeError::runtime_error(format!(
                 "cannot convert dictionary update sequence element #{index} to a sequence"
-            ));
+            )));
         }
     }
     Ok(())

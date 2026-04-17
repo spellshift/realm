@@ -1,6 +1,6 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::collections::BTreeSet;
-use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -9,9 +9,9 @@ use spin::RwLock;
 ///
 /// Returns a list of strings representing the names of all libraries loaded
 /// in the current environment scope chain.
-pub fn builtin_libs(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_libs(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if !args.is_empty() {
-        return Err("libs() takes no arguments".to_string());
+        return Err(NativeError::runtime_error("libs() takes no arguments"));
     }
 
     let mut names = BTreeSet::new();

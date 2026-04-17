@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -9,15 +9,18 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `x` (Int | Float | String): The value to convert.
-pub fn builtin_float(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_float(
+    _env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     if args.is_empty() {
         return Ok(Value::Float(0.0));
     }
     if args.len() != 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "float() takes at most 1 argument ({} given)",
             args.len()
-        ));
+        )));
     }
 
     match &args[0] {
@@ -47,16 +50,20 @@ pub fn builtin_float(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
                         // But for "inf" string it is valid.
                         // Distinguishing overflow from explicit "inf" is handled by above checks.
                         // So if we reach here and get infinity, it was overflow.
-                        return Err(format!("float() literal too large: {s}"));
+                        return Err(NativeError::runtime_error(format!(
+                            "float() literal too large: {s}"
+                        )));
                     }
                     Ok(Value::Float(f))
                 }
-                Err(_) => Err(format!("could not convert string to float: '{s}'")),
+                Err(_) => Err(NativeError::runtime_error(format!(
+                    "could not convert string to float: '{s}'"
+                ))),
             }
         }
-        _ => Err(format!(
+        _ => Err(NativeError::runtime_error(format!(
             "float() argument must be a string or a number, not '{}'",
             get_type_name(&args[0])
-        )),
+        ))),
     }
 }

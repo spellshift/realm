@@ -175,7 +175,6 @@ pub(crate) fn apply_binary_op_values(
     b: Value,
     span: Span,
 ) -> Result<Value, EldritchError> {
-
     // Handle operations that are fully delegated
     if matches!(
         op,

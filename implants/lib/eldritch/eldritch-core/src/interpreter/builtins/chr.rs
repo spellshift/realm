@@ -1,7 +1,8 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use core::char;
 use spin::RwLock;
@@ -10,28 +11,32 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `i` (Int): The integer code point.
-pub fn builtin_chr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_chr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.len() != 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "chr() takes exactly one argument ({} given)",
             args.len()
-        ));
+        )));
     }
     match &args[0] {
         Value::Int(i) => {
             // Valid range for char is roughly 0 to 0x10FFFF
             // Rust char::from_u32 checks this.
             if *i < 0 || *i > 0x10FFFF {
-                return Err("chr() arg not in range(0x110000)".to_string());
+                return Err(NativeError::runtime_error(
+                    "chr() arg not in range(0x110000)",
+                ));
             }
             match char::from_u32(*i as u32) {
                 Some(c) => Ok(Value::String(String::from(c))),
-                None => Err("chr() arg not in range(0x110000)".to_string()),
+                None => Err(NativeError::runtime_error(
+                    "chr() arg not in range(0x110000)",
+                )),
             }
         }
-        _ => Err(format!(
-            "TypeError: an integer is required (got type {})",
+        _ => Err(NativeError::type_error(format!(
+            "an integer is required (got type {})",
             get_type_name(&args[0])
-        )),
+        ))),
     }
 }

@@ -26,6 +26,7 @@ pub(crate) fn to_iterable(
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn parse_error_kind(msg: &str) -> (EldritchErrorKind, &str) {
     if let Some(rest) = msg.strip_prefix("TypeError: ") {
         (EldritchErrorKind::TypeError, rest)

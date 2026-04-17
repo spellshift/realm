@@ -1,4 +1,5 @@
 use super::interpreter::Printer;
+use super::interpreter::error::NativeError;
 use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -52,9 +53,9 @@ pub enum Argument {
     KwArgs(Expr),
 }
 
-pub type BuiltinFn = fn(&Arc<RwLock<Environment>>, &[Value]) -> Result<Value, String>;
+pub type BuiltinFn = fn(&Arc<RwLock<Environment>>, &[Value]) -> Result<Value, NativeError>;
 pub type BuiltinFnWithKwargs =
-    fn(&Arc<RwLock<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, String>;
+    fn(&Arc<RwLock<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, NativeError>;
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;
@@ -65,7 +66,7 @@ pub trait ForeignValue: fmt::Debug + Send + Sync {
         name: &str,
         args: &[Value],
         kwargs: &BTreeMap<String, Value>,
-    ) -> Result<Value, String>;
+    ) -> Result<Value, NativeError>;
 }
 
 #[derive(Clone)]

@@ -1,5 +1,5 @@
 use crate::ast::{Environment, Value};
-use alloc::string::{String, ToString};
+use crate::interpreter::error::NativeError;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -10,15 +10,22 @@ use spin::RwLock;
 /// - `start` (Int): The start value (inclusive). Defaults to 0.
 /// - `stop` (Int): The stop value (exclusive).
 /// - `step` (Int): The step size. Defaults to 1.
-pub fn builtin_range(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_range(
+    _env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     let (start, end, step) = match args {
         [Value::Int(end)] => (0, *end, 1),
         [Value::Int(start), Value::Int(end)] => (*start, *end, 1),
         [Value::Int(start), Value::Int(end), Value::Int(step)] => (*start, *end, *step),
-        _ => return Err("TypeError: range expects 1-3 integer arguments".to_string()),
+        _ => {
+            return Err(NativeError::type_error(
+                "range expects 1-3 integer arguments",
+            ));
+        }
     };
     if step == 0 {
-        return Err("ValueError: range() arg 3 must not be zero".to_string());
+        return Err(NativeError::value_error("range() arg 3 must not be zero"));
     }
 
     let mut list = Vec::new();

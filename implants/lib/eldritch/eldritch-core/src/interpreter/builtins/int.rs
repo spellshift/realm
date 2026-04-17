@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -9,22 +9,22 @@ use spin::RwLock;
 ///
 /// If x is a number, return x.__int__(). For floating point numbers, this truncates towards zero.
 /// If x is not a number or if base is given, then x must be a string, bytes, or bytearray instance representing an integer literal in the given base.
-pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.is_empty() {
         return Ok(Value::Int(0));
     }
     if args.len() > 2 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "int() takes at most 2 arguments ({} given)",
             args.len()
-        ));
+        )));
     }
 
     let x = &args[0];
     let base = if args.len() == 2 {
         match &args[1] {
             Value::Int(i) => Some(*i),
-            _ => return Err("int() base must be an integer".into()),
+            _ => return Err(NativeError::runtime_error("int() base must be an integer")),
         }
     } else {
         None
@@ -34,7 +34,9 @@ pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         // Explicit base provided
         match x {
             Value::String(s) => parse_int_string(s, base),
-            _ => Err("int() can't convert non-string with explicit base".into()),
+            _ => Err(NativeError::runtime_error(
+                "int() can't convert non-string with explicit base",
+            )),
         }
     } else {
         // No base provided
@@ -43,17 +45,19 @@ pub fn builtin_int(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::Float(f) => Ok(Value::Int(*f as i64)), // Truncate
             Value::Bool(b) => Ok(Value::Int(if *b { 1 } else { 0 })),
             Value::String(s) => parse_int_string(s, 10),
-            _ => Err(format!(
+            _ => Err(NativeError::runtime_error(format!(
                 "int() argument must be a string, bytes or number, not '{}'",
                 get_type_name(x)
-            )),
+            ))),
         }
     }
 }
 
-fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
+fn parse_int_string(s: &str, base: i64) -> Result<Value, NativeError> {
     if (base != 0 && base < 2) || base > 36 {
-        return Err("int() base must be >= 2 and <= 36, or 0".into());
+        return Err(NativeError::runtime_error(
+            "int() base must be >= 2 and <= 36, or 0",
+        ));
     }
 
     let trimmed = s.trim();
@@ -92,9 +96,11 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
 
     let uval = u64::from_str_radix(clean_s_no_prefix, radix).map_err(|_| {
         if base == 0 || base == 10 {
-            format!("invalid literal for int() with base {radix}: '{s}'")
+            NativeError::runtime_error(format!(
+                "invalid literal for int() with base {radix}: '{s}'"
+            ))
         } else {
-            format!("invalid literal for int() with base {base}: '{s}'")
+            NativeError::runtime_error(format!("invalid literal for int() with base {base}: '{s}'"))
         }
     })?;
 
@@ -104,16 +110,18 @@ fn parse_int_string(s: &str, base: i64) -> Result<Value, String> {
         // i64::MAX is  9223372036854775807
         // abs(i64::MIN) is 9223372036854775808 (u64)
         if uval > i64::MAX as u64 + 1 {
-            return Err(format!(
+            return Err(NativeError::runtime_error(format!(
                 "int() literal too large: '{s}'" // Python behavior for overflow in fixed-width types? Python ints are arbitrary precision.
                                                  // But eldritch uses i64. We should error on overflow.
-            ));
+            )));
         }
         // Wrapping negation for i64::MIN case
         Ok(Value::Int((uval as i64).wrapping_neg()))
     } else {
         if uval > i64::MAX as u64 {
-            return Err(format!("int() literal too large: '{s}'"));
+            return Err(NativeError::runtime_error(format!(
+                "int() literal too large: '{s}'"
+            )));
         }
         Ok(Value::Int(uval as i64))
     }

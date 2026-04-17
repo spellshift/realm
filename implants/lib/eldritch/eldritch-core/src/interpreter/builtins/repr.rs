@@ -1,15 +1,15 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::format;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
-pub fn builtin_repr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_repr(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.len() != 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "repr() takes exactly one argument ({} given)",
             args.len()
-        ));
+        )));
     }
 
     // Default formatting uses Debug for now, or display for strings differently?

@@ -1,7 +1,8 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -14,15 +15,24 @@ use spin::RwLock;
 /// **Parameters**
 /// - `iterable` (Iterable): The sequence to enumerate.
 /// - `start` (Int): The starting index. Defaults to 0.
-pub fn builtin_enumerate(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_enumerate(
+    _env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     if args.is_empty() {
-        return Err("enumerate() takes at least one argument".to_string());
+        return Err(NativeError::runtime_error(
+            "enumerate() takes at least one argument",
+        ));
     }
     let iterable = &args[0];
     let start = if args.len() > 1 {
         match args[1] {
             Value::Int(i) => i,
-            _ => return Err("enumerate() start must be an integer".to_string()),
+            _ => {
+                return Err(NativeError::runtime_error(
+                    "enumerate() start must be an integer",
+                ));
+            }
         }
     } else {
         0
@@ -33,10 +43,10 @@ pub fn builtin_enumerate(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Res
         Value::Set(s) => s.read().iter().cloned().collect(),
         Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
         _ => {
-            return Err(format!(
+            return Err(NativeError::runtime_error(format!(
                 "Type '{:?}' is not iterable",
                 get_type_name(iterable)
-            ));
+            )));
         }
     };
     let mut pairs = Vec::new();

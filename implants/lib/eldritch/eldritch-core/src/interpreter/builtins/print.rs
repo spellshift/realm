@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
@@ -7,7 +8,7 @@ use spin::RwLock;
 ///
 /// Converts each argument to a string and prints it to the standard output,
 /// separated by spaces.
-pub fn builtin_print(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_print(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     let mut out = String::new();
     for (i, arg) in args.iter().enumerate() {
         if i > 0 {

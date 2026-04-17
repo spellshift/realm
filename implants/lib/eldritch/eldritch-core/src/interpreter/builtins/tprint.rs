@@ -1,4 +1,5 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -7,15 +8,24 @@ use alloc::vec::Vec;
 use spin::RwLock;
 
 /// `tprint(list_of_dicts)`: Prints a list of dictionaries as a markdown table.
-pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_tprint(
+    env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     if args.is_empty() {
-        return Err("tprint() takes at least 1 argument".to_string());
+        return Err(NativeError::runtime_error(
+            "tprint() takes at least 1 argument",
+        ));
     }
 
     let list_val = &args[0];
     let items_snapshot: Vec<Value> = match list_val {
         Value::List(l) => l.read().clone(),
-        _ => return Err("tprint() argument must be a list of dictionaries".to_string()),
+        _ => {
+            return Err(NativeError::runtime_error(
+                "tprint() argument must be a list of dictionaries",
+            ));
+        }
     };
 
     if items_snapshot.is_empty() {
@@ -41,7 +51,11 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
                 }
                 rows.push(row_map);
             }
-            _ => return Err("tprint() list must contain only dictionaries".to_string()),
+            _ => {
+                return Err(NativeError::runtime_error(
+                    "tprint() list must contain only dictionaries",
+                ));
+            }
         }
     }
 

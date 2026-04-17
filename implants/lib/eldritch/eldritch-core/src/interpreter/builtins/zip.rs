@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::String;
 use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -14,7 +14,7 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `*iterables` (Iterable): Iterables to zip together.
-pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.is_empty() {
         return Ok(Value::List(Arc::new(RwLock::new(Vec::new()))));
     }
@@ -27,7 +27,12 @@ pub fn builtin_zip(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
             Value::String(s) => s.chars().map(|c| Value::String(c.to_string())).collect(),
             Value::Set(s) => s.read().iter().cloned().collect(),
             Value::Dictionary(d) => d.read().keys().cloned().collect(),
-            _ => return Err(format!("'{}' object is not iterable", get_type_name(arg))),
+            _ => {
+                return Err(NativeError::runtime_error(format!(
+                    "'{}' object is not iterable",
+                    get_type_name(arg)
+                )));
+            }
         };
         iterators.push(items);
     }

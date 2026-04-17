@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_dir_attributes;
 use alloc::collections::BTreeSet;
-use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
@@ -10,7 +10,7 @@ use spin::RwLock;
 ///
 /// Without arguments, return the list of names in the current local scope.
 /// With an argument, attempt to return a list of valid attributes for that object.
-pub fn builtin_dir(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_dir(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.is_empty() {
         let mut symbols = BTreeSet::new();
         let mut current_env = Some(Arc::clone(env));

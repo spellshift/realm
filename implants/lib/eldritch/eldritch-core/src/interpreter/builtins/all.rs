@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::{get_type_name, is_truthy};
 use alloc::format;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -9,12 +9,12 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `iterable` (Iterable): The iterable to check.
-pub fn builtin_all(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_all(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.len() != 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "all() takes exactly one argument ({} given)",
             args.len()
-        ));
+        )));
     }
 
     let items = match &args[0] {
@@ -23,10 +23,10 @@ pub fn builtin_all(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
         Value::Set(s) => s.read().iter().cloned().collect(),
         Value::Dictionary(d) => d.read().keys().cloned().collect(),
         _ => {
-            return Err(format!(
+            return Err(NativeError::runtime_error(format!(
                 "'{}' object is not iterable",
                 get_type_name(&args[0])
-            ));
+            )));
         }
     };
 

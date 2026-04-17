@@ -7,11 +7,10 @@ use super::super::builtins::{
     reduce::builtin_reduce, sorted::builtin_sorted,
 };
 use super::super::core::{Flow, Interpreter};
-use super::super::error::{EldritchError, EldritchErrorKind};
+use super::super::error::{EldritchError, EldritchErrorKind, NativeError};
 use super::super::exec::execute_stmts;
 use super::super::introspection::get_type_name;
 use super::super::methods::call_bound_method;
-use super::utils::parse_error_kind;
 use super::{MAX_RECURSION_DEPTH, evaluate};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
@@ -157,8 +156,8 @@ pub(crate) fn call_function(
             }
 
             let res = f(&interp.env, args_slice).map_err(|e| {
-                let (kind, msg) = parse_error_kind(&e);
-                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                e.into_eldritch_error(span)
+                    .with_stack(interp.call_stack.clone())
             });
             interp.pop_frame();
             res
@@ -171,8 +170,8 @@ pub(crate) fn call_function(
                 interp.push_frame("<native>", span);
             }
             let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| {
-                let (kind, msg) = parse_error_kind(&e);
-                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                e.into_eldritch_error(span)
+                    .with_stack(interp.call_stack.clone())
             });
             interp.pop_frame();
             res
@@ -322,8 +321,7 @@ pub(crate) fn call_function(
                     foreign
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
                         .map_err(|e| {
-                            let (kind, msg) = parse_error_kind(&e);
-                            EldritchError::new(kind, msg, span)
+                            e.into_eldritch_error(span)
                                 .with_stack(interp.call_stack.clone())
                         })
                 } else if !kw_args_val.is_empty() {
@@ -335,8 +333,9 @@ pub(crate) fn call_function(
                     .with_stack(interp.call_stack.clone()))
                 } else {
                     call_bound_method(&receiver, &method_name, args_slice).map_err(|e| {
-                        let (kind, msg) = parse_error_kind(&e);
-                        EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                        NativeError::from(e)
+                            .into_eldritch_error(span)
+                            .with_stack(interp.call_stack.clone())
                     })
                 }
             };
@@ -363,8 +362,8 @@ pub(crate) fn call_value(
             // Native function name?
             interp.push_frame("<native>", span);
             let res = f(&interp.env, args).map_err(|e| {
-                let (kind, msg) = parse_error_kind(&e);
-                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                e.into_eldritch_error(span)
+                    .with_stack(interp.call_stack.clone())
             });
             interp.pop_frame();
             res
@@ -407,8 +406,9 @@ pub(crate) fn call_value(
         Value::BoundMethod(receiver, method_name) => {
             interp.push_frame(method_name, span);
             let res = call_bound_method(receiver, method_name, args).map_err(|e| {
-                let (kind, msg) = parse_error_kind(&e);
-                EldritchError::new(kind, msg, span).with_stack(interp.call_stack.clone())
+                NativeError::from(e)
+                    .into_eldritch_error(span)
+                    .with_stack(interp.call_stack.clone())
             });
             interp.pop_frame();
             res

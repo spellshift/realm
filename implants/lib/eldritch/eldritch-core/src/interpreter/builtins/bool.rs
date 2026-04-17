@@ -1,13 +1,13 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::is_truthy;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
 /// `bool(x)`: Converts a value to a Boolean.
 ///
 /// Returns True when the argument x is true, False otherwise.
-pub fn builtin_bool(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_bool(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.is_empty() {
         return Ok(Value::Bool(false));
     }

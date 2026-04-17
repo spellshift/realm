@@ -140,3 +140,76 @@ pub fn runtime_error<T>(span: Span, msg: &str) -> Result<T, EldritchError> {
         span,
     ))
 }
+
+/// A type-safe error returned by native (builtin) functions and methods.
+/// This replaces the old `Result<Value, String>` pattern where error kind
+/// was encoded as a string prefix (e.g. "TypeError: ...").
+#[derive(Debug, Clone)]
+pub struct NativeError {
+    pub kind: EldritchErrorKind,
+    pub message: String,
+}
+
+impl NativeError {
+    pub fn new(kind: EldritchErrorKind, message: impl Into<String>) -> Self {
+        NativeError {
+            kind,
+            message: message.into(),
+        }
+    }
+
+    pub fn type_error(message: impl Into<String>) -> Self {
+        Self::new(EldritchErrorKind::TypeError, message)
+    }
+
+    pub fn value_error(message: impl Into<String>) -> Self {
+        Self::new(EldritchErrorKind::ValueError, message)
+    }
+
+    pub fn runtime_error(message: impl Into<String>) -> Self {
+        Self::new(EldritchErrorKind::RuntimeError, message)
+    }
+
+    pub fn index_error(message: impl Into<String>) -> Self {
+        Self::new(EldritchErrorKind::IndexError, message)
+    }
+
+    pub fn key_error(message: impl Into<String>) -> Self {
+        Self::new(EldritchErrorKind::KeyError, message)
+    }
+
+    /// Convert to a full EldritchError with span and stack information.
+    pub fn into_eldritch_error(self, span: Span) -> EldritchError {
+        EldritchError::new(self.kind, &self.message, span)
+    }
+}
+
+impl fmt::Display for NativeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}: {}", self.kind, self.message)
+    }
+}
+
+/// Conversion from String errors to NativeError for backward compatibility.
+/// This parses the old "ErrorKind: message" prefix convention.
+impl From<String> for NativeError {
+    fn from(msg: String) -> Self {
+        if let Some(rest) = msg.strip_prefix("TypeError: ") {
+            NativeError::new(EldritchErrorKind::TypeError, rest)
+        } else if let Some(rest) = msg.strip_prefix("ValueError: ") {
+            NativeError::new(EldritchErrorKind::ValueError, rest)
+        } else if let Some(rest) = msg.strip_prefix("IndexError: ") {
+            NativeError::new(EldritchErrorKind::IndexError, rest)
+        } else if let Some(rest) = msg.strip_prefix("KeyError: ") {
+            NativeError::new(EldritchErrorKind::KeyError, rest)
+        } else if let Some(rest) = msg.strip_prefix("AttributeError: ") {
+            NativeError::new(EldritchErrorKind::AttributeError, rest)
+        } else if let Some(rest) = msg.strip_prefix("NameError: ") {
+            NativeError::new(EldritchErrorKind::NameError, rest)
+        } else if let Some(rest) = msg.strip_prefix("AssertionError: ") {
+            NativeError::new(EldritchErrorKind::AssertionError, rest)
+        } else {
+            NativeError::new(EldritchErrorKind::RuntimeError, msg)
+        }
+    }
+}

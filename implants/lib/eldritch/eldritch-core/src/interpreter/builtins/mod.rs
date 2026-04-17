@@ -1,5 +1,5 @@
 use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, Value};
-use alloc::string::ToString;
+use crate::interpreter::error::NativeError;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -96,8 +96,10 @@ pub fn get_all_builtins_with_kwargs() -> Vec<(&'static str, BuiltinFnWithKwargs)
 pub fn builtin_stub(
     _env: &alloc::sync::Arc<spin::RwLock<crate::ast::Environment>>,
     _args: &[Value],
-) -> Result<Value, alloc::string::String> {
-    Err("internal error: this function should be handled by interpreter".to_string())
+) -> Result<Value, NativeError> {
+    Err(NativeError::runtime_error(
+        "internal error: this function should be handled by interpreter",
+    ))
 }
 
 pub fn get_stubs() -> Vec<(&'static str, BuiltinFn)> {

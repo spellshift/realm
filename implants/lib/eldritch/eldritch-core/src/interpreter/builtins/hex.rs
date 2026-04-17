@@ -1,7 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::format;
-use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -9,12 +9,12 @@ use spin::RwLock;
 ///
 /// **Parameters**
 /// - `x` (Int): The integer to convert.
-pub fn builtin_hex(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_hex(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, NativeError> {
     if args.len() != 1 {
-        return Err(format!(
+        return Err(NativeError::runtime_error(format!(
             "hex() takes exactly one argument ({} given)",
             args.len()
-        ));
+        )));
     }
     match &args[0] {
         Value::Int(i) => {
@@ -24,9 +24,9 @@ pub fn builtin_hex(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Va
                 Ok(Value::String(format!("0x{:x}", i)))
             }
         }
-        _ => Err(format!(
+        _ => Err(NativeError::runtime_error(format!(
             "hex() argument must be an integer, not '{}'",
             get_type_name(&args[0])
-        )),
+        ))),
     }
 }

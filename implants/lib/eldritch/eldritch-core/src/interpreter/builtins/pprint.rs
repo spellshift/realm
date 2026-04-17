@@ -1,6 +1,7 @@
 use crate::ast::{Environment, Value};
+use crate::interpreter::error::NativeError;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use spin::RwLock;
 
@@ -8,18 +9,27 @@ use spin::RwLock;
 ///
 /// Prints the object in a formatted, readable way with indentation.
 /// Useful for debugging complex data structures like dictionaries and lists.
-pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<Value, String> {
+pub fn builtin_pprint(
+    env: &Arc<RwLock<Environment>>,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     let indent_width = if args.len() > 1 {
         match args[1] {
             Value::Int(i) => i.max(0) as usize,
-            _ => return Err("pprint() indent must be an integer".to_string()),
+            _ => {
+                return Err(NativeError::runtime_error(
+                    "pprint() indent must be an integer",
+                ));
+            }
         }
     } else {
         2 // Default indent
     };
 
     if args.is_empty() {
-        return Err("pprint() takes at least 1 argument".to_string());
+        return Err(NativeError::runtime_error(
+            "pprint() takes at least 1 argument",
+        ));
     }
 
     let mut output = String::new();
