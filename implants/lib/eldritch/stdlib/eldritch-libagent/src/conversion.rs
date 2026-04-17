@@ -79,7 +79,7 @@ impl ToValue for TaskWrapper {
 
 #[cfg(feature = "stdlib")]
 impl FromValue for CredentialWrapper {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, eldritch_core::NativeError> {
         match v {
             Value::Dictionary(d) => {
                 let dict = d.read();
@@ -103,14 +103,14 @@ impl FromValue for CredentialWrapper {
                     kind: 0,
                 }))
             }
-            _ => Err(format!("Expected Dictionary for Credential, got {v:?}")),
+            _ => Err(eldritch_core::NativeError::type_error(format!("Expected Dictionary for Credential, got {v:?}"))),
         }
     }
 }
 
 #[cfg(feature = "stdlib")]
 impl FromValue for FileWrapper {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, eldritch_core::NativeError> {
         match v {
             Value::Dictionary(d) => {
                 let dict = d.read();
@@ -138,14 +138,14 @@ impl FromValue for FileWrapper {
                     chunk,
                 }))
             }
-            _ => Err(format!("Expected Dictionary for File, got {v:?}")),
+            _ => Err(eldritch_core::NativeError::type_error(format!("Expected Dictionary for File, got {v:?}"))),
         }
     }
 }
 
 #[cfg(feature = "stdlib")]
 impl FromValue for ProcessListWrapper {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, eldritch_core::NativeError> {
         // ProcessList has `repeated Process list`.
         match v {
             Value::List(l) => {
@@ -178,16 +178,16 @@ impl FromValue for ProcessListWrapper {
                     list: processes,
                 }))
             }
-            _ => Err(format!("Expected List for ProcessList, got {v:?}")),
+            _ => Err(eldritch_core::NativeError::type_error(format!("Expected List for ProcessList, got {v:?}"))),
         }
     }
 }
 
 #[cfg(feature = "stdlib")]
 impl FromValue for TaskOutputWrapper {
-    fn from_value(_v: &Value) -> Result<Self, String> {
+    fn from_value(_v: &Value) -> Result<Self, eldritch_core::NativeError> {
         // This might not be needed if we use simple args for report_task_output
-        Err("TaskOutputWrapper FromValue not implemented".to_string())
+        Err(eldritch_core::NativeError::runtime_error("TaskOutputWrapper FromValue not implemented"))
     }
 }
 

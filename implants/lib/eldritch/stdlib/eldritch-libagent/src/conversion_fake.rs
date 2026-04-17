@@ -18,19 +18,19 @@ pub struct FileWrapper;
 pub struct ProcessListWrapper;
 
 impl FromValue for CredentialWrapper {
-    fn from_value(_v: &Value) -> Result<Self, String> {
+    fn from_value(_v: &Value) -> Result<Self, eldritch_core::NativeError> {
         Ok(CredentialWrapper)
     }
 }
 
 impl FromValue for FileWrapper {
-    fn from_value(_v: &Value) -> Result<Self, String> {
+    fn from_value(_v: &Value) -> Result<Self, eldritch_core::NativeError> {
         Ok(FileWrapper)
     }
 }
 
 impl FromValue for ProcessListWrapper {
-    fn from_value(_v: &Value) -> Result<Self, String> {
+    fn from_value(_v: &Value) -> Result<Self, eldritch_core::NativeError> {
         Ok(ProcessListWrapper)
     }
 }
