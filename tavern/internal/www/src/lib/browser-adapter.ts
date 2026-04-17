@@ -19,6 +19,7 @@ export class BrowserWasmAdapter {
     private isWsOpen: boolean = false;
     private reconnectTimer: NodeJS.Timeout | null = null;
     private isClosedExplicitly: boolean = false;
+    public version: string = "";
 
     constructor(
         url: string,
@@ -93,6 +94,16 @@ export class BrowserWasmAdapter {
             const module = await import(/* webpackIgnore: true */ "/wasm/eldritch_wasm.js");
             await module.default("/wasm/eldritch_wasm_bg.wasm");
             this.repl = new module.BrowserRepl();
+
+            // Load version from wasm package metadata
+            try {
+                const resp = await fetch("/wasm/package.json");
+                const pkg = await resp.json();
+                this.version = pkg.version || "";
+            } catch {
+                // Version display is non-critical; silently ignore failures
+            }
+
             this.checkReady();
         } catch (e) {
             console.error("Failed to initialize WASM module", e);

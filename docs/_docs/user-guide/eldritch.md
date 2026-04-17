@@ -1159,7 +1159,7 @@ The **process.kill** method will kill a process using the KILL signal given its 
 
 ### process.list
 
-`process.list() -> List<Dict>`
+`process.list(include_env: Optional<bool>) -> List<Dict>`
 
 The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:
 
@@ -1176,6 +1176,8 @@ The **process.list** method returns a list of dictionaries that describe each pr
     "environ": "CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0",
 }
 ```
+
+The `include_env` parameter is an optional boolean (default `False`). When `True`, the `environ` field is included in each process dictionary. When `False` or omitted, the `environ` field is omitted.
 
 ### process.name
 
