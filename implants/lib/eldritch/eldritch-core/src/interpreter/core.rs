@@ -92,11 +92,6 @@ impl Interpreter {
         for (name, func) in get_stubs() {
             self.register_function(name, func);
         }
-        // Hardcoded pass variable for now
-        self.env
-            .write()
-            .values
-            .insert("pass".to_string(), Value::None);
     }
 
     pub fn register_function(&mut self, name: &str, func: BuiltinFn) {
