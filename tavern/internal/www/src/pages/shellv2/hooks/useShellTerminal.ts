@@ -383,6 +383,12 @@ export const useShellTerminal = (
         };
         window.addEventListener("resize", handleResize);
 
+        // Also observe container size changes (e.g. tab switches)
+        const resizeObserver = new ResizeObserver(() => {
+            fitAddon.fit();
+        });
+        resizeObserver.observe(termRef.current);
+
         termInstance.current.write("Eldritch v0.3.0\r\n");
 
         // Define redrawLine early so it can be used by adapter callback
@@ -1087,6 +1093,7 @@ export const useShellTerminal = (
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            resizeObserver.disconnect();
             adapter.current?.close();
             termInstance.current?.dispose();
             if (redrawTimeoutRef.current) clearTimeout(redrawTimeoutRef.current);
@@ -1095,6 +1102,20 @@ export const useShellTerminal = (
 
     const getSessionInputs = useCallback(() => {
         return sessionInputs.current.join("\n");
+    }, []);
+
+    const setShellInput = useCallback((text: string) => {
+        const term = termInstance.current;
+        if (!term) return;
+        const state = shellState.current;
+        state.inputBuffer = text;
+        state.cursorPos = text.length;
+        redrawLine();
+        term.focus();
+    }, [redrawLine]);
+
+    const focusTerminal = useCallback(() => {
+        termInstance.current?.focus();
     }, []);
 
     return {
@@ -1111,6 +1132,8 @@ export const useShellTerminal = (
         connectionMessage,
         handleTooltipMouseEnter: cancelHideTooltip,
         handleTooltipMouseLeave: scheduleHideTooltip,
-        getSessionInputs
+        getSessionInputs,
+        setShellInput,
+        focusTerminal
     };
 };

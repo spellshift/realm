@@ -1,21 +1,27 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug, Share } from "lucide-react";
+import { Bug } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
+import ShellActionsMenu from "./ShellActionsMenu";
+import NotificationBell from "../../../components/notifications/NotificationBell";
 
 interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
-  onExport?: () => void;
+  portalId: number | null;
+  onExport: () => void;
+  onNewPortal: () => void;
+  onClosePortal: () => void;
+  onSshConnect: (target: string) => void;
+  onPtyOpen: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], onExport }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onClosePortal, onSshConnect, onPtyOpen }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -62,27 +68,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         {principal && <Badge>{principal}</Badge>}
       </h1>
 
-      <a
-        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-400 hover:text-white transition-colors"
-        title="Report a bug"
-      >
-        <Bug size={20} />
-      </a>
-
-      <Button
-        buttonVariant="solid"
-        buttonStyle={{ color: "gray", size: "sm" }}
-        leftIcon={<Share size={16} />}
-        onClick={onExport}
-      >
-        Export
-      </Button>
-
       {/* Active Users Display */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 min-w-0 overflow-x-auto">
         {activeUsers.length > 0 && (
           <div className="flex -space-x-2">
             {activeUsers.map((user) => {
@@ -100,6 +87,31 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
             })}
           </div>
         )}
+      </div>
+
+      <a
+        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
+        title="Report a bug"
+      >
+        <Bug size={20} />
+      </a>
+
+      <div className="flex-shrink-0">
+        <NotificationBell />
+      </div>
+
+      <div className="flex-shrink-0">
+        <ShellActionsMenu
+          portalId={portalId}
+          onExport={onExport}
+          onNewPortal={onNewPortal}
+          onClosePortal={onClosePortal}
+          onSshConnect={onSshConnect}
+          onPtyOpen={onPtyOpen}
+        />
       </div>
     </div>
   );

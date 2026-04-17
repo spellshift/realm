@@ -9,9 +9,10 @@ interface SshTerminalProps {
   target: string;
   pivotId?: number;
   shellId: string;
+  onConnectionStatusChange?: (status: "connecting" | "connected" | "disconnected") => void;
 }
 
-const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, shellId }) => {
+const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, shellId, onConnectionStatusChange }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -54,6 +55,7 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, sh
 
     ws.onopen = () => {
       setConnectionStatus("connected");
+      onConnectionStatusChange?.("connected");
       term.write(`\r\n\x1b[32mConnected to SSH portal for ${target}\x1b[0m\r\n`);
     };
 
@@ -75,12 +77,14 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, sh
 
     ws.onclose = () => {
       setConnectionStatus("disconnected");
+      onConnectionStatusChange?.("disconnected");
       term.write(`\r\n\x1b[33mConnection closed\x1b[0m\r\n`);
     };
 
     ws.onerror = (e) => {
       console.error("SSH WebSocket error:", e);
       setConnectionStatus("disconnected");
+      onConnectionStatusChange?.("disconnected");
     };
 
     // User input to WebSocket

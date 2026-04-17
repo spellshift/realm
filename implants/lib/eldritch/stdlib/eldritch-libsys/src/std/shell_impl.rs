@@ -9,10 +9,14 @@ use {
     std::ffi::{OsStr, OsString, c_void},
     std::iter::once,
     std::os::windows::ffi::{OsStrExt, OsStringExt},
+    std::os::windows::process::CommandExt,
     std::path::Path,
     std::{slice, str},
     windows_sys::Win32::UI::Shell::CommandLineToArgvW,
 };
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct CommandOutput {
     stdout: String,
@@ -89,7 +93,10 @@ fn handle_shell(cmd: String) -> Result<CommandOutput> {
         let command_string = "cmd";
         let all_together = format!("/c {}", cmd);
         let new_arg = to_argv(all_together.as_str());
-        let tmp_res = Command::new(command_string).args(new_arg).output()?;
+        let tmp_res = Command::new(command_string)
+            .args(new_arg)
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()?;
         Ok(CommandOutput {
             stdout: String::from_utf8_lossy(&tmp_res.stdout).to_string(),
             stderr: String::from_utf8_lossy(&tmp_res.stderr).to_string(),

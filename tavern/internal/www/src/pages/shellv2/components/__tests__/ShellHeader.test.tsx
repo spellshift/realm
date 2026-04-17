@@ -1,9 +1,20 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ShellHeader from "../ShellHeader";
 import React from "react";
-import { expect, describe, it, vi } from "vitest";
+import { expect, describe, it, vi, beforeAll } from "vitest";
 import { BrowserRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
+
+// Polyfill ResizeObserver for Headless UI Menu in jsdom
+beforeAll(() => {
+    if (typeof globalThis.ResizeObserver === "undefined") {
+        globalThis.ResizeObserver = class {
+            observe() {}
+            unobserve() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+    }
+});
 
 // Mock Tooltip because it often causes issues in tests
 vi.mock("@chakra-ui/react", async () => {
@@ -35,10 +46,19 @@ describe("ShellHeader", () => {
         }
     };
 
+    const defaultProps = {
+        shellData: mockShellData,
+        portalId: null as number | null,
+        onExport: vi.fn(),
+        onNewPortal: vi.fn(),
+        onSshConnect: vi.fn(),
+        onPtyOpen: vi.fn(),
+    };
+
     it("renders beacon name and host name", () => {
         render(
             <BrowserRouter>
-                <ShellHeader shellData={mockShellData} />
+                <ShellHeader {...defaultProps} />
             </BrowserRouter>
         );
         expect(screen.getByText("test-beacon")).toBeInTheDocument();
@@ -48,7 +68,7 @@ describe("ShellHeader", () => {
     it("renders principal badge when present", () => {
         render(
             <BrowserRouter>
-                <ShellHeader shellData={mockShellData} />
+                <ShellHeader {...defaultProps} />
             </BrowserRouter>
         );
         expect(screen.getByText("root")).toBeInTheDocument();
@@ -66,19 +86,22 @@ describe("ShellHeader", () => {
         };
         render(
             <BrowserRouter>
-                <ShellHeader shellData={dataWithoutPrincipal} />
+                <ShellHeader {...defaultProps} shellData={dataWithoutPrincipal} />
             </BrowserRouter>
         );
         expect(screen.queryByText("root")).not.toBeInTheDocument();
     });
 
-    it("calls onExport when export button is clicked", () => {
+    it("calls onExport when export menu item is clicked", () => {
         const onExport = vi.fn();
         render(
             <BrowserRouter>
-                <ShellHeader shellData={mockShellData} onExport={onExport} />
+                <ShellHeader {...defaultProps} onExport={onExport} />
             </BrowserRouter>
         );
+        // Open the actions menu first
+        const actionsButton = screen.getByLabelText("Shell actions");
+        fireEvent.click(actionsButton);
         const exportButton = screen.getByText("Export");
         fireEvent.click(exportButton);
         expect(onExport).toHaveBeenCalled();
