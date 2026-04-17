@@ -98,6 +98,9 @@ pub fn get_interpreter_builtins() -> Vec<(&'static str, InterpreterBuiltinFn)> {
         ("filter", filter::builtin_filter as InterpreterBuiltinFn),
         ("reduce", reduce::builtin_reduce as InterpreterBuiltinFn),
         ("sorted", sorted::builtin_sorted as InterpreterBuiltinFn),
-        ("eval", eval_builtin::builtin_eval_func as InterpreterBuiltinFn),
+        (
+            "eval",
+            eval_builtin::builtin_eval_func as InterpreterBuiltinFn,
+        ),
     ]
 }

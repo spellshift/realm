@@ -128,7 +128,11 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
     }
 }
 
-pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Result<Value, NativeError> {
+pub fn call_bound_method(
+    receiver: &Value,
+    method: &str,
+    args: &[Value],
+) -> Result<Value, NativeError> {
     let result = match receiver {
         Value::List(l) => handle_list_methods(l, method, args),
         Value::Dictionary(d) => handle_dict_methods(d, method, args),

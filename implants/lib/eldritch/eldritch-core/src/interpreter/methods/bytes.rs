@@ -13,7 +13,10 @@ pub fn handle_bytes_methods(
             args.require(0, "decode")?;
             match String::from_utf8(b.to_vec()) {
                 Ok(s) => Ok(Value::String(s)),
-                Err(e) => Err(NativeError::runtime_error(alloc::format!("UnicodeDecodeError: {}", e))),
+                Err(e) => Err(NativeError::runtime_error(alloc::format!(
+                    "UnicodeDecodeError: {}",
+                    e
+                ))),
             }
         })()),
         _ => None,

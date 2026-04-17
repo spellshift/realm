@@ -335,7 +335,14 @@ pub(crate) fn call_function(
         "<anonymous>"
     };
 
-    dispatch_call(interp, callee_val, callee_name, pos_args_val, kw_args_val, span)
+    dispatch_call(
+        interp,
+        callee_val,
+        callee_name,
+        pos_args_val,
+        kw_args_val,
+        span,
+    )
 }
 
 pub(crate) fn call_value(

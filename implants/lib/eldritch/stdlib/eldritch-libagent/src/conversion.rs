@@ -103,7 +103,9 @@ impl FromValue for CredentialWrapper {
                     kind: 0,
                 }))
             }
-            _ => Err(eldritch_core::NativeError::type_error(format!("Expected Dictionary for Credential, got {v:?}"))),
+            _ => Err(eldritch_core::NativeError::type_error(format!(
+                "Expected Dictionary for Credential, got {v:?}"
+            ))),
         }
     }
 }
@@ -138,7 +140,9 @@ impl FromValue for FileWrapper {
                     chunk,
                 }))
             }
-            _ => Err(eldritch_core::NativeError::type_error(format!("Expected Dictionary for File, got {v:?}"))),
+            _ => Err(eldritch_core::NativeError::type_error(format!(
+                "Expected Dictionary for File, got {v:?}"
+            ))),
         }
     }
 }
@@ -178,7 +182,9 @@ impl FromValue for ProcessListWrapper {
                     list: processes,
                 }))
             }
-            _ => Err(eldritch_core::NativeError::type_error(format!("Expected List for ProcessList, got {v:?}"))),
+            _ => Err(eldritch_core::NativeError::type_error(format!(
+                "Expected List for ProcessList, got {v:?}"
+            ))),
         }
     }
 }
@@ -187,7 +193,9 @@ impl FromValue for ProcessListWrapper {
 impl FromValue for TaskOutputWrapper {
     fn from_value(_v: &Value) -> Result<Self, eldritch_core::NativeError> {
         // This might not be needed if we use simple args for report_task_output
-        Err(eldritch_core::NativeError::runtime_error("TaskOutputWrapper FromValue not implemented"))
+        Err(eldritch_core::NativeError::runtime_error(
+            "TaskOutputWrapper FromValue not implemented",
+        ))
     }
 }
 

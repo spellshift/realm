@@ -109,8 +109,7 @@ impl Interpreter {
             // Register a dummy NativeFunction in the env so the name resolves,
             // and store the real handler in the interpreter_builtins registry.
             self.register_function(name, interpreter_builtin_placeholder);
-            self.interpreter_builtins
-                .insert(name.to_string(), func);
+            self.interpreter_builtins.insert(name.to_string(), func);
         }
     }
 
