@@ -53,8 +53,7 @@ const writeHelpMessage = (term: Terminal, version: string) => {
     term.write("\r\n");
     term.write("\x1b[1;33m# Meta Commands\x1b[0m\r\n");
     term.write("These commands run locally in your browser and are not sent to the agent.\r\n");
-    term.write("  \x1b[1m`help`\x1b[0m            — Show this message. Use \x1b[1m`help(module)`\x1b[0m for module docs (e.g. \x1b[1m`help(sys)`\x1b[0m).\r\n");
-    term.write("                      Hover over any symbol for inline documentation.\r\n");
+    term.write("  \x1b[1m`help`\x1b[0m            — Show this message. Use \x1b[1m`help(module)`\x1b[0m for module docs (e.g. \x1b[1m`help(sys)`\x1b[0m).\r\n                      Hover over any symbol for inline documentation.\r\n");
     term.write("  \x1b[1m`ssh(\"user:pass@host:port\")`\x1b[0m — Open an SSH session through the agent's portal connection.\r\n");
     term.write("  \x1b[1m`pty()`\x1b[0m           — Open an interactive PTY session through the agent's portal connection.\r\n");
     term.write("\r\n");
