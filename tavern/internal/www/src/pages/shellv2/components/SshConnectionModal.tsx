@@ -74,7 +74,7 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({ isOpen, onClose
                                         type="text"
                                         value={target}
                                         onChange={(e) => setTarget(e.target.value)}
-                                        placeholder="user@hostname"
+                                        placeholder="user:password@host:port"
                                         className="w-full px-3 py-2 bg-[#1e1e1e] border border-[#555] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                         autoFocus
                                     />

@@ -1,7 +1,6 @@
 import React, { Fragment, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { Share, Terminal, Globe, SquareTerminal } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -15,6 +14,7 @@ interface ShellActionsMenuProps {
 }
 
 const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using pivot.create_portal().";
+const PORTAL_ACTIVE_TOOLTIP = "A portal is already active on this session.";
 
 const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     portalId,
@@ -31,11 +31,11 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
             <Menu as="div" className="relative">
                 <Menu.Button
                     as={Button}
-                    buttonVariant="solid"
+                    buttonVariant="ghost"
                     buttonStyle={{ color: "gray", size: "sm" }}
-                    rightIcon={<ChevronDownIcon className="h-4 w-4" aria-hidden="true" />}
+                    aria-label="Shell actions"
                 >
-                    Actions
+                    <Ellipsis className="w-5 h-5" />
                 </Menu.Button>
                 <Transition
                     as={Fragment}
@@ -46,7 +46,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                     leaveFrom="transform opacity-100 scale-100"
                     leaveTo="transform opacity-0 scale-95"
                 >
-                    <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left rounded-md bg-[#2d2d2d] border border-[#444] shadow-lg focus:outline-none z-50">
+                    <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-[#2d2d2d] border border-[#444] shadow-lg focus:outline-none z-50">
                         <div className="px-1 py-1">
                             <Menu.Item>
                                 {() => (
@@ -64,15 +64,25 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
 
                             <Menu.Item>
                                 {() => (
-                                    <Button
-                                        buttonVariant="ghost"
-                                        buttonStyle={{ color: "gray", size: "sm" }}
-                                        className="w-full justify-start text-gray-200 hover:bg-[#3d3d3d]"
-                                        leftIcon={<Globe className="w-4 h-4" />}
-                                        onClick={onNewPortal}
+                                    <Tooltip
+                                        label={hasPortal ? PORTAL_ACTIVE_TOOLTIP : ""}
+                                        isDisabled={!hasPortal}
+                                        placement="right"
+                                        hasArrow
                                     >
-                                        New Portal
-                                    </Button>
+                                        <div>
+                                            <Button
+                                                buttonVariant="ghost"
+                                                buttonStyle={{ color: "gray", size: "sm" }}
+                                                className={`w-full justify-start ${hasPortal ? "text-gray-600 cursor-not-allowed" : "text-gray-200 hover:bg-[#3d3d3d]"}`}
+                                                leftIcon={<Globe className={`w-4 h-4 ${hasPortal ? "opacity-40" : ""}`} />}
+                                                onClick={onNewPortal}
+                                                disabled={hasPortal}
+                                            >
+                                                New Portal
+                                            </Button>
+                                        </div>
+                                    </Tooltip>
                                 )}
                             </Menu.Item>
 

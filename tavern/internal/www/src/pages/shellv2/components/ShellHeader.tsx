@@ -76,14 +76,6 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         <Bug size={20} />
       </a>
 
-      <ShellActionsMenu
-        portalId={portalId}
-        onExport={onExport}
-        onNewPortal={onNewPortal}
-        onSshConnect={onSshConnect}
-        onPtyOpen={onPtyOpen}
-      />
-
       {/* Active Users Display */}
       <div className="ml-auto flex items-center gap-2">
         {activeUsers.length > 0 && (
@@ -104,6 +96,14 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
           </div>
         )}
       </div>
+
+      <ShellActionsMenu
+        portalId={portalId}
+        onExport={onExport}
+        onNewPortal={onNewPortal}
+        onSshConnect={onSshConnect}
+        onPtyOpen={onPtyOpen}
+      />
     </div>
   );
 };

@@ -100,7 +100,7 @@ describe("ShellHeader", () => {
             </BrowserRouter>
         );
         // Open the actions menu first
-        const actionsButton = screen.getByText("Actions");
+        const actionsButton = screen.getByLabelText("Shell actions");
         fireEvent.click(actionsButton);
         const exportButton = screen.getByText("Export");
         fireEvent.click(exportButton);
