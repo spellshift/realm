@@ -394,7 +394,8 @@ fn format_value_smart(value: &Value) -> String {
             if is_list_of_dicts {
                 match format_tprint(value) {
                     Ok(Some(table)) => table,
-                    _ => format!("{:?}\n", value),
+                    Ok(None) => format!("{:?}\n", value),
+                    Err(_) => format!("{:?}\n", value),
                 }
             } else {
                 let mut buf = String::new();
