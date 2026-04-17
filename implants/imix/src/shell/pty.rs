@@ -47,8 +47,8 @@ pub async fn run_reverse_shell_pty(
 
     // Create a new pty
     let pair = match pty_system.openpty(PtySize {
-        rows: 24,
-        cols: 80,
+        rows: 48,
+        cols: 160,
         pixel_width: 0,
         pixel_height: 0,
     }) {

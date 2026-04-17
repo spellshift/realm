@@ -68,8 +68,8 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
     let pty_system = native_pty_system();
 
     let pair = pty_system.openpty(PtySize {
-        rows: 24,
-        cols: 80,
+        rows: 48,
+        cols: 160,
         pixel_width: 0,
         pixel_height: 0,
     })?;
