@@ -1,13 +1,14 @@
 use super::ast::Value;
+use super::interpreter::error::NativeError;
 use alloc::collections::BTreeMap;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
 pub trait FromValue: Sized {
-    fn from_value(v: &Value) -> Result<Self, String>;
+    fn from_value(v: &Value) -> Result<Self, NativeError>;
 }
 
 pub trait ToValue {
@@ -16,53 +17,68 @@ pub trait ToValue {
 
 // Implementations for FromValue
 impl FromValue for i64 {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::Int(i) => Ok(*i),
-            _ => Err(format!("Expected Int, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected Int, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl FromValue for f64 {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::Float(f) => Ok(*f),
             Value::Int(i) => Ok(*i as f64),
-            _ => Err(format!("Expected Float or Int, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected Float or Int, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl FromValue for String {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::String(s) => Ok(s.clone()),
-            _ => Err(format!("Expected String, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected String, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl FromValue for bool {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::Bool(b) => Ok(*b),
-            _ => Err(format!("Expected Bool, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected Bool, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl FromValue for Vec<u8> {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::Bytes(b) => Ok(b.clone()),
-            _ => Err(format!("Expected Bytes, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected Bytes, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl<T: FromValue> FromValue for Vec<T> {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::List(l) => {
                 let list = l.read();
@@ -79,17 +95,16 @@ impl<T: FromValue> FromValue for Vec<T> {
                 }
                 Ok(res)
             }
-            // Should we support Set -> Vec conversion automatically?
-            // Python typing sometimes allows Iterable[T].
-            // But strict Vec<T> mapping usually implies order.
-            // Let's stick to List/Tuple for now.
-            _ => Err(format!("Expected List or Tuple, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected List or Tuple, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl<K: FromValue + Ord, V: FromValue> FromValue for BTreeMap<K, V> {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::Dictionary(d) => {
                 let dict = d.read();
@@ -101,19 +116,22 @@ impl<K: FromValue + Ord, V: FromValue> FromValue for BTreeMap<K, V> {
                 }
                 Ok(res)
             }
-            _ => Err(format!("Expected Dictionary, got {}", get_type_name(v))),
+            _ => Err(NativeError::type_error(format!(
+                "Expected Dictionary, got {}",
+                get_type_name(v)
+            ))),
         }
     }
 }
 
 impl FromValue for Value {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         Ok(v.clone())
     }
 }
 
 impl<T: FromValue> FromValue for Option<T> {
-    fn from_value(v: &Value) -> Result<Self, String> {
+    fn from_value(v: &Value) -> Result<Self, NativeError> {
         match v {
             Value::None => Ok(None),
             _ => Ok(Some(T::from_value(v)?)),
@@ -190,18 +208,19 @@ impl ToValue for Value {
     }
 }
 
-// Trait for handling return types
+// Trait for handling return types from native functions.
+// Converts a Result<T, E> into Result<Value, NativeError>.
 pub trait IntoEldritchResult {
-    fn into_eldritch_result(self) -> Result<Value, String>;
+    fn into_eldritch_result(self) -> Result<Value, NativeError>;
 }
 
 impl<T, E> IntoEldritchResult for Result<T, E>
 where
     T: ToValue,
-    E: ToString,
+    E: Into<NativeError>,
 {
-    fn into_eldritch_result(self) -> Result<Value, String> {
-        self.map(|v| v.to_value()).map_err(|e| e.to_string())
+    fn into_eldritch_result(self) -> Result<Value, NativeError> {
+        self.map(|v| v.to_value()).map_err(|e| e.into())
     }
 }
 

@@ -104,7 +104,7 @@ pub fn expand_eldritch_library(
             name: &str,
             _eldritch_args: &[eldritch_core::Value],
             _eldritch_kwargs: &alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
-        ) -> Result<eldritch_core::Value, alloc::string::String> {
+        ) -> Result<eldritch_core::Value, eldritch_core::NativeError> {
             match name {
                 #(#method_dispatches)*
                 _ => {
@@ -114,7 +114,7 @@ pub fn expand_eldritch_library(
                         use core::fmt::Write;
                         let _ = write!(msg, "\nDid you mean '{}'?", suggestion);
                     }
-                    Err(msg)
+                    Err(eldritch_core::NativeError::runtime_error(msg))
                 }
             }
         }
@@ -155,7 +155,7 @@ pub fn expand_eldritch_library_impl(
                 name: &str,
                 args: &[eldritch_core::Value],
                 kwargs: &alloc::collections::BTreeMap<alloc::string::String, eldritch_core::Value>,
-            ) -> Result<eldritch_core::Value, alloc::string::String> {
+            ) -> Result<eldritch_core::Value, eldritch_core::NativeError> {
                 <Self as #trait_ident>::_eldritch_call_method(self, interp, name, args, kwargs)
             }
         }
@@ -221,7 +221,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                 // Add validation for multiple values (positional AND keyword)
                 parsing.push(quote! {
                     if #arg_idx < _eldritch_args.len() && _eldritch_kwargs.contains_key(#arg_name_str) {
-                         return Err(alloc::format!("TypeError: Function got multiple values for argument '{}'", #arg_name_str));
+                         return Err(eldritch_core::NativeError::type_error(alloc::format!("Function got multiple values for argument '{}'", #arg_name_str)));
                     }
                 });
 
@@ -232,7 +232,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                         } else if let Some(val) = _eldritch_kwargs.get(#arg_name_str) {
                             eldritch_core::conversion::FromValue::from_value(val)?
                         } else {
-                            return Err(alloc::format!("Missing argument: {}", #arg_name_str));
+                            return Err(eldritch_core::NativeError::type_error(alloc::format!("Missing argument: {}", #arg_name_str)));
                         };
                     });
                     call_args.push(quote!(&#pat));
@@ -240,7 +240,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                     let missing_handler = if is_option_type(ty) {
                         quote! { Default::default() }
                     } else {
-                        quote! { return Err(alloc::format!("Missing argument: {}", #arg_name_str)); }
+                        quote! { return Err(eldritch_core::NativeError::type_error(alloc::format!("Missing argument: {}", #arg_name_str))); }
                     };
 
                     parsing.push(quote! {
@@ -265,7 +265,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
 
     validation.push(quote! {
         if _eldritch_args.len() > #max_pos {
-             return Err(alloc::format!("TypeError: Function got too many arguments. Expected {}, got {}", #max_pos, _eldritch_args.len()));
+             return Err(eldritch_core::NativeError::type_error(alloc::format!("Function got too many arguments. Expected {}, got {}", #max_pos, _eldritch_args.len())));
         }
     });
 
@@ -275,7 +275,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
              if !_eldritch_kwargs.is_empty() {
                  // Get first key to report
                  let key = _eldritch_kwargs.keys().next().unwrap();
-                 return Err(alloc::format!("TypeError: Function got an unexpected keyword argument '{}'", key));
+                 return Err(eldritch_core::NativeError::type_error(alloc::format!("Function got an unexpected keyword argument '{}'", key)));
              }
         });
     } else {
@@ -286,7 +286,7 @@ fn generate_args_parsing(sig: &Signature) -> Result<(TokenStream, TokenStream), 
                      _ => false
                  };
                  if !is_valid {
-                      return Err(alloc::format!("TypeError: Function got an unexpected keyword argument '{}'", key));
+                      return Err(eldritch_core::NativeError::type_error(alloc::format!("Function got an unexpected keyword argument '{}'", key)));
                  }
              }
         });
