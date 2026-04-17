@@ -75,7 +75,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
     })?;
 
     // Determine the shell command
-    let cmd_builder = {
+    let mut cmd_builder = {
         #[cfg(not(target_os = "windows"))]
         {
             if Path::new("/bin/bash").exists() {
@@ -87,6 +87,9 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
         #[cfg(target_os = "windows")]
         CommandBuilder::new("cmd.exe")
     };
+
+    // Set TERM so that terminal-dependent commands (clear, reset, etc.) work
+    cmd_builder.env("TERM", "xterm-256color");
 
     let mut child = pair.slave.spawn_command(cmd_builder)?;
 
