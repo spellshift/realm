@@ -1000,6 +1000,31 @@ var (
 			},
 		},
 	}
+	// UserSubscribedHostsColumns holds the columns for the "user_subscribedHosts" table.
+	UserSubscribedHostsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeInt},
+		{Name: "host_id", Type: field.TypeInt},
+	}
+	// UserSubscribedHostsTable holds the schema information for the "user_subscribedHosts" table.
+	UserSubscribedHostsTable = &schema.Table{
+		Name:       "user_subscribedHosts",
+		Columns:    UserSubscribedHostsColumns,
+		PrimaryKey: []*schema.Column{UserSubscribedHostsColumns[0], UserSubscribedHostsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_subscribedHosts_user_id",
+				Columns:    []*schema.Column{UserSubscribedHostsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_subscribedHosts_host_id",
+				Columns:    []*schema.Column{UserSubscribedHostsColumns[1]},
+				RefColumns: []*schema.Column{HostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdventuresTable,
@@ -1033,6 +1058,7 @@ var (
 		ShellActiveUsersTable,
 		TomeAssetsTable,
 		UserFavoriteHostsTable,
+		UserSubscribedHostsTable,
 	}
 )
 
@@ -1176,4 +1202,6 @@ func init() {
 	TomeAssetsTable.ForeignKeys[1].RefTable = AssetsTable
 	UserFavoriteHostsTable.ForeignKeys[0].RefTable = UsersTable
 	UserFavoriteHostsTable.ForeignKeys[1].RefTable = HostsTable
+	UserSubscribedHostsTable.ForeignKeys[0].RefTable = UsersTable
+	UserSubscribedHostsTable.ForeignKeys[1].RefTable = HostsTable
 }

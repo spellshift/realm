@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent"
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
 )
@@ -231,12 +232,33 @@ func HookDeriveNotifications() ent.Hook {
 				if err != nil {
 					return nil, fmt.Errorf("fetching users for host access event: %w", err)
 				}
+
+				// For HOST_ACCESS_RECOVERED, determine which users are subscribers
+				subscriberIDs := make(map[int]bool)
+				if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
+					subscribers, err := client.Event.Query().
+						Where(event.ID(evt.ID)).
+						QueryHost().
+						QuerySubscribers().
+						All(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("fetching host subscribers for event: %w", err)
+					}
+					for _, s := range subscribers {
+						subscriberIDs[s.ID] = true
+					}
+				}
+
 				var creates []*NotificationCreate
 				for _, u := range users {
+					priority := notification.PriorityLow
+					if subscriberIDs[u.ID] {
+						priority = notification.PriorityUrgent
+					}
 					creates = append(creates, client.Notification.Create().
 						SetUser(u).
 						SetEvent(evt).
-						SetPriority("Low"))
+						SetPriority(priority))
 				}
 				if len(creates) > 0 {
 					err = client.Notification.CreateBulk(creates...).Exec(ctx)
