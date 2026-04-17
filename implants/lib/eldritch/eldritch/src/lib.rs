@@ -24,8 +24,8 @@ pub use eldritch_repl as repl;
 
 // Re-export core types
 pub use eldritch_core::{
-    BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer, Span,
-    StdoutPrinter, TokenKind, Value, conversion,
+    BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, NoopPrinter, Printer,
+    Span, StdoutPrinter, TokenKind, Value, conversion,
 };
 pub use eldritch_macros as macros;
 

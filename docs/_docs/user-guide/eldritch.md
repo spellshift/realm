@@ -859,6 +859,12 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 
 The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
 
+### file.tmp_dir
+
+`file.tmp_dir() -> str`
+
+The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
+
 ### file.template
   
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
