@@ -104,7 +104,7 @@ fn test_introspection() {
     assert::all_true(
         r#"
         type(1) == "int"
-        type("s") == "string"
+        type("s") == "str"
         type(True) == "bool"
         type(None) == "NoneType"
         type([]) == "list"
@@ -120,11 +120,11 @@ fn test_basic_errors() {
     assert::fail("undefined_var", "Undefined variable");
     assert::fail(
         "1 + 'string'",
-        "unsupported operand type(s) for +: 'int' and 'string'",
+        "unsupported operand type(s) for +: 'int' and 'str'",
     );
     // Verify type mismatch in comparison
     assert::fail(
         "1 < 'a'",
-        "'<' not supported between instances of 'int' and 'string'",
+        "'<' not supported between instances of 'int' and 'str'",
     );
 }

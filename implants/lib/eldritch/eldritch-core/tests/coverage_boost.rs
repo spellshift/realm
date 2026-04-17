@@ -188,15 +188,15 @@ fn test_coverage_interpreter_edge_cases() {
     // Augmented assignment errors
     assert::fail(
         "a = 1; a += 's'",
-        "unsupported operand type(s) for +: 'int' and 'string'",
+        "unsupported operand type(s) for +: 'int' and 'str'",
     );
     assert::fail(
         "l=[1]; l[0] += 's'",
-        "unsupported operand type(s) for +: 'int' and 'string'",
+        "unsupported operand type(s) for +: 'int' and 'str'",
     );
     assert::fail(
         "d={'a':1}; d['a'] += 's'",
-        "unsupported operand type(s) for +: 'int' and 'string'",
+        "unsupported operand type(s) for +: 'int' and 'str'",
     );
 }
 

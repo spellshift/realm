@@ -139,7 +139,7 @@ fn test_encode_decode() {
         assert_eq(type(b), "bytes")
         s2 = b.decode()
         assert_eq(s2, "hello")
-        assert_eq(type(s2), "string")
+        assert_eq(type(s2), "str")
         # Raw byte literal with hex escapes
         s3 = b"\x41\x42\x43".decode()
         assert_eq(s3, "ABC")
@@ -162,7 +162,7 @@ fn test_doc_strings() {
         r#"
         s = """line1
         line2"""
-        assert_eq(type(s), "string")
+        assert_eq(type(s), "str")
         # Check content if possible, or just compilation
     "#,
     );

@@ -410,6 +410,29 @@ impl Value {
 }
 
 impl Value {
+    /// Returns the canonical Python-style type name for this value.
+    /// This is the single source of truth for type names used in error messages,
+    /// the `type()` builtin, and the conversion layer.
+    pub fn type_name(&self) -> &str {
+        match self {
+            Value::None => "NoneType",
+            Value::Bool(_) => "bool",
+            Value::Int(_) => "int",
+            Value::Float(_) => "float",
+            Value::String(_) => "str",
+            Value::Bytes(_) => "bytes",
+            Value::List(_) => "list",
+            Value::Tuple(_) => "tuple",
+            Value::Dictionary(_) => "dict",
+            Value::Set(_) => "set",
+            Value::Function(_)
+            | Value::NativeFunction(_, _)
+            | Value::NativeFunctionWithKwargs(_, _)
+            | Value::BoundMethod(_, _) => "function",
+            Value::Foreign(f) => f.type_name(),
+        }
+    }
+
     fn discriminant_value(&self) -> u8 {
         match self {
             Value::None => 0,

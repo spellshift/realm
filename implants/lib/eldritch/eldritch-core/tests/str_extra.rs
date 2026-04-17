@@ -7,12 +7,12 @@ fn test_str_conversion() {
         b = b"hello world"
         s = str(b)
         assert_eq(s, "hello world")
-        assert_eq(type(s), "string")
+        assert_eq(type(s), "str")
 
         # Test fallback (not strictly required by spec to be exact repr but ensures no crash)
         # b_invalid = b"\xff"
         # s_inv = str(b_invalid)
-        # assert(type(s_inv) == "string")
+        # assert(type(s_inv) == "str")
     "#,
     );
 }

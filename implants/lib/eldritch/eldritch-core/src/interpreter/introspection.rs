@@ -23,24 +23,10 @@ pub fn is_truthy(value: &Value) -> bool {
     }
 }
 
-pub fn get_type_name(value: &Value) -> String {
-    match value {
-        Value::None => "NoneType".to_string(),
-        Value::Bool(_) => "bool".to_string(),
-        Value::Int(_) => "int".to_string(),
-        Value::Float(_) => "float".to_string(),
-        Value::String(_) => "string".to_string(),
-        Value::Bytes(_) => "bytes".to_string(),
-        Value::List(_) => "list".to_string(),
-        Value::Dictionary(_) => "dict".to_string(),
-        Value::Set(_) => "set".to_string(),
-        Value::Tuple(_) => "tuple".to_string(),
-        Value::Function(_)
-        | Value::NativeFunction(_, _)
-        | Value::NativeFunctionWithKwargs(_, _)
-        | Value::BoundMethod(_, _) => "function".to_string(),
-        Value::Foreign(f) => f.type_name().to_string(),
-    }
+/// Returns the type name of a value.
+/// Delegates to `Value::type_name()` which is the canonical source of truth.
+pub fn get_type_name(value: &Value) -> &str {
+    value.type_name()
 }
 
 pub fn get_dir_attributes(value: &Value) -> Vec<String> {

@@ -11,5 +11,5 @@ pub fn builtin_type(_env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<V
     if args.len() != 1 {
         return Err(String::from("TypeError: type() takes exactly 1 argument"));
     }
-    Ok(Value::String(get_type_name(&args[0])))
+    Ok(Value::String(get_type_name(&args[0]).to_string()))
 }

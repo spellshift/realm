@@ -205,23 +205,7 @@ where
     }
 }
 
-// Helper to get type name (duplicate from utils but avoids public exposure of utils)
-fn get_type_name(v: &Value) -> &'static str {
-    match v {
-        Value::None => "NoneType",
-        Value::Bool(_) => "bool",
-        Value::Int(_) => "int",
-        Value::Float(_) => "float",
-        Value::String(_) => "str",
-        Value::Bytes(_) => "bytes",
-        Value::List(_) => "list",
-        Value::Tuple(_) => "tuple",
-        Value::Dictionary(_) => "dict",
-        Value::Set(_) => "set",
-        Value::Function(_) => "function",
-        Value::NativeFunction(_, _) => "native_function",
-        Value::NativeFunctionWithKwargs(_, _) => "native_function_kwargs",
-        Value::BoundMethod(_, _) => "bound_method",
-        Value::Foreign(_) => "foreign_object",
-    }
+// Delegate to the canonical Value::type_name() implementation.
+fn get_type_name(v: &Value) -> &str {
+    v.type_name()
 }
