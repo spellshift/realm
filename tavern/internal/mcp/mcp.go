@@ -16,6 +16,9 @@ import (
 // contextKey is used for storing the ent client in the context.
 type contextKey struct{}
 
+// graphqlHandlerKey is used for storing the GraphQL HTTP handler in the context.
+type graphqlHandlerKey struct{}
+
 // clientFromContext returns the per-request ent client from the context.
 func clientFromContext(ctx context.Context) *ent.Client {
 	if c, ok := ctx.Value(contextKey{}).(*ent.Client); ok {
@@ -24,11 +27,19 @@ func clientFromContext(ctx context.Context) *ent.Client {
 	return nil
 }
 
+// graphqlHandlerFromContext returns the GraphQL HTTP handler from the context.
+func graphqlHandlerFromContext(ctx context.Context) http.Handler {
+	if h, ok := ctx.Value(graphqlHandlerKey{}).(http.Handler); ok {
+		return h
+	}
+	return nil
+}
+
 // NewHandler creates an http.Handler that serves the MCP Streamable HTTP endpoints.
 // The handler is meant to be mounted at a prefix (e.g. /mcp) on the main server mux.
 // Authentication is handled by the parent Tavern HTTP server; this handler
 // expects an authenticated context to already be set.
-func NewHandler(client *ent.Client, version string) http.Handler {
+func NewHandler(client *ent.Client, version string, gqlHandler http.Handler) http.Handler {
 	mcpSrv := mcpserver.NewMCPServer(
 		"tavern",
 		version,
@@ -43,12 +54,15 @@ func NewHandler(client *ent.Client, version string) http.Handler {
 		createQuestTool(mcpSrv),
 		listHostsTool(),
 		waitForQuestTool(),
+		graphqlQueryTool(),
 	)
 
 	httpSrv := mcpserver.NewStreamableHTTPServer(mcpSrv,
 		mcpserver.WithEndpointPath("/mcp"),
 		mcpserver.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
-			return context.WithValue(ctx, contextKey{}, client)
+			ctx = context.WithValue(ctx, contextKey{}, client)
+			ctx = context.WithValue(ctx, graphqlHandlerKey{}, gqlHandler)
+			return ctx
 		}),
 	)
 

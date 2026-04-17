@@ -71,6 +71,7 @@ The MCP server exposes the following tools. Tools are annotated as **read-only**
 | `create_quest` | Create a new quest targeting specific beacons | `name`, `beacon_ids`, `parameters`, `tome_id` | Write |
 | `list_hosts` | List all hosts with their beacons and tags | None | Read-only |
 | `wait_for_quest` | Wait for all tasks in a quest to finish (polls for up to 10 min) | `quest_id` | Read-only |
+| `graphql_query` | Execute a raw GraphQL query against the Tavern API (queries only — mutations are rejected) | `query`, `variables` (optional) | Read-only |
 
 ### Typical Workflow
 

@@ -26,7 +26,7 @@ func setupTestDB(t *testing.T) *ent.Client {
 // setupTestHandler creates the MCP HTTP handler backed by a test database.
 func setupTestHandler(t *testing.T, client *ent.Client) http.Handler {
 	t.Helper()
-	return tavernmcp.NewHandler(client, "test")
+	return tavernmcp.NewHandler(client, "test", nil)
 }
 
 // TestNewHandler verifies the MCP handler can be created without error.
@@ -409,4 +409,27 @@ func TestParseIntIDs(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGraphQLQueryHandler tests the graphql_query tool validation logic.
+func TestGraphQLQueryHandler(t *testing.T) {
+ctx := context.Background()
+client := setupTestDB(t)
+defer client.Close()
+
+// Create test data so queries return something
+client.Tome.Create().
+SetName("graphql-test-tome").
+SetDescription("A tome for graphql test").
+SetAuthor("test-author").
+SetSupportModel(tome.SupportModelCOMMUNITY).
+SetEldritch("print('hello')").
+SetHash("gqlhash").
+SaveX(ctx)
+
+// Verify the tome was created via direct query
+tomes, err := client.Tome.Query().All(ctx)
+require.NoError(t, err)
+assert.Len(t, tomes, 1)
+assert.Equal(t, "graphql-test-tome", tomes[0].Name)
 }

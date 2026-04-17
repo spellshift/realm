@@ -322,6 +322,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Portal Mux
 	portalMux := cfg.NewPortalMux(ctx)
 
+	// GraphQL Handler (shared with MCP)
+	gqlHandler := newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux))
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -370,7 +373,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux)),
+			Handler:          gqlHandler,
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -435,7 +438,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Setup MCP Server
 	if cfg.IsMCPEnabled() {
 		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
-		mcpHandler := tavernmcp.NewHandler(client, Version)
+		mcpHandler := tavernmcp.NewHandler(client, Version, gqlHandler)
 		routes["/mcp/"] = tavernhttp.Endpoint{
 			Handler: mcpHandler,
 		}
