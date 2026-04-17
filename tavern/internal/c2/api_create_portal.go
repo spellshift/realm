@@ -188,6 +188,22 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 }
 
 func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int) {
+	// Log portal close with beacon and host info
+	logAttrs := []any{"portal_id", portalID}
+	if p, err := graph.Portal.Get(ctx, portalID); err == nil {
+		if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
+			logAttrs = append(logAttrs, "beacon_id", b.ID)
+			if b.Edges.Host != nil {
+				logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+			}
+		} else {
+			slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
+		}
+	} else {
+		slog.WarnContext(ctx, "failed to query portal for close log", "portal_id", portalID, "error", err)
+	}
+	slog.InfoContext(ctx, "portal closed", logAttrs...)
+
 	// Update DB to Closed
 	if err := graph.Portal.UpdateOneID(portalID).
 		SetClosedAt(time.Now()).
