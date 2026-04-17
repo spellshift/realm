@@ -42,6 +42,25 @@ const wrapText = (text: string, cols: number) => {
     return lines.join('\r\n');
 };
 
+const writeHelpMessage = (term: Terminal, version: string) => {
+    const versionStr = version ? ` ${version}` : "";
+    term.write(`Welcome to Eldritch${versionStr}!\r\n`);
+    term.write("Run \x1b[1m`libs()`\x1b[0m and \x1b[1m`builtins()`\x1b[0m to list available functionality.\r\n");
+    term.write("Use \x1b[1m`dir(module)`\x1b[0m to enumerate a module's properties and methods (e.g. \x1b[1m`dir(file)`\x1b[0m).\r\n");
+    term.write("\r\n");
+    term.write("\x1b[1;33m# Macros\x1b[0m\r\n");
+    term.write("  \x1b[1m`!command`\x1b[0m — Shorthand for \x1b[1m`sys.shell(command)`\x1b[0m.\r\n");
+    term.write("\r\n");
+    term.write("\x1b[1;33m# Meta Commands\x1b[0m\r\n");
+    term.write("These commands run locally in your browser and are not sent to the agent.\r\n");
+    term.write("  \x1b[1m`help`\x1b[0m            — Show this message. Use \x1b[1m`help(module)`\x1b[0m for module docs (e.g. \x1b[1m`help(sys)`\x1b[0m).\r\n");
+    term.write("                      Hover over any symbol for inline documentation.\r\n");
+    term.write("  \x1b[1m`ssh(\"user:pass@host:port\")`\x1b[0m — Open an SSH session through the agent's portal connection.\r\n");
+    term.write("  \x1b[1m`pty()`\x1b[0m           — Open an interactive PTY session through the agent's portal connection.\r\n");
+    term.write("\r\n");
+    term.write("Docs: \x1b[4mhttps://docs.realm.pub/user-guide/eldritch\x1b[0m\r\n");
+};
+
 interface ShellState {
     inputBuffer: string;
     cursorPos: number;
@@ -886,10 +905,7 @@ export const useShellTerminal = (
                     if (metaCmd?.type === "help") {
                         const target = metaCmd.target;
                         if (!target) {
-                            term.write("Welcome to the Browser REPL.\r\n");
-                            term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
-                            term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
-                            term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                            writeHelpMessage(term, adapter.current?.version || "");
                         } else {
                             const doc = docs[target];
                             if (doc) {
@@ -1026,10 +1042,7 @@ export const useShellTerminal = (
                         if (metaCmd?.type === "help") {
                             const target = metaCmd.target;
                             if (!target) {
-                                term.write("Welcome to the Browser REPL.\r\n");
-                                term.write("You can use this REPL to execute code locally or send it to the backend.\r\n");
-                                term.write("Run `libs()` and `builtins()` to get a list of the functionality available on this session.\r\n");
-                                term.write("Try `help(sys)` to see documentation for the sys module.\r\n");
+                                writeHelpMessage(term, adapter.current?.version || "");
                             } else {
                                 const doc = docs[target];
                                 if (doc) {
