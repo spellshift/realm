@@ -1,6 +1,6 @@
 use anyhow::Result;
 use pb::portal::{BytesPayload, BytesPayloadKind, Mote, mote::Payload};
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use portable_pty::{CommandBuilder, MasterPty, PtySize, native_pty_system};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
@@ -9,9 +9,12 @@ use tokio::sync::mpsc;
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
 
-/// A single PTY session with its writer and cancel channel.
+/// A single PTY session with its writer, master handle, and cancel channel.
 struct PtySession {
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
+    // Keep the master PTY handle alive for the lifetime of the session.
+    // Dropping it closes the PTY fd, which would kill the shell process.
+    _master: Box<dyn MasterPty + Send>,
     _cancel_tx: mpsc::Sender<()>,
 }
 
@@ -87,16 +90,20 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
 
     let mut child = pair.slave.spawn_command(cmd_builder)?;
 
-    let mut reader = pair.master.try_clone_reader()?;
+    let reader = pair.master.try_clone_reader()?;
     let writer = pair.master.take_writer()?;
     let writer = Arc::new(Mutex::new(writer));
 
-    let (cancel_tx, mut cancel_rx) = mpsc::channel::<()>(1);
+    let (cancel_tx, _cancel_rx) = mpsc::channel::<()>(1);
 
-    // Spawn task: read PTY output -> send as portal motes
+    // Use spawn_blocking for the PTY reader since portable-pty's read() is
+    // synchronous blocking I/O that would starve the tokio async executor.
     let stream_id_clone = stream_id.clone();
     let out_tx_clone = out_tx.clone();
-    tokio::spawn(async move {
+    tokio::task::spawn_blocking(move || {
+        let rt = tokio::runtime::Handle::current();
+        let mut reader = reader;
+        let mut child = child;
         let mut seq_id: u64 = 0;
         loop {
             let mut buffer = [0u8; 1024];
@@ -107,8 +114,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                     if let Ok(Some(_status)) = child.try_wait() {
                         break;
                     }
-                    // Small sleep to avoid busy loop on zero reads
-                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                    std::thread::sleep(std::time::Duration::from_millis(10));
                     continue;
                 }
                 Err(_err) => {
@@ -128,7 +134,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                 })),
             };
 
-            if out_tx_clone.send(mote).await.is_err() {
+            if rt.block_on(out_tx_clone.send(mote)).is_err() {
                 break;
             }
         }
@@ -142,19 +148,12 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                 kind: BytesPayloadKind::Close as i32,
             })),
         };
-        let _ = out_tx_clone.send(close_mote).await;
-    });
-
-    // Spawn a cancellation watcher that kills the child on cancel
-    let stream_id_for_cancel = stream_id.clone();
-    tokio::spawn(async move {
-        let _ = cancel_rx.recv().await;
-        #[cfg(debug_assertions)]
-        log::info!("PTY session {} cancelled", stream_id_for_cancel);
+        let _ = rt.block_on(out_tx_clone.send(close_mote));
     });
 
     Ok(PtySession {
         writer,
+        _master: pair.master,
         _cancel_tx: cancel_tx,
     })
 }
