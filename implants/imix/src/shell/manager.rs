@@ -7,7 +7,7 @@ use tokio::sync::mpsc;
 
 use eldritch::agent::agent::Agent;
 use eldritch::assets::std::EmptyAssets;
-use eldritch::{Interpreter, Printer, Span, Value};
+use eldritch::{Interpreter, Printer, Span, Value, format_tprint, pretty_format};
 use eldritch_agent::Context;
 use pb::c2::{
     ReportOutputRequest, ReportShellTaskOutputMessage, ShellTask, ShellTaskContext,
@@ -327,7 +327,8 @@ impl ShellManager {
             Ok(Ok(value)) => {
                 if !matches!(value, Value::None) {
                     let ctx = context.lock().unwrap().clone();
-                    dispatch_output(agent, shell_id, &ctx, format!("{:?}\n", value), false);
+                    let formatted = format_value_smart(&value);
+                    dispatch_output(agent, shell_id, &ctx, formatted, false);
                 }
             }
             Ok(Err(e)) => {
@@ -372,6 +373,40 @@ impl ShellManager {
         }
     }
 }
+
+/// Formats a Value for REPL output using smart formatting:
+/// - Dictionaries are pretty-printed (pprint style)
+/// - Lists of dictionaries are table-printed (tprint style)
+/// - Everything else uses the default Debug format
+fn format_value_smart(value: &Value) -> String {
+    match value {
+        Value::Dictionary(_) => {
+            let mut buf = String::new();
+            pretty_format(value, 0, 2, &mut buf);
+            buf.push('\n');
+            buf
+        }
+        Value::List(l) => {
+            let items = l.read();
+            let is_list_of_dicts =
+                !items.is_empty() && items.iter().all(|v| matches!(v, Value::Dictionary(_)));
+            drop(items);
+            if is_list_of_dicts {
+                match format_tprint(value) {
+                    Ok(Some(table)) => table,
+                    _ => format!("{:?}\n", value),
+                }
+            } else {
+                let mut buf = String::new();
+                pretty_format(value, 0, 2, &mut buf);
+                buf.push('\n');
+                buf
+            }
+        }
+        _ => format!("{:?}\n", value),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
