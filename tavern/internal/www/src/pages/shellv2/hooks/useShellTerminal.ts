@@ -1118,6 +1118,21 @@ export const useShellTerminal = (
         termInstance.current?.focus();
     }, []);
 
+    const sendCtrlC = useCallback(() => {
+        const term = termInstance.current;
+        if (!term) return;
+        const state = shellState.current;
+        adapter.current?.reset();
+        term.write("^C\r\n");
+        state.inputBuffer = "";
+        state.currentBlock = "";
+        state.cursorPos = 0;
+        state.historyIndex = -1;
+        state.prompt = ">>> ";
+        term.write(state.prompt);
+        lastBufferHeight.current = 0;
+    }, []);
+
     return {
         termRef,
         connectionError,
@@ -1134,6 +1149,7 @@ export const useShellTerminal = (
         handleTooltipMouseLeave: scheduleHideTooltip,
         getSessionInputs,
         setShellInput,
-        focusTerminal
+        focusTerminal,
+        sendCtrlC
     };
 };

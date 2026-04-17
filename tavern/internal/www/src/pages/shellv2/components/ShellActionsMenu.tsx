@@ -1,6 +1,6 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -12,6 +12,7 @@ interface ShellActionsMenuProps {
     onClosePortal: () => void;
     onSshConnect: (target: string) => void;
     onPtyOpen: () => void;
+    onSendCtrlC: () => void;
 }
 
 const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using pivot.create_portal().";
@@ -23,9 +24,20 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onClosePortal,
     onSshConnect,
     onPtyOpen,
+    onSendCtrlC,
 }) => {
     const [sshModalOpen, setSshModalOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const hasPortal = portalId !== null;
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
 
     return (
         <>
@@ -60,6 +72,22 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                     </Button>
                                 )}
                             </Menu.Item>
+
+                            {isMobile && (
+                                <Menu.Item>
+                                    {() => (
+                                        <Button
+                                            buttonVariant="ghost"
+                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                            className="w-full justify-start text-gray-200 hover:bg-[#3d3d3d]"
+                                            leftIcon={<StopCircle className="w-4 h-4" />}
+                                            onClick={onSendCtrlC}
+                                        >
+                                            Send Ctrl + C
+                                        </Button>
+                                    )}
+                                </Menu.Item>
+                            )}
 
                             <Menu.Item>
                                 {() => (
