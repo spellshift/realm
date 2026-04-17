@@ -56,6 +56,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, o
       setConnectionStatus("connected");
       onConnectionStatusChange?.("connected");
       term.write(`\r\n\x1b[32mConnected to PTY session\x1b[0m\r\n`);
+      term.focus();
     };
 
     ws.onmessage = (event) => {
