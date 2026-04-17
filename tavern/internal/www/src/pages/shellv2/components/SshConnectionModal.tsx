@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 

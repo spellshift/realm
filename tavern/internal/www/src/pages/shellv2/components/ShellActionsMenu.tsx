@@ -92,7 +92,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                 buttonStyle={{ color: "gray", size: "sm" }}
                                                 className={`w-full justify-start ${hasPortal ? "text-gray-200 hover:bg-[#3d3d3d]" : "text-gray-600 cursor-not-allowed"}`}
                                                 leftIcon={<Terminal className={`w-4 h-4 ${hasPortal ? "" : "opacity-40"}`} />}
-                                                onClick={() => { if (hasPortal) setSshModalOpen(true); }}
+                                                onClick={() => setSshModalOpen(true)}
                                                 disabled={!hasPortal}
                                             >
                                                 SSH
@@ -116,7 +116,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                                 buttonStyle={{ color: "gray", size: "sm" }}
                                                 className={`w-full justify-start ${hasPortal ? "text-gray-200 hover:bg-[#3d3d3d]" : "text-gray-600 cursor-not-allowed"}`}
                                                 leftIcon={<SquareTerminal className={`w-4 h-4 ${hasPortal ? "" : "opacity-40"}`} />}
-                                                onClick={() => { if (hasPortal) onPtyOpen(); }}
+                                                onClick={onPtyOpen}
                                                 disabled={!hasPortal}
                                             >
                                                 PTY
