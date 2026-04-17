@@ -18,6 +18,8 @@ import (
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // EventQuery is the builder for querying Event entities.
@@ -30,6 +32,8 @@ type EventQuery struct {
 	withBeacon             *BeaconQuery
 	withHost               *HostQuery
 	withQuest              *QuestQuery
+	withShell              *ShellQuery
+	withUser               *UserQuery
 	withNotifications      *NotificationQuery
 	withFKs                bool
 	modifiers              []func(*sql.Selector)
@@ -130,6 +134,50 @@ func (eq *EventQuery) QueryQuest() *QuestQuery {
 			sqlgraph.From(event.Table, event.FieldID, selector),
 			sqlgraph.To(quest.Table, quest.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, event.QuestTable, event.QuestColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryShell chains the current query on the "shell" edge.
+func (eq *EventQuery) QueryShell() *ShellQuery {
+	query := (&ShellClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, event.ShellTable, event.ShellColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUser chains the current query on the "user" edge.
+func (eq *EventQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, event.UserTable, event.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
@@ -354,6 +402,8 @@ func (eq *EventQuery) Clone() *EventQuery {
 		withBeacon:        eq.withBeacon.Clone(),
 		withHost:          eq.withHost.Clone(),
 		withQuest:         eq.withQuest.Clone(),
+		withShell:         eq.withShell.Clone(),
+		withUser:          eq.withUser.Clone(),
 		withNotifications: eq.withNotifications.Clone(),
 		// clone intermediate query.
 		sql:  eq.sql.Clone(),
@@ -391,6 +441,28 @@ func (eq *EventQuery) WithQuest(opts ...func(*QuestQuery)) *EventQuery {
 		opt(query)
 	}
 	eq.withQuest = query
+	return eq
+}
+
+// WithShell tells the query-builder to eager-load the nodes that are connected to
+// the "shell" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithShell(opts ...func(*ShellQuery)) *EventQuery {
+	query := (&ShellClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withShell = query
+	return eq
+}
+
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithUser(opts ...func(*UserQuery)) *EventQuery {
+	query := (&UserClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withUser = query
 	return eq
 }
 
@@ -484,14 +556,16 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 		nodes       = []*Event{}
 		withFKs     = eq.withFKs
 		_spec       = eq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [6]bool{
 			eq.withBeacon != nil,
 			eq.withHost != nil,
 			eq.withQuest != nil,
+			eq.withShell != nil,
+			eq.withUser != nil,
 			eq.withNotifications != nil,
 		}
 	)
-	if eq.withBeacon != nil || eq.withHost != nil || eq.withQuest != nil {
+	if eq.withBeacon != nil || eq.withHost != nil || eq.withQuest != nil || eq.withShell != nil || eq.withUser != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -533,6 +607,18 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 	if query := eq.withQuest; query != nil {
 		if err := eq.loadQuest(ctx, query, nodes, nil,
 			func(n *Event, e *Quest) { n.Edges.Quest = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withShell; query != nil {
+		if err := eq.loadShell(ctx, query, nodes, nil,
+			func(n *Event, e *Shell) { n.Edges.Shell = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withUser; query != nil {
+		if err := eq.loadUser(ctx, query, nodes, nil,
+			func(n *Event, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -647,6 +733,70 @@ func (eq *EventQuery) loadQuest(ctx context.Context, query *QuestQuery, nodes []
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "quest_events" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (eq *EventQuery) loadShell(ctx context.Context, query *ShellQuery, nodes []*Event, init func(*Event), assign func(*Event, *Shell)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Event)
+	for i := range nodes {
+		if nodes[i].shell_events == nil {
+			continue
+		}
+		fk := *nodes[i].shell_events
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(shell.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "shell_events" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (eq *EventQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Event, init func(*Event), assign func(*Event, *User)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Event)
+	for i := range nodes {
+		if nodes[i].user_events == nil {
+			continue
+		}
+		fk := *nodes[i].user_events
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_events" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

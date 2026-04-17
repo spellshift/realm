@@ -29,6 +29,7 @@ func (Event) Fields() []ent.Field {
 				"HOST_ACCESS_RECOVERED",
 				"HOST_ACCESS_LOST",
 				"QUEST_COMPLETED",
+				"SHELL_CREATED",
 			).
 			Comment("Type of event"),
 	}
@@ -49,6 +50,14 @@ func (Event) Edges() []ent.Edge {
 			Ref("events").
 			Unique().
 			Comment("Quest associated with this event"),
+		edge.From("shell", Shell.Type).
+			Ref("events").
+			Unique().
+			Comment("Shell associated with this event"),
+		edge.From("user", User.Type).
+			Ref("events").
+			Unique().
+			Comment("User associated with this event"),
 		edge.From("notifications", Notification.Type).
 			Ref("event").
 			Annotations(

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -36,6 +37,7 @@ type ShellQuery struct {
 	withActiveUsers      *UserQuery
 	withShellTasks       *ShellTaskQuery
 	withPivots           *ShellPivotQuery
+	withEvents           *EventQuery
 	withFKs              bool
 	modifiers            []func(*sql.Selector)
 	loadTotal            []func(context.Context, []*Shell) error
@@ -43,6 +45,7 @@ type ShellQuery struct {
 	withNamedActiveUsers map[string]*UserQuery
 	withNamedShellTasks  map[string]*ShellTaskQuery
 	withNamedPivots      map[string]*ShellPivotQuery
+	withNamedEvents      map[string]*EventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -226,6 +229,28 @@ func (sq *ShellQuery) QueryPivots() *ShellPivotQuery {
 			sqlgraph.From(shell.Table, shell.FieldID, selector),
 			sqlgraph.To(shellpivot.Table, shellpivot.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, shell.PivotsTable, shell.PivotsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (sq *ShellQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.EventsTable, shell.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -432,6 +457,7 @@ func (sq *ShellQuery) Clone() *ShellQuery {
 		withActiveUsers: sq.withActiveUsers.Clone(),
 		withShellTasks:  sq.withShellTasks.Clone(),
 		withPivots:      sq.withPivots.Clone(),
+		withEvents:      sq.withEvents.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -515,6 +541,17 @@ func (sq *ShellQuery) WithPivots(opts ...func(*ShellPivotQuery)) *ShellQuery {
 	return sq
 }
 
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithEvents(opts ...func(*EventQuery)) *ShellQuery {
+	query := (&EventClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withEvents = query
+	return sq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -594,7 +631,7 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		nodes       = []*Shell{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [7]bool{
+		loadedTypes = [8]bool{
 			sq.withTask != nil,
 			sq.withBeacon != nil,
 			sq.withOwner != nil,
@@ -602,6 +639,7 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			sq.withActiveUsers != nil,
 			sq.withShellTasks != nil,
 			sq.withPivots != nil,
+			sq.withEvents != nil,
 		}
 	)
 	if sq.withTask != nil || sq.withBeacon != nil || sq.withOwner != nil {
@@ -677,6 +715,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 			return nil, err
 		}
 	}
+	if query := sq.withEvents; query != nil {
+		if err := sq.loadEvents(ctx, query, nodes,
+			func(n *Shell) { n.Edges.Events = []*Event{} },
+			func(n *Shell, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range sq.withNamedPortals {
 		if err := sq.loadPortals(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPortals(name) },
@@ -702,6 +747,13 @@ func (sq *ShellQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Shell,
 		if err := sq.loadPivots(ctx, query, nodes,
 			func(n *Shell) { n.appendNamedPivots(name) },
 			func(n *Shell, e *ShellPivot) { n.appendNamedPivots(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range sq.withNamedEvents {
+		if err := sq.loadEvents(ctx, query, nodes,
+			func(n *Shell) { n.appendNamedEvents(name) },
+			func(n *Shell, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -963,6 +1015,37 @@ func (sq *ShellQuery) loadPivots(ctx context.Context, query *ShellPivotQuery, no
 	}
 	return nil
 }
+func (sq *ShellQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*Shell, init func(*Shell), assign func(*Shell, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Shell)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(shell.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.shell_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "shell_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "shell_events" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (sq *ShellQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -1101,6 +1184,20 @@ func (sq *ShellQuery) WithNamedPivots(name string, opts ...func(*ShellPivotQuery
 		sq.withNamedPivots = make(map[string]*ShellPivotQuery)
 	}
 	sq.withNamedPivots[name] = query
+	return sq
+}
+
+// WithNamedEvents tells the query-builder to eager-load the nodes that are connected to the "events"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (sq *ShellQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *ShellQuery {
+	query := (&EventClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if sq.withNamedEvents == nil {
+		sq.withNamedEvents = make(map[string]*EventQuery)
+	}
+	sq.withNamedEvents[name] = query
 	return sq
 }
 

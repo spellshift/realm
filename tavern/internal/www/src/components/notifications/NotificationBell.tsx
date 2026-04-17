@@ -55,6 +55,8 @@ const NotificationBell = () => {
         switch (kind) {
             case EventKind.QUEST_COMPLETED:
                 return <FileTerminal size={16} />;
+            case EventKind.SHELL_CREATED:
+                return <FileTerminal size={16} />;
             case EventKind.BEACON_LOST:
             case EventKind.HOST_ACCESS_NEW:
             case EventKind.HOST_ACCESS_RECOVERED:
@@ -78,6 +80,8 @@ const NotificationBell = () => {
                 return `Beacon lost: ${event.beacon?.name || event.beacon?.id}`;
             case EventKind.QUEST_COMPLETED:
                 return `Quest completed: ${event.quest?.name || event.quest?.id}`;
+            case EventKind.SHELL_CREATED:
+                return `Shell created${event.user ? ` by ${event.user.name}` : ''}: ${event.shell?.id || 'unknown'}`;
             default:
                 return 'Notification received';
         }
@@ -94,6 +98,8 @@ const NotificationBell = () => {
                 return event.host?.id ? `/hosts/${event.host.id}` : (event.beacon?.host?.id ? `/hosts/${event.beacon.host.id}` : null);
             case EventKind.QUEST_COMPLETED:
                 return event.quest ? `/tasks/${event.quest.id}` : null;
+            case EventKind.SHELL_CREATED:
+                return null;
             default:
                 return null;
         }

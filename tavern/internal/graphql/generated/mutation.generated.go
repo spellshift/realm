@@ -691,6 +691,8 @@ func (ec *executionContext) fieldContext_Mutation_createShell(ctx context.Contex
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
 			case "pivots":
 				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "events":
+				return ec.fieldContext_Shell_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -1587,6 +1589,8 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -1659,6 +1663,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}

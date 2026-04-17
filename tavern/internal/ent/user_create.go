@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/shell"
@@ -173,6 +174,21 @@ func (uc *UserCreate) AddFavoriteHosts(h ...*Host) *UserCreate {
 		ids[i] = h[i].ID
 	}
 	return uc.AddFavoriteHostIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (uc *UserCreate) AddEventIDs(ids ...int) *UserCreate {
+	uc.mutation.AddEventIDs(ids...)
+	return uc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (uc *UserCreate) AddEvents(e ...*Event) *UserCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return uc.AddEventIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -394,6 +410,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.EventsTable,
+			Columns: []string{user.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

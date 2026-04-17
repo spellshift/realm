@@ -244,6 +244,25 @@ func HookDeriveNotifications() ent.Hook {
 						return nil, fmt.Errorf("creating notifications for host access: %w", err)
 					}
 				}
+			case event.KindSHELL_CREATED:
+				// Notify all users
+				users, err := client.User.Query().All(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("fetching users for shell created event: %w", err)
+				}
+				var creates []*NotificationCreate
+				for _, u := range users {
+					creates = append(creates, client.Notification.Create().
+						SetUser(u).
+						SetEvent(evt).
+						SetPriority("Low"))
+				}
+				if len(creates) > 0 {
+					err = client.Notification.CreateBulk(creates...).Exec(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("creating notifications for shell created: %w", err)
+					}
+				}
 			}
 
 			return val, nil
@@ -254,3 +273,51 @@ func HookDeriveNotifications() ent.Hook {
 // Intercept the client directly in the constructor or use `ent.Client` features.
 // Since ent generated `Open` functions return the client, we can't easily hook there without modifying `client.go` or `Open`.
 // However, there is a better way!
+
+// HookDeriveShellEvents will create shell events when a shell is created.
+func HookDeriveShellEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*ShellMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			var shouldCreate bool
+			if mut.Op().Is(ent.OpCreate) {
+				shouldCreate = true
+			}
+
+			val, err := next.Mutate(ctx, m)
+			if err != nil {
+				return val, err
+			}
+
+			if shouldCreate {
+				shell, ok := val.(*Shell)
+				if !ok {
+					return val, fmt.Errorf("unexpected value type for shell creation")
+				}
+
+				client := mut.Client()
+
+				evtCreate := client.Event.Create().
+					SetKind(event.KindSHELL_CREATED).
+					SetTimestamp(time.Now().Unix()).
+					SetShellID(shell.ID)
+
+				ownerID, ok := mut.OwnerID()
+				if ok {
+					evtCreate.SetUserID(ownerID)
+				}
+
+				err := evtCreate.Exec(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("creating shell created event: %w", err)
+				}
+			}
+
+			return val, nil
+		})
+	}
+}

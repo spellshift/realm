@@ -479,6 +479,8 @@ export interface EventNode {
     beacon?: BeaconNode;
     host?: HostNode;
     quest?: QuestNode;
+    shell?: { id: string };
+    user?: { id: string; name: string };
 }
 
 export interface NotificationNode {

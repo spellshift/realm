@@ -102,6 +102,12 @@ func (User) Edges() []ent.Edge {
 				entgql.MultiOrder(),
 			).
 			Comment("Hosts favorited by the user."),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+			).
+			Comment("Events associated with the user."),
 	}
 }
 

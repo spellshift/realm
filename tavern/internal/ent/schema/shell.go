@@ -84,6 +84,13 @@ func (Shell) Edges() []ent.Edge {
 				entgql.Skip(entgql.SkipMutationCreateInput),
 			).
 			Comment("Pivots associated with this shell"),
+		edge.To("events", Event.Type).
+			Annotations(
+				entgql.RelayConnection(),
+				entgql.MultiOrder(),
+				entgql.Skip(entgql.SkipMutationCreateInput),
+			).
+			Comment("Events associated with this shell"),
 	}
 }
 

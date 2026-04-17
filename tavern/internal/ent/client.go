@@ -1901,6 +1901,38 @@ func (c *EventClient) QueryQuest(e *Event) *QuestQuery {
 	return query
 }
 
+// QueryShell queries the shell edge of a Event.
+func (c *EventClient) QueryShell(e *Event) *ShellQuery {
+	query := (&ShellClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(shell.Table, shell.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, event.ShellTable, event.ShellColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Event.
+func (c *EventClient) QueryUser(e *Event) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, event.UserTable, event.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryNotifications queries the notifications edge of a Event.
 func (c *EventClient) QueryNotifications(e *Event) *NotificationQuery {
 	query := (&NotificationClient{config: c.config}).Query()
@@ -4316,6 +4348,22 @@ func (c *ShellClient) QueryPivots(s *Shell) *ShellPivotQuery {
 	return query
 }
 
+// QueryEvents queries the events edge of a Shell.
+func (c *ShellClient) QueryEvents(s *Shell) *EventQuery {
+	query := (&EventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(shell.Table, shell.FieldID, id),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, shell.EventsTable, shell.EventsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ShellClient) Hooks() []Hook {
 	return c.hooks.Shell
@@ -5509,6 +5557,22 @@ func (c *UserClient) QueryFavoriteHosts(u *User) *HostQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, user.FavoriteHostsTable, user.FavoriteHostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEvents queries the events edge of a User.
+func (c *UserClient) QueryEvents(u *User) *EventQuery {
+	query := (&EventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.EventsTable, user.EventsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

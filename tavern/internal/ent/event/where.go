@@ -279,6 +279,52 @@ func HasQuestWith(preds ...predicate.Quest) predicate.Event {
 	})
 }
 
+// HasShell applies the HasEdge predicate on the "shell" edge.
+func HasShell() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ShellTable, ShellColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasShellWith applies the HasEdge predicate on the "shell" edge with a given conditions (other predicates).
+func HasShellWith(preds ...predicate.Shell) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := newShellStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := newUserStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasNotifications applies the HasEdge predicate on the "notifications" edge.
 func HasNotifications() predicate.Event {
 	return predicate.Event(func(s *sql.Selector) {

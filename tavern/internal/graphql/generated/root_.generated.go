@@ -264,7 +264,9 @@ type ComplexityRoot struct {
 		LastModifiedAt func(childComplexity int) int
 		Notifications  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.NotificationOrder, where *ent.NotificationWhereInput) int
 		Quest          func(childComplexity int) int
+		Shell          func(childComplexity int) int
 		Timestamp      func(childComplexity int) int
+		User           func(childComplexity int) int
 	}
 
 	EventConnection struct {
@@ -651,6 +653,7 @@ type ComplexityRoot struct {
 		Beacon         func(childComplexity int) int
 		ClosedAt       func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
+		Events         func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		ID             func(childComplexity int) int
 		LastModifiedAt func(childComplexity int) int
 		Owner          func(childComplexity int) int
@@ -825,6 +828,7 @@ type ComplexityRoot struct {
 		APIKey        func(childComplexity int) int
 		ActiveShells  func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.ShellOrder, where *ent.ShellWhereInput) int
 		DeviceAuths   func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.DeviceAuthOrder, where *ent.DeviceAuthWhereInput) int
+		Events        func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.EventOrder, where *ent.EventWhereInput) int
 		FavoriteHosts func(childComplexity int, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, orderBy []*ent.HostOrder, where *ent.HostWhereInput) int
 		ID            func(childComplexity int) int
 		IsActivated   func(childComplexity int) int
@@ -1886,12 +1890,26 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Event.Quest(childComplexity), true
 
+	case "Event.shell":
+		if e.ComplexityRoot.Event.Shell == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.Shell(childComplexity), true
+
 	case "Event.timestamp":
 		if e.ComplexityRoot.Event.Timestamp == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Event.Timestamp(childComplexity), true
+
+	case "Event.user":
+		if e.ComplexityRoot.Event.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Event.User(childComplexity), true
 
 	case "EventConnection.edges":
 		if e.ComplexityRoot.EventConnection.Edges == nil {
@@ -4002,6 +4020,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Shell.CreatedAt(childComplexity), true
 
+	case "Shell.events":
+		if e.ComplexityRoot.Shell.Events == nil {
+			break
+		}
+
+		args, err := ec.field_Shell_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Shell.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
+
 	case "Shell.id":
 		if e.ComplexityRoot.Shell.ID == nil {
 			break
@@ -4854,6 +4884,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.User.DeviceAuths(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.DeviceAuthOrder), args["where"].(*ent.DeviceAuthWhereInput)), true
+
+	case "User.events":
+		if e.ComplexityRoot.User.Events == nil {
+			break
+		}
+
+		args, err := ec.field_User_events_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.User.Events(childComplexity, args["after"].(*entgql.Cursor[int]), args["first"].(*int), args["before"].(*entgql.Cursor[int]), args["last"].(*int), args["orderBy"].([]*ent.EventOrder), args["where"].(*ent.EventWhereInput)), true
 
 	case "User.favoritehosts":
 		if e.ComplexityRoot.User.FavoriteHosts == nil {
@@ -7354,6 +7396,14 @@ type Event implements Node {
   Quest associated with this event
   """
   quest: Quest
+  """
+  Shell associated with this event
+  """
+  shell: Shell
+  """
+  User associated with this event
+  """
+  user: User
   notifications(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -7425,6 +7475,7 @@ enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
   HOST_ACCESS_RECOVERED
   HOST_ACCESS_LOST
   QUEST_COMPLETED
+  SHELL_CREATED
 }
 """
 Ordering options for Event connections
@@ -7521,6 +7572,16 @@ input EventWhereInput {
   """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
   """
   notifications edge predicates
   """
@@ -10644,6 +10705,37 @@ type Shell implements Node {
     """
     where: ShellPivotWhereInput
   ): ShellPivotConnection!
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -11338,6 +11430,11 @@ input ShellWhereInput {
   """
   hasPivots: Boolean
   hasPivotsWith: [ShellPivotWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -12467,6 +12564,9 @@ input UpdateUserInput {
   addFavoriteHostIDs: [ID!]
   removeFavoriteHostIDs: [ID!]
   clearFavoriteHosts: Boolean
+  addEventIDs: [ID!]
+  removeEventIDs: [ID!]
+  clearEvents: Boolean
 }
 type User implements Node {
   id: ID!
@@ -12641,6 +12741,37 @@ type User implements Node {
     """
     where: HostWhereInput
   ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -12777,6 +12908,11 @@ input UserWhereInput {
   """
   hasFavoriteHosts: Boolean
   hasFavoriteHostsWith: [HostWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 `, BuiltIn: false},
 	{Name: "../schema/scalars.graphql", Input: `scalar Time

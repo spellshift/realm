@@ -2224,6 +2224,14 @@ type Event implements Node {
   Quest associated with this event
   """
   quest: Quest
+  """
+  Shell associated with this event
+  """
+  shell: Shell
+  """
+  User associated with this event
+  """
+  user: User
   notifications(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -2295,6 +2303,7 @@ enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
   HOST_ACCESS_RECOVERED
   HOST_ACCESS_LOST
   QUEST_COMPLETED
+  SHELL_CREATED
 }
 """
 Ordering options for Event connections
@@ -2391,6 +2400,16 @@ input EventWhereInput {
   """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
+  """
+  shell edge predicates
+  """
+  hasShell: Boolean
+  hasShellWith: [ShellWhereInput!]
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
   """
   notifications edge predicates
   """
@@ -5514,6 +5533,37 @@ type Shell implements Node {
     """
     where: ShellPivotWhereInput
   ): ShellPivotConnection!
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -6208,6 +6258,11 @@ input ShellWhereInput {
   """
   hasPivots: Boolean
   hasPivotsWith: [ShellPivotWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 type Tag implements Node {
   id: ID!
@@ -7337,6 +7392,9 @@ input UpdateUserInput {
   addFavoriteHostIDs: [ID!]
   removeFavoriteHostIDs: [ID!]
   clearFavoriteHosts: Boolean
+  addEventIDs: [ID!]
+  removeEventIDs: [ID!]
+  clearEvents: Boolean
 }
 type User implements Node {
   id: ID!
@@ -7511,6 +7569,37 @@ type User implements Node {
     """
     where: HostWhereInput
   ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -7647,6 +7736,11 @@ input UserWhereInput {
   """
   hasFavoriteHosts: Boolean
   hasFavoriteHostsWith: [HostWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }
 input ClaimTasksInput {
   """The identity the beacon is authenticated as (e.g. 'root')"""

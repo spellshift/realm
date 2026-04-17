@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/shellpivot"
@@ -175,6 +176,21 @@ func (sc *ShellCreate) AddPivots(s ...*ShellPivot) *ShellCreate {
 		ids[i] = s[i].ID
 	}
 	return sc.AddPivotIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (sc *ShellCreate) AddEventIDs(ids ...int) *ShellCreate {
+	sc.mutation.AddEventIDs(ids...)
+	return sc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (sc *ShellCreate) AddEvents(e ...*Event) *ShellCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return sc.AddEventIDs(ids...)
 }
 
 // Mutation returns the ShellMutation object of the builder.
@@ -390,6 +406,22 @@ func (sc *ShellCreate) createSpec() (*Shell, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

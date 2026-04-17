@@ -13,6 +13,8 @@ import (
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // Event is the model entity for the Event schema.
@@ -34,6 +36,8 @@ type Event struct {
 	beacon_events *int
 	host_events   *int
 	quest_events  *int
+	shell_events  *int
+	user_events   *int
 	selectValues  sql.SelectValues
 }
 
@@ -45,13 +49,17 @@ type EventEdges struct {
 	Host *Host `json:"host,omitempty"`
 	// Quest associated with this event
 	Quest *Quest `json:"quest,omitempty"`
+	// Shell associated with this event
+	Shell *Shell `json:"shell,omitempty"`
+	// User associated with this event
+	User *User `json:"user,omitempty"`
 	// Notifications related to this event
 	Notifications []*Notification `json:"notifications,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [6]bool
 	// totalCount holds the count of the edges above.
-	totalCount [4]map[string]int
+	totalCount [6]map[string]int
 
 	namedNotifications map[string][]*Notification
 }
@@ -89,10 +97,32 @@ func (e EventEdges) QuestOrErr() (*Quest, error) {
 	return nil, &NotLoadedError{edge: "quest"}
 }
 
+// ShellOrErr returns the Shell value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EventEdges) ShellOrErr() (*Shell, error) {
+	if e.Shell != nil {
+		return e.Shell, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: shell.Label}
+	}
+	return nil, &NotLoadedError{edge: "shell"}
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e EventEdges) UserOrErr() (*User, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: user.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
+}
+
 // NotificationsOrErr returns the Notifications value or an error if the edge
 // was not loaded in eager-loading.
 func (e EventEdges) NotificationsOrErr() ([]*Notification, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[5] {
 		return e.Notifications, nil
 	}
 	return nil, &NotLoadedError{edge: "notifications"}
@@ -114,6 +144,10 @@ func (*Event) scanValues(columns []string) ([]any, error) {
 		case event.ForeignKeys[1]: // host_events
 			values[i] = new(sql.NullInt64)
 		case event.ForeignKeys[2]: // quest_events
+			values[i] = new(sql.NullInt64)
+		case event.ForeignKeys[3]: // shell_events
+			values[i] = new(sql.NullInt64)
+		case event.ForeignKeys[4]: // user_events
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -181,6 +215,20 @@ func (e *Event) assignValues(columns []string, values []any) error {
 				e.quest_events = new(int)
 				*e.quest_events = int(value.Int64)
 			}
+		case event.ForeignKeys[3]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field shell_events", value)
+			} else if value.Valid {
+				e.shell_events = new(int)
+				*e.shell_events = int(value.Int64)
+			}
+		case event.ForeignKeys[4]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field user_events", value)
+			} else if value.Valid {
+				e.user_events = new(int)
+				*e.user_events = int(value.Int64)
+			}
 		default:
 			e.selectValues.Set(columns[i], values[i])
 		}
@@ -207,6 +255,16 @@ func (e *Event) QueryHost() *HostQuery {
 // QueryQuest queries the "quest" edge of the Event entity.
 func (e *Event) QueryQuest() *QuestQuery {
 	return NewEventClient(e.config).QueryQuest(e)
+}
+
+// QueryShell queries the "shell" edge of the Event entity.
+func (e *Event) QueryShell() *ShellQuery {
+	return NewEventClient(e.config).QueryShell(e)
+}
+
+// QueryUser queries the "user" edge of the Event entity.
+func (e *Event) QueryUser() *UserQuery {
+	return NewEventClient(e.config).QueryUser(e)
 }
 
 // QueryNotifications queries the "notifications" edge of the Event entity.

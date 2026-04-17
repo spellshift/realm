@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/shell"
@@ -167,6 +168,21 @@ func (su *ShellUpdate) AddPivots(s ...*ShellPivot) *ShellUpdate {
 	return su.AddPivotIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (su *ShellUpdate) AddEventIDs(ids ...int) *ShellUpdate {
+	su.mutation.AddEventIDs(ids...)
+	return su
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (su *ShellUpdate) AddEvents(e ...*Event) *ShellUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return su.AddEventIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (su *ShellUpdate) Mutation() *ShellMutation {
 	return su.mutation
@@ -272,6 +288,27 @@ func (su *ShellUpdate) RemovePivots(s ...*ShellPivot) *ShellUpdate {
 		ids[i] = s[i].ID
 	}
 	return su.RemovePivotIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (su *ShellUpdate) ClearEvents() *ShellUpdate {
+	su.mutation.ClearEvents()
+	return su
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (su *ShellUpdate) RemoveEventIDs(ids ...int) *ShellUpdate {
+	su.mutation.RemoveEventIDs(ids...)
+	return su
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (su *ShellUpdate) RemoveEvents(e ...*Event) *ShellUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return su.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -612,6 +649,51 @@ func (su *ShellUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if su.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedEventsIDs(); len(nodes) > 0 && !su.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{shell.Label}
@@ -765,6 +847,21 @@ func (suo *ShellUpdateOne) AddPivots(s ...*ShellPivot) *ShellUpdateOne {
 	return suo.AddPivotIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (suo *ShellUpdateOne) AddEventIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.AddEventIDs(ids...)
+	return suo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (suo *ShellUpdateOne) AddEvents(e ...*Event) *ShellUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return suo.AddEventIDs(ids...)
+}
+
 // Mutation returns the ShellMutation object of the builder.
 func (suo *ShellUpdateOne) Mutation() *ShellMutation {
 	return suo.mutation
@@ -870,6 +967,27 @@ func (suo *ShellUpdateOne) RemovePivots(s ...*ShellPivot) *ShellUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return suo.RemovePivotIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (suo *ShellUpdateOne) ClearEvents() *ShellUpdateOne {
+	suo.mutation.ClearEvents()
+	return suo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (suo *ShellUpdateOne) RemoveEventIDs(ids ...int) *ShellUpdateOne {
+	suo.mutation.RemoveEventIDs(ids...)
+	return suo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (suo *ShellUpdateOne) RemoveEvents(e ...*Event) *ShellUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return suo.RemoveEventIDs(ids...)
 }
 
 // Where appends a list predicates to the ShellUpdate builder.
@@ -1233,6 +1351,51 @@ func (suo *ShellUpdateOne) sqlSave(ctx context.Context) (_node *Shell, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(shellpivot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if suo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !suo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   shell.EventsTable,
+			Columns: []string{shell.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

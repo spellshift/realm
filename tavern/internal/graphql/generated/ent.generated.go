@@ -1587,6 +1587,42 @@ func (ec *executionContext) field_Shell_activeUsers_args(ctx context.Context, ra
 	return args, nil
 }
 
+func (ec *executionContext) field_Shell_events_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOEventOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOEventWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
 func (ec *executionContext) field_Shell_pivots_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1976,6 +2012,42 @@ func (ec *executionContext) field_User_deviceAuths_args(ctx context.Context, raw
 	}
 	args["orderBy"] = arg4
 	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalODeviceAuthWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐDeviceAuthWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_User_events_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["after"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOEventOrder2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventOrderᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["orderBy"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOEventWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2753,6 +2825,8 @@ func (ec *executionContext) fieldContext_Asset_creator(_ context.Context, field 
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -6128,6 +6202,8 @@ func (ec *executionContext) fieldContext_DeviceAuth_user(_ context.Context, fiel
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -6654,6 +6730,116 @@ func (ec *executionContext) fieldContext_Event_quest(_ context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Event_shell(ctx context.Context, field graphql.CollectedField, obj *ent.Event) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Event_shell,
+		func(ctx context.Context) (any, error) {
+			return obj.Shell(ctx)
+		},
+		nil,
+		ec.marshalOShell2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShell,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Event_shell(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Shell_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Shell_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Shell_lastModifiedAt(ctx, field)
+			case "closedAt":
+				return ec.fieldContext_Shell_closedAt(ctx, field)
+			case "task":
+				return ec.fieldContext_Shell_task(ctx, field)
+			case "beacon":
+				return ec.fieldContext_Shell_beacon(ctx, field)
+			case "owner":
+				return ec.fieldContext_Shell_owner(ctx, field)
+			case "portals":
+				return ec.fieldContext_Shell_portals(ctx, field)
+			case "activeUsers":
+				return ec.fieldContext_Shell_activeUsers(ctx, field)
+			case "shellTasks":
+				return ec.fieldContext_Shell_shellTasks(ctx, field)
+			case "pivots":
+				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "events":
+				return ec.fieldContext_Shell_events(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Event_user(ctx context.Context, field graphql.CollectedField, obj *ent.Event) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Event_user,
+		func(ctx context.Context) (any, error) {
+			return obj.User(ctx)
+		},
+		nil,
+		ec.marshalOUser2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUser,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Event_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "photoURL":
+				return ec.fieldContext_User_photoURL(ctx, field)
+			case "isActivated":
+				return ec.fieldContext_User_isActivated(ctx, field)
+			case "isAdmin":
+				return ec.fieldContext_User_isAdmin(ctx, field)
+			case "notifications":
+				return ec.fieldContext_User_notifications(ctx, field)
+			case "tomes":
+				return ec.fieldContext_User_tomes(ctx, field)
+			case "activeShells":
+				return ec.fieldContext_User_activeShells(ctx, field)
+			case "deviceAuths":
+				return ec.fieldContext_User_deviceAuths(ctx, field)
+			case "favoritehosts":
+				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
+			case "apiKey":
+				return ec.fieldContext_User_apiKey(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Event_notifications(ctx context.Context, field graphql.CollectedField, obj *ent.Event) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6846,6 +7032,10 @@ func (ec *executionContext) fieldContext_EventEdge_node(_ context.Context, field
 				return ec.fieldContext_Event_host(ctx, field)
 			case "quest":
 				return ec.fieldContext_Event_quest(ctx, field)
+			case "shell":
+				return ec.fieldContext_Event_shell(ctx, field)
+			case "user":
+				return ec.fieldContext_Event_user(ctx, field)
 			case "notifications":
 				return ec.fieldContext_Event_notifications(ctx, field)
 			}
@@ -10083,6 +10273,8 @@ func (ec *executionContext) fieldContext_Link_creator(_ context.Context, field g
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -10491,6 +10683,8 @@ func (ec *executionContext) fieldContext_Notification_user(_ context.Context, fi
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -10540,6 +10734,10 @@ func (ec *executionContext) fieldContext_Notification_event(_ context.Context, f
 				return ec.fieldContext_Event_host(ctx, field)
 			case "quest":
 				return ec.fieldContext_Event_quest(ctx, field)
+			case "shell":
+				return ec.fieldContext_Event_shell(ctx, field)
+			case "user":
+				return ec.fieldContext_Event_user(ctx, field)
 			case "notifications":
 				return ec.fieldContext_Event_notifications(ctx, field)
 			}
@@ -11195,6 +11393,8 @@ func (ec *executionContext) fieldContext_Portal_owner(_ context.Context, field g
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -12632,6 +12832,8 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -13206,6 +13408,8 @@ func (ec *executionContext) fieldContext_Quest_creator(_ context.Context, field 
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -13979,6 +14183,8 @@ func (ec *executionContext) fieldContext_Repository_owner(_ context.Context, fie
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -15637,6 +15843,8 @@ func (ec *executionContext) fieldContext_Shell_owner(_ context.Context, field gr
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -15842,6 +16050,55 @@ func (ec *executionContext) fieldContext_Shell_pivots(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Shell_events(ctx context.Context, field graphql.CollectedField, obj *ent.Shell) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Shell_events,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Events(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.EventOrder), fc.Args["where"].(*ent.EventWhereInput))
+		},
+		nil,
+		ec.marshalNEventConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Shell_events(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Shell",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_EventConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_EventConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_EventConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EventConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Shell_events_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ShellConnection_edges(ctx context.Context, field graphql.CollectedField, obj *ent.ShellConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15991,6 +16248,8 @@ func (ec *executionContext) fieldContext_ShellEdge_node(_ context.Context, field
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
 			case "pivots":
 				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "events":
+				return ec.fieldContext_Shell_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -16334,6 +16593,8 @@ func (ec *executionContext) fieldContext_ShellPivot_shell(_ context.Context, fie
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
 			case "pivots":
 				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "events":
+				return ec.fieldContext_Shell_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -16991,6 +17252,8 @@ func (ec *executionContext) fieldContext_ShellTask_shell(_ context.Context, fiel
 				return ec.fieldContext_Shell_shellTasks(ctx, field)
 			case "pivots":
 				return ec.fieldContext_Shell_pivots(ctx, field)
+			case "events":
+				return ec.fieldContext_Shell_events(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Shell", field.Name)
 		},
@@ -17042,6 +17305,8 @@ func (ec *executionContext) fieldContext_ShellTask_creator(_ context.Context, fi
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -18987,6 +19252,8 @@ func (ec *executionContext) fieldContext_Tome_uploader(_ context.Context, field 
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -19622,6 +19889,55 @@ func (ec *executionContext) fieldContext_User_favoritehosts(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _User_events(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_events,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return obj.Events(ctx, fc.Args["after"].(*entgql.Cursor[int]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[int]), fc.Args["last"].(*int), fc.Args["orderBy"].([]*ent.EventOrder), fc.Args["where"].(*ent.EventWhereInput))
+		},
+		nil,
+		ec.marshalNEventConnection2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_events(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_EventConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_EventConnection_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_EventConnection_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EventConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_User_events_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_apiKey(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -19798,6 +20114,8 @@ func (ec *executionContext) fieldContext_UserEdge_node(_ context.Context, field 
 				return ec.fieldContext_User_deviceAuths(ctx, field)
 			case "favoritehosts":
 				return ec.fieldContext_User_favoritehosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -25848,7 +26166,7 @@ func (ec *executionContext) unmarshalInputEventWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasBeacon", "hasBeaconWith", "hasHost", "hasHostWith", "hasQuest", "hasQuestWith", "hasNotifications", "hasNotificationsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "timestamp", "timestampNEQ", "timestampIn", "timestampNotIn", "timestampGT", "timestampGTE", "timestampLT", "timestampLTE", "kind", "kindNEQ", "kindIn", "kindNotIn", "hasBeacon", "hasBeaconWith", "hasHost", "hasHostWith", "hasQuest", "hasQuestWith", "hasShell", "hasShellWith", "hasUser", "hasUserWith", "hasNotifications", "hasNotificationsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -26170,6 +26488,34 @@ func (ec *executionContext) unmarshalInputEventWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasQuestWith = data
+		case "hasShell":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShell"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasShell = data
+		case "hasShellWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasShellWith"))
+			data, err := ec.unmarshalOShellWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐShellWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasShellWith = data
+		case "hasUser":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUser"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasUser = data
+		case "hasUserWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasUserWith"))
+			data, err := ec.unmarshalOUserWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐUserWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasUserWith = data
 		case "hasNotifications":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNotifications"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -35307,7 +35653,7 @@ func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "hasTask", "hasTaskWith", "hasBeacon", "hasBeaconWith", "hasOwner", "hasOwnerWith", "hasPortals", "hasPortalsWith", "hasActiveUsers", "hasActiveUsersWith", "hasShellTasks", "hasShellTasksWith", "hasPivots", "hasPivotsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "createdAt", "createdAtNEQ", "createdAtIn", "createdAtNotIn", "createdAtGT", "createdAtGTE", "createdAtLT", "createdAtLTE", "lastModifiedAt", "lastModifiedAtNEQ", "lastModifiedAtIn", "lastModifiedAtNotIn", "lastModifiedAtGT", "lastModifiedAtGTE", "lastModifiedAtLT", "lastModifiedAtLTE", "closedAt", "closedAtNEQ", "closedAtIn", "closedAtNotIn", "closedAtGT", "closedAtGTE", "closedAtLT", "closedAtLTE", "closedAtIsNil", "closedAtNotNil", "hasTask", "hasTaskWith", "hasBeacon", "hasBeaconWith", "hasOwner", "hasOwnerWith", "hasPortals", "hasPortalsWith", "hasActiveUsers", "hasActiveUsersWith", "hasShellTasks", "hasShellTasksWith", "hasPivots", "hasPivotsWith", "hasEvents", "hasEventsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -35671,6 +36017,20 @@ func (ec *executionContext) unmarshalInputShellWhereInput(ctx context.Context, o
 				return it, err
 			}
 			it.HasPivotsWith = data
+		case "hasEvents":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEvents"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEvents = data
+		case "hasEventsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEventsWith"))
+			data, err := ec.unmarshalOEventWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEventsWith = data
 		}
 	}
 	return it, nil
@@ -38310,7 +38670,7 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addNotificationIDs", "removeNotificationIDs", "clearNotifications", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths", "addFavoriteHostIDs", "removeFavoriteHostIDs", "clearFavoriteHosts"}
+	fieldsInOrder := [...]string{"name", "photoURL", "isActivated", "isAdmin", "addNotificationIDs", "removeNotificationIDs", "clearNotifications", "addTomeIDs", "removeTomeIDs", "clearTomes", "addActiveShellIDs", "removeActiveShellIDs", "clearActiveShells", "addDeviceAuthIDs", "removeDeviceAuthIDs", "clearDeviceAuths", "addFavoriteHostIDs", "removeFavoriteHostIDs", "clearFavoriteHosts", "addEventIDs", "removeEventIDs", "clearEvents"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38450,6 +38810,27 @@ func (ec *executionContext) unmarshalInputUpdateUserInput(ctx context.Context, o
 				return it, err
 			}
 			it.ClearFavoriteHosts = data
+		case "addEventIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addEventIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddEventIDs = data
+		case "removeEventIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeEventIDs"))
+			data, err := ec.unmarshalOID2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RemoveEventIDs = data
+		case "clearEvents":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clearEvents"))
+			data, err := ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClearEvents = data
 		}
 	}
 	return it, nil
@@ -38507,7 +38888,7 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasNotifications", "hasNotificationsWith", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith"}
+	fieldsInOrder := [...]string{"not", "and", "or", "id", "idNEQ", "idIn", "idNotIn", "idGT", "idGTE", "idLT", "idLTE", "name", "nameNEQ", "nameIn", "nameNotIn", "nameGT", "nameGTE", "nameLT", "nameLTE", "nameContains", "nameHasPrefix", "nameHasSuffix", "nameEqualFold", "nameContainsFold", "photoURL", "photoURLNEQ", "photoURLIn", "photoURLNotIn", "photoURLGT", "photoURLGTE", "photoURLLT", "photoURLLTE", "photoURLContains", "photoURLHasPrefix", "photoURLHasSuffix", "photoURLEqualFold", "photoURLContainsFold", "isActivated", "isActivatedNEQ", "isAdmin", "isAdminNEQ", "hasNotifications", "hasNotificationsWith", "hasTomes", "hasTomesWith", "hasActiveShells", "hasActiveShellsWith", "hasDeviceAuths", "hasDeviceAuthsWith", "hasFavoriteHosts", "hasFavoriteHostsWith", "hasEvents", "hasEventsWith"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -38871,6 +39252,20 @@ func (ec *executionContext) unmarshalInputUserWhereInput(ctx context.Context, ob
 				return it, err
 			}
 			it.HasFavoriteHostsWith = data
+		case "hasEvents":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEvents"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEvents = data
+		case "hasEventsWith":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasEventsWith"))
+			data, err := ec.unmarshalOEventWhereInput2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐEventWhereInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.HasEventsWith = data
 		}
 	}
 	return it, nil
@@ -40950,6 +41345,72 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Event_quest(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "shell":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Event_shell(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Event_user(ctx, field, obj)
 				return res
 			}
 
@@ -45181,6 +45642,42 @@ func (ec *executionContext) _Shell(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "events":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Shell_events(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -46981,6 +47478,42 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._User_favoritehosts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "events":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_events(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

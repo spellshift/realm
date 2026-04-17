@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
@@ -33,6 +34,7 @@ type UserQuery struct {
 	withActiveShells       *ShellQuery
 	withDeviceAuths        *DeviceAuthQuery
 	withFavoriteHosts      *HostQuery
+	withEvents             *EventQuery
 	withFKs                bool
 	modifiers              []func(*sql.Selector)
 	loadTotal              []func(context.Context, []*User) error
@@ -41,6 +43,7 @@ type UserQuery struct {
 	withNamedActiveShells  map[string]*ShellQuery
 	withNamedDeviceAuths   map[string]*DeviceAuthQuery
 	withNamedFavoriteHosts map[string]*HostQuery
+	withNamedEvents        map[string]*EventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -180,6 +183,28 @@ func (uq *UserQuery) QueryFavoriteHosts() *HostQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, user.FavoriteHostsTable, user.FavoriteHostsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (uq *UserQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.EventsTable, user.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -384,6 +409,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		withActiveShells:  uq.withActiveShells.Clone(),
 		withDeviceAuths:   uq.withDeviceAuths.Clone(),
 		withFavoriteHosts: uq.withFavoriteHosts.Clone(),
+		withEvents:        uq.withEvents.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -442,6 +468,17 @@ func (uq *UserQuery) WithFavoriteHosts(opts ...func(*HostQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withFavoriteHosts = query
+	return uq
+}
+
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithEvents(opts ...func(*EventQuery)) *UserQuery {
+	query := (&EventClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withEvents = query
 	return uq
 }
 
@@ -524,12 +561,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			uq.withNotifications != nil,
 			uq.withTomes != nil,
 			uq.withActiveShells != nil,
 			uq.withDeviceAuths != nil,
 			uq.withFavoriteHosts != nil,
+			uq.withEvents != nil,
 		}
 	)
 	if withFKs {
@@ -591,6 +629,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withEvents; query != nil {
+		if err := uq.loadEvents(ctx, query, nodes,
+			func(n *User) { n.Edges.Events = []*Event{} },
+			func(n *User, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range uq.withNamedNotifications {
 		if err := uq.loadNotifications(ctx, query, nodes,
 			func(n *User) { n.appendNamedNotifications(name) },
@@ -623,6 +668,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadFavoriteHosts(ctx, query, nodes,
 			func(n *User) { n.appendNamedFavoriteHosts(name) },
 			func(n *User, e *Host) { n.appendNamedFavoriteHosts(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range uq.withNamedEvents {
+		if err := uq.loadEvents(ctx, query, nodes,
+			func(n *User) { n.appendNamedEvents(name) },
+			func(n *User, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -849,6 +901,37 @@ func (uq *UserQuery) loadFavoriteHosts(ctx context.Context, query *HostQuery, no
 	}
 	return nil
 }
+func (uq *UserQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*User, init func(*User), assign func(*User, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_events" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (uq *UserQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := uq.querySpec()
@@ -1001,6 +1084,20 @@ func (uq *UserQuery) WithNamedFavoriteHosts(name string, opts ...func(*HostQuery
 		uq.withNamedFavoriteHosts = make(map[string]*HostQuery)
 	}
 	uq.withNamedFavoriteHosts[name] = query
+	return uq
+}
+
+// WithNamedEvents tells the query-builder to eager-load the nodes that are connected to the "events"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *UserQuery {
+	query := (&EventClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if uq.withNamedEvents == nil {
+		uq.withNamedEvents = make(map[string]*EventQuery)
+	}
+	uq.withNamedEvents[name] = query
 	return uq
 }
 

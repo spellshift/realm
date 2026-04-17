@@ -53,16 +53,19 @@ type ShellEdges struct {
 	ShellTasks []*ShellTask `json:"shell_tasks,omitempty"`
 	// Pivots associated with this shell
 	Pivots []*ShellPivot `json:"pivots,omitempty"`
+	// Events associated with this shell
+	Events []*Event `json:"events,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 	// totalCount holds the count of the edges above.
-	totalCount [7]map[string]int
+	totalCount [8]map[string]int
 
 	namedPortals     map[string][]*Portal
 	namedActiveUsers map[string][]*User
 	namedShellTasks  map[string][]*ShellTask
 	namedPivots      map[string][]*ShellPivot
+	namedEvents      map[string][]*Event
 }
 
 // TaskOrErr returns the Task value or an error if the edge
@@ -132,6 +135,15 @@ func (e ShellEdges) PivotsOrErr() ([]*ShellPivot, error) {
 		return e.Pivots, nil
 	}
 	return nil, &NotLoadedError{edge: "pivots"}
+}
+
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e ShellEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[7] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -265,6 +277,11 @@ func (s *Shell) QueryPivots() *ShellPivotQuery {
 	return NewShellClient(s.config).QueryPivots(s)
 }
 
+// QueryEvents queries the "events" edge of the Shell entity.
+func (s *Shell) QueryEvents() *EventQuery {
+	return NewShellClient(s.config).QueryEvents(s)
+}
+
 // Update returns a builder for updating this Shell.
 // Note that you need to call Shell.Unwrap() before calling this method if this Shell
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -396,6 +413,30 @@ func (s *Shell) appendNamedPivots(name string, edges ...*ShellPivot) {
 		s.Edges.namedPivots[name] = []*ShellPivot{}
 	} else {
 		s.Edges.namedPivots[name] = append(s.Edges.namedPivots[name], edges...)
+	}
+}
+
+// NamedEvents returns the Events named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (s *Shell) NamedEvents(name string) ([]*Event, error) {
+	if s.Edges.namedEvents == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := s.Edges.namedEvents[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (s *Shell) appendNamedEvents(name string, edges ...*Event) {
+	if s.Edges.namedEvents == nil {
+		s.Edges.namedEvents = make(map[string][]*Event)
+	}
+	if len(edges) == 0 {
+		s.Edges.namedEvents[name] = []*Event{}
+	} else {
+		s.Edges.namedEvents[name] = append(s.Edges.namedEvents[name], edges...)
 	}
 }
 
