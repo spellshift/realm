@@ -48,6 +48,12 @@ export const GET_HOST_CONTEXT_QUERY = gql`
         activeShells: shells(where: { hasBeaconWith: { hasHostWith: { id: $hostId } }, closedAtIsNil: true }) {
             totalCount
         }
+        totalPortals: portals(where: { hasBeaconWith: { hasHostWith: { id: $hostId } } }) {
+            totalCount
+        }
+        activePortals: portals(where: { hasBeaconWith: { hasHostWith: { id: $hostId } }, closedAtIsNil: true }) {
+            totalCount
+        }
     }
 `;
 
@@ -58,6 +64,8 @@ export type HostContextQueryType = {
     taskCount: number | undefined;
     totalShellCount: number | undefined;
     activeShellCount: number | undefined;
+    totalPortalCount: number | undefined;
+    activePortalCount: number | undefined;
 }
 
 export const HostContext = createContext<HostContextQueryType | undefined>(undefined);
@@ -75,9 +83,11 @@ export const HostContextProvider = ({ children }: { children: React.ReactNode })
     const taskCount = data?.tasks?.totalCount;
     const totalShellCount = data?.totalShells?.totalCount;
     const activeShellCount = data?.activeShells?.totalCount;
+    const totalPortalCount = data?.totalPortals?.totalCount;
+    const activePortalCount = data?.activePortals?.totalCount;
 
     return (
-        <HostContext.Provider value={{ data: host, loading, error, taskCount, totalShellCount, activeShellCount }}>
+        <HostContext.Provider value={{ data: host, loading, error, taskCount, totalShellCount, activeShellCount, totalPortalCount, activePortalCount }}>
             {children}
         </HostContext.Provider>
     );

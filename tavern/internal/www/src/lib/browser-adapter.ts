@@ -1,9 +1,10 @@
 import { WebsocketMessage, WebsocketMessageKind } from "../pages/shellv2/websocket";
 
 export interface ExecutionResult {
-    status: "complete" | "incomplete" | "error";
+    status: "complete" | "incomplete" | "error" | "meta";
     prompt?: string;
     message?: string;
+    meta_command?: any;
 }
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
@@ -132,6 +133,8 @@ export class BrowserWasmAdapter {
                 return { status: "complete" };
             } else if (result.status === "incomplete") {
                 return { status: "incomplete", prompt: result.prompt };
+            } else if (result.status === "meta") {
+                return { status: "meta", meta_command: result.meta_command };
             } else {
                 return { status: "error", message: result.message };
             }
@@ -173,6 +176,8 @@ export class BrowserWasmAdapter {
                 return { status: "complete" };
             } else if (result.status === "incomplete") {
                 return { status: "incomplete", prompt: result.prompt };
+            } else if (result.status === "meta") {
+                return { status: "meta", meta_command: result.meta_command };
             } else {
                 return { status: "error", message: result.message };
             }

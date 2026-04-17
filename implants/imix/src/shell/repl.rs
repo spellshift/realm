@@ -131,9 +131,7 @@ pub async fn run_repl_reverse_shell(
     }
 
     // Initiate gRPC stream
-    if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
-        return Err(e);
-    }
+    transport.reverse_shell(output_rx, input_tx).await?;
 
     let runtime = tokio::runtime::Handle::current();
     let _ = tokio::task::spawn_blocking(move || {

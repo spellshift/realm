@@ -41,6 +41,8 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/portals/ssh"
+	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -368,7 +370,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
+			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux)),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -409,6 +411,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
+		},
+		"/portals/ssh/ws": tavernhttp.Endpoint{
+			Handler: ssh.NewHandler(client, portalMux),
+		},
+		"/portals/pty/ws": tavernhttp.Endpoint{
+			Handler: pty.NewHandler(client, portalMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),

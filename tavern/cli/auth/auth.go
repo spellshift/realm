@@ -78,72 +78,78 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 		}
 	}
 
-	// Create Listener
-	conn, err := net.Listen("tcp", ":0")
-	if err != nil {
-		return Token(""), fmt.Errorf("failed to start access_token http redirect handler: %w", err)
-	}
-	defer conn.Close()
-
-	// Build Access Token Endpoint
-	accessTokenRedirURL, err := url.Parse(tavernURL)
-	if err != nil {
-		return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
-	}
-	_, redirPort, err := net.SplitHostPort(conn.Addr().String())
-	if err != nil {
-		return Token(""), fmt.Errorf("%w: %q: %v", ErrInvalidURL, conn.Addr().String(), err)
-	}
-	accessTokenRedirURL.RawQuery = url.Values{
-		auth.ParamTokenRedirPort: []string{redirPort},
-	}.Encode()
-	accessTokenRedirURL.Path = "/access_token/redirect"
-
-	// Log TLS Warning
-	if accessTokenRedirURL.Scheme == "http" {
-		slog.WarnContext(ctx, "using insecure access token url (http), this may leak sensitive information")
-	}
-
 	// Create Channels
 	tokenCh := make(chan Token, 1)
 	errCh := make(chan error, 1)
 
-	// Configure Server
-	srv := &http.Server{
-		Addr:    ":0",
-		Handler: newTokenHandler(tokenCh, errCh),
-	}
-
-	// Start HTTP Server
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := srv.Serve(conn); err != nil {
-			errCh <- fmt.Errorf("http token redirect server failed: %w", err)
+	// Use Browser OAuth Flow if Explicitly Enabled
+	if os.Getenv("TAVERN_USE_BROWSER_OAUTH") == "1" {
+		// Create Listener
+		conn, err := net.Listen("tcp", ":0")
+		if err != nil {
+			return Token(""), fmt.Errorf("failed to start access_token http redirect handler: %w", err)
 		}
-	}()
+		defer conn.Close()
 
-	// Handle Cleanup
-	defer func() {
-		// Browsers keep open the connection, which means we must timeout the shutdown to
-		// prevent the http package from waiting indefinitely.
-		shutdownCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
-		defer cancel()
-		srv.Shutdown(shutdownCtx)
-		wg.Wait()
-	}()
+		// Build Access Token Endpoint
+		accessTokenRedirURL, err := url.Parse(tavernURL)
+		if err != nil {
+			return Token(""), fmt.Errorf("%w: %v", ErrInvalidURL, err)
+		}
+		_, redirPort, err := net.SplitHostPort(conn.Addr().String())
+		if err != nil {
+			return Token(""), fmt.Errorf("%w: %q: %v", ErrInvalidURL, conn.Addr().String(), err)
+		}
+		accessTokenRedirURL.RawQuery = url.Values{
+			auth.ParamTokenRedirPort: []string{redirPort},
+		}.Encode()
+		accessTokenRedirURL.Path = "/access_token/redirect"
 
-	// Try to open the browser
-	if browser != nil {
-		err = browser.OpenURL(accessTokenRedirURL.String())
+		// Log TLS Warning
+		if accessTokenRedirURL.Scheme == "http" {
+			slog.WarnContext(ctx, "using insecure access token url (http), this may leak sensitive information")
+		}
+
+		// Configure Server
+		srv := &http.Server{
+			Addr:    ":0",
+			Handler: newTokenHandler(tokenCh, errCh),
+		}
+
+		// Start HTTP Server
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := srv.Serve(conn); err != nil {
+				errCh <- fmt.Errorf("http token redirect server failed: %w", err)
+			}
+		}()
+
+		// Handle Cleanup
+		defer func() {
+			// Browsers keep open the connection, which means we must timeout the shutdown to
+			// prevent the http package from waiting indefinitely.
+			shutdownCtx, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+			defer cancel()
+			srv.Shutdown(shutdownCtx)
+			wg.Wait()
+		}()
+
+		// Try to open the browser
+		if browser != nil {
+			err = browser.OpenURL(accessTokenRedirURL.String())
+		} else {
+			err = fmt.Errorf("no browser provided")
+		}
+
+		// Fallback to Remote Device Authentication if browser fails
+		if err != nil {
+			slog.WarnContext(ctx, "failed to open browser, falling back to remote device authentication", "error", err)
+			go AuthenticateRemoteDevice(ctx, tavernURL, tokenCh, errCh)
+		}
 	} else {
-		err = fmt.Errorf("no browser provided")
-	}
-
-	// Fallback to Remote Device Authentication if browser fails
-	if err != nil {
-		slog.WarnContext(ctx, "failed to open browser, falling back to remote device authentication", "error", err)
+		// Default to Remote Device Authentication
 		go AuthenticateRemoteDevice(ctx, tavernURL, tokenCh, errCh)
 	}
 
@@ -154,6 +160,12 @@ func Authenticate(ctx context.Context, browser Browser, tavernURL string, opts .
 	case err := <-errCh:
 		return Token(""), fmt.Errorf("failed to obtain credentials: %w", err)
 	case token := <-tokenCh:
+		if options.CachePath != "" {
+			err := os.WriteFile(options.CachePath, []byte(token), 0600)
+			if err != nil {
+				slog.Warn("failed to write credential cache", "path", options.CachePath, "error", err)
+			}
+		}
 		return token, nil
 	}
 }

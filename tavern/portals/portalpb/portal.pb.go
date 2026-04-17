@@ -30,6 +30,7 @@ const (
 	BytesPayloadKind_BYTES_PAYLOAD_KIND_KEEPALIVE   BytesPayloadKind = 3
 	BytesPayloadKind_BYTES_PAYLOAD_KIND_TRACE       BytesPayloadKind = 4
 	BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE       BytesPayloadKind = 5
+	BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY         BytesPayloadKind = 6
 )
 
 // Enum value maps for BytesPayloadKind.
@@ -41,6 +42,7 @@ var (
 		3: "BYTES_PAYLOAD_KIND_KEEPALIVE",
 		4: "BYTES_PAYLOAD_KIND_TRACE",
 		5: "BYTES_PAYLOAD_KIND_CLOSE",
+		6: "BYTES_PAYLOAD_KIND_PTY",
 	}
 	BytesPayloadKind_value = map[string]int32{
 		"BYTES_PAYLOAD_KIND_UNSPECIFIED": 0,
@@ -49,6 +51,7 @@ var (
 		"BYTES_PAYLOAD_KIND_KEEPALIVE":   3,
 		"BYTES_PAYLOAD_KIND_TRACE":       4,
 		"BYTES_PAYLOAD_KIND_CLOSE":       5,
+		"BYTES_PAYLOAD_KIND_PTY":         6,
 	}
 )
 

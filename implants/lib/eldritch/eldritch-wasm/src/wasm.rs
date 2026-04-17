@@ -10,8 +10,8 @@ use wasm_bindgen::prelude::*;
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
     agent::fake::AgentLibraryFake, assets::fake::FakeAssetsLibrary,
-    crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
-    pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
+    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
+    http::fake::HttpLibraryFake, pivot::fake::PivotLibraryFake, process::fake::ProcessLibraryFake,
     random::fake::RandomLibraryFake, regex::fake::RegexLibraryFake,
     report::fake::ReportLibraryFake, sys::fake::SysLibraryFake, time::fake::TimeLibraryFake,
 };
@@ -99,6 +99,7 @@ impl WasmRepl {
             interp.register_lib(ProcessLibraryFake::default());
             interp.register_lib(SysLibraryFake::default());
             interp.register_lib(HttpLibraryFake::default());
+            interp.register_lib(DnsLibraryFake::default());
             interp.register_lib(CryptoLibraryFake::default());
             interp.register_lib(AgentLibraryFake::default());
             interp.register_lib(FakeAssetsLibrary::default());

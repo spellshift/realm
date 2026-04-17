@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -21,11 +20,39 @@ import (
 
 type MetricsResolver interface {
 	QuestTimelineChart(ctx context.Context, obj *models.Metrics, start time.Time, end *time.Time, granularitySeconds int, where *ent.QuestWhereInput) ([]*models.QuestTimelineBucket, error)
+	BeaconTimelineChart(ctx context.Context, obj *models.Metrics, start time.Time, end *time.Time, granularitySeconds int, where *ent.BeaconWhereInput) ([]*models.BeaconTimelineBucket, error)
+	TasksByTome(ctx context.Context, obj *models.Metrics) ([]*models.TomeTaskMetrics, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Metrics_beaconTimelineChart_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "start", ec.unmarshalNTime2timeᚐTime)
+	if err != nil {
+		return nil, err
+	}
+	args["start"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "end", ec.unmarshalOTime2ᚖtimeᚐTime)
+	if err != nil {
+		return nil, err
+	}
+	args["end"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "granularity_seconds", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["granularity_seconds"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOBeaconWhereInput2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐBeaconWhereInput)
+	if err != nil {
+		return nil, err
+	}
+	args["where"] = arg3
+	return args, nil
+}
 
 func (ec *executionContext) field_Metrics_questTimelineChart_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -61,6 +88,195 @@ func (ec *executionContext) field_Metrics_questTimelineChart_args(ctx context.Co
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _BeaconTimelineBucket_count(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineBucket_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineBucket_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BeaconTimelineBucket_startTimestamp(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineBucket_startTimestamp,
+		func(ctx context.Context) (any, error) {
+			return obj.StartTimestamp, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineBucket_startTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BeaconTimelineBucket_groupByHosts(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineBucket_groupByHosts,
+		func(ctx context.Context) (any, error) {
+			return obj.GroupByHosts, nil
+		},
+		nil,
+		ec.marshalNBeaconTimelineHostBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineHostBucketᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineBucket_groupByHosts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "host":
+				return ec.fieldContext_BeaconTimelineHostBucket_host(ctx, field)
+			case "count":
+				return ec.fieldContext_BeaconTimelineHostBucket_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BeaconTimelineHostBucket", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BeaconTimelineHostBucket_host(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineHostBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineHostBucket_host,
+		func(ctx context.Context) (any, error) {
+			return obj.Host, nil
+		},
+		nil,
+		ec.marshalNHost2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐHost,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_host(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineHostBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Host_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Host_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Host_lastModifiedAt(ctx, field)
+			case "identifier":
+				return ec.fieldContext_Host_identifier(ctx, field)
+			case "name":
+				return ec.fieldContext_Host_name(ctx, field)
+			case "primaryIP":
+				return ec.fieldContext_Host_primaryIP(ctx, field)
+			case "externalIP":
+				return ec.fieldContext_Host_externalIP(ctx, field)
+			case "platform":
+				return ec.fieldContext_Host_platform(ctx, field)
+			case "lastSeenAt":
+				return ec.fieldContext_Host_lastSeenAt(ctx, field)
+			case "nextSeenAt":
+				return ec.fieldContext_Host_nextSeenAt(ctx, field)
+			case "tags":
+				return ec.fieldContext_Host_tags(ctx, field)
+			case "beacons":
+				return ec.fieldContext_Host_beacons(ctx, field)
+			case "files":
+				return ec.fieldContext_Host_files(ctx, field)
+			case "processes":
+				return ec.fieldContext_Host_processes(ctx, field)
+			case "credentials":
+				return ec.fieldContext_Host_credentials(ctx, field)
+			case "screenshots":
+				return ec.fieldContext_Host_screenshots(ctx, field)
+			case "favoritedby":
+				return ec.fieldContext_Host_favoritedby(ctx, field)
+			case "events":
+				return ec.fieldContext_Host_events(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Host", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BeaconTimelineHostBucket_count(ctx context.Context, field graphql.CollectedField, obj *models.BeaconTimelineHostBucket) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_BeaconTimelineHostBucket_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_BeaconTimelineHostBucket_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BeaconTimelineHostBucket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Metrics_questTimelineChart(ctx context.Context, field graphql.CollectedField, obj *models.Metrics) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -69,7 +285,7 @@ func (ec *executionContext) _Metrics_questTimelineChart(ctx context.Context, fie
 		ec.fieldContext_Metrics_questTimelineChart,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Metrics().QuestTimelineChart(ctx, obj, fc.Args["start"].(time.Time), fc.Args["end"].(*time.Time), fc.Args["granularity_seconds"].(int), fc.Args["where"].(*ent.QuestWhereInput))
+			return ec.Resolvers.Metrics().QuestTimelineChart(ctx, obj, fc.Args["start"].(time.Time), fc.Args["end"].(*time.Time), fc.Args["granularity_seconds"].(int), fc.Args["where"].(*ent.QuestWhereInput))
 		},
 		nil,
 		ec.marshalNQuestTimelineBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineBucketᚄ,
@@ -106,6 +322,102 @@ func (ec *executionContext) fieldContext_Metrics_questTimelineChart(ctx context.
 	if fc.Args, err = ec.field_Metrics_questTimelineChart_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Metrics_beaconTimelineChart(ctx context.Context, field graphql.CollectedField, obj *models.Metrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Metrics_beaconTimelineChart,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Metrics().BeaconTimelineChart(ctx, obj, fc.Args["start"].(time.Time), fc.Args["end"].(*time.Time), fc.Args["granularity_seconds"].(int), fc.Args["where"].(*ent.BeaconWhereInput))
+		},
+		nil,
+		ec.marshalNBeaconTimelineBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineBucketᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Metrics_beaconTimelineChart(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Metrics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "count":
+				return ec.fieldContext_BeaconTimelineBucket_count(ctx, field)
+			case "startTimestamp":
+				return ec.fieldContext_BeaconTimelineBucket_startTimestamp(ctx, field)
+			case "groupByHosts":
+				return ec.fieldContext_BeaconTimelineBucket_groupByHosts(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BeaconTimelineBucket", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Metrics_beaconTimelineChart_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Metrics_tasksByTome(ctx context.Context, field graphql.CollectedField, obj *models.Metrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Metrics_tasksByTome,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Metrics().TasksByTome(ctx, obj)
+		},
+		nil,
+		ec.marshalNTomeTaskMetrics2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTomeTaskMetricsᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Metrics_tasksByTome(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Metrics",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "tome":
+				return ec.fieldContext_TomeTaskMetrics_tome(ctx, field)
+			case "tasksTotal":
+				return ec.fieldContext_TomeTaskMetrics_tasksTotal(ctx, field)
+			case "tasksWithErrors":
+				return ec.fieldContext_TomeTaskMetrics_tasksWithErrors(ctx, field)
+			case "tasksWithNoErrors":
+				return ec.fieldContext_TomeTaskMetrics_tasksWithNoErrors(ctx, field)
+			case "tasksCompleteWithNoErrors":
+				return ec.fieldContext_TomeTaskMetrics_tasksCompleteWithNoErrors(ctx, field)
+			case "tasksPending":
+				return ec.fieldContext_TomeTaskMetrics_tasksPending(ctx, field)
+			case "tasksRunning":
+				return ec.fieldContext_TomeTaskMetrics_tasksRunning(ctx, field)
+			case "tasksStale":
+				return ec.fieldContext_TomeTaskMetrics_tasksStale(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TomeTaskMetrics", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -261,6 +573,266 @@ func (ec *executionContext) fieldContext_QuestTimelineTacticBucket_count(_ conte
 	return fc, nil
 }
 
+func (ec *executionContext) _TomeTaskMetrics_tome(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tome,
+		func(ctx context.Context) (any, error) {
+			return obj.Tome, nil
+		},
+		nil,
+		ec.marshalNTome2ᚖrealmᚗpubᚋtavernᚋinternalᚋentᚐTome,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tome(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tome_id(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Tome_createdAt(ctx, field)
+			case "lastModifiedAt":
+				return ec.fieldContext_Tome_lastModifiedAt(ctx, field)
+			case "name":
+				return ec.fieldContext_Tome_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tome_description(ctx, field)
+			case "author":
+				return ec.fieldContext_Tome_author(ctx, field)
+			case "supportModel":
+				return ec.fieldContext_Tome_supportModel(ctx, field)
+			case "tactic":
+				return ec.fieldContext_Tome_tactic(ctx, field)
+			case "paramDefs":
+				return ec.fieldContext_Tome_paramDefs(ctx, field)
+			case "eldritch":
+				return ec.fieldContext_Tome_eldritch(ctx, field)
+			case "assets":
+				return ec.fieldContext_Tome_assets(ctx, field)
+			case "uploader":
+				return ec.fieldContext_Tome_uploader(ctx, field)
+			case "repository":
+				return ec.fieldContext_Tome_repository(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tome", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksTotal(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksTotal,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksTotal, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksTotal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksWithErrors(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksWithErrors,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksWithErrors, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksWithErrors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksWithNoErrors(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksWithNoErrors,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksWithNoErrors, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksWithNoErrors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksCompleteWithNoErrors(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksCompleteWithNoErrors,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksCompleteWithNoErrors, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksCompleteWithNoErrors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksPending(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksPending,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksPending, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksPending(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksRunning(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksRunning,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksRunning, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksRunning(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TomeTaskMetrics_tasksStale(ctx context.Context, field graphql.CollectedField, obj *models.TomeTaskMetrics) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TomeTaskMetrics_tasksStale,
+		func(ctx context.Context) (any, error) {
+			return obj.TasksStale, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TomeTaskMetrics_tasksStale(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TomeTaskMetrics",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -272,6 +844,99 @@ func (ec *executionContext) fieldContext_QuestTimelineTacticBucket_count(_ conte
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var beaconTimelineBucketImplementors = []string{"BeaconTimelineBucket"}
+
+func (ec *executionContext) _BeaconTimelineBucket(ctx context.Context, sel ast.SelectionSet, obj *models.BeaconTimelineBucket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, beaconTimelineBucketImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BeaconTimelineBucket")
+		case "count":
+			out.Values[i] = ec._BeaconTimelineBucket_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startTimestamp":
+			out.Values[i] = ec._BeaconTimelineBucket_startTimestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "groupByHosts":
+			out.Values[i] = ec._BeaconTimelineBucket_groupByHosts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var beaconTimelineHostBucketImplementors = []string{"BeaconTimelineHostBucket"}
+
+func (ec *executionContext) _BeaconTimelineHostBucket(ctx context.Context, sel ast.SelectionSet, obj *models.BeaconTimelineHostBucket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, beaconTimelineHostBucketImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BeaconTimelineHostBucket")
+		case "host":
+			out.Values[i] = ec._BeaconTimelineHostBucket_host(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._BeaconTimelineHostBucket_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var metricsImplementors = []string{"Metrics"}
 
@@ -320,6 +985,78 @@ func (ec *executionContext) _Metrics(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "beaconTimelineChart":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Metrics_beaconTimelineChart(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "tasksByTome":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Metrics_tasksByTome(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -329,10 +1066,10 @@ func (ec *executionContext) _Metrics(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -378,10 +1115,10 @@ func (ec *executionContext) _QuestTimelineBucket(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -422,10 +1159,84 @@ func (ec *executionContext) _QuestTimelineTacticBucket(ctx context.Context, sel 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var tomeTaskMetricsImplementors = []string{"TomeTaskMetrics"}
+
+func (ec *executionContext) _TomeTaskMetrics(ctx context.Context, sel ast.SelectionSet, obj *models.TomeTaskMetrics) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, tomeTaskMetricsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TomeTaskMetrics")
+		case "tome":
+			out.Values[i] = ec._TomeTaskMetrics_tome(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksTotal":
+			out.Values[i] = ec._TomeTaskMetrics_tasksTotal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksWithErrors":
+			out.Values[i] = ec._TomeTaskMetrics_tasksWithErrors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksWithNoErrors":
+			out.Values[i] = ec._TomeTaskMetrics_tasksWithNoErrors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksCompleteWithNoErrors":
+			out.Values[i] = ec._TomeTaskMetrics_tasksCompleteWithNoErrors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksPending":
+			out.Values[i] = ec._TomeTaskMetrics_tasksPending(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksRunning":
+			out.Values[i] = ec._TomeTaskMetrics_tasksRunning(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tasksStale":
+			out.Values[i] = ec._TomeTaskMetrics_tasksStale(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -439,6 +1250,58 @@ func (ec *executionContext) _QuestTimelineTacticBucket(ctx context.Context, sel 
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNBeaconTimelineBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineBucketᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.BeaconTimelineBucket) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBeaconTimelineBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineBucket(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBeaconTimelineBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineBucket(ctx context.Context, sel ast.SelectionSet, v *models.BeaconTimelineBucket) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BeaconTimelineBucket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBeaconTimelineHostBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineHostBucketᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.BeaconTimelineHostBucket) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBeaconTimelineHostBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineHostBucket(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBeaconTimelineHostBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐBeaconTimelineHostBucket(ctx context.Context, sel ast.SelectionSet, v *models.BeaconTimelineHostBucket) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BeaconTimelineHostBucket(ctx, sel, v)
+}
 
 func (ec *executionContext) marshalNMetrics2realmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐMetrics(ctx context.Context, sel ast.SelectionSet, v models.Metrics) graphql.Marshaler {
 	return ec._Metrics(ctx, sel, &v)
@@ -455,39 +1318,11 @@ func (ec *executionContext) marshalNMetrics2ᚖrealmᚗpubᚋtavernᚋinternal�
 }
 
 func (ec *executionContext) marshalNQuestTimelineBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineBucketᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.QuestTimelineBucket) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNQuestTimelineBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineBucket(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNQuestTimelineBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineBucket(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -509,39 +1344,11 @@ func (ec *executionContext) marshalNQuestTimelineBucket2ᚖrealmᚗpubᚋtavern�
 }
 
 func (ec *executionContext) marshalNQuestTimelineTacticBucket2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineTacticBucketᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.QuestTimelineTacticBucket) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNQuestTimelineTacticBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineTacticBucket(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNQuestTimelineTacticBucket2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐQuestTimelineTacticBucket(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -560,6 +1367,32 @@ func (ec *executionContext) marshalNQuestTimelineTacticBucket2ᚖrealmᚗpubᚋt
 		return graphql.Null
 	}
 	return ec._QuestTimelineTacticBucket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTomeTaskMetrics2ᚕᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTomeTaskMetricsᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.TomeTaskMetrics) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTomeTaskMetrics2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTomeTaskMetrics(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTomeTaskMetrics2ᚖrealmᚗpubᚋtavernᚋinternalᚋgraphqlᚋmodelsᚐTomeTaskMetrics(ctx context.Context, sel ast.SelectionSet, v *models.TomeTaskMetrics) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TomeTaskMetrics(ctx, sel, v)
 }
 
 // endregion ***************************** type.gotpl *****************************

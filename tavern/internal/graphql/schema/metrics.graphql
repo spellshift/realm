@@ -9,6 +9,37 @@ type Metrics {
     granularity_seconds: Int!
     where: QuestWhereInput
   ): [QuestTimelineBucket!]!
+
+  beaconTimelineChart(
+    start: Time!
+    end: Time
+    granularity_seconds: Int!
+    where: BeaconWhereInput
+  ): [BeaconTimelineBucket!]!
+
+  tasksByTome: [TomeTaskMetrics!]!
+}
+
+type TomeTaskMetrics {
+  tome: Tome!
+  tasksTotal: Int!
+  tasksWithErrors: Int!
+  tasksWithNoErrors: Int!
+  tasksCompleteWithNoErrors: Int!
+  tasksPending: Int!
+  tasksRunning: Int!
+  tasksStale: Int!
+}
+
+type BeaconTimelineBucket {
+  count: Int!
+  startTimestamp: Time!
+  groupByHosts: [BeaconTimelineHostBucket!]!
+}
+
+type BeaconTimelineHostBucket {
+  host: Host!
+  count: Int!
 }
 
 type QuestTimelineBucket {

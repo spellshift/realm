@@ -440,6 +440,27 @@ it after running the install.
 def main():
     config_data = {
         "service_configs": [
+            {
+                "name": "imix_svc",
+                "windows_display_name": "",
+                "description": "Realm c2 agent service",
+                "executable_name": "imixd",
+                "executable_args": "--some-fake-args"
+            },
+            {
+                "name": "imix_svc2",
+                "windows_display_name": "Service display name on Windows",
+                "description": "Another realm c2 agent service",
+                "executable_name": "imixd2",
+                "executable_args": "-q -k -v"
+            },
+            {
+                "name": "imix_svc3",
+                "windows_display_name": "",
+                "description": "Another description.",
+                "executable_name": "imixd3",
+                "executable_args": "--no-check-certificates"
+            }
         ]
     }
     parse_and_persist(config_data)

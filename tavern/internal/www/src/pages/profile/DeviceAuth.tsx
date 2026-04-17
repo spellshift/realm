@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useToast, Input } from '@chakra-ui/react';
 import { createColumnHelper } from '@tanstack/react-table';
 import Button from '../../components/tavern-base-ui/button/Button';
@@ -6,6 +6,7 @@ import Table from '../../components/tavern-base-ui/table/Table';
 import { EmptyState, EmptyStateType } from '../../components/tavern-base-ui/EmptyState';
 import { DeviceAuthNode } from './Profile';
 import { Trash2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 interface DeviceAuthProps {
     devices: { node: DeviceAuthNode }[];
@@ -16,6 +17,14 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
     const toast = useToast();
     const [userCode, setUserCode] = useState('');
     const [approving, setApproving] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        if (searchParams.has('device-code')) {
+            setUserCode(searchParams.get('device-code') || '');
+        }
+    }, [location.search]);
 
     const handleApproveDevice = async () => {
         if (!userCode.trim()) return;
@@ -79,7 +88,7 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
                 if (node.status === 'PENDING' || node.status === 'APPROVED') {
                     return (
                         <div className="flex justify-end">
-                            <Button buttonVariant="outline" buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.id)}>
+                            <Button buttonVariant="outline" buttonStyle={{ color: 'red', size: 'xs' }} onClick={() => handleRevokeDevice(node.userCode)}>
                                 <Trash2 size={16} />
                             </Button>
                         </div>
@@ -88,7 +97,7 @@ const DeviceAuth: React.FC<DeviceAuthProps> = ({ devices, refetch }) => {
                 return null;
             }
         })
-    ], [columnHelper]);
+    ], [columnHelper, handleRevokeDevice]);
 
     return (
         <div className="bg-white p-6 shadow-sm rounded-md border border-gray-200">

@@ -12,8 +12,8 @@ use std::time::Duration;
 
 #[cfg(feature = "fake_bindings")]
 use eldritch::{
-    crypto::fake::CryptoLibraryFake, file::fake::FileLibraryFake, http::fake::HttpLibraryFake,
-    regex::fake::RegexLibraryFake,
+    crypto::fake::CryptoLibraryFake, dns::fake::DnsLibraryFake, file::fake::FileLibraryFake,
+    http::fake::HttpLibraryFake, regex::fake::RegexLibraryFake,
 };
 
 fn main() -> io::Result<()> {
@@ -31,6 +31,7 @@ fn main() -> io::Result<()> {
         use std::sync::Arc;
         interpreter.inner.register_lib(FileLibraryFake::default());
         interpreter.inner.register_lib(HttpLibraryFake::default());
+        interpreter.inner.register_lib(DnsLibraryFake::default());
         interpreter.inner.register_lib(RegexLibraryFake::default());
         interpreter.inner.register_lib(CryptoLibraryFake::default());
     }

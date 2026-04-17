@@ -17,7 +17,7 @@ pub use analysis::find_node_at_offset;
 pub use ast::{
     Argument, Environment, ExprKind, FStringSegment, ForeignValue, Param, Stmt, StmtKind, Value,
 };
-pub use interpreter::{BufferPrinter, Interpreter, Printer, StdoutPrinter};
+pub use interpreter::{BufferPrinter, Interpreter, NoopPrinter, Printer, StdoutPrinter};
 pub use lexer::Lexer;
 pub use token::{Span, TokenKind};
 

@@ -7,6 +7,17 @@ import { useShellTerminal } from "./hooks/useShellTerminal";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
+import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
+import { useState, useEffect } from 'react';
+import SshTerminal from './components/SshTerminal';
+import PtyTerminal from './components/PtyTerminal';
+
+interface PortalTab {
+    id: string;
+    type: string;
+    target: string;
+    pivotId?: string;
+}
 
 const ShellV2 = () => {
     const { shellId } = useParams<{ shellId: string }>();
@@ -16,13 +27,36 @@ const ShellV2 = () => {
         error,
         shellData,
         beaconData,
-        portalData,
         portalId,
         setPortalId,
         activeUsers
     } = useShellData(shellId);
 
     const { timeUntilCallback, isMissedCallback, isLateCheckin } = useCallbackTimer(beaconData);
+
+    const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
+    const [tabIndex, setTabIndex] = useState(0);
+
+    useEffect(() => {
+        if (shellData?.node?.pivots?.edges) {
+            shellData.node.pivots.edges.forEach((edge: any) => {
+                const pivot = edge.node;
+                if (!pivot.closedAt) {
+                    handleOpenPortalTab(pivot.kind, pivot.destination, pivot.id);
+                }
+            });
+        }
+    }, [shellData]);
+
+    const handleOpenPortalTab = (type: string, target: string, pivotId?: string) => {
+        const id = pivotId ? `pivot-${pivotId}` : `${type}-${target}-${Date.now()}`;
+        setPortalTabs(prev => {
+            if (prev.find(t => t.id === id)) return prev;
+            const newTabs = [...prev, { id, type, target, pivotId }];
+            setTabIndex(newTabs.length); // index 0 is main shell, so new length is the correct index
+            return newTabs;
+        });
+    };
 
     const {
         termRef,
@@ -37,8 +71,33 @@ const ShellV2 = () => {
         connectionStatus,
         connectionMessage,
         handleTooltipMouseEnter,
-        handleTooltipMouseLeave
-    } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin);
+        handleTooltipMouseLeave,
+        getSessionInputs
+    } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
+
+    const toast = useToast();
+
+    const handleExport = () => {
+        const inputs = getSessionInputs();
+        if (inputs) {
+            navigator.clipboard.writeText(inputs);
+            toast({
+                title: "Copied to clipboard",
+                description: "Session input history has been copied to your clipboard.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        } else {
+            toast({
+                title: "No inputs to export",
+                description: "There are no completed commands in the current session.",
+                status: "info",
+                duration: 3000,
+                isClosable: true,
+            });
+        }
+    };
 
     if (connectionError) {
         return (
@@ -52,24 +111,54 @@ const ShellV2 = () => {
         return <div style={{ padding: "20px", color: "#d4d4d4" }}>Loading Shell...</div>;
     }
 
+    const useTabs = portalTabs.length > 0;
+
+    let shellTerm = (
+        <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} variant="enclosed" flex="1" display="flex" flexDirection="column" mt={useTabs ? 4 : 0} overflow="hidden">
+            <TabList borderBottomColor="#333" display={useTabs ? 'flex' : 'none'}>
+                <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
+                {portalTabs.map(tab => (
+                    <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
+                        {tab.target}
+                    </Tab>
+                ))}
+            </TabList>
+            <TabPanels flex="1" display="flex" flexDirection="column" overflow="hidden">
+                <TabPanel flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
+                    <ShellTerminal
+                        termRef={termRef}
+                        completions={completions}
+                        showCompletions={showCompletions}
+                        completionPos={completionPos}
+                        completionIndex={completionIndex}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleTooltipMouseLeave}
+                        tooltipState={tooltipState}
+                        handleCompletionSelect={handleCompletionSelect}
+                        onTooltipMouseEnter={handleTooltipMouseEnter}
+                        onTooltipMouseLeave={handleTooltipMouseLeave}
+                    />
+                </TabPanel>
+                {portalTabs.map(tab => (
+                    <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
+                        {tab.type === "ssh" && (portalId || tab.pivotId) && (
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                        )}
+                        {tab.type === "pty" && (portalId || tab.pivotId) && (
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                        )}
+                    </TabPanel>
+                ))}
+            </TabPanels>
+        </Tabs>
+    );
+
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-                <ShellHeader shellData={shellData} activeUsers={activeUsers} />
+                <ShellHeader shellData={shellData} activeUsers={activeUsers} onExport={handleExport} />
 
-                <ShellTerminal
-                    termRef={termRef}
-                    completions={completions}
-                    showCompletions={showCompletions}
-                    completionPos={completionPos}
-                    completionIndex={completionIndex}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleTooltipMouseLeave}
-                    tooltipState={tooltipState}
-                    handleCompletionSelect={handleCompletionSelect}
-                    onTooltipMouseEnter={handleTooltipMouseEnter}
-                    onTooltipMouseLeave={handleTooltipMouseLeave}
-                />
+                {shellTerm}
 
                 <ShellStatusBar
                     portalId={portalId}
@@ -77,6 +166,7 @@ const ShellV2 = () => {
                     isMissedCallback={isMissedCallback}
                     connectionStatus={connectionStatus}
                     connectionMessage={connectionMessage}
+                    closedAt={shellData?.node?.closedAt}
                 />
             </div>
         </AccessGate>

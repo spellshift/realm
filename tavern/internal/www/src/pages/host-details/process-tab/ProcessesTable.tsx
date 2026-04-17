@@ -38,7 +38,7 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
         {
             key: 'principal',
             label: 'User',
-            width: 'minmax(100px,1fr)',
+            width: 'minmax(80px,0.5fr)',
             render: (process: ProcessNode) => {
                 const principal = process.principal;
                 const color = principalColors.indexOf(principal as PrincipalAdminTypes) === -1 ? 'gray' : 'purple';
@@ -59,31 +59,31 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
         {
             key: 'pid',
             label: 'PID',
-            width: 'minmax(70px,0.5fr)',
+            width: 'minmax(50px,0.3fr)',
             render: (process: ProcessNode) => process.pid,
         },
         {
             key: 'ppid',
             label: 'PPID',
-            width: 'minmax(70px,0.5fr)',
+            width: 'minmax(50px,0.3fr)',
             render: (process: ProcessNode) => process.ppid,
         },
         {
             key: 'status',
             label: 'Status',
-            width: 'minmax(80px,0.5fr)',
+            width: 'minmax(70px,0.4fr)',
             render: (process: ProcessNode) => formatStatus(process.status),
         },
         {
             key: 'startTime',
             label: 'Start Time',
-            width: 'minmax(120px,1fr)',
+            width: 'minmax(100px,0.8fr)',
             render: (process: ProcessNode) => formatStartTime(process.startTime),
         },
         {
             key: 'cmd',
             label: 'CMD',
-            width: 'minmax(150px,2fr)',
+            width: 'minmax(200px,4fr)',
             render: (process: ProcessNode) => (
                 <Tooltip label={process.cmd || process.name} isDisabled={!process.cmd && !process.name}>
                     <div className="truncate text-sm text-gray-600">
@@ -95,7 +95,7 @@ export const ProcessesTable = ({ hostId, processIds, }: ProcessesTableProps) => 
         {
             key: 'lastModifiedAt',
             label: 'Last Reported',
-            width: 'minmax(120px,1fr)',
+            width: 'minmax(100px,0.8fr)',
             render: (process: ProcessNode) => format(new Date(process.lastModifiedAt), "yyyy-MM-dd HH:mm"),
         },
     ], [principalColors]);

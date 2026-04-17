@@ -10,6 +10,7 @@ pub use eldritch_libagent as agent;
 pub use eldritch_libassets as assets;
 pub use eldritch_libchain as chain;
 pub use eldritch_libcrypto as crypto;
+pub use eldritch_libdns as dns;
 pub use eldritch_libfile as file;
 pub use eldritch_libhttp as http;
 pub use eldritch_libpivot as pivot;
@@ -23,8 +24,8 @@ pub use eldritch_repl as repl;
 
 // Re-export core types
 pub use eldritch_core::{
-    BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, Printer, Span,
-    StdoutPrinter, TokenKind, Value, conversion,
+    BufferPrinter, Environment, ForeignValue, Interpreter as CoreInterpreter, NoopPrinter, Printer,
+    Span, StdoutPrinter, TokenKind, Value, conversion,
 };
 pub use eldritch_macros as macros;
 
@@ -52,6 +53,8 @@ use crate::chain::std::StdChainLibrary;
 #[cfg(feature = "stdlib")]
 use crate::crypto::std::StdCryptoLibrary;
 #[cfg(feature = "stdlib")]
+use crate::dns::std::StdDnsLibrary;
+#[cfg(feature = "stdlib")]
 use crate::file::std::StdFileLibrary;
 #[cfg(feature = "stdlib")]
 use crate::http::std::StdHttpLibrary;
@@ -74,8 +77,12 @@ use crate::time::std::StdTimeLibrary;
 use crate::agent::fake::AgentLibraryFake;
 #[cfg(feature = "fake_assets")]
 use crate::assets::fake::FakeAssetsLibrary;
+#[cfg(feature = "fake_chain")]
+use crate::chain::fake::FakeChainLibrary;
 #[cfg(feature = "fake_crypto")]
 use crate::crypto::fake::CryptoLibraryFake;
+#[cfg(feature = "fake_dns")]
+use crate::dns::fake::DnsLibraryFake;
 #[cfg(feature = "fake_file")]
 use crate::file::fake::FileLibraryFake;
 #[cfg(feature = "fake_http")]
@@ -130,6 +137,7 @@ impl Interpreter {
             self.inner.register_lib(StdRegexLibrary);
             self.inner.register_lib(StdSysLibrary);
             self.inner.register_lib(StdTimeLibrary);
+            self.inner.register_lib(StdDnsLibrary);
         }
 
         #[cfg(feature = "fake_crypto")]
@@ -150,6 +158,8 @@ impl Interpreter {
         self.inner.register_lib(SysLibraryFake);
         #[cfg(feature = "fake_time")]
         self.inner.register_lib(TimeLibraryFake);
+        #[cfg(feature = "fake_dns")]
+        self.inner.register_lib(DnsLibraryFake::default());
 
         self
     }
@@ -199,6 +209,8 @@ impl Interpreter {
         self.inner.register_lib(PivotLibraryFake);
         #[cfg(feature = "fake_assets")]
         self.inner.register_lib(FakeAssetsLibrary);
+        #[cfg(feature = "fake_chain")]
+        self.inner.register_lib(FakeChainLibrary::new());
         self
     }
 

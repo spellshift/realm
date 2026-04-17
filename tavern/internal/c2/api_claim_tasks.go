@@ -268,16 +268,16 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	}()
 
 	// Generate name for new beacons
-	beaconExists, err := srv.graph.Beacon.Query().
+	existingBeacon, err := srv.graph.Beacon.Query().
 		Where(beacon.IdentifierEQ(req.Beacon.Identifier)).
-		Exist(ctx)
-	if err != nil {
+		Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
 		return nil, status.Errorf(codes.Internal, "failed to query beacon entity: %v", err)
 	}
-	isNewBeacon := !beaconExists
+	isNewBeacon := existingBeacon == nil
 
 	var beaconNameAddr *string = nil
-	if !beaconExists {
+	if isNewBeacon {
 		candidateNames := []string{
 			namegen.NewSimple(),
 			namegen.New(),
@@ -328,6 +328,20 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 		ID(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert beacon entity: %v", err)
+	}
+
+	// Create BeaconHistory record
+	var latency int64
+	if !isNewBeacon && !existingBeacon.NextSeenAt.IsZero() {
+		latency = now.Sub(existingBeacon.NextSeenAt).Milliseconds()
+	}
+
+	_, err = srv.graph.BeaconHistory.Create().
+		SetBeaconID(beaconID).
+		SetLatency(latency).
+		Save(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to create beacon history record", "err", err, "beacon_id", beaconID)
 	}
 
 	// Run Tome Automation (non-blocking, best effort)

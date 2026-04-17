@@ -271,18 +271,17 @@ impl ImixAgent {
         }
 
         // Only send the latest process list report (it replaces previous ones)
-        if let Some(req) = process_list_reqs.into_iter().last() {
-            if let Err(_e) = transport.report_process_list(req).await {
-                #[cfg(feature = "verbose-logging")]
-                log::error!("Failed to report process list: {_e}");
-            }
+        if let Some(req) = process_list_reqs.into_iter().last()
+            && let Err(_e) = transport.report_process_list(req).await
+        {
+            #[cfg(feature = "verbose-logging")]
+            log::error!("Failed to report process list: {_e}");
         }
     }
 
     // Helper to get config URIs for creating new transport
     pub async fn get_transport_config(&self) -> Config {
-        let config = self.config.read().await.clone();
-        config
+        self.config.read().await.clone()
     }
 
     pub async fn rotate_callback_uri(&self) {

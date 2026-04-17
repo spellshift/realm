@@ -26,6 +26,8 @@ const (
 	FieldIsActivated = "is_activated"
 	// FieldIsAdmin holds the string denoting the is_admin field in the database.
 	FieldIsAdmin = "is_admin"
+	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
+	EdgeNotifications = "notifications"
 	// EdgeTomes holds the string denoting the tomes edge name in mutations.
 	EdgeTomes = "tomes"
 	// EdgeActiveShells holds the string denoting the active_shells edge name in mutations.
@@ -36,6 +38,13 @@ const (
 	EdgeFavoriteHosts = "favoriteHosts"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// NotificationsTable is the table that holds the notifications relation/edge.
+	NotificationsTable = "notifications"
+	// NotificationsInverseTable is the table name for the Notification entity.
+	// It exists in this package in order to avoid circular dependency with the "notification" package.
+	NotificationsInverseTable = "notifications"
+	// NotificationsColumn is the table column denoting the notifications relation/edge.
+	NotificationsColumn = "notification_user"
 	// TomesTable is the table that holds the tomes relation/edge.
 	TomesTable = "tomes"
 	// TomesInverseTable is the table name for the Tome entity.
@@ -164,6 +173,20 @@ func ByIsAdmin(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsAdmin, opts...).ToFunc()
 }
 
+// ByNotificationsCount orders the results by notifications count.
+func ByNotificationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNotificationsStep(), opts...)
+	}
+}
+
+// ByNotifications orders the results by notifications terms.
+func ByNotifications(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNotificationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTomesCount orders the results by tomes count.
 func ByTomesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -218,6 +241,13 @@ func ByFavoriteHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newFavoriteHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newNotificationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NotificationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, NotificationsTable, NotificationsColumn),
+	)
 }
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

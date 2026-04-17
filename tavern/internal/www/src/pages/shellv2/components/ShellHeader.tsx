@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug } from "lucide-react";
+import { Bug, Share } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
+import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
@@ -11,9 +12,10 @@ import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
 interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
+  onExport?: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], onExport }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -31,31 +33,35 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
     <div className="flex items-center gap-4 mb-4">
       <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
       <Badge badgeStyle={{ color: "red" }}>BETA</Badge>
-      <h1 className="text-xl font-bold">
-        <Tooltip label={
-          <div className="flex flex-col">
-            <span>Principal: {principal}</span>
-            <span>Agent Identifier: {agentIdentifier}</span>
-            <span>Interval: {interval}</span>
-            <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
-          </div>
-        }>
-          <span className="cursor-help border-b border-dashed border-gray-500">{beaconName}</span>
-        </Tooltip>
-        {" @ "}
-        <Tooltip label={
-          <div className="flex flex-col">
-            <span>Primary IP: {primaryIP}</span>
-            <span>External IP: {externalIP}</span>
-            <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
-            {tags.length > 0 && (
-              <span>Tags: {tags.map((t: any) => t.name).join(', ')}</span>
-            )}
-          </div>
-        }>
-          <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
-        </Tooltip>
+      <h1 className="text-xl font-bold flex items-center gap-2">
+        <span>
+          <Tooltip label={
+            <div className="flex flex-col">
+              <span>Principal: {principal}</span>
+              <span>Agent Identifier: {agentIdentifier}</span>
+              <span>Interval: {interval}</span>
+              <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
+            </div>
+          }>
+            <span className="cursor-help border-b border-dashed border-gray-500">{beaconName}</span>
+          </Tooltip>
+          {" @ "}
+          <Tooltip label={
+            <div className="flex flex-col">
+              <span>Primary IP: {primaryIP}</span>
+              <span>External IP: {externalIP}</span>
+              <span>Platform: {getEnumKey(SupportedPlatforms, platform)}</span>
+              {tags.length > 0 && (
+                <span>Tags: {tags.map((t: any) => t.name).join(', ')}</span>
+              )}
+            </div>
+          }>
+            <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
+          </Tooltip>
+        </span>
+        {principal && <Badge>{principal}</Badge>}
       </h1>
+
       <a
         href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"
@@ -65,6 +71,15 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [] }
       >
         <Bug size={20} />
       </a>
+
+      <Button
+        buttonVariant="solid"
+        buttonStyle={{ color: "gray", size: "sm" }}
+        leftIcon={<Share size={16} />}
+        onClick={onExport}
+      >
+        Export
+      </Button>
 
       {/* Active Users Display */}
       <div className="ml-auto flex items-center gap-2">
