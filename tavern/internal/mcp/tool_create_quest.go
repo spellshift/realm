@@ -101,20 +101,21 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 		}
 
 		// Look up beacon names for the elicitation message.
+		const maxBeaconNames = 8
 		beacons, err := client.Beacon.Query().
 			Where(beacon.IDIn(beaconIDs...)).
+			Limit(maxBeaconNames + 1).
 			All(ctx)
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to look up beacons: %v", err)), nil
 		}
-		const maxBeaconNames = 8
 		beaconNames := make([]string, 0, len(beacons))
 		for _, b := range beacons {
 			beaconNames = append(beaconNames, b.Name)
 		}
 		beaconSummary := strings.Join(beaconNames, ", ")
-		if len(beaconNames) > maxBeaconNames {
-			beaconSummary = strings.Join(beaconNames[:maxBeaconNames], ", ") + fmt.Sprintf(" and %d more", len(beaconNames)-maxBeaconNames)
+		if len(beaconIDs) > maxBeaconNames {
+			beaconSummary = strings.Join(beaconNames[:min(len(beaconNames), maxBeaconNames)], ", ") + fmt.Sprintf(" and %d more", len(beaconIDs)-maxBeaconNames)
 		}
 
 		// Request human-in-the-loop confirmation before creating the quest.
