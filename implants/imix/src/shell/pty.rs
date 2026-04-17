@@ -59,7 +59,7 @@ pub async fn run_reverse_shell_pty(
     };
 
     // Spawn command into the pty
-    let cmd_builder = match cmd {
+    let mut cmd_builder = match cmd {
         Some(c) => CommandBuilder::new(c),
         None => {
             #[cfg(not(target_os = "windows"))]
@@ -74,6 +74,9 @@ pub async fn run_reverse_shell_pty(
             CommandBuilder::new("cmd.exe")
         }
     };
+
+    // Set TERM so that terminal-dependent commands (clear, reset, etc.) work
+    cmd_builder.env("TERM", "xterm-256color");
 
     let mut child = match pair.slave.spawn_command(cmd_builder) {
         Ok(c) => c,
