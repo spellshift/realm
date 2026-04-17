@@ -17,7 +17,7 @@ mod int;
 mod len;
 mod libs;
 mod ord;
-mod pprint;
+pub mod pprint;
 mod print;
 mod range;
 mod str;
@@ -36,7 +36,7 @@ mod min;
 mod repr;
 mod reversed;
 mod set;
-mod tprint;
+pub mod tprint;
 mod tuple;
 mod zip;
 
