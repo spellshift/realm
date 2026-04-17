@@ -4,7 +4,7 @@ use super::super::ast::{
 use super::super::token::TokenKind;
 use super::core::{Flow, Interpreter};
 use super::error::{EldritchError, EldritchErrorKind};
-use super::eval::{apply_binary_op_pub, evaluate};
+use super::eval::{apply_binary_op_values, evaluate};
 use super::introspection::{get_type_name, is_truthy};
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
@@ -317,17 +317,7 @@ fn execute_augmented_assignment(
                 stack: Vec::new(),
             })?;
 
-            // Construct dummy expressions for apply_binary_op call to reuse logic
-            let left_expr = Expr {
-                kind: ExprKind::Literal(left),
-                span,
-            };
-            let right_expr = Expr {
-                kind: ExprKind::Literal(right),
-                span,
-            };
-
-            let new_val = apply_binary_op_pub(interp, &left_expr, &bin_op, &right_expr, span)?;
+            let new_val = apply_binary_op_values(interp, left, &bin_op, right, span)?;
             interp.assign_variable(name, new_val);
             Ok(())
         }
@@ -392,15 +382,7 @@ fn execute_augmented_assignment(
                 stack: Vec::new(),
             })?;
 
-            let left_expr = Expr {
-                kind: ExprKind::Literal(current_val),
-                span,
-            };
-            let right_expr = Expr {
-                kind: ExprKind::Literal(right),
-                span,
-            };
-            let new_val = apply_binary_op_pub(interp, &left_expr, &bin_op, &right_expr, span)?;
+            let new_val = apply_binary_op_values(interp, current_val, &bin_op, right, span)?;
 
             // Set back
             match obj {

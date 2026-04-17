@@ -163,6 +163,18 @@ pub(crate) fn apply_binary_op(
 ) -> Result<Value, EldritchError> {
     let a = evaluate(interp, left)?;
     let b = evaluate(interp, right)?;
+    apply_binary_op_values(interp, a, op, b, span)
+}
+
+/// Apply a binary operation directly on two `Value`s, without requiring AST `Expr` nodes.
+/// This is the core implementation used by both expression evaluation and augmented assignment.
+pub(crate) fn apply_binary_op_values(
+    interp: &mut Interpreter,
+    a: Value,
+    op: &TokenKind,
+    b: Value,
+    span: Span,
+) -> Result<Value, EldritchError> {
 
     // Handle operations that are fully delegated
     if matches!(

@@ -22,7 +22,7 @@ use self::strings::evaluate_fstring;
 use alloc::format;
 
 // Re-export for exec.rs
-pub(crate) use self::ops::apply_binary_op as apply_binary_op_pub;
+pub(crate) use self::ops::apply_binary_op_values;
 pub(crate) use self::utils::to_iterable;
 
 pub(crate) const MAX_RECURSION_DEPTH: usize = 64;
