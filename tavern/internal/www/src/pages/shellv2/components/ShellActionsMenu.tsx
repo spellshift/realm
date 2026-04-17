@@ -1,6 +1,6 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X, StopCircle, Search } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -13,6 +13,7 @@ interface ShellActionsMenuProps {
     onSshConnect: (target: string) => void;
     onPtyOpen: () => void;
     onSendCtrlC: () => void;
+    onSendCtrlR: () => void;
 }
 
 const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using pivot.create_portal().";
@@ -25,6 +26,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     onSshConnect,
     onPtyOpen,
     onSendCtrlC,
+    onSendCtrlR,
 }) => {
     const [sshModalOpen, setSshModalOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
@@ -84,6 +86,22 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
                                             onClick={onSendCtrlC}
                                         >
                                             Send Ctrl + C
+                                        </Button>
+                                    )}
+                                </Menu.Item>
+                            )}
+
+                            {isMobile && (
+                                <Menu.Item>
+                                    {() => (
+                                        <Button
+                                            buttonVariant="ghost"
+                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                            className="w-full justify-start text-gray-200 hover:bg-[#3d3d3d]"
+                                            leftIcon={<Search className="w-4 h-4" />}
+                                            onClick={onSendCtrlR}
+                                        >
+                                            Send Ctrl + R
                                         </Button>
                                     )}
                                 </Menu.Item>
