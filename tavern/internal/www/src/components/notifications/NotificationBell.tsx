@@ -81,7 +81,7 @@ const NotificationBell = () => {
             case EventKind.QUEST_COMPLETED:
                 return `Quest completed: ${event.quest?.name || event.quest?.id}`;
             case EventKind.SHELL_CREATED:
-                return `Shell created${event.user ? ` by ${event.user.name}` : ''}: ${event.shell?.id || 'unknown'}`;
+                return `Shell created${event.user ? ` by ${event.user.name}` : ''}: Shell #${event.shell?.id || 'unknown'}`;
             default:
                 return 'Notification received';
         }
