@@ -42,8 +42,8 @@ import (
 	tavernmcp "realm.pub/tavern/internal/mcp"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
-	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/portals/pty"
+	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -328,6 +328,21 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
+		"/.well-known/oauth-protected-resource": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthProtectedResourceMetadataHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/.well-known/oauth-authorization-server": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthAuthorizationServerMetadataHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/.well-known/openid-configuration": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOpenIDConfigurationHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
 		"/status": tavernhttp.Endpoint{
 			Handler:              newStatusHandler(),
 			AllowUnauthenticated: true,
@@ -370,6 +385,16 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 				client,
 				cfg.userProfiles,
 			),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/register": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthDynamicClientRegistrationHandler(),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
+		},
+		"/oauth/token": tavernhttp.Endpoint{
+			Handler:              tavernhttp.NewOAuthTokenHandler(client),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -443,8 +468,20 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	if cfg.IsMCPEnabled() {
 		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
 		mcpHandler := tavernmcp.NewHandler(client, Version, gqlHandler)
+		normalizedMCPHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/mcp/" {
+				r2 := r.Clone(r.Context())
+				r2.URL.Path = "/mcp"
+				mcpHandler.ServeHTTP(w, r2)
+				return
+			}
+			mcpHandler.ServeHTTP(w, r)
+		})
+		routes["/mcp"] = tavernhttp.Endpoint{
+			Handler: normalizedMCPHandler,
+		}
 		routes["/mcp/"] = tavernhttp.Endpoint{
-			Handler: mcpHandler,
+			Handler: normalizedMCPHandler,
 		}
 	}
 

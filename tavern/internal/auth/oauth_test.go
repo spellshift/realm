@@ -52,19 +52,9 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 	assert.NotEmpty(t, state)
 	assert.GreaterOrEqual(t, len(state), 30)
 
-	// Ensure OAuth cookie was set properly
-	var oauthCookie *http.Cookie
-	for _, cookie := range result.Cookies() {
-		if cookie.Name == auth.OAuthCookieName {
-			oauthCookie = cookie
-			break
-		}
-	}
-	require.NotNil(t, oauthCookie)
-
 	// Parse JWT
 	var claims jwt.RegisteredClaims
-	token, err := jwt.ParseWithClaims(oauthCookie.Value, &claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(state, &claims, func(token *jwt.Token) (interface{}, error) {
 		assert.IsType(t, token.Method, &jwt.SigningMethodEd25519{})
 		return pubKey, nil
 	})
@@ -72,7 +62,7 @@ func TestNewOAuthLoginHandler(t *testing.T) {
 	assert.True(t, token.Valid)
 
 	// JWT assertions
-	assert.Equal(t, state, claims.ID)
+	assert.NotEmpty(t, claims.ID)
 	assert.GreaterOrEqual(t, claims.IssuedAt.Time.Unix(), time.Now().Add(-60*time.Second).Unix())
 	assert.Greater(t, claims.ExpiresAt.Time.Unix(), time.Now().Add(9*time.Minute).Unix())
 	assert.Less(t, claims.ExpiresAt.Time.Unix(), time.Now().Add(11*time.Minute).Unix())
@@ -136,6 +126,9 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 	// Result Assertions
 	result := resp.Result()
 	require.Equal(t, http.StatusFound, result.StatusCode)
+	firstLocation, err := result.Location()
+	require.NoError(t, err)
+	assert.Equal(t, "/", firstLocation.Path)
 	usr := graph.User.Query().
 		Where(user.OauthID("goofygoober")).
 		OnlyX(context.Background())
@@ -149,10 +142,16 @@ func TestNewOAuthAuthorizationHandler(t *testing.T) {
 
 	// Login again with the same user
 	resp = httptest.NewRecorder()
-	req = getOAuthAuthorizationRequest(t, privKey, expectedCode)
+	req = getOAuthAuthorizationRequestWithClientRedirect(t, privKey, expectedCode, "https://chat.openai.com/aip/callback", "client-state-123")
 	handler.ServeHTTP(resp, req)
 	result = resp.Result()
 	require.Equal(t, http.StatusFound, result.StatusCode)
+	clientLocation, err := result.Location()
+	require.NoError(t, err)
+	assert.Equal(t, "chat.openai.com", clientLocation.Host)
+	assert.Equal(t, "/aip/callback", clientLocation.Path)
+	assert.Equal(t, "client-state-123", clientLocation.Query().Get("state"))
+	assert.NotEmpty(t, clientLocation.Query().Get("code"))
 
 	// User assertions
 	assert.Equal(t, 1, graph.User.Query().CountX(context.Background()))
@@ -190,12 +189,22 @@ func getSessionCookie(cookies []*http.Cookie) *http.Cookie {
 }
 
 func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code string) *http.Request {
+	return getOAuthAuthorizationRequestWithClientRedirect(t, privKey, code, "", "")
+}
+
+func getOAuthAuthorizationRequestWithClientRedirect(t *testing.T, privKey ed25519.PrivateKey, code, redirectURI, clientState string) *http.Request {
 	// Create a JWT
 	expiresAt := time.Now().Add(10 * time.Minute)
-	claims := jwt.RegisteredClaims{
-		ID:        "ABCDEFG",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
+	claims := jwt.MapClaims{
+		"jti": "ABCDEFG",
+		"iat": jwt.NewNumericDate(time.Now()).Unix(),
+		"exp": jwt.NewNumericDate(expiresAt).Unix(),
+	}
+	if redirectURI != "" {
+		claims["redirect_uri"] = redirectURI
+	}
+	if clientState != "" {
+		claims["client_state"] = clientState
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
 	tokenStr, err := token.SignedString(privKey)
@@ -203,16 +212,9 @@ func getOAuthAuthorizationRequest(t *testing.T, privKey ed25519.PrivateKey, code
 
 	req := httptest.NewRequest(http.MethodGet, "/oauth/authorize", nil)
 	params := url.Values{
-		"state": []string{claims.ID},
+		"state": []string{tokenStr},
 		"code":  []string{code},
 	}
-	req.AddCookie(&http.Cookie{
-		Name:     auth.OAuthCookieName,
-		Value:    tokenStr,
-		Secure:   true,
-		HttpOnly: true,
-		Expires:  expiresAt,
-	})
 	req.URL.RawQuery = params.Encode()
 	return req
 }

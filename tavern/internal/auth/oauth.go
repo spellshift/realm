@@ -9,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -34,18 +36,24 @@ var (
 	ErrOAuthFailedUserLookup          = fmt.Errorf("failed to lookup user account")
 )
 
+type oauthStateClaims struct {
+	RedirectURI string `json:"redirect_uri,omitempty"`
+	ClientState string `json:"client_state,omitempty"`
+	jwt.RegisteredClaims
+}
+
 // NewOAuthLoginHandler returns an http endpoint that redirects the user to the configured OAuth consent flow
 // It will set a JWT in a cookie that will later be used to verify the OAuth state
 func NewOAuthLoginHandler(cfg oauth2.Config, privKey ed25519.PrivateKey) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// Create a new random string to prevent against CSRF attacks
-		state := newOAuthState()
+		clientRedirectURI := req.URL.Query().Get("redirect_uri")
+		clientState := req.URL.Query().Get("state")
+
+		// Create a signed OAuth state so callback verification can be stateless.
+		state := newOAuthStateToken(privKey, clientRedirectURI, clientState)
 
 		// Generate OAuth URL based on this state
 		url := cfg.AuthCodeURL(state)
-
-		// Set a JWT to verify the state after consent flow redirect
-		http.SetCookie(w, newOAuthStateCookie(privKey, state))
 
 		// Redirect to identity provider
 		http.Redirect(w, req, url, http.StatusFound)
@@ -65,38 +73,30 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			return
 		}
 
-		// Lookup OAuth cookie for verification
-		var oauthCookie *http.Cookie
-		for _, cookie := range req.Cookies() {
-			if cookie.Name == OAuthCookieName {
-				oauthCookie = cookie
-				break
+		stateClaims, stateErr := parseOAuthStateToken(presentedState, pubKey)
+		if stateErr != nil {
+			// Fallback for legacy cookie-based state validation.
+			oauthCookie, err := req.Cookie(stateCookieName(presentedState))
+			if err == http.ErrNoCookie {
+				// Backward compatibility with legacy single-cookie state storage.
+				oauthCookie, err = req.Cookie(OAuthCookieName)
 			}
-		}
-		if oauthCookie == nil {
-			http.Error(w, ErrOAuthNoCookieFound.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// Verify JWT in provided OAuth cookie
-		var claims jwt.RegisteredClaims
-		stateToken, err := jwt.ParseWithClaims(oauthCookie.Value, &claims, func(stateToken *jwt.Token) (interface{}, error) {
-			// Ensure ed25519 was used
-			if _, ok := stateToken.Method.(*jwt.SigningMethodEd25519); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", stateToken.Header["alg"])
+			if err != nil || oauthCookie == nil {
+				http.Error(w, ErrOAuthNoCookieFound.Error(), http.StatusBadRequest)
+				return
 			}
 
-			return pubKey, nil
-		})
-		if err != nil || !stateToken.Valid {
-			http.Error(w, ErrOAuthInvalidCookie.Error(), http.StatusBadRequest)
-			return
-		}
+			stateClaims, err = parseOAuthStateToken(oauthCookie.Value, pubKey)
+			if err != nil {
+				http.Error(w, ErrOAuthInvalidCookie.Error(), http.StatusBadRequest)
+				return
+			}
 
-		// Ensure presented OAuth state matches expected (stored in JWT)
-		if presentedState != claims.ID {
-			http.Error(w, ErrOAuthInvalidState.Error(), http.StatusUnauthorized)
-			return
+			// Ensure presented OAuth state matches expected (stored in JWT)
+			if presentedState != stateClaims.ID {
+				http.Error(w, ErrOAuthInvalidState.Error(), http.StatusUnauthorized)
+				return
+			}
 		}
 
 		// Exchange the authorization code for an access token from the IDP
@@ -151,7 +151,7 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 				Expires:  time.Now().AddDate(0, 1, 0),
 			})
 			slog.InfoContext(req.Context(), "oauth new login", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
-			http.Redirect(w, req, "/", http.StatusFound)
+			http.Redirect(w, req, oauthPostLoginRedirect(usr.AccessToken, stateClaims), http.StatusFound)
 			return
 		}
 
@@ -181,11 +181,11 @@ func NewOAuthAuthorizationHandler(cfg oauth2.Config, pubKey ed25519.PublicKey, g
 			Expires:  time.Now().AddDate(0, 1, 0),
 		})
 		slog.InfoContext(req.Context(), "oauth registered new user %q", "user_id", usr.ID, "user_name", usr.Name, "is_admin", usr.IsAdmin, "is_activated", usr.IsActivated)
-		http.Redirect(w, req, "/", http.StatusFound)
+		http.Redirect(w, req, oauthPostLoginRedirect(usr.AccessToken, stateClaims), http.StatusFound)
 	})
 }
 
-func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie {
+func newOAuthStateCookie(req *http.Request, privKey ed25519.PrivateKey, state string) *http.Cookie {
 	expiresAt := time.Now().Add(10 * time.Minute)
 	claims := jwt.RegisteredClaims{
 		ID:        state,
@@ -198,13 +198,55 @@ func newOAuthStateCookie(privKey ed25519.PrivateKey, state string) *http.Cookie 
 		panic(fmt.Errorf("failed to create oauth-state JWT: %w", err))
 	}
 
+	secure := req.TLS != nil || strings.EqualFold(req.Header.Get("X-Forwarded-Proto"), "https")
+
 	return &http.Cookie{
-		Name:     OAuthCookieName,
+		Name:     stateCookieName(state),
 		Value:    tokenStr,
-		Secure:   true,
+		Secure:   secure,
 		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 		Expires:  expiresAt,
 	}
+}
+
+func parseOAuthStateToken(tokenStr string, pubKey ed25519.PublicKey) (*oauthStateClaims, error) {
+	var claims oauthStateClaims
+	stateToken, err := jwt.ParseWithClaims(tokenStr, &claims, func(stateToken *jwt.Token) (interface{}, error) {
+		if _, ok := stateToken.Method.(*jwt.SigningMethodEd25519); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", stateToken.Header["alg"])
+		}
+		return pubKey, nil
+	})
+	if err != nil || !stateToken.Valid {
+		return nil, ErrOAuthInvalidState
+	}
+	return &claims, nil
+}
+
+func oauthPostLoginRedirect(accessToken string, claims *oauthStateClaims) string {
+	if claims == nil || claims.RedirectURI == "" {
+		return "/"
+	}
+
+	redirectURI, err := url.Parse(claims.RedirectURI)
+	if err != nil || !redirectURI.IsAbs() {
+		return "/"
+	}
+
+	query := redirectURI.Query()
+	if claims.ClientState != "" {
+		query.Set("state", claims.ClientState)
+	}
+	query.Set("code", accessToken)
+	redirectURI.RawQuery = query.Encode()
+
+	return redirectURI.String()
+}
+
+func stateCookieName(state string) string {
+	return OAuthCookieName + "-" + state
 }
 
 func newOAuthState() string {
@@ -213,5 +255,26 @@ func newOAuthState() string {
 	if err != nil {
 		panic(fmt.Errorf("failed to generate oauth state: %w", err))
 	}
-	return base64.StdEncoding.EncodeToString(buf)
+	// Use URL-safe base64 to avoid intermediary rewriting of '+' and '/' characters.
+	return base64.RawURLEncoding.EncodeToString(buf)
+}
+
+func newOAuthStateToken(privKey ed25519.PrivateKey, clientRedirectURI, clientState string) string {
+	expiresAt := time.Now().Add(10 * time.Minute)
+	claims := oauthStateClaims{
+		RedirectURI: clientRedirectURI,
+		ClientState: clientState,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        newOAuthState(),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+	}
+	stateToken := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims)
+	stateTokenStr, err := stateToken.SignedString(privKey)
+	if err != nil {
+		panic(fmt.Errorf("failed to create oauth-state JWT: %w", err))
+	}
+
+	return stateTokenStr
 }

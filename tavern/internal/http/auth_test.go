@@ -63,6 +63,27 @@ func TestRequestAuthenticator(t *testing.T) {
 			wantCode: http.StatusOK,
 		},
 		{
+			name:    "BearerAccessToken",
+			req:     httptest.NewRequest(http.MethodGet, "/test", nil),
+			cookies: []*http.Cookie{},
+			headers: http.Header{
+				"Authorization": []string{"Bearer " + existingAdmin.AccessToken},
+			},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "InvalidBearerWithValidSession",
+			req:  httptest.NewRequest(http.MethodGet, "/test", nil),
+			cookies: []*http.Cookie{{
+				Name:  auth.SessionCookieName,
+				Value: existingAdmin.SessionToken,
+			}},
+			headers: http.Header{
+				"Authorization": []string{"Bearer invalid"},
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
 			name:    "Unauthenticated",
 			req:     httptest.NewRequest(http.MethodGet, "/test", nil),
 			cookies: []*http.Cookie{},
@@ -80,7 +101,7 @@ func TestRequestAuthenticator(t *testing.T) {
 				Value: "already_eaten",
 			}},
 			headers:  http.Header{},
-			wantCode: http.StatusUnauthorized,
+			wantCode: http.StatusOK,
 		},
 		{
 			name:    "InvalidAccessToken",

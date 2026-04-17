@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"realm.pub/tavern/internal/auth"
@@ -77,8 +78,13 @@ type requestAuthenticator struct {
 // If no authenticated identity is associated with the request, no error is returned.
 // Instead, the context will not be associated with an authenticated identity.
 func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r *http.Request) (context.Context, error) {
-	// Check for Access Token
-	accessToken := r.Header.Get(auth.HeaderAPIAccessToken)
+	// Check standard OAuth bearer token first, then fallback to Tavern custom header.
+	accessToken := ""
+	if bearerToken, ok := parseBearerToken(r.Header.Get("Authorization")); ok {
+		accessToken = bearerToken
+	} else {
+		accessToken = r.Header.Get(auth.HeaderAPIAccessToken)
+	}
 	if accessToken != "" {
 		authCtx, err := auth.ContextFromAccessToken(r.Context(), authenticator.graph, accessToken)
 		if err != nil {
@@ -103,11 +109,30 @@ func (authenticator *requestAuthenticator) Authenticate(w http.ResponseWriter, r
 	// Create an authenticated context (if provided cookie is valid)
 	authCtx, err := auth.ContextFromSessionToken(r.Context(), authenticator.graph, authCookie.Value)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to create session from auth cookie", "err", err)
-		return nil, ErrInvalidAuthCookie
+		slog.WarnContext(r.Context(), "invalid auth cookie provided, resetting cookie", "err", err)
+		resetAuthCookie(w)
+		return r.Context(), nil
 	}
 
 	return authCtx, nil
+}
+
+func parseBearerToken(value string) (string, bool) {
+	if value == "" {
+		return "", false
+	}
+	parts := strings.SplitN(value, " ", 2)
+	if len(parts) != 2 {
+		return "", false
+	}
+	if !strings.EqualFold(parts[0], "Bearer") {
+		return "", false
+	}
+	token := strings.TrimSpace(parts[1])
+	if token == "" {
+		return "", false
+	}
+	return token, true
 }
 
 func resetAuthCookie(w http.ResponseWriter) {
