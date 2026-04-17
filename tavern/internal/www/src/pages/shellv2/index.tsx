@@ -7,12 +7,13 @@ import { useShellTerminal } from "./hooks/useShellTerminal";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
-import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast, Tooltip } from '@chakra-ui/react';
+import { useState, useEffect, useCallback } from 'react';
 import { useMutation } from '@apollo/client';
 import SshTerminal from './components/SshTerminal';
 import PtyTerminal from './components/PtyTerminal';
 import { CLOSE_PORTAL_MUTATION } from './graphql';
+import { WifiOff } from 'lucide-react';
 
 interface PortalTab {
     id: string;
@@ -38,6 +39,19 @@ const ShellV2 = () => {
 
     const [portalTabs, setPortalTabs] = useState<PortalTab[]>([]);
     const [tabIndex, setTabIndex] = useState(0);
+    const [disconnectedTabs, setDisconnectedTabs] = useState<Set<string>>(new Set());
+
+    const handleTabConnectionStatusChange = useCallback((tabId: string, status: "connecting" | "connected" | "disconnected") => {
+        setDisconnectedTabs(prev => {
+            const next = new Set(prev);
+            if (status === "disconnected") {
+                next.add(tabId);
+            } else {
+                next.delete(tabId);
+            }
+            return next;
+        });
+    }, []);
 
     useEffect(() => {
         if (shellData?.node?.pivots?.edges) {
@@ -163,7 +177,14 @@ const ShellV2 = () => {
                 <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
                 {portalTabs.map(tab => (
                     <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
-                        {tab.target}
+                        <span className="flex items-center gap-1.5">
+                            {disconnectedTabs.has(tab.id) && (
+                                <Tooltip label="Disconnected" hasArrow>
+                                    <span className="text-yellow-500"><WifiOff size={14} /></span>
+                                </Tooltip>
+                            )}
+                            {tab.target}
+                        </span>
                     </Tab>
                 ))}
             </TabList>
@@ -186,10 +207,10 @@ const ShellV2 = () => {
                 {portalTabs.map(tab => (
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                         {tab.type === "ssh" && (portalId || tab.pivotId) && (
-                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                         {tab.type === "pty" && (portalId || tab.pivotId) && (
-                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} />
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                     </TabPanel>
                 ))}

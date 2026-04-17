@@ -8,9 +8,10 @@ interface PtyTerminalProps {
   portalId: number;
   pivotId?: number;
   shellId: string;
+  onConnectionStatusChange?: (status: "connecting" | "connected" | "disconnected") => void;
 }
 
-const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId }) => {
+const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId, onConnectionStatusChange }) => {
   const termRef = useRef<HTMLDivElement>(null);
   const termInstance = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -53,6 +54,7 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId })
 
     ws.onopen = () => {
       setConnectionStatus("connected");
+      onConnectionStatusChange?.("connected");
       term.write(`\r\n\x1b[32mConnected to PTY session\x1b[0m\r\n`);
       term.focus();
     };
@@ -75,12 +77,14 @@ const PtyTerminal: React.FC<PtyTerminalProps> = ({ portalId, pivotId, shellId })
 
     ws.onclose = () => {
       setConnectionStatus("disconnected");
+      onConnectionStatusChange?.("disconnected");
       term.write(`\r\n\x1b[33mConnection closed\x1b[0m\r\n`);
     };
 
     ws.onerror = (e) => {
       console.error("PTY WebSocket error:", e);
       setConnectionStatus("disconnected");
+      onConnectionStatusChange?.("disconnected");
     };
 
     // User input to WebSocket
