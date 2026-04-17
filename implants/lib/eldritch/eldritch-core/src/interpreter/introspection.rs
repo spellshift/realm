@@ -1,5 +1,5 @@
 use super::super::ast::Value;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -29,44 +29,13 @@ pub fn get_type_name(value: &Value) -> &str {
     value.type_name()
 }
 
+/// Returns the list of attributes/methods available on a value.
+/// Delegates to `get_native_methods()` for type-specific methods and
+/// `ForeignValue::method_names()` for foreign objects, ensuring a single source of truth.
 pub fn get_dir_attributes(value: &Value) -> Vec<String> {
     let mut attrs = match value {
-        Value::List(_) => vec![
-            "append".to_string(),
-            "extend".to_string(),
-            "index".to_string(),
-            "insert".to_string(),
-            "pop".to_string(),
-            "remove".to_string(),
-            "sort".to_string(),
-        ],
-        Value::Dictionary(_) => vec![
-            "get".to_string(),
-            "items".to_string(),
-            "keys".to_string(),
-            "popitem".to_string(),
-            "update".to_string(),
-            "values".to_string(),
-        ],
-        Value::Set(_) => vec![
-            "add".to_string(),
-            "clear".to_string(),
-            "contains".to_string(), // not standard python but useful
-            "difference".to_string(),
-            "discard".to_string(),
-            "intersection".to_string(),
-            "isdisjoint".to_string(),
-            "issubset".to_string(),
-            "issuperset".to_string(),
-            "pop".to_string(),
-            "remove".to_string(),
-            "symmetric_difference".to_string(),
-            "union".to_string(),
-            "update".to_string(),
-        ],
-        Value::String(s) => super::methods::get_native_methods(&Value::String(s.clone())),
         Value::Foreign(f) => f.method_names(),
-        _ => Vec::new(),
+        _ => super::methods::get_native_methods(value),
     };
     attrs.sort();
     attrs
