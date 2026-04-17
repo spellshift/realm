@@ -15,12 +15,12 @@ import (
 func questOutputTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("quest_output",
-			mcp.WithDescription("Get the output of quests by their IDs"),
+			mcp.WithDescription("Get the output of quests by their IDs. The 'ids' parameter takes quest IDs (from create_quest), not task IDs returned by wait_for_quest."),
 			mcp.WithReadOnlyHintAnnotation(true),
 			mcp.WithDestructiveHintAnnotation(false),
 			mcp.WithArray("ids",
 				mcp.Required(),
-				mcp.Description("List of quest IDs"),
+				mcp.Description("List of quest IDs (from create_quest) — not task IDs"),
 				mcp.WithStringItems(),
 			),
 		),

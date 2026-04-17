@@ -19,7 +19,7 @@ import (
 func createQuestTool(mcpSrv *mcpserver.MCPServer) mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("create_quest",
-			mcp.WithDescription("Create a new quest in Tavern"),
+			mcp.WithDescription("Create a new quest in Tavern. tome_id must be a numeric Ent global ID (e.g. 107374182403) obtained from list_tomes — do not pass a name string or guess small integers like 1."),
 			mcp.WithReadOnlyHintAnnotation(false),
 			mcp.WithDestructiveHintAnnotation(true),
 			mcp.WithString("name",

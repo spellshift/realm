@@ -14,7 +14,7 @@ import (
 func listQuestsTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("list_quests",
-			mcp.WithDescription("List all available quests in Tavern"),
+			mcp.WithDescription("List all available quests in Tavern. When the result is large it may be written to a file path; read that file to access the data."),
 			mcp.WithReadOnlyHintAnnotation(true),
 			mcp.WithDestructiveHintAnnotation(false),
 		),

@@ -13,7 +13,7 @@ import (
 func listTomesTool() mcpserver.ServerTool {
 	return mcpserver.ServerTool{
 		Tool: mcp.NewTool("list_tomes",
-			mcp.WithDescription("List all available tomes in Tavern and their required parameters"),
+			mcp.WithDescription("List all available tomes in Tavern and their required parameters. Always call this before create_quest to obtain the correct numeric tome ID — IDs are large Ent global IDs (e.g. 107374182403), not sequential integers starting at 1. When the result is large it may be written to a file path; read that file to access the data."),
 			mcp.WithReadOnlyHintAnnotation(true),
 			mcp.WithDestructiveHintAnnotation(false),
 		),
