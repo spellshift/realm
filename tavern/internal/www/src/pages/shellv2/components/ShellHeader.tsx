@@ -1,21 +1,25 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Bug, Share } from "lucide-react";
+import { Bug } from "lucide-react";
 import Badge from "../../../components/tavern-base-ui/badge/Badge";
-import Button from "../../../components/tavern-base-ui/button/Button";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import { Tooltip } from "@chakra-ui/react";
 import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
+import ShellActionsMenu from "./ShellActionsMenu";
 
 interface ShellHeaderProps {
   shellData: any;
   activeUsers?: { id: string; name: string; photoURL?: string }[];
-  onExport?: () => void;
+  portalId: number | null;
+  onExport: () => void;
+  onNewPortal: () => void;
+  onSshConnect: (target: string) => void;
+  onPtyOpen: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], onExport }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onSshConnect, onPtyOpen }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -72,14 +76,13 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         <Bug size={20} />
       </a>
 
-      <Button
-        buttonVariant="solid"
-        buttonStyle={{ color: "gray", size: "sm" }}
-        leftIcon={<Share size={16} />}
-        onClick={onExport}
-      >
-        Export
-      </Button>
+      <ShellActionsMenu
+        portalId={portalId}
+        onExport={onExport}
+        onNewPortal={onNewPortal}
+        onSshConnect={onSshConnect}
+        onPtyOpen={onPtyOpen}
+      />
 
       {/* Active Users Display */}
       <div className="ml-auto flex items-center gap-2">

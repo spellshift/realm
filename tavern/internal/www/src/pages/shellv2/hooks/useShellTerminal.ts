@@ -1097,6 +1097,16 @@ export const useShellTerminal = (
         return sessionInputs.current.join("\n");
     }, []);
 
+    const setShellInput = useCallback((text: string) => {
+        const term = termInstance.current;
+        if (!term) return;
+        const state = shellState.current;
+        state.inputBuffer = text;
+        state.cursorPos = text.length;
+        redrawLine();
+        term.focus();
+    }, [redrawLine]);
+
     return {
         termRef,
         connectionError,
@@ -1111,6 +1121,7 @@ export const useShellTerminal = (
         connectionMessage,
         handleTooltipMouseEnter: cancelHideTooltip,
         handleTooltipMouseLeave: scheduleHideTooltip,
-        getSessionInputs
+        getSessionInputs,
+        setShellInput
     };
 };

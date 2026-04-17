@@ -72,7 +72,8 @@ const ShellV2 = () => {
         connectionMessage,
         handleTooltipMouseEnter,
         handleTooltipMouseLeave,
-        getSessionInputs
+        getSessionInputs,
+        setShellInput
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
 
     const toast = useToast();
@@ -97,6 +98,18 @@ const ShellV2 = () => {
                 isClosable: true,
             });
         }
+    };
+
+    const handleNewPortal = () => {
+        setShellInput("pivot.create_portal()");
+    };
+
+    const handleSshConnect = (target: string) => {
+        handleOpenPortalTab("ssh", target);
+    };
+
+    const handlePtyOpen = () => {
+        handleOpenPortalTab("pty", "PTY");
     };
 
     if (connectionError) {
@@ -156,7 +169,15 @@ const ShellV2 = () => {
     return (
         <AccessGate>
             <div className="flex flex-col h-screen p-5 bg-[#1e1e1e] text-[#d4d4d4]">
-                <ShellHeader shellData={shellData} activeUsers={activeUsers} onExport={handleExport} />
+                <ShellHeader
+                    shellData={shellData}
+                    activeUsers={activeUsers}
+                    portalId={portalId}
+                    onExport={handleExport}
+                    onNewPortal={handleNewPortal}
+                    onSshConnect={handleSshConnect}
+                    onPtyOpen={handlePtyOpen}
+                />
 
                 {shellTerm}
 
