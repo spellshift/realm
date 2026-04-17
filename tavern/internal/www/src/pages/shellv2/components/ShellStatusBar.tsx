@@ -67,7 +67,7 @@ const ShellStatusBar: React.FC<ShellStatusBarProps> = ({ portalId, timeUntilCall
                 connectionStatus === "reconnecting" ? "text-yellow-500" :
                 "text-gray-500"
               }`}>
-                Portal Active (ID: {portalId})
+                Portal Active<span className="hidden md:inline"> (ID: {portalId})</span>
               </span>
               <Tooltip label="This shell is currently using an established portal connection for low-latency i/o. You may utilize this portal for SOCKS5 proxying or pivoting (e.g. with SSH)">
                 <span><Info size={14} className={
