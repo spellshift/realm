@@ -1,5 +1,4 @@
-use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, InterpreterBuiltinFn, Value};
-use crate::interpreter::error::NativeError;
+use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, InterpreterBuiltinFn};
 use alloc::vec;
 use alloc::vec::Vec;
 

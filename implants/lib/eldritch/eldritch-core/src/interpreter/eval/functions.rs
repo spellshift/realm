@@ -46,84 +46,17 @@ pub(crate) fn evaluate_lambda(
     Ok(func)
 }
 
-pub(crate) fn call_function(
+/// Internal dispatch: given an already-resolved callee value, positional args, and keyword args,
+/// perform the call. Used by both `call_function` (after evaluating AST arguments) and
+/// `call_value` (from HOFs where values are already available).
+fn dispatch_call(
     interp: &mut Interpreter,
-    callee: &Expr,
-    args: &[Argument],
+    callee_val: Value,
+    callee_name: &str,
+    mut pos_args_val: Vec<Value>,
+    mut kw_args_val: BTreeMap<String, Value>,
     span: Span,
 ) -> Result<Value, EldritchError> {
-    let callee_val = evaluate(interp, callee)?;
-
-    // Check if this is an interpreter builtin (HOF like map, filter, reduce, sorted, eval)
-    if let Value::NativeFunction(name, _) = &callee_val {
-        if let Some(handler) = interp.interpreter_builtins.get(name).copied() {
-            return handler(interp, args, span);
-        }
-    }
-
-    // Standard call
-    let mut pos_args_val = Vec::new();
-    let mut kw_args_val = BTreeMap::new();
-
-    for arg in args {
-        match arg {
-            Argument::Positional(expr) => pos_args_val.push(evaluate(interp, expr)?),
-            Argument::Keyword(name, expr) => {
-                let val = evaluate(interp, expr)?;
-                kw_args_val.insert(name.clone(), val);
-            }
-            Argument::StarArgs(expr) => {
-                let val = evaluate(interp, expr)?;
-                match val {
-                    Value::List(l) => pos_args_val.extend(l.read().clone()),
-                    Value::Tuple(t) => pos_args_val.extend(t.clone()),
-                    _ => {
-                        return interp.error(
-                            EldritchErrorKind::TypeError,
-                            &format!(
-                                "*args argument must be iterable, got {:?}",
-                                get_type_name(&val)
-                            ),
-                            expr.span,
-                        );
-                    }
-                }
-            }
-            Argument::KwArgs(expr) => {
-                let val = evaluate(interp, expr)?;
-                match val {
-                    Value::Dictionary(d) => {
-                        let dict = d.read();
-                        for (k, v) in dict.iter() {
-                            match k {
-                                Value::String(s) => {
-                                    kw_args_val.insert(s.clone(), v.clone());
-                                }
-                                _ => {
-                                    return interp.error(
-                                        EldritchErrorKind::TypeError,
-                                        "Keywords must be strings",
-                                        expr.span,
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    _ => {
-                        return interp.error(
-                            EldritchErrorKind::TypeError,
-                            &format!(
-                                "**kwargs argument must be a dict, got {:?}",
-                                get_type_name(&val)
-                            ),
-                            expr.span,
-                        );
-                    }
-                }
-            }
-        }
-    }
-
     let args_slice = pos_args_val.as_slice();
 
     match callee_val {
@@ -135,14 +68,7 @@ pub(crate) fn call_function(
                     span,
                 );
             }
-            // Ensure stack frame for native call
-            // Native function name?
-            if let ExprKind::Identifier(name) = &callee.kind {
-                interp.push_frame(name, span);
-            } else {
-                interp.push_frame("<native>", span);
-            }
-
+            interp.push_frame(callee_name, span);
             let res = f(&interp.env, args_slice).map_err(|e| {
                 e.into_eldritch_error(span)
                     .with_stack(interp.call_stack.clone())
@@ -151,12 +77,7 @@ pub(crate) fn call_function(
             res
         }
         Value::NativeFunctionWithKwargs(_, f) => {
-            // Ensure stack frame for native call
-            if let ExprKind::Identifier(name) = &callee.kind {
-                interp.push_frame(name, span);
-            } else {
-                interp.push_frame("<native>", span);
-            }
+            interp.push_frame(callee_name, span);
             let res = f(&interp.env, args_slice, &kw_args_val).map_err(|e| {
                 e.into_eldritch_error(span)
                     .with_stack(interp.call_stack.clone())
@@ -170,9 +91,6 @@ pub(crate) fn call_function(
             body,
             closure,
         }) => {
-            #[allow(unused_variables)]
-            let _ = name; // Silence unused name warning if any
-
             if interp.depth >= MAX_RECURSION_DEPTH {
                 return interp.error(
                     EldritchErrorKind::RecursionError,
@@ -181,8 +99,6 @@ pub(crate) fn call_function(
                 );
             }
             interp.depth += 1;
-
-            // Push stack frame
             interp.push_frame(&name, span);
 
             let result = (|| {
@@ -301,10 +217,8 @@ pub(crate) fn call_function(
             result
         }
         Value::BoundMethod(receiver, method_name) => {
-            // Push stack frame
             interp.push_frame(&method_name, span);
             let res = {
-                // Check if receiver is Foreign
                 if let Value::Foreign(foreign) = receiver.as_ref() {
                     foreign
                         .call_method(interp, &method_name, args_slice, &kw_args_val)
@@ -321,8 +235,7 @@ pub(crate) fn call_function(
                     .with_stack(interp.call_stack.clone()))
                 } else {
                     call_bound_method(&receiver, &method_name, args_slice).map_err(|e| {
-                        e
-                            .into_eldritch_error(span)
+                        e.into_eldritch_error(span)
                             .with_stack(interp.call_stack.clone())
                     })
                 }
@@ -338,75 +251,113 @@ pub(crate) fn call_function(
     }
 }
 
+pub(crate) fn call_function(
+    interp: &mut Interpreter,
+    callee: &Expr,
+    args: &[Argument],
+    span: Span,
+) -> Result<Value, EldritchError> {
+    let callee_val = evaluate(interp, callee)?;
+
+    // Check if this is an interpreter builtin (HOF like map, filter, reduce, sorted, eval)
+    if let Value::NativeFunction(name, _) = &callee_val {
+        if let Some(handler) = interp.interpreter_builtins.get(name).copied() {
+            return handler(interp, args, span);
+        }
+    }
+
+    // Evaluate AST arguments into values
+    let mut pos_args_val = Vec::new();
+    let mut kw_args_val = BTreeMap::new();
+
+    for arg in args {
+        match arg {
+            Argument::Positional(expr) => pos_args_val.push(evaluate(interp, expr)?),
+            Argument::Keyword(name, expr) => {
+                let val = evaluate(interp, expr)?;
+                kw_args_val.insert(name.clone(), val);
+            }
+            Argument::StarArgs(expr) => {
+                let val = evaluate(interp, expr)?;
+                match val {
+                    Value::List(l) => pos_args_val.extend(l.read().clone()),
+                    Value::Tuple(t) => pos_args_val.extend(t.clone()),
+                    _ => {
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
+                            &format!(
+                                "*args argument must be iterable, got {:?}",
+                                get_type_name(&val)
+                            ),
+                            expr.span,
+                        );
+                    }
+                }
+            }
+            Argument::KwArgs(expr) => {
+                let val = evaluate(interp, expr)?;
+                match val {
+                    Value::Dictionary(d) => {
+                        let dict = d.read();
+                        for (k, v) in dict.iter() {
+                            match k {
+                                Value::String(s) => {
+                                    kw_args_val.insert(s.clone(), v.clone());
+                                }
+                                _ => {
+                                    return interp.error(
+                                        EldritchErrorKind::TypeError,
+                                        "Keywords must be strings",
+                                        expr.span,
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        return interp.error(
+                            EldritchErrorKind::TypeError,
+                            &format!(
+                                "**kwargs argument must be a dict, got {:?}",
+                                get_type_name(&val)
+                            ),
+                            expr.span,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    let callee_name = if let ExprKind::Identifier(name) = &callee.kind {
+        name.as_str()
+    } else {
+        "<anonymous>"
+    };
+
+    dispatch_call(interp, callee_val, callee_name, pos_args_val, kw_args_val, span)
+}
+
 pub(crate) fn call_value(
     interp: &mut Interpreter,
     func: &Value,
     args: &[Value],
     span: Span,
 ) -> Result<Value, EldritchError> {
-    match func {
-        Value::NativeFunction(_, f) => {
-            // Push stack frame
-            // Native function name?
-            interp.push_frame("<native>", span);
-            let res = f(&interp.env, args).map_err(|e| {
-                e.into_eldritch_error(span)
-                    .with_stack(interp.call_stack.clone())
-            });
-            interp.pop_frame();
-            res
-        }
-        Value::Function(Function {
-            name: _,
-            params: _,
-            body: _,
-            closure: _,
-        }) => {
-            if interp.depth >= MAX_RECURSION_DEPTH {
-                return interp.error(
-                    EldritchErrorKind::RecursionError,
-                    "Recursion limit exceeded",
-                    span,
-                );
-            }
-            interp.depth += 1;
-
-            let expr_args: Vec<Argument> = args
-                .iter()
-                .map(|v| {
-                    Argument::Positional(Expr {
-                        kind: ExprKind::Literal(v.clone()),
-                        span,
-                    })
-                })
-                .collect();
-
-            // Construct minimal callee expr for recursion call
-            let callee_expr = Expr {
-                kind: ExprKind::Literal(func.clone()),
-                span,
-            };
-
-            let res = call_function(interp, &callee_expr, &expr_args, span);
-            interp.depth -= 1;
-            res
-        }
-        Value::BoundMethod(receiver, method_name) => {
-            interp.push_frame(method_name, span);
-            let res = call_bound_method(receiver, method_name, args).map_err(|e| {
-                e
-                    .into_eldritch_error(span)
-                    .with_stack(interp.call_stack.clone())
-            });
-            interp.pop_frame();
-            res
-        }
-        _ => interp.error(
-            EldritchErrorKind::TypeError,
-            &format!("'{}' object is not callable", get_type_name(func)),
-            span,
-        ),
-    }
+    let callee_name = match func {
+        Value::NativeFunction(name, _) => name.as_str(),
+        Value::Function(f) => f.name.as_str(),
+        Value::BoundMethod(_, name) => name.as_str(),
+        _ => "<anonymous>",
+    };
+    dispatch_call(
+        interp,
+        func.clone(),
+        callee_name,
+        args.to_vec(),
+        BTreeMap::new(),
+        span,
+    )
 }
 
 pub(crate) fn evaluate_arg(
