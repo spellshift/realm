@@ -1,4 +1,3 @@
-use crate::token::Span;
 use alloc::string::String;
 use alloc::sync::Arc;
 use core::fmt;
@@ -15,10 +14,10 @@ use std::{eprintln, println};
 /// It must implement Debug to satisfy AST derivation requirements.
 pub trait Printer: Send + Sync + fmt::Debug {
     /// Print to standard output
-    fn print_out(&self, span: &Span, s: &str);
+    fn print_out(&self, s: &str);
 
     /// Print to standard error
-    fn print_err(&self, span: &Span, s: &str);
+    fn print_err(&self, s: &str);
 }
 
 /// A printer that writes to standard output (println!).
@@ -27,7 +26,7 @@ pub trait Printer: Send + Sync + fmt::Debug {
 pub struct StdoutPrinter;
 
 impl Printer for StdoutPrinter {
-    fn print_out(&self, _span: &Span, s: &str) {
+    fn print_out(&self, s: &str) {
         #[cfg(feature = "std")]
         {
             println!("{s}");
@@ -38,7 +37,7 @@ impl Printer for StdoutPrinter {
         }
     }
 
-    fn print_err(&self, _span: &Span, s: &str) {
+    fn print_err(&self, s: &str) {
         #[cfg(feature = "std")]
         {
             eprintln!("{s}");
@@ -56,9 +55,9 @@ impl Printer for StdoutPrinter {
 pub struct NoopPrinter;
 
 impl Printer for NoopPrinter {
-    fn print_out(&self, _span: &Span, _s: &str) {}
+    fn print_out(&self, _s: &str) {}
 
-    fn print_err(&self, _span: &Span, _s: &str) {}
+    fn print_err(&self, _s: &str) {}
 }
 
 /// A printer that writes to an internal string buffer.
@@ -119,7 +118,7 @@ impl Default for BufferPrinter {
 }
 
 impl Printer for BufferPrinter {
-    fn print_out(&self, _span: &Span, s: &str) {
+    fn print_out(&self, s: &str) {
         let mut buf = self.stdout.lock();
         if !buf.is_empty() {
             buf.push('\n');
@@ -127,7 +126,7 @@ impl Printer for BufferPrinter {
         buf.push_str(s);
     }
 
-    fn print_err(&self, _span: &Span, s: &str) {
+    fn print_err(&self, s: &str) {
         let mut buf = self.stderr.lock();
         if !buf.is_empty() {
             buf.push('\n');

@@ -1,4 +1,4 @@
-use eldritch_core::{Interpreter, Printer, Span};
+use eldritch_core::{Interpreter, Printer};
 use std::sync::{Arc, Mutex};
 
 // Mock printer to capture output
@@ -8,12 +8,12 @@ struct MockPrinter {
 }
 
 impl Printer for MockPrinter {
-    fn print_out(&self, _span: &Span, msg: &str) {
+    fn print_out(&self, msg: &str) {
         let mut out = self.output.lock().unwrap();
         out.push_str(msg);
         out.push('\n');
     }
-    fn print_err(&self, _span: &Span, msg: &str) {
+    fn print_err(&self, msg: &str) {
         let mut out = self.output.lock().unwrap();
         out.push_str("ERR: ");
         out.push_str(msg);

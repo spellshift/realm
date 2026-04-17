@@ -1,5 +1,4 @@
 use crate::ast::{Environment, Value};
-use crate::token::Span;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
@@ -26,8 +25,7 @@ pub fn builtin_pprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     let mut output = String::new();
     pretty_format(&args[0], 0, indent_width, &mut output);
 
-    // TODO: Pass actual span
-    env.read().printer.print_out(&Span::new(0, 0, 0), &output);
+    env.read().printer.print_out(&output);
 
     Ok(Value::None)
 }

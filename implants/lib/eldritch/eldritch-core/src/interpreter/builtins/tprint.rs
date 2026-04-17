@@ -1,5 +1,4 @@
 use crate::ast::{Environment, Value};
-use crate::token::Span;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -98,7 +97,7 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
         output.push('\n');
     }
 
-    env.read().printer.print_out(&Span::new(0, 0, 0), &output);
+    env.read().printer.print_out(&output);
 
     Ok(Value::None)
 }

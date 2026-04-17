@@ -1,14 +1,14 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
-use eldritch_core::{Interpreter, Printer, Span};
+use eldritch_core::{Interpreter, Printer};
 use std::sync::Arc;
 
 #[derive(Debug)]
 struct NoOpPrinter;
 
 impl Printer for NoOpPrinter {
-    fn print_out(&self, _span: &Span, _s: &str) {}
-    fn print_err(&self, _span: &Span, _s: &str) {}
+    fn print_out(&self, _s: &str) {}
+    fn print_err(&self, _s: &str) {}
 }
 
 fuzz_target!(|data: &str| {

@@ -1,5 +1,4 @@
 use crate::ast::{Environment, Value};
-use crate::token::Span;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use spin::RwLock;
@@ -17,7 +16,6 @@ pub fn builtin_print(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<V
         out.push_str(&arg.to_string());
     }
 
-    // TODO: Pass actual span
-    env.read().printer.print_out(&Span::new(0, 0, 0), &out);
+    env.read().printer.print_out(&out);
     Ok(Value::None)
 }

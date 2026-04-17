@@ -1,7 +1,7 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
 use arbitrary::{Unstructured, Result};
-use eldritch_core::{Interpreter, Value, Printer, Span};
+use eldritch_core::{Interpreter, Value, Printer};
 use std::sync::Arc;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -9,8 +9,8 @@ use std::collections::{BTreeMap, BTreeSet};
 struct NoOpPrinter;
 
 impl Printer for NoOpPrinter {
-    fn print_out(&self, _span: &Span, _s: &str) {}
-    fn print_err(&self, _span: &Span, _s: &str) {}
+    fn print_out(&self, _s: &str) {}
+    fn print_err(&self, _s: &str) {}
 }
 
 // Helper to generate arbitrary Values.
