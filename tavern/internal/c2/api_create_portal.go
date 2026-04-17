@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"realm.pub/tavern/internal/ent"
+	"realm.pub/tavern/internal/ent/portal"
+	"realm.pub/tavern/internal/ent/shellpivot"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -196,7 +198,55 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 		)
 	}
 
+	// Close all open ShellPivots associated with this portal
+	now := time.Now()
+	pivots, err := graph.ShellPivot.Query().
+		Where(
+			shellpivot.HasPortalWith(portal.ID(portalID)),
+			shellpivot.ClosedAtIsNil(),
+		).
+		All(context.Background())
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to query open shell pivots for portal",
+			"portal_id", portalID,
+			"error", err,
+		)
+	}
+
 	portalOutTopic := mux.TopicOut(portalID)
+
+	for _, p := range pivots {
+		// Mark pivot as closed in DB
+		if err := graph.ShellPivot.UpdateOneID(p.ID).
+			SetClosedAt(now).
+			Exec(context.Background()); err != nil {
+			slog.ErrorContext(ctx, "failed to close shell pivot",
+				"portal_id", portalID,
+				"pivot_id", p.ID,
+				"error", err,
+			)
+		}
+
+		// Send a stream-specific CLOSE mote so the SSH/PTY session receives the shutdown signal
+		if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
+			StreamId: p.StreamID,
+			Payload: &portalpb.Mote_Bytes{
+				Bytes: &portalpb.BytesPayload{
+					Data: []byte("portal closed"),
+					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE,
+				},
+			},
+		}); err != nil {
+			slog.ErrorContext(ctx, "failed to send close mote to shell pivot",
+				"portal_id", portalID,
+				"pivot_id", p.ID,
+				"stream_id", p.StreamID,
+				"error", err,
+			)
+		}
+	}
+
+	// Send portal-level CLOSE mote (no stream_id) to disconnect the agent
 	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
 		Payload: &portalpb.Mote_Bytes{
 			Bytes: &portalpb.BytesPayload{
