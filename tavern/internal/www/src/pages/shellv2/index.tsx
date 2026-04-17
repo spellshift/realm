@@ -91,7 +91,8 @@ const ShellV2 = () => {
         handleTooltipMouseLeave,
         getSessionInputs,
         setShellInput,
-        focusTerminal
+        focusTerminal,
+        sendCtrlC
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
 
     const totalTabs = 1 + portalTabs.length;
@@ -235,6 +236,7 @@ const ShellV2 = () => {
                     onClosePortal={handleClosePortal}
                     onSshConnect={handleSshConnect}
                     onPtyOpen={handlePtyOpen}
+                    onSendCtrlC={sendCtrlC}
                 />
 
                 {shellTerm}
