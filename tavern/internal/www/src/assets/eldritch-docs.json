@@ -476,8 +476,8 @@
     "description": "The **process.kill** method will kill a process using the KILL signal given its process id."
   },
   "process.list": {
-    "signature": "process.list() -> List<Dict>",
-    "description": "The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:\n```json\n{\n\"pid\": \"9812\",\n\"ppid\": \"1\",\n\"status\": \"Sleeping\",\n\"name\": \"golem\",\n\"path\": \"/usr/bin/golem\",\n\"username\": \"root\",\n\"command\": \"/usr/bin/golem -i\",\n\"cwd\": \"/root/\",\n\"environ\": \"CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0\",\n}\n```"
+    "signature": "process.list(include_env: Optional<bool>) -> List<Dict>",
+    "description": "The **process.list** method returns a list of dictionaries that describe each process. The dictionaries follow the schema:\n```json\n{\n\"pid\": \"9812\",\n\"ppid\": \"1\",\n\"status\": \"Sleeping\",\n\"name\": \"golem\",\n\"path\": \"/usr/bin/golem\",\n\"username\": \"root\",\n\"command\": \"/usr/bin/golem -i\",\n\"cwd\": \"/root/\",\n\"environ\": \"CARGO_PKG_REPOSITORY= CARGO_PKG_RUST_VERSION= CARGO_PKG_VERSION=0.1.0 CARGO_PKG_VERSION_MAJOR=0\",\n}\n```\nThe `include_env` parameter is an optional boolean (default `False`). When `True`, the `environ` field is included in each process dictionary. When `False` or omitted, the `environ` field is omitted."
   },
   "process.name": {
     "signature": "process.name(pid: int) -> str",
