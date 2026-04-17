@@ -77,7 +77,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
       </a>
 
       {/* Active Users Display */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 min-w-0 overflow-x-auto">
         {activeUsers.length > 0 && (
           <div className="flex -space-x-2">
             {activeUsers.map((user) => {
@@ -97,13 +97,15 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         )}
       </div>
 
-      <ShellActionsMenu
-        portalId={portalId}
-        onExport={onExport}
-        onNewPortal={onNewPortal}
-        onSshConnect={onSshConnect}
-        onPtyOpen={onPtyOpen}
-      />
+      <div className="flex-shrink-0">
+        <ShellActionsMenu
+          portalId={portalId}
+          onExport={onExport}
+          onNewPortal={onNewPortal}
+          onSshConnect={onSshConnect}
+          onPtyOpen={onPtyOpen}
+        />
+      </div>
     </div>
   );
 };

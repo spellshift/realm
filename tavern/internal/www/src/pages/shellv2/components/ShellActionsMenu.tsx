@@ -30,9 +30,7 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
         <>
             <Menu as="div" className="relative">
                 <Menu.Button
-                    as={Button}
-                    buttonVariant="ghost"
-                    buttonStyle={{ color: "gray", size: "sm" }}
+                    className="p-1 rounded text-white hover:bg-[#3d3d3d] transition-colors focus:outline-none"
                     aria-label="Shell actions"
                 >
                     <Ellipsis className="w-5 h-5" />
