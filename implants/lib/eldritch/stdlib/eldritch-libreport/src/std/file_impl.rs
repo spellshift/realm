@@ -6,7 +6,9 @@ use eldritch_agent::{Agent, Context};
 use pb::c2::report_file_request;
 use pb::{c2, eldritch};
 use std::io::Read;
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Mutex;
+use std::time::Duration;
 
 #[cfg(unix)]
 fn get_file_metadata_fields(metadata: &std::fs::Metadata) -> (String, String, String) {
@@ -74,8 +76,9 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
 
     // Use a sync channel with bound 1 to provide backpressure
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let (done_tx, done_rx) = std::sync::mpsc::channel();
 
-    let producer = std::thread::spawn(move || {
+    std::thread::spawn(move || {
         for path_clone in files_to_report {
             let file_res = std::fs::File::open(&path_clone).map_err(|e| e.to_string());
             match file_res {
@@ -140,13 +143,21 @@ pub fn file(agent: Arc<dyn Agent>, context: Context, path: String) -> Result<(),
                 }
             }
         }
+
+        let _ = done_tx.send(());
     });
 
     let report_result = agent.report_file(rx).map(|_| ());
 
-    producer
-        .join()
-        .map_err(|_| "report.file worker thread panicked".to_string())?;
+    match done_rx.recv_timeout(Duration::from_secs(600)) {
+        Ok(()) => {}
+        Err(RecvTimeoutError::Timeout) => {
+            return Err("report.file worker thread timed out after 10 minutes".to_string());
+        }
+        Err(RecvTimeoutError::Disconnected) => {
+            return Err("report.file worker thread panicked".to_string());
+        }
+    }
 
     if let Some(e) = error.lock().unwrap().as_ref() {
         return Err(e.clone());
