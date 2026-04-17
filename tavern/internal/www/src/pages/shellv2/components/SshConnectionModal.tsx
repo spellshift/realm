@@ -1,6 +1,5 @@
 import React, { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import Button from "../../../components/tavern-base-ui/button/Button";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface SshConnectionModalProps {
@@ -84,21 +83,20 @@ const SshConnectionModal: React.FC<SshConnectionModalProps> = ({ isOpen, onClose
                                 </div>
 
                                 <div className="flex justify-end gap-2">
-                                    <Button
-                                        buttonVariant="ghost"
-                                        buttonStyle={{ color: "gray", size: "sm" }}
+                                    <button
+                                        type="button"
                                         onClick={handleClose}
+                                        className="text-sm font-semibold py-1 px-2 rounded-md text-gray-300 hover:bg-[#444] transition-colors"
                                     >
                                         Cancel
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         type="submit"
-                                        buttonVariant="solid"
-                                        buttonStyle={{ color: "purple", size: "sm" }}
                                         disabled={!target.trim()}
+                                        className="text-sm font-semibold py-1 px-2 rounded-md bg-purple-700 text-white hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                         Connect
-                                    </Button>
+                                    </button>
                                 </div>
                             </form>
                         </Dialog.Panel>
