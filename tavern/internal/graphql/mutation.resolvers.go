@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	mathrand "math/rand"
 	"strings"
 	"time"
@@ -410,6 +411,18 @@ func (r *mutationResolver) ClosePortal(ctx context.Context, portalID int) (*ent.
 	if !p.ClosedAt.IsZero() {
 		return nil, fmt.Errorf("portal %d is already closed", portalID)
 	}
+
+	// Log portal close with beacon and host info
+	logAttrs := []any{"portal_id", portalID}
+	if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
+		logAttrs = append(logAttrs, "beacon_id", b.ID)
+		if b.Edges.Host != nil {
+			logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+		}
+	} else {
+		slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
+	}
+	slog.InfoContext(ctx, "portal close requested", logAttrs...)
 
 	// Publish CLOSE message with an empty stream ID to the portal's input topic
 	// so the agent receives it and tears down the portal connections.
