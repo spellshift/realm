@@ -413,23 +413,101 @@ func TestParseIntIDs(t *testing.T) {
 
 // TestGraphQLQueryHandler tests the graphql_query tool validation logic.
 func TestGraphQLQueryHandler(t *testing.T) {
-ctx := context.Background()
-client := setupTestDB(t)
-defer client.Close()
+	ctx := context.Background()
+	client := setupTestDB(t)
+	defer client.Close()
 
-// Create test data so queries return something
-client.Tome.Create().
-SetName("graphql-test-tome").
-SetDescription("A tome for graphql test").
-SetAuthor("test-author").
-SetSupportModel(tome.SupportModelCOMMUNITY).
-SetEldritch("print('hello')").
-SetHash("gqlhash").
-SaveX(ctx)
+	// Create test data so queries return something
+	client.Tome.Create().
+		SetName("graphql-test-tome").
+		SetDescription("A tome for graphql test").
+		SetAuthor("test-author").
+		SetSupportModel(tome.SupportModelCOMMUNITY).
+		SetEldritch("print('hello')").
+		SetHash("gqlhash").
+		SaveX(ctx)
 
-// Verify the tome was created via direct query
-tomes, err := client.Tome.Query().All(ctx)
-require.NoError(t, err)
-assert.Len(t, tomes, 1)
-assert.Equal(t, "graphql-test-tome", tomes[0].Name)
+	// Verify the tome was created via direct query
+	tomes, err := client.Tome.Query().All(ctx)
+	require.NoError(t, err)
+	assert.Len(t, tomes, 1)
+	assert.Equal(t, "graphql-test-tome", tomes[0].Name)
+}
+
+// TestGraphQLQueryValidation tests that the graphql_query tool rejects mutations and subscriptions.
+func TestGraphQLQueryValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		query     string
+		expectErr bool
+		errMsg    string
+	}{
+		{
+			name:  "valid query",
+			query: `query { __schema { types { name } } }`,
+		},
+		{
+			name:  "valid shorthand query",
+			query: `{ __schema { types { name } } }`,
+		},
+		{
+			name:  "valid introspection",
+			query: `query IntrospectionQuery { __type(name: "Tome") { name fields { name } } }`,
+		},
+		{
+			name:      "mutation rejected",
+			query:     `mutation { createQuest(input: {}) { id } }`,
+			expectErr: true,
+			errMsg:    "only queries are allowed, got mutation operation",
+		},
+		{
+			name:      "subscription rejected",
+			query:     `subscription { onQuestCreated { id } }`,
+			expectErr: true,
+			errMsg:    "only queries are allowed, got subscription operation",
+		},
+		{
+			name:      "invalid syntax",
+			query:     `not a valid query`,
+			expectErr: true,
+			errMsg:    "failed to parse GraphQL query",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Build MCP request with the query
+			req := mcp.CallToolRequest{
+				Params: mcp.CallToolParams{
+					Arguments: map[string]any{
+						"query": tc.query,
+					},
+				},
+			}
+
+			// Call the handler directly (no GraphQL handler in context — will
+			// error at execution time for valid queries, but validation still runs).
+			result, err := tavernmcp.HandleGraphQLQueryForTest(context.Background(), req)
+			require.NoError(t, err)
+
+			if tc.expectErr {
+				assert.True(t, result.IsError, "expected error for %q", tc.name)
+				// Check the error text
+				if tc.errMsg != "" && len(result.Content) > 0 {
+					if txt, ok := result.Content[0].(mcp.TextContent); ok {
+						assert.Contains(t, txt.Text, tc.errMsg)
+					}
+				}
+			} else {
+				// Valid queries will fail because there's no GraphQL handler in context,
+				// but the validation step should have passed (error message will be about
+				// no handler, not about query parsing).
+				if result.IsError && len(result.Content) > 0 {
+					if txt, ok := result.Content[0].(mcp.TextContent); ok {
+						assert.Contains(t, txt.Text, "no GraphQL handler", "expected handler error, not validation error")
+					}
+				}
+			}
+		})
+	}
 }

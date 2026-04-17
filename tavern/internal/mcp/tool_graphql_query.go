@@ -35,11 +35,6 @@ func graphqlQueryTool() mcpserver.ServerTool {
 
 // handleGraphQLQuery executes a validated read-only GraphQL query against the Tavern GraphQL handler.
 func handleGraphQLQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	gqlHandler := graphqlHandlerFromContext(ctx)
-	if gqlHandler == nil {
-		return mcp.NewToolResultError("internal error: no GraphQL handler available"), nil
-	}
-
 	query, err := request.RequireString("query")
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("invalid query: %v", err)), nil
@@ -54,6 +49,11 @@ func handleGraphQLQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		if op.Operation != ast.Query {
 			return mcp.NewToolResultError(fmt.Sprintf("only queries are allowed, got %s operation", op.Operation)), nil
 		}
+	}
+
+	gqlHandler := graphqlHandlerFromContext(ctx)
+	if gqlHandler == nil {
+		return mcp.NewToolResultError("internal error: no GraphQL handler available"), nil
 	}
 
 	// Build the GraphQL request body.
@@ -97,4 +97,9 @@ func handleGraphQLQuery(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	}
 
 	return mcp.NewToolResultText(string(respBody)), nil
+}
+
+// HandleGraphQLQueryForTest is an exported wrapper for testing the query validation logic.
+func HandleGraphQLQueryForTest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return handleGraphQLQuery(ctx, request)
 }
