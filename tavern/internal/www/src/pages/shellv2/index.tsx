@@ -75,7 +75,8 @@ const ShellV2 = () => {
         handleTooltipMouseEnter,
         handleTooltipMouseLeave,
         getSessionInputs,
-        setShellInput
+        setShellInput,
+        focusTerminal
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
 
     const toast = useToast();
@@ -106,6 +107,9 @@ const ShellV2 = () => {
 
     const handleNewPortal = () => {
         setShellInput("pivot.create_portal()");
+        // HeadlessUI Menu restores focus to Menu.Button after onClick;
+        // delay refocus so the terminal regains focus after the menu closes.
+        setTimeout(() => focusTerminal(), 0);
     };
 
     const handleClosePortal = async () => {

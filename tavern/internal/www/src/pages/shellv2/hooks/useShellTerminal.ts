@@ -1114,6 +1114,10 @@ export const useShellTerminal = (
         term.focus();
     }, [redrawLine]);
 
+    const focusTerminal = useCallback(() => {
+        termInstance.current?.focus();
+    }, []);
+
     return {
         termRef,
         connectionError,
@@ -1129,6 +1133,7 @@ export const useShellTerminal = (
         handleTooltipMouseEnter: cancelHideTooltip,
         handleTooltipMouseLeave: scheduleHideTooltip,
         getSessionInputs,
-        setShellInput
+        setShellInput,
+        focusTerminal
     };
 };
