@@ -3,6 +3,7 @@ package mux
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"realm.pub/tavern/internal/ent"
@@ -22,7 +23,9 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 		// We need to fetch Task dependencies (Beacon, Owner/Creator) to satisfy Portal constraints.
 		t, err := client.Task.Query().
 			Where(task.ID(taskID)).
-			WithBeacon().
+			WithBeacon(func(bq *ent.BeaconQuery) {
+				bq.WithHost()
+			}).
 			WithQuest(func(q *ent.QuestQuery) {
 				q.WithCreator()
 			}).
@@ -39,7 +42,9 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 			Where(shelltask.ID(shellTaskID)).
 			WithCreator().
 			WithShell(func(s *ent.ShellQuery) {
-				s.WithBeacon()
+				s.WithBeacon(func(bq *ent.BeaconQuery) {
+					bq.WithHost()
+				})
 			}).
 			Only(ctx)
 		if err != nil {
@@ -63,6 +68,16 @@ func (m *Mux) CreatePortal(ctx context.Context, client *ent.Client, taskID int, 
 	if err != nil {
 		return 0, nil, fmt.Errorf("failed to create portal record: %w", err)
 	}
+
+	// Log portal creation with beacon and host info
+	logAttrs := []any{"portal_id", p.ID}
+	if beacon != nil {
+		logAttrs = append(logAttrs, "beacon_id", beacon.ID)
+		if beacon.Edges.Host != nil {
+			logAttrs = append(logAttrs, "host_id", beacon.Edges.Host.ID)
+		}
+	}
+	slog.InfoContext(ctx, "portal created", logAttrs...)
 
 	portalID := p.ID
 	topicIn := m.TopicIn(portalID)
