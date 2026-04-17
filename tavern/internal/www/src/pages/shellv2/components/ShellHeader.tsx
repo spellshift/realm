@@ -15,11 +15,12 @@ interface ShellHeaderProps {
   portalId: number | null;
   onExport: () => void;
   onNewPortal: () => void;
+  onClosePortal: () => void;
   onSshConnect: (target: string) => void;
   onPtyOpen: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onSshConnect, onPtyOpen }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onClosePortal, onSshConnect, onPtyOpen }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -102,6 +103,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
           portalId={portalId}
           onExport={onExport}
           onNewPortal={onNewPortal}
+          onClosePortal={onClosePortal}
           onSshConnect={onSshConnect}
           onPtyOpen={onPtyOpen}
         />

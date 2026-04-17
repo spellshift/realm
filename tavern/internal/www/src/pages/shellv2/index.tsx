@@ -9,8 +9,10 @@ import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
 import { Tabs, TabList, TabPanels, Tab, TabPanel, useToast } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
+import { useMutation } from '@apollo/client';
 import SshTerminal from './components/SshTerminal';
 import PtyTerminal from './components/PtyTerminal';
+import { CLOSE_PORTAL_MUTATION } from './graphql';
 
 interface PortalTab {
     id: string;
@@ -78,6 +80,8 @@ const ShellV2 = () => {
 
     const toast = useToast();
 
+    const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
+
     const handleExport = () => {
         const inputs = getSessionInputs();
         if (inputs) {
@@ -102,6 +106,29 @@ const ShellV2 = () => {
 
     const handleNewPortal = () => {
         setShellInput("pivot.create_portal()");
+    };
+
+    const handleClosePortal = async () => {
+        if (!portalId) return;
+        try {
+            await closePortalMutation({ variables: { id: portalId } });
+            setPortalId(null);
+            toast({
+                title: "Portal closed",
+                description: "The active portal has been closed.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+            });
+        } catch (err: any) {
+            toast({
+                title: "Failed to close portal",
+                description: err?.message || "An error occurred while closing the portal.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            });
+        }
     };
 
     const handleSshConnect = (target: string) => {
@@ -175,6 +202,7 @@ const ShellV2 = () => {
                     portalId={portalId}
                     onExport={handleExport}
                     onNewPortal={handleNewPortal}
+                    onClosePortal={handleClosePortal}
                     onSshConnect={handleSshConnect}
                     onPtyOpen={handlePtyOpen}
                 />

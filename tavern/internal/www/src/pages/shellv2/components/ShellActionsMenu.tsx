@@ -1,6 +1,6 @@
 import React, { Fragment, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Share, Terminal, Globe, SquareTerminal, Ellipsis } from "lucide-react";
+import { Share, Terminal, Globe, SquareTerminal, Ellipsis, X } from "lucide-react";
 import { Tooltip } from "@chakra-ui/react";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import SshConnectionModal from "./SshConnectionModal";
@@ -9,17 +9,18 @@ interface ShellActionsMenuProps {
     portalId: number | null;
     onExport: () => void;
     onNewPortal: () => void;
+    onClosePortal: () => void;
     onSshConnect: (target: string) => void;
     onPtyOpen: () => void;
 }
 
 const PORTAL_REQUIRED_TOOLTIP = "Requires an active portal connection. Create a portal first using pivot.create_portal().";
-const PORTAL_ACTIVE_TOOLTIP = "A portal is already active on this session.";
 
 const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
     portalId,
     onExport,
     onNewPortal,
+    onClosePortal,
     onSshConnect,
     onPtyOpen,
 }) => {
@@ -62,25 +63,27 @@ const ShellActionsMenu: React.FC<ShellActionsMenuProps> = ({
 
                             <Menu.Item>
                                 {() => (
-                                    <Tooltip
-                                        label={hasPortal ? PORTAL_ACTIVE_TOOLTIP : ""}
-                                        isDisabled={!hasPortal}
-                                        placement="right"
-                                        hasArrow
-                                    >
-                                        <div>
-                                            <Button
-                                                buttonVariant="ghost"
-                                                buttonStyle={{ color: "gray", size: "sm" }}
-                                                className={`w-full justify-start ${hasPortal ? "text-gray-600 cursor-not-allowed" : "text-gray-200 hover:bg-[#3d3d3d]"}`}
-                                                leftIcon={<Globe className={`w-4 h-4 ${hasPortal ? "opacity-40" : ""}`} />}
-                                                onClick={onNewPortal}
-                                                disabled={hasPortal}
-                                            >
-                                                New Portal
-                                            </Button>
-                                        </div>
-                                    </Tooltip>
+                                    hasPortal ? (
+                                        <Button
+                                            buttonVariant="ghost"
+                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                            className="w-full justify-start text-red-400 hover:bg-[#3d3d3d]"
+                                            leftIcon={<X className="w-4 h-4" />}
+                                            onClick={onClosePortal}
+                                        >
+                                            Close Portal
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            buttonVariant="ghost"
+                                            buttonStyle={{ color: "gray", size: "sm" }}
+                                            className="w-full justify-start text-gray-200 hover:bg-[#3d3d3d]"
+                                            leftIcon={<Globe className="w-4 h-4" />}
+                                            onClick={onNewPortal}
+                                        >
+                                            New Portal
+                                        </Button>
+                                    )
                                 )}
                             </Menu.Item>
 
