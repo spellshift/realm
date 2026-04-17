@@ -13,14 +13,26 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
         return Err("tprint() takes at least 1 argument".to_string());
     }
 
-    let list_val = &args[0];
+    let output = format_tprint(&args[0])?;
+
+    if let Some(text) = output {
+        env.read().printer.print_out(&Span::new(0, 0, 0), &text);
+    }
+
+    Ok(Value::None)
+}
+
+/// Formats a list of dictionaries as a markdown table string.
+/// Returns `Ok(None)` if the list or all dictionaries are empty.
+/// Returns an error if the value is not a list of dictionaries.
+pub fn format_tprint(list_val: &Value) -> Result<Option<String>, String> {
     let items_snapshot: Vec<Value> = match list_val {
         Value::List(l) => l.read().clone(),
         _ => return Err("tprint() argument must be a list of dictionaries".to_string()),
     };
 
     if items_snapshot.is_empty() {
-        return Ok(Value::None);
+        return Ok(None);
     }
 
     // Collect all unique keys (columns)
@@ -47,7 +59,7 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
     }
 
     if columns.is_empty() {
-        return Ok(Value::None);
+        return Ok(None);
     }
 
     let columns_vec: Vec<String> = columns.into_iter().collect();
@@ -98,7 +110,5 @@ pub fn builtin_tprint(env: &Arc<RwLock<Environment>>, args: &[Value]) -> Result<
         output.push('\n');
     }
 
-    env.read().printer.print_out(&Span::new(0, 0, 0), &output);
-
-    Ok(Value::None)
+    Ok(Some(output))
 }
