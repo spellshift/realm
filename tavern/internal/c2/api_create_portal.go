@@ -196,7 +196,11 @@ func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, porta
 			if b.Edges.Host != nil {
 				logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
 			}
+		} else {
+			slog.WarnContext(ctx, "failed to query beacon for portal close log", "portal_id", portalID, "error", err)
 		}
+	} else {
+		slog.WarnContext(ctx, "failed to query portal for close log", "portal_id", portalID, "error", err)
 	}
 	slog.InfoContext(ctx, "portal closed", logAttrs...)
 

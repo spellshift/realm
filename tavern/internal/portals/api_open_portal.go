@@ -43,6 +43,8 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 		if b.Edges.Host != nil {
 			logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
 		}
+	} else {
+		slog.WarnContext(ctx, "failed to query beacon for portal open log", "portal_id", portalID, "error", err)
 	}
 	slog.InfoContext(ctx, "portal opened", logAttrs...)
 
