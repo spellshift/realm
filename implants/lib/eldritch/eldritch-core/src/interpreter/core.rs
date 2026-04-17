@@ -1,4 +1,4 @@
-use super::super::ast::{BuiltinFn, Environment, Value};
+use super::super::ast::{BuiltinFn, Environment, InterpreterBuiltinFn, Value};
 use super::super::lexer::Lexer;
 use super::super::parser::Parser;
 use super::super::token::{Span, TokenKind};
@@ -10,7 +10,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::RwLock;
 
-use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_stubs};
+use super::builtins::{get_all_builtins, get_all_builtins_with_kwargs, get_interpreter_builtins};
 use super::error::{EldritchError, EldritchErrorKind, StackFrame};
 use super::eval;
 use super::exec;
@@ -18,6 +18,19 @@ use super::introspection::find_best_match;
 use super::methods::get_native_methods;
 use super::printer::{Printer, StdoutPrinter};
 use crate::ast::ForeignValue;
+use crate::interpreter::error::NativeError;
+
+/// Placeholder function registered in the environment for interpreter builtins.
+/// This should never be called directly — `call_function` intercepts these
+/// by checking the `interpreter_builtins` registry.
+fn interpreter_builtin_placeholder(
+    _env: &Arc<RwLock<Environment>>,
+    _args: &[Value],
+) -> Result<Value, NativeError> {
+    Err(NativeError::runtime_error(
+        "internal error: interpreter builtin should be dispatched via interpreter_builtins registry",
+    ))
+}
 
 #[derive(Clone, PartialEq)]
 pub enum Flow {
@@ -34,6 +47,8 @@ pub struct Interpreter {
     pub call_stack: Vec<StackFrame>,
     pub current_func_name: String,
     pub is_scope_owner: bool,
+    /// Registry for builtins that require interpreter access (HOFs like map, filter, etc.)
+    pub(crate) interpreter_builtins: BTreeMap<String, InterpreterBuiltinFn>,
 }
 
 impl Drop for Interpreter {
@@ -73,6 +88,7 @@ impl Interpreter {
             call_stack: Vec::new(),
             current_func_name: "<module>".to_string(),
             is_scope_owner: true,
+            interpreter_builtins: BTreeMap::new(),
         };
 
         interpreter.load_builtins();
@@ -89,8 +105,12 @@ impl Interpreter {
                 Value::NativeFunctionWithKwargs(name.to_string(), func),
             );
         }
-        for (name, func) in get_stubs() {
-            self.register_function(name, func);
+        for (name, func) in get_interpreter_builtins() {
+            // Register a dummy NativeFunction in the env so the name resolves,
+            // and store the real handler in the interpreter_builtins registry.
+            self.register_function(name, interpreter_builtin_placeholder);
+            self.interpreter_builtins
+                .insert(name.to_string(), func);
         }
     }
 

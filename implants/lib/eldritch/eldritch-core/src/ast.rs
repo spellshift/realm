@@ -1,5 +1,5 @@
 use super::interpreter::Printer;
-use super::interpreter::error::NativeError;
+use super::interpreter::error::{EldritchError, NativeError};
 use super::token::{Span, TokenKind};
 use alloc::boxed::Box;
 use alloc::collections::{BTreeMap, BTreeSet};
@@ -56,6 +56,11 @@ pub enum Argument {
 pub type BuiltinFn = fn(&Arc<RwLock<Environment>>, &[Value]) -> Result<Value, NativeError>;
 pub type BuiltinFnWithKwargs =
     fn(&Arc<RwLock<Environment>>, &[Value], &BTreeMap<String, Value>) -> Result<Value, NativeError>;
+
+/// Function type for builtins that require interpreter access (e.g., map, filter, reduce, sorted, eval).
+/// These receive the raw AST arguments for lazy evaluation and the interpreter for recursive evaluation.
+pub type InterpreterBuiltinFn =
+    fn(&mut Interpreter, &[Argument], Span) -> Result<Value, EldritchError>;
 
 pub trait ForeignValue: fmt::Debug + Send + Sync {
     fn type_name(&self) -> &str;

@@ -1,4 +1,4 @@
-use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, Value};
+use crate::ast::{BuiltinFn, BuiltinFnWithKwargs, InterpreterBuiltinFn, Value};
 use crate::interpreter::error::NativeError;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -92,22 +92,13 @@ pub fn get_all_builtins_with_kwargs() -> Vec<(&'static str, BuiltinFnWithKwargs)
     vec![("dict", dict::builtin_dict as BuiltinFnWithKwargs)]
 }
 
-// I need to handle stubs.
-pub fn builtin_stub(
-    _env: &alloc::sync::Arc<spin::RwLock<crate::ast::Environment>>,
-    _args: &[Value],
-) -> Result<Value, NativeError> {
-    Err(NativeError::runtime_error(
-        "internal error: this function should be handled by interpreter",
-    ))
-}
-
-pub fn get_stubs() -> Vec<(&'static str, BuiltinFn)> {
+// Builtins that require interpreter access (HOFs and eval)
+pub fn get_interpreter_builtins() -> Vec<(&'static str, InterpreterBuiltinFn)> {
     vec![
-        ("map", builtin_stub as BuiltinFn),
-        ("filter", builtin_stub as BuiltinFn),
-        ("reduce", builtin_stub as BuiltinFn),
-        ("sorted", builtin_stub as BuiltinFn),
-        ("eval", builtin_stub as BuiltinFn),
+        ("map", map::builtin_map as InterpreterBuiltinFn),
+        ("filter", filter::builtin_filter as InterpreterBuiltinFn),
+        ("reduce", reduce::builtin_reduce as InterpreterBuiltinFn),
+        ("sorted", sorted::builtin_sorted as InterpreterBuiltinFn),
+        ("eval", eval_builtin::builtin_eval_func as InterpreterBuiltinFn),
     ]
 }

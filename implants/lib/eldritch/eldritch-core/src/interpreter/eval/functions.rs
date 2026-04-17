@@ -2,10 +2,6 @@ use super::super::super::ast::{
     Argument, Environment, Expr, ExprKind, Function, Param, RuntimeParam, Stmt, StmtKind, Value,
 };
 use super::super::super::token::Span;
-use super::super::builtins::{
-    eval_builtin::builtin_eval_func, filter::builtin_filter, map::builtin_map,
-    reduce::builtin_reduce, sorted::builtin_sorted,
-};
 use super::super::core::{Flow, Interpreter};
 use super::super::error::{EldritchError, EldritchErrorKind};
 use super::super::exec::execute_stmts;
@@ -58,18 +54,10 @@ pub(crate) fn call_function(
 ) -> Result<Value, EldritchError> {
     let callee_val = evaluate(interp, callee)?;
 
-    // Special handling for map/filter/reduce which take functions
+    // Check if this is an interpreter builtin (HOF like map, filter, reduce, sorted, eval)
     if let Value::NativeFunction(name, _) = &callee_val {
-        if name == "map" {
-            return builtin_map(interp, args, span);
-        } else if name == "filter" {
-            return builtin_filter(interp, args, span);
-        } else if name == "reduce" {
-            return builtin_reduce(interp, args, span);
-        } else if name == "sorted" {
-            return builtin_sorted(interp, args, span);
-        } else if name == "eval" {
-            return builtin_eval_func(interp, args, span);
+        if let Some(handler) = interp.interpreter_builtins.get(name).copied() {
+            return handler(interp, args, span);
         }
     }
 
