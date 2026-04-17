@@ -43,6 +43,7 @@ import (
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/portals/ssh"
+	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -417,6 +418,9 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/portals/ssh/ws": tavernhttp.Endpoint{
 			Handler: ssh.NewHandler(client, portalMux),
+		},
+		"/portals/pty/ws": tavernhttp.Endpoint{
+			Handler: pty.NewHandler(client, portalMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
