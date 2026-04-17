@@ -3,6 +3,11 @@ use std::env;
 use std::path::PathBuf;
 use which::which;
 
+/// Default placeholder server public key (32 zero bytes, base64-encoded) used when
+/// the real key cannot be obtained during build. This allows compilation to succeed
+/// for local development, but the agent will not be able to authenticate with the server.
+const DEFAULT_SERVER_PUBKEY: &str = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
 #[derive(Debug, Deserialize)]
 struct TransportConfig {
     #[serde(rename = "URI")]
@@ -256,10 +261,8 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
             );
         }
         None => {
-            // Emit a default placeholder key (32 zero bytes, base64-encoded) so compilation
-            // succeeds for local development even when the server is not running.
-            // The agent will not be able to authenticate with the server using this key.
-            let default_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            // Emit the default placeholder key so compilation succeeds for local development
+            // even when the server is not running.
             println!(
                 "cargo:warning=Could not obtain server public key. Using default placeholder for local development."
             );
@@ -269,7 +272,10 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
             println!(
                 "cargo:warning=Set IMIX_SERVER_PUBKEY env var or ensure Tavern is running before building for production use."
             );
-            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", default_key);
+            println!(
+                "cargo:rustc-env=IMIX_SERVER_PUBKEY={}",
+                DEFAULT_SERVER_PUBKEY
+            );
         }
     }
 }
