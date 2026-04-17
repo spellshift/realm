@@ -190,6 +190,9 @@ type UpdateHostInput struct {
 	ClearFavoritedBy     bool
 	AddFavoritedByIDs    []int
 	RemoveFavoritedByIDs []int
+	ClearSubscribers     bool
+	AddSubscriberIDs     []int
+	RemoveSubscriberIDs  []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -265,6 +268,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveFavoritedByIDs; len(v) > 0 {
 		m.RemoveFavoritedByIDs(v...)
+	}
+	if i.ClearSubscribers {
+		m.ClearSubscribers()
+	}
+	if v := i.AddSubscriberIDs; len(v) > 0 {
+		m.AddSubscriberIDs(v...)
+	}
+	if v := i.RemoveSubscriberIDs; len(v) > 0 {
+		m.RemoveSubscriberIDs(v...)
 	}
 }
 
@@ -808,25 +820,28 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name                  *string
-	PhotoURL              *string
-	IsActivated           *bool
-	IsAdmin               *bool
-	ClearNotifications    bool
-	AddNotificationIDs    []int
-	RemoveNotificationIDs []int
-	ClearTomes            bool
-	AddTomeIDs            []int
-	RemoveTomeIDs         []int
-	ClearActiveShells     bool
-	AddActiveShellIDs     []int
-	RemoveActiveShellIDs  []int
-	ClearDeviceAuths      bool
-	AddDeviceAuthIDs      []int
-	RemoveDeviceAuthIDs   []int
-	ClearFavoriteHosts    bool
-	AddFavoriteHostIDs    []int
-	RemoveFavoriteHostIDs []int
+	Name                    *string
+	PhotoURL                *string
+	IsActivated             *bool
+	IsAdmin                 *bool
+	ClearNotifications      bool
+	AddNotificationIDs      []int
+	RemoveNotificationIDs   []int
+	ClearTomes              bool
+	AddTomeIDs              []int
+	RemoveTomeIDs           []int
+	ClearActiveShells       bool
+	AddActiveShellIDs       []int
+	RemoveActiveShellIDs    []int
+	ClearDeviceAuths        bool
+	AddDeviceAuthIDs        []int
+	RemoveDeviceAuthIDs     []int
+	ClearFavoriteHosts      bool
+	AddFavoriteHostIDs      []int
+	RemoveFavoriteHostIDs   []int
+	ClearSubscribedHosts    bool
+	AddSubscribedHostIDs    []int
+	RemoveSubscribedHostIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -887,6 +902,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveFavoriteHostIDs; len(v) > 0 {
 		m.RemoveFavoriteHostIDs(v...)
+	}
+	if i.ClearSubscribedHosts {
+		m.ClearSubscribedHosts()
+	}
+	if v := i.AddSubscribedHostIDs; len(v) > 0 {
+		m.AddSubscribedHostIDs(v...)
+	}
+	if v := i.RemoveSubscribedHostIDs; len(v) > 0 {
+		m.RemoveSubscribedHostIDs(v...)
 	}
 }
 

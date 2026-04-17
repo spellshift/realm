@@ -548,6 +548,29 @@ func HasFavoriteHostsWith(preds ...predicate.Host) predicate.User {
 	})
 }
 
+// HasSubscribedHosts applies the HasEdge predicate on the "subscribedHosts" edge.
+func HasSubscribedHosts() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, SubscribedHostsTable, SubscribedHostsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubscribedHostsWith applies the HasEdge predicate on the "subscribedHosts" edge with a given conditions (other predicates).
+func HasSubscribedHostsWith(preds ...predicate.Host) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSubscribedHostsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.User) predicate.User {
 	return predicate.User(sql.AndPredicates(predicates...))

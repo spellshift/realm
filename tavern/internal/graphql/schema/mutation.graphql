@@ -25,6 +25,8 @@ type Mutation {
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
     favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
     unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    subscribeToHost(hostID: ID!): Host! @requireRole(role: USER)
+    unsubscribeFromHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
