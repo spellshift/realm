@@ -28,10 +28,10 @@ func clientFromContext(ctx context.Context) *ent.Client {
 // The handler is meant to be mounted at a prefix (e.g. /mcp) on the main server mux.
 // Authentication is handled by the parent Tavern HTTP server; this handler
 // expects an authenticated context to already be set.
-func NewHandler(client *ent.Client) http.Handler {
+func NewHandler(client *ent.Client, version string) http.Handler {
 	mcpSrv := mcpserver.NewMCPServer(
 		"tavern",
-		"1.0.0",
+		version,
 		mcpserver.WithToolCapabilities(true),
 		mcpserver.WithElicitation(),
 	)

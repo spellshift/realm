@@ -435,7 +435,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Setup MCP Server
 	if cfg.IsMCPEnabled() {
 		slog.InfoContext(ctx, "AI MCP server is enabled at /mcp")
-		mcpHandler := tavernmcp.NewHandler(client)
+		mcpHandler := tavernmcp.NewHandler(client, Version)
 		routes["/mcp/"] = tavernhttp.Endpoint{
 			Handler: mcpHandler,
 		}

@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 	"realm.pub/tavern/internal/auth"
+	"realm.pub/tavern/internal/ent/beacon"
 )
 
 // createQuestTool returns the create_quest MCP tool.
@@ -79,6 +81,9 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError(fmt.Sprintf("invalid parameters: %v", err)), nil
 		}
+		if params == "" {
+			params = "{}"
+		}
 
 		tomeIDStr, err := request.RequireString("tome_id")
 		if err != nil {
@@ -95,11 +100,28 @@ func handleCreateQuest(mcpSrv *mcpserver.MCPServer) mcpserver.ToolHandlerFunc {
 			return mcp.NewToolResultError(fmt.Sprintf("failed to load tome: %v", err)), nil
 		}
 
+		// Look up beacon names for the elicitation message.
+		beacons, err := client.Beacon.Query().
+			Where(beacon.IDIn(beaconIDs...)).
+			All(ctx)
+		if err != nil {
+			return mcp.NewToolResultError(fmt.Sprintf("failed to look up beacons: %v", err)), nil
+		}
+		const maxBeaconNames = 8
+		beaconNames := make([]string, 0, len(beacons))
+		for _, b := range beacons {
+			beaconNames = append(beaconNames, b.Name)
+		}
+		beaconSummary := strings.Join(beaconNames, ", ")
+		if len(beaconNames) > maxBeaconNames {
+			beaconSummary = strings.Join(beaconNames[:maxBeaconNames], ", ") + fmt.Sprintf(" and %d more", len(beaconNames)-maxBeaconNames)
+		}
+
 		// Request human-in-the-loop confirmation before creating the quest.
 		// If elicitation is not supported by the client session, proceed without it.
 		elicitResult, err := mcpSrv.RequestElicitation(ctx, mcp.ElicitationRequest{
 			Params: mcp.ElicitationParams{
-				Message:         fmt.Sprintf("Create quest %q using tome %q targeting %d beacon(s)?", name, questTome.Name, len(beaconIDs)),
+				Message:         fmt.Sprintf("Create quest %q using tome %q targeting beacon(s): %s?", name, questTome.Name, beaconSummary),
 				RequestedSchema: confirmSchema,
 			},
 		})

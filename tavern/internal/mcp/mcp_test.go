@@ -26,7 +26,7 @@ func setupTestDB(t *testing.T) *ent.Client {
 // setupTestHandler creates the MCP HTTP handler backed by a test database.
 func setupTestHandler(t *testing.T, client *ent.Client) http.Handler {
 	t.Helper()
-	return tavernmcp.NewHandler(client)
+	return tavernmcp.NewHandler(client, "test")
 }
 
 // TestNewHandler verifies the MCP handler can be created without error.
