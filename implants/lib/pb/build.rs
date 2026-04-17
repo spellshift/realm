@@ -205,52 +205,73 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
     // Construct the status endpoint URL
     let status_url = format!("{}/status", base_uri);
 
-    // Make a GET request to /status
-    let response = match reqwest::blocking::get(&status_url) {
-        Ok(resp) => resp,
-        Err(e) => {
-            println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
-            return;
-        }
-    };
+    // Try to fetch the pubkey from the running server
+    let fetched_pubkey = (|| -> Option<String> {
+        let response = match reqwest::blocking::get(&status_url) {
+            Ok(resp) => resp,
+            Err(e) => {
+                println!("cargo:warning=Failed to connect to {}: {}", status_url, e);
+                return None;
+            }
+        };
 
-    if !response.status().is_success() {
-        println!(
-            "cargo:warning=Failed to fetch status from {}: HTTP {}",
-            status_url,
-            response.status()
-        );
-        return;
-    }
-
-    let json = match response.json::<serde_json::Value>() {
-        Ok(json) => json,
-        Err(e) => {
+        if !response.status().is_success() {
             println!(
-                "cargo:warning=Failed to parse JSON response from {}: {}",
-                status_url, e
+                "cargo:warning=Failed to fetch status from {}: HTTP {}",
+                status_url,
+                response.status()
             );
-            return;
+            return None;
         }
-    };
 
-    let pubkey = match json.get("Pubkey").and_then(|v| v.as_str()) {
-        Some(key) => key,
-        None => {
+        let json = match response.json::<serde_json::Value>() {
+            Ok(json) => json,
+            Err(e) => {
+                println!(
+                    "cargo:warning=Failed to parse JSON response from {}: {}",
+                    status_url, e
+                );
+                return None;
+            }
+        };
+
+        match json.get("Pubkey").and_then(|v| v.as_str()) {
+            Some(key) => Some(key.to_string()),
+            None => {
+                println!(
+                    "cargo:warning=Pubkey field not found in response from {}",
+                    status_url
+                );
+                None
+            }
+        }
+    })();
+
+    match fetched_pubkey {
+        Some(pubkey) => {
+            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", pubkey);
             println!(
-                "cargo:warning=Pubkey field not found in response from {}",
+                "cargo:warning=Successfully fetched server public key from {}",
                 status_url
             );
-            return;
         }
-    };
-
-    // Set the IMIX_SERVER_PUBKEY environment variable for the build
-    println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", pubkey);
-    println!(
-        "cargo:warning=Successfully fetched server public key from {}",
-        status_url
-    );
+        None => {
+            // Emit a default placeholder key (32 zero bytes, base64-encoded) so compilation
+            // succeeds for local development even when the server is not running.
+            // The agent will not be able to authenticate with the server using this key.
+            let default_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            println!(
+                "cargo:warning=Could not obtain server public key. Using default placeholder for local development."
+            );
+            println!(
+                "cargo:warning=The agent will not be able to authenticate with the server using the placeholder key."
+            );
+            println!(
+                "cargo:warning=Set IMIX_SERVER_PUBKEY env var or ensure Tavern is running before building for production use."
+            );
+            println!("cargo:rustc-env=IMIX_SERVER_PUBKEY={}", default_key);
+        }
+    }
 }
 
 fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
@@ -271,7 +292,9 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 
     // If DSN has query parameters AND legacy config is set, this is an error
     if has_query_params && (has_callback_interval || has_transport_extra) {
-        let mut error_msg = String::from("Configuration error: Cannot use both DSN query parameters and legacy environment variables.\n");
+        let mut error_msg = String::from(
+            "Configuration error: Cannot use both DSN query parameters and legacy environment variables.\n",
+        );
         error_msg.push_str("Found query parameters in IMIX_CALLBACK_URI and one or more of:\n");
 
         if has_callback_interval {
