@@ -60,7 +60,7 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	// Send CLOSE
-	defer sendPortalClose(ctx, srv.graph, srv.portalMux, portalID)
+	defer sendPortalClose(context.Background(), srv.graph, srv.portalMux, portalID)
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
