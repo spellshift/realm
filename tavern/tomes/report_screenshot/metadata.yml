@@ -1,0 +1,5 @@
+name: Report screenshot
+description: Report a screenshot from the target host back to the c2 server.
+author: hulto
+support_model: FIRST_PARTY
+tactic: COLLECTION

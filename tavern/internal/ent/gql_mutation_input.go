@@ -8,9 +8,29 @@ import (
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/c2/epb"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/tome"
 )
+
+// CreateAdventureInput represents a mutation input for creating adventures.
+type CreateAdventureInput struct {
+	Name *string
+}
+
+// Mutate applies the CreateAdventureInput on the AdventureMutation builder.
+func (i *CreateAdventureInput) Mutate(m *AdventureMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateAdventureInput on the AdventureCreate builder.
+func (c *AdventureCreate) SetInput(i CreateAdventureInput) *AdventureCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
 
 // UpdateBeaconInput represents a mutation input for updating beacons.
 type UpdateBeaconInput struct {
@@ -36,6 +56,24 @@ func (c *BeaconUpdate) SetInput(i UpdateBeaconInput) *BeaconUpdate {
 
 // SetInput applies the change-set in the UpdateBeaconInput on the BeaconUpdateOne builder.
 func (c *BeaconUpdateOne) SetInput(i UpdateBeaconInput) *BeaconUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateBeaconHistoryInput represents a mutation input for creating beaconhistories.
+type CreateBeaconHistoryInput struct {
+	Latency  int64
+	BeaconID int
+}
+
+// Mutate applies the CreateBeaconHistoryInput on the BeaconHistoryMutation builder.
+func (i *CreateBeaconHistoryInput) Mutate(m *BeaconHistoryMutation) {
+	m.SetLatency(i.Latency)
+	m.SetBeaconID(i.BeaconID)
+}
+
+// SetInput applies the change-set in the CreateBeaconHistoryInput on the BeaconHistoryCreate builder.
+func (c *BeaconHistoryCreate) SetInput(i CreateBeaconHistoryInput) *BeaconHistoryCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -128,27 +166,30 @@ func (c *DeviceAuthUpdateOne) SetInput(i UpdateDeviceAuthInput) *DeviceAuthUpdat
 
 // UpdateHostInput represents a mutation input for updating hosts.
 type UpdateHostInput struct {
-	LastModifiedAt      *time.Time
-	ClearName           bool
-	Name                *string
-	ClearTags           bool
-	AddTagIDs           []int
-	RemoveTagIDs        []int
-	ClearBeacons        bool
-	AddBeaconIDs        []int
-	RemoveBeaconIDs     []int
-	ClearFiles          bool
-	AddFileIDs          []int
-	RemoveFileIDs       []int
-	ClearProcesses      bool
-	AddProcessIDs       []int
-	RemoveProcessIDs    []int
-	ClearCredentials    bool
-	AddCredentialIDs    []int
-	RemoveCredentialIDs []int
-	ClearScreenshots    bool
-	AddScreenshotIDs    []int
-	RemoveScreenshotIDs []int
+	LastModifiedAt       *time.Time
+	ClearName            bool
+	Name                 *string
+	ClearTags            bool
+	AddTagIDs            []int
+	RemoveTagIDs         []int
+	ClearBeacons         bool
+	AddBeaconIDs         []int
+	RemoveBeaconIDs      []int
+	ClearFiles           bool
+	AddFileIDs           []int
+	RemoveFileIDs        []int
+	ClearProcesses       bool
+	AddProcessIDs        []int
+	RemoveProcessIDs     []int
+	ClearCredentials     bool
+	AddCredentialIDs     []int
+	RemoveCredentialIDs  []int
+	ClearScreenshots     bool
+	AddScreenshotIDs     []int
+	RemoveScreenshotIDs  []int
+	ClearFavoritedBy     bool
+	AddFavoritedByIDs    []int
+	RemoveFavoritedByIDs []int
 }
 
 // Mutate applies the UpdateHostInput on the HostMutation builder.
@@ -215,6 +256,15 @@ func (i *UpdateHostInput) Mutate(m *HostMutation) {
 	}
 	if v := i.RemoveScreenshotIDs; len(v) > 0 {
 		m.RemoveScreenshotIDs(v...)
+	}
+	if i.ClearFavoritedBy {
+		m.ClearFavoritedBy()
+	}
+	if v := i.AddFavoritedByIDs; len(v) > 0 {
+		m.AddFavoritedByIDs(v...)
+	}
+	if v := i.RemoveFavoritedByIDs; len(v) > 0 {
+		m.RemoveFavoritedByIDs(v...)
 	}
 }
 
@@ -340,6 +390,50 @@ func (c *LinkUpdate) SetInput(i UpdateLinkInput) *LinkUpdate {
 
 // SetInput applies the change-set in the UpdateLinkInput on the LinkUpdateOne builder.
 func (c *LinkUpdateOne) SetInput(i UpdateLinkInput) *LinkUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateNotificationInput represents a mutation input for updating notifications.
+type UpdateNotificationInput struct {
+	LastModifiedAt *time.Time
+	Priority       *notification.Priority
+	Read           *bool
+	Archived       *bool
+	UserID         *int
+	EventID        *int
+}
+
+// Mutate applies the UpdateNotificationInput on the NotificationMutation builder.
+func (i *UpdateNotificationInput) Mutate(m *NotificationMutation) {
+	if v := i.LastModifiedAt; v != nil {
+		m.SetLastModifiedAt(*v)
+	}
+	if v := i.Priority; v != nil {
+		m.SetPriority(*v)
+	}
+	if v := i.Read; v != nil {
+		m.SetRead(*v)
+	}
+	if v := i.Archived; v != nil {
+		m.SetArchived(*v)
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
+	}
+	if v := i.EventID; v != nil {
+		m.SetEventID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdate builder.
+func (c *NotificationUpdate) SetInput(i UpdateNotificationInput) *NotificationUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateNotificationInput on the NotificationUpdateOne builder.
+func (c *NotificationUpdateOne) SetInput(i UpdateNotificationInput) *NotificationUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -506,6 +600,40 @@ func (i *CreateShellInput) Mutate(m *ShellMutation) {
 
 // SetInput applies the change-set in the CreateShellInput on the ShellCreate builder.
 func (c *ShellCreate) SetInput(i CreateShellInput) *ShellCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateShellPivotInput represents a mutation input for creating shellpivots.
+type CreateShellPivotInput struct {
+	StreamID     string
+	Kind         shellpivot.Kind
+	Destination  string
+	Port         int
+	ShellID      *int
+	PortalID     *int
+	CredentialID *int
+}
+
+// Mutate applies the CreateShellPivotInput on the ShellPivotMutation builder.
+func (i *CreateShellPivotInput) Mutate(m *ShellPivotMutation) {
+	m.SetStreamID(i.StreamID)
+	m.SetKind(i.Kind)
+	m.SetDestination(i.Destination)
+	m.SetPort(i.Port)
+	if v := i.ShellID; v != nil {
+		m.SetShellID(*v)
+	}
+	if v := i.PortalID; v != nil {
+		m.SetPortalID(*v)
+	}
+	if v := i.CredentialID; v != nil {
+		m.SetCredentialID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateShellPivotInput on the ShellPivotCreate builder.
+func (c *ShellPivotCreate) SetInput(i CreateShellPivotInput) *ShellPivotCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
@@ -680,19 +808,25 @@ func (c *TomeUpdateOne) SetInput(i UpdateTomeInput) *TomeUpdateOne {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name                 *string
-	PhotoURL             *string
-	IsActivated          *bool
-	IsAdmin              *bool
-	ClearTomes           bool
-	AddTomeIDs           []int
-	RemoveTomeIDs        []int
-	ClearActiveShells    bool
-	AddActiveShellIDs    []int
-	RemoveActiveShellIDs []int
-	ClearDeviceAuths     bool
-	AddDeviceAuthIDs     []int
-	RemoveDeviceAuthIDs  []int
+	Name                  *string
+	PhotoURL              *string
+	IsActivated           *bool
+	IsAdmin               *bool
+	ClearNotifications    bool
+	AddNotificationIDs    []int
+	RemoveNotificationIDs []int
+	ClearTomes            bool
+	AddTomeIDs            []int
+	RemoveTomeIDs         []int
+	ClearActiveShells     bool
+	AddActiveShellIDs     []int
+	RemoveActiveShellIDs  []int
+	ClearDeviceAuths      bool
+	AddDeviceAuthIDs      []int
+	RemoveDeviceAuthIDs   []int
+	ClearFavoriteHosts    bool
+	AddFavoriteHostIDs    []int
+	RemoveFavoriteHostIDs []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -708,6 +842,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.IsAdmin; v != nil {
 		m.SetIsAdmin(*v)
+	}
+	if i.ClearNotifications {
+		m.ClearNotifications()
+	}
+	if v := i.AddNotificationIDs; len(v) > 0 {
+		m.AddNotificationIDs(v...)
+	}
+	if v := i.RemoveNotificationIDs; len(v) > 0 {
+		m.RemoveNotificationIDs(v...)
 	}
 	if i.ClearTomes {
 		m.ClearTomes()
@@ -735,6 +878,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveDeviceAuthIDs; len(v) > 0 {
 		m.RemoveDeviceAuthIDs(v...)
+	}
+	if i.ClearFavoriteHosts {
+		m.ClearFavoriteHosts()
+	}
+	if v := i.AddFavoriteHostIDs; len(v) > 0 {
+		m.AddFavoriteHostIDs(v...)
+	}
+	if v := i.RemoveFavoriteHostIDs; len(v) > 0 {
+		m.RemoveFavoriteHostIDs(v...)
 	}
 }
 

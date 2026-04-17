@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 eldritch-agent = { path = "../../eldritch-agent" }
 pb = { path = "../../../pb" }
+tokio = { workspace = true, features = ["sync"] }
+async-trait = { workspace = true }

@@ -6,6 +6,8 @@ schema:
   - schema/mutation.graphql
   - schema/inputs.graphql
   - schema/user.graphql
+  - schema/metrics.graphql
+  - schema/quest.graphql
 
 model:
   package: models
@@ -67,3 +69,12 @@ models:
   BuildTaskTargetFormat:
     model:
       - realm.pub/tavern/internal/builder/builderpb.TargetFormat
+
+  Metrics:
+    fields:
+      questTimelineChart:
+        resolver: true
+      beaconTimelineChart:
+        resolver: true
+      tasksByTome:
+        resolver: true

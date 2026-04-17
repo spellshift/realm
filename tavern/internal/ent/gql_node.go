@@ -15,23 +15,28 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/semaphore"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -44,6 +49,11 @@ type Noder interface {
 	IsNode()
 }
 
+var adventureImplementors = []string{"Adventure", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Adventure) IsNode() {}
+
 var assetImplementors = []string{"Asset", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
@@ -53,6 +63,11 @@ var beaconImplementors = []string{"Beacon", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Beacon) IsNode() {}
+
+var beaconhistoryImplementors = []string{"BeaconHistory", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*BeaconHistory) IsNode() {}
 
 var buildprofileImplementors = []string{"BuildProfile", "Node"}
 
@@ -73,6 +88,11 @@ var deviceauthImplementors = []string{"DeviceAuth", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*DeviceAuth) IsNode() {}
+
+var eventImplementors = []string{"Event", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Event) IsNode() {}
 
 var hostImplementors = []string{"Host", "Node"}
 
@@ -98,6 +118,11 @@ var linkImplementors = []string{"Link", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Link) IsNode() {}
+
+var notificationImplementors = []string{"Notification", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*Notification) IsNode() {}
 
 var portalImplementors = []string{"Portal", "Node"}
 
@@ -128,6 +153,11 @@ var shellImplementors = []string{"Shell", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Shell) IsNode() {}
+
+var shellpivotImplementors = []string{"ShellPivot", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*ShellPivot) IsNode() {}
 
 var shelltaskImplementors = []string{"ShellTask", "Node"}
 
@@ -212,6 +242,15 @@ func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder
 
 func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error) {
 	switch table {
+	case adventure.Table:
+		query := c.Adventure.Query().
+			Where(adventure.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, adventureImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
 	case asset.Table:
 		query := c.Asset.Query().
 			Where(asset.ID(id))
@@ -226,6 +265,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(beacon.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, beaconImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case beaconhistory.Table:
+		query := c.BeaconHistory.Query().
+			Where(beaconhistory.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, beaconhistoryImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -262,6 +310,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(deviceauth.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, deviceauthImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case event.Table:
+		query := c.Event.Query().
+			Where(event.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, eventImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -307,6 +364,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(link.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, linkImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case notification.Table:
+		query := c.Notification.Query().
+			Where(notification.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, notificationImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -361,6 +427,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(shell.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case shellpivot.Table:
+		query := c.ShellPivot.Query().
+			Where(shellpivot.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, shellpivotImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -483,6 +558,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
+	case adventure.Table:
+		query := c.Adventure.Query().
+			Where(adventure.IDIn(ids...))
+		query, err := query.CollectFields(ctx, adventureImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
 	case asset.Table:
 		query := c.Asset.Query().
 			Where(asset.IDIn(ids...))
@@ -503,6 +594,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Beacon.Query().
 			Where(beacon.IDIn(ids...))
 		query, err := query.CollectFields(ctx, beaconImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case beaconhistory.Table:
+		query := c.BeaconHistory.Query().
+			Where(beaconhistory.IDIn(ids...))
+		query, err := query.CollectFields(ctx, beaconhistoryImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -567,6 +674,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.DeviceAuth.Query().
 			Where(deviceauth.IDIn(ids...))
 		query, err := query.CollectFields(ctx, deviceauthImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case event.Table:
+		query := c.Event.Query().
+			Where(event.IDIn(ids...))
+		query, err := query.CollectFields(ctx, eventImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -647,6 +770,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Link.Query().
 			Where(link.IDIn(ids...))
 		query, err := query.CollectFields(ctx, linkImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case notification.Table:
+		query := c.Notification.Query().
+			Where(notification.IDIn(ids...))
+		query, err := query.CollectFields(ctx, notificationImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -743,6 +882,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Shell.Query().
 			Where(shell.IDIn(ids...))
 		query, err := query.CollectFields(ctx, shellImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case shellpivot.Table:
+		query := c.ShellPivot.Query().
+			Where(shellpivot.IDIn(ids...))
+		query, err := query.CollectFields(ctx, shellpivotImplementors...)
 		if err != nil {
 			return nil, err
 		}

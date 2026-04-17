@@ -10,6 +10,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/graphql/generated"
 	"realm.pub/tavern/internal/graphql/models"
+	"realm.pub/tavern/internal/portals/mux"
 
 	"github.com/99designs/gqlgen/graphql"
 )
@@ -28,6 +29,13 @@ type Resolver struct {
 	importer     RepoImporter
 	builderCA    *x509.Certificate
 	builderCAKey ed25519.PrivateKey
+	portalMux    *mux.Mux
+}
+
+func WithPortalMux(portalMux *mux.Mux) Option {
+	return Option(func(resolver *Resolver) {
+		resolver.portalMux = portalMux
+	})
 }
 
 func WithBuilderCAKey(builderCAKey ed25519.PrivateKey) Option {
@@ -45,12 +53,12 @@ func WithBuilderCA(builderCA *x509.Certificate) Option {
 // NewSchema creates a graphql executable schema.
 func NewSchema(client *ent.Client, importer RepoImporter, options ...func(*Resolver)) graphql.ExecutableSchema {
 	resolver := &Resolver{
-		client:       client,
-		importer:     importer,
+		client:   client,
+		importer: importer,
 	}
 	for _, opt := range options {
-      opt(resolver)
-    }
+		opt(resolver)
+	}
 	cfg := generated.Config{
 		Resolvers: resolver,
 	}

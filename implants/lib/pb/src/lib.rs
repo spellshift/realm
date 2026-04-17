@@ -4,8 +4,8 @@ pub mod eldritch {
 pub mod c2 {
     include!("generated/c2.rs");
 }
-pub mod dns {
-    include!("generated/dns.rs");
+pub mod conv {
+    include!("generated/conv.rs");
 }
 pub mod portal {
     include!("generated/portal.rs");

@@ -46,7 +46,9 @@ export const GET_PROCESS_DETAIL_QUERY = gql`
                                 ppid
                                 name
                                 path
+                                cmd
                                 status
+                                startTime
                                 env
                                 cwd
                             }

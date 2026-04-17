@@ -13,6 +13,8 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
     table,
     sortType,
     showFiltering = true,
+    actions,
+    emptyStateAction,
 }) => {
     const { filterCount, resetFilters } = useFilters();
 
@@ -58,7 +60,9 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
                 <EmptyState
                     type={EmptyStateType.noData}
                     label="No data found"
-                />
+                >
+                    {emptyStateAction}
+                </EmptyState>
             );
         }
 
@@ -75,6 +79,7 @@ export const VirtualizedTableWrapper: React.FC<VirtualizedTableWrapperProps> = (
                     <p className='text-md text-gray-600'>{totalItems !== undefined && `(${totalItems})`}</p>
                 </div>
                 <div className="flex flex-row justify-end gap-2 w-full md:w-auto">
+                    {actions}
                     {sortType && <SortingControls sortType={sortType} />}
                     {showFiltering && <FilterControls />}
                 </div>

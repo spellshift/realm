@@ -207,6 +207,14 @@
     "signature": "assets.read(src: str) -> str",
     "description": "The **assets.read** method returns a UTF-8 string representation of the asset file.\n---"
   },
+  "chain": {
+    "signature": "chain",
+    "description": "The `chain` library enables multi-agent chaining by allowing one agent (Agent A) to proxy C2 traffic for another agent (Agent B). This is useful for establishing communication through intermediary agents in restricted networks."
+  },
+  "chain.tcp": {
+    "signature": "chain.tcp(addr: str) -> int",
+    "description": "The **chain.tcp** method establishes a chain proxy over TCP, allowing Agent A to forward C2 messages to/from Agent B. Agent A connects to Agent B's bind TCP transport listener at the specified address and proxies gRPC traffic over HTTP/2.\n**Parameters:**\n- `addr`: The address and port where Agent B is listening for chain connections (e.g., `\"192.168.1.100:8443\"`)\n**Returns:**\n- `0` on successful initialization (the proxy runs asynchronously in the background)\n**Example:**\n```python\n# Agent A connects to Agent B's bind TCP listener and starts proxying traffic\nchain.tcp(\"192.168.1.100:8443\")\n# Now Agent B's C2 messages flow through Agent A to Tavern\n```\n**Usage Pattern:**\nAgent A must have one of the standard transports (grpc, http1, dns) configured for its upstream connection to Tavern. Agent B is configured with a TCP bind transport to accept connections from Agent A on a TCP port.\n---"
+  },
   "crypto": {
     "signature": "crypto",
     "description": "The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing."
@@ -270,6 +278,14 @@
   "crypto.sha256": {
     "signature": "crypto.sha256(data: Bytes) -> str",
     "description": "The **crypto.sha256** method calculates the SHA256 hash of the provided data.\n---"
+  },
+  "dns": {
+    "signature": "dns",
+    "description": "The `dns` library enables DNS lookups within Eldritch scripts."
+  },
+  "dns.list": {
+    "signature": "dns.list(domain: str, kind: Option<str>, nameserver: Option<str>) -> List<str>",
+    "description": "The **dns.list** method resolves the given domain name to the specified DNS record type.\nIt natively supports querying `A`, `AAAA`, `CNAME`, `TXT`, `MX`, `SOA`, `NS`, `PTR`, `AXFR`, and `SRV` records. If `kind` is not provided, it defaults to \"A\".\nAn optional nameserver IP (e.g. \"8.8.8.8\") can be provided to query a specific DNS server instead of the system default.\n```python\n# Default to \"A\" records using system nameserver\nips = dns.list(\"google.com\")\nprint(ips) # Output: [\"142.251.41.14\", ...]\n# Fetch a CNAME explicitly\ncnames = dns.list(\"www.google.com\", kind=\"CNAME\")\nprint(cnames)\n# Custom nameserver\ncloudflare_ips = dns.list(\"google.com\", nameserver=\"1.1.1.1\")\nprint(cloudflare_ips)\n```\n---"
   },
   "file": {
     "signature": "file",
@@ -353,11 +369,19 @@
   },
   "file.temp_file": {
     "signature": "file.temp_file(name: Option<str>) -> str",
-    "description": "The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument."
+    "description": "The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument."
+  },
+  "file.tmp_dir": {
+    "signature": "file.tmp_dir() -> str",
+    "description": "The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns."
   },
   "file.template": {
     "signature": "file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None",
     "description": "The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.\nIf the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.\nThe `args` dictionary currently supports values of: `int`, `str`, and `List`.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)"
+  },
+  "file.template_str": {
+    "signature": "file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str",
+    "description": "Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.\n`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)\n```python\ntemplate = \"Hello, {{ name }}!\\n\"\nresult = file.template_str(template, {\"name\": \"world\"}, True)\n```"
   },
   "file.timestomp": {
     "signature": "file.timestomp(path: str, mtime: Option<int|str>, atime: Option<int|str>, ctime: Option<int|str>, ref_file: Option<str>) -> None",
@@ -541,11 +565,11 @@
   },
   "sys.dll_inject": {
     "signature": "sys.dll_inject(dll_path: str, pid: int) -> None",
-    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call."
+    "description": "The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.\nFor Imix DLLs, set `function_name` to `lib_entry`."
   },
   "sys.dll_reflect": {
     "signature": "sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None",
-    "description": "The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
+    "description": "The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.\nFor Imix DLLs, set `function_name` to `lib_entry`.\nThe ints in dll_bytes will be cast down from int u32 ---> u8 in rust.\nIf your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte."
   },
   "sys.exec": {
     "signature": "sys.exec(path: str, args: List<str>, disown: Optional<bool>, env_vars: Option<Dict<str, str>>, input: Option<str>) -> Dict",
@@ -568,8 +592,8 @@
     "description": "The **sys.get_pid** method returns the process ID of the current process.\nAn example is below:\n```python\n$> sys.get_pid()\n123456\n```"
   },
   "sys.get_reg": {
-    "signature": "sys.get_reg(reghive: str, regpath: str) -> Dict",
-    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\",\"SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
+    "signature": "sys.get_reg(path: str) -> Dict",
+    "description": "The **sys.get_reg** method returns the registry values at the requested registry path.\nAn example is below:\n```python\n$> sys.get_reg(\"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\")\n{\n\"ProgramFilesDir\": \"C:\\\\Program Files\",\n\"CommonFilesDir\": \"C:\\\\Program Files\\\\Common Files\",\n\"ProgramFilesDir (x86)\": \"C:\\\\Program Files (x86)\",\n\"CommonFilesDir (x86)\": \"C:\\\\Program Files (x86)\\\\Common Files\",\n\"CommonW6432Dir\": \"C:\\\\Program Files\\\\Common Files\",\n\"DevicePath\": \"%SystemRoot%\\\\inf\",\n\"MediaPathUnexpanded\": \"%SystemRoot%\\\\Media\",\n\"ProgramFilesPath\": \"%ProgramFiles%\",\n\"ProgramW6432Dir\": \"C:\\\\Program Files\",\n\"SM_ConfigureProgramsName\": \"Set Program Access and Defaults\",\n\"SM_GamesName\": \"Games\"\n}\n```"
   },
   "sys.get_user": {
     "signature": "sys.get_user() -> Dict",

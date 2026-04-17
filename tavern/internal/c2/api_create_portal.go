@@ -3,8 +3,9 @@ package c2
 import (
 	"context"
 	"log/slog"
-	"sync"
 	"time"
+
+	"realm.pub/tavern/internal/ent"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -57,23 +58,31 @@ func (srv *Server) CreatePortal(gstream c2pb.C2_CreatePortalServer) error {
 	defer cleanup()
 
 	// Send CLOSE
-	defer sendPortalClose(ctx, srv.portalMux, portalID)
+	defer sendPortalClose(ctx, srv.graph, srv.portalMux, portalID)
 
 	// Start goroutine to subscribe to portal input and send to gRPC stream
 	ctx, cancel := context.WithCancel(ctx)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func(ctx context.Context) {
-		defer wg.Done()
+
+	done := make(chan struct{}, 2)
+
+	go func() {
 		sendPortalInput(ctx, portalID, gstream, recv)
-	}(ctx)
+		done <- struct{}{}
+	}()
 
 	// Send portal output from gRPC stream to portal output topic
-	sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+	go func() {
+		sendPortalOutput(ctx, portalID, gstream, srv.portalMux)
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-done:
+	}
 
 	// Cleanup
 	cancel()
-	wg.Wait()
 
 	return nil
 }
@@ -164,11 +173,29 @@ func sendPortalInput(ctx context.Context, portalID int, gstream c2pb.C2_CreatePo
 					"error", err,
 				)
 			}
+
+			// Check for close message indicating portal termination
+			if payload := mote.GetBytes(); payload != nil && payload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+				if mote.GetStreamId() == "" {
+					slog.InfoContext(ctx, "received portal close, disconnecting agent", "portal_id", portalID)
+					return
+				}
+			}
 		}
 	}
 }
 
-func sendPortalClose(ctx context.Context, mux *mux.Mux, portalID int) {
+func sendPortalClose(ctx context.Context, graph *ent.Client, mux *mux.Mux, portalID int) {
+	// Update DB to Closed
+	if err := graph.Portal.UpdateOneID(portalID).
+		SetClosedAt(time.Now()).
+		Exec(context.Background()); err != nil {
+		slog.ErrorContext(ctx, "failed to update portal closed_at",
+			"portal_id", portalID,
+			"error", err,
+		)
+	}
+
 	portalOutTopic := mux.TopicOut(portalID)
 	if err := mux.Publish(ctx, portalOutTopic, &portalpb.Mote{
 		Payload: &portalpb.Mote_Bytes{

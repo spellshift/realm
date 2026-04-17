@@ -41,6 +41,8 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals"
 	"realm.pub/tavern/internal/portals/mux"
+	"realm.pub/tavern/internal/portals/ssh"
+	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/redirectors"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
@@ -51,6 +53,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/dns"
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
+	_ "realm.pub/tavern/internal/redirectors/icmp"
 )
 
 func init() {
@@ -337,10 +340,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/auth/rda/approve": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDAApproveHandler(client),
+			Handler: tavernhttp.NewRDAApproveHandler(client),
 		},
 		"/auth/rda/revoke": tavernhttp.Endpoint{
-			Handler:              tavernhttp.NewRDARevokeHandler(client),
+			Handler: tavernhttp.NewRDARevokeHandler(client),
 		},
 		"/api/auth/signout": tavernhttp.Endpoint{
 			Handler:              tavernhttp.NewSignoutHandler(),
@@ -367,7 +370,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated:     true,
 		},
 		"/graphql": tavernhttp.Endpoint{
-			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert)),
+			Handler:          newGraphQLHandler(client, git, graphql.WithBuilderCAKey(builderCAKey), graphql.WithBuilderCA(builderCACert), graphql.WithPortalMux(portalMux)),
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
@@ -408,6 +411,12 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/shell/ping": tavernhttp.Endpoint{
 			Handler: stream.NewPingHandler(client, wsShellMux),
+		},
+		"/portals/ssh/ws": tavernhttp.Endpoint{
+			Handler: ssh.NewHandler(client, portalMux),
+		},
+		"/portals/pty/ws": tavernhttp.Endpoint{
+			Handler: pty.NewHandler(client, portalMux),
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),

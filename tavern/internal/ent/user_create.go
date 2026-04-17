@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/host"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/shell"
 	"realm.pub/tavern/internal/ent/tome"
 	"realm.pub/tavern/internal/ent/user"
@@ -98,6 +100,21 @@ func (uc *UserCreate) SetNillableIsAdmin(b *bool) *UserCreate {
 	return uc
 }
 
+// AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
+func (uc *UserCreate) AddNotificationIDs(ids ...int) *UserCreate {
+	uc.mutation.AddNotificationIDs(ids...)
+	return uc
+}
+
+// AddNotifications adds the "notifications" edges to the Notification entity.
+func (uc *UserCreate) AddNotifications(n ...*Notification) *UserCreate {
+	ids := make([]int, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return uc.AddNotificationIDs(ids...)
+}
+
 // AddTomeIDs adds the "tomes" edge to the Tome entity by IDs.
 func (uc *UserCreate) AddTomeIDs(ids ...int) *UserCreate {
 	uc.mutation.AddTomeIDs(ids...)
@@ -141,6 +158,21 @@ func (uc *UserCreate) AddDeviceAuths(d ...*DeviceAuth) *UserCreate {
 		ids[i] = d[i].ID
 	}
 	return uc.AddDeviceAuthIDs(ids...)
+}
+
+// AddFavoriteHostIDs adds the "favoriteHosts" edge to the Host entity by IDs.
+func (uc *UserCreate) AddFavoriteHostIDs(ids ...int) *UserCreate {
+	uc.mutation.AddFavoriteHostIDs(ids...)
+	return uc
+}
+
+// AddFavoriteHosts adds the "favoriteHosts" edges to the Host entity.
+func (uc *UserCreate) AddFavoriteHosts(h ...*Host) *UserCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uc.AddFavoriteHostIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -289,6 +321,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldIsAdmin, field.TypeBool, value)
 		_node.IsAdmin = value
 	}
+	if nodes := uc.mutation.NotificationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.NotificationsTable,
+			Columns: []string{user.NotificationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(notification.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := uc.mutation.TomesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -330,6 +378,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(deviceauth.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.FavoriteHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.FavoriteHostsTable,
+			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

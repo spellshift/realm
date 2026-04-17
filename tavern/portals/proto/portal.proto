@@ -12,6 +12,7 @@ enum BytesPayloadKind {
     BYTES_PAYLOAD_KIND_KEEPALIVE = 3;
     BYTES_PAYLOAD_KIND_TRACE = 4;
     BYTES_PAYLOAD_KIND_CLOSE = 5;
+    BYTES_PAYLOAD_KIND_PTY = 6;
 }
 message BytesPayload {
     bytes data = 1;

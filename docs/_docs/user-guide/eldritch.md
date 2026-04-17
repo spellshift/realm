@@ -459,6 +459,37 @@ The **assets.read** method returns a UTF-8 string representation of the asset fi
 
 ---
 
+## Chain
+
+The `chain` library enables multi-agent chaining by allowing one agent (Agent A) to proxy C2 traffic for another agent (Agent B). This is useful for establishing communication through intermediary agents in restricted networks.
+
+### chain.tcp
+
+`chain.tcp(addr: str) -> int`
+
+The **chain.tcp** method establishes a chain proxy over TCP, allowing Agent A to forward C2 messages to/from Agent B. Agent A connects to Agent B's bind TCP transport listener at the specified address and proxies gRPC traffic over HTTP/2.
+
+**Parameters:**
+- `addr`: The address and port where Agent B is listening for chain connections (e.g., `"192.168.1.100:8443"`)
+
+**Returns:**
+- `0` on successful initialization (the proxy runs asynchronously in the background)
+
+**Example:**
+
+```python
+# Agent A connects to Agent B's bind TCP listener and starts proxying traffic
+chain.tcp("192.168.1.100:8443")
+
+# Now Agent B's C2 messages flow through Agent A to Tavern
+```
+
+**Usage Pattern:**
+
+Agent A must have one of the standard transports (grpc, http1, dns) configured for its upstream connection to Tavern. Agent B is configured with a TCP bind transport to accept connections from Agent A on a TCP port.
+
+---
+
 ## Crypto
 
 The `crypto` library offers functionalities to encrypt, decrypt, and hash data. It includes support for algorithms like AES, MD5, SHA1, and SHA256, as well as helpers for base64 encoding and JSON parsing.
@@ -593,6 +624,34 @@ The **crypto.sha1** method calculates the SHA1 hash of the provided data.
 `crypto.sha256(data: Bytes) -> str`
 
 The **crypto.sha256** method calculates the SHA256 hash of the provided data.
+
+---
+
+## DNS
+
+The `dns` library enables DNS lookups within Eldritch scripts.
+
+### dns.list
+
+`dns.list(domain: str, kind: Option<str>, nameserver: Option<str>) -> List<str>`
+
+The **dns.list** method resolves the given domain name to the specified DNS record type.
+It natively supports querying `A`, `AAAA`, `CNAME`, `TXT`, `MX`, `SOA`, `NS`, `PTR`, `AXFR`, and `SRV` records. If `kind` is not provided, it defaults to "A".
+An optional nameserver IP (e.g. "8.8.8.8") can be provided to query a specific DNS server instead of the system default.
+
+```python
+# Default to "A" records using system nameserver
+ips = dns.list("google.com")
+print(ips) # Output: ["142.251.41.14", ...]
+
+# Fetch a CNAME explicitly
+cnames = dns.list("www.google.com", kind="CNAME")
+print(cnames)
+
+# Custom nameserver
+cloudflare_ips = dns.list("google.com", nameserver="1.1.1.1")
+print(cloudflare_ips)
+```
 
 ---
 
@@ -798,16 +857,35 @@ The **file.replace_all** method finds all strings matching a regex pattern in th
 
 `file.temp_file(name: Option<str>) -> str`
 
-The ** file.temp** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+The **file.temp_file** method returns the path of a new temporary file with a random filename or the optional filename provided as an argument.
+
+### file.tmp_dir
+
+`file.tmp_dir() -> str`
+
+The **file.tmp_dir** method creates a temporary directory and returns its absolute path. Operates similar to `mktemp -d`. The directory persists after the function returns.
 
 ### file.template
-
+  
 `file.template(template_path: str, dst: str, args: Dict<String, Value>, autoescape: bool) -> None`
 
 The **file.template** method reads a Jinja2 template file from disk, fill in the variables using `args` and then write it to the destination specified.
 If the destination file doesn't exist it will be created (if the parent directory exists). If the destination file does exist it will be overwritten.
 The `args` dictionary currently supports values of: `int`, `str`, and `List`.
 `autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+### file.template_str
+
+`file.template_str(template_str: str, args: Dict<String, Value>, autoescape: bool) -> str`
+
+Rather than reading a Jinja2 template file from disk, **template_str** accepts a Jinja2 template string directly, renders it using the provided `args`, and returns the result as a string.
+
+`autoescape` when `True` will perform HTML character escapes according to the [OWASP XSS guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+
+```python
+template = "Hello, {{ name }}!\n"
+result = file.template_str(template, {"name": "world"}, True)
+```
 
 ### file.timestomp
 
@@ -1245,11 +1323,15 @@ The `sys` library offers general system capabilities to retrieve context about t
 
 The **sys.dll_inject** method will attempt to inject a dll on disk into a remote process by using the `CreateRemoteThread` function call.
 
+For Imix DLLs, set `function_name` to `lib_entry`.
+
 ### sys.dll_reflect
 
 `sys.dll_reflect(dll_bytes: List<int>, pid: int, function_name: str) -> None`
 
 The **sys.dll_reflect** method will attempt to inject a dll from memory into a remote process by using the loader defined in `realm/bin/reflective_loader`.
+
+For Imix DLLs, set `function_name` to `lib_entry`.
 
 The ints in dll_bytes will be cast down from int u32 ---> u8 in rust.
 If your dll_bytes array contains a value greater than u8::MAX it will cause the function to fail. If you're doing any decryption in starlark make sure to be careful of the u8::MAX bound for each byte.
@@ -1349,13 +1431,13 @@ $> sys.get_pid()
 
 ### sys.get_reg
 
-`sys.get_reg(reghive: str, regpath: str) -> Dict`
+`sys.get_reg(path: str) -> Dict`
 
 The **sys.get_reg** method returns the registry values at the requested registry path.
 An example is below:
 
 ```python
-$> sys.get_reg("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+$> sys.get_reg("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
 {
     "ProgramFilesDir": "C:\\Program Files",
     "CommonFilesDir": "C:\\Program Files\\Common Files",

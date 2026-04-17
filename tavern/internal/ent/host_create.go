@@ -13,12 +13,14 @@ import (
 	"entgo.io/ent/schema/field"
 	"realm.pub/tavern/internal/c2/c2pb"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/tag"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // HostCreate is the builder for creating a Host entity.
@@ -227,6 +229,36 @@ func (hc *HostCreate) AddScreenshots(s ...*Screenshot) *HostCreate {
 		ids[i] = s[i].ID
 	}
 	return hc.AddScreenshotIDs(ids...)
+}
+
+// AddFavoritedByIDs adds the "favoritedBy" edge to the User entity by IDs.
+func (hc *HostCreate) AddFavoritedByIDs(ids ...int) *HostCreate {
+	hc.mutation.AddFavoritedByIDs(ids...)
+	return hc
+}
+
+// AddFavoritedBy adds the "favoritedBy" edges to the User entity.
+func (hc *HostCreate) AddFavoritedBy(u ...*User) *HostCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return hc.AddFavoritedByIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (hc *HostCreate) AddEventIDs(ids ...int) *HostCreate {
+	hc.mutation.AddEventIDs(ids...)
+	return hc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (hc *HostCreate) AddEvents(e ...*Event) *HostCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return hc.AddEventIDs(ids...)
 }
 
 // Mutation returns the HostMutation object of the builder.
@@ -455,6 +487,38 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(screenshot.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.FavoritedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.FavoritedByTable,
+			Columns: host.FavoritedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   host.EventsTable,
+			Columns: []string{host.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

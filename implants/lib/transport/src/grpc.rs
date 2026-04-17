@@ -1,4 +1,5 @@
 use anyhow::Result;
+use bytes::{Buf, BufMut};
 use http::Uri;
 use pb::c2::*;
 use pb::config::Config;
@@ -13,6 +14,54 @@ use crate::Transport;
 
 use crate::tls_utils::AcceptAllCertVerifier;
 use std::sync::Arc;
+
+// RawCodec is a passthrough tonic codec that sends/receives raw byte slices unchanged.
+// Used by forward_raw so that pre-encrypted bytes from Agent B aren't re-encoded.
+#[derive(Debug, Default, Clone)]
+struct RawCodec;
+impl tonic::codec::Codec for RawCodec {
+    type Encode = Vec<u8>;
+    type Decode = Vec<u8>;
+    type Encoder = RawEncoder;
+    type Decoder = RawDecoder;
+    fn encoder(&mut self) -> Self::Encoder {
+        RawEncoder
+    }
+    fn decoder(&mut self) -> Self::Decoder {
+        RawDecoder
+    }
+}
+#[derive(Debug, Default, Clone)]
+struct RawEncoder;
+impl tonic::codec::Encoder for RawEncoder {
+    type Item = Vec<u8>;
+    type Error = tonic::Status;
+    fn encode(
+        &mut self,
+        item: Self::Item,
+        buf: &mut tonic::codec::EncodeBuf<'_>,
+    ) -> std::result::Result<(), Self::Error> {
+        buf.put_slice(&item);
+        Ok(())
+    }
+}
+#[derive(Debug, Default, Clone)]
+struct RawDecoder;
+impl tonic::codec::Decoder for RawDecoder {
+    type Item = Vec<u8>;
+    type Error = tonic::Status;
+    fn decode(
+        &mut self,
+        buf: &mut tonic::codec::DecodeBuf<'_>,
+    ) -> std::result::Result<Option<Self::Item>, Self::Error> {
+        if !buf.has_remaining() {
+            return Ok(None);
+        }
+        let chunk = buf.chunk().to_vec();
+        buf.advance(chunk.len());
+        Ok(Some(chunk))
+    }
+}
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -340,6 +389,59 @@ impl Transport for GRPC {
 
     fn list_available(&self) -> Vec<String> {
         vec!["grpc".to_string()]
+    }
+
+    async fn forward_raw(
+        &mut self,
+        path: String,
+        rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> anyhow::Result<()> {
+        if self.grpc.is_none() {
+            return Err(anyhow::anyhow!("grpc client not created"));
+        }
+        self.grpc
+            .as_mut()
+            .unwrap()
+            .ready()
+            .await
+            .map_err(|e| anyhow::anyhow!("Service was not ready: {}", e))?;
+
+        // Agent B already ChaCha-encodes its messages before sending over UDS/TCP.
+        // Using RawCodec here forwards those bytes unchanged so Tavern sees
+        // exactly one layer of ChaCha encryption (not two).
+        let codec = RawCodec;
+        let uri_path = tonic::codegen::http::uri::PathAndQuery::try_from(path)?;
+
+        let req_stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+        let req = tonic::Request::new(req_stream);
+
+        let resp = self
+            .grpc
+            .as_mut()
+            .unwrap()
+            .streaming(req, uri_path, codec)
+            .await?;
+        let mut resp_stream = resp.into_inner();
+
+        tokio::spawn(async move {
+            while let Some(msg) = match resp_stream.message().await {
+                Ok(m) => m,
+                Err(_err) => {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to receive gRPC stream response: {}", _err);
+                    None
+                }
+            } {
+                if tx.send(msg).await.is_err() {
+                    #[cfg(debug_assertions)]
+                    log::error!("failed to queue remote input");
+                    return;
+                }
+            }
+        });
+
+        Ok(())
     }
 }
 

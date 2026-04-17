@@ -53,6 +53,7 @@ impl Default for MockAgent {
     }
 }
 
+#[async_trait::async_trait]
 impl Agent for MockAgent {
     fn get_config(&self) -> Result<BTreeMap<String, String>, String> {
         Ok(self.config.read().unwrap().clone())
@@ -195,6 +196,15 @@ impl Agent for MockAgent {
     }
 
     fn stop_task(&self, _task_id: i64) -> Result<(), String> {
+        Ok(())
+    }
+
+    async fn forward_raw(
+        &self,
+        _path: String,
+        _rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+        _tx: tokio::sync::mpsc::Sender<Vec<u8>>,
+    ) -> Result<(), String> {
         Ok(())
     }
 }

@@ -35,11 +35,8 @@ func TestTokenAuthenticate(t *testing.T) {
 func TestAuthenticate(t *testing.T) {
 	// Setup Dependencies
 	ctx := context.Background()
-	var (
-		driverName     = "sqlite3"
-		dataSourceName = "file:ent?mode=memory&cache=shared&_fk=1"
-	)
-	graph := enttest.Open(t, driverName, dataSourceName, enttest.WithOptions())
+
+	graph := enttest.OpenTempDB(t)
 	defer graph.Close()
 
 	// Create Test User
@@ -88,6 +85,8 @@ func TestAuthenticate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TAVERN_USE_BROWSER_OAUTH", "1")
+
 			// Setup Timeout
 			deadline, ok := t.Deadline()
 			if !ok {

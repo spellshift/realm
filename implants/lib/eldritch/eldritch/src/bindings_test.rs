@@ -26,7 +26,7 @@ fn create_interp() -> Interpreter {
     }
     #[cfg(not(feature = "stdlib"))]
     {
-        Interpreter::new().with_default_libs()
+        Interpreter::new()
     }
 }
 
@@ -79,6 +79,7 @@ fn test_file_bindings() {
             "replace_all",
             "temp_file",
             "template",
+            "template_str",
             "timestomp",
             "write",
             "write_binary",

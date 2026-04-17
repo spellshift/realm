@@ -162,15 +162,15 @@ pub trait FileLibrary {
     /// Lists files in a directory recursively, sorted by most recent modification time.
     ///
     /// **Parameters**
-    /// - `path` (`str`): The directory to scan. Defaults to "/".
-    /// - `limit` (`int`): The maximum number of files to return. Defaults to 10.
+    /// - `path` (`Option<str>`): The directory to scan. Defaults to "/".
+    /// - `limit` (`Option<int>`): The maximum number of files to return. Defaults to 10.
     ///
     /// **Returns**
     /// - `List<str>`: A list of file paths sorted by modification time (descending).
     ///
     /// **Errors**
     /// - Returns an error string if scanning fails.
-    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String>;
+    fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String>;
 
     #[eldritch_method]
     /// Creates a new directory.
@@ -306,6 +306,19 @@ pub trait FileLibrary {
     fn temp_file(&self, name: Option<String>) -> Result<String, String>;
 
     #[eldritch_method]
+    /// Creates a temporary directory and returns its path.
+    ///
+    /// The directory persists after this function returns.
+    /// Operates similar to `mktemp -d`.
+    ///
+    /// **Returns**
+    /// - `str`: The absolute path to the temporary directory.
+    ///
+    /// **Errors**
+    /// - Returns an error string if creation fails.
+    fn tmp_dir(&self) -> Result<String, String>;
+
+    #[eldritch_method]
     /// Renders a Jinja2 template file to a destination path.
     ///
     /// **Parameters**
@@ -326,6 +339,26 @@ pub trait FileLibrary {
         args: BTreeMap<String, Value>,
         autoescape: bool,
     ) -> Result<(), String>;
+
+    #[eldritch_method]
+    /// Renders a template string and writes it to a file.
+    ///
+    /// **Parameters**
+    /// - `template` (`str`): The template string to render.
+    /// - `args` (`Dict<str, Value>`): Variables to substitute in the template.
+    /// - `autoescape` (`bool`): Whether to enable HTML auto-escaping (OWASP recommendations).
+    ///
+    /// **Returns**
+    /// - Returns the template as a string
+    ///
+    /// **Errors**
+    /// - Returns an error string if the template cannot be parsed or written.
+    fn template_str(
+        &self,
+        template: String,
+        args: BTreeMap<String, Value>,
+        autoescape: bool,
+    ) -> Result<String, String>;
 
     #[eldritch_method]
     /// Timestomps a file.

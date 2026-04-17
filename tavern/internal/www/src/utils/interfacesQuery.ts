@@ -1,4 +1,4 @@
-import { OrderDirection, QuestOrderField, TaskOrderField, HostOrderField, RepositoryOrderField } from "./enums";
+import { OrderDirection, QuestOrderField, TaskOrderField, HostOrderField, RepositoryOrderField, NotificationPriority, EventKind } from "./enums";
 
 export type Cursor = string | null;
 
@@ -119,6 +119,7 @@ export interface UserNode {
     photoURL: string;
     isActivated: boolean;
     isAdmin: boolean;
+    notifications?: NotificationConnection;
 }
 
 export interface UserEdge {
@@ -382,7 +383,9 @@ export interface ProcessNode {
     ppid: number;
     name: string;
     path: string | null;
+    cmd: string | null;
     status: string;
+    startTime: number | null;
     env: string | null;
     cwd: string | null;
 }
@@ -465,4 +468,35 @@ export interface GetTomeIdsQueryVariables {
 
 export interface GetTomeDetailQueryVariables {
     id: string;
+}
+
+export interface EventNode {
+    id: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    timestamp: number;
+    kind: EventKind;
+    beacon?: BeaconNode;
+    host?: HostNode;
+    quest?: QuestNode;
+}
+
+export interface NotificationNode {
+    id: string;
+    createdAt: string;
+    lastModifiedAt: string;
+    priority: NotificationPriority;
+    read: boolean;
+    archived: boolean;
+    event: EventNode;
+}
+
+export interface NotificationEdge {
+    node: NotificationNode;
+}
+
+export interface NotificationConnection {
+    edges: NotificationEdge[];
+    pageInfo: QueryPageInfo;
+    totalCount: number;
 }

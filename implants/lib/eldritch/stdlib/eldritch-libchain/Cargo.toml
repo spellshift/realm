@@ -1,0 +1,35 @@
+[package]
+name = "eldritch-libchain"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+pb = { workspace = true, optional = true }
+anyhow = { workspace = true }
+tokio = { workspace = true, features = ["net", "rt-multi-thread", "sync"], optional = true }
+tonic = { workspace = true, optional = true }
+bytes = { workspace = true, optional = true }
+log = { workspace = true, optional = true }
+prost = { workspace = true, optional = true }
+hyper = { workspace = true, features = ["server", "http2"], optional = true }
+hyper-util = { workspace = true, features = ["tokio"], optional = true }
+http-body-util = { workspace = true, optional = true }
+eldritch-agent = { workspace = true, optional = true }
+eldritch-core = { workspace = true }
+eldritch-macros = { workspace = true }
+
+[features]
+default = ["stdlib"]
+stdlib = [
+    "dep:pb",
+    "dep:tokio",
+    "dep:tonic",
+    "dep:bytes",
+    "dep:log",
+    "dep:prost",
+    "dep:hyper",
+    "dep:hyper-util",
+    "dep:http-body-util",
+    "dep:eldritch-agent",
+]
+fake_bindings = []

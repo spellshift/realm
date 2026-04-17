@@ -4,9 +4,8 @@ import { sub } from "date-fns";
 import { useHost } from "../../../../context/HostContext";
 import { GET_TOME_IDS_QUERY } from "../../../../utils/queries";
 import { GET_ONLINE_HOST_BEACONS_QUERY } from "../queries";
-import { getPriotizedBeaconId, safelyJsonParse } from "../../../../utils/utils";
+import { getPriotizedBeaconId } from "../../../../utils/utils";
 import { CreateQuestInitialData } from "../../../../context/CreateQuestModalContext";
-import { FieldInputParams } from "../../../../utils/interfacesUI";
 import {
     TomeIdNode,
     TomeIdsQueryTopLevel,
@@ -21,11 +20,6 @@ interface BeaconQueryResponse {
     };
 }
 
-function buildParams(paramDefs: string | null): FieldInputParams[] {
-    const { params = [] } = safelyJsonParse(paramDefs || "");
-    return params.map((param: FieldInputParams) => ({ ...param, value: "*" }));
-}
-
 function buildFormData(
     hostName: string,
     tome: TomeIdNode,
@@ -37,7 +31,7 @@ function buildFormData(
     return {
         name: `Populate ${hostName} Process list`,
         tomeId: tome.id,
-        params: buildParams(tome.paramDefs),
+        params: [],
         beacons: beaconId ? [beaconId] : [],
         initialFilters: initialFilters
     };

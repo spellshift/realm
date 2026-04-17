@@ -72,7 +72,13 @@ where
         }
 
         let include = match cond {
-            Some(c) => is_truthy(&evaluate(interp, c)?),
+            Some(c) => match evaluate(interp, c) {
+                Ok(val) => is_truthy(&val),
+                Err(e) => {
+                    interp.env = original_env;
+                    return Err(e);
+                }
+            },
             None => true,
         };
         if include {

@@ -9,6 +9,7 @@ struct TransportConfig {
     uri: String,
     #[serde(rename = "type")]
     transport_type: String,
+    #[serde(default)]
     extra: String,
     #[serde(default)]
     interval: Option<u64>,
@@ -87,7 +88,7 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
     for transport in &config.transports {
         // Validate transport type
         let transport_type_lower = transport.transport_type.to_lowercase();
-        if !["grpc", "http1", "dns"].contains(&transport_type_lower.as_str()) {
+        if !["grpc", "http1", "dns", "icmp"].contains(&transport_type_lower.as_str()) {
             return Err(format!(
                 "Invalid transport type '{}'. Must be one of: GRPC, http1, DNS",
                 transport.transport_type
@@ -391,23 +392,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(_) => println!("generated c2 protos"),
     };
 
-    // Build DNS Protos (no encryption codec - used for transport layer only)
+    // Build Conv Protos (no encryption codec - shared conversation protocol)
     match tonic_prost_build::configure()
         .out_dir("./src/generated")
         .build_server(false)
         .build_client(false)
         .compile_protos(
-            &["dns.proto"],
+            &["conv.proto"],
             &[
                 "../../../tavern/internal/c2/proto/",
                 "../../../tavern/portals/proto/",
             ],
         ) {
         Err(err) => {
-            println!("WARNING: Failed to compile dns protos: {}", err);
+            println!("WARNING: Failed to compile conv protos: {}", err);
             panic!("{}", err);
         }
-        Ok(_) => println!("generated dns protos"),
+        Ok(_) => println!("generated conv protos"),
     };
 
     Ok(())

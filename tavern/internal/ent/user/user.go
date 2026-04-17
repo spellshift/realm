@@ -26,14 +26,25 @@ const (
 	FieldIsActivated = "is_activated"
 	// FieldIsAdmin holds the string denoting the is_admin field in the database.
 	FieldIsAdmin = "is_admin"
+	// EdgeNotifications holds the string denoting the notifications edge name in mutations.
+	EdgeNotifications = "notifications"
 	// EdgeTomes holds the string denoting the tomes edge name in mutations.
 	EdgeTomes = "tomes"
 	// EdgeActiveShells holds the string denoting the active_shells edge name in mutations.
 	EdgeActiveShells = "active_shells"
 	// EdgeDeviceAuths holds the string denoting the device_auths edge name in mutations.
 	EdgeDeviceAuths = "device_auths"
+	// EdgeFavoriteHosts holds the string denoting the favoritehosts edge name in mutations.
+	EdgeFavoriteHosts = "favoriteHosts"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// NotificationsTable is the table that holds the notifications relation/edge.
+	NotificationsTable = "notifications"
+	// NotificationsInverseTable is the table name for the Notification entity.
+	// It exists in this package in order to avoid circular dependency with the "notification" package.
+	NotificationsInverseTable = "notifications"
+	// NotificationsColumn is the table column denoting the notifications relation/edge.
+	NotificationsColumn = "notification_user"
 	// TomesTable is the table that holds the tomes relation/edge.
 	TomesTable = "tomes"
 	// TomesInverseTable is the table name for the Tome entity.
@@ -53,6 +64,11 @@ const (
 	DeviceAuthsInverseTable = "device_auths"
 	// DeviceAuthsColumn is the table column denoting the device_auths relation/edge.
 	DeviceAuthsColumn = "device_auth_user"
+	// FavoriteHostsTable is the table that holds the favoriteHosts relation/edge. The primary key declared below.
+	FavoriteHostsTable = "user_favoriteHosts"
+	// FavoriteHostsInverseTable is the table name for the Host entity.
+	// It exists in this package in order to avoid circular dependency with the "host" package.
+	FavoriteHostsInverseTable = "hosts"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -77,6 +93,9 @@ var (
 	// ActiveShellsPrimaryKey and ActiveShellsColumn2 are the table columns denoting the
 	// primary key for the active_shells relation (M2M).
 	ActiveShellsPrimaryKey = []string{"shell_id", "user_id"}
+	// FavoriteHostsPrimaryKey and FavoriteHostsColumn2 are the table columns denoting the
+	// primary key for the favoriteHosts relation (M2M).
+	FavoriteHostsPrimaryKey = []string{"user_id", "host_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -154,6 +173,20 @@ func ByIsAdmin(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsAdmin, opts...).ToFunc()
 }
 
+// ByNotificationsCount orders the results by notifications count.
+func ByNotificationsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newNotificationsStep(), opts...)
+	}
+}
+
+// ByNotifications orders the results by notifications terms.
+func ByNotifications(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newNotificationsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByTomesCount orders the results by tomes count.
 func ByTomesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -195,6 +228,27 @@ func ByDeviceAuths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newDeviceAuthsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByFavoriteHostsCount orders the results by favoriteHosts count.
+func ByFavoriteHostsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFavoriteHostsStep(), opts...)
+	}
+}
+
+// ByFavoriteHosts orders the results by favoriteHosts terms.
+func ByFavoriteHosts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFavoriteHostsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newNotificationsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(NotificationsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, NotificationsTable, NotificationsColumn),
+	)
+}
 func newTomesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -214,5 +268,12 @@ func newDeviceAuthsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(DeviceAuthsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, DeviceAuthsTable, DeviceAuthsColumn),
+	)
+}
+func newFavoriteHostsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FavoriteHostsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, false, FavoriteHostsTable, FavoriteHostsPrimaryKey...),
 	)
 }

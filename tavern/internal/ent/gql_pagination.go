@@ -15,23 +15,28 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
 	"realm.pub/tavern/internal/ent/beacon"
+	"realm.pub/tavern/internal/ent/beaconhistory"
 	"realm.pub/tavern/internal/ent/builder"
 	"realm.pub/tavern/internal/ent/buildprofile"
 	"realm.pub/tavern/internal/ent/buildtask"
 	"realm.pub/tavern/internal/ent/deviceauth"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/hostcredential"
 	"realm.pub/tavern/internal/ent/hostfile"
 	"realm.pub/tavern/internal/ent/hostprocess"
 	"realm.pub/tavern/internal/ent/link"
+	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/portal"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/repository"
 	"realm.pub/tavern/internal/ent/scheduledtask"
 	"realm.pub/tavern/internal/ent/screenshot"
 	"realm.pub/tavern/internal/ent/shell"
+	"realm.pub/tavern/internal/ent/shellpivot"
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
@@ -117,6 +122,374 @@ func paginateLimit(first, last *int) int {
 		limit = *last + 1
 	}
 	return limit
+}
+
+// AdventureEdge is the edge representation of Adventure.
+type AdventureEdge struct {
+	Node   *Adventure `json:"node"`
+	Cursor Cursor     `json:"cursor"`
+}
+
+// AdventureConnection is the connection containing edges to Adventure.
+type AdventureConnection struct {
+	Edges      []*AdventureEdge `json:"edges"`
+	PageInfo   PageInfo         `json:"pageInfo"`
+	TotalCount int              `json:"totalCount"`
+}
+
+func (c *AdventureConnection) build(nodes []*Adventure, pager *adventurePager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Adventure
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Adventure {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Adventure {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*AdventureEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &AdventureEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// AdventurePaginateOption enables pagination customization.
+type AdventurePaginateOption func(*adventurePager) error
+
+// WithAdventureOrder configures pagination ordering.
+func WithAdventureOrder(order []*AdventureOrder) AdventurePaginateOption {
+	return func(pager *adventurePager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithAdventureFilter configures pagination filter.
+func WithAdventureFilter(filter func(*AdventureQuery) (*AdventureQuery, error)) AdventurePaginateOption {
+	return func(pager *adventurePager) error {
+		if filter == nil {
+			return errors.New("AdventureQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type adventurePager struct {
+	reverse bool
+	order   []*AdventureOrder
+	filter  func(*AdventureQuery) (*AdventureQuery, error)
+}
+
+func newAdventurePager(opts []AdventurePaginateOption, reverse bool) (*adventurePager, error) {
+	pager := &adventurePager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *adventurePager) applyFilter(query *AdventureQuery) (*AdventureQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *adventurePager) toCursor(a *Adventure) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(a).Value)
+	}
+	return Cursor{ID: a.ID, Value: cs_}
+}
+
+func (p *adventurePager) applyCursors(query *AdventureQuery, after, before *Cursor) (*AdventureQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultAdventureOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *adventurePager) applyOrder(query *AdventureQuery) *AdventureQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultAdventureOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultAdventureOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *adventurePager) orderExpr(query *AdventureQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultAdventureOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Adventure.
+func (a *AdventureQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...AdventurePaginateOption,
+) (*AdventureConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newAdventurePager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if a, err = pager.applyFilter(a); err != nil {
+		return nil, err
+	}
+	conn := &AdventureConnection{Edges: []*AdventureEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := a.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if a, err = pager.applyCursors(a, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		a.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := a.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	a = pager.applyOrder(a)
+	nodes, err := a.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// AdventureOrderFieldCreatedAt orders Adventure by created_at.
+	AdventureOrderFieldCreatedAt = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.CreatedAt, nil
+		},
+		column: adventure.FieldCreatedAt,
+		toTerm: adventure.ByCreatedAt,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.CreatedAt,
+			}
+		},
+	}
+	// AdventureOrderFieldLastModifiedAt orders Adventure by last_modified_at.
+	AdventureOrderFieldLastModifiedAt = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.LastModifiedAt, nil
+		},
+		column: adventure.FieldLastModifiedAt,
+		toTerm: adventure.ByLastModifiedAt,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.LastModifiedAt,
+			}
+		},
+	}
+	// AdventureOrderFieldName orders Adventure by name.
+	AdventureOrderFieldName = &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.Name, nil
+		},
+		column: adventure.FieldName,
+		toTerm: adventure.ByName,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.Name,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f AdventureOrderField) String() string {
+	var str string
+	switch f.column {
+	case AdventureOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case AdventureOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case AdventureOrderFieldName.column:
+		str = "NAME"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f AdventureOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *AdventureOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("AdventureOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *AdventureOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *AdventureOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *AdventureOrderFieldName
+	default:
+		return fmt.Errorf("%s is not a valid AdventureOrderField", str)
+	}
+	return nil
+}
+
+// AdventureOrderField defines the ordering field of Adventure.
+type AdventureOrderField struct {
+	// Value extracts the ordering value from the given Adventure.
+	Value    func(*Adventure) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) adventure.OrderOption
+	toCursor func(*Adventure) Cursor
+}
+
+// AdventureOrder defines the ordering of Adventure.
+type AdventureOrder struct {
+	Direction OrderDirection       `json:"direction"`
+	Field     *AdventureOrderField `json:"field"`
+}
+
+// DefaultAdventureOrder is the default ordering of Adventure.
+var DefaultAdventureOrder = &AdventureOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &AdventureOrderField{
+		Value: func(a *Adventure) (ent.Value, error) {
+			return a.ID, nil
+		},
+		column: adventure.FieldID,
+		toTerm: adventure.ByID,
+		toCursor: func(a *Adventure) Cursor {
+			return Cursor{ID: a.ID}
+		},
+	},
+}
+
+// ToEdge converts Adventure into AdventureEdge.
+func (a *Adventure) ToEdge(order *AdventureOrder) *AdventureEdge {
+	if order == nil {
+		order = DefaultAdventureOrder
+	}
+	return &AdventureEdge{
+		Node:   a,
+		Cursor: order.Field.toCursor(a),
+	}
 }
 
 // AssetEdge is the edge representation of Asset.
@@ -906,6 +1279,356 @@ func (b *Beacon) ToEdge(order *BeaconOrder) *BeaconEdge {
 	return &BeaconEdge{
 		Node:   b,
 		Cursor: order.Field.toCursor(b),
+	}
+}
+
+// BeaconHistoryEdge is the edge representation of BeaconHistory.
+type BeaconHistoryEdge struct {
+	Node   *BeaconHistory `json:"node"`
+	Cursor Cursor         `json:"cursor"`
+}
+
+// BeaconHistoryConnection is the connection containing edges to BeaconHistory.
+type BeaconHistoryConnection struct {
+	Edges      []*BeaconHistoryEdge `json:"edges"`
+	PageInfo   PageInfo             `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (c *BeaconHistoryConnection) build(nodes []*BeaconHistory, pager *beaconhistoryPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *BeaconHistory
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *BeaconHistory {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *BeaconHistory {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*BeaconHistoryEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &BeaconHistoryEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// BeaconHistoryPaginateOption enables pagination customization.
+type BeaconHistoryPaginateOption func(*beaconhistoryPager) error
+
+// WithBeaconHistoryOrder configures pagination ordering.
+func WithBeaconHistoryOrder(order []*BeaconHistoryOrder) BeaconHistoryPaginateOption {
+	return func(pager *beaconhistoryPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithBeaconHistoryFilter configures pagination filter.
+func WithBeaconHistoryFilter(filter func(*BeaconHistoryQuery) (*BeaconHistoryQuery, error)) BeaconHistoryPaginateOption {
+	return func(pager *beaconhistoryPager) error {
+		if filter == nil {
+			return errors.New("BeaconHistoryQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type beaconhistoryPager struct {
+	reverse bool
+	order   []*BeaconHistoryOrder
+	filter  func(*BeaconHistoryQuery) (*BeaconHistoryQuery, error)
+}
+
+func newBeaconHistoryPager(opts []BeaconHistoryPaginateOption, reverse bool) (*beaconhistoryPager, error) {
+	pager := &beaconhistoryPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *beaconhistoryPager) applyFilter(query *BeaconHistoryQuery) (*BeaconHistoryQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *beaconhistoryPager) toCursor(bh *BeaconHistory) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(bh).Value)
+	}
+	return Cursor{ID: bh.ID, Value: cs_}
+}
+
+func (p *beaconhistoryPager) applyCursors(query *BeaconHistoryQuery, after, before *Cursor) (*BeaconHistoryQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultBeaconHistoryOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *beaconhistoryPager) applyOrder(query *BeaconHistoryQuery) *BeaconHistoryQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultBeaconHistoryOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultBeaconHistoryOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *beaconhistoryPager) orderExpr(query *BeaconHistoryQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultBeaconHistoryOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to BeaconHistory.
+func (bh *BeaconHistoryQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...BeaconHistoryPaginateOption,
+) (*BeaconHistoryConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newBeaconHistoryPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if bh, err = pager.applyFilter(bh); err != nil {
+		return nil, err
+	}
+	conn := &BeaconHistoryConnection{Edges: []*BeaconHistoryEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := bh.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if bh, err = pager.applyCursors(bh, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		bh.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := bh.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	bh = pager.applyOrder(bh)
+	nodes, err := bh.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// BeaconHistoryOrderFieldCreatedAt orders BeaconHistory by created_at.
+	BeaconHistoryOrderFieldCreatedAt = &BeaconHistoryOrderField{
+		Value: func(bh *BeaconHistory) (ent.Value, error) {
+			return bh.CreatedAt, nil
+		},
+		column: beaconhistory.FieldCreatedAt,
+		toTerm: beaconhistory.ByCreatedAt,
+		toCursor: func(bh *BeaconHistory) Cursor {
+			return Cursor{
+				ID:    bh.ID,
+				Value: bh.CreatedAt,
+			}
+		},
+	}
+	// BeaconHistoryOrderFieldLastModifiedAt orders BeaconHistory by last_modified_at.
+	BeaconHistoryOrderFieldLastModifiedAt = &BeaconHistoryOrderField{
+		Value: func(bh *BeaconHistory) (ent.Value, error) {
+			return bh.LastModifiedAt, nil
+		},
+		column: beaconhistory.FieldLastModifiedAt,
+		toTerm: beaconhistory.ByLastModifiedAt,
+		toCursor: func(bh *BeaconHistory) Cursor {
+			return Cursor{
+				ID:    bh.ID,
+				Value: bh.LastModifiedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f BeaconHistoryOrderField) String() string {
+	var str string
+	switch f.column {
+	case BeaconHistoryOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case BeaconHistoryOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f BeaconHistoryOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *BeaconHistoryOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("BeaconHistoryOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *BeaconHistoryOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *BeaconHistoryOrderFieldLastModifiedAt
+	default:
+		return fmt.Errorf("%s is not a valid BeaconHistoryOrderField", str)
+	}
+	return nil
+}
+
+// BeaconHistoryOrderField defines the ordering field of BeaconHistory.
+type BeaconHistoryOrderField struct {
+	// Value extracts the ordering value from the given BeaconHistory.
+	Value    func(*BeaconHistory) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) beaconhistory.OrderOption
+	toCursor func(*BeaconHistory) Cursor
+}
+
+// BeaconHistoryOrder defines the ordering of BeaconHistory.
+type BeaconHistoryOrder struct {
+	Direction OrderDirection           `json:"direction"`
+	Field     *BeaconHistoryOrderField `json:"field"`
+}
+
+// DefaultBeaconHistoryOrder is the default ordering of BeaconHistory.
+var DefaultBeaconHistoryOrder = &BeaconHistoryOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &BeaconHistoryOrderField{
+		Value: func(bh *BeaconHistory) (ent.Value, error) {
+			return bh.ID, nil
+		},
+		column: beaconhistory.FieldID,
+		toTerm: beaconhistory.ByID,
+		toCursor: func(bh *BeaconHistory) Cursor {
+			return Cursor{ID: bh.ID}
+		},
+	},
+}
+
+// ToEdge converts BeaconHistory into BeaconHistoryEdge.
+func (bh *BeaconHistory) ToEdge(order *BeaconHistoryOrder) *BeaconHistoryEdge {
+	if order == nil {
+		order = DefaultBeaconHistoryOrder
+	}
+	return &BeaconHistoryEdge{
+		Node:   bh,
+		Cursor: order.Field.toCursor(bh),
 	}
 }
 
@@ -2453,6 +3176,374 @@ func (da *DeviceAuth) ToEdge(order *DeviceAuthOrder) *DeviceAuthEdge {
 	}
 }
 
+// EventEdge is the edge representation of Event.
+type EventEdge struct {
+	Node   *Event `json:"node"`
+	Cursor Cursor `json:"cursor"`
+}
+
+// EventConnection is the connection containing edges to Event.
+type EventConnection struct {
+	Edges      []*EventEdge `json:"edges"`
+	PageInfo   PageInfo     `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
+}
+
+func (c *EventConnection) build(nodes []*Event, pager *eventPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Event
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Event {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Event {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*EventEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &EventEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// EventPaginateOption enables pagination customization.
+type EventPaginateOption func(*eventPager) error
+
+// WithEventOrder configures pagination ordering.
+func WithEventOrder(order []*EventOrder) EventPaginateOption {
+	return func(pager *eventPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithEventFilter configures pagination filter.
+func WithEventFilter(filter func(*EventQuery) (*EventQuery, error)) EventPaginateOption {
+	return func(pager *eventPager) error {
+		if filter == nil {
+			return errors.New("EventQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type eventPager struct {
+	reverse bool
+	order   []*EventOrder
+	filter  func(*EventQuery) (*EventQuery, error)
+}
+
+func newEventPager(opts []EventPaginateOption, reverse bool) (*eventPager, error) {
+	pager := &eventPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *eventPager) applyFilter(query *EventQuery) (*EventQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *eventPager) toCursor(e *Event) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(e).Value)
+	}
+	return Cursor{ID: e.ID, Value: cs_}
+}
+
+func (p *eventPager) applyCursors(query *EventQuery, after, before *Cursor) (*EventQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultEventOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *eventPager) applyOrder(query *EventQuery) *EventQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultEventOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultEventOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *eventPager) orderExpr(query *EventQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultEventOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Event.
+func (e *EventQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...EventPaginateOption,
+) (*EventConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newEventPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if e, err = pager.applyFilter(e); err != nil {
+		return nil, err
+	}
+	conn := &EventConnection{Edges: []*EventEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := e.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if e, err = pager.applyCursors(e, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		e.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := e.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	e = pager.applyOrder(e)
+	nodes, err := e.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// EventOrderFieldCreatedAt orders Event by created_at.
+	EventOrderFieldCreatedAt = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.CreatedAt, nil
+		},
+		column: event.FieldCreatedAt,
+		toTerm: event.ByCreatedAt,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.CreatedAt,
+			}
+		},
+	}
+	// EventOrderFieldLastModifiedAt orders Event by last_modified_at.
+	EventOrderFieldLastModifiedAt = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.LastModifiedAt, nil
+		},
+		column: event.FieldLastModifiedAt,
+		toTerm: event.ByLastModifiedAt,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.LastModifiedAt,
+			}
+		},
+	}
+	// EventOrderFieldTimestamp orders Event by timestamp.
+	EventOrderFieldTimestamp = &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.Timestamp, nil
+		},
+		column: event.FieldTimestamp,
+		toTerm: event.ByTimestamp,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{
+				ID:    e.ID,
+				Value: e.Timestamp,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f EventOrderField) String() string {
+	var str string
+	switch f.column {
+	case EventOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case EventOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case EventOrderFieldTimestamp.column:
+		str = "TIMESTAMP"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f EventOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *EventOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("EventOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *EventOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *EventOrderFieldLastModifiedAt
+	case "TIMESTAMP":
+		*f = *EventOrderFieldTimestamp
+	default:
+		return fmt.Errorf("%s is not a valid EventOrderField", str)
+	}
+	return nil
+}
+
+// EventOrderField defines the ordering field of Event.
+type EventOrderField struct {
+	// Value extracts the ordering value from the given Event.
+	Value    func(*Event) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) event.OrderOption
+	toCursor func(*Event) Cursor
+}
+
+// EventOrder defines the ordering of Event.
+type EventOrder struct {
+	Direction OrderDirection   `json:"direction"`
+	Field     *EventOrderField `json:"field"`
+}
+
+// DefaultEventOrder is the default ordering of Event.
+var DefaultEventOrder = &EventOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &EventOrderField{
+		Value: func(e *Event) (ent.Value, error) {
+			return e.ID, nil
+		},
+		column: event.FieldID,
+		toTerm: event.ByID,
+		toCursor: func(e *Event) Cursor {
+			return Cursor{ID: e.ID}
+		},
+	},
+}
+
+// ToEdge converts Event into EventEdge.
+func (e *Event) ToEdge(order *EventOrder) *EventEdge {
+	if order == nil {
+		order = DefaultEventOrder
+	}
+	return &EventEdge{
+		Node:   e,
+		Cursor: order.Field.toCursor(e),
+	}
+}
+
 // HostEdge is the edge representation of Host.
 type HostEdge struct {
 	Node   *Host  `json:"node"`
@@ -2726,6 +3817,20 @@ var (
 			}
 		},
 	}
+	// HostOrderFieldName orders Host by name.
+	HostOrderFieldName = &HostOrderField{
+		Value: func(h *Host) (ent.Value, error) {
+			return h.Name, nil
+		},
+		column: host.FieldName,
+		toTerm: host.ByName,
+		toCursor: func(h *Host) Cursor {
+			return Cursor{
+				ID:    h.ID,
+				Value: h.Name,
+			}
+		},
+	}
 	// HostOrderFieldLastSeenAt orders Host by last_seen_at.
 	HostOrderFieldLastSeenAt = &HostOrderField{
 		Value: func(h *Host) (ent.Value, error) {
@@ -2764,6 +3869,8 @@ func (f HostOrderField) String() string {
 		str = "CREATED_AT"
 	case HostOrderFieldLastModifiedAt.column:
 		str = "LAST_MODIFIED_AT"
+	case HostOrderFieldName.column:
+		str = "NAME"
 	case HostOrderFieldLastSeenAt.column:
 		str = "LAST_SEEN_AT"
 	case HostOrderFieldNextSeenAt.column:
@@ -2788,6 +3895,8 @@ func (f *HostOrderField) UnmarshalGQL(v interface{}) error {
 		*f = *HostOrderFieldCreatedAt
 	case "LAST_MODIFIED_AT":
 		*f = *HostOrderFieldLastModifiedAt
+	case "NAME":
+		*f = *HostOrderFieldName
 	case "LAST_SEEN_AT":
 		*f = *HostOrderFieldLastSeenAt
 	case "NEXT_SEEN_AT":
@@ -4434,6 +5543,356 @@ func (l *Link) ToEdge(order *LinkOrder) *LinkEdge {
 	return &LinkEdge{
 		Node:   l,
 		Cursor: order.Field.toCursor(l),
+	}
+}
+
+// NotificationEdge is the edge representation of Notification.
+type NotificationEdge struct {
+	Node   *Notification `json:"node"`
+	Cursor Cursor        `json:"cursor"`
+}
+
+// NotificationConnection is the connection containing edges to Notification.
+type NotificationConnection struct {
+	Edges      []*NotificationEdge `json:"edges"`
+	PageInfo   PageInfo            `json:"pageInfo"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+func (c *NotificationConnection) build(nodes []*Notification, pager *notificationPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Notification
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Notification {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Notification {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*NotificationEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &NotificationEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// NotificationPaginateOption enables pagination customization.
+type NotificationPaginateOption func(*notificationPager) error
+
+// WithNotificationOrder configures pagination ordering.
+func WithNotificationOrder(order []*NotificationOrder) NotificationPaginateOption {
+	return func(pager *notificationPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithNotificationFilter configures pagination filter.
+func WithNotificationFilter(filter func(*NotificationQuery) (*NotificationQuery, error)) NotificationPaginateOption {
+	return func(pager *notificationPager) error {
+		if filter == nil {
+			return errors.New("NotificationQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type notificationPager struct {
+	reverse bool
+	order   []*NotificationOrder
+	filter  func(*NotificationQuery) (*NotificationQuery, error)
+}
+
+func newNotificationPager(opts []NotificationPaginateOption, reverse bool) (*notificationPager, error) {
+	pager := &notificationPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *notificationPager) applyFilter(query *NotificationQuery) (*NotificationQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *notificationPager) toCursor(n *Notification) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(n).Value)
+	}
+	return Cursor{ID: n.ID, Value: cs_}
+}
+
+func (p *notificationPager) applyCursors(query *NotificationQuery, after, before *Cursor) (*NotificationQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultNotificationOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *notificationPager) applyOrder(query *NotificationQuery) *NotificationQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultNotificationOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultNotificationOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *notificationPager) orderExpr(query *NotificationQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultNotificationOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Notification.
+func (n *NotificationQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...NotificationPaginateOption,
+) (*NotificationConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newNotificationPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if n, err = pager.applyFilter(n); err != nil {
+		return nil, err
+	}
+	conn := &NotificationConnection{Edges: []*NotificationEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := n.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if n, err = pager.applyCursors(n, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		n.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := n.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	n = pager.applyOrder(n)
+	nodes, err := n.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// NotificationOrderFieldCreatedAt orders Notification by created_at.
+	NotificationOrderFieldCreatedAt = &NotificationOrderField{
+		Value: func(n *Notification) (ent.Value, error) {
+			return n.CreatedAt, nil
+		},
+		column: notification.FieldCreatedAt,
+		toTerm: notification.ByCreatedAt,
+		toCursor: func(n *Notification) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.CreatedAt,
+			}
+		},
+	}
+	// NotificationOrderFieldLastModifiedAt orders Notification by last_modified_at.
+	NotificationOrderFieldLastModifiedAt = &NotificationOrderField{
+		Value: func(n *Notification) (ent.Value, error) {
+			return n.LastModifiedAt, nil
+		},
+		column: notification.FieldLastModifiedAt,
+		toTerm: notification.ByLastModifiedAt,
+		toCursor: func(n *Notification) Cursor {
+			return Cursor{
+				ID:    n.ID,
+				Value: n.LastModifiedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f NotificationOrderField) String() string {
+	var str string
+	switch f.column {
+	case NotificationOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case NotificationOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f NotificationOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *NotificationOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("NotificationOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *NotificationOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *NotificationOrderFieldLastModifiedAt
+	default:
+		return fmt.Errorf("%s is not a valid NotificationOrderField", str)
+	}
+	return nil
+}
+
+// NotificationOrderField defines the ordering field of Notification.
+type NotificationOrderField struct {
+	// Value extracts the ordering value from the given Notification.
+	Value    func(*Notification) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) notification.OrderOption
+	toCursor func(*Notification) Cursor
+}
+
+// NotificationOrder defines the ordering of Notification.
+type NotificationOrder struct {
+	Direction OrderDirection          `json:"direction"`
+	Field     *NotificationOrderField `json:"field"`
+}
+
+// DefaultNotificationOrder is the default ordering of Notification.
+var DefaultNotificationOrder = &NotificationOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &NotificationOrderField{
+		Value: func(n *Notification) (ent.Value, error) {
+			return n.ID, nil
+		},
+		column: notification.FieldID,
+		toTerm: notification.ByID,
+		toCursor: func(n *Notification) Cursor {
+			return Cursor{ID: n.ID}
+		},
+	},
+}
+
+// ToEdge converts Notification into NotificationEdge.
+func (n *Notification) ToEdge(order *NotificationOrder) *NotificationEdge {
+	if order == nil {
+		order = DefaultNotificationOrder
+	}
+	return &NotificationEdge{
+		Node:   n,
+		Cursor: order.Field.toCursor(n),
 	}
 }
 
@@ -6660,6 +8119,374 @@ func (s *Shell) ToEdge(order *ShellOrder) *ShellEdge {
 	return &ShellEdge{
 		Node:   s,
 		Cursor: order.Field.toCursor(s),
+	}
+}
+
+// ShellPivotEdge is the edge representation of ShellPivot.
+type ShellPivotEdge struct {
+	Node   *ShellPivot `json:"node"`
+	Cursor Cursor      `json:"cursor"`
+}
+
+// ShellPivotConnection is the connection containing edges to ShellPivot.
+type ShellPivotConnection struct {
+	Edges      []*ShellPivotEdge `json:"edges"`
+	PageInfo   PageInfo          `json:"pageInfo"`
+	TotalCount int               `json:"totalCount"`
+}
+
+func (c *ShellPivotConnection) build(nodes []*ShellPivot, pager *shellpivotPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *ShellPivot
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *ShellPivot {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *ShellPivot {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*ShellPivotEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &ShellPivotEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// ShellPivotPaginateOption enables pagination customization.
+type ShellPivotPaginateOption func(*shellpivotPager) error
+
+// WithShellPivotOrder configures pagination ordering.
+func WithShellPivotOrder(order []*ShellPivotOrder) ShellPivotPaginateOption {
+	return func(pager *shellpivotPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithShellPivotFilter configures pagination filter.
+func WithShellPivotFilter(filter func(*ShellPivotQuery) (*ShellPivotQuery, error)) ShellPivotPaginateOption {
+	return func(pager *shellpivotPager) error {
+		if filter == nil {
+			return errors.New("ShellPivotQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type shellpivotPager struct {
+	reverse bool
+	order   []*ShellPivotOrder
+	filter  func(*ShellPivotQuery) (*ShellPivotQuery, error)
+}
+
+func newShellPivotPager(opts []ShellPivotPaginateOption, reverse bool) (*shellpivotPager, error) {
+	pager := &shellpivotPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *shellpivotPager) applyFilter(query *ShellPivotQuery) (*ShellPivotQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *shellpivotPager) toCursor(sp *ShellPivot) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(sp).Value)
+	}
+	return Cursor{ID: sp.ID, Value: cs_}
+}
+
+func (p *shellpivotPager) applyCursors(query *ShellPivotQuery, after, before *Cursor) (*ShellPivotQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultShellPivotOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *shellpivotPager) applyOrder(query *ShellPivotQuery) *ShellPivotQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultShellPivotOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultShellPivotOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *shellpivotPager) orderExpr(query *ShellPivotQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultShellPivotOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to ShellPivot.
+func (sp *ShellPivotQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...ShellPivotPaginateOption,
+) (*ShellPivotConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newShellPivotPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if sp, err = pager.applyFilter(sp); err != nil {
+		return nil, err
+	}
+	conn := &ShellPivotConnection{Edges: []*ShellPivotEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := sp.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if sp, err = pager.applyCursors(sp, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		sp.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := sp.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	sp = pager.applyOrder(sp)
+	nodes, err := sp.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// ShellPivotOrderFieldCreatedAt orders ShellPivot by created_at.
+	ShellPivotOrderFieldCreatedAt = &ShellPivotOrderField{
+		Value: func(sp *ShellPivot) (ent.Value, error) {
+			return sp.CreatedAt, nil
+		},
+		column: shellpivot.FieldCreatedAt,
+		toTerm: shellpivot.ByCreatedAt,
+		toCursor: func(sp *ShellPivot) Cursor {
+			return Cursor{
+				ID:    sp.ID,
+				Value: sp.CreatedAt,
+			}
+		},
+	}
+	// ShellPivotOrderFieldLastModifiedAt orders ShellPivot by last_modified_at.
+	ShellPivotOrderFieldLastModifiedAt = &ShellPivotOrderField{
+		Value: func(sp *ShellPivot) (ent.Value, error) {
+			return sp.LastModifiedAt, nil
+		},
+		column: shellpivot.FieldLastModifiedAt,
+		toTerm: shellpivot.ByLastModifiedAt,
+		toCursor: func(sp *ShellPivot) Cursor {
+			return Cursor{
+				ID:    sp.ID,
+				Value: sp.LastModifiedAt,
+			}
+		},
+	}
+	// ShellPivotOrderFieldClosedAt orders ShellPivot by closed_at.
+	ShellPivotOrderFieldClosedAt = &ShellPivotOrderField{
+		Value: func(sp *ShellPivot) (ent.Value, error) {
+			return sp.ClosedAt, nil
+		},
+		column: shellpivot.FieldClosedAt,
+		toTerm: shellpivot.ByClosedAt,
+		toCursor: func(sp *ShellPivot) Cursor {
+			return Cursor{
+				ID:    sp.ID,
+				Value: sp.ClosedAt,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f ShellPivotOrderField) String() string {
+	var str string
+	switch f.column {
+	case ShellPivotOrderFieldCreatedAt.column:
+		str = "CREATED_AT"
+	case ShellPivotOrderFieldLastModifiedAt.column:
+		str = "LAST_MODIFIED_AT"
+	case ShellPivotOrderFieldClosedAt.column:
+		str = "CLOSED_AT"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f ShellPivotOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *ShellPivotOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("ShellPivotOrderField %T must be a string", v)
+	}
+	switch str {
+	case "CREATED_AT":
+		*f = *ShellPivotOrderFieldCreatedAt
+	case "LAST_MODIFIED_AT":
+		*f = *ShellPivotOrderFieldLastModifiedAt
+	case "CLOSED_AT":
+		*f = *ShellPivotOrderFieldClosedAt
+	default:
+		return fmt.Errorf("%s is not a valid ShellPivotOrderField", str)
+	}
+	return nil
+}
+
+// ShellPivotOrderField defines the ordering field of ShellPivot.
+type ShellPivotOrderField struct {
+	// Value extracts the ordering value from the given ShellPivot.
+	Value    func(*ShellPivot) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) shellpivot.OrderOption
+	toCursor func(*ShellPivot) Cursor
+}
+
+// ShellPivotOrder defines the ordering of ShellPivot.
+type ShellPivotOrder struct {
+	Direction OrderDirection        `json:"direction"`
+	Field     *ShellPivotOrderField `json:"field"`
+}
+
+// DefaultShellPivotOrder is the default ordering of ShellPivot.
+var DefaultShellPivotOrder = &ShellPivotOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &ShellPivotOrderField{
+		Value: func(sp *ShellPivot) (ent.Value, error) {
+			return sp.ID, nil
+		},
+		column: shellpivot.FieldID,
+		toTerm: shellpivot.ByID,
+		toCursor: func(sp *ShellPivot) Cursor {
+			return Cursor{ID: sp.ID}
+		},
+	},
+}
+
+// ToEdge converts ShellPivot into ShellPivotEdge.
+func (sp *ShellPivot) ToEdge(order *ShellPivotOrder) *ShellPivotEdge {
+	if order == nil {
+		order = DefaultShellPivotOrder
+	}
+	return &ShellPivotEdge{
+		Node:   sp,
+		Cursor: order.Field.toCursor(sp),
 	}
 }
 

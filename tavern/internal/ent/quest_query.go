@@ -12,7 +12,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"realm.pub/tavern/internal/ent/adventure"
 	"realm.pub/tavern/internal/ent/asset"
+	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/scheduledtask"
@@ -24,19 +26,25 @@ import (
 // QuestQuery is the builder for querying Quest entities.
 type QuestQuery struct {
 	config
-	ctx               *QueryContext
-	order             []quest.OrderOption
-	inters            []Interceptor
-	predicates        []predicate.Quest
-	withTome          *TomeQuery
-	withBundle        *AssetQuery
-	withTasks         *TaskQuery
-	withCreator       *UserQuery
-	withScheduledTask *ScheduledTaskQuery
-	withFKs           bool
-	modifiers         []func(*sql.Selector)
-	loadTotal         []func(context.Context, []*Quest) error
-	withNamedTasks    map[string]*TaskQuery
+	ctx                    *QueryContext
+	order                  []quest.OrderOption
+	inters                 []Interceptor
+	predicates             []predicate.Quest
+	withTome               *TomeQuery
+	withBundle             *AssetQuery
+	withTasks              *TaskQuery
+	withCreator            *UserQuery
+	withScheduledTask      *ScheduledTaskQuery
+	withAdventure          *AdventureQuery
+	withRelatedQuests      *QuestQuery
+	withPreviousQuest      *QuestQuery
+	withEvents             *EventQuery
+	withFKs                bool
+	modifiers              []func(*sql.Selector)
+	loadTotal              []func(context.Context, []*Quest) error
+	withNamedTasks         map[string]*TaskQuery
+	withNamedRelatedQuests map[string]*QuestQuery
+	withNamedEvents        map[string]*EventQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -176,6 +184,94 @@ func (qq *QuestQuery) QueryScheduledTask() *ScheduledTaskQuery {
 			sqlgraph.From(quest.Table, quest.FieldID, selector),
 			sqlgraph.To(scheduledtask.Table, scheduledtask.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, quest.ScheduledTaskTable, quest.ScheduledTaskColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAdventure chains the current query on the "adventure" edge.
+func (qq *QuestQuery) QueryAdventure() *AdventureQuery {
+	query := (&AdventureClient{config: qq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := qq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := qq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, selector),
+			sqlgraph.To(adventure.Table, adventure.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.AdventureTable, quest.AdventureColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRelatedQuests chains the current query on the "related_quests" edge.
+func (qq *QuestQuery) QueryRelatedQuests() *QuestQuery {
+	query := (&QuestClient{config: qq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := qq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := qq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, selector),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, quest.RelatedQuestsTable, quest.RelatedQuestsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPreviousQuest chains the current query on the "previous_quest" edge.
+func (qq *QuestQuery) QueryPreviousQuest() *QuestQuery {
+	query := (&QuestClient{config: qq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := qq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := qq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, selector),
+			sqlgraph.To(quest.Table, quest.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, quest.PreviousQuestTable, quest.PreviousQuestColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (qq *QuestQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: qq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := qq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := qq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(quest.Table, quest.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, quest.EventsTable, quest.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
 		return fromU, nil
@@ -380,6 +476,10 @@ func (qq *QuestQuery) Clone() *QuestQuery {
 		withTasks:         qq.withTasks.Clone(),
 		withCreator:       qq.withCreator.Clone(),
 		withScheduledTask: qq.withScheduledTask.Clone(),
+		withAdventure:     qq.withAdventure.Clone(),
+		withRelatedQuests: qq.withRelatedQuests.Clone(),
+		withPreviousQuest: qq.withPreviousQuest.Clone(),
+		withEvents:        qq.withEvents.Clone(),
 		// clone intermediate query.
 		sql:  qq.sql.Clone(),
 		path: qq.path,
@@ -438,6 +538,50 @@ func (qq *QuestQuery) WithScheduledTask(opts ...func(*ScheduledTaskQuery)) *Ques
 		opt(query)
 	}
 	qq.withScheduledTask = query
+	return qq
+}
+
+// WithAdventure tells the query-builder to eager-load the nodes that are connected to
+// the "adventure" edge. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithAdventure(opts ...func(*AdventureQuery)) *QuestQuery {
+	query := (&AdventureClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	qq.withAdventure = query
+	return qq
+}
+
+// WithRelatedQuests tells the query-builder to eager-load the nodes that are connected to
+// the "related_quests" edge. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithRelatedQuests(opts ...func(*QuestQuery)) *QuestQuery {
+	query := (&QuestClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	qq.withRelatedQuests = query
+	return qq
+}
+
+// WithPreviousQuest tells the query-builder to eager-load the nodes that are connected to
+// the "previous_quest" edge. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithPreviousQuest(opts ...func(*QuestQuery)) *QuestQuery {
+	query := (&QuestClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	qq.withPreviousQuest = query
+	return qq
+}
+
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithEvents(opts ...func(*EventQuery)) *QuestQuery {
+	query := (&EventClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	qq.withEvents = query
 	return qq
 }
 
@@ -520,15 +664,19 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 		nodes       = []*Quest{}
 		withFKs     = qq.withFKs
 		_spec       = qq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [9]bool{
 			qq.withTome != nil,
 			qq.withBundle != nil,
 			qq.withTasks != nil,
 			qq.withCreator != nil,
 			qq.withScheduledTask != nil,
+			qq.withAdventure != nil,
+			qq.withRelatedQuests != nil,
+			qq.withPreviousQuest != nil,
+			qq.withEvents != nil,
 		}
 	)
-	if qq.withTome != nil || qq.withBundle != nil || qq.withCreator != nil || qq.withScheduledTask != nil {
+	if qq.withTome != nil || qq.withBundle != nil || qq.withCreator != nil || qq.withScheduledTask != nil || qq.withAdventure != nil || qq.withPreviousQuest != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -586,10 +734,50 @@ func (qq *QuestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Quest,
 			return nil, err
 		}
 	}
+	if query := qq.withAdventure; query != nil {
+		if err := qq.loadAdventure(ctx, query, nodes, nil,
+			func(n *Quest, e *Adventure) { n.Edges.Adventure = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := qq.withRelatedQuests; query != nil {
+		if err := qq.loadRelatedQuests(ctx, query, nodes,
+			func(n *Quest) { n.Edges.RelatedQuests = []*Quest{} },
+			func(n *Quest, e *Quest) { n.Edges.RelatedQuests = append(n.Edges.RelatedQuests, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := qq.withPreviousQuest; query != nil {
+		if err := qq.loadPreviousQuest(ctx, query, nodes, nil,
+			func(n *Quest, e *Quest) { n.Edges.PreviousQuest = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := qq.withEvents; query != nil {
+		if err := qq.loadEvents(ctx, query, nodes,
+			func(n *Quest) { n.Edges.Events = []*Event{} },
+			func(n *Quest, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range qq.withNamedTasks {
 		if err := qq.loadTasks(ctx, query, nodes,
 			func(n *Quest) { n.appendNamedTasks(name) },
 			func(n *Quest, e *Task) { n.appendNamedTasks(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range qq.withNamedRelatedQuests {
+		if err := qq.loadRelatedQuests(ctx, query, nodes,
+			func(n *Quest) { n.appendNamedRelatedQuests(name) },
+			func(n *Quest, e *Quest) { n.appendNamedRelatedQuests(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range qq.withNamedEvents {
+		if err := qq.loadEvents(ctx, query, nodes,
+			func(n *Quest) { n.appendNamedEvents(name) },
+			func(n *Quest, e *Event) { n.appendNamedEvents(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -760,6 +948,132 @@ func (qq *QuestQuery) loadScheduledTask(ctx context.Context, query *ScheduledTas
 	}
 	return nil
 }
+func (qq *QuestQuery) loadAdventure(ctx context.Context, query *AdventureQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Adventure)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Quest)
+	for i := range nodes {
+		if nodes[i].adventure_quests == nil {
+			continue
+		}
+		fk := *nodes[i].adventure_quests
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(adventure.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "adventure_quests" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (qq *QuestQuery) loadRelatedQuests(ctx context.Context, query *QuestQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Quest)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Quest)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Quest(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(quest.RelatedQuestsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.quest_related_quests
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "quest_related_quests" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "quest_related_quests" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (qq *QuestQuery) loadPreviousQuest(ctx context.Context, query *QuestQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Quest)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Quest)
+	for i := range nodes {
+		if nodes[i].quest_related_quests == nil {
+			continue
+		}
+		fk := *nodes[i].quest_related_quests
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(quest.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "quest_related_quests" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (qq *QuestQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*Quest, init func(*Quest), assign func(*Quest, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Quest)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(quest.EventsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.quest_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "quest_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "quest_events" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (qq *QuestQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := qq.querySpec()
@@ -856,6 +1170,34 @@ func (qq *QuestQuery) WithNamedTasks(name string, opts ...func(*TaskQuery)) *Que
 		qq.withNamedTasks = make(map[string]*TaskQuery)
 	}
 	qq.withNamedTasks[name] = query
+	return qq
+}
+
+// WithNamedRelatedQuests tells the query-builder to eager-load the nodes that are connected to the "related_quests"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithNamedRelatedQuests(name string, opts ...func(*QuestQuery)) *QuestQuery {
+	query := (&QuestClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if qq.withNamedRelatedQuests == nil {
+		qq.withNamedRelatedQuests = make(map[string]*QuestQuery)
+	}
+	qq.withNamedRelatedQuests[name] = query
+	return qq
+}
+
+// WithNamedEvents tells the query-builder to eager-load the nodes that are connected to the "events"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestQuery) WithNamedEvents(name string, opts ...func(*EventQuery)) *QuestQuery {
+	query := (&EventClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if qq.withNamedEvents == nil {
+		qq.withNamedEvents = make(map[string]*EventQuery)
+	}
+	qq.withNamedEvents[name] = query
 	return qq
 }
 

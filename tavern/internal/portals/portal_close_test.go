@@ -104,4 +104,10 @@ func TestPortalClose(t *testing.T) {
 	_, err = portalStream.Recv()
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "portal closed")
+
+	// 7. Verify DB update
+	p, err := env.EntClient.Portal.Get(ctx, portalID)
+	require.NoError(t, err)
+	require.NotNil(t, p.ClosedAt)
+	require.False(t, p.ClosedAt.IsZero())
 }

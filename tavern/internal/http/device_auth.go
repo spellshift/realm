@@ -25,9 +25,11 @@ func generateDeviceCode() string {
 }
 
 type RDACodeResponse struct {
-	UserCode   string `json:"user_code"`
-	DeviceCode string `json:"device_code"`
-	ExpiresIn  int    `json:"expires_in"` // seconds
+	UserCode                string `json:"user_code"`
+	DeviceCode              string `json:"device_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete"`
+	ExpiresIn               int    `json:"expires_in"` // seconds
 }
 
 func NewRDACodeHandler(client *ent.Client) http.HandlerFunc {
@@ -54,10 +56,18 @@ func NewRDACodeHandler(client *ent.Client) http.HandlerFunc {
 			return
 		}
 
+		scheme := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
+		verificationURI := fmt.Sprintf("%s://%s/profile", scheme, r.Host)
+
 		resp := RDACodeResponse{
-			UserCode:   userCode,
-			DeviceCode: deviceCode,
-			ExpiresIn:  600,
+			UserCode:                userCode,
+			DeviceCode:              deviceCode,
+			VerificationURI:         verificationURI,
+			VerificationURIComplete: fmt.Sprintf("%s?device-code=%s", verificationURI, userCode),
+			ExpiresIn:               600,
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
@@ -189,7 +199,7 @@ func NewRDARevokeHandler(client *ent.Client) http.HandlerFunc {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		
+
 		var req RDAApproveRequest // Reuse same struct
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, "invalid request body", http.StatusBadRequest)

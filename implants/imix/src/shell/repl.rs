@@ -131,9 +131,7 @@ pub async fn run_repl_reverse_shell(
     }
 
     // Initiate gRPC stream
-    if let Err(e) = transport.reverse_shell(output_rx, input_tx).await {
-        return Err(e);
-    }
+    transport.reverse_shell(output_rx, input_tx).await?;
 
     let runtime = tokio::runtime::Handle::current();
     let _ = tokio::task::spawn_blocking(move || {
@@ -276,7 +274,12 @@ pub async fn run_repl_reverse_shell(
         let backend = Arc::new(EmptyAssets {});
         let mut interpreter = Interpreter::new_with_printer(printer)
             .with_default_libs()
-            .with_context(Arc::new(agent), context.clone(), Vec::new(), backend); // Changed to with_context
+            .with_context(
+                Arc::new(agent.clone()) as Arc<dyn eldritch::agent::agent::Agent>,
+                context.clone(),
+                Vec::new(),
+                backend,
+            );
 
         let mut repl = Repl::new();
         let stdout = VtWriter {

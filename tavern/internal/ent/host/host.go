@@ -47,6 +47,10 @@ const (
 	EdgeCredentials = "credentials"
 	// EdgeScreenshots holds the string denoting the screenshots edge name in mutations.
 	EdgeScreenshots = "screenshots"
+	// EdgeFavoritedBy holds the string denoting the favoritedby edge name in mutations.
+	EdgeFavoritedBy = "favoritedBy"
+	// EdgeEvents holds the string denoting the events edge name in mutations.
+	EdgeEvents = "events"
 	// Table holds the table name of the host in the database.
 	Table = "hosts"
 	// TagsTable is the table that holds the tags relation/edge. The primary key declared below.
@@ -89,6 +93,18 @@ const (
 	ScreenshotsInverseTable = "screenshots"
 	// ScreenshotsColumn is the table column denoting the screenshots relation/edge.
 	ScreenshotsColumn = "screenshot_host"
+	// FavoritedByTable is the table that holds the favoritedBy relation/edge. The primary key declared below.
+	FavoritedByTable = "user_favoriteHosts"
+	// FavoritedByInverseTable is the table name for the User entity.
+	// It exists in this package in order to avoid circular dependency with the "user" package.
+	FavoritedByInverseTable = "users"
+	// EventsTable is the table that holds the events relation/edge.
+	EventsTable = "events"
+	// EventsInverseTable is the table name for the Event entity.
+	// It exists in this package in order to avoid circular dependency with the "event" package.
+	EventsInverseTable = "events"
+	// EventsColumn is the table column denoting the events relation/edge.
+	EventsColumn = "host_events"
 )
 
 // Columns holds all SQL columns for host fields.
@@ -115,6 +131,9 @@ var (
 	// TagsPrimaryKey and TagsColumn2 are the table columns denoting the
 	// primary key for the tags relation (M2M).
 	TagsPrimaryKey = []string{"host_id", "tag_id"}
+	// FavoritedByPrimaryKey and FavoritedByColumn2 are the table columns denoting the
+	// primary key for the favoritedBy relation (M2M).
+	FavoritedByPrimaryKey = []string{"user_id", "host_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -291,6 +310,34 @@ func ByScreenshots(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newScreenshotsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByFavoritedByCount orders the results by favoritedBy count.
+func ByFavoritedByCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFavoritedByStep(), opts...)
+	}
+}
+
+// ByFavoritedBy orders the results by favoritedBy terms.
+func ByFavoritedBy(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFavoritedByStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByEventsCount orders the results by events count.
+func ByEventsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEventsStep(), opts...)
+	}
+}
+
+// ByEvents orders the results by events terms.
+func ByEvents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEventsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newTagsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -331,6 +378,20 @@ func newScreenshotsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScreenshotsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ScreenshotsTable, ScreenshotsColumn),
+	)
+}
+func newFavoritedByStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FavoritedByInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2M, true, FavoritedByTable, FavoritedByPrimaryKey...),
+	)
+}
+func newEventsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EventsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EventsTable, EventsColumn),
 	)
 }
 

@@ -22,6 +22,6 @@ The `TAVERN_API_TOKEN` is a separate token used for authenticating CLI tools and
 
 #### When to use TAVERN_API_TOKEN
 
-You typically need to use the `TAVERN_API_TOKEN` in scenarios where you are running tools on a remote machine (like a Kali VM via SSH) and cannot perform the standard local browser-based authentication flow due to networking restrictions (e.g., you cannot define the auth redirection port for SSH port forwarding).
+You typically need to use the `TAVERN_API_TOKEN` in scenarios where you are running tools on a remote machine (like a Kali VM via SSH) and cannot perform the standard Remote Device Authentication (RDA) flow. By default, CLI tools will use the RDA flow to authenticate.
 
-In a standard local setup, CLI tools might pop open a browser window to authenticate. However, when you are SSH'd into a remote box, this isn't possible. The `TAVERN_API_TOKEN` provides a way to bypass this limitation.
+To enable the legacy local browser-based OAuth flow, you can set the `TAVERN_USE_BROWSER_OAUTH=1` environment variable. In a standard local setup with this variable set, CLI tools might pop open a browser window to authenticate. However, when you are SSH'd into a remote box, this isn't possible, which is why the default is the RDA flow. The `TAVERN_API_TOKEN` provides a way to bypass these limitations altogether.

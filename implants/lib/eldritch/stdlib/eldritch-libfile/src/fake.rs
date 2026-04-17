@@ -201,9 +201,17 @@ impl FileLibrary for FileLibraryFake {
         }
     }
 
-    fn list_recent(&self, path: String, limit: i64) -> Result<Vec<String>, String> {
+    fn list_recent(&self, path: Option<String>, limit: Option<i64>) -> Result<Vec<String>, String> {
         let mut root = self.root.lock();
-        let parts = Self::normalize_path(&path);
+        let path_str = path.unwrap_or_else(|| {
+            if cfg!(windows) {
+                "C:\\".to_string()
+            } else {
+                "/".to_string()
+            }
+        });
+        let limit_val = limit.unwrap_or(10);
+        let parts = Self::normalize_path(&path_str);
         let mut files = Vec::new();
 
         fn traverse_recursive(entry: &FsEntry, current_path: String, files: &mut Vec<String>) {
@@ -238,10 +246,10 @@ impl FileLibrary for FileLibraryFake {
             // But traverse consumes parts.
 
             // It's easier to just traverse from the found entry and prepend `path`.
-            let base = if path.ends_with('/') && path.len() > 1 {
-                path.trim_end_matches('/').to_string()
+            let base = if path_str.ends_with('/') && path_str.len() > 1 {
+                path_str.trim_end_matches('/').to_string()
             } else {
-                path.clone()
+                path_str.clone()
             };
 
             traverse_recursive(entry, base, &mut files);
@@ -250,8 +258,8 @@ impl FileLibrary for FileLibraryFake {
         }
 
         // Since we don't have timestamps, we just return the first `limit`
-        let limit = if limit < 0 { 0 } else { limit as usize };
-        Ok(files.into_iter().take(limit).collect())
+        let limit_usize = if limit_val < 1 { 1 } else { limit_val as usize };
+        Ok(files.into_iter().take(limit_usize).collect())
     }
 
     fn mkdir(&self, path: String, _parent: Option<bool>) -> Result<(), String> {
@@ -345,6 +353,13 @@ impl FileLibrary for FileLibraryFake {
         Ok(format!("/tmp/{}", name))
     }
 
+    fn tmp_dir(&self) -> Result<String, String> {
+        let name = "tmp_dir".to_string();
+        let path = format!("/tmp/{}", name);
+        self.mkdir(path.clone(), None)?;
+        Ok(path)
+    }
+
     fn template(
         &self,
         _template_path: String,
@@ -353,6 +368,15 @@ impl FileLibrary for FileLibraryFake {
         _autoescape: bool,
     ) -> Result<(), String> {
         Ok(())
+    }
+
+    fn template_str(
+        &self,
+        _template: String,
+        _args: BTreeMap<String, Value>,
+        _autoescape: bool,
+    ) -> Result<String, String> {
+        Ok(String::new())
     }
 
     #[allow(unused_variables)]
@@ -474,5 +498,22 @@ mod tests {
         // Remove
         file.remove("/tmp/notes_backup.txt".into()).unwrap();
         assert!(!file.exists("/tmp/notes_backup.txt".into()).unwrap());
+    }
+
+    #[test]
+    fn test_list_recent_default_args() {
+        let file = FileLibraryFake::default();
+
+        // Default path "/" should list files across the whole fake filesystem
+        let all_files = file.list_recent(None, None).unwrap();
+
+        // In default fake FS, we have: /home/user/notes.txt, /home/user/todo.txt, /etc/passwd
+        assert!(all_files.len() >= 3);
+        assert!(all_files.contains(&"/home/user/notes.txt".to_string()));
+        assert!(all_files.contains(&"/etc/passwd".to_string()));
+
+        // Default limit (10) should capture all of them
+        let limited_files = file.list_recent(None, Some(1)).unwrap();
+        assert_eq!(limited_files.len(), 1);
     }
 }

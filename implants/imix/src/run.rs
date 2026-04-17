@@ -7,7 +7,6 @@ use crate::agent::ImixAgent;
 use crate::task::TaskRegistry;
 use crate::version::VERSION;
 use pb::config::Config;
-use transport;
 
 pub static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 const MAX_BUF_SHELL_MESSAGES: usize = 65535;
@@ -96,15 +95,16 @@ async fn run_agent_cycle(agent: Arc<ImixAgent>, registry: Arc<TaskRegistry>) {
     // Create new active transport
     let config = agent.get_transport_config().await;
 
-    let transport = match transport::create_transport(config) {
-        Ok(t) => t,
-        Err(_e) => {
-            #[cfg(debug_assertions)]
-            log::error!("Failed to create transport: {_e:#}");
-            agent.rotate_callback_uri().await;
-            return;
-        }
-    };
+    let transport: Box<dyn transport::Transport + Send + Sync> =
+        match transport::create_transport(config) {
+            Ok(t) => t,
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                log::error!("Failed to create transport: {_e:#}");
+                agent.rotate_callback_uri().await;
+                return;
+            }
+        };
 
     // Set transport
     agent.update_transport(transport).await;
