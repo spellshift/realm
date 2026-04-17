@@ -8,6 +8,7 @@ import PlaceholderUser from "../../../assets/PlaceholderUser.png";
 import { getEnumKey } from "../../../utils/utils";
 import { SupportedPlatforms, SupportedTransports } from "../../../utils/enums";
 import ShellActionsMenu from "./ShellActionsMenu";
+import NotificationBell from "../../../components/notifications/NotificationBell";
 
 interface ShellHeaderProps {
   shellData: any;
@@ -67,16 +68,6 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         {principal && <Badge>{principal}</Badge>}
       </h1>
 
-      <a
-        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-gray-400 hover:text-white transition-colors"
-        title="Report a bug"
-      >
-        <Bug size={20} />
-      </a>
-
       {/* Active Users Display */}
       <div className="ml-auto flex items-center gap-2 min-w-0 overflow-x-auto">
         {activeUsers.length > 0 && (
@@ -96,6 +87,20 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
             })}
           </div>
         )}
+      </div>
+
+      <a
+        href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
+        title="Report a bug"
+      >
+        <Bug size={20} />
+      </a>
+
+      <div className="flex-shrink-0">
+        <NotificationBell />
       </div>
 
       <div className="flex-shrink-0">
