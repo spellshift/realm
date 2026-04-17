@@ -175,20 +175,25 @@ fn parse_yaml_config() -> Result<Option<YamlConfigResult>, Box<dyn std::error::E
     }))
 }
 
-fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
+/// Attempts to obtain the server public key and emits it as a compile-time env var.
+///
+/// Returns `true` if the real key was obtained (from YAML config, env var, or server fetch),
+/// or `false` if the placeholder was used. The caller uses this to decide whether Cargo
+/// should cache the build script output.
+fn get_pub_key(yaml_config: Option<YamlConfigResult>) -> bool {
     // Check if server pubkey was provided via YAML config
     if let Some(ref config) = yaml_config {
         if config.server_pubkey.is_some() {
             // Already emitted in parse_yaml_config, no need to fetch
             println!("cargo:warning=Server pubkey provided via YAML config, skipping fetch");
-            return;
+            return true;
         }
     }
 
     // Check if IMIX_SERVER_PUBKEY is already set via env var
     if std::env::var("IMIX_SERVER_PUBKEY").is_ok() {
         println!("cargo:warning=IMIX_SERVER_PUBKEY already set, skipping fetch");
-        return;
+        return true;
     }
 
     // Get the callback URI: prefer YAML config upstream, then env var, then default
@@ -259,6 +264,7 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
                 "cargo:warning=Successfully fetched server public key from {}",
                 status_url
             );
+            true
         }
         None => {
             // Emit the default placeholder key so compilation succeeds for local development
@@ -276,6 +282,7 @@ fn get_pub_key(yaml_config: Option<YamlConfigResult>) {
                 "cargo:rustc-env=IMIX_SERVER_PUBKEY={}",
                 DEFAULT_SERVER_PUBKEY
             );
+            false
         }
     }
 }
@@ -320,21 +327,26 @@ fn validate_dsn_config() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Tell Cargo to rerun this build script if these env vars change
-    // This fixes the issue where changing IMIX_CONFIG doesn't trigger a rebuild
-    println!("cargo:rerun-if-env-changed=IMIX_CONFIG");
-    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_URI");
-    println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
-    println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
-    println!("cargo:rerun-if-env-changed=PROTOC");
-
     // Parse YAML config if present (this will emit IMIX_CALLBACK_URI if successful)
     let yaml_config = parse_yaml_config()?;
 
     // Validate DSN config (skips if YAML config was used)
     validate_dsn_config()?;
 
-    get_pub_key(yaml_config);
+    let pubkey_resolved = get_pub_key(yaml_config);
+
+    // Only restrict build script reruns to env var changes when we successfully obtained
+    // the real server public key. When the placeholder was used (server unreachable),
+    // we omit these directives so Cargo uses its default behavior (rerun when any file
+    // in the package changes), giving the build script a chance to fetch the real key
+    // on the next build once the server becomes available.
+    if pubkey_resolved {
+        println!("cargo:rerun-if-env-changed=IMIX_CONFIG");
+        println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_URI");
+        println!("cargo:rerun-if-env-changed=IMIX_CALLBACK_INTERVAL");
+        println!("cargo:rerun-if-env-changed=IMIX_SERVER_PUBKEY");
+        println!("cargo:rerun-if-env-changed=PROTOC");
+    }
 
     // Skip if no `protoc` can be found
     match env::var_os("PROTOC")
