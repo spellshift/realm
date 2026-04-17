@@ -1,5 +1,6 @@
 use super::ArgCheck;
 use crate::ast::Value;
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::is_truthy;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
@@ -11,7 +12,7 @@ pub fn handle_string_methods(
     s: &str,
     method: &str,
     args: &[Value],
-) -> Option<Result<Value, String>> {
+) -> Option<Result<Value, NativeError>> {
     match method {
         "split" => Some({
             let parts: Vec<Value> = if args.is_empty() {
@@ -150,7 +151,7 @@ pub fn handle_string_methods(
             let sub = args[0].to_string();
             match s.find(&sub) {
                 Some(idx) => Ok(Value::Int(idx as i64)),
-                None => Err("ValueError: substring not found".into()),
+                None => Err(NativeError::value_error("substring not found")),
             }
         })()),
         "rfind" => Some((|| {
@@ -166,7 +167,7 @@ pub fn handle_string_methods(
             let sub = args[0].to_string();
             match s.rfind(&sub) {
                 Some(idx) => Ok(Value::Int(idx as i64)),
-                None => Err("ValueError: substring not found".into()),
+                None => Err(NativeError::value_error("substring not found")),
             }
         })()),
         "count" => Some((|| {
@@ -193,12 +194,12 @@ pub fn handle_string_methods(
                         .iter()
                         .map(|v| match v {
                             Value::String(ss) => Ok(ss.clone()),
-                            _ => Err("TypeError: join() expects list of strings".to_string()),
+                            _ => Err(NativeError::type_error("join() expects list of strings")),
                         })
                         .collect();
                     Ok(Value::String(strs?.join(s)))
                 }
-                _ => Err("TypeError: join() expects a list".into()),
+                _ => Err(NativeError::type_error("join() expects a list")),
             }
         })()),
         "format" => Some((|| {
@@ -209,7 +210,7 @@ pub fn handle_string_methods(
             while i < chars.len() {
                 if chars[i] == '{' && i + 1 < chars.len() && chars[i + 1] == '}' {
                     if arg_idx >= args.len() {
-                        return Err("IndexError: tuple index out of range".into());
+                        return Err(NativeError::index_error("tuple index out of range"));
                     }
                     result.push_str(&args[arg_idx].to_string());
                     arg_idx += 1;

@@ -1,4 +1,5 @@
 use crate::ast::Value;
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::{find_best_match, get_type_name};
 use alloc::format;
 use alloc::string::{String, ToString};
@@ -20,29 +21,29 @@ use str::handle_string_methods;
 // --- Argument Validation Helper ---
 
 pub trait ArgCheck {
-    fn require(&self, count: usize, name: &str) -> Result<(), String>;
-    fn require_range(&self, min: usize, max: usize, name: &str) -> Result<(), String>;
+    fn require(&self, count: usize, name: &str) -> Result<(), NativeError>;
+    fn require_range(&self, min: usize, max: usize, name: &str) -> Result<(), NativeError>;
 }
 
 impl ArgCheck for [Value] {
-    fn require(&self, count: usize, name: &str) -> Result<(), String> {
+    fn require(&self, count: usize, name: &str) -> Result<(), NativeError> {
         if self.len() != count {
-            return Err(format!(
-                "TypeError: {}() takes exactly {} argument{}",
+            return Err(NativeError::type_error(format!(
+                "{}() takes exactly {} argument{}",
                 name,
                 count,
                 if count != 1 { "s" } else { "" }
-            ));
+            )));
         }
         Ok(())
     }
 
-    fn require_range(&self, min: usize, max: usize, name: &str) -> Result<(), String> {
+    fn require_range(&self, min: usize, max: usize, name: &str) -> Result<(), NativeError> {
         if self.len() < min || self.len() > max {
-            return Err(format!(
-                "TypeError: {}() takes between {} and {} arguments",
+            return Err(NativeError::type_error(format!(
+                "{}() takes between {} and {} arguments",
                 name, min, max
-            ));
+            )));
         }
         Ok(())
     }
@@ -127,7 +128,7 @@ pub fn get_native_methods(value: &Value) -> Vec<String> {
     }
 }
 
-pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Result<Value, String> {
+pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Result<Value, NativeError> {
     let result = match receiver {
         Value::List(l) => handle_list_methods(l, method, args),
         Value::Dictionary(d) => handle_dict_methods(d, method, args),
@@ -150,7 +151,7 @@ pub fn call_bound_method(receiver: &Value, method: &str, args: &[Value]) -> Resu
             if let Some(suggestion) = find_best_match(method, &candidates) {
                 msg.push_str(&format!("\nDid you mean '{suggestion}'?"));
             }
-            Err(msg)
+            Err(NativeError::runtime_error(msg))
         }
     }
 }

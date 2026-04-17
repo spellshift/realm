@@ -1,5 +1,6 @@
 use super::ArgCheck;
 use crate::ast::Value;
+use crate::interpreter::error::NativeError;
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::sync::Arc;
@@ -11,7 +12,7 @@ pub fn handle_dict_methods(
     d: &Arc<RwLock<BTreeMap<Value, Value>>>,
     method: &str,
     args: &[Value],
-) -> Option<Result<Value, alloc::string::String>> {
+) -> Option<Result<Value, NativeError>> {
     match method {
         "keys" => Some((|| {
             args.require(0, "keys")?;
@@ -53,7 +54,7 @@ pub fn handle_dict_methods(
                     d.write().extend(other_map);
                     Ok(Value::None)
                 }
-                _ => Err("TypeError: update() requires a dictionary".into()),
+                _ => Err(NativeError::type_error("update() requires a dictionary")),
             }
         })()),
         "popitem" => Some((|| {
@@ -64,7 +65,7 @@ pub fn handle_dict_methods(
                 let v = map.remove(&k).unwrap();
                 Ok(Value::Tuple(vec![k, v]))
             } else {
-                Err("KeyError: popitem(): dictionary is empty".into())
+                Err(NativeError::key_error("popitem(): dictionary is empty"))
             }
         })()),
         "clear" => Some((|| {
@@ -82,7 +83,7 @@ pub fn handle_dict_methods(
             if args.len() == 2 {
                 Ok(args[1].clone())
             } else {
-                Err(format!("KeyError: {}", key))
+                Err(NativeError::key_error(format!("{}", key)))
             }
         })()),
         "setdefault" => Some((|| {

@@ -1,24 +1,25 @@
 use super::ArgCheck;
 use crate::ast::Value;
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use alloc::collections::BTreeSet;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::sync::Arc;
 use spin::RwLock;
 
 // Helper to convert any iterable Value into a BTreeSet<Value> for set operations.
-fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, String> {
+fn get_set_elements(v: &Value) -> Result<BTreeSet<Value>, NativeError> {
     match v {
         Value::Set(s) => Ok(s.read().clone()),
         Value::List(l) => Ok(l.read().iter().cloned().collect()),
         Value::Tuple(t) => Ok(t.iter().cloned().collect()),
         Value::Dictionary(d) => Ok(d.read().keys().cloned().collect()),
         Value::String(s) => Ok(s.chars().map(|c| Value::String(c.to_string())).collect()),
-        _ => Err(format!(
-            "TypeError: '{}' object is not iterable",
+        _ => Err(NativeError::type_error(format!(
+            "'{}' object is not iterable",
             get_type_name(v)
-        )),
+        ))),
     }
 }
 
@@ -26,7 +27,7 @@ pub fn handle_set_methods(
     s: &Arc<RwLock<BTreeSet<Value>>>,
     method: &str,
     args: &[Value],
-) -> Option<Result<Value, String>> {
+) -> Option<Result<Value, NativeError>> {
     match method {
         "add" => Some((|| {
             args.require(1, "add")?;
@@ -78,20 +79,20 @@ pub fn handle_set_methods(
             args.require(0, "pop")?;
             let mut set = s.write();
             if set.is_empty() {
-                return Err("KeyError: pop from empty set".into());
+                return Err(NativeError::key_error("pop from empty set"));
             }
             let last = set.iter().next_back().cloned();
             if let Some(v) = last {
                 set.remove(&v);
                 Ok(v)
             } else {
-                Err("KeyError: pop from empty set".into())
+                Err(NativeError::key_error("pop from empty set"))
             }
         })()),
         "remove" => Some((|| {
             args.require(1, "remove")?;
             if !s.write().remove(&args[0]) {
-                return Err(format!("KeyError: {}", args[0]));
+                return Err(NativeError::key_error(format!("{}", args[0])));
             }
             Ok(Value::None)
         })()),

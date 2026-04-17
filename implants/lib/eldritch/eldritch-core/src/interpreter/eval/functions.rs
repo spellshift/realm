@@ -7,7 +7,7 @@ use super::super::builtins::{
     reduce::builtin_reduce, sorted::builtin_sorted,
 };
 use super::super::core::{Flow, Interpreter};
-use super::super::error::{EldritchError, EldritchErrorKind, NativeError};
+use super::super::error::{EldritchError, EldritchErrorKind};
 use super::super::exec::execute_stmts;
 use super::super::introspection::get_type_name;
 use super::super::methods::call_bound_method;
@@ -333,7 +333,7 @@ pub(crate) fn call_function(
                     .with_stack(interp.call_stack.clone()))
                 } else {
                     call_bound_method(&receiver, &method_name, args_slice).map_err(|e| {
-                        NativeError::from(e)
+                        e
                             .into_eldritch_error(span)
                             .with_stack(interp.call_stack.clone())
                     })
@@ -406,7 +406,7 @@ pub(crate) fn call_value(
         Value::BoundMethod(receiver, method_name) => {
             interp.push_frame(method_name, span);
             let res = call_bound_method(receiver, method_name, args).map_err(|e| {
-                NativeError::from(e)
+                e
                     .into_eldritch_error(span)
                     .with_stack(interp.call_stack.clone())
             });

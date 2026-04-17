@@ -1,5 +1,6 @@
 use super::ArgCheck;
 use crate::ast::Value;
+use crate::interpreter::error::NativeError;
 use crate::interpreter::introspection::get_type_name;
 use crate::interpreter::operations::{compare_values, values_equal};
 use alloc::format;
@@ -12,7 +13,7 @@ pub fn handle_list_methods(
     l: &Arc<RwLock<Vec<Value>>>,
     method: &str,
     args: &[Value],
-) -> Option<Result<Value, alloc::string::String>> {
+) -> Option<Result<Value, NativeError>> {
     match method {
         "append" => Some((|| {
             args.require(1, "append")?;
@@ -30,10 +31,10 @@ pub fn handle_list_methods(
                 }
                 Value::Tuple(other) => l.write().extend(other.clone()),
                 _ => {
-                    return Err(format!(
-                        "TypeError: extend() expects an iterable, got {}",
+                    return Err(NativeError::type_error(format!(
+                        "extend() expects an iterable, got {}",
                         get_type_name(iterable)
-                    ));
+                    )));
                 }
             }
             Ok(Value::None)
@@ -42,7 +43,7 @@ pub fn handle_list_methods(
             args.require(2, "insert")?;
             let idx = match args[0] {
                 Value::Int(i) => i,
-                _ => return Err("TypeError: insert() index must be an integer".into()),
+                _ => return Err(NativeError::type_error("insert() index must be an integer")),
             };
             let val = args[1].clone();
             let mut vec = l.write();
@@ -63,7 +64,7 @@ pub fn handle_list_methods(
                 vec.remove(pos);
                 Ok(Value::None)
             } else {
-                Err("ValueError: list.remove(x): x not in list".into())
+                Err(NativeError::value_error("list.remove(x): x not in list"))
             }
         })()),
         "index" => Some((|| {
@@ -73,7 +74,7 @@ pub fn handle_list_methods(
             if let Some(pos) = vec.iter().position(|x| values_equal(x, target)) {
                 Ok(Value::Int(pos as i64))
             } else {
-                Err("ValueError: list.index(x): x not in list".into())
+                Err(NativeError::value_error("list.index(x): x not in list"))
             }
         })()),
         "pop" => Some((|| {
@@ -81,7 +82,7 @@ pub fn handle_list_methods(
             if let Some(v) = l.write().pop() {
                 Ok(v)
             } else {
-                Err("IndexError: pop from empty list".into())
+                Err(NativeError::index_error("pop from empty list"))
             }
         })()),
         "sort" => Some((|| {
