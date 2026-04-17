@@ -140,7 +140,7 @@ mod tests {
             ::std::thread::sleep(::std::time::Duration::from_millis(100));
 
             let lib = StdProcessLibrary;
-            let list = lib.list().unwrap();
+            let list = lib.list(None).unwrap();
             assert!(!list.is_empty());
 
             // Find our spawned process
