@@ -4,6 +4,7 @@ import { useCreateQuestModal } from "../../../context/CreateQuestModalContext";
 import Button from "../../../components/tavern-base-ui/button/Button";
 import { FileTerminal } from "lucide-react";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import HostSubscriptionButton from "./HostSubscriptionButton";
 
 const HostHeader = () => {
     const [, setSearchParams] = useSearchParams();
@@ -24,7 +25,8 @@ const HostHeader = () => {
     return (
         <div className="flex flex-row justify-between w-full items-center">
             <Breadcrumbs pages={BreadcrumbsList} />
-            <div>
+            <div className="flex flex-row gap-2 items-center">
+                {host?.id && <HostSubscriptionButton hostId={host.id} />}
                 <Button
                     leftIcon={<FileTerminal className="w-5 h-5" />}
                     buttonStyle={{ color: "purple", size: "md" }}

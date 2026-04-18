@@ -92,7 +92,8 @@ const ShellV2 = () => {
         getSessionInputs,
         setShellInput,
         focusTerminal,
-        sendCtrlC
+        sendCtrlC,
+        sendCtrlR
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
 
     const totalTabs = 1 + portalTabs.length;
@@ -237,6 +238,7 @@ const ShellV2 = () => {
                     onSshConnect={handleSshConnect}
                     onPtyOpen={handlePtyOpen}
                     onSendCtrlC={sendCtrlC}
+                    onSendCtrlR={sendCtrlR}
                 />
 
                 {shellTerm}

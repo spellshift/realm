@@ -1145,6 +1145,15 @@ export const useShellTerminal = (
         lastBufferHeight.current = 0;
     }, []);
 
+    const sendCtrlR = useCallback(() => {
+        const term = termInstance.current;
+        if (!term) return;
+        const state = shellState.current;
+        state.isSearching = true;
+        state.searchQuery = "";
+        redrawLine();
+    }, [redrawLine]);
+
     return {
         termRef,
         connectionError,
@@ -1162,6 +1171,7 @@ export const useShellTerminal = (
         getSessionInputs,
         setShellInput,
         focusTerminal,
-        sendCtrlC
+        sendCtrlC,
+        sendCtrlR
     };
 };
