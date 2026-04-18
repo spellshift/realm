@@ -6,8 +6,6 @@ import {
     Popover,
     PopoverTrigger,
     PopoverContent,
-    PopoverHeader,
-    PopoverBody,
     PopoverArrow,
     Tabs,
     TabList,
@@ -24,6 +22,8 @@ import {
 import { GET_NOTIFICATIONS, MARK_NOTIFICATIONS_AS_READ } from '../../lib/notifications';
 import { NotificationPriority, EventKind } from '../../utils/enums';
 import { NotificationNode } from '../../utils/interfacesQuery';
+import { getNotificationLink, getEventDescription } from '../../utils/notificationHelpers';
+import useUrgentNotifications from '../../hooks/useUrgentNotifications';
 import { FileTerminal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -36,6 +36,9 @@ const NotificationBell = () => {
 
     const notifications: NotificationNode[] = data?.me?.notifications?.edges?.map((edge: any) => edge.node) || [];
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    // Monitor for new urgent notifications and show toasts / system notifications
+    useUrgentNotifications(notifications);
 
     const urgentNotifications = notifications.filter(n => n.priority === NotificationPriority.Urgent && !n.archived);
     const unreadNotifications = notifications.filter(n => !n.read && !n.archived);
@@ -62,40 +65,6 @@ const NotificationBell = () => {
                 return <BugAntIcon className="h-4 w-4" />;
             default:
                 return <BellIcon className="h-4 w-4" />;
-        }
-    };
-
-    const getEventDescription = (notification: NotificationNode) => {
-        const event = notification.event;
-        switch (event.kind) {
-            case EventKind.HOST_ACCESS_NEW:
-                return `New host access: ${event.host?.name || event.host?.id}`;
-            case EventKind.HOST_ACCESS_RECOVERED:
-                return `Host access recovered: ${event.host?.name || event.host?.id}`;
-            case EventKind.HOST_ACCESS_LOST:
-                return `Host access lost: ${event.host?.name || event.host?.id}`;
-            case EventKind.BEACON_LOST:
-                return `Beacon lost: ${event.beacon?.name || event.beacon?.id}`;
-            case EventKind.QUEST_COMPLETED:
-                return `Quest completed: ${event.quest?.name || event.quest?.id}`;
-            default:
-                return 'Notification received';
-        }
-    };
-
-    const getNotificationLink = (notification: NotificationNode) => {
-        const event = notification.event;
-        switch (event.kind) {
-            case EventKind.HOST_ACCESS_NEW:
-            case EventKind.HOST_ACCESS_RECOVERED:
-            case EventKind.HOST_ACCESS_LOST:
-                return event.host ? `/hosts/${event.host.id}` : null;
-            case EventKind.BEACON_LOST:
-                return event.host?.id ? `/hosts/${event.host.id}` : (event.beacon?.host?.id ? `/hosts/${event.beacon.host.id}` : null);
-            case EventKind.QUEST_COMPLETED:
-                return event.quest ? `/tasks/${event.quest.id}` : null;
-            default:
-                return null;
         }
     };
 
