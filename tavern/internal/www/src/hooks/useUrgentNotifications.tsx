@@ -42,6 +42,47 @@ const showSystemNotification = (description: string, link: string | null, naviga
     };
 };
 
+interface UrgentNotificationToastProps {
+    description: string;
+    link: string | null;
+    onNavigate: (path: string) => void;
+    onClose?: () => void;
+}
+
+const UrgentNotificationToast = ({ description, link, onNavigate, onClose }: UrgentNotificationToastProps) => (
+    <Box
+        role="alert"
+        onClick={() => {
+            if (link) {
+                onNavigate(link);
+            }
+            if (onClose) onClose();
+        }}
+        cursor={link ? 'pointer' : 'default'}
+        bg="orange.700"
+        color="white"
+        p={4}
+        borderRadius="md"
+        boxShadow="lg"
+        maxW="350px"
+    >
+        <HStack justify="space-between" align="start">
+            <VStack align="start" spacing={1}>
+                <Text fontWeight="bold" fontSize="sm">⚠ Urgent Notification</Text>
+                <Text fontSize="sm">{description}</Text>
+                {link && <Text fontSize="xs" opacity={0.8}>Click to view</Text>}
+            </VStack>
+            <CloseButton
+                size="sm"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    if (onClose) onClose();
+                }}
+            />
+        </HStack>
+    </Box>
+);
+
 /**
  * Hook that monitors notifications for urgent priority items and displays
  * toasts and system notifications when new urgent notifications arrive.
@@ -87,37 +128,12 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
                 duration: 10000,
                 isClosable: true,
                 render: ({ onClose }) => (
-                    <Box
-                        role="alert"
-                        onClick={() => {
-                            if (link) {
-                                navigate(link);
-                            }
-                            if (onClose) onClose();
-                        }}
-                        cursor={link ? 'pointer' : 'default'}
-                        bg="orange.700"
-                        color="white"
-                        p={4}
-                        borderRadius="md"
-                        boxShadow="lg"
-                        maxW="350px"
-                    >
-                        <HStack justify="space-between" align="start">
-                            <VStack align="start" spacing={1}>
-                                <Text fontWeight="bold" fontSize="sm">⚠ Urgent Notification</Text>
-                                <Text fontSize="sm">{description}</Text>
-                                {link && <Text fontSize="xs" opacity={0.8}>Click to view</Text>}
-                            </VStack>
-                            <CloseButton
-                                size="sm"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onClose) onClose();
-                                }}
-                            />
-                        </HStack>
-                    </Box>
+                    <UrgentNotificationToast
+                        description={description}
+                        link={link}
+                        onNavigate={navigate}
+                        onClose={onClose}
+                    />
                 ),
             });
 
