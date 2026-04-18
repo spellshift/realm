@@ -45,31 +45,23 @@ func TestMCPStreamableHTTPEndpoint(t *testing.T) {
 
 	handler := setupTestHandler(t, client)
 
-	// Use a context with timeout to avoid hanging
+	// Use a real HTTP server to avoid data races with httptest.ResponseRecorder.
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	req := httptest.NewRequest(http.MethodGet, "/mcp", nil).WithContext(ctx)
-	w := httptest.NewRecorder()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/mcp", nil)
+	require.NoError(t, err)
 
-	// Run handler in goroutine since streaming will block
-	done := make(chan struct{})
-	go func() {
-		handler.ServeHTTP(w, req)
-		close(done)
-	}()
-
-	// Wait for either the handler to return or timeout
-	select {
-	case <-done:
-	case <-ctx.Done():
-	}
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
 
 	// Streamable HTTP GET endpoint should return text/event-stream
-	result := w.Result()
-	defer result.Body.Close()
-	assert.Equal(t, http.StatusOK, result.StatusCode)
-	assert.Contains(t, result.Header.Get("Content-Type"), "text/event-stream")
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, resp.Header.Get("Content-Type"), "text/event-stream")
 }
 
 // TestMCPPostEndpointRequiresValidRequest verifies the POST endpoint rejects requests without valid JSON-RPC.
