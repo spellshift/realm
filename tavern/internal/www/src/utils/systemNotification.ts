@@ -26,7 +26,10 @@ const getNotificationSW = (): Promise<ServiceWorkerRegistration | null> => {
     swReadyPromise = navigator.serviceWorker
         .register('/notification-sw.js')
         .then(() => navigator.serviceWorker.ready)
-        .catch(() => null);
+        .catch((err) => {
+            console.warn('Notification service worker registration failed:', err);
+            return null;
+        });
     return swReadyPromise;
 };
 

@@ -8,6 +8,7 @@
  */
 
 const shownTags = new Set();
+const shownTagsOrder = [];
 const MAX_TRACKED_TAGS = 500;
 
 // Immediately take control of all client tabs on activation.
@@ -33,9 +34,10 @@ self.addEventListener('message', (event) => {
 
     if (tag) {
         shownTags.add(tag);
-        // Prevent unbounded memory growth
-        if (shownTags.size > MAX_TRACKED_TAGS) {
-            const oldest = shownTags.values().next().value;
+        shownTagsOrder.push(tag);
+        // Evict the oldest entry to prevent unbounded memory growth
+        if (shownTagsOrder.length > MAX_TRACKED_TAGS) {
+            const oldest = shownTagsOrder.shift();
             shownTags.delete(oldest);
         }
     }
