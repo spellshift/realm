@@ -16,7 +16,6 @@ import (
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
-	"realm.pub/tavern/portals/stream"
 )
 
 var upgrader = websocket.Upgrader{
@@ -272,46 +271,45 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Background goroutine: read portal output -> broadcast to websockets (ordered)
-		orderedReader := stream.NewOrderedReader(func() (*portalpb.Mote, error) {
+		// Background goroutine: read portal output -> broadcast to websockets.
+		// Deduplication: The mux dispatches each mote twice (once via the local
+		// fast-path in Publish and once via the global pubsub receiveLoop). We
+		// track the highest seq_id we have processed and skip any mote whose
+		// seq_id has already been seen, which also preserves ordering.
+		go func() {
+			var lastSeqID uint64
+			seenAny := false
 			for {
 				select {
 				case <-sessionCtx.Done():
-					return nil, fmt.Errorf("session closed")
+					return
 				case m, ok := <-recvCh:
 					if !ok {
-						return nil, fmt.Errorf("receive channel closed")
+						closePivot()
+						return
 					}
 					// Only accept motes matching our streamID
 					if m.StreamId != streamID {
 						continue
 					}
-					return m, nil
-				}
-			}
-		})
-
-		go func() {
-			defer orderedReader.Close()
-			defer closePivot()
-			for {
-				m, err := orderedReader.Read()
-				if err != nil {
-					slog.ErrorContext(sessionCtx, "ordered reader error", "error", err)
-					closePivot()
-					return
-				}
-				// Check for close
-				if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-					closePivot()
-					return
-				}
-				// Handle PTY data
-				if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
-					pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
-						Kind:   shell.WebsocketMessageKindOutput,
-						Output: string(bytesPayload.Data),
-					})
+					// Check for close
+					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+						closePivot()
+						return
+					}
+					// Deduplicate: skip motes we have already processed
+					if seenAny && m.SeqId <= lastSeqID {
+						continue
+					}
+					lastSeqID = m.SeqId
+					seenAny = true
+					// Handle PTY data
+					if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
+						pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
+							Kind:   shell.WebsocketMessageKindOutput,
+							Output: string(bytesPayload.Data),
+						})
+					}
 				}
 			}
 		}()
@@ -330,15 +328,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		// Create the input writer for sequencing motes sent to the agent.
-		// This writer is shared between the init mote and the input forwarder
-		// goroutine to ensure a single monotonic sequence on the input stream.
-		inputWriter := stream.NewOrderedWriter(streamID, func(mote *portalpb.Mote) error {
-			return h.mux.Publish(sessionCtx, topicIn, mote)
-		})
-
 		// Send initial PTY request mote to the agent to spawn the PTY
-		if err := inputWriter.WriteBytes([]byte{}, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
+		initMote := &portalpb.Mote{
+			StreamId: streamID,
+			SeqId:    0,
+			Payload: &portalpb.Mote_Bytes{
+				Bytes: &portalpb.BytesPayload{
+					Data: []byte{},
+					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+				},
+			},
+		}
+		if err := h.mux.Publish(sessionCtx, topicIn, initMote); err != nil {
 			sendWsError(fmt.Sprintf("Failed to send PTY init mote: %v", err))
 			closePivot()
 			return
@@ -348,6 +349,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
 			go func() {
+				var seqID uint64
 				for {
 					_, msg, err := wsConn.ReadMessage()
 					if err != nil {
@@ -358,7 +360,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
 						continue
 					}
-					if err := inputWriter.WriteBytes([]byte(inputMsg.Input), portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
+					seqID++
+					mote := &portalpb.Mote{
+						StreamId: streamID,
+						SeqId:    seqID,
+						Payload: &portalpb.Mote_Bytes{
+							Bytes: &portalpb.BytesPayload{
+								Data: []byte(inputMsg.Input),
+								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+							},
+						},
+					}
+					if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
 						errCh <- err
 						return
 					}
@@ -410,9 +423,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Reader goroutine - for reconnects we need the portal info
 	// The pivot session tracks the stream context, but we need topicIn
-	// For reconnects, we look up the portal from the pivot
+	// For reconnects, we look up the portal from the pivot once up front.
 	go func() {
-		// Resolve portalID once up front
+		// Resolve portalID once to avoid per-keystroke DB queries
 		pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
 		if err != nil {
 			errCh <- err
@@ -425,10 +438,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		topicIn := h.mux.TopicIn(portalEnt.ID)
 
-		inputWriter := stream.NewOrderedWriter(pivotSession.StreamID, func(mote *portalpb.Mote) error {
-			return h.mux.Publish(ctx, topicIn, mote)
-		})
-
+		var seqID uint64
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
@@ -440,7 +450,18 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			if err := inputWriter.WriteBytes([]byte(inputMsg.Input), portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
+			seqID++
+			mote := &portalpb.Mote{
+				StreamId: pivotSession.StreamID,
+				SeqId:    seqID,
+				Payload: &portalpb.Mote_Bytes{
+					Bytes: &portalpb.BytesPayload{
+						Data: []byte(inputMsg.Input),
+						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
+					},
+				},
+			}
+			if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
 				slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
 			}
 		}

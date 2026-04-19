@@ -127,6 +127,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                 }
             };
 
+            seq_id += 1;
             let mote = Mote {
                 stream_id: stream_id_clone.clone(),
                 seq_id,
@@ -135,7 +136,6 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
                     kind: BytesPayloadKind::Pty as i32,
                 })),
             };
-            seq_id += 1;
 
             if rt.block_on(out_tx_clone.send(mote)).is_err() {
                 break;
@@ -145,7 +145,7 @@ fn spawn_pty_session(stream_id: String, out_tx: mpsc::Sender<Mote>) -> Result<Pt
         // Send close mote when PTY exits
         let close_mote = Mote {
             stream_id: stream_id_clone,
-            seq_id,
+            seq_id: seq_id + 1,
             payload: Some(Payload::Bytes(BytesPayload {
                 data: b"PTY session ended".to_vec(),
                 kind: BytesPayloadKind::Close as i32,
