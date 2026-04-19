@@ -7,13 +7,13 @@ export const TIME_RANGES: TimeRange[] = ["today", "last3days", "week", "month"];
 export const TIME_RANGE_CONFIG: Record<TimeRange, TimeRangeConfig> = {
     today: {
         label: "1 Day",
-        granularity_seconds: 3600, 
+        granularity_seconds: 3600,
         daysBack: 1,
         formatString: "h A",
     },
     last3days: {
         label: "3 Days",
-        granularity_seconds: 7200,
+        granularity_seconds: 3600,
         daysBack: 3,
         formatString: "ddd h A",
     },

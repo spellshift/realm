@@ -3,7 +3,7 @@ import Button from "../../components/tavern-base-ui/button/Button";
 import PageHeader from "../../components/tavern-base-ui/PageHeader";
 import { FileTerminal } from "lucide-react";
 import { useCreateQuestModal } from "../../context/CreateQuestModalContext";
-import { QuestTimelineChart } from "./QuestTimelineChart";
+import { QuestSummaryCard } from "./QuestSummaryCard";
 import { HostByTagCard } from "./HostByTagCard/HostByTagCard";
 import { useQuery } from "@apollo/client";
 import { GET_TAGS_FOR_DASHBOARD } from "./HostByTagCard/queries";
@@ -37,16 +37,14 @@ export const Dashboard = () => {
                     <Button
                         leftIcon={<FileTerminal className="w-5 h-5" />}
                         buttonStyle={{ color: "purple", size: "md" }}
-                        onClick={() => openModal({navigateToQuest: true})}
+                        onClick={() => openModal({ navigateToQuest: true })}
                     >
                         Create a quest
                     </Button>
                 </div>
             </div>
-            <PageHeader title="Dashboard" />
-
-            <div className="mt-6 flex flex-col gap-2">
-                <QuestTimelineChart />
+            <div className="flex flex-col gap-2">
+                <QuestSummaryCard />
                 {loading && tags.length === 0 ? (
                     <EmptyState type={EmptyStateType.loading} label="Loading tags..." />
                 ) : error ? (

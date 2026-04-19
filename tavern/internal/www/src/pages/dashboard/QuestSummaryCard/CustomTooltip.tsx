@@ -26,7 +26,7 @@ export const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label }
                             className="w-3 h-3 rounded-sm"
                             style={{ backgroundColor: entry.fill }}
                         />
-                        <span className="text-gray-700">
+                        <span className="text-gray-800">
                             {TomeTactic[entry.name as keyof typeof TomeTactic] || entry.name}:
                         </span>
                         <span className="font-medium text-gray-900">{entry.value}</span>
