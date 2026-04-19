@@ -104,7 +104,9 @@ const SshTerminal: React.FC<SshTerminalProps> = ({ portalId, target, pivotId, sh
 
   useEffect(() => {
     if (isActive) {
-      termInstance.current?.focus();
+      // Delay focus so it runs after the browser finishes focusing the
+      // clicked tab header element.
+      setTimeout(() => termInstance.current?.focus(), 0);
     }
   }, [isActive]);
 

@@ -102,7 +102,9 @@ const ShellV2 = () => {
 
     useEffect(() => {
         if (tabIndex === 0) {
-            focusTerminal();
+            // Delay focus so it runs after the browser finishes focusing the
+            // clicked tab header element.
+            setTimeout(() => focusTerminal(), 0);
         }
     }, [tabIndex, focusTerminal]);
 
