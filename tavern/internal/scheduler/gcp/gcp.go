@@ -95,7 +95,7 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
 		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
 	} else if exists {
-		return fmt.Errorf("scheduler/gcp: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	method := schedulerpb.HttpMethod_POST
@@ -146,7 +146,7 @@ func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
 		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
 	} else if exists {
-		return fmt.Errorf("scheduler/gcp: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	method := schedulerpb.HttpMethod_POST

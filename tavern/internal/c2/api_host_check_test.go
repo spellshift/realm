@@ -1,9 +1,7 @@
 package c2_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,8 +22,8 @@ import (
 
 // TestHostAccessLost verifies the end-to-end flow:
 //  1. A beacon checks in, establishing a host.
-//  2. The host fails to check in again (simulated by calling the host-check
-//     handler with the expected NextSeenAt).
+//  2. The host fails to check in again (simulated by setting its NextSeenAt
+//     into the past by more than 1 minute and then calling the host-check handler).
 //  3. A HOST_ACCESS_LOST event is created.
 //  4. URGENT notifications are sent to subscribers and Low notifications to
 //     other users.
@@ -97,21 +95,18 @@ func TestHostAccessLost(t *testing.T) {
 	_, err = graph.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
 	require.NoError(t, err)
 
+	// Simulate the host being lost by setting NextSeenAt to > 1 minute ago
+	pastTime := time.Now().Add(-2 * time.Minute)
+	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime).Save(ctx)
+	require.NoError(t, err)
+
 	// Set up host-check handler with the same ent client (which has hooks)
 	handler := hostcheck.NewHandler(graph)
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	// Simulate the host being lost by calling the host-check endpoint
-	// with the current NextSeenAt (meaning no new beacon checked in)
-	checkReq := hostcheck.Request{
-		HostID:             h.ID,
-		ExpectedNextSeenAt: h.NextSeenAt,
-	}
-	body, err := json.Marshal(checkReq)
-	require.NoError(t, err)
-
-	resp, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
+	// Call the host-check handler (it polls all hosts, no body needed)
+	resp, err := http.Post(ts.URL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "host check handler should return 200")
@@ -147,7 +142,7 @@ func TestHostAccessLost(t *testing.T) {
 	}
 
 	// Verify idempotency: calling host check again should NOT create a duplicate event
-	resp2, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
+	resp2, err := http.Post(ts.URL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp2.Body.Close()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
@@ -160,8 +155,17 @@ func TestHostAccessLost(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, lostEventsAfter, 1, "duplicate HOST_ACCESS_LOST event should NOT be created")
 
-	// Verify that if the host checks in again (NextSeenAt changes), the old
-	// check is correctly skipped.
+	// Verify that if the host checks in again and then goes lost again,
+	// a NEW HOST_ACCESS_LOST event IS created (recovery + re-loss scenario).
+	//
+	// To simulate time passage without sleeping, we move the first event's
+	// timestamp into the past. This way, when we set a new NextSeenAt that
+	// is more recent than the old event, the dedup check correctly finds
+	// no matching event.
+	oldTimestamp := time.Now().Add(-10 * time.Minute).Unix()
+	_, err = graph.Event.UpdateOne(lostEvents[0]).SetTimestamp(oldTimestamp).Save(ctx)
+	require.NoError(t, err)
+
 	_, err = client.ClaimTasks(ctx, &c2pb.ClaimTasksRequest{
 		Beacon: &c2pb.Beacon{
 			Identifier: "test-beacon-host-lost",
@@ -185,44 +189,36 @@ func TestHostAccessLost(t *testing.T) {
 	})
 	require.Equal(t, codes.OK.String(), status.Code(err).String())
 
-	// The old ExpectedNextSeenAt no longer matches, so calling the handler with
-	// the stale value should be a no-op.
-	resp3, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
+	// Set NextSeenAt to 5 minutes ago: this is after the old event's timestamp
+	// (10 min ago) so the dedup check won't find it, but still > 1 minute
+	// before now so the host is detected as lost.
+	h, err = graph.Host.Query().Where(host.IdentifierEQ("test-host-lost")).Only(ctx)
 	require.NoError(t, err)
-	defer resp3.Body.Close()
-	assert.Equal(t, http.StatusOK, resp3.StatusCode)
+	pastTime2 := time.Now().Add(-5 * time.Minute)
+	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime2).Save(ctx)
+	require.NoError(t, err)
 
-	// Still only one HOST_ACCESS_LOST event
+	resp4, err := http.Post(ts.URL, "application/json", nil)
+	require.NoError(t, err)
+	defer resp4.Body.Close()
+	assert.Equal(t, http.StatusOK, resp4.StatusCode)
+
+	// Now there should be 2 HOST_ACCESS_LOST events (one for each loss)
 	finalLostEvents, err := graph.Event.Query().
 		Where(
 			event.HasHostWith(host.ID(h.ID)),
 			event.KindEQ(event.KindHOST_ACCESS_LOST),
 		).Count(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 1, finalLostEvents, "no additional HOST_ACCESS_LOST event should be created")
-
-	// Verify a HOST_ACCESS_RECOVERED event was created (since the beacon
-	// checked in again after being lost).
-	recoveredCount, err := graph.Event.Query().
-		Where(
-			event.HasHostWith(host.ID(h.ID)),
-			event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
-		).Count(ctx)
-	require.NoError(t, err)
-
-	_ = recoveredCount
-	// Note: HOST_ACCESS_RECOVERED is triggered by HookDeriveHostEvents when
-	// newLastSeen > oldNextSeen + 1 minute. In this test, the beacon checks
-	// in right away, so the condition may or may not be met depending on timing.
-	// We primarily verify the HOST_ACCESS_LOST flow here.
+	assert.Equal(t, 2, finalLostEvents, "a new HOST_ACCESS_LOST event should be created after recovery and re-loss")
 
 	t.Log("✅ HOST_ACCESS_LOST event created with URGENT notification for subscribers")
 }
 
-// TestHostAccessLostSkippedWhenHostUpdated verifies that the host check
-// handler is a no-op when the host's NextSeenAt has been updated since the
-// check was scheduled (i.e., the beacon checked in on time).
-func TestHostAccessLostSkippedWhenHostUpdated(t *testing.T) {
+// TestHostAccessLostSkippedWhenNotOverdue verifies that the host check
+// handler does not create events for hosts whose NextSeenAt has not been
+// missed by more than 1 minute.
+func TestHostAccessLostSkippedWhenNotOverdue(t *testing.T) {
 	ctx := context.Background()
 	_, graph, close, _ := c2test.New(t)
 	defer close()
@@ -230,7 +226,7 @@ func TestHostAccessLostSkippedWhenHostUpdated(t *testing.T) {
 	graph.Host.Use(ent.HookDeriveHostEvents())
 	graph.Event.Use(ent.HookDeriveNotifications())
 
-	// Create a host directly
+	// Create a host with NextSeenAt in the future (not lost)
 	h, err := graph.Host.Create().
 		SetIdentifier("host-not-lost").
 		SetPlatform(c2pb.Host_PLATFORM_LINUX).
@@ -243,14 +239,8 @@ func TestHostAccessLostSkippedWhenHostUpdated(t *testing.T) {
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
-	// Send a check with a stale ExpectedNextSeenAt (different from current)
-	staleTime := time.Now().Add(-5 * time.Minute)
-	body, _ := json.Marshal(hostcheck.Request{
-		HostID:             h.ID,
-		ExpectedNextSeenAt: staleTime,
-	})
-
-	resp, err := http.Post(ts.URL, "application/json", bytes.NewReader(body))
+	// Call the host-check handler (no body needed)
+	resp, err := http.Post(ts.URL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -262,5 +252,5 @@ func TestHostAccessLostSkippedWhenHostUpdated(t *testing.T) {
 			event.KindEQ(event.KindHOST_ACCESS_LOST),
 		).Count(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, 0, count, "no HOST_ACCESS_LOST event should be created when NextSeenAt changed")
+	assert.Equal(t, 0, count, "no HOST_ACCESS_LOST event should be created when NextSeenAt is in the future")
 }

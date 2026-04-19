@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -361,6 +362,26 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
 	}
 
+	// Schedule a recurring host-lost check that polls every 10 seconds.
+	// If the job is already scheduled (e.g. from a previous startup), the
+	// scheduler will return an error which we log and ignore.
+	if err := sched.Schedule(ctx, scheduler.Job{
+		Name:     "host-lost-poll",
+		Schedule: "@every 10s",
+		HTTPTarget: scheduler.HTTPTarget{
+			URL:    hostCheckURL,
+			Method: "POST",
+		},
+	}); err != nil {
+		if errors.Is(err, scheduler.ErrJobExists) {
+			slog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
+		} else {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("failed to schedule host-lost check: %w", err)
+		}
+	}
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -413,7 +434,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux, c2.WithScheduler(sched, hostCheckURL)),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},

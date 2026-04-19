@@ -48,7 +48,7 @@ func (s *Scheduler) Schedule(_ context.Context, job scheduler.Job) error {
 	defer s.mu.Unlock()
 
 	if _, exists := s.jobs[job.Name]; exists {
-		return fmt.Errorf("scheduler/mem: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	target := job.HTTPTarget
@@ -69,10 +69,10 @@ func (s *Scheduler) ScheduleAt(_ context.Context, job scheduler.OnceJob) error {
 	defer s.mu.Unlock()
 
 	if _, exists := s.jobs[job.Name]; exists {
-		return fmt.Errorf("scheduler/mem: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 	if _, exists := s.timers[job.Name]; exists {
-		return fmt.Errorf("scheduler/mem: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	delay := time.Until(job.At)
