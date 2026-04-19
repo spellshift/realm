@@ -364,7 +364,7 @@ func TestHostAccessRecoveredViaClaimTasks(t *testing.T) {
 			event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
 		).All(ctx)
 	require.NoError(t, err)
-	require.Len(t, recoveredEvents, 1, "HOST_ACCESS_RECOVERED event should exist after beacon re-check-in")
+	require.Len(t, recoveredEvents, 1, "HOST_ACCESS_RECOVERED event should exist after beacon check-in")
 
 	// Step 5: Verify notification priorities
 	notifs, err := graph.Notification.Query().

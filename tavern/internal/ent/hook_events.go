@@ -35,7 +35,7 @@ func HookDeriveHostEvents() ent.Hook {
 						Where(host.IdentifierEQ(identifier)).
 						Only(ctx)
 					if err == nil {
-						// Host already exists — this is an upsert (beacon re-check-in).
+						// Host already exists — this is an upsert (beacon check-in).
 						// Check if the host is recovering from a lost state.
 						existingHostID = existingHost.ID
 						newLastSeen, ok := mut.LastSeenAt()
