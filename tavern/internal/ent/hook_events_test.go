@@ -235,80 +235,80 @@ func TestHookDeriveNotifications_HostAccessRecovered(t *testing.T) {
 }
 
 // TestHookDeriveNotifications_HostAccessLost verifies that HOST_ACCESS_LOST
-// events create Urgent notifications for ALL users (subscribers and
-// non-subscribers alike), because losing access to a host is always urgent.
+// events create Urgent notifications for subscribers and Medium notifications
+// for non-subscribers, matching the behaviour of HOST_ACCESS_RECOVERED.
 func TestHookDeriveNotifications_HostAccessLost(t *testing.T) {
-client := enttest.OpenTempDB(t)
-defer client.Close()
+	client := enttest.OpenTempDB(t)
+	defer client.Close()
 
-client.Host.Use(ent.HookDeriveHostEvents())
-client.Task.Use(ent.HookDeriveQuestEvents())
-client.Event.Use(ent.HookDeriveNotifications())
+	client.Host.Use(ent.HookDeriveHostEvents())
+	client.Task.Use(ent.HookDeriveQuestEvents())
+	client.Event.Use(ent.HookDeriveNotifications())
 
-ctx := context.Background()
+	ctx := context.Background()
 
-// Create two users: one subscriber and one non-subscriber
-subscriber, err := client.User.Create().
-SetName("subscriber-user").
-SetOauthID("oauth-sub-lost").
-SetPhotoURL("http://photo.com/sub").
-Save(ctx)
-require.NoError(t, err)
+	// Create two users: one subscriber and one non-subscriber
+	subscriber, err := client.User.Create().
+		SetName("subscriber-user").
+		SetOauthID("oauth-sub-lost").
+		SetPhotoURL("http://photo.com/sub").
+		Save(ctx)
+	require.NoError(t, err)
 
-nonSubscriber, err := client.User.Create().
-SetName("other-user").
-SetOauthID("oauth-other-lost").
-SetPhotoURL("http://photo.com/other").
-Save(ctx)
-require.NoError(t, err)
+	nonSubscriber, err := client.User.Create().
+		SetName("other-user").
+		SetOauthID("oauth-other-lost").
+		SetPhotoURL("http://photo.com/other").
+		Save(ctx)
+	require.NoError(t, err)
 
-// Create a host with NextSeenAt in the past (simulating an overdue host)
-pastNext := time.Now().Add(-5 * time.Minute)
-h, err := client.Host.Create().
-SetIdentifier("host-lost").
-SetPlatform(c2pb.Host_PLATFORM_LINUX).
-SetNextSeenAt(pastNext).
-Save(ctx)
-require.NoError(t, err)
+	// Create a host with NextSeenAt in the past (simulating an overdue host)
+	pastNext := time.Now().Add(-5 * time.Minute)
+	h, err := client.Host.Create().
+		SetIdentifier("host-lost").
+		SetPlatform(c2pb.Host_PLATFORM_LINUX).
+		SetNextSeenAt(pastNext).
+		Save(ctx)
+	require.NoError(t, err)
 
-// Subscribe one user to the host
-_, err = client.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
-require.NoError(t, err)
+	// Subscribe one user to the host
+	_, err = client.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
+	require.NoError(t, err)
 
-// Create a HOST_ACCESS_LOST event directly (as the hostcheck handler does)
-err = client.Event.Create().
-SetKind(event.KindHOST_ACCESS_LOST).
-SetTimestamp(time.Now().Unix()).
-SetHostID(h.ID).
-Exec(ctx)
-require.NoError(t, err)
+	// Create a HOST_ACCESS_LOST event directly (as the hostcheck handler does)
+	err = client.Event.Create().
+		SetKind(event.KindHOST_ACCESS_LOST).
+		SetTimestamp(time.Now().Unix()).
+		SetHostID(h.ID).
+		Exec(ctx)
+	require.NoError(t, err)
 
-// Verify exactly one HOST_ACCESS_LOST event was created
-lostEvents, err := client.Event.Query().
-Where(
-event.HasHostWith(host.ID(h.ID)),
-event.KindEQ(event.KindHOST_ACCESS_LOST),
-).All(ctx)
-require.NoError(t, err)
-require.Len(t, lostEvents, 1, "exactly one HOST_ACCESS_LOST event should exist")
+	// Verify exactly one HOST_ACCESS_LOST event was created
+	lostEvents, err := client.Event.Query().
+		Where(
+			event.HasHostWith(host.ID(h.ID)),
+			event.KindEQ(event.KindHOST_ACCESS_LOST),
+		).All(ctx)
+	require.NoError(t, err)
+	require.Len(t, lostEvents, 1, "exactly one HOST_ACCESS_LOST event should exist")
 
-// Verify notifications were created with Urgent priority for ALL users
-notifs, err := client.Notification.Query().
-Where(notification.HasEventWith(event.ID(lostEvents[0].ID))).
-WithUser().
-All(ctx)
-require.NoError(t, err)
-require.Len(t, notifs, 2, "notifications should be created for both users")
+	// Verify notifications: subscriber gets Urgent, non-subscriber gets Medium
+	notifs, err := client.Notification.Query().
+		Where(notification.HasEventWith(event.ID(lostEvents[0].ID))).
+		WithUser().
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, notifs, 2, "notifications should be created for both users")
 
-for _, n := range notifs {
-if n.Edges.User.ID == subscriber.ID {
-assert.Equal(t, notification.PriorityUrgent, n.Priority,
-"subscriber should get Urgent notification")
-} else if n.Edges.User.ID == nonSubscriber.ID {
-assert.Equal(t, notification.PriorityUrgent, n.Priority,
-"non-subscriber should also get Urgent notification for lost access")
-} else {
-t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
-}
-}
+	for _, n := range notifs {
+		if n.Edges.User.ID == subscriber.ID {
+			assert.Equal(t, notification.PriorityUrgent, n.Priority,
+				"subscriber should get Urgent notification")
+		} else if n.Edges.User.ID == nonSubscriber.ID {
+			assert.Equal(t, notification.PriorityMedium, n.Priority,
+				"non-subscriber should get Medium notification for lost access")
+		} else {
+			t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
+		}
+	}
 }

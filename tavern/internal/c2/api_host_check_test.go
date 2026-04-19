@@ -28,7 +28,7 @@ import (
 //  2. The host fails to check in again (simulated by setting its NextSeenAt
 //     into the past by more than 1 minute and then calling the host-check handler).
 //  3. A HOST_ACCESS_LOST event is created.
-//  4. URGENT notifications are sent to all users (loss of access is always urgent).
+//  4. URGENT notifications are sent to subscribers, Medium to non-subscribers.
 func TestHostAccessLost(t *testing.T) {
 	ctx := context.Background()
 	client, graph, close, _ := c2test.New(t)
@@ -140,14 +140,14 @@ func TestHostAccessLost(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, notifs, 2, "notifications should be created for both users")
 
-	// Verify all users got URGENT notifications (loss of access is always urgent)
+	// Verify subscriber got URGENT and non-subscriber got Medium
 	for _, n := range notifs {
 		if n.Edges.User.ID == subscriber.ID {
 			assert.Equal(t, notification.PriorityUrgent, n.Priority,
 				"subscriber should get URGENT notification")
 		} else if n.Edges.User.ID == nonSubscriber.ID {
-			assert.Equal(t, notification.PriorityUrgent, n.Priority,
-				"non-subscriber should get URGENT notification for lost access")
+			assert.Equal(t, notification.PriorityMedium, n.Priority,
+				"non-subscriber should get Medium notification for lost access")
 		} else {
 			t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
 		}
