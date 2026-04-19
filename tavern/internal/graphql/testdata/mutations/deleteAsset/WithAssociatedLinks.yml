@@ -1,0 +1,20 @@
+state: |
+  INSERT INTO `users` (id,oauth_id,photo_url,name,session_token,access_token,is_activated,is_admin)
+    VALUES (5,"test_oauth_id","https://photos.com","test","secretToken","accessToken",true,true);
+  INSERT INTO `assets` (id, name, content, hash, created_at, last_modified_at)
+    VALUES (3000, "TestFile1", "hello world", "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447", "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `links` (id, path, expires_at, downloads, link_asset, created_at, last_modified_at)
+    VALUES (4000, "abc123", "2099-01-01 00:00:00", 0, 3000, "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+  INSERT INTO `links` (id, path, expires_at, downloads, link_asset, created_at, last_modified_at)
+    VALUES (4001, "def456", "2099-01-01 00:00:00", 0, 3000, "2023-03-04 14:51:13", "2023-03-04 14:51:13");
+requestor:
+  session_token: secretToken
+query: |
+  mutation DeleteAsset($assetID: ID!) {
+    deleteAsset(assetID:$assetID)
+  }
+variables:
+  assetID: 3000
+
+expected:
+  deleteAsset: "3000"
