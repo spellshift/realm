@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/portals/portalpb"
+	"realm.pub/tavern/portals/stream"
 )
 
 var upgrader = websocket.Upgrader{
@@ -271,33 +272,45 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Background goroutine: read portal output -> broadcast to websockets
-		go func() {
+		// Background goroutine: read portal output -> broadcast to websockets (ordered)
+		orderedReader := stream.NewOrderedReader(func() (*portalpb.Mote, error) {
 			for {
 				select {
 				case <-sessionCtx.Done():
-					return
+					return nil, fmt.Errorf("session closed")
 				case m, ok := <-recvCh:
 					if !ok {
-						closePivot()
-						return
+						return nil, fmt.Errorf("receive channel closed")
 					}
 					// Only accept motes matching our streamID
 					if m.StreamId != streamID {
 						continue
 					}
-					// Check for close
-					if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
-						closePivot()
-						return
-					}
-					// Handle PTY data
-					if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
-						pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
-							Kind:   shell.WebsocketMessageKindOutput,
-							Output: string(bytesPayload.Data),
-						})
-					}
+					return m, nil
+				}
+			}
+		})
+
+		go func() {
+			defer orderedReader.Close()
+			for {
+				m, err := orderedReader.Read()
+				if err != nil {
+					slog.ErrorContext(sessionCtx, "ordered reader error", "error", err)
+					closePivot()
+					return
+				}
+				// Check for close
+				if m.GetBytes() != nil && m.GetBytes().Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_CLOSE {
+					closePivot()
+					return
+				}
+				// Handle PTY data
+				if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
+					pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
+						Kind:   shell.WebsocketMessageKindOutput,
+						Output: string(bytesPayload.Data),
+					})
 				}
 			}
 		}()
@@ -337,7 +350,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
 			go func() {
-				var seqID uint64
+				inputWriter := stream.NewOrderedWriter(streamID, func(mote *portalpb.Mote) error {
+					return h.mux.Publish(sessionCtx, topicIn, mote)
+				})
 				for {
 					_, msg, err := wsConn.ReadMessage()
 					if err != nil {
@@ -348,18 +363,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					if err := json.Unmarshal(msg, &inputMsg); err != nil || inputMsg.Kind != shell.WebsocketMessageKindInput {
 						continue
 					}
-					seqID++
-					mote := &portalpb.Mote{
-						StreamId: streamID,
-						SeqId:    seqID,
-						Payload: &portalpb.Mote_Bytes{
-							Bytes: &portalpb.BytesPayload{
-								Data: []byte(inputMsg.Input),
-								Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-							},
-						},
-					}
-					if err := h.mux.Publish(sessionCtx, topicIn, mote); err != nil {
+					if err := inputWriter.WriteBytes([]byte(inputMsg.Input), portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
 						errCh <- err
 						return
 					}
@@ -413,6 +417,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The pivot session tracks the stream context, but we need topicIn
 	// For reconnects, we look up the portal from the pivot
 	go func() {
+		// Resolve portalID once up front
+		pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		portalEnt, err := pivot.QueryPortal().Only(ctx)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		topicIn := h.mux.TopicIn(portalEnt.ID)
+
+		inputWriter := stream.NewOrderedWriter(pivotSession.StreamID, func(mote *portalpb.Mote) error {
+			return h.mux.Publish(ctx, topicIn, mote)
+		})
+
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
@@ -424,30 +445,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// For reconnects, look up the portal from the pivot
-			pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
-			if err != nil {
-				errCh <- err
-				return
-			}
-			portalEnt, err := pivot.QueryPortal().Only(ctx)
-			if err != nil {
-				errCh <- err
-				return
-			}
-
-			topicIn := h.mux.TopicIn(portalEnt.ID)
-			mote := &portalpb.Mote{
-				StreamId: pivotSession.StreamID,
-				SeqId:    0,
-				Payload: &portalpb.Mote_Bytes{
-					Bytes: &portalpb.BytesPayload{
-						Data: []byte(inputMsg.Input),
-						Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-					},
-				},
-			}
-			if err := h.mux.Publish(ctx, topicIn, mote); err != nil {
+			if err := inputWriter.WriteBytes([]byte(inputMsg.Input), portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
 				slog.ErrorContext(ctx, "failed to publish pty input", "error", err)
 			}
 		}
