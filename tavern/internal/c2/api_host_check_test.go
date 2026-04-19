@@ -2,6 +2,9 @@ package c2_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -100,13 +103,23 @@ func TestHostAccessLost(t *testing.T) {
 	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime).Save(ctx)
 	require.NoError(t, err)
 
+	// Generate test key pair for JWT signing
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	// Generate a valid host-check JWT
+	hostCheckToken, err := hostcheck.NewToken(privKey)
+	require.NoError(t, err)
+
 	// Set up host-check handler with the same ent client (which has hooks)
-	handler := hostcheck.NewHandler(graph)
+	handler := hostcheck.NewHandler(graph, pubKey)
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
+	tokenURL := fmt.Sprintf("%s?token=%s", ts.URL, hostCheckToken)
+
 	// Call the host-check handler (it polls all hosts, no body needed)
-	resp, err := http.Post(ts.URL, "application/json", nil)
+	resp, err := http.Post(tokenURL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "host check handler should return 200")
@@ -142,7 +155,7 @@ func TestHostAccessLost(t *testing.T) {
 	}
 
 	// Verify idempotency: calling host check again should NOT create a duplicate event
-	resp2, err := http.Post(ts.URL, "application/json", nil)
+	resp2, err := http.Post(tokenURL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp2.Body.Close()
 	assert.Equal(t, http.StatusOK, resp2.StatusCode)
@@ -198,7 +211,7 @@ func TestHostAccessLost(t *testing.T) {
 	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime2).Save(ctx)
 	require.NoError(t, err)
 
-	resp4, err := http.Post(ts.URL, "application/json", nil)
+	resp4, err := http.Post(tokenURL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp4.Body.Close()
 	assert.Equal(t, http.StatusOK, resp4.StatusCode)
@@ -235,12 +248,22 @@ func TestHostAccessLostSkippedWhenNotOverdue(t *testing.T) {
 		Save(ctx)
 	require.NoError(t, err)
 
-	handler := hostcheck.NewHandler(graph)
+	// Generate test key pair for JWT signing
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	// Generate a valid host-check JWT
+	hostCheckToken, err := hostcheck.NewToken(privKey)
+	require.NoError(t, err)
+
+	handler := hostcheck.NewHandler(graph, pubKey)
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
+	tokenURL := fmt.Sprintf("%s?token=%s", ts.URL, hostCheckToken)
+
 	// Call the host-check handler (no body needed)
-	resp, err := http.Post(ts.URL, "application/json", nil)
+	resp, err := http.Post(tokenURL, "application/json", nil)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

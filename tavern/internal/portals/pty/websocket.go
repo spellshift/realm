@@ -330,18 +330,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
+		// Create the input writer for sequencing motes sent to the agent.
+		// This writer is shared between the init mote and the input forwarder
+		// goroutine to ensure a single monotonic sequence on the input stream.
+		inputWriter := stream.NewOrderedWriter(streamID, func(mote *portalpb.Mote) error {
+			return h.mux.Publish(sessionCtx, topicIn, mote)
+		})
+
 		// Send initial PTY request mote to the agent to spawn the PTY
-		initMote := &portalpb.Mote{
-			StreamId: streamID,
-			SeqId:    0,
-			Payload: &portalpb.Mote_Bytes{
-				Bytes: &portalpb.BytesPayload{
-					Data: []byte{},
-					Kind: portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY,
-				},
-			},
-		}
-		if err := h.mux.Publish(sessionCtx, topicIn, initMote); err != nil {
+		if err := inputWriter.WriteBytes([]byte{}, portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY); err != nil {
 			sendWsError(fmt.Sprintf("Failed to send PTY init mote: %v", err))
 			closePivot()
 			return
@@ -351,9 +348,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// needs access to topicIn and sessionCtx, so we wrap them in a closure
 		startInputForwarder := func(wsConn *websocket.Conn, errCh chan error) {
 			go func() {
-				inputWriter := stream.NewOrderedWriter(streamID, func(mote *portalpb.Mote) error {
-					return h.mux.Publish(sessionCtx, topicIn, mote)
-				})
 				for {
 					_, msg, err := wsConn.ReadMessage()
 					if err != nil {
