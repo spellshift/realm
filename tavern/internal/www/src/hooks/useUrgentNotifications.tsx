@@ -165,7 +165,8 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
 
             // Attempt system notification (async, fire-and-forget).
             // If permission is 'default' this will also try to request it.
-            showSystemNotification(description, link, navigate);
+            // Errors are caught silently since this is best-effort.
+            showSystemNotification(description, link, navigate).catch(() => {});
         });
     }, [notifications, toast, navigate]);
 
