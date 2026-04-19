@@ -25,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -328,6 +329,9 @@ func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, e
 	}
 	if tomeCount > 0 {
 		return 0, fmt.Errorf("cannot delete asset: it is associated with %d tome(s)", tomeCount)
+	}
+	if _, err := r.client.Link.Delete().Where(link.HasAssetWith(asset.ID(assetID))).Exec(ctx); err != nil {
+		return 0, fmt.Errorf("failed to delete associated links: %w", err)
 	}
 	if err := r.client.Asset.DeleteOneID(assetID).Exec(ctx); err != nil {
 		return 0, err
