@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
+	"net/url"
 	"os"
 	"strings"
 
@@ -344,7 +345,8 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		listenAddr = cfg.srv.Addr
 	}
 	var hostCheckURL string
-	if strings.HasPrefix(schedulerURI, "mem://") {
+	schedulerURL, _ := url.Parse(schedulerURI)
+	if schedulerURL != nil && schedulerURL.Scheme == "mem" {
 		hostCheckURL = fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
 	} else {
 		domain := EnvOAuthDomain.String()
