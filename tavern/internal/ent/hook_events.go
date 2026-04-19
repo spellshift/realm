@@ -23,8 +23,35 @@ func HookDeriveHostEvents() ent.Hook {
 			}
 
 			var shouldCreateNew, shouldCreateRecovered bool
+			var existingHostID int
+
 			if mut.Op().Is(ent.OpCreate) {
-				shouldCreateNew = true
+				// This handles both plain Creates (new hosts) and upserts
+				// (Create().OnConflict().UpdateNewValues()) used by ClaimTasks.
+				// We query by identifier to determine if the host already exists.
+				identifier, hasIdentifier := mut.Identifier()
+				if hasIdentifier {
+					existingHost, err := mut.Client().Host.Query().
+						Where(host.IdentifierEQ(identifier)).
+						Only(ctx)
+					if err == nil {
+						// Host already exists — this is an upsert (beacon check-in).
+						// Check if the host is recovering from a lost state.
+						existingHostID = existingHost.ID
+						newLastSeen, ok := mut.LastSeenAt()
+						if ok && !existingHost.NextSeenAt.IsZero() {
+							if newLastSeen.After(existingHost.NextSeenAt.Add(1 * time.Minute)) {
+								shouldCreateRecovered = true
+							}
+						}
+					} else if IsNotFound(err) {
+						shouldCreateNew = true
+					} else {
+						return nil, fmt.Errorf("checking for existing host: %w", err)
+					}
+				} else {
+					shouldCreateNew = true
+				}
 			} else if mut.Op().Is(ent.OpUpdateOne) {
 				newLastSeen, ok := mut.LastSeenAt()
 				if ok {
@@ -46,13 +73,17 @@ func HookDeriveHostEvents() ent.Hook {
 			}
 
 			if shouldCreateNew || shouldCreateRecovered {
-				id, ok := mut.ID()
-				if !ok {
-					// For OpCreate, the ID might not be in the mutation, but in the returned value.
-					if h, ok := val.(*Host); ok {
-						id = h.ID
-					} else {
-						return val, fmt.Errorf("could not determine host ID for event creation")
+				id := existingHostID
+				if id == 0 {
+					var ok bool
+					id, ok = mut.ID()
+					if !ok {
+						// For OpCreate, the ID might not be in the mutation, but in the returned value.
+						if h, ok := val.(*Host); ok {
+							id = h.ID
+						} else {
+							return val, fmt.Errorf("could not determine host ID for event creation")
+						}
 					}
 				}
 
@@ -251,7 +282,11 @@ func HookDeriveNotifications() ent.Hook {
 
 				var creates []*NotificationCreate
 				for _, u := range users {
-					priority := notification.PriorityLow
+					defaultPriority := notification.PriorityLow
+					if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
+						defaultPriority = notification.PriorityMedium
+					}
+					priority := defaultPriority
 					if subscriberIDs[u.ID] {
 						priority = notification.PriorityUrgent
 					}
