@@ -585,7 +585,7 @@ export const useShellTerminal = (
                             portalIdRef.current = null;
                             setPortalId(null);
                             content = "Portal closed. Reverting to non-interactive mode.\n";
-                            color = "\x1b[38;5;178m"; // Purple
+                            color = "\x1b[38;5;178m"; // Gold
                         }
                         break;
                     case WebsocketMessageKind.OutputFromOtherStream:
