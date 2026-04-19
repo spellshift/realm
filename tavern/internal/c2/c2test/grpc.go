@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"errors"
 	"net"
 	"testing"
 	"time"
@@ -85,10 +84,15 @@ func New(t *testing.T) (c2pb.C2Client, *ent.Client, func(), string) {
 	require.NoError(t, err)
 
 	return c2pb.NewC2Client(conn), graph, func() {
-		assert.NoError(t, lis.Close())
+		// Stop the server first: this sets the quit flag and closes all
+		// registered listeners, so Serve() returns nil instead of a raw
+		// "closed" error from the listener.  Calling lis.Close() before
+		// Stop() is a race — Serve() may observe the closed listener
+		// before the quit flag is set and return an unexpected error.
 		baseSrv.Stop()
+		conn.Close()
 		assert.NoError(t, graph.Close())
-		if err := <-grpcErrCh; err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+		if err := <-grpcErrCh; err != nil {
 			t.Fatalf("failed to serve grpc: %v", err)
 		}
 	}, testToken
