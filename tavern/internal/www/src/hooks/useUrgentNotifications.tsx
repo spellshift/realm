@@ -4,7 +4,7 @@ import { useToast, Box, Text, CloseButton, HStack, VStack } from '@chakra-ui/rea
 import { NotificationNode } from '../utils/interfacesQuery';
 import { NotificationPriority } from '../utils/enums';
 import { getNotificationLink, getEventDescription } from '../utils/notificationHelpers';
-import { requestNotificationPermission, showSystemNotification } from '../utils/systemNotification';
+import { initNotificationServiceWorker, showSystemNotification, onServiceWorkerNotificationClick } from '../utils/systemNotification';
 
 // Module-level Set to deduplicate across multiple component instances
 const notifiedIds = new Set<string>();
@@ -76,10 +76,18 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
     const toast = useToast();
     const initializedRef = useRef(false);
 
-    // Request browser notification permission once on mount.
+    // Register the notification service worker and request permission once on mount.
+    // Also listen for click messages from the SW so we can navigate in this tab.
     useEffect(() => {
-        requestNotificationPermission();
-    }, []);
+        initNotificationServiceWorker();
+        const cleanup = onServiceWorkerNotificationClick((url) => {
+            if (url) {
+                window.focus();
+                navigate(url);
+            }
+        });
+        return cleanup;
+    }, [navigate]);
 
     useEffect(() => {
         const urgentNotifications = notifications.filter(
@@ -103,10 +111,14 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
             const description = getEventDescription(notification);
             const link = getNotificationLink(notification);
 
-            // Fire an OS-level system notification (e.g. macOS Notification Center).
+            // Fire an OS-level system notification via the service worker.
+            // The `tag` ensures only one notification per event across all tabs.
+            const notificationUrl = link ? `${window.location.origin}${link}` : undefined;
             showSystemNotification({
                 title: '⚠ Urgent Notification',
                 body: description,
+                tag: `urgent-${notification.id}`,
+                url: notificationUrl,
                 onClick: () => {
                     if (link) {
                         navigate(link);
