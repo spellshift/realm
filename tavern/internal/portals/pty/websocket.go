@@ -293,6 +293,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		go func() {
 			defer orderedReader.Close()
+			defer closePivot()
 			for {
 				m, err := orderedReader.Read()
 				if err != nil {
