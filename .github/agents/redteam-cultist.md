@@ -10,10 +10,10 @@ tools: ["*"]
 mcp-servers:
   custom-mcp:
     type: 'http'
-    url: 'https://${{ secrets.tavern-url }}/mcp'
+    url: 'https://${{ secrets.TAVERN_URL }}/mcp'
     tools: ["*"]
     headers:
-      Cookie: ${{ secrets.auth-session }}
+      Cookie: auth-session=${{ secrets.TAVERN_AUTH }}
 ---
 
 # Red v. Blue class assistant
