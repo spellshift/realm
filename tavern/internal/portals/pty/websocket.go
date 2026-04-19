@@ -272,13 +272,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Background goroutine: read portal output -> broadcast to websockets.
-		// Deduplication: The mux dispatches each mote twice (once via the local
-		// fast-path in Publish and once via the global pubsub receiveLoop). We
-		// track the highest seq_id we have processed and skip any mote whose
-		// seq_id has already been seen, which also preserves ordering.
+		// Each mote is delivered exactly once: in single-server mode the
+		// fast-path in Publish dispatches it and the receiveLoop is a no-op
+		// (loopback detection). In multi-server mode the receiveLoop on the
+		// websocket server receives it from GCP PubSub. No deduplication is
+		// needed because loopback detection prevents any path from dispatching
+		// the same mote twice.
 		go func() {
-			var lastSeqID uint64
-			seenAny := false
 			for {
 				select {
 				case <-sessionCtx.Done():
@@ -297,12 +297,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						closePivot()
 						return
 					}
-					// Deduplicate: skip motes we have already processed
-					if seenAny && m.SeqId <= lastSeqID {
-						continue
-					}
-					lastSeqID = m.SeqId
-					seenAny = true
 					// Handle PTY data
 					if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
 						pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{

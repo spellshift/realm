@@ -143,15 +143,15 @@ func readOutputMessages(t *testing.T, ws *websocket.Conn, deadline time.Time) []
 	return outputs
 }
 
-// TestPTYOutputDeduplication is an end-to-end test that verifies PTY output
-// motes delivered through the portal mux are deduplicated correctly.
+// TestPTYOutputDelivery is an end-to-end test that verifies PTY output
+// motes delivered through the portal mux reach the websocket client exactly once.
 //
-// Scenario: The mux's Publish() fast-path dispatches each mote to local
-// subscribers immediately. The global pubsub receiveLoop (started by
-// OpenPortal) then dispatches the same mote a second time. Without
-// deduplication the websocket client would see doubled output. This test
-// publishes several output motes and verifies each payload appears exactly once.
-func TestPTYOutputDeduplication(t *testing.T) {
+// Scenario: In single-server mode, the mux's Publish() fast-path dispatches
+// each mote to local subscribers immediately. The global pubsub receiveLoop
+// (started by OpenPortal) receives the same mote from pstest but loopback
+// detection filters it out, so no double delivery occurs. This test publishes
+// several output motes and verifies each payload appears exactly once in order.
+func TestPTYOutputDelivery(t *testing.T) {
 	env := setupPTYTestEnv(t)
 	defer env.Close()
 	ctx := context.Background()
@@ -203,7 +203,7 @@ func TestPTYOutputDeduplication(t *testing.T) {
 	combined := strings.Join(outputs, "")
 	expected := strings.Join(payloads, "")
 	assert.Equal(t, expected, combined,
-		"PTY output should be deduplicated; got %d output messages: %v", len(outputs), outputs)
+		"PTY output should be delivered exactly once; got %d output messages: %v", len(outputs), outputs)
 }
 
 // TestPTYOutputOrdering verifies that when motes arrive in order from a
