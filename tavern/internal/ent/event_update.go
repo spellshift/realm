@@ -17,6 +17,7 @@ import (
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/predicate"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // EventUpdate is the builder for updating Event entities.
@@ -130,6 +131,25 @@ func (eu *EventUpdate) SetQuest(q *Quest) *EventUpdate {
 	return eu.SetQuestID(q.ID)
 }
 
+// SetUserID sets the "user" edge to the User entity by ID.
+func (eu *EventUpdate) SetUserID(id int) *EventUpdate {
+	eu.mutation.SetUserID(id)
+	return eu
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (eu *EventUpdate) SetNillableUserID(id *int) *EventUpdate {
+	if id != nil {
+		eu = eu.SetUserID(*id)
+	}
+	return eu
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (eu *EventUpdate) SetUser(u *User) *EventUpdate {
+	return eu.SetUserID(u.ID)
+}
+
 // AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
 func (eu *EventUpdate) AddNotificationIDs(ids ...int) *EventUpdate {
 	eu.mutation.AddNotificationIDs(ids...)
@@ -165,6 +185,12 @@ func (eu *EventUpdate) ClearHost() *EventUpdate {
 // ClearQuest clears the "quest" edge to the Quest entity.
 func (eu *EventUpdate) ClearQuest() *EventUpdate {
 	eu.mutation.ClearQuest()
+	return eu
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (eu *EventUpdate) ClearUser() *EventUpdate {
+	eu.mutation.ClearUser()
 	return eu
 }
 
@@ -346,6 +372,35 @@ func (eu *EventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if eu.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.UserTable,
+			Columns: []string{event.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.UserTable,
+			Columns: []string{event.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if eu.mutation.NotificationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -509,6 +564,25 @@ func (euo *EventUpdateOne) SetQuest(q *Quest) *EventUpdateOne {
 	return euo.SetQuestID(q.ID)
 }
 
+// SetUserID sets the "user" edge to the User entity by ID.
+func (euo *EventUpdateOne) SetUserID(id int) *EventUpdateOne {
+	euo.mutation.SetUserID(id)
+	return euo
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (euo *EventUpdateOne) SetNillableUserID(id *int) *EventUpdateOne {
+	if id != nil {
+		euo = euo.SetUserID(*id)
+	}
+	return euo
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (euo *EventUpdateOne) SetUser(u *User) *EventUpdateOne {
+	return euo.SetUserID(u.ID)
+}
+
 // AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
 func (euo *EventUpdateOne) AddNotificationIDs(ids ...int) *EventUpdateOne {
 	euo.mutation.AddNotificationIDs(ids...)
@@ -544,6 +618,12 @@ func (euo *EventUpdateOne) ClearHost() *EventUpdateOne {
 // ClearQuest clears the "quest" edge to the Quest entity.
 func (euo *EventUpdateOne) ClearQuest() *EventUpdateOne {
 	euo.mutation.ClearQuest()
+	return euo
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (euo *EventUpdateOne) ClearUser() *EventUpdateOne {
+	euo.mutation.ClearUser()
 	return euo
 }
 
@@ -748,6 +828,35 @@ func (euo *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(quest.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if euo.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.UserTable,
+			Columns: []string{event.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.UserTable,
+			Columns: []string{event.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
