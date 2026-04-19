@@ -189,9 +189,9 @@ const ShellV2 = () => {
     let shellTerm = (
         <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} variant="enclosed" flex="1" display="flex" flexDirection="column" mt={useTabs ? 4 : 0} overflow="hidden">
             <TabList borderBottomColor="#333" display={useTabs ? 'flex' : 'none'}>
-                <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
+                <Tab onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
                 {portalTabs.map(tab => (
-                    <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
+                    <Tab key={tab.id} onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
                         <span className="flex items-center gap-1.5">
                             {disconnectedTabs.has(tab.id) && (
                                 <Tooltip label="Disconnected" hasArrow>
