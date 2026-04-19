@@ -16,6 +16,8 @@ export const getNotificationLink = (notification: NotificationNode): string | nu
             return event.host?.id ? `/hosts/${event.host.id}` : (event.beacon?.host?.id ? `/hosts/${event.beacon.host.id}` : null);
         case EventKind.QUEST_COMPLETED:
             return event.quest ? `/tasks/${event.quest.id}` : null;
+        case EventKind.NEW_USER_REQUEST:
+            return '/admin';
         default:
             return null;
     }
@@ -37,6 +39,8 @@ export const getEventDescription = (notification: NotificationNode): string => {
             return `Beacon lost: ${event.beacon?.name || event.beacon?.id}`;
         case EventKind.QUEST_COMPLETED:
             return `Quest completed: ${event.quest?.name || event.quest?.id}`;
+        case EventKind.NEW_USER_REQUEST:
+            return `New user request: ${event.user?.name || 'Unknown user'}`;
         default:
             return 'Notification received';
     }

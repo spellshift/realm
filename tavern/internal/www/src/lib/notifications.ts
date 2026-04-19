@@ -38,6 +38,10 @@ export const GET_NOTIFICATIONS = gql`
                                 id
                                 name
                             }
+                            user {
+                                id
+                                name
+                            }
                         }
                     }
                 }
