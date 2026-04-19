@@ -34,10 +34,11 @@ const DownloadButton = ({ assetName }: DownloadButtonProps) => {
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "An unexpected error occurred";
             toast({
                 title: "Download failed",
-                description: err.message,
+                description: message,
                 status: "error",
                 duration: 4000,
                 isClosable: true,
