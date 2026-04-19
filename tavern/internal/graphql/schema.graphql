@@ -7982,6 +7982,7 @@ type TomeTaskMetrics {
 
 type BeaconTimelineBucket {
   count: Int!
+  callbackCount: Int!
   startTimestamp: Time!
   groupByHosts: [BeaconTimelineHostBucket!]!
 }
@@ -7989,6 +7990,7 @@ type BeaconTimelineBucket {
 type BeaconTimelineHostBucket {
   host: Host!
   count: Int!
+  callbackCount: Int!
 }
 
 type QuestTimelineBucket {
