@@ -375,11 +375,13 @@ impl ShellManager {
 }
 
 /// Formats a Value for REPL output using smart formatting:
+/// - Strings are printed directly (interpreting escape sequences)
 /// - Dictionaries are pretty-printed (pprint style)
 /// - Lists of dictionaries are table-printed (tprint style)
 /// - Everything else uses the default Debug format
 fn format_value_smart(value: &Value) -> String {
     match value {
+        Value::String(s) => format!("{}\n", s),
         Value::Dictionary(_) => {
             let mut buf = String::new();
             pretty_format(value, 0, 2, &mut buf);
