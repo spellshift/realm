@@ -330,11 +330,13 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 
 	// Initialize Scheduler
 	schedulerURI := EnvSchedulerURI.String()
+	slog.InfoContext(ctx, "initializing scheduler", "uri", schedulerURI)
 	sched, err := scheduler.New(ctx, schedulerURI)
 	if err != nil {
 		client.Close()
-		return nil, fmt.Errorf("failed to initialize scheduler: %w", err)
+		return nil, fmt.Errorf("failed to initialize scheduler (uri=%q): %w", schedulerURI, err)
 	}
+	slog.InfoContext(ctx, "scheduler initialized successfully", "uri", schedulerURI)
 
 	// Determine host check URL based on the scheduler backend.
 	// The in-memory scheduler fires HTTP requests from the same process,
@@ -346,9 +348,17 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		listenAddr = cfg.srv.Addr
 	}
 	var hostCheckURL string
+
+	// The in-memory scheduler uses robfig/cron which supports "@every 10s"
+	// for sub-minute intervals. External schedulers like GCP Cloud Scheduler
+	// only support standard unix-cron expressions with a minimum granularity
+	// of 1 minute, so we use "* * * * *" (every minute) instead.
+	var hostCheckSchedule string
+
 	schedulerURL, _ := url.Parse(schedulerURI)
 	if schedulerURL != nil && schedulerURL.Scheme == "mem" {
 		hostCheckURL = fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
+		hostCheckSchedule = "@every 10s"
 	} else {
 		domain := EnvOAuthDomain.String()
 		if domain == "" {
@@ -360,14 +370,19 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			domain = fmt.Sprintf("https://%s", domain)
 		}
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
+		hostCheckSchedule = "* * * * *"
 	}
+	slog.InfoContext(ctx, "resolved host check configuration", "url", hostCheckURL, "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
-	// Schedule a recurring host-lost check that polls every 10 seconds.
+	// Schedule a recurring host-lost check.
+	// In-memory: fires every 10 seconds via robfig/cron.
+	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
 	// If the job is already scheduled (e.g. from a previous startup), the
 	// scheduler will return an error which we log and ignore.
+	slog.InfoContext(ctx, "scheduling host-lost-poll job", "url", hostCheckURL, "schedule", hostCheckSchedule)
 	if err := sched.Schedule(ctx, scheduler.Job{
 		Name:     "host-lost-poll",
-		Schedule: "@every 10s",
+		Schedule: hostCheckSchedule,
 		HTTPTarget: scheduler.HTTPTarget{
 			URL:    hostCheckURL,
 			Method: "POST",
@@ -378,8 +393,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		} else {
 			client.Close()
 			sched.Close()
-			return nil, fmt.Errorf("failed to schedule host-lost check: %w", err)
+			return nil, fmt.Errorf("failed to schedule host-lost check (url=%q, schedule=%q): %w", hostCheckURL, hostCheckSchedule, err)
 		}
+	} else {
+		slog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "url", hostCheckURL, "schedule", hostCheckSchedule)
 	}
 
 	// Route Map

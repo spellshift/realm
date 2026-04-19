@@ -66,11 +66,15 @@ func (d *Driver) Open(ctx context.Context, uri *url.URL) (scheduler.Scheduler, e
 		return nil, fmt.Errorf("scheduler/gcp: URI must specify a parent (e.g. gcp://projects/{project}/locations/{location})")
 	}
 
+	slog.InfoContext(ctx, "scheduler/gcp: creating Cloud Scheduler client", "parent", parent)
+
 	var opts []option.ClientOption
 	client, err := cloudscheduler.NewCloudSchedulerClient(ctx, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("scheduler/gcp: failed to create client: %w", err)
+		return nil, fmt.Errorf("scheduler/gcp: failed to create client (parent=%q): %w", parent, err)
 	}
+
+	slog.InfoContext(ctx, "scheduler/gcp: client created successfully", "parent", parent)
 
 	return &Scheduler{
 		client: &gcpClient{inner: client},
@@ -91,9 +95,11 @@ type Scheduler struct {
 func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
 
+	slog.InfoContext(ctx, "scheduler/gcp: scheduling job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
+
 	// Check for an existing job with the same name.
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
-		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
+		return fmt.Errorf("scheduler/gcp: failed checking for existing job %q: %w", fullName, err)
 	} else if exists {
 		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
@@ -121,10 +127,10 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 		Parent: s.parent,
 		Job:    pbJob,
 	}); err != nil {
-		return fmt.Errorf("scheduler/gcp: failed to create job: %w", err)
+		return fmt.Errorf("scheduler/gcp: failed to create job %q (schedule=%q, url=%q): %w", fullName, job.Schedule, job.HTTPTarget.URL, err)
 	}
 
-	slog.Info("scheduler/gcp: created job", "name", fullName, "schedule", job.Schedule)
+	slog.InfoContext(ctx, "scheduler/gcp: created job", "name", fullName, "schedule", job.Schedule, "url", job.HTTPTarget.URL)
 	return nil
 }
 
@@ -142,9 +148,11 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error {
 	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
 
+	slog.InfoContext(ctx, "scheduler/gcp: scheduling one-time job", "name", fullName, "at", job.At.UTC(), "url", job.HTTPTarget.URL, "method", job.HTTPTarget.Method)
+
 	// Check for an existing job with the same name.
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
-		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
+		return fmt.Errorf("scheduler/gcp: failed checking for existing job %q: %w", fullName, err)
 	} else if exists {
 		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
@@ -176,10 +184,10 @@ func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error
 		Parent: s.parent,
 		Job:    pbJob,
 	}); err != nil {
-		return fmt.Errorf("scheduler/gcp: failed to create job: %w", err)
+		return fmt.Errorf("scheduler/gcp: failed to create one-time job %q (schedule=%q, url=%q): %w", fullName, schedule, job.HTTPTarget.URL, err)
 	}
 
-	slog.Info("scheduler/gcp: created one-time job", "name", fullName, "schedule", schedule, "target_time", utc)
+	slog.InfoContext(ctx, "scheduler/gcp: created one-time job", "name", fullName, "schedule", schedule, "target_time", utc, "url", job.HTTPTarget.URL)
 	return nil
 }
 
