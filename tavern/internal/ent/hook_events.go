@@ -251,7 +251,11 @@ func HookDeriveNotifications() ent.Hook {
 
 				var creates []*NotificationCreate
 				for _, u := range users {
-					priority := notification.PriorityLow
+					defaultPriority := notification.PriorityLow
+					if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
+						defaultPriority = notification.PriorityMedium
+					}
+					priority := defaultPriority
 					if subscriberIDs[u.ID] {
 						priority = notification.PriorityUrgent
 					}
