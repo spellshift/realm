@@ -3,7 +3,7 @@
 VERSION=$1
 if [ -z "$VERSION" ]
 then
-    echo "Please specify a version, for example ./release.sh 0.3.0"
+    echo "Please specify a version, for example ./release.sh 0.4.1"
     exit 2
 fi
 
@@ -39,8 +39,8 @@ sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/l
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" implants/lib/c2/Cargo.toml
 sed -i -E "s/version = \"[0-9].[0-9].[0-9]\"/version = \"$VERSION\"/" vscode/eldritch-lang/Cargo.toml
 sed -i -E "s/version_string = \"v[0-9].[0-9].[0-9]\"/version_string = \"v$VERSION\"/" implants/imix/src/main.rs
-sed -i -E "s/Version = \"v[0-9].[0-9].[0-9]\"/Version = \"v$VERSION\"/" tavern/version.go
-
+sed -i -E "s/Version = \"[0-9].[0-9].[0-9]\"/Version = \"$VERSION\"/" tavern/version.go
+sed -i -E "s/Eldritch v[0-9].[0-9].[0-9]/Eldritch v$VERSION/" tavern/internal/www/src/pages/shellv2/hooks/useShellTerminal.ts
 
 ###
 ## Rust Setup
