@@ -4,6 +4,7 @@ import { useToast, Box, Text, CloseButton, HStack, VStack } from '@chakra-ui/rea
 import { NotificationNode } from '../utils/interfacesQuery';
 import { NotificationPriority } from '../utils/enums';
 import { getNotificationLink, getEventDescription } from '../utils/notificationHelpers';
+import { requestNotificationPermission, showSystemNotification } from '../utils/systemNotification';
 
 // Module-level Set to deduplicate across multiple component instances
 const notifiedIds = new Set<string>();
@@ -75,6 +76,11 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
     const toast = useToast();
     const initializedRef = useRef(false);
 
+    // Request browser notification permission once on mount.
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
+
     useEffect(() => {
         const urgentNotifications = notifications.filter(
             (n) => n.priority === NotificationPriority.Urgent && !n.read && !n.archived
@@ -96,6 +102,17 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
             notifiedIds.add(notification.id);
             const description = getEventDescription(notification);
             const link = getNotificationLink(notification);
+
+            // Fire an OS-level system notification (e.g. macOS Notification Center).
+            showSystemNotification({
+                title: '⚠ Urgent Notification',
+                body: description,
+                onClick: () => {
+                    if (link) {
+                        navigate(link);
+                    }
+                },
+            });
 
             toast({
                 position: 'top-right',
