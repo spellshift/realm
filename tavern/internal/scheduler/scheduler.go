@@ -111,7 +111,7 @@ func New(ctx context.Context, uri string) (Scheduler, error) {
 	driver, ok := drivers[scheme]
 	mu.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("scheduler: unknown driver %q (forgotten import?)", scheme)
+		return nil, fmt.Errorf("scheduler: unknown driver %q (forgotten import?); registered drivers: %v", scheme, Drivers())
 	}
 
 	return driver.Open(ctx, parsed)
