@@ -433,6 +433,7 @@ type ComplexityRoot struct {
 		CreateTag                   func(childComplexity int, input ent.CreateTagInput) int
 		CreateTome                  func(childComplexity int, input ent.CreateTomeInput) int
 		DeleteAllNotifications      func(childComplexity int) int
+		DeleteAsset                 func(childComplexity int, assetID int) int
 		DeleteBuilder               func(childComplexity int, builderID int) int
 		DeleteTome                  func(childComplexity int, tomeID int) int
 		DisableLink                 func(childComplexity int, linkID int) int
@@ -2779,6 +2780,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteAllNotifications(childComplexity), true
+
+	case "Mutation.deleteAsset":
+		if e.ComplexityRoot.Mutation.DeleteAsset == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteAsset_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAsset(childComplexity, args["assetID"].(int)), true
 
 	case "Mutation.deleteBuilder":
 		if e.ComplexityRoot.Mutation.DeleteBuilder == nil {
@@ -13263,6 +13276,11 @@ scalar Uint64
     ###
     createTag(input: CreateTagInput!): Tag! @requireRole(role: ADMIN)
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
+
+    ###
+    # Asset
+    ###
+    deleteAsset(assetID: ID!): ID! @requireRole(role: ADMIN)
 
     ###
     # Tome
