@@ -239,6 +239,11 @@ resource "google_project_service" "cloud_sqladmin_api" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "cloud_scheduler_api" {
+  service = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_sql_database_instance" "tavern-sql-instance" {
   name             = "tavern-db"
   database_version = "MYSQL_8_0"
@@ -329,6 +334,22 @@ resource "google_project_iam_member" "tavern-logwriter-binding" {
 resource "google_project_iam_member" "tavern-pubsub-binding" {
   project = var.gcp_project
   role    = "roles/pubsub.editor"
+  member  = "serviceAccount:${google_service_account.svctavern.email}"
+}
+
+resource "google_project_iam_custom_role" "tavern-cloud-scheduler" {
+  role_id     = "tavernCloudScheduler"
+  title       = "Tavern Cloud Scheduler"
+  description = "Least-privilege role for Tavern to create and list Cloud Scheduler jobs."
+  permissions = [
+    "cloudscheduler.jobs.create",
+    "cloudscheduler.jobs.list",
+  ]
+}
+
+resource "google_project_iam_member" "tavern-cloud-scheduler-binding" {
+  project = var.gcp_project
+  role    = google_project_iam_custom_role.tavern-cloud-scheduler.id
   member  = "serviceAccount:${google_service_account.svctavern.email}"
 }
 
@@ -498,8 +519,10 @@ resource "google_cloud_run_service" "tavern" {
     google_project_iam_member.tavern-metricwriter-binding,
     google_project_iam_member.tavern-logwriter-binding,
     google_project_iam_member.tavern-pubsub-binding,
+    google_project_iam_member.tavern-cloud-scheduler-binding,
     google_project_service.cloud_run_api,
     google_project_service.cloud_sqladmin_api,
+    google_project_service.cloud_scheduler_api,
     google_sql_user.tavern-user,
     google_sql_database.tavern-db
   ]
