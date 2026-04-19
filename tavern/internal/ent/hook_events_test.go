@@ -62,73 +62,174 @@ func TestHookDeriveNotifications(t *testing.T) {
 // events create Urgent notifications for subscribers and Medium notifications for
 // non-subscribers.
 func TestHookDeriveNotifications_HostAccessRecovered(t *testing.T) {
-	client := enttest.OpenTempDB(t)
-	defer client.Close()
+	t.Run("via UpdateOne", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
 
-	client.Host.Use(ent.HookDeriveHostEvents())
-	client.Task.Use(ent.HookDeriveQuestEvents())
-	client.Event.Use(ent.HookDeriveNotifications())
+		client.Host.Use(ent.HookDeriveHostEvents())
+		client.Task.Use(ent.HookDeriveQuestEvents())
+		client.Event.Use(ent.HookDeriveNotifications())
 
-	ctx := context.Background()
+		ctx := context.Background()
 
-	// Create two users
-	subscriber, err := client.User.Create().
-		SetName("subscriber-user").
-		SetOauthID("oauth-sub").
-		SetPhotoURL("http://photo.com/sub").
-		Save(ctx)
-	require.NoError(t, err)
+		// Create two users
+		subscriber, err := client.User.Create().
+			SetName("subscriber-user").
+			SetOauthID("oauth-sub").
+			SetPhotoURL("http://photo.com/sub").
+			Save(ctx)
+		require.NoError(t, err)
 
-	nonSubscriber, err := client.User.Create().
-		SetName("other-user").
-		SetOauthID("oauth-other").
-		SetPhotoURL("http://photo.com/other").
-		Save(ctx)
-	require.NoError(t, err)
+		nonSubscriber, err := client.User.Create().
+			SetName("other-user").
+			SetOauthID("oauth-other").
+			SetPhotoURL("http://photo.com/other").
+			Save(ctx)
+		require.NoError(t, err)
 
-	// Create a host with NextSeenAt in the past (simulating an overdue host)
-	pastNext := time.Now().Add(-5 * time.Minute)
-	h, err := client.Host.Create().
-		SetIdentifier("host-recovered").
-		SetPlatform(c2pb.Host_PLATFORM_LINUX).
-		SetNextSeenAt(pastNext).
-		Save(ctx)
-	require.NoError(t, err)
+		// Create a host with NextSeenAt in the past (simulating an overdue host)
+		pastNext := time.Now().Add(-5 * time.Minute)
+		h, err := client.Host.Create().
+			SetIdentifier("host-recovered").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			SetNextSeenAt(pastNext).
+			Save(ctx)
+		require.NoError(t, err)
 
-	// Subscribe one user to the host
-	_, err = client.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
-	require.NoError(t, err)
+		// Subscribe one user to the host
+		_, err = client.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
+		require.NoError(t, err)
 
-	// Simulate recovery: update LastSeenAt to now (which is > NextSeenAt + 1 minute)
-	_, err = client.Host.UpdateOne(h).SetLastSeenAt(time.Now()).Save(ctx)
-	require.NoError(t, err)
+		// Simulate recovery: update LastSeenAt to now (which is > NextSeenAt + 1 minute)
+		_, err = client.Host.UpdateOne(h).SetLastSeenAt(time.Now()).Save(ctx)
+		require.NoError(t, err)
 
-	// Verify HOST_ACCESS_RECOVERED event was created
-	recoveredEvents, err := client.Event.Query().
-		Where(
-			event.HasHostWith(host.ID(h.ID)),
-			event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
-		).All(ctx)
-	require.NoError(t, err)
-	require.Len(t, recoveredEvents, 1, "exactly one HOST_ACCESS_RECOVERED event should exist")
+		// Verify HOST_ACCESS_RECOVERED event was created
+		recoveredEvents, err := client.Event.Query().
+			Where(
+				event.HasHostWith(host.ID(h.ID)),
+				event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
+			).All(ctx)
+		require.NoError(t, err)
+		require.Len(t, recoveredEvents, 1, "exactly one HOST_ACCESS_RECOVERED event should exist")
 
-	// Verify notifications were created with correct priorities
-	notifs, err := client.Notification.Query().
-		Where(notification.HasEventWith(event.ID(recoveredEvents[0].ID))).
-		WithUser().
-		All(ctx)
-	require.NoError(t, err)
-	require.Len(t, notifs, 2, "notifications should be created for both users")
+		// Verify notifications were created with correct priorities
+		notifs, err := client.Notification.Query().
+			Where(notification.HasEventWith(event.ID(recoveredEvents[0].ID))).
+			WithUser().
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, notifs, 2, "notifications should be created for both users")
 
-	for _, n := range notifs {
-		if n.Edges.User.ID == subscriber.ID {
-			assert.Equal(t, notification.PriorityUrgent, n.Priority,
-				"subscriber should get Urgent notification")
-		} else if n.Edges.User.ID == nonSubscriber.ID {
-			assert.Equal(t, notification.PriorityMedium, n.Priority,
-				"non-subscriber should get Medium notification")
-		} else {
-			t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
+		for _, n := range notifs {
+			if n.Edges.User.ID == subscriber.ID {
+				assert.Equal(t, notification.PriorityUrgent, n.Priority,
+					"subscriber should get Urgent notification")
+			} else if n.Edges.User.ID == nonSubscriber.ID {
+				assert.Equal(t, notification.PriorityMedium, n.Priority,
+					"non-subscriber should get Medium notification")
+			} else {
+				t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
+			}
 		}
-	}
+	})
+
+	// Test the upsert path used by ClaimTasks (Create().OnConflict().UpdateNewValues())
+	t.Run("via Upsert", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		client.Host.Use(ent.HookDeriveHostEvents())
+		client.Task.Use(ent.HookDeriveQuestEvents())
+		client.Event.Use(ent.HookDeriveNotifications())
+
+		ctx := context.Background()
+
+		// Create two users
+		subscriber, err := client.User.Create().
+			SetName("subscriber-user").
+			SetOauthID("oauth-sub-2").
+			SetPhotoURL("http://photo.com/sub").
+			Save(ctx)
+		require.NoError(t, err)
+
+		nonSubscriber, err := client.User.Create().
+			SetName("other-user").
+			SetOauthID("oauth-other-2").
+			SetPhotoURL("http://photo.com/other").
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Step 1: First upsert — creates the host (like first beacon check-in)
+		hostID, err := client.Host.Create().
+			SetIdentifier("host-upsert-recovered").
+			SetName("test-host").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			SetLastSeenAt(time.Now()).
+			SetNextSeenAt(time.Now().Add(10 * time.Second)).
+			OnConflict().
+			UpdateNewValues().
+			ID(ctx)
+		require.NoError(t, err)
+
+		// Verify HOST_ACCESS_NEW event
+		newEvents, err := client.Event.Query().
+			Where(
+				event.HasHostWith(host.ID(hostID)),
+				event.KindEQ(event.KindHOST_ACCESS_NEW),
+			).All(ctx)
+		require.NoError(t, err)
+		require.Len(t, newEvents, 1, "HOST_ACCESS_NEW event should exist after first upsert")
+
+		// Subscribe one user
+		_, err = client.Host.UpdateOneID(hostID).AddSubscriberIDs(subscriber.ID).Save(ctx)
+		require.NoError(t, err)
+
+		// Step 2: Simulate the host being lost by setting NextSeenAt into the past
+		pastTime := time.Now().Add(-5 * time.Minute)
+		_, err = client.Host.UpdateOneID(hostID).SetNextSeenAt(pastTime).Save(ctx)
+		require.NoError(t, err)
+
+		// Step 3: Second upsert — beacon checks in again after being lost
+		// newLastSeen (now) should be after oldNextSeen (5 min ago) + 1 minute
+		_, err = client.Host.Create().
+			SetIdentifier("host-upsert-recovered").
+			SetName("test-host").
+			SetPlatform(c2pb.Host_PLATFORM_LINUX).
+			SetLastSeenAt(time.Now()).
+			SetNextSeenAt(time.Now().Add(10 * time.Second)).
+			OnConflict().
+			UpdateNewValues().
+			ID(ctx)
+		require.NoError(t, err)
+
+		// Verify HOST_ACCESS_RECOVERED event was created
+		recoveredEvents, err := client.Event.Query().
+			Where(
+				event.HasHostWith(host.ID(hostID)),
+				event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
+			).All(ctx)
+		require.NoError(t, err)
+		require.Len(t, recoveredEvents, 1, "exactly one HOST_ACCESS_RECOVERED event should exist after upsert recovery")
+
+		// Verify notifications with correct priorities
+		notifs, err := client.Notification.Query().
+			Where(notification.HasEventWith(event.ID(recoveredEvents[0].ID))).
+			WithUser().
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, notifs, 2, "notifications should be created for both users")
+
+		for _, n := range notifs {
+			if n.Edges.User.ID == subscriber.ID {
+				assert.Equal(t, notification.PriorityUrgent, n.Priority,
+					"subscriber should get Urgent notification")
+			} else if n.Edges.User.ID == nonSubscriber.ID {
+				assert.Equal(t, notification.PriorityMedium, n.Priority,
+					"non-subscriber should get Medium notification")
+			} else {
+				t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
+			}
+		}
+	})
 }

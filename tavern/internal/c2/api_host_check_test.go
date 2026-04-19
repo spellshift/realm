@@ -254,3 +254,137 @@ func TestHostAccessLostSkippedWhenNotOverdue(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "no HOST_ACCESS_LOST event should be created when NextSeenAt is in the future")
 }
+
+// TestHostAccessRecoveredViaClaimTasks verifies the full end-to-end recovery flow:
+//  1. A beacon checks in, establishing a host (HOST_ACCESS_NEW).
+//  2. The host's NextSeenAt is moved into the past and HOST_ACCESS_LOST is triggered.
+//  3. The beacon checks in again via ClaimTasks (upsert).
+//  4. A HOST_ACCESS_RECOVERED event is created.
+//  5. URGENT notifications are sent to subscribers and Medium to others.
+func TestHostAccessRecoveredViaClaimTasks(t *testing.T) {
+	ctx := context.Background()
+	client, graph, closeFunc, _ := c2test.New(t)
+	defer closeFunc()
+
+	graph.Host.Use(ent.HookDeriveHostEvents())
+	graph.Task.Use(ent.HookDeriveQuestEvents())
+	graph.Event.Use(ent.HookDeriveNotifications())
+
+	// Create two users
+	subscriber, err := graph.User.Create().
+		SetName("subscriber-recovery").
+		SetOauthID("oauth-sub-recovery").
+		SetPhotoURL("http://photo.com/sub").
+		SetIsActivated(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	nonSubscriber, err := graph.User.Create().
+		SetName("other-recovery").
+		SetOauthID("oauth-other-recovery").
+		SetPhotoURL("http://photo.com/other").
+		SetIsActivated(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Step 1: First ClaimTasks — creates the host
+	interval := uint64(10)
+	_, err = client.ClaimTasks(ctx, &c2pb.ClaimTasksRequest{
+		Beacon: &c2pb.Beacon{
+			Identifier: "test-beacon-recovery",
+			Principal:  "root",
+			Agent:      &c2pb.Agent{Identifier: "test-agent"},
+			Host: &c2pb.Host{
+				Identifier: "test-host-recovery",
+				Name:       "recovery-host",
+				Platform:   c2pb.Host_PLATFORM_LINUX,
+				PrimaryIp:  "10.0.0.2",
+			},
+			AvailableTransports: &c2pb.AvailableTransports{
+				Transports: []*c2pb.Transport{{
+					Uri:      "grpc://127.0.0.1:8080",
+					Interval: interval,
+					Type:     c2pb.Transport_TRANSPORT_GRPC,
+				}},
+				ActiveIndex: 0,
+			},
+		},
+	})
+	require.Equal(t, codes.OK.String(), status.Code(err).String())
+
+	// Verify HOST_ACCESS_NEW
+	h, err := graph.Host.Query().Where(host.IdentifierEQ("test-host-recovery")).Only(ctx)
+	require.NoError(t, err)
+
+	newEvents, err := graph.Event.Query().
+		Where(
+			event.HasHostWith(host.ID(h.ID)),
+			event.KindEQ(event.KindHOST_ACCESS_NEW),
+		).All(ctx)
+	require.NoError(t, err)
+	require.Len(t, newEvents, 1, "HOST_ACCESS_NEW should exist")
+
+	// Subscribe one user
+	_, err = graph.Host.UpdateOne(h).AddSubscriberIDs(subscriber.ID).Save(ctx)
+	require.NoError(t, err)
+
+	// Step 2: Simulate the host being lost by moving NextSeenAt into the past
+	pastTime := time.Now().Add(-5 * time.Minute)
+	_, err = graph.Host.UpdateOne(h).SetNextSeenAt(pastTime).Save(ctx)
+	require.NoError(t, err)
+
+	// Step 3: Beacon checks in again via ClaimTasks (upsert path)
+	_, err = client.ClaimTasks(ctx, &c2pb.ClaimTasksRequest{
+		Beacon: &c2pb.Beacon{
+			Identifier: "test-beacon-recovery",
+			Principal:  "root",
+			Agent:      &c2pb.Agent{Identifier: "test-agent"},
+			Host: &c2pb.Host{
+				Identifier: "test-host-recovery",
+				Name:       "recovery-host",
+				Platform:   c2pb.Host_PLATFORM_LINUX,
+				PrimaryIp:  "10.0.0.2",
+			},
+			AvailableTransports: &c2pb.AvailableTransports{
+				Transports: []*c2pb.Transport{{
+					Uri:      "grpc://127.0.0.1:8080",
+					Interval: interval,
+					Type:     c2pb.Transport_TRANSPORT_GRPC,
+				}},
+				ActiveIndex: 0,
+			},
+		},
+	})
+	require.Equal(t, codes.OK.String(), status.Code(err).String())
+
+	// Step 4: Verify HOST_ACCESS_RECOVERED event was created
+	recoveredEvents, err := graph.Event.Query().
+		Where(
+			event.HasHostWith(host.ID(h.ID)),
+			event.KindEQ(event.KindHOST_ACCESS_RECOVERED),
+		).All(ctx)
+	require.NoError(t, err)
+	require.Len(t, recoveredEvents, 1, "HOST_ACCESS_RECOVERED event should exist after beacon re-check-in")
+
+	// Step 5: Verify notification priorities
+	notifs, err := graph.Notification.Query().
+		Where(notification.HasEventWith(event.ID(recoveredEvents[0].ID))).
+		WithUser().
+		All(ctx)
+	require.NoError(t, err)
+	require.Len(t, notifs, 2, "notifications should be created for both users")
+
+	for _, n := range notifs {
+		if n.Edges.User.ID == subscriber.ID {
+			assert.Equal(t, notification.PriorityUrgent, n.Priority,
+				"subscriber should get URGENT notification for recovery")
+		} else if n.Edges.User.ID == nonSubscriber.ID {
+			assert.Equal(t, notification.PriorityMedium, n.Priority,
+				"non-subscriber should get Medium notification for recovery")
+		} else {
+			t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
+		}
+	}
+
+	t.Log("✅ HOST_ACCESS_RECOVERED event created via ClaimTasks upsert with correct notification priorities")
+}
