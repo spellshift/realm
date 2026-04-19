@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast, Box, Text, CloseButton, HStack, VStack } from '@chakra-ui/react';
 import { NotificationNode } from '../utils/interfacesQuery';
@@ -10,28 +10,41 @@ const notifiedIds = new Set<string>();
 
 /**
  * Request browser notification permission if the API is available.
+ * Should be called from a user gesture (e.g. click handler) for best
+ * browser compatibility, since many browsers silently block permission
+ * requests that are not triggered by user interaction.
  */
-const requestSystemNotificationPermission = async (): Promise<void> => {
+export const requestSystemNotificationPermission = async (): Promise<NotificationPermission | null> => {
     if (!('Notification' in window)) {
-        return;
+        return null;
     }
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        await Notification.requestPermission();
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+        return Notification.permission;
     }
+    return Notification.requestPermission();
 };
 
 /**
  * Show a browser system notification for an urgent notification.
+ * If permission has not yet been decided, attempts to request it first.
  * Clicking the system notification focuses the window and navigates to the link.
  */
-const showSystemNotification = (description: string, link: string | null, navigate: (path: string) => void) => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') {
+const showSystemNotification = async (description: string, link: string | null, navigate: (path: string) => void): Promise<void> => {
+    if (!('Notification' in window)) {
+        return;
+    }
+    // If permission hasn't been decided yet, attempt to request it
+    if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+    }
+    if (Notification.permission !== 'granted') {
         return;
     }
     const systemNotification = new Notification('Realm - Urgent', {
         body: description,
         icon: '/favicon.ico',
         tag: description,
+        requireInteraction: true,
     });
     systemNotification.onclick = () => {
         window.focus();
@@ -89,14 +102,27 @@ const UrgentNotificationToast = ({ description, link, onNavigate, onClose }: Urg
  *
  * Uses a module-level Set to prevent duplicate notifications across multiple
  * component instances (e.g. sidebar variants).
+ *
+ * Returns a callback that should be attached to a user-gesture event (e.g. a
+ * click handler) so the browser allows the notification permission prompt.
  */
 const useUrgentNotifications = (notifications: NotificationNode[]) => {
     const navigate = useNavigate();
     const toast = useToast();
     const initializedRef = useRef(false);
 
-    // Request system notification permission on mount
+    // Request system notification permission on mount as a best-effort fallback.
+    // Some browsers may silently ignore this because there is no user gesture.
     useEffect(() => {
+        requestSystemNotificationPermission();
+    }, []);
+
+    /**
+     * Callback intended to be called from a user-gesture context (e.g. onClick
+     * on the notification bell) so browsers that require a user gesture will
+     * properly display the permission prompt.
+     */
+    const requestPermissionOnGesture = useCallback(() => {
         requestSystemNotificationPermission();
     }, []);
 
@@ -137,10 +163,13 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
                 ),
             });
 
-            // Attempt system notification
+            // Attempt system notification (async, fire-and-forget).
+            // If permission is 'default' this will also try to request it.
             showSystemNotification(description, link, navigate);
         });
     }, [notifications, toast, navigate]);
+
+    return { requestPermissionOnGesture };
 };
 
 export default useUrgentNotifications;

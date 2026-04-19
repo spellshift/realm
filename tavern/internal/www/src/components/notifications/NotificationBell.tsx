@@ -37,8 +37,10 @@ const NotificationBell = () => {
     const notifications: NotificationNode[] = data?.me?.notifications?.edges?.map((edge: any) => edge.node) || [];
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    // Monitor for new urgent notifications and show toasts / system notifications
-    useUrgentNotifications(notifications);
+    // Monitor for new urgent notifications and show toasts / system notifications.
+    // The returned callback requests browser notification permission and should
+    // be called from a user gesture so that the browser allows the prompt.
+    const { requestPermissionOnGesture } = useUrgentNotifications(notifications);
 
     const urgentNotifications = notifications.filter(n => n.priority === NotificationPriority.Urgent && !n.archived);
     const unreadNotifications = notifications.filter(n => !n.read && !n.archived);
@@ -155,6 +157,7 @@ const NotificationBell = () => {
     return (
         <Popover
             placement="bottom-end"
+            onOpen={requestPermissionOnGesture}
             onClose={handleClose}
         >
             <PopoverTrigger>
