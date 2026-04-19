@@ -104,9 +104,11 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
             const link = getNotificationLink(notification);
 
             // Fire an OS-level system notification (e.g. macOS Notification Center).
+            // The tag ensures only one notification is shown across all open tabs.
             showSystemNotification({
                 title: '⚠ Urgent Notification',
                 body: description,
+                tag: `urgent-${notification.id}`,
                 onClick: () => {
                     if (link) {
                         navigate(link);
