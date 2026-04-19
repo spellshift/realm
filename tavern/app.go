@@ -332,7 +332,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize scheduler: %w", err)
 	}
 
-	// Determine host check URL based on server listen address
+	// Determine host check URL based on server listen address.
+	// The in-memory scheduler fires HTTP requests from the same process,
+	// so localhost is always correct. For production GCP deployments the
+	// scheduler driver would use the public server address instead.
 	listenAddr := "0.0.0.0:80"
 	if cfg.srv != nil && cfg.srv.Addr != "" {
 		listenAddr = cfg.srv.Addr

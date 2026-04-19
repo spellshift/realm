@@ -42,11 +42,18 @@ var (
 			Help: "The total number of errors encountered during tome automation",
 		},
 	)
+	metricHostLostScheduleErrors = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "tavern_host_lost_schedule_errors_total",
+			Help: "The total number of errors encountered when scheduling host-lost checks",
+		},
+	)
 )
 
 func init() {
 	prometheus.MustRegister(metricHostCallbacksTotal)
 	prometheus.MustRegister(metricTomeAutomationErrors)
+	prometheus.MustRegister(metricHostLostScheduleErrors)
 }
 
 func (srv *Server) handleTomeAutomation(ctx context.Context, beaconID int, hostID int, isNewBeacon bool, isNewHost bool, now time.Time, interval time.Duration) {
@@ -517,7 +524,7 @@ func (srv *Server) scheduleHostLostCheck(ctx context.Context, hostID int, expect
 		return
 	}
 
-	jobName := fmt.Sprintf("host-lost-check-%d-%d", hostID, expectedNextSeenAt.UnixNano())
+	jobName := fmt.Sprintf("host-lost-check-%d-%d", hostID, expectedNextSeenAt.Unix())
 	err = srv.scheduler.ScheduleAt(ctx, scheduler.OnceJob{
 		Name: jobName,
 		At:   expectedNextSeenAt.Add(1 * time.Minute),
@@ -532,5 +539,6 @@ func (srv *Server) scheduleHostLostCheck(ctx context.Context, hostID int, expect
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to schedule host-lost check", "err", err, "host_id", hostID)
+		metricHostLostScheduleErrors.Inc()
 	}
 }
