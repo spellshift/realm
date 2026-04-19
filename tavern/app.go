@@ -372,6 +372,14 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
 		hostCheckSchedule = "* * * * *"
 	}
+	// Generate a JWT scoped to the host-check endpoint and append it as a query parameter.
+	hostCheckToken, err := hostcheck.NewToken(privKey)
+	if err != nil {
+		client.Close()
+		sched.Close()
+		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
+	}
+	hostCheckURL = fmt.Sprintf("%s?token=%s", hostCheckURL, url.QueryEscape(hostCheckToken))
 	slog.InfoContext(ctx, "resolved host check configuration", "url", hostCheckURL, "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
 	// Schedule a recurring host-lost check.
@@ -496,7 +504,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: pty.NewHandler(client, portalMux),
 		},
 		"/internal/host-check": tavernhttp.Endpoint{
-			Handler:              hostcheck.NewHandler(client),
+			Handler:              hostcheck.NewHandler(client, pubKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
