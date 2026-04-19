@@ -76,6 +76,12 @@ var (
 	EnvDBMaxOpenConns    = EnvInteger{"DB_MAX_OPEN_CONNS", 100}
 	EnvDBMaxConnLifetime = EnvInteger{"DB_MAX_CONN_LIFETIME", 3600}
 
+	// EnvSchedulerURI selects the scheduler backend via a URI scheme.
+	// Examples:
+	//   mem://                                                (in-memory, default)
+	//   gcp://projects/{project}/locations/{location}         (GCP Cloud Scheduler)
+	EnvSchedulerURI = EnvString{"SCHEDULER_URI", "mem://"}
+
 	// EnvGCPProjectID represents the project id tavern is deployed in for Google Cloud Platform deployments (leave empty otherwise).
 	// EnvGCPPubsubKeepAliveIntervalMs is the interval to publish no-op pubsub messages to help avoid gcppubsub coldstart latency. 0 disables this feature.
 	// EnvPubSubTopicShellInput defines the topic to publish shell input to.

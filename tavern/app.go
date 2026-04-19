@@ -56,6 +56,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 	_ "realm.pub/tavern/internal/redirectors/icmp"
+	_ "realm.pub/tavern/internal/scheduler/gcp"
 	_ "realm.pub/tavern/internal/scheduler/mem"
 )
 
@@ -326,21 +327,37 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	portalMux := cfg.NewPortalMux(ctx)
 
 	// Initialize Scheduler
-	sched, err := scheduler.New(ctx, "mem://")
+	schedulerURI := EnvSchedulerURI.String()
+	sched, err := scheduler.New(ctx, schedulerURI)
 	if err != nil {
 		client.Close()
 		return nil, fmt.Errorf("failed to initialize scheduler: %w", err)
 	}
 
-	// Determine host check URL based on server listen address.
+	// Determine host check URL based on the scheduler backend.
 	// The in-memory scheduler fires HTTP requests from the same process,
-	// so localhost is always correct. For production GCP deployments the
-	// scheduler driver would use the public server address instead.
+	// so localhost is always reachable. For external schedulers like GCP
+	// Cloud Scheduler, requests originate outside this process and must
+	// target a publicly accessible address (OAUTH_DOMAIN).
 	listenAddr := "0.0.0.0:80"
 	if cfg.srv != nil && cfg.srv.Addr != "" {
 		listenAddr = cfg.srv.Addr
 	}
-	hostCheckURL := fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
+	var hostCheckURL string
+	if strings.HasPrefix(schedulerURI, "mem://") {
+		hostCheckURL = fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
+	} else {
+		domain := EnvOAuthDomain.String()
+		if domain == "" {
+			client.Close()
+			sched.Close()
+			return nil, fmt.Errorf("OAUTH_DOMAIN must be set when using an external scheduler (SCHEDULER_URI=%q)", schedulerURI)
+		}
+		if !strings.HasPrefix(domain, "http") {
+			domain = fmt.Sprintf("https://%s", domain)
+		}
+		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
+	}
 
 	// Route Map
 	routes := tavernhttp.RouteMap{
