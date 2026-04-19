@@ -25,6 +25,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
 	entbuilder "realm.pub/tavern/internal/ent/builder"
+	"realm.pub/tavern/internal/ent/link"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/user"
 	"realm.pub/tavern/internal/graphql/generated"
@@ -314,6 +315,28 @@ func (r *mutationResolver) CreateTag(ctx context.Context, input ent.CreateTagInp
 // UpdateTag is the resolver for the updateTag field.
 func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.UpdateTagInput) (*ent.Tag, error) {
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
+}
+
+// DeleteAsset is the resolver for the deleteAsset field.
+func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, error) {
+	a, err := r.client.Asset.Get(ctx, assetID)
+	if err != nil {
+		return 0, err
+	}
+	tomeCount, err := a.QueryTomes().Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query associated tomes: %w", err)
+	}
+	if tomeCount > 0 {
+		return 0, fmt.Errorf("cannot delete asset: it is associated with %d tome(s)", tomeCount)
+	}
+	if _, err := r.client.Link.Delete().Where(link.HasAssetWith(asset.ID(assetID))).Exec(ctx); err != nil {
+		return 0, fmt.Errorf("failed to delete associated links: %w", err)
+	}
+	if err := r.client.Asset.DeleteOneID(assetID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return assetID, nil
 }
 
 // CreateTome is the resolver for the createTome field.

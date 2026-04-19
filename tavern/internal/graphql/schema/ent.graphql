@@ -2219,6 +2219,10 @@ type Event implements Node {
   Quest associated with this event
   """
   quest: Quest
+  """
+  User associated with this event
+  """
+  user: User
   notifications(
     """
     Returns the elements in the list that come after the specified cursor.
@@ -2290,6 +2294,7 @@ enum EventKind @goModel(model: "realm.pub/tavern/internal/ent/event.Kind") {
   HOST_ACCESS_RECOVERED
   HOST_ACCESS_LOST
   QUEST_COMPLETED
+  NEW_USER_REQUEST
 }
 """
 Ordering options for Event connections
@@ -2386,6 +2391,11 @@ input EventWhereInput {
   """
   hasQuest: Boolean
   hasQuestWith: [QuestWhereInput!]
+  """
+  user edge predicates
+  """
+  hasUser: Boolean
+  hasUserWith: [UserWhereInput!]
   """
   notifications edge predicates
   """
@@ -7374,6 +7384,9 @@ input UpdateUserInput {
   addSubscribedHostIDs: [ID!]
   removeSubscribedHostIDs: [ID!]
   clearSubscribedHosts: Boolean
+  addEventIDs: [ID!]
+  removeEventIDs: [ID!]
+  clearEvents: Boolean
 }
 type User implements Node {
   id: ID!
@@ -7579,6 +7592,37 @@ type User implements Node {
     """
     where: HostWhereInput
   ): HostConnection! @goField(name: "SubscribedHosts", forceResolver: false)
+  events(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Events returned from the connection.
+    """
+    orderBy: [EventOrder!]
+
+    """
+    Filtering options for Events returned from the connection.
+    """
+    where: EventWhereInput
+  ): EventConnection!
 }
 """
 A connection to a list of items.
@@ -7720,4 +7764,9 @@ input UserWhereInput {
   """
   hasSubscribedHosts: Boolean
   hasSubscribedHostsWith: [HostWhereInput!]
+  """
+  events edge predicates
+  """
+  hasEvents: Boolean
+  hasEventsWith: [EventWhereInput!]
 }

@@ -842,6 +842,9 @@ type UpdateUserInput struct {
 	ClearSubscribedHosts    bool
 	AddSubscribedHostIDs    []int
 	RemoveSubscribedHostIDs []int
+	ClearEvents             bool
+	AddEventIDs             []int
+	RemoveEventIDs          []int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -911,6 +914,15 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.RemoveSubscribedHostIDs; len(v) > 0 {
 		m.RemoveSubscribedHostIDs(v...)
+	}
+	if i.ClearEvents {
+		m.ClearEvents()
+	}
+	if v := i.AddEventIDs; len(v) > 0 {
+		m.AddEventIDs(v...)
+	}
+	if v := i.RemoveEventIDs; len(v) > 0 {
+		m.RemoveEventIDs(v...)
 	}
 }
 

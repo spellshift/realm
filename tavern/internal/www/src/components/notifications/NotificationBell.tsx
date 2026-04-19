@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { Link } from 'react-router-dom';
-import { BellIcon, BugAntIcon } from '@heroicons/react/24/outline';
+import { BellIcon, BugAntIcon, UserPlusIcon } from '@heroicons/react/24/outline';
 import {
     Popover,
     PopoverTrigger,
@@ -63,6 +63,8 @@ const NotificationBell = () => {
             case EventKind.HOST_ACCESS_RECOVERED:
             case EventKind.HOST_ACCESS_LOST:
                 return <BugAntIcon className="h-4 w-4" />;
+            case EventKind.NEW_USER_REQUEST:
+                return <UserPlusIcon className="h-4 w-4" />;
             default:
                 return <BellIcon className="h-4 w-4" />;
         }
@@ -192,7 +194,7 @@ const NotificationBell = () => {
                         <Tabs colorScheme="purple" isFitted>
                             <TabList borderColor="gray.700">
                                 {activeTabs.map(tab => (
-                                    <Tab key={tab} fontSize="xs" py={3} _focus={{ outline: 'none' }}>{tab}</Tab>
+                                    <Tab key={tab} fontSize="xs" py={3} color="white" _focus={{ outline: 'none' }}>{tab}</Tab>
                                 ))}
                             </TabList>
                             <TabPanels>
