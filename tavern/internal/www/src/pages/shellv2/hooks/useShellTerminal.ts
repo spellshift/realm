@@ -427,7 +427,7 @@ export const useShellTerminal = (
         });
         resizeObserver.observe(termRef.current);
 
-        termInstance.current.write("Eldritch v0.3.0\r\n");
+        termInstance.current.write("Eldritch v0.4.0\r\n");
 
         // Define redrawLine early so it can be used by adapter callback
         const redrawLine = () => {
