@@ -728,6 +728,14 @@ func (r *mutationResolver) MarkNotificationsAsArchived(ctx context.Context, noti
 		All(ctx)
 }
 
+// DeleteAllNotifications is the resolver for the deleteAllNotifications field.
+func (r *mutationResolver) DeleteAllNotifications(ctx context.Context) (bool, error) {
+	if _, err := r.client.Notification.Delete().Exec(ctx); err != nil {
+		return false, fmt.Errorf("failed to delete notifications: %w", err)
+	}
+	return true, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
