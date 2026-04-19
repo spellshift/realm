@@ -316,6 +316,25 @@ func (r *mutationResolver) UpdateTag(ctx context.Context, tagID int, input ent.U
 	return r.client.Tag.UpdateOneID(tagID).SetInput(input).Save(ctx)
 }
 
+// DeleteAsset is the resolver for the deleteAsset field.
+func (r *mutationResolver) DeleteAsset(ctx context.Context, assetID int) (int, error) {
+	a, err := r.client.Asset.Get(ctx, assetID)
+	if err != nil {
+		return 0, err
+	}
+	tomeCount, err := a.QueryTomes().Count(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query associated tomes: %w", err)
+	}
+	if tomeCount > 0 {
+		return 0, fmt.Errorf("cannot delete asset: it is associated with %d tome(s)", tomeCount)
+	}
+	if err := r.client.Asset.DeleteOneID(assetID).Exec(ctx); err != nil {
+		return 0, err
+	}
+	return assetID, nil
+}
+
 // CreateTome is the resolver for the createTome field.
 func (r *mutationResolver) CreateTome(ctx context.Context, input ent.CreateTomeInput) (*ent.Tome, error) {
 	var uploaderID *int

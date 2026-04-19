@@ -7989,6 +7989,11 @@ type Mutation {
     updateTag(tagID: ID!, input: UpdateTagInput!): Tag! @requireRole(role: USER)
 
     ###
+    # Asset
+    ###
+    deleteAsset(assetID: ID!): ID! @requireRole(role: ADMIN)
+
+    ###
     # Tome
     ###
     createTome(input: CreateTomeInput!,): Tome! @requireRole(role: USER)
