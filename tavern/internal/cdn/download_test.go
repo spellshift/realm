@@ -52,6 +52,32 @@ func TestDownload(t *testing.T) {
 			assert.Empty(t, string(fileContent))
 		},
 	))
+	t.Run("ChunkedDownload", func(t *testing.T) {
+		// Set a small chunk size for testing
+		origMaxChunkSize := cdn.MaxChunkSize
+		cdn.MaxChunkSize = 4
+		defer func() { cdn.MaxChunkSize = origMaxChunkSize }()
+
+		// Create a large asset (larger than chunk size)
+		largeContent := []byte("abcdefghijklmnop") // 16 bytes, 4 chunks of 4 bytes
+		largeAsset := newAsset(graph, "LargeTestAsset", largeContent)
+
+		handler := cdn.NewDownloadHandler(graph, "/download/")
+		req := newDownloadRequest(largeAsset.Name)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		result := w.Result()
+		body, err := ioutil.ReadAll(result.Body)
+		require.NoError(t, err)
+		defer result.Body.Close()
+
+		assert.Equal(t, http.StatusOK, result.StatusCode)
+		assert.Equal(t, largeContent, body)
+
+		hash := fmt.Sprintf("%x", sha3.Sum256(body))
+		assert.Equal(t, hash, result.Header.Get(cdn.HeaderEtag))
+	})
 }
 
 // newDownloadTest initializes a new test case for the download handler.
