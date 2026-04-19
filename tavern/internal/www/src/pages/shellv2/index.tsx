@@ -100,6 +100,14 @@ const ShellV2 = () => {
 
     useTabHotkeys(totalTabs, setTabIndex);
 
+    useEffect(() => {
+        if (tabIndex === 0) {
+            // Delay focus so it runs after the browser finishes focusing the
+            // clicked tab header element.
+            setTimeout(() => focusTerminal(), 0);
+        }
+    }, [tabIndex, focusTerminal]);
+
     const toast = useToast();
 
     const [closePortalMutation] = useMutation(CLOSE_PORTAL_MUTATION);
@@ -181,9 +189,9 @@ const ShellV2 = () => {
     let shellTerm = (
         <Tabs index={tabIndex} onChange={(index) => setTabIndex(index)} variant="enclosed" flex="1" display="flex" flexDirection="column" mt={useTabs ? 4 : 0} overflow="hidden">
             <TabList borderBottomColor="#333" display={useTabs ? 'flex' : 'none'}>
-                <Tab _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
+                <Tab onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">{shellData?.node?.beacon?.name ?? "Shell"}</Tab>
                 {portalTabs.map(tab => (
-                    <Tab key={tab.id} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
+                    <Tab key={tab.id} onMouseDown={e => e.preventDefault()} _selected={{ color: 'white', bg: '#2d2d2d', borderColor: '#333', borderBottomColor: 'transparent' }} color="#888" borderColor="transparent">
                         <span className="flex items-center gap-1.5">
                             {disconnectedTabs.has(tab.id) && (
                                 <Tooltip label="Disconnected" hasArrow>
@@ -211,13 +219,13 @@ const ShellV2 = () => {
                         onTooltipMouseLeave={handleTooltipMouseLeave}
                     />
                 </TabPanel>
-                {portalTabs.map(tab => (
+                {portalTabs.map((tab, idx) => (
                     <TabPanel key={tab.id} flex="1" p={0} display="flex" flexDirection="column" overflow="hidden">
                         {tab.type === "ssh" && (portalId || tab.pivotId) && (
-                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
+                            <SshTerminal portalId={portalId || 0} target={tab.target} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                         {tab.type === "pty" && (portalId || tab.pivotId) && (
-                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
+                            <PtyTerminal portalId={portalId || 0} pivotId={tab.pivotId ? parseInt(tab.pivotId) : undefined} shellId={shellId || ""} isActive={tabIndex === idx + 1} onConnectionStatusChange={(status) => handleTabConnectionStatusChange(tab.id, status)} />
                         )}
                     </TabPanel>
                 ))}
