@@ -264,9 +264,10 @@ func HookDeriveNotifications() ent.Hook {
 					return nil, fmt.Errorf("fetching users for host access event: %w", err)
 				}
 
-				// For HOST_ACCESS_RECOVERED and HOST_ACCESS_LOST, determine which users are subscribers
+				// For HOST_ACCESS_RECOVERED, determine which users are subscribers so they
+				// receive a higher-priority notification than non-subscribers.
 				subscriberIDs := make(map[int]bool)
-				if evt.Kind == event.KindHOST_ACCESS_RECOVERED || evt.Kind == event.KindHOST_ACCESS_LOST {
+				if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
 					subscribers, err := client.Event.Query().
 						Where(event.ID(evt.ID)).
 						QueryHost().
@@ -285,6 +286,8 @@ func HookDeriveNotifications() ent.Hook {
 					defaultPriority := notification.PriorityLow
 					if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
 						defaultPriority = notification.PriorityMedium
+					} else if evt.Kind == event.KindHOST_ACCESS_LOST {
+						defaultPriority = notification.PriorityUrgent
 					}
 					priority := defaultPriority
 					if subscriberIDs[u.ID] {
