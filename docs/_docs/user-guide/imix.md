@@ -24,6 +24,8 @@ Building in the dev container limits variables that might cause issues and is th
 | IMIX_RETRY_INTERVAL | Duration to wait before restarting the agent loop if an error occurs, in seconds. | `5` | No |
 | IMIX_HOST_ID | Manually specify the host ID for this beacon. Supersedes the file on disk. | - | No |
 | IMIX_RUN_ONCE | Imix will only do one callback and execution of queued tasks (may want to pair with runtime environment variable `IMIX_BEACON_ID`) | false | No |
+| IMIX_GUARDRAILS | JSON list of guardrail objects; if set, Imix exits at startup unless at least one guardrail passes. See [Guardrails](#guardrails) for details. | - | No |
+| IMIX_CONFIG | YAML-formatted advanced configuration string for multiple transports. When set, overrides `IMIX_CALLBACK_URI`, `IMIX_CALLBACK_INTERVAL`, and `IMIX_TRANSPORT_EXTRA_*`. See [Advanced Configuration](#advanced-configuration-imix_config) for details. | - | No |
 
 
 Imix has run-time configuration, that may be specified using environment variables during execution.
