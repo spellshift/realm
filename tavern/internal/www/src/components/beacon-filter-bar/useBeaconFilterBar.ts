@@ -41,6 +41,11 @@ export function useBeaconFilterBar(props?: UseBeaconFilterBarProps): UseBeaconFi
             (node) => node.primaryIP,
             "primaryIP"
         );
+        const externalIPs = buildUniqueOptions(
+            data.hosts.edges,
+            (node) => node.externalIP,
+            "externalIP"
+        );
         const hosts = buildEntityOptions(data.hosts.edges, "host");
         const beacons = buildEntityOptions(data.beacons.edges, "beacon");
 
@@ -52,6 +57,7 @@ export function useBeaconFilterBar(props?: UseBeaconFilterBarProps): UseBeaconFi
             { label: "Group", options: groupTags },
             { label: "Principal", options: principals },
             { label: "PrimaryIPs", options: primaryIPs },
+            { label: "ExternalIPs", options: externalIPs },
             { label: "Host", options: hosts },
             { label: "Beacon", options: beacons },
         ];
