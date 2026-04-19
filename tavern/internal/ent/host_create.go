@@ -261,6 +261,21 @@ func (hc *HostCreate) AddEvents(e ...*Event) *HostCreate {
 	return hc.AddEventIDs(ids...)
 }
 
+// AddSubscriberIDs adds the "subscribers" edge to the User entity by IDs.
+func (hc *HostCreate) AddSubscriberIDs(ids ...int) *HostCreate {
+	hc.mutation.AddSubscriberIDs(ids...)
+	return hc
+}
+
+// AddSubscribers adds the "subscribers" edges to the User entity.
+func (hc *HostCreate) AddSubscribers(u ...*User) *HostCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return hc.AddSubscriberIDs(ids...)
+}
+
 // Mutation returns the HostMutation object of the builder.
 func (hc *HostCreate) Mutation() *HostMutation {
 	return hc.mutation
@@ -519,6 +534,22 @@ func (hc *HostCreate) createSpec() (*Host, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(event.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := hc.mutation.SubscribersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   host.SubscribersTable,
+			Columns: host.SubscribersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

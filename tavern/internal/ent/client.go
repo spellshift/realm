@@ -2178,6 +2178,22 @@ func (c *HostClient) QueryEvents(h *Host) *EventQuery {
 	return query
 }
 
+// QuerySubscribers queries the subscribers edge of a Host.
+func (c *HostClient) QuerySubscribers(h *Host) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := h.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(host.Table, host.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, host.SubscribersTable, host.SubscribersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(h.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *HostClient) Hooks() []Hook {
 	return c.hooks.Host
@@ -5509,6 +5525,22 @@ func (c *UserClient) QueryFavoriteHosts(u *User) *HostQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(host.Table, host.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, user.FavoriteHostsTable, user.FavoriteHostsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubscribedHosts queries the subscribedHosts edge of a User.
+func (c *UserClient) QuerySubscribedHosts(u *User) *HostQuery {
+	query := (&HostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(host.Table, host.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.SubscribedHostsTable, user.SubscribedHostsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

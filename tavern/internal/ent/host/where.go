@@ -770,6 +770,29 @@ func HasEventsWith(preds ...predicate.Event) predicate.Host {
 	})
 }
 
+// HasSubscribers applies the HasEdge predicate on the "subscribers" edge.
+func HasSubscribers() predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, SubscribersTable, SubscribersPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubscribersWith applies the HasEdge predicate on the "subscribers" edge with a given conditions (other predicates).
+func HasSubscribersWith(preds ...predicate.User) predicate.Host {
+	return predicate.Host(func(s *sql.Selector) {
+		step := newSubscribersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Host) predicate.Host {
 	return predicate.Host(sql.AndPredicates(predicates...))

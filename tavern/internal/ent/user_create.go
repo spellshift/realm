@@ -175,6 +175,21 @@ func (uc *UserCreate) AddFavoriteHosts(h ...*Host) *UserCreate {
 	return uc.AddFavoriteHostIDs(ids...)
 }
 
+// AddSubscribedHostIDs adds the "subscribedHosts" edge to the Host entity by IDs.
+func (uc *UserCreate) AddSubscribedHostIDs(ids ...int) *UserCreate {
+	uc.mutation.AddSubscribedHostIDs(ids...)
+	return uc
+}
+
+// AddSubscribedHosts adds the "subscribedHosts" edges to the Host entity.
+func (uc *UserCreate) AddSubscribedHosts(h ...*Host) *UserCreate {
+	ids := make([]int, len(h))
+	for i := range h {
+		ids[i] = h[i].ID
+	}
+	return uc.AddSubscribedHostIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uc *UserCreate) Mutation() *UserMutation {
 	return uc.mutation
@@ -391,6 +406,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Inverse: false,
 			Table:   user.FavoriteHostsTable,
 			Columns: user.FavoriteHostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.SubscribedHostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.SubscribedHostsTable,
+			Columns: user.SubscribedHostsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(host.FieldID, field.TypeInt),

@@ -6,8 +6,6 @@ import {
     Popover,
     PopoverTrigger,
     PopoverContent,
-    PopoverHeader,
-    PopoverBody,
     PopoverArrow,
     Tabs,
     TabList,
@@ -24,6 +22,8 @@ import {
 import { GET_NOTIFICATIONS, MARK_NOTIFICATIONS_AS_READ } from '../../lib/notifications';
 import { NotificationPriority, EventKind } from '../../utils/enums';
 import { NotificationNode } from '../../utils/interfacesQuery';
+import { getNotificationLink, getEventDescription } from '../../utils/notificationHelpers';
+import useUrgentNotifications from '../../hooks/useUrgentNotifications';
 import { FileTerminal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -36,6 +36,11 @@ const NotificationBell = () => {
 
     const notifications: NotificationNode[] = data?.me?.notifications?.edges?.map((edge: any) => edge.node) || [];
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    // Monitor for new urgent notifications and show toasts / system notifications.
+    // The returned callback requests browser notification permission and should
+    // be called from a user gesture so that the browser allows the prompt.
+    const { requestPermissionOnGesture } = useUrgentNotifications(notifications);
 
     const urgentNotifications = notifications.filter(n => n.priority === NotificationPriority.Urgent && !n.archived);
     const unreadNotifications = notifications.filter(n => !n.read && !n.archived);
@@ -62,40 +67,6 @@ const NotificationBell = () => {
                 return <BugAntIcon className="h-4 w-4" />;
             default:
                 return <BellIcon className="h-4 w-4" />;
-        }
-    };
-
-    const getEventDescription = (notification: NotificationNode) => {
-        const event = notification.event;
-        switch (event.kind) {
-            case EventKind.HOST_ACCESS_NEW:
-                return `New host access: ${event.host?.name || event.host?.id}`;
-            case EventKind.HOST_ACCESS_RECOVERED:
-                return `Host access recovered: ${event.host?.name || event.host?.id}`;
-            case EventKind.HOST_ACCESS_LOST:
-                return `Host access lost: ${event.host?.name || event.host?.id}`;
-            case EventKind.BEACON_LOST:
-                return `Beacon lost: ${event.beacon?.name || event.beacon?.id}`;
-            case EventKind.QUEST_COMPLETED:
-                return `Quest completed: ${event.quest?.name || event.quest?.id}`;
-            default:
-                return 'Notification received';
-        }
-    };
-
-    const getNotificationLink = (notification: NotificationNode) => {
-        const event = notification.event;
-        switch (event.kind) {
-            case EventKind.HOST_ACCESS_NEW:
-            case EventKind.HOST_ACCESS_RECOVERED:
-            case EventKind.HOST_ACCESS_LOST:
-                return event.host ? `/hosts/${event.host.id}` : null;
-            case EventKind.BEACON_LOST:
-                return event.host?.id ? `/hosts/${event.host.id}` : (event.beacon?.host?.id ? `/hosts/${event.beacon.host.id}` : null);
-            case EventKind.QUEST_COMPLETED:
-                return event.quest ? `/tasks/${event.quest.id}` : null;
-            default:
-                return null;
         }
     };
 
@@ -185,11 +156,12 @@ const NotificationBell = () => {
 
     return (
         <Popover
-            placement="right-start"
+            placement="bottom-end"
+            onOpen={requestPermissionOnGesture}
             onClose={handleClose}
         >
             <PopoverTrigger>
-                <Box position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }}>
+                <Box as="button" type="button" position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }} bg="transparent" border="none" outline="none" display="flex" alignItems="center">
                     <BellIcon className="h-6 w-6 text-gray-400 hover:text-white" />
                     {unreadCount > 0 && (
                         <Box

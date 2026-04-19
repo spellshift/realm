@@ -271,8 +271,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
-		// Background goroutine: read portal output -> broadcast to websockets
+		// Background goroutine: read portal output -> broadcast to websockets.
+		// Deduplication: The mux dispatches each mote twice (once via the local
+		// fast-path in Publish and once via the global pubsub receiveLoop). We
+		// track the highest seq_id we have processed and skip any mote whose
+		// seq_id has already been seen, which also preserves ordering.
 		go func() {
+			var lastSeqID uint64
+			seenAny := false
 			for {
 				select {
 				case <-sessionCtx.Done():
@@ -291,6 +297,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						closePivot()
 						return
 					}
+					// Deduplicate: skip motes we have already processed
+					if seenAny && m.SeqId <= lastSeqID {
+						continue
+					}
+					lastSeqID = m.SeqId
+					seenAny = true
 					// Handle PTY data
 					if bytesPayload := m.GetBytes(); bytesPayload != nil && bytesPayload.Kind == portalpb.BytesPayloadKind_BYTES_PAYLOAD_KIND_PTY {
 						pivotSession.Broadcast(shell.WebsocketTaskOutputMessage{
@@ -411,8 +423,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Reader goroutine - for reconnects we need the portal info
 	// The pivot session tracks the stream context, but we need topicIn
-	// For reconnects, we look up the portal from the pivot
+	// For reconnects, we look up the portal from the pivot once up front.
 	go func() {
+		// Resolve portalID once to avoid per-keystroke DB queries
+		pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		portalEnt, err := pivot.QueryPortal().Only(ctx)
+		if err != nil {
+			errCh <- err
+			return
+		}
+		topicIn := h.mux.TopicIn(portalEnt.ID)
+
+		var seqID uint64
 		for {
 			_, msg, err := wsConn.ReadMessage()
 			if err != nil {
@@ -424,22 +450,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// For reconnects, look up the portal from the pivot
-			pivot, err := h.graph.ShellPivot.Get(ctx, pivotSession.PivotID)
-			if err != nil {
-				errCh <- err
-				return
-			}
-			portalEnt, err := pivot.QueryPortal().Only(ctx)
-			if err != nil {
-				errCh <- err
-				return
-			}
-
-			topicIn := h.mux.TopicIn(portalEnt.ID)
+			seqID++
 			mote := &portalpb.Mote{
 				StreamId: pivotSession.StreamID,
-				SeqId:    0,
+				SeqId:    seqID,
 				Payload: &portalpb.Mote_Bytes{
 					Bytes: &portalpb.BytesPayload{
 						Data: []byte(inputMsg.Input),

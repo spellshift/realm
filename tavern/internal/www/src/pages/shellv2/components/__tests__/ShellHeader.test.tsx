@@ -53,6 +53,9 @@ describe("ShellHeader", () => {
         onNewPortal: vi.fn(),
         onSshConnect: vi.fn(),
         onPtyOpen: vi.fn(),
+        onSendCtrlC: vi.fn(),
+        onSendCtrlR: vi.fn(),
+        onClosePortal: vi.fn(),
     };
 
     it("renders beacon name and host name", () => {

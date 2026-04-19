@@ -94,6 +94,9 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 	}
 	defer sshConn.Close()
 
+	log.Printf("Client connected: %s\n", sshConn.RemoteAddr())
+	defer log.Printf("Client disconnected: %s\n", sshConn.RemoteAddr())
+
 	go ssh.DiscardRequests(reqs)
 
 	for newChannel := range chans {

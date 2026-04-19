@@ -19,9 +19,11 @@ interface ShellHeaderProps {
   onClosePortal: () => void;
   onSshConnect: (target: string) => void;
   onPtyOpen: () => void;
+  onSendCtrlC: () => void;
+  onSendCtrlR: () => void;
 }
 
-const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onClosePortal, onSshConnect, onPtyOpen }) => {
+const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], portalId, onExport, onNewPortal, onClosePortal, onSshConnect, onPtyOpen, onSendCtrlC, onSendCtrlR }) => {
   const beaconName = shellData?.node?.beacon?.name;
   const principal = shellData?.node?.beacon?.principal;
   const agentIdentifier = shellData?.node?.beacon?.agentIdentifier;
@@ -36,11 +38,11 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
   const tags = shellData?.node?.beacon?.host?.tags?.edges?.map((edge: any) => edge.node) || [];
 
   return (
-    <div className="flex items-center gap-4 mb-4">
+    <div className="flex items-center gap-2 md:gap-4 mb-4">
       <Breadcrumbs pages={[{ label: "Shell", link: window.location.pathname }]} />
       <Badge badgeStyle={{ color: "red" }}>BETA</Badge>
-      <h1 className="text-xl font-bold flex items-center gap-2">
-        <span>
+      <h1 className="text-xl font-bold flex items-center gap-2 min-w-0">
+        <span className="truncate max-w-[200px] md:max-w-none">
           <Tooltip label={
             <div className="flex flex-col">
               <span>Principal: {principal}</span>
@@ -49,9 +51,9 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
               <span>Transport: {getEnumKey(SupportedTransports, transport)}</span>
             </div>
           }>
-            <span className="cursor-help border-b border-dashed border-gray-500">{beaconName}</span>
+            <span className="cursor-help border-b border-dashed border-gray-500 hidden md:inline">{beaconName}</span>
           </Tooltip>
-          {" @ "}
+          <span className="hidden md:inline">{" @ "}</span>
           <Tooltip label={
             <div className="flex flex-col">
               <span>Primary IP: {primaryIP}</span>
@@ -65,7 +67,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
             <Link to={`/hosts/${hostId}`} className="text-blue-400 hover:text-blue-300 underline">{hostName}</Link>
           </Tooltip>
         </span>
-        {principal && <Badge>{principal}</Badge>}
+        {principal && <span className="hidden md:inline"><Badge>{principal}</Badge></span>}
       </h1>
 
       {/* Active Users Display */}
@@ -93,7 +95,7 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
         href="https://github.com/spellshift/realm/issues/new?template=bug_report.md&labels=bug&title=%5Bbug%5D%20Shell%3A%20%3CYOUR%20ISSUE%3E"
         target="_blank"
         rel="noopener noreferrer"
-        className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
+        className="hidden md:flex text-gray-400 hover:text-white transition-colors flex-shrink-0"
         title="Report a bug"
       >
         <Bug size={20} />
@@ -111,6 +113,8 @@ const ShellHeader: React.FC<ShellHeaderProps> = ({ shellData, activeUsers = [], 
           onClosePortal={onClosePortal}
           onSshConnect={onSshConnect}
           onPtyOpen={onPtyOpen}
+          onSendCtrlC={onSendCtrlC}
+          onSendCtrlR={onSendCtrlR}
         />
       </div>
     </div>

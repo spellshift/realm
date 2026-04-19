@@ -2683,6 +2683,37 @@ type Host implements Node {
     """
     where: EventWhereInput
   ): EventConnection!
+  subscribers(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Users returned from the connection.
+    """
+    orderBy: [UserOrder!]
+
+    """
+    Filtering options for Users returned from the connection.
+    """
+    where: UserWhereInput
+  ): UserConnection!
 }
 """
 A connection to a list of items.
@@ -3740,6 +3771,11 @@ input HostWhereInput {
   """
   hasEvents: Boolean
   hasEventsWith: [EventWhereInput!]
+  """
+  subscribers edge predicates
+  """
+  hasSubscribers: Boolean
+  hasSubscribersWith: [UserWhereInput!]
 }
 type Link implements Node {
   id: ID!
@@ -7146,6 +7182,9 @@ input UpdateHostInput {
   addFavoritedByIDs: [ID!]
   removeFavoritedByIDs: [ID!]
   clearFavoritedBy: Boolean
+  addSubscriberIDs: [ID!]
+  removeSubscriberIDs: [ID!]
+  clearSubscribers: Boolean
 }
 """
 UpdateLinkInput is used for update Link object.
@@ -7337,6 +7376,9 @@ input UpdateUserInput {
   addFavoriteHostIDs: [ID!]
   removeFavoriteHostIDs: [ID!]
   clearFavoriteHosts: Boolean
+  addSubscribedHostIDs: [ID!]
+  removeSubscribedHostIDs: [ID!]
+  clearSubscribedHosts: Boolean
 }
 type User implements Node {
   id: ID!
@@ -7511,6 +7553,37 @@ type User implements Node {
     """
     where: HostWhereInput
   ): HostConnection! @goField(name: "FavoriteHosts", forceResolver: false)
+  subscribedhosts(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Ordering options for Hosts returned from the connection.
+    """
+    orderBy: [HostOrder!]
+
+    """
+    Filtering options for Hosts returned from the connection.
+    """
+    where: HostWhereInput
+  ): HostConnection! @goField(name: "SubscribedHosts", forceResolver: false)
 }
 """
 A connection to a list of items.
@@ -7647,6 +7720,11 @@ input UserWhereInput {
   """
   hasFavoriteHosts: Boolean
   hasFavoriteHostsWith: [HostWhereInput!]
+  """
+  subscribedHosts edge predicates
+  """
+  hasSubscribedHosts: Boolean
+  hasSubscribedHostsWith: [HostWhereInput!]
 }
 input ClaimTasksInput {
   """The identity the beacon is authenticated as (e.g. 'root')"""
@@ -7901,6 +7979,8 @@ type Mutation {
     updateHost(hostID: ID!, input: UpdateHostInput!): Host! @requireRole(role: USER)
     favoriteHost(hostID: ID!): Host! @requireRole(role: USER)
     unfavoriteHost(hostID: ID!): Host! @requireRole(role: USER)
+    subscribeToHost(hostID: ID!): Host! @requireRole(role: USER)
+    unsubscribeFromHost(hostID: ID!): Host! @requireRole(role: USER)
 
     ###
     # Tag
@@ -7966,6 +8046,7 @@ type Mutation {
     ###
     markNotificationsAsRead(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
     markNotificationsAsArchived(notificationIDs: [ID!]!): [Notification!]! @requireRole(role: USER)
+    deleteAllNotifications: Boolean! @requireRole(role: ADMIN)
 }
 extend type Query {
   assets(

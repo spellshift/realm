@@ -4,6 +4,7 @@ import { AccessGate } from "../../components/access-gate";
 import { useShellData } from "./hooks/useShellData";
 import { useCallbackTimer } from "./hooks/useCallbackTimer";
 import { useShellTerminal } from "./hooks/useShellTerminal";
+import { useTabHotkeys } from "./hooks/useTabHotkeys";
 import ShellHeader from "./components/ShellHeader";
 import ShellTerminal from "./components/ShellTerminal";
 import ShellStatusBar from "./components/ShellStatusBar";
@@ -90,8 +91,14 @@ const ShellV2 = () => {
         handleTooltipMouseLeave,
         getSessionInputs,
         setShellInput,
-        focusTerminal
+        focusTerminal,
+        sendCtrlC,
+        sendCtrlR
     } = useShellTerminal(shellId, loading, error, shellData, setPortalId, isLateCheckin, handleOpenPortalTab);
+
+    const totalTabs = 1 + portalTabs.length;
+
+    useTabHotkeys(totalTabs, setTabIndex);
 
     const toast = useToast();
 
@@ -230,6 +237,8 @@ const ShellV2 = () => {
                     onClosePortal={handleClosePortal}
                     onSshConnect={handleSshConnect}
                     onPtyOpen={handlePtyOpen}
+                    onSendCtrlC={sendCtrlC}
+                    onSendCtrlR={sendCtrlR}
                 />
 
                 {shellTerm}

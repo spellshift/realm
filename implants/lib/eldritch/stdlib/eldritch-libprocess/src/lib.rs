@@ -49,12 +49,15 @@ pub trait ProcessLibrary {
     #[eldritch_method]
     /// Lists all currently running processes.
     ///
+    /// **Parameters**
+    /// - `include_env` (`Option<bool>`): If `True`, includes the `environ` field in each process dictionary. Defaults to `False`.
+    ///
     /// **Returns**
     /// - `List<Dict>`: A list of process dictionaries containing `pid`, `ppid`, `name`, `path`, `username`, `command`, `cwd`, etc.
     ///
     /// **Errors**
     /// - Returns an error string if the process list cannot be retrieved.
-    fn list(&self) -> Result<Vec<BTreeMap<String, Value>>, String>;
+    fn list(&self, include_env: Option<bool>) -> Result<Vec<BTreeMap<String, Value>>, String>;
 
     #[eldritch_method]
     /// Returns the name of a process given its ID.

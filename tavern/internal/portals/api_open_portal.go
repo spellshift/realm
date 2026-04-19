@@ -36,6 +36,18 @@ func (srv *Server) OpenPortal(gstream portalpb.Portal_OpenPortalServer) error {
 		return status.Errorf(codes.InvalidArgument, "portal %d is closed", portalID)
 	}
 
+	// Log portal open with beacon and host info
+	logAttrs := []any{"portal_id", portalID}
+	if b, err := p.QueryBeacon().WithHost().Only(ctx); err == nil {
+		logAttrs = append(logAttrs, "beacon_id", b.ID)
+		if b.Edges.Host != nil {
+			logAttrs = append(logAttrs, "host_id", b.Edges.Host.ID)
+		}
+	} else {
+		slog.WarnContext(ctx, "failed to query beacon for portal open log", "portal_id", portalID, "error", err)
+	}
+	slog.InfoContext(ctx, "portal opened", logAttrs...)
+
 	cleanup, err := srv.mux.OpenPortal(ctx, portalID)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to open portal", "portal_id", portalID, "error", err)
