@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -372,7 +373,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Method: "POST",
 		},
 	}); err != nil {
-		if strings.Contains(err.Error(), "already exists") {
+		if errors.Is(err, scheduler.ErrJobExists) {
 			slog.InfoContext(ctx, "host-lost-poll job already scheduled, skipping")
 		} else {
 			client.Close()

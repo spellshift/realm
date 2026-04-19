@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
@@ -9,6 +10,9 @@ import (
 	"sync"
 	"time"
 )
+
+// ErrJobExists is returned when attempting to create a job that already exists.
+var ErrJobExists = errors.New("job already exists")
 
 // HTTPTarget defines an HTTP endpoint to invoke when a scheduled job fires.
 type HTTPTarget struct {
