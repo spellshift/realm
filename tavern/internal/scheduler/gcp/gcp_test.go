@@ -2,7 +2,9 @@ package gcp
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	schedulerpb "cloud.google.com/go/scheduler/apiv1/schedulerpb"
 	"google.golang.org/api/iterator"
@@ -158,5 +160,159 @@ func TestScheduleCreatesJob(t *testing.T) {
 	}
 	if httpTarget.GetHttpMethod() != schedulerpb.HttpMethod_GET {
 		t.Errorf("unexpected HTTP method: %v", httpTarget.GetHttpMethod())
+	}
+}
+
+func TestScheduleAtCreatesJob(t *testing.T) {
+	mock := &mockClient{}
+	s := &Scheduler{
+		client: mock,
+		parent: "projects/test-proj/locations/us-central1",
+	}
+
+	targetTime := time.Date(2026, 4, 19, 14, 45, 0, 0, time.UTC)
+	job := scheduler.OnceJob{
+		Name: "once-job",
+		At:   targetTime,
+		HTTPTarget: scheduler.HTTPTarget{
+			URL:    "https://example.com/host-check",
+			Method: "POST",
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: []byte(`{"host_id":42}`),
+		},
+	}
+
+	if err := s.ScheduleAt(context.Background(), job); err != nil {
+		t.Fatalf("ScheduleAt: %v", err)
+	}
+
+	if len(mock.created) != 1 {
+		t.Fatalf("expected 1 CreateJob call, got %d", len(mock.created))
+	}
+
+	req := mock.created[0]
+	if req.Parent != "projects/test-proj/locations/us-central1" {
+		t.Errorf("unexpected parent: %s", req.Parent)
+	}
+
+	pbJob := req.GetJob()
+	if pbJob.GetName() != "projects/test-proj/locations/us-central1/jobs/once-job" {
+		t.Errorf("unexpected job name: %s", pbJob.GetName())
+	}
+
+	// Cron expression should match the target time in UTC: minute hour day month *
+	wantSchedule := fmt.Sprintf("%d %d %d %d *", targetTime.Minute(), targetTime.Hour(), targetTime.Day(), targetTime.Month())
+	if pbJob.GetSchedule() != wantSchedule {
+		t.Errorf("unexpected schedule: got %q, want %q", pbJob.GetSchedule(), wantSchedule)
+	}
+	if pbJob.GetTimeZone() != "UTC" {
+		t.Errorf("unexpected timezone: %s", pbJob.GetTimeZone())
+	}
+
+	httpTarget := pbJob.GetHttpTarget()
+	if httpTarget.GetUri() != "https://example.com/host-check" {
+		t.Errorf("unexpected URI: %s", httpTarget.GetUri())
+	}
+	if httpTarget.GetHttpMethod() != schedulerpb.HttpMethod_POST {
+		t.Errorf("unexpected HTTP method: %v", httpTarget.GetHttpMethod())
+	}
+	if string(httpTarget.GetBody()) != `{"host_id":42}` {
+		t.Errorf("unexpected body: %s", string(httpTarget.GetBody()))
+	}
+}
+
+func TestScheduleAtDuplicate(t *testing.T) {
+	mock := &mockClient{}
+	s := &Scheduler{
+		client: mock,
+		parent: "projects/test-proj/locations/us-central1",
+	}
+
+	job := scheduler.OnceJob{
+		Name: "dup-once-job",
+		At:   time.Date(2026, 5, 1, 12, 0, 0, 0, time.UTC),
+		HTTPTarget: scheduler.HTTPTarget{
+			URL: "https://example.com/check",
+		},
+	}
+
+	// First call should succeed.
+	if err := s.ScheduleAt(context.Background(), job); err != nil {
+		t.Fatalf("first ScheduleAt: %v", err)
+	}
+	if len(mock.created) != 1 {
+		t.Fatalf("expected 1 CreateJob call, got %d", len(mock.created))
+	}
+
+	// Second call with the same name should fail.
+	err := s.ScheduleAt(context.Background(), job)
+	if err == nil {
+		t.Fatal("expected error on duplicate ScheduleAt, got nil")
+	}
+	if len(mock.created) != 1 {
+		t.Fatalf("expected CreateJob not to be called again, got %d calls", len(mock.created))
+	}
+}
+
+func TestScheduleAtNonUTCTime(t *testing.T) {
+	mock := &mockClient{}
+	s := &Scheduler{
+		client: mock,
+		parent: "projects/test-proj/locations/us-central1",
+	}
+
+	// Use a non-UTC timezone; the cron expression should still be derived in UTC.
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("failed to load timezone: %v", err)
+	}
+	// 10:30 AM Eastern Time on Dec 15 (EST, UTC-5) = 15:30 UTC
+	targetTime := time.Date(2026, 12, 15, 10, 30, 0, 0, loc)
+
+	job := scheduler.OnceJob{
+		Name: "tz-job",
+		At:   targetTime,
+		HTTPTarget: scheduler.HTTPTarget{
+			URL: "https://example.com/check",
+		},
+	}
+
+	if err := s.ScheduleAt(context.Background(), job); err != nil {
+		t.Fatalf("ScheduleAt: %v", err)
+	}
+
+	pbJob := mock.created[0].GetJob()
+	utc := targetTime.UTC()
+	wantSchedule := fmt.Sprintf("%d %d %d %d *", utc.Minute(), utc.Hour(), utc.Day(), utc.Month())
+	if pbJob.GetSchedule() != wantSchedule {
+		t.Errorf("unexpected schedule: got %q, want %q", pbJob.GetSchedule(), wantSchedule)
+	}
+}
+
+func TestScheduleAtDefaultMethod(t *testing.T) {
+	mock := &mockClient{}
+	s := &Scheduler{
+		client: mock,
+		parent: "projects/test-proj/locations/us-central1",
+	}
+
+	job := scheduler.OnceJob{
+		Name: "default-method-job",
+		At:   time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC),
+		HTTPTarget: scheduler.HTTPTarget{
+			URL: "https://example.com/check",
+			// Method intentionally left empty — should default to POST.
+		},
+	}
+
+	if err := s.ScheduleAt(context.Background(), job); err != nil {
+		t.Fatalf("ScheduleAt: %v", err)
+	}
+
+	httpTarget := mock.created[0].GetJob().GetHttpTarget()
+	if httpTarget.GetHttpMethod() != schedulerpb.HttpMethod_POST {
+		t.Errorf("expected default POST method, got %v", httpTarget.GetHttpMethod())
 	}
 }

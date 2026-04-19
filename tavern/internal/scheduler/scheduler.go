@@ -2,12 +2,17 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"net/url"
 	"slices"
 	"sync"
+	"time"
 )
+
+// ErrJobExists is returned when attempting to create a job that already exists.
+var ErrJobExists = errors.New("job already exists")
 
 // HTTPTarget defines an HTTP endpoint to invoke when a scheduled job fires.
 type HTTPTarget struct {
@@ -29,11 +34,28 @@ type Job struct {
 	HTTPTarget HTTPTarget
 }
 
+// OnceJob represents a unit of work to be run once at a specific time.
+type OnceJob struct {
+	// Name uniquely identifies the job within a scheduler.
+	Name string
+
+	// At is the time at which the job should fire.
+	// If At is in the past, the job fires immediately.
+	At time.Time
+
+	// HTTPTarget is the HTTP endpoint to call when the job fires.
+	HTTPTarget HTTPTarget
+}
+
 // Scheduler manages scheduled jobs.
 type Scheduler interface {
 	// Schedule creates a job that operates on a schedule.
 	// If a job with the same name already exists, it returns an error.
 	Schedule(ctx context.Context, job Job) error
+
+	// ScheduleAt creates a one-time job that fires at a specific time.
+	// If a job with the same name already exists, it returns an error.
+	ScheduleAt(ctx context.Context, job OnceJob) error
 
 	// Close releases any resources held by the scheduler.
 	Close() error

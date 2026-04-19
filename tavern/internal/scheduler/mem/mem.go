@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"realm.pub/tavern/internal/scheduler"
@@ -26,16 +27,18 @@ func (d *Driver) Open(_ context.Context, _ *url.URL) (scheduler.Scheduler, error
 	c := cron.New()
 	c.Start()
 	return &Scheduler{
-		cron: c,
-		jobs: make(map[string]cron.EntryID),
+		cron:   c,
+		jobs:   make(map[string]cron.EntryID),
+		timers: make(map[string]*time.Timer),
 	}, nil
 }
 
 // Scheduler is an in-memory implementation of scheduler.Scheduler backed by robfig/cron.
 type Scheduler struct {
-	mu   sync.Mutex
-	cron *cron.Cron
-	jobs map[string]cron.EntryID
+	mu     sync.Mutex
+	cron   *cron.Cron
+	jobs   map[string]cron.EntryID
+	timers map[string]*time.Timer
 }
 
 // Schedule creates a job that fires on the given cron schedule.
@@ -45,7 +48,7 @@ func (s *Scheduler) Schedule(_ context.Context, job scheduler.Job) error {
 	defer s.mu.Unlock()
 
 	if _, exists := s.jobs[job.Name]; exists {
-		return fmt.Errorf("scheduler/mem: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	target := job.HTTPTarget
@@ -59,9 +62,47 @@ func (s *Scheduler) Schedule(_ context.Context, job scheduler.Job) error {
 	return nil
 }
 
-// Close stops the cron scheduler and releases resources.
+// ScheduleAt creates a one-time job that fires at the given time.
+// It returns an error if a job with the same name already exists.
+func (s *Scheduler) ScheduleAt(_ context.Context, job scheduler.OnceJob) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, exists := s.jobs[job.Name]; exists {
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
+	}
+	if _, exists := s.timers[job.Name]; exists {
+		return fmt.Errorf("scheduler/mem: %w: %s", scheduler.ErrJobExists, job.Name)
+	}
+
+	delay := time.Until(job.At)
+	if delay < 0 {
+		delay = 0
+	}
+
+	target := job.HTTPTarget
+	name := job.Name
+	timer := time.AfterFunc(delay, func() {
+		s.fireHTTP(name, target)
+
+		s.mu.Lock()
+		delete(s.timers, name)
+		s.mu.Unlock()
+	})
+	s.timers[job.Name] = timer
+	return nil
+}
+
+// Close stops the cron scheduler, cancels pending timers, and releases resources.
 func (s *Scheduler) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.cron.Stop()
+	for _, timer := range s.timers {
+		timer.Stop()
+	}
+	s.timers = make(map[string]*time.Timer)
 	return nil
 }
 

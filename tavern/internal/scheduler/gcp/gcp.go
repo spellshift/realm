@@ -95,7 +95,7 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	if exists, err := s.jobExists(ctx, fullName); err != nil {
 		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
 	} else if exists {
-		return fmt.Errorf("scheduler/gcp: job %q already exists", job.Name)
+		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
 	}
 
 	method := schedulerpb.HttpMethod_POST
@@ -125,6 +125,61 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	}
 
 	slog.Info("scheduler/gcp: created job", "name", fullName, "schedule", job.Schedule)
+	return nil
+}
+
+// ScheduleAt creates a one-time Cloud Scheduler job that fires at the specified time.
+//
+// GCP Cloud Scheduler does not natively support one-shot jobs. This method
+// converts the target time to a cron expression targeting the exact minute
+// (e.g. "45 14 19 4 *" for April 19 at 14:45 UTC). The resulting job will
+// repeat annually at the same date and time; callers should ensure their
+// HTTP handler is idempotent.
+//
+// If the target time is in the past, the cron expression will still be set
+// for the exact minute; Cloud Scheduler will fire the job at the next
+// occurrence of that cron expression.
+func (s *Scheduler) ScheduleAt(ctx context.Context, job scheduler.OnceJob) error {
+	fullName := fmt.Sprintf("%s/jobs/%s", s.parent, job.Name)
+
+	// Check for an existing job with the same name.
+	if exists, err := s.jobExists(ctx, fullName); err != nil {
+		return fmt.Errorf("scheduler/gcp: failed checking for existing job: %w", err)
+	} else if exists {
+		return fmt.Errorf("scheduler/gcp: %w: %s", scheduler.ErrJobExists, job.Name)
+	}
+
+	method := schedulerpb.HttpMethod_POST
+	if job.HTTPTarget.Method != "" {
+		method = httpMethodToProto(job.HTTPTarget.Method)
+	}
+
+	// Convert the target time to a cron expression in UTC.
+	utc := job.At.UTC()
+	schedule := fmt.Sprintf("%d %d %d %d *", utc.Minute(), utc.Hour(), utc.Day(), utc.Month())
+
+	pbJob := &schedulerpb.Job{
+		Name:     fullName,
+		Schedule: schedule,
+		TimeZone: "UTC",
+		Target: &schedulerpb.Job_HttpTarget{
+			HttpTarget: &schedulerpb.HttpTarget{
+				Uri:        job.HTTPTarget.URL,
+				HttpMethod: method,
+				Headers:    job.HTTPTarget.Headers,
+				Body:       job.HTTPTarget.Body,
+			},
+		},
+	}
+
+	if _, err := s.client.CreateJob(ctx, &schedulerpb.CreateJobRequest{
+		Parent: s.parent,
+		Job:    pbJob,
+	}); err != nil {
+		return fmt.Errorf("scheduler/gcp: failed to create job: %w", err)
+	}
+
+	slog.Info("scheduler/gcp: created one-time job", "name", fullName, "schedule", schedule, "target_time", utc)
 	return nil
 }
 
