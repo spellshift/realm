@@ -268,7 +268,7 @@ func TestScheduleAtNonUTCTime(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load timezone: %v", err)
 	}
-	// 10:30 AM EST = 15:30 UTC (during standard time)
+	// 10:30 AM Eastern Time on Dec 15 (EST, UTC-5) = 15:30 UTC
 	targetTime := time.Date(2026, 12, 15, 10, 30, 0, 0, loc)
 
 	job := scheduler.OnceJob{
