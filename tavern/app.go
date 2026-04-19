@@ -372,14 +372,22 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		hostCheckURL = fmt.Sprintf("%s/internal/host-check", strings.TrimRight(domain, "/"))
 		hostCheckSchedule = "* * * * *"
 	}
-	slog.InfoContext(ctx, "resolved host check configuration", "url", hostCheckURL, "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
+	// Generate a JWT scoped to the host-check endpoint and append it as a query parameter.
+	hostCheckToken, err := hostcheck.NewToken(privKey)
+	if err != nil {
+		client.Close()
+		sched.Close()
+		return nil, fmt.Errorf("failed to generate host-check JWT: %w", err)
+	}
+	hostCheckURL = fmt.Sprintf("%s?token=%s", hostCheckURL, url.QueryEscape(hostCheckToken))
+	slog.InfoContext(ctx, "resolved host check configuration", "schedule", hostCheckSchedule, "scheduler_scheme", schedulerURL.Scheme)
 
 	// Schedule a recurring host-lost check.
 	// In-memory: fires every 10 seconds via robfig/cron.
 	// GCP Cloud Scheduler: fires every minute (minimum supported granularity).
 	// If the job is already scheduled (e.g. from a previous startup), the
 	// scheduler will return an error which we log and ignore.
-	slog.InfoContext(ctx, "scheduling host-lost-poll job", "url", hostCheckURL, "schedule", hostCheckSchedule)
+	slog.InfoContext(ctx, "scheduling host-lost-poll job", "schedule", hostCheckSchedule)
 	if err := sched.Schedule(ctx, scheduler.Job{
 		Name:     "host-lost-poll",
 		Schedule: hostCheckSchedule,
@@ -393,10 +401,10 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		} else {
 			client.Close()
 			sched.Close()
-			return nil, fmt.Errorf("failed to schedule host-lost check (url=%q, schedule=%q): %w", hostCheckURL, hostCheckSchedule, err)
+			return nil, fmt.Errorf("failed to schedule host-lost check (schedule=%q): %w", hostCheckSchedule, err)
 		}
 	} else {
-		slog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "url", hostCheckURL, "schedule", hostCheckSchedule)
+		slog.InfoContext(ctx, "host-lost-poll job scheduled successfully", "schedule", hostCheckSchedule)
 	}
 
 	// Route Map
@@ -496,7 +504,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			Handler: pty.NewHandler(client, portalMux),
 		},
 		"/internal/host-check": tavernhttp.Endpoint{
-			Handler:              hostcheck.NewHandler(client),
+			Handler:              hostcheck.NewHandler(client, pubKey),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
