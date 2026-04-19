@@ -16,6 +16,7 @@ import (
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/quest"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // EventCreate is the builder for creating a Event entity.
@@ -121,6 +122,25 @@ func (ec *EventCreate) SetNillableQuestID(id *int) *EventCreate {
 // SetQuest sets the "quest" edge to the Quest entity.
 func (ec *EventCreate) SetQuest(q *Quest) *EventCreate {
 	return ec.SetQuestID(q.ID)
+}
+
+// SetUserID sets the "user" edge to the User entity by ID.
+func (ec *EventCreate) SetUserID(id int) *EventCreate {
+	ec.mutation.SetUserID(id)
+	return ec
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (ec *EventCreate) SetNillableUserID(id *int) *EventCreate {
+	if id != nil {
+		ec = ec.SetUserID(*id)
+	}
+	return ec
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (ec *EventCreate) SetUser(u *User) *EventCreate {
+	return ec.SetUserID(u.ID)
 }
 
 // AddNotificationIDs adds the "notifications" edge to the Notification entity by IDs.
@@ -294,6 +314,23 @@ func (ec *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.quest_events = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ec.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   event.UserTable,
+			Columns: []string{event.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_events = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ec.mutation.NotificationsIDs(); len(nodes) > 0 {

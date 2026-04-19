@@ -11,6 +11,7 @@ import (
 	"realm.pub/tavern/internal/ent/notification"
 	"realm.pub/tavern/internal/ent/quest"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 // HookDeriveHostEvents will create host events based on mutations.
@@ -301,6 +302,71 @@ func HookDeriveNotifications() ent.Hook {
 						return nil, fmt.Errorf("creating notifications for host access: %w", err)
 					}
 				}
+			case event.KindNEW_USER_REQUEST:
+				// Notify only admin users
+				admins, err := client.User.Query().Where(user.IsAdminEQ(true)).All(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("fetching admins for new user request event: %w", err)
+				}
+
+				var creates []*NotificationCreate
+				for _, admin := range admins {
+					creates = append(creates, client.Notification.Create().
+						SetUser(admin).
+						SetEvent(evt).
+						SetPriority(notification.PriorityHigh))
+				}
+				if len(creates) > 0 {
+					err = client.Notification.CreateBulk(creates...).Exec(ctx)
+					if err != nil {
+						return nil, fmt.Errorf("creating notifications for new user request: %w", err)
+					}
+				}
+			}
+
+			return val, nil
+		})
+	}
+}
+
+// HookDeriveUserRequestEvents creates NEW_USER_REQUEST events when a user is created but not yet activated.
+func HookDeriveUserRequestEvents() ent.Hook {
+	return func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			mut, ok := m.(*UserMutation)
+			if !ok {
+				return next.Mutate(ctx, m)
+			}
+
+			// Only trigger on user creation
+			if !mut.Op().Is(ent.OpCreate) {
+				return next.Mutate(ctx, m)
+			}
+
+			// Run the mutation first to create the user
+			val, err := next.Mutate(ctx, m)
+			if err != nil {
+				return val, err
+			}
+
+			u, ok := val.(*User)
+			if !ok {
+				return val, fmt.Errorf("could not determine user for event creation")
+			}
+
+			// Only create event if user is NOT activated (needs approval)
+			if u.IsActivated {
+				return val, nil
+			}
+
+			client := mut.Client()
+			err = client.Event.Create().
+				SetTimestamp(time.Now().Unix()).
+				SetKind(event.KindNEW_USER_REQUEST).
+				SetUserID(u.ID).
+				Exec(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("creating new user request event: %w", err)
 			}
 
 			return val, nil

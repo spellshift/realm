@@ -1818,6 +1818,8 @@ func (ec *executionContext) fieldContext_Mutation_resetUserAPIKey(_ context.Cont
 				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "subscribedhosts":
 				return ec.fieldContext_User_subscribedhosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}
@@ -1892,6 +1894,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_favoritehosts(ctx, field)
 			case "subscribedhosts":
 				return ec.fieldContext_User_subscribedhosts(ctx, field)
+			case "events":
+				return ec.fieldContext_User_events(ctx, field)
 			case "apiKey":
 				return ec.fieldContext_User_apiKey(ctx, field)
 			}

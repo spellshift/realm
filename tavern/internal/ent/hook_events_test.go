@@ -15,6 +15,7 @@ import (
 	"realm.pub/tavern/internal/ent/event"
 	"realm.pub/tavern/internal/ent/host"
 	"realm.pub/tavern/internal/ent/notification"
+	"realm.pub/tavern/internal/ent/user"
 )
 
 func TestHookDeriveNotifications(t *testing.T) {
@@ -231,5 +232,158 @@ func TestHookDeriveNotifications_HostAccessRecovered(t *testing.T) {
 				t.Errorf("unexpected user ID %d in notification", n.Edges.User.ID)
 			}
 		}
+	})
+}
+
+// TestHookDeriveUserRequestEvents verifies that creating a non-activated user
+// triggers a NEW_USER_REQUEST event and notifies only admin users.
+func TestHookDeriveUserRequestEvents(t *testing.T) {
+	t.Run("non-activated user creates event and notifies admins", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		client.Host.Use(ent.HookDeriveHostEvents())
+		client.Task.Use(ent.HookDeriveQuestEvents())
+		client.Event.Use(ent.HookDeriveNotifications())
+		client.User.Use(ent.HookDeriveUserRequestEvents())
+
+		ctx := context.Background()
+
+		// Create an admin user (activated)
+		admin, err := client.User.Create().
+			SetName("admin-user").
+			SetOauthID("oauth-admin").
+			SetPhotoURL("http://photo.com/admin").
+			SetIsAdmin(true).
+			SetIsActivated(true).
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Create a regular activated user (non-admin)
+		_, err = client.User.Create().
+			SetName("regular-user").
+			SetOauthID("oauth-regular").
+			SetPhotoURL("http://photo.com/regular").
+			SetIsActivated(true).
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Create a new non-activated user (should trigger NEW_USER_REQUEST)
+		newUser, err := client.User.Create().
+			SetName("new-user").
+			SetOauthID("oauth-new").
+			SetPhotoURL("http://photo.com/new").
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Verify NEW_USER_REQUEST event was created
+		evt, err := client.Event.Query().
+			Where(
+				event.KindEQ(event.KindNEW_USER_REQUEST),
+				event.HasUserWith(user.IDEQ(newUser.ID)),
+			).
+			Only(ctx)
+		require.NoError(t, err)
+		require.Equal(t, event.KindNEW_USER_REQUEST, evt.Kind)
+
+		// Verify notification was created only for admin user
+		notifs, err := client.Notification.Query().
+			Where(notification.HasEventWith(event.ID(evt.ID))).
+			WithUser().
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, notifs, 1, "only admin should be notified")
+		assert.Equal(t, admin.ID, notifs[0].Edges.User.ID)
+		assert.Equal(t, notification.PriorityHigh, notifs[0].Priority)
+	})
+
+	t.Run("activated user does not create event", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		client.Host.Use(ent.HookDeriveHostEvents())
+		client.Task.Use(ent.HookDeriveQuestEvents())
+		client.Event.Use(ent.HookDeriveNotifications())
+		client.User.Use(ent.HookDeriveUserRequestEvents())
+
+		ctx := context.Background()
+
+		// Create an activated user directly
+		_, err := client.User.Create().
+			SetName("active-user").
+			SetOauthID("oauth-active").
+			SetPhotoURL("http://photo.com/active").
+			SetIsActivated(true).
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Verify no NEW_USER_REQUEST event was created
+		count, err := client.Event.Query().
+			Where(event.KindEQ(event.KindNEW_USER_REQUEST)).
+			Count(ctx)
+		require.NoError(t, err)
+		assert.Equal(t, 0, count, "no event should be created for activated users")
+	})
+
+	t.Run("multiple admins all receive notifications", func(t *testing.T) {
+		client := enttest.OpenTempDB(t)
+		defer client.Close()
+
+		client.Host.Use(ent.HookDeriveHostEvents())
+		client.Task.Use(ent.HookDeriveQuestEvents())
+		client.Event.Use(ent.HookDeriveNotifications())
+		client.User.Use(ent.HookDeriveUserRequestEvents())
+
+		ctx := context.Background()
+
+		// Create two admin users
+		admin1, err := client.User.Create().
+			SetName("admin-one").
+			SetOauthID("oauth-admin-1").
+			SetPhotoURL("http://photo.com/admin1").
+			SetIsAdmin(true).
+			SetIsActivated(true).
+			Save(ctx)
+		require.NoError(t, err)
+
+		admin2, err := client.User.Create().
+			SetName("admin-two").
+			SetOauthID("oauth-admin-2").
+			SetPhotoURL("http://photo.com/admin2").
+			SetIsAdmin(true).
+			SetIsActivated(true).
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Create a non-admin, non-activated user
+		_, err = client.User.Create().
+			SetName("pending-user").
+			SetOauthID("oauth-pending").
+			SetPhotoURL("http://photo.com/pending").
+			Save(ctx)
+		require.NoError(t, err)
+
+		// Verify NEW_USER_REQUEST event was created
+		evts, err := client.Event.Query().
+			Where(event.KindEQ(event.KindNEW_USER_REQUEST)).
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, evts, 1)
+
+		// Verify both admins got notifications
+		notifs, err := client.Notification.Query().
+			Where(notification.HasEventWith(event.ID(evts[0].ID))).
+			WithUser().
+			All(ctx)
+		require.NoError(t, err)
+		require.Len(t, notifs, 2, "both admins should be notified")
+
+		notifUserIDs := map[int]bool{}
+		for _, n := range notifs {
+			notifUserIDs[n.Edges.User.ID] = true
+			assert.Equal(t, notification.PriorityHigh, n.Priority)
+		}
+		assert.True(t, notifUserIDs[admin1.ID], "admin1 should be notified")
+		assert.True(t, notifUserIDs[admin2.ID], "admin2 should be notified")
 	})
 }
