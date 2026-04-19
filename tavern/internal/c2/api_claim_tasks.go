@@ -22,8 +22,10 @@ import (
 	"realm.pub/tavern/internal/ent/shelltask"
 	"realm.pub/tavern/internal/ent/tag"
 	"realm.pub/tavern/internal/ent/task"
+	"realm.pub/tavern/internal/hostcheck"
 	"realm.pub/tavern/internal/namegen"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/scheduler"
 )
 
 var (
@@ -232,6 +234,10 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to upsert host entity: %v", err)
 	}
+
+	// Schedule a host-lost check for 1 minute after the expected next seen at.
+	expectedNextSeenAt := now.Add(time.Duration(activeTransport.Interval) * time.Second)
+	srv.scheduleHostLostCheck(ctx, hostID, expectedNextSeenAt)
 
 	// Metrics
 	defer func() {
@@ -493,4 +499,38 @@ func (srv *Server) ClaimTasks(ctx context.Context, req *c2pb.ClaimTasksRequest) 
 
 	// Return claimed tasks
 	return &resp, nil
+}
+
+// scheduleHostLostCheck schedules a one-time check for whether a host has been
+// lost. The check fires 1 minute after the host's expected next seen at time.
+func (srv *Server) scheduleHostLostCheck(ctx context.Context, hostID int, expectedNextSeenAt time.Time) {
+	if srv.scheduler == nil || srv.hostCheckURL == "" {
+		return
+	}
+
+	body, err := json.Marshal(hostcheck.Request{
+		HostID:             hostID,
+		ExpectedNextSeenAt: expectedNextSeenAt,
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to marshal host check request", "err", err, "host_id", hostID)
+		return
+	}
+
+	jobName := fmt.Sprintf("host-lost-check-%d-%d", hostID, expectedNextSeenAt.UnixNano())
+	err = srv.scheduler.ScheduleAt(ctx, scheduler.OnceJob{
+		Name: jobName,
+		At:   expectedNextSeenAt.Add(1 * time.Minute),
+		HTTPTarget: scheduler.HTTPTarget{
+			URL:    srv.hostCheckURL,
+			Method: "POST",
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: body,
+		},
+	})
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to schedule host-lost check", "err", err, "host_id", hostID)
+	}
 }

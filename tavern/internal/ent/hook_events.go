@@ -226,16 +226,16 @@ func HookDeriveNotifications() ent.Hook {
 						return nil, fmt.Errorf("creating notification for quest completed: %w", err)
 					}
 				}
-			case event.KindHOST_ACCESS_NEW, event.KindHOST_ACCESS_RECOVERED:
+			case event.KindHOST_ACCESS_NEW, event.KindHOST_ACCESS_RECOVERED, event.KindHOST_ACCESS_LOST:
 				// Notify all users
 				users, err := client.User.Query().All(ctx)
 				if err != nil {
 					return nil, fmt.Errorf("fetching users for host access event: %w", err)
 				}
 
-				// For HOST_ACCESS_RECOVERED, determine which users are subscribers
+				// For HOST_ACCESS_RECOVERED and HOST_ACCESS_LOST, determine which users are subscribers
 				subscriberIDs := make(map[int]bool)
-				if evt.Kind == event.KindHOST_ACCESS_RECOVERED {
+				if evt.Kind == event.KindHOST_ACCESS_RECOVERED || evt.Kind == event.KindHOST_ACCESS_LOST {
 					subscribers, err := client.Event.Query().
 						Where(event.ID(evt.ID)).
 						QueryHost().

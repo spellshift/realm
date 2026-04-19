@@ -36,6 +36,7 @@ import (
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/migrate"
 	"realm.pub/tavern/internal/graphql"
+	"realm.pub/tavern/internal/hostcheck"
 	tavernhttp "realm.pub/tavern/internal/http"
 	tavernshell "realm.pub/tavern/internal/http/shell"
 	"realm.pub/tavern/internal/http/stream"
@@ -44,6 +45,7 @@ import (
 	"realm.pub/tavern/internal/portals/ssh"
 	"realm.pub/tavern/internal/portals/pty"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/scheduler"
 	"realm.pub/tavern/internal/secrets"
 	"realm.pub/tavern/internal/www"
 	"realm.pub/tavern/portals/portalpb"
@@ -54,6 +56,7 @@ import (
 	_ "realm.pub/tavern/internal/redirectors/grpc"
 	_ "realm.pub/tavern/internal/redirectors/http1"
 	_ "realm.pub/tavern/internal/redirectors/icmp"
+	_ "realm.pub/tavern/internal/scheduler/mem"
 )
 
 func init() {
@@ -322,6 +325,20 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 	// Configure Portal Mux
 	portalMux := cfg.NewPortalMux(ctx)
 
+	// Initialize Scheduler
+	sched, err := scheduler.New(ctx, "mem://")
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to initialize scheduler: %w", err)
+	}
+
+	// Determine host check URL based on server listen address
+	listenAddr := "0.0.0.0:80"
+	if cfg.srv != nil && cfg.srv.Addr != "" {
+		listenAddr = cfg.srv.Addr
+	}
+	hostCheckURL := fmt.Sprintf("http://127.0.0.1%s/internal/host-check", portFromAddr(listenAddr))
+
 	// Route Map
 	routes := tavernhttp.RouteMap{
 		"/status": tavernhttp.Endpoint{
@@ -374,7 +391,7 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 			AllowUnactivated: true,
 		},
 		"/c2.C2/": tavernhttp.Endpoint{
-			Handler:              newGRPCHandler(client, grpcShellMux, portalMux),
+			Handler:              newGRPCHandler(client, grpcShellMux, portalMux, c2.WithScheduler(sched, hostCheckURL)),
 			AllowUnauthenticated: true,
 			AllowUnactivated:     true,
 		},
@@ -417,6 +434,11 @@ func NewServer(ctx context.Context, options ...func(*Config)) (*Server, error) {
 		},
 		"/portals/pty/ws": tavernhttp.Endpoint{
 			Handler: pty.NewHandler(client, portalMux),
+		},
+		"/internal/host-check": tavernhttp.Endpoint{
+			Handler:              hostcheck.NewHandler(client),
+			AllowUnauthenticated: true,
+			AllowUnactivated:     true,
 		},
 		"/": tavernhttp.Endpoint{
 			Handler:          www.NewHandler(httpLogger),
@@ -669,7 +691,7 @@ func newBuilderGRPCHandler(client *ent.Client, caCert *x509.Certificate, serverP
 	})
 }
 
-func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux) http.Handler {
+func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux.Mux, c2Opts ...c2.Option) http.Handler {
 	pub, priv, err := getKeyPairX25519()
 	if err != nil {
 		panic(err)
@@ -682,7 +704,7 @@ func newGRPCHandler(client *ent.Client, grpcShellMux *stream.Mux, portalMux *mux
 		panic(err)
 	}
 
-	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey)
+	c2srv := c2.New(client, grpcShellMux, portalMux, ed25519PubKey, ed25519PrivKey, c2Opts...)
 	xchacha := cryptocodec.StreamDecryptCodec{
 		Csvc: cryptocodec.NewCryptoSvc(priv),
 	}
@@ -727,4 +749,14 @@ func registerProfiler(router tavernhttp.RouteMap) {
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+}
+
+// portFromAddr extracts the port (including the colon prefix) from a listen
+// address like "0.0.0.0:80" or ":8080". If the address contains no colon,
+// the default ":80" is returned.
+func portFromAddr(addr string) string {
+	if i := strings.LastIndex(addr, ":"); i >= 0 {
+		return addr[i:]
+	}
+	return ":80"
 }

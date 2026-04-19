@@ -128,6 +128,11 @@ func (s *Scheduler) Schedule(ctx context.Context, job scheduler.Job) error {
 	return nil
 }
 
+// ScheduleAt is not yet supported for the GCP Cloud Scheduler driver.
+func (s *Scheduler) ScheduleAt(_ context.Context, _ scheduler.OnceJob) error {
+	return fmt.Errorf("scheduler/gcp: ScheduleAt is not yet supported")
+}
+
 // Close releases the underlying GCP client connection.
 func (s *Scheduler) Close() error {
 	return s.client.Close()

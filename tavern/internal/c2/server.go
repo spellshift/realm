@@ -19,6 +19,7 @@ import (
 	"realm.pub/tavern/internal/http/stream"
 	"realm.pub/tavern/internal/portals/mux"
 	"realm.pub/tavern/internal/redirectors"
+	"realm.pub/tavern/internal/scheduler"
 )
 
 type Server struct {
@@ -28,18 +29,35 @@ type Server struct {
 	portalMux        *mux.Mux
 	jwtPrivateKey    ed25519.PrivateKey
 	jwtPublicKey     ed25519.PublicKey
+	scheduler        scheduler.Scheduler
+	hostCheckURL     string
 
 	c2pb.UnimplementedC2Server
 }
 
-func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey) *Server {
-	return &Server{
+func New(graph *ent.Client, mux *stream.Mux, portalMux *mux.Mux, jwtPublicKey ed25519.PublicKey, jwtPrivateKey ed25519.PrivateKey, opts ...Option) *Server {
+	srv := &Server{
 		MaxFileChunkSize: 1024 * 1024, // 1 MB
 		graph:            graph,
 		mux:              mux,
 		portalMux:        portalMux,
 		jwtPrivateKey:    jwtPrivateKey,
 		jwtPublicKey:     jwtPublicKey,
+	}
+	for _, opt := range opts {
+		opt(srv)
+	}
+	return srv
+}
+
+// Option configures a C2 Server.
+type Option func(*Server)
+
+// WithScheduler sets the scheduler used for scheduling host-lost checks.
+func WithScheduler(s scheduler.Scheduler, hostCheckURL string) Option {
+	return func(srv *Server) {
+		srv.scheduler = s
+		srv.hostCheckURL = hostCheckURL
 	}
 }
 
