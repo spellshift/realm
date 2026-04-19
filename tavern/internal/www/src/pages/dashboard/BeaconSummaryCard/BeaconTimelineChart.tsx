@@ -1,39 +1,30 @@
 import { FC } from "react";
 import {
-    BarChart,
-    Bar,
+    LineChart,
+    Line,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
     ResponsiveContainer,
 } from "recharts";
 import { ApolloError } from "@apollo/client";
-import { getTacticColor } from "../../../utils/utils";
 import { EmptyState, EmptyStateType } from "../../../components/tavern-base-ui/EmptyState";
-import { CustomTooltip } from "./CustomTooltip";
-import { CustomLegend } from "./CustomLegend";
 import { ChartDataPoint } from "../utils/types";
 
-interface QuestTimelineChartProps {
+interface BeaconTimelineChartProps {
     loading: boolean;
     chartData: ChartDataPoint[];
     error: ApolloError | undefined;
-    activeTactics: string[];
+    tickInterval: number;
 }
 
-export const QuestTimelineChart: FC<QuestTimelineChartProps> = ({
-    loading,
-    chartData,
-    error,
-    activeTactics,
-}) => {
+export const BeaconTimelineChart: FC<BeaconTimelineChartProps> = ({ loading, chartData, error, tickInterval }) => {
     if (loading && !chartData.length) {
         return (
             <EmptyState
                 type={EmptyStateType.loading}
-                label="Loading quest timeline..."
+                label="Loading beacon timeline..."
             />
         );
     }
@@ -42,7 +33,7 @@ export const QuestTimelineChart: FC<QuestTimelineChartProps> = ({
         return (
             <EmptyState
                 type={EmptyStateType.error}
-                label="Failed to load quest timeline"
+                label="Failed to load beacon timeline"
                 details={error.message}
             />
         );
@@ -52,21 +43,22 @@ export const QuestTimelineChart: FC<QuestTimelineChartProps> = ({
         return (
             <EmptyState
                 type={EmptyStateType.noData}
-                label="No quest data available"
-                details="Create some quests to see the timeline"
+                label="No beacon data available"
+                details="Beacons will appear here once they check in"
             />
         );
     }
 
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <BarChart
+            <LineChart
                 data={chartData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                     dataKey="displayLabel"
+                    interval={tickInterval - 1}
                     tick={{ fill: "#6b7280", fontSize: 12 }}
                     tickLine={{ stroke: "#e5e7eb" }}
                     axisLine={{ stroke: "#e5e7eb" }}
@@ -77,24 +69,19 @@ export const QuestTimelineChart: FC<QuestTimelineChartProps> = ({
                     axisLine={{ stroke: "#e5e7eb" }}
                     allowDecimals={false}
                 />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend content={<CustomLegend />} />
-
-                {activeTactics.map((tactic, index) => (
-                    <Bar
-                        key={tactic}
-                        dataKey={tactic}
-                        stackId="tactics"
-                        fill={getTacticColor(tactic)}
-                        name={tactic}
-                        radius={
-                            index === activeTactics.length - 1
-                                ? [4, 4, 0, 0]
-                                : [0, 0, 0, 0]
-                        }
-                    />
-                ))}
-            </BarChart>
+                <Tooltip
+                    contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }}
+                    labelStyle={{ fontWeight: 600, color: "#111827" }}
+                />
+                <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#7c3aed"
+                    name="Beacons"
+                    dot={false}
+                    strokeWidth={2}
+                />
+            </LineChart>
         </ResponsiveContainer>
     );
 };

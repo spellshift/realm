@@ -1,25 +1,25 @@
 import { FC } from "react";
 import { Tab, TabGroup, TabList } from "@headlessui/react";
-import { useQuestTimelineChart } from "./useQuestTimelineChart";
-import { QuestTimelineChart } from "./QuestTimelineChart";
+import { TIME_RANGES, TIME_RANGE_CONFIG } from "../utils/timeRange";
+import { useBeaconTimelineChart } from "./useBeaconTimelineChart";
+import { BeaconTimelineChart } from "./BeaconTimelineChart";
 import { MetricCard } from "../MetricCard";
-import { TIME_RANGE_CONFIG, TIME_RANGES } from "../utils/timeRange";
 
-export const QuestSummaryCard: FC = () => {
+export const BeaconSummaryCard: FC = () => {
     const {
         selectedIndex,
         chartData,
-        activeTactics,
-        questMetric,
+        beaconMetric,
+        tickInterval,
         loading,
         error,
         handleTabChange,
-    } = useQuestTimelineChart();
+    } = useBeaconTimelineChart();
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 py-2 px-6 flex flex-col gap-4">
             <div className="flex flex-row justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Quest Timeline</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Beacon Timeline</h3>
 
                 <TabGroup selectedIndex={selectedIndex} onChange={handleTabChange}>
                     <TabList className="flex rounded-lg bg-gray-100 p-1">
@@ -40,18 +40,18 @@ export const QuestSummaryCard: FC = () => {
                 </TabGroup>
             </div>
 
-            <MetricCard label="Quests" count={questMetric.count} trend={questMetric.trend} timeframe={questMetric.timeframe} trendValue={questMetric.trendValue ?? undefined} />
+            <MetricCard label="Beacons" count={beaconMetric.count} trend={beaconMetric.trend} timeframe={beaconMetric.timeframe} trendValue={beaconMetric.trendValue ?? undefined} />
 
             <div className="h-64">
-                <QuestTimelineChart
+                <BeaconTimelineChart
                     loading={loading}
                     chartData={chartData}
                     error={error}
-                    activeTactics={activeTactics}
+                    tickInterval={tickInterval}
                 />
             </div>
         </div>
     );
 };
 
-export default QuestSummaryCard;
+export default BeaconSummaryCard;

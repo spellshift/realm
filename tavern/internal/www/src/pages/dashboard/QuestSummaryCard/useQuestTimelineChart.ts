@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import moment from "moment";
-import { TIME_RANGES, TIME_RANGE_CONFIG, ALL_TACTICS, GET_QUEST_TIMELINE_CHART } from "./config";
-import { TimeRange, QuestTimelineChartResponse, ChartDataPoint } from "./types";
+import { TIME_RANGES, TIME_RANGE_CONFIG, TimeRange, computeTimeWindow } from "../utils/timeRange";
+import { ALL_TACTICS, GET_QUEST_TIMELINE_CHART, GET_QUEST_FILTERED_TIMELINE_CHART } from "./config";
+import { computeMetric } from "./computeMetric";
+import { ChartDataPoint, QuestTimelineChartResponse } from "../utils/types";
 
 export const useQuestTimelineChart = () => {
     const [timeRange, setTimeRange] = useState<TimeRange>("today");
@@ -11,12 +13,10 @@ export const useQuestTimelineChart = () => {
     const selectedIndex = TIME_RANGES.indexOf(timeRange);
 
     const queryVariables = useMemo(() => {
-        const now = moment().startOf("hour").add(1, "hour");
-        const start = moment().subtract(config.daysBack, "days").startOf("hour");
-
+        const { start, stop } = computeTimeWindow(config);
         return {
             start: start.toISOString(),
-            end: now.toISOString(),
+            end: stop.toISOString(),
             granularity_seconds: config.granularity_seconds,
         };
     }, [config]);
@@ -25,6 +25,15 @@ export const useQuestTimelineChart = () => {
         GET_QUEST_TIMELINE_CHART,
         {
             variables: queryVariables,
+            fetchPolicy: "cache-and-network",
+            pollInterval: 5000,
+        }
+    );
+
+    const { data: outputData } = useQuery<QuestTimelineChartResponse>(
+        GET_QUEST_FILTERED_TIMELINE_CHART,
+        {
+            variables: { ...queryVariables, where: { hasTasksWith: [{ outputNotNil: true }] } },
             fetchPolicy: "cache-and-network",
             pollInterval: 5000,
         }
@@ -76,30 +85,7 @@ export const useQuestTimelineChart = () => {
         return ALL_TACTICS.filter((tactic) => tacticTotals[tactic] > 0);
     }, [chartData]);
 
-    const questMetric = useMemo(() => {
-        // The final bucket is always empty (in-progress window), so exclude it
-        const buckets = chartData.length > 1 ? chartData.slice(0, -1) : chartData;
-        const count = buckets.reduce((sum, point) => sum + point.total, 0);
-
-        if (buckets.length < 2) return { count, trend: undefined, timeframe: undefined, trendValue: undefined };
-
-        const start = buckets[0];
-        const end = buckets[buckets.length - 1];
-
-        const trend: "up" | "down" | undefined =
-            end.total === start.total ? undefined : end.total > start.total ? "up" : "down";
-
-        const trendValue = start.total === 0
-            ? undefined
-            : `${Math.round(((end.total - start.total) / start.total) * 100)}%`;
-
-        return {
-            count,
-            trend,
-            timeframe: `since ${start.displayLabel}`,
-            trendValue,
-        };
-    }, [chartData]);
+    const questMetric = useMemo(() => computeMetric(chartData), [chartData]);
 
     const handleTabChange = (index: number) => {
         setTimeRange(TIME_RANGES[index]);
