@@ -1,13 +1,37 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@apollo/client';
 import { useToast, Box, Text, CloseButton, HStack, VStack } from '@chakra-ui/react';
 import { NotificationNode } from '../utils/interfacesQuery';
 import { NotificationPriority } from '../utils/enums';
 import { getNotificationLink, getEventDescription } from '../utils/notificationHelpers';
+import { MARK_NOTIFICATIONS_AS_READ } from '../lib/notifications';
 import { initNotificationServiceWorker, showSystemNotification, onServiceWorkerNotificationClick } from '../utils/systemNotification';
 
-// Module-level Set to deduplicate across multiple component instances
-const notifiedIds = new Set<string>();
+const STORAGE_KEY = 'notified-urgent-ids';
+
+/** Load previously-notified IDs from sessionStorage so they survive page refresh. */
+function loadNotifiedIds(): Set<string> {
+    try {
+        const stored = sessionStorage.getItem(STORAGE_KEY);
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+        return new Set();
+    }
+}
+
+/** Persist the notified IDs set to sessionStorage. */
+function saveNotifiedIds(ids: Set<string>): void {
+    try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids)));
+    } catch {
+        // Ignore storage errors (e.g. private browsing quota).
+    }
+}
+
+// Module-level Set to deduplicate across multiple component instances.
+// Seeded from sessionStorage so IDs survive page refresh.
+const notifiedIds = loadNotifiedIds();
 
 const PRIORITY_COLORS: Record<string, { bg: string; borderColor: string }> = {
     [NotificationPriority.Urgent]: { bg: 'red.700', borderColor: 'red.500' },
@@ -75,6 +99,7 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
     const navigate = useNavigate();
     const toast = useToast();
     const initializedRef = useRef(false);
+    const [markAsRead] = useMutation(MARK_NOTIFICATIONS_AS_READ);
 
     // Register the notification service worker and request permission once on mount.
     // Also listen for click messages from the SW so we can navigate in this tab.
@@ -99,9 +124,15 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
             (n) => n.priority === NotificationPriority.Urgent && !n.read && !n.archived
         );
 
-        // On first load, seed the known IDs without firing alerts
+        // On first load, seed the known IDs without firing alerts.
+        // Wait until `notifications` is non-empty so we don't mark as
+        // initialized before the query has returned data.
         if (!initializedRef.current) {
+            if (notifications.length === 0) {
+                return;
+            }
             urgentNotifications.forEach((n) => notifiedIds.add(n.id));
+            saveNotifiedIds(notifiedIds);
             initializedRef.current = true;
             return;
         }
@@ -142,12 +173,17 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
                         link={link}
                         priority={notification.priority}
                         onNavigate={navigate}
-                        onClose={onClose}
+                        onClose={() => {
+                            markAsRead({ variables: { notificationIDs: [notification.id] } });
+                            if (onClose) onClose();
+                        }}
                     />
                 ),
             });
         });
-    }, [notifications, toast, navigate]);
+
+        saveNotifiedIds(notifiedIds);
+    }, [notifications, toast, navigate, markAsRead]);
 };
 
 export default useUrgentNotifications;
