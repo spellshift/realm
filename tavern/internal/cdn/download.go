@@ -1,9 +1,10 @@
 package cdn
 
 import (
-	"bytes"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"realm.pub/tavern/internal/ent"
 	"realm.pub/tavern/internal/ent/asset"
@@ -16,6 +17,32 @@ const (
 	HeaderIfNoneMatch = "If-None-Match"
 	HeaderEtag        = "Etag"
 )
+
+// MaxChunkSize is the maximum number of bytes written in a single chunk when serving downloads.
+// This is set to 31MB to accommodate GCP's 32MB response size limit.
+var MaxChunkSize = 31 * 1024 * 1024
+
+// serveChunkedContent writes the content to w in chunks of at most MaxChunkSize bytes,
+// flushing after each chunk to ensure data is sent to the client incrementally.
+func serveChunkedContent(w http.ResponseWriter, content []byte, modTime time.Time) {
+	w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+	if !modTime.IsZero() {
+		w.Header().Set("Last-Modified", modTime.UTC().Format(http.TimeFormat))
+	}
+
+	for offset := 0; offset < len(content); offset += MaxChunkSize {
+		end := offset + MaxChunkSize
+		if end > len(content) {
+			end = len(content)
+		}
+		if _, err := w.Write(content[offset:end]); err != nil {
+			return
+		}
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+	}
+}
 
 // NewDownloadHandler returns an HTTP handler responsible for downloading a asset from the CDN.
 func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
@@ -49,9 +76,9 @@ func NewDownloadHandler(graph *ent.Client, prefix string) http.Handler {
 		// Set Etag to hash of asset
 		w.Header().Set(HeaderEtag, a.Hash)
 
-		// Set Content-Type and serve content
+		// Set Content-Type and serve content in chunks
 		w.Header().Set("Content-Type", "application/octet-stream")
-		http.ServeContent(w, req, a.Name, a.LastModifiedAt, bytes.NewReader(a.Content))
+		serveChunkedContent(w, a.Content, a.LastModifiedAt)
 
 		return nil
 	})
