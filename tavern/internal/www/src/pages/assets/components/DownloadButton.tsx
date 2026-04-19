@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowDownToLine } from "lucide-react";
 import { Tooltip, useToast } from "@chakra-ui/react";
+import { Ring } from "@uiball/loaders";
 import Button from "../../../components/tavern-base-ui/button/Button";
 
 type DownloadButtonProps = {
@@ -53,8 +54,11 @@ const DownloadButton = ({ assetName }: DownloadButtonProps) => {
             <Button
                 buttonVariant="ghost"
                 buttonStyle={{ color: "gray", size: "xs" }}
-                leftIcon={<ArrowDownToLine className="w-4 h-4" />}
-                isLoading={isDownloading}
+                leftIcon={isDownloading
+                    ? <Ring size={14} lineWeight={2} speed={2} color="gray" />
+                    : <ArrowDownToLine className="w-4 h-4" />
+                }
+                disabled={isDownloading}
                 onClick={handleDownload}
                 aria-label="Download"
             />
