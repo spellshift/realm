@@ -25,6 +25,11 @@ vi.mock("@chakra-ui/react", async () => {
     };
 });
 
+// Mock NotificationBell to avoid requiring ApolloProvider in ShellHeader tests
+vi.mock("../../../../components/notifications/NotificationBell", () => ({
+    default: () => <div data-testid="notification-bell" />,
+}));
+
 describe("ShellHeader", () => {
     const mockShellData = {
         node: {
