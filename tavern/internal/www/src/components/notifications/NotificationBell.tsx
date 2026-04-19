@@ -158,7 +158,7 @@ const NotificationBell = () => {
             onClose={handleClose}
         >
             <PopoverTrigger>
-                <Box position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }}>
+                <Box as="button" type="button" position="relative" cursor="pointer" p={2} borderRadius="md" _hover={{ bg: "gray.800" }} bg="transparent" border="none" outline="none" display="flex" alignItems="center">
                     <BellIcon className="h-6 w-6 text-gray-400 hover:text-white" />
                     {unreadCount > 0 && (
                         <Box
