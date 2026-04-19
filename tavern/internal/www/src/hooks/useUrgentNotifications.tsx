@@ -109,6 +109,7 @@ const useUrgentNotifications = (notifications: NotificationNode[]) => {
                 title: '⚠ Urgent Notification',
                 body: description,
                 tag: `urgent-${notification.id}`,
+                url: link || undefined,
                 onClick: () => {
                     if (link) {
                         navigate(link);
